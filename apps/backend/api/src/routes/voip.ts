@@ -51,6 +51,8 @@ import {
   checkEdgvoipConnection,
   syncTrunksWithEdgvoip,
   syncExtensionsWithEdgvoip,
+  pushLocalTrunksToEdgvoip,
+  pushLocalExtensionsToEdgvoip,
   getTrunkRegistrationStatuses,
   getTrunkRegistrationStatus,
   getExtensionRegistrationStatuses,
@@ -226,6 +228,42 @@ router.post('/trunks/refresh', rbacMiddleware, requirePermission('manage_telepho
   } catch (error) {
     logger.error('Error refreshing trunks', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to refresh trunks' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/trunks/push - Push local trunks to EDGVoIP
+router.post('/trunks/push', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    logger.info('Pushing local trunks to EDGVoIP', { tenantId });
+
+    const pushResult = await pushLocalTrunksToEdgvoip(tenantId);
+
+    if (!pushResult.success) {
+      return res.status(500).json({ 
+        error: 'Trunk push failed',
+        details: pushResult.errors
+      } as ApiErrorResponse);
+    }
+
+    return res.json({ 
+      success: true, 
+      data: {
+        message: `Successfully pushed ${pushResult.pushed} trunks to EDGVoIP`,
+        pushed: pushResult.pushed,
+        created: pushResult.created,
+        updated: pushResult.updated,
+        failed: pushResult.failed,
+        errors: pushResult.errors
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error pushing trunks to EDGVoIP', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to push trunks' } as ApiErrorResponse);
   }
 });
 
@@ -738,6 +776,42 @@ router.post('/extensions/refresh-all', rbacMiddleware, requirePermission('manage
   } catch (error) {
     logger.error('Error refreshing extensions', { error, tenantId: getTenantId(req) });
     return res.status(500).json({ error: 'Failed to refresh extensions' } as ApiErrorResponse);
+  }
+});
+
+// POST /api/voip/extensions/push - Push local extensions to EDGVoIP
+router.post('/extensions/push', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' } as ApiErrorResponse);
+    }
+
+    logger.info('Pushing local extensions to EDGVoIP', { tenantId });
+
+    const pushResult = await pushLocalExtensionsToEdgvoip(tenantId);
+
+    if (!pushResult.success) {
+      return res.status(500).json({ 
+        error: 'Extension push failed',
+        details: pushResult.errors
+      } as ApiErrorResponse);
+    }
+
+    return res.json({ 
+      success: true, 
+      data: {
+        message: `Successfully pushed ${pushResult.pushed} extensions to EDGVoIP`,
+        pushed: pushResult.pushed,
+        created: pushResult.created,
+        updated: pushResult.updated,
+        failed: pushResult.failed,
+        errors: pushResult.errors
+      }
+    } as ApiSuccessResponse);
+  } catch (error) {
+    logger.error('Error pushing extensions to EDGVoIP', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ error: 'Failed to push extensions' } as ApiErrorResponse);
   }
 });
 

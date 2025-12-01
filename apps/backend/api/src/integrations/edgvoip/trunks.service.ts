@@ -440,6 +440,251 @@ export async function deleteTrunk(
 }
 
 /**
+ * Push local-only trunks to EDGVoIP
+ * 
+ * This function handles the W3 Suite → EDGVoIP direction of sync.
+ * It finds trunks created locally (syncSource='w3suite', syncStatus='local_only')
+ * and creates them on EDGVoIP.
+ * 
+ * Sync Logic:
+ * - syncStatus='local_only' + no externalId → Create on EDGVoIP (POST)
+ * - syncStatus='pending' + has externalId → Update on EDGVoIP (PUT)
+ */
+export async function pushLocalTrunksToEdgvoip(
+  tenantId: string
+): Promise<TrunkSyncResult & { pushed: number }> {
+  const result = {
+    success: true,
+    synced: 0,
+    created: 0,
+    updated: 0,
+    pushed: 0,
+    failed: 0,
+    errors: [] as Array<{ trunkId: string; error: string }>
+  };
+
+  try {
+    await setTenantContext(db, tenantId);
+
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return {
+        ...result,
+        success: false,
+        errors: [{ trunkId: 'config', error: 'EDGVoIP not configured' }]
+      };
+    }
+
+    // Find trunks that need to be pushed to EDGVoIP:
+    // 1. syncSource='w3suite' and syncStatus='local_only' (new local trunks)
+    // 2. syncSource='w3suite' and syncStatus='pending' (modified local trunks)
+    const localTrunks = await db.select()
+      .from(voipTrunks)
+      .where(
+        and(
+          eq(voipTrunks.tenantId, tenantId),
+          eq(voipTrunks.syncSource, 'w3suite'),
+          eq(voipTrunks.status, 'active') // Only push active trunks
+        )
+      );
+
+    // Filter trunks that need pushing
+    const trunksToPush = localTrunks.filter(t => 
+      t.syncStatus === 'local_only' || t.syncStatus === 'pending'
+    );
+
+    logger.info('Found local trunks to push to EDGVoIP', {
+      tenantId,
+      total: localTrunks.length,
+      toPush: trunksToPush.length
+    });
+
+    for (const trunk of trunksToPush) {
+      try {
+        // Build request payload for EDGVoIP
+        const sipConfig = trunk.sipConfig as SipConfig | null;
+        const didConfig = trunk.didConfig as DidConfig | null;
+        const security = trunk.security as TrunkSecurity | null;
+        const gdpr = trunk.gdpr as TrunkGdpr | null;
+        const codecPrefs = trunk.codecPreferences as string[] | null;
+
+        if (!trunk.externalId) {
+          // CREATE: No externalId = new trunk, push to EDGVoIP
+          const createRequest: CreateTrunkRequest = {
+            tenant_external_id: client.tenantExternalId,
+            store_id: trunk.storeId,
+            name: trunk.name,
+            provider: trunk.provider || undefined,
+            sip_config: sipConfig || {
+              host: trunk.host || 'edgvoip.it',
+              port: trunk.port || 5060,
+              transport: (trunk.protocol?.toUpperCase() as 'UDP' | 'TCP' | 'TLS') || 'UDP',
+              username: '',
+              password: '',
+              register: true
+            },
+            did_config: didConfig || {
+              number: '',
+              country_code: '+39',
+              area_code: '',
+              local_number: ''
+            },
+            security: security || undefined,
+            gdpr: gdpr || undefined,
+            codec_preferences: codecPrefs || undefined
+          };
+
+          logger.info('Pushing new trunk to EDGVoIP', {
+            tenantId,
+            trunkId: trunk.id,
+            name: trunk.name
+          });
+
+          const response = await client.createTrunk(createRequest);
+
+          if (response.success && response.data) {
+            // Update local trunk with externalId from EDGVoIP
+            await db.update(voipTrunks)
+              .set({
+                externalId: response.data.external_id,
+                syncStatus: 'synced',
+                lastSyncAt: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(voipTrunks.id, trunk.id));
+
+            result.created++;
+            result.pushed++;
+            
+            await logActivity(tenantId, 'create', trunk.id, 'ok', {
+              externalId: response.data.external_id,
+              name: trunk.name,
+              direction: 'push'
+            });
+
+            logger.info('Trunk pushed to EDGVoIP successfully', {
+              trunkId: trunk.id,
+              externalId: response.data.external_id
+            });
+          } else {
+            // Mark as failed
+            await db.update(voipTrunks)
+              .set({
+                syncStatus: 'failed',
+                updatedAt: new Date()
+              })
+              .where(eq(voipTrunks.id, trunk.id));
+
+            result.failed++;
+            result.errors.push({
+              trunkId: trunk.id,
+              error: response.error || 'Failed to create on EDGVoIP'
+            });
+
+            logger.error('Failed to push trunk to EDGVoIP', {
+              trunkId: trunk.id,
+              error: response.error
+            });
+          }
+        } else {
+          // UPDATE: Has externalId but syncStatus='pending' = local modification
+          const updateRequest: UpdateTrunkRequest = {
+            name: trunk.name,
+            provider: trunk.provider || undefined,
+            sip_config: sipConfig || undefined,
+            did_config: didConfig || undefined,
+            security: security || undefined,
+            gdpr: gdpr || undefined,
+            codec_preferences: codecPrefs || undefined
+          };
+
+          logger.info('Updating trunk on EDGVoIP', {
+            tenantId,
+            trunkId: trunk.id,
+            externalId: trunk.externalId
+          });
+
+          const response = await client.updateTrunk(trunk.externalId, updateRequest);
+
+          if (response.success) {
+            await db.update(voipTrunks)
+              .set({
+                syncStatus: 'synced',
+                lastSyncAt: new Date(),
+                updatedAt: new Date()
+              })
+              .where(eq(voipTrunks.id, trunk.id));
+
+            result.updated++;
+            result.pushed++;
+
+            await logActivity(tenantId, 'update', trunk.id, 'ok', {
+              externalId: trunk.externalId,
+              direction: 'push'
+            });
+
+            logger.info('Trunk updated on EDGVoIP successfully', {
+              trunkId: trunk.id,
+              externalId: trunk.externalId
+            });
+          } else {
+            await db.update(voipTrunks)
+              .set({
+                syncStatus: 'failed',
+                updatedAt: new Date()
+              })
+              .where(eq(voipTrunks.id, trunk.id));
+
+            result.failed++;
+            result.errors.push({
+              trunkId: trunk.id,
+              error: response.error || 'Failed to update on EDGVoIP'
+            });
+          }
+        }
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push({
+          trunkId: trunk.id,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        logger.error('Error pushing trunk to EDGVoIP', {
+          trunkId: trunk.id,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    result.success = result.failed === 0;
+
+    await logActivity(tenantId, 'sync', 'push', result.success ? 'ok' : 'fail', {
+      pushed: result.pushed,
+      created: result.created,
+      updated: result.updated,
+      failed: result.failed,
+      direction: 'push'
+    });
+
+    logger.info('Push local trunks completed', {
+      tenantId,
+      ...result
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Push local trunks failed', { error, tenantId });
+    return {
+      ...result,
+      success: false,
+      errors: [{ trunkId: 'push', error: error instanceof Error ? error.message : 'Unknown error' }]
+    };
+  }
+}
+
+/**
  * Bidirectional sync trunks with EDGVoIP
  * Strategy: EDGVoIP wins on conflicts (last_updated)
  */

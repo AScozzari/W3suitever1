@@ -487,6 +487,253 @@ export async function deleteExtension(
 }
 
 /**
+ * Push local-only extensions to EDGVoIP
+ * 
+ * This function handles the W3 Suite → EDGVoIP direction of sync.
+ * It finds extensions created locally (syncSource='w3suite', syncStatus='local_only')
+ * and creates them on EDGVoIP.
+ * 
+ * Sync Logic:
+ * - syncStatus='local_only' + no externalId → Create on EDGVoIP (POST)
+ * - syncStatus='pending' + has externalId → Update on EDGVoIP (PUT)
+ * 
+ * Note: userId and storeId are local-only fields and are NOT pushed to EDGVoIP.
+ * They are preserved locally during any sync operation.
+ */
+export async function pushLocalExtensionsToEdgvoip(
+  tenantId: string
+): Promise<ExtensionSyncResult & { pushed: number }> {
+  const result = {
+    success: true,
+    total: 0,
+    synced: 0,
+    created: 0,
+    updated: 0,
+    pushed: 0,
+    failed: 0,
+    errors: [] as Array<{ extensionId: string; error: string }>
+  };
+
+  try {
+    await setTenantContext(db, tenantId);
+
+    const client = await EdgvoipApiClient.fromTenantId(tenantId);
+    
+    if (!client) {
+      return {
+        ...result,
+        success: false,
+        errors: [{ extensionId: 'config', error: 'EDGVoIP not configured' }]
+      };
+    }
+
+    // Find extensions that need to be pushed to EDGVoIP:
+    // 1. syncSource='w3suite' and syncStatus='local_only' (new local extensions)
+    // 2. syncSource='w3suite' and syncStatus='pending' (modified local extensions)
+    const localExtensions = await db.select()
+      .from(voipExtensions)
+      .where(
+        and(
+          eq(voipExtensions.tenantId, tenantId),
+          eq(voipExtensions.syncSource, 'w3suite'),
+          eq(voipExtensions.status, 'active') // Only push active extensions
+        )
+      );
+
+    // Filter extensions that need pushing
+    const extensionsToPush = localExtensions.filter(ext => 
+      ext.syncStatus === 'local_only' || ext.syncStatus === 'pending'
+    );
+
+    result.total = extensionsToPush.length;
+
+    logger.info('Found local extensions to push to EDGVoIP', {
+      tenantId,
+      total: localExtensions.length,
+      toPush: extensionsToPush.length
+    });
+
+    for (const ext of extensionsToPush) {
+      try {
+        // Decrypt password for EDGVoIP
+        const decryptedPassword = await encryptionService.decrypt(ext.sipPassword, tenantId);
+        
+        if (!decryptedPassword) {
+          result.failed++;
+          result.errors.push({
+            extensionId: ext.id,
+            error: 'Failed to decrypt SIP password'
+          });
+          continue;
+        }
+
+        const settings = ext.settings as ExtensionSettings | null;
+
+        if (!ext.externalId) {
+          // CREATE: No externalId = new extension, push to EDGVoIP
+          const createRequest: CreateExtensionRequest = {
+            tenant_external_id: client.tenantExternalId,
+            store_id: ext.storeId || undefined,
+            extension: ext.extension,
+            display_name: ext.displayName || ext.extension,
+            password: decryptedPassword,
+            type: ext.type as 'user' | 'queue' | 'conference' || 'user',
+            settings: settings || undefined
+          };
+
+          logger.info('Pushing new extension to EDGVoIP', {
+            tenantId,
+            extensionId: ext.id,
+            extension: ext.extension
+          });
+
+          const response = await client.createExtension(createRequest);
+
+          if (response.success && response.data) {
+            // Update local extension with externalId from EDGVoIP
+            // IMPORTANT: Preserve userId and storeId (local-only fields)
+            await db.update(voipExtensions)
+              .set({
+                externalId: response.data.external_id,
+                edgvoipExtensionId: response.data.external_id,
+                syncStatus: 'synced',
+                lastSyncAt: new Date(),
+                syncErrorMessage: null,
+                updatedAt: new Date()
+              })
+              .where(eq(voipExtensions.id, ext.id));
+
+            result.created++;
+            result.pushed++;
+            
+            await logActivity(tenantId, 'create', ext.id, 'ok', {
+              externalId: response.data.external_id,
+              extension: ext.extension,
+              direction: 'push'
+            });
+
+            logger.info('Extension pushed to EDGVoIP successfully', {
+              extensionId: ext.id,
+              externalId: response.data.external_id
+            });
+          } else {
+            // Mark as failed
+            await db.update(voipExtensions)
+              .set({
+                syncStatus: 'failed',
+                syncErrorMessage: response.error || 'Failed to create on EDGVoIP',
+                updatedAt: new Date()
+              })
+              .where(eq(voipExtensions.id, ext.id));
+
+            result.failed++;
+            result.errors.push({
+              extensionId: ext.id,
+              error: response.error || 'Failed to create on EDGVoIP'
+            });
+
+            logger.error('Failed to push extension to EDGVoIP', {
+              extensionId: ext.id,
+              error: response.error
+            });
+          }
+        } else {
+          // UPDATE: Has externalId but syncStatus='pending' = local modification
+          const updateRequest: UpdateExtensionRequest = {
+            display_name: ext.displayName || undefined,
+            password: decryptedPassword,
+            type: ext.type as 'user' | 'queue' | 'conference' || undefined,
+            settings: settings || undefined
+          };
+
+          logger.info('Updating extension on EDGVoIP', {
+            tenantId,
+            extensionId: ext.id,
+            externalId: ext.externalId
+          });
+
+          const response = await client.updateExtension(ext.externalId, updateRequest);
+
+          if (response.success) {
+            await db.update(voipExtensions)
+              .set({
+                syncStatus: 'synced',
+                lastSyncAt: new Date(),
+                syncErrorMessage: null,
+                updatedAt: new Date()
+              })
+              .where(eq(voipExtensions.id, ext.id));
+
+            result.updated++;
+            result.pushed++;
+
+            await logActivity(tenantId, 'update', ext.id, 'ok', {
+              externalId: ext.externalId,
+              direction: 'push'
+            });
+
+            logger.info('Extension updated on EDGVoIP successfully', {
+              extensionId: ext.id,
+              externalId: ext.externalId
+            });
+          } else {
+            await db.update(voipExtensions)
+              .set({
+                syncStatus: 'failed',
+                syncErrorMessage: response.error || 'Failed to update on EDGVoIP',
+                updatedAt: new Date()
+              })
+              .where(eq(voipExtensions.id, ext.id));
+
+            result.failed++;
+            result.errors.push({
+              extensionId: ext.id,
+              error: response.error || 'Failed to update on EDGVoIP'
+            });
+          }
+        }
+
+        result.synced++;
+      } catch (error) {
+        result.failed++;
+        result.errors.push({
+          extensionId: ext.id,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        logger.error('Error pushing extension to EDGVoIP', {
+          extensionId: ext.id,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    result.success = result.failed === 0;
+
+    await logActivity(tenantId, 'sync', 'push', result.success ? 'ok' : 'fail', {
+      pushed: result.pushed,
+      created: result.created,
+      updated: result.updated,
+      failed: result.failed,
+      direction: 'push'
+    });
+
+    logger.info('Push local extensions completed', {
+      tenantId,
+      ...result
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Push local extensions failed', { error, tenantId });
+    return {
+      ...result,
+      success: false,
+      errors: [{ extensionId: 'push', error: error instanceof Error ? error.message : 'Unknown error' }]
+    };
+  }
+}
+
+/**
  * Reset SIP password for extension
  */
 export async function resetExtensionPassword(
