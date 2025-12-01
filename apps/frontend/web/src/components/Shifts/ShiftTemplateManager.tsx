@@ -73,8 +73,8 @@ export default function ShiftTemplateManager({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editState, setEditState] = useState<{ isOpen: boolean; template: ShiftTemplate | null }>({ isOpen: false, template: null });
-  const [duplicateState, setDuplicateState] = useState<{ isOpen: boolean; template: ShiftTemplate | null }>({ isOpen: false, template: null });
+  const [editState, setEditState] = useState<{ isOpen: boolean; templateId: string | null }>({ isOpen: false, templateId: null });
+  const [duplicateState, setDuplicateState] = useState<{ isOpen: boolean; templateId: string | null }>({ isOpen: false, templateId: null });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -100,19 +100,19 @@ export default function ShiftTemplateManager({
   };
   
   const handleEditTemplate = (template: LocalShiftTemplate) => {
-    setEditState({ isOpen: true, template: template as ShiftTemplate });
+    setEditState({ isOpen: true, templateId: template.id });
   };
   
   const handleDuplicateTemplate = (template: LocalShiftTemplate) => {
-    setDuplicateState({ isOpen: true, template: template as ShiftTemplate });
+    setDuplicateState({ isOpen: true, templateId: template.id });
   };
   
   const handleCloseEditDialog = () => {
-    setEditState({ isOpen: false, template: null });
+    setEditState({ isOpen: false, templateId: null });
   };
   
   const handleCloseDuplicateDialog = () => {
-    setDuplicateState({ isOpen: false, template: null });
+    setDuplicateState({ isOpen: false, templateId: null });
   };
   
   const handleApplyTemplate = async () => {
@@ -437,13 +437,13 @@ export default function ShiftTemplateManager({
       <ShiftTemplateEditDialog
         isOpen={editState.isOpen}
         onClose={handleCloseEditDialog}
-        template={editState.template}
+        templateId={editState.templateId}
       />
       
       <ShiftTemplateDuplicateDialog
         isOpen={duplicateState.isOpen}
         onClose={handleCloseDuplicateDialog}
-        template={duplicateState.template}
+        templateId={duplicateState.templateId}
       />
       
       <Dialog open={isApplyModalOpen} onOpenChange={setIsApplyModalOpen}>
