@@ -80,7 +80,24 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
 - **Campaign Management**: Dual-mode campaign creation (wizard/advanced), GDPR Consent Enforcement.
 - **Deployment & Governance**: Deploy Center Auto-Commit System (Git-like versioning) and Bidirectional Branch Linking.
 - **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes), Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration for call actions, CDR analytics, policy-based routing, and edgvoip PBX Integration. Supports bidirectional sync for trunks and extensions with dual authentication.
+- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration for call actions, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys.
+- **VoIP Bidirectional Sync Architecture**:
+  - **Per-Tenant API Keys**: Each tenant has encrypted API keys stored in `voip_tenant_config` table (X-API-Key auth)
+  - **Sync Direction Detection** via `syncSource` and `syncStatus` fields:
+    - `syncSource='edgvoip'` → Record originates from EDGVoIP (PULL direction)
+    - `syncSource='w3suite'` → Record originates from W3 Suite (PUSH direction)
+  - **syncStatus Enum**: `synced`, `pending`, `failed`, `local_only`
+  - **PULL Sync** (EDGVoIP → W3 Suite): `GET /trunks` and `GET /extensions` from EDGVoIP, upsert locally
+  - **PUSH Sync** (W3 Suite → EDGVoIP): POST/PUT local records with `syncStatus='local_only'` or `'pending'`
+  - **Orphan Cleanup**: Records with `syncSource='edgvoip'` + `externalId` not found on EDGVoIP → DELETE locally
+  - **Local-Only Fields Preserved**: `userId` and `storeId` are W3 Suite-only fields, never overwritten during sync
+  - **API Endpoints**:
+    - `POST /api/voip/trunks/refresh` - Pull trunks from EDGVoIP
+    - `POST /api/voip/trunks/push` - Push local trunks to EDGVoIP
+    - `POST /api/voip/extensions/refresh-all` - Pull extensions from EDGVoIP
+    - `POST /api/voip/extensions/push` - Push local extensions to EDGVoIP
+    - `GET /api/voip/trunks/status` - Registration status for all trunks
+    - `GET /api/voip/extensions/status` - Registration status for all extensions
 - **RBAC System**: 10 Italian role templates with a granular permission system (215 total permissions), providing default assignments for various roles (e.g., Amministratore, Store Manager, Sales Agent).
 - **Workflow Database Operations**: Provides 4 secure database operations (SELECT, INSERT, UPDATE, DELETE) on the `w3suite` schema with a visual query builder, RLS enforcement, prepared statements, and table/column validation. EXECUTE_QUERY is disabled for security reasons in the MVP.
 - **Store Working Stats API**: Calculates aggregated working days and hours for stores based on `store_opening_rules`, `store_calendar_settings`, `store_calendar_overrides`, and `public.italian_holidays` tables, with double-layer tenant isolation.
