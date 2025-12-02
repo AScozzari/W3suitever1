@@ -1799,26 +1799,76 @@ const HRManagementPage: React.FC = () => {
     </div>
   );
 
-  // ==================== ATTENDANCE & ANOMALIES SECTION ====================
+  // ==================== ATTENDANCE & ANOMALIES SECTION (ENHANCED) ====================
 
   const AttendanceSection = () => {
+    const now = new Date();
+    const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+    const [selectedStore, setSelectedStore] = useState('all');
     const [filters, setFilters] = useState({ storeId: '', userId: '', status: 'pending', severity: 'all' });
     const [resolutionDialogOpen, setResolutionDialogOpen] = useState(false);
     const [selectedAnomaly, setSelectedAnomaly] = useState<any>(null);
     const [resolutionType, setResolutionType] = useState<'justify' | 'sanction' | 'dismiss'>('justify');
     const [resolutionNotes, setResolutionNotes] = useState('');
     
+    // Generate month options (last 12 months)
+    const monthOptions = useMemo(() => {
+      const options = [];
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        options.push({
+          month: d.getMonth() + 1,
+          year: d.getFullYear(),
+          label: d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+        });
+      }
+      return options;
+    }, []);
+
+    // Combined filters for API
+    const apiFilters = useMemo(() => ({
+      ...filters,
+      storeId: selectedStore !== 'all' ? selectedStore : '',
+      month: selectedMonth,
+      year: selectedYear
+    }), [filters, selectedStore, selectedMonth, selectedYear]);
+
     const { data: anomalies, isLoading: loadingAnomalies, refetch: refetchAnomalies } = useQuery({
-      queryKey: ['/api/hr/attendance/anomalies', filters],
+      queryKey: ['/api/hr/attendance/anomalies', apiFilters],
       enabled: hrQueriesEnabled,
       staleTime: 30000
     });
 
     // Fetch timbrature/attendance logs (from time tracking entries)
     const { data: attendanceData = [], isLoading: loadingAttendance } = useQuery<any[]>({
-      queryKey: ['/api/hr/time-tracking/entries', filters],
+      queryKey: ['/api/hr/time-tracking/entries', apiFilters],
       enabled: hrQueriesEnabled,
       staleTime: 30000
+    });
+
+    // Mutation to detect no-shows (shifts without clock-in)
+    const detectNoShowsMutation = useMutation({
+      mutationFn: async () => {
+        return apiRequest(`/api/hr/attendance/detect-no-shows`, {
+          method: 'POST',
+          body: JSON.stringify({ month: selectedMonth, year: selectedYear, storeId: selectedStore !== 'all' ? selectedStore : undefined })
+        });
+      },
+      onSuccess: (data: any) => {
+        toast({
+          title: 'Scansione Completata',
+          description: `Rilevate ${data.anomaliesCreated || 0} nuove anomalie per turni senza timbrature.`,
+        });
+        refetchAnomalies();
+      },
+      onError: () => {
+        toast({
+          title: 'Errore',
+          description: 'Impossibile eseguire la scansione anomalie.',
+          variant: 'destructive'
+        });
+      }
     });
     
     // Mutation for resolving anomalies
@@ -1909,14 +1959,82 @@ const HRManagementPage: React.FC = () => {
 
     return (
       <div className="space-y-6">
+        {/* Enhanced Filters Row */}
+        <Card className="bg-white border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Month/Year Selector */}
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <Select 
+                  value={`${selectedMonth}-${selectedYear}`}
+                  onValueChange={(val) => {
+                    const [m, y] = val.split('-').map(Number);
+                    setSelectedMonth(m);
+                    setSelectedYear(y);
+                  }}
+                >
+                  <SelectTrigger className="w-[200px] bg-white" data-testid="select-attendance-month">
+                    <SelectValue placeholder="Seleziona mese" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions.map(opt => (
+                      <SelectItem key={`${opt.month}-${opt.year}`} value={`${opt.month}-${opt.year}`}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Store Selector */}
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-slate-500" />
+                <Select value={selectedStore} onValueChange={setSelectedStore}>
+                  <SelectTrigger className="w-[220px] bg-white" data-testid="select-attendance-store">
+                    <SelectValue placeholder="Tutti i negozi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i negozi</SelectItem>
+                    {stores.map((store: any) => (
+                      <SelectItem key={store.id} value={store.id}>{store.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Scan No-Shows Button */}
+              <div className="ml-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => detectNoShowsMutation.mutate()}
+                  disabled={detectNoShowsMutation.isPending}
+                  className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+                  data-testid="btn-detect-no-shows"
+                >
+                  {detectNoShowsMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                  )}
+                  Rileva Assenze Ingiustificate
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Timbrature DataTable */}
-        <Card className="backdrop-blur-md bg-white/10 border-white/20">
+        <Card className="bg-white border shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
+              <Clock className="w-5 h-5 text-blue-500" />
               Timbrature Presenze
             </CardTitle>
-            <CardDescription>Registro timbrature dipendenti</CardDescription>
+            <CardDescription>
+              Registro timbrature dipendenti - {monthOptions.find(o => o.month === selectedMonth && o.year === selectedYear)?.label}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loadingAttendance ? (

@@ -1787,6 +1787,123 @@ router.post('/attendance/anomalies/:id/resolve', requirePermission('hr.timbratur
   }
 });
 
+// POST /api/hr/attendance/detect-no-shows - Detect and create anomalies for shifts without clock-in
+// Scans past shifts that have assignments but no attendance record
+router.post('/attendance/detect-no-shows', requirePermission('hr.timbrature.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { month, year, storeId } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const targetMonth = month || new Date().getMonth() + 1;
+    const targetYear = year || new Date().getFullYear();
+    
+    // Calculate date range for the month
+    const startDate = new Date(targetYear, targetMonth - 1, 1);
+    const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59); // Last day of month
+    const now = new Date();
+    
+    // Only scan past dates (before today)
+    const effectiveEndDate = endDate > now ? new Date(now.getTime() - 24 * 60 * 60 * 1000) : endDate;
+    
+    console.log(`[HR] Scanning no-shows from ${startDate.toISOString()} to ${effectiveEndDate.toISOString()}`);
+    
+    // Find all confirmed shift assignments within the date range that have no attendance
+    let assignmentsQuery = db.select({
+      assignmentId: shiftAssignments.id,
+      userId: shiftAssignments.userId,
+      shiftId: shiftAssignments.shiftId,
+      shift: {
+        id: shifts.id,
+        name: shifts.name,
+        storeId: shifts.storeId,
+        date: shifts.date,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime
+      }
+    })
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        inArray(shiftAssignments.status, ['assigned', 'confirmed']),
+        gte(shifts.startTime, startDate),
+        lte(shifts.startTime, effectiveEndDate),
+        ...(storeId ? [eq(shifts.storeId, storeId)] : [])
+      ));
+    
+    const assignmentsResult = await assignmentsQuery;
+    console.log(`[HR] Found ${assignmentsResult.length} shift assignments in date range`);
+    
+    let anomaliesCreated = 0;
+    let alreadyExists = 0;
+    
+    for (const assignment of assignmentsResult) {
+      // Check if attendance exists for this assignment
+      const existingAttendance = await db.select({ id: shiftAttendance.id })
+        .from(shiftAttendance)
+        .where(and(
+          eq(shiftAttendance.tenantId, tenantId),
+          eq(shiftAttendance.userId, assignment.userId),
+          eq(shiftAttendance.shiftId, assignment.shiftId)
+        ))
+        .limit(1);
+      
+      if (existingAttendance.length === 0) {
+        // No attendance record - check if anomaly already exists
+        const existingAnomaly = await db.select({ id: attendanceAnomalies.id })
+          .from(attendanceAnomalies)
+          .where(and(
+            eq(attendanceAnomalies.tenantId, tenantId),
+            eq(attendanceAnomalies.userId, assignment.userId),
+            eq(attendanceAnomalies.shiftId, assignment.shiftId),
+            eq(attendanceAnomalies.anomalyType, 'no_clock_in')
+          ))
+          .limit(1);
+        
+        if (existingAnomaly.length === 0) {
+          // Create no-show anomaly
+          await db.insert(attendanceAnomalies).values({
+            id: crypto.randomUUID(),
+            tenantId,
+            userId: assignment.userId,
+            storeId: assignment.shift.storeId,
+            shiftId: assignment.shiftId,
+            anomalyType: 'no_clock_in',
+            severity: 'high',
+            description: `Turno "${assignment.shift.name}" del ${new Date(assignment.shift.startTime).toLocaleDateString('it-IT')} senza timbratura di ingresso`,
+            expectedValue: new Date(assignment.shift.startTime).toISOString(),
+            actualValue: 'Nessuna timbratura',
+            detectedAt: new Date(),
+            resolutionStatus: 'pending'
+          });
+          anomaliesCreated++;
+        } else {
+          alreadyExists++;
+        }
+      }
+    }
+    
+    console.log(`[HR] No-show detection complete: ${anomaliesCreated} new anomalies, ${alreadyExists} already existed`);
+    
+    res.json({
+      success: true,
+      month: targetMonth,
+      year: targetYear,
+      assignmentsScanned: assignmentsResult.length,
+      anomaliesCreated,
+      alreadyExisted: alreadyExists,
+      message: `Rilevate ${anomaliesCreated} nuove assenze ingiustificate per ${targetMonth}/${targetYear}`
+    });
+  } catch (error) {
+    console.error('Error detecting no-shows:', error);
+    res.status(500).json({ error: 'Failed to detect no-shows' });
+  }
+});
+
 // POST /api/hr/clock-entries/validate - Pre-validate clock entry before recording
 // Returns potential anomalies without creating records
 router.post('/clock-entries/validate', requirePermission('hr.timbrature.manage'), async (req: Request, res: Response) => {
