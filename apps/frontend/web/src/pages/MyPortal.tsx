@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -28,10 +28,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { 
   Clock, FileText, GraduationCap, Target, Sun, Home, Bell, Plus, User, CheckCircle, ClipboardList,
   BarChart3, Activity, Coffee, RefreshCw, AlertCircle, Edit3, Save, Filter, Eye, Star, 
-  Calendar1, Receipt, Loader2, X, Calendar as CalendarIcon, Upload, TrendingUp, Award, BookOpen, PlayCircle
+  Calendar1, Receipt, Loader2, X, Calendar as CalendarIcon, Upload, TrendingUp, Award, BookOpen, PlayCircle,
+  ChevronLeft, ChevronRight, MapPin
 } from 'lucide-react';
-import { format, addDays, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, addDays, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { Link } from 'wouter';
 import { z } from 'zod';
 import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
@@ -163,6 +167,20 @@ export default function MyPortal() {
     queryKey: ['/api/hr/shift-assignments/my-assignments', { startDate: thirtyDaysAgo, endDate: yesterday }],
     enabled: !!hrQueriesEnabled
   });
+  
+  // ✅ CALENDAR SHIFTS: Query for calendar view (current month ± 1 month)
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const calendarStartDate = format(startOfMonth(subMonths(calendarMonth, 1)), 'yyyy-MM-dd');
+  const calendarEndDate = format(endOfMonth(addMonths(calendarMonth, 1)), 'yyyy-MM-dd');
+  const { data: calendarShiftsData, isLoading: calendarShiftsLoading } = useQuery<any>({
+    queryKey: ['/api/hr/shift-assignments/my-assignments', { startDate: calendarStartDate, endDate: calendarEndDate }],
+    enabled: !!hrQueriesEnabled
+  });
+  
+  // ✅ CALENDAR EVENT CLICK STATE
+  const [selectedShiftEvent, setSelectedShiftEvent] = useState<any>(null);
+  const [showShiftDetailModal, setShowShiftDetailModal] = useState(false);
+  const calendarRef = useRef<FullCalendar>(null);
   
   // ✅ DEFINITIVE SOLUTION: TanStack Query for HR requests with proper cache management
   const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
@@ -670,8 +688,10 @@ export default function MyPortal() {
                           return assignments.slice(0, 4).map((shift: any) => {
                             const isToday = shift.shiftDate === today || shift.date === today;
                             const storeName = shift.storeName || shift.shift?.storeName || shift.store?.name || 'PDV';
-                            const startTime = shift.startTime || shift.shift?.startTime || '';
-                            const endTime = shift.endTime || shift.shift?.endTime || '';
+                            const rawStartTime = shift.startTime || shift.shift?.startTime || '';
+                            const rawEndTime = shift.endTime || shift.shift?.endTime || '';
+                            const startTimeFormatted = rawStartTime ? format(new Date(rawStartTime), 'HH:mm') : '';
+                            const endTimeFormatted = rawEndTime ? format(new Date(rawEndTime), 'HH:mm') : '';
                             
                             return (
                               <div 
@@ -687,7 +707,7 @@ export default function MyPortal() {
                                         {format(new Date(shift.shiftDate || shift.date), 'EEEE d MMMM', { locale: it })}
                                       </div>
                                       <div className="text-sm text-gray-600">
-                                        {storeName} • {startTime} - {endTime}
+                                        {storeName} • {startTimeFormatted} - {endTimeFormatted}
                                       </div>
                                     </div>
                                   </div>
@@ -741,8 +761,8 @@ export default function MyPortal() {
                           }
                           return pastAssignments.slice(0, 10).map((shift: any) => {
                             const storeName = shift.storeName || shift.store?.name || 'PDV';
-                            const startTime = shift.startTime || '';
-                            const endTime = shift.endTime || '';
+                            const startTimeFormatted = shift.startTime ? format(new Date(shift.startTime), 'HH:mm') : '';
+                            const endTimeFormatted = shift.endTime ? format(new Date(shift.endTime), 'HH:mm') : '';
                             
                             return (
                               <div 
@@ -758,7 +778,7 @@ export default function MyPortal() {
                                         {format(new Date(shift.shiftDate || shift.date), 'EEEE d MMMM', { locale: it })}
                                       </div>
                                       <div className="text-sm text-gray-500">
-                                        {storeName} • {startTime} - {endTime}
+                                        {storeName} • {startTimeFormatted} - {endTimeFormatted}
                                       </div>
                                     </div>
                                   </div>
@@ -839,6 +859,242 @@ export default function MyPortal() {
                     )}
                   </CardContent>
                 </Card>
+
+                {/* ✅ PERSONAL CALENDAR - Shows shifts and events on monthly view */}
+                <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2" data-testid="section-personal-calendar">
+                        <CalendarIcon className="h-5 w-5 text-orange-500" />
+                        Calendario Personale
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newMonth = subMonths(calendarMonth, 1);
+                            setCalendarMonth(newMonth);
+                            calendarRef.current?.getApi().gotoDate(newMonth);
+                          }}
+                          data-testid="btn-calendar-prev"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm font-medium min-w-[120px] text-center">
+                          {format(calendarMonth, 'MMMM yyyy', { locale: it })}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newMonth = addMonths(calendarMonth, 1);
+                            setCalendarMonth(newMonth);
+                            calendarRef.current?.getApi().gotoDate(newMonth);
+                          }}
+                          data-testid="btn-calendar-next"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const today = new Date();
+                            setCalendarMonth(today);
+                            calendarRef.current?.getApi().today();
+                          }}
+                          data-testid="btn-calendar-today"
+                        >
+                          Oggi
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription>I tuoi turni e pianificazioni</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {calendarShiftsLoading ? (
+                      <div className="h-[400px] flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                      </div>
+                    ) : (
+                      <div className="personal-calendar-container" style={{ height: '400px' }}>
+                        <FullCalendar
+                          ref={calendarRef}
+                          plugins={[dayGridPlugin, interactionPlugin]}
+                          initialView="dayGridMonth"
+                          initialDate={calendarMonth}
+                          locale="it"
+                          headerToolbar={false}
+                          height="100%"
+                          firstDay={1}
+                          dayMaxEvents={3}
+                          events={(() => {
+                            const shifts = Array.isArray(calendarShiftsData) ? calendarShiftsData : [];
+                            return shifts.map((shift: any) => {
+                              const isPast = new Date(shift.shiftDate) < new Date(today);
+                              const isToday = shift.shiftDate === today;
+                              const startTimeFormatted = shift.startTime ? format(new Date(shift.startTime), 'HH:mm') : '';
+                              const endTimeFormatted = shift.endTime ? format(new Date(shift.endTime), 'HH:mm') : '';
+                              
+                              return {
+                                id: shift.id,
+                                title: `${startTimeFormatted}-${endTimeFormatted}`,
+                                start: shift.shiftDate,
+                                allDay: true,
+                                backgroundColor: isPast ? '#9CA3AF' : isToday ? '#FF6900' : '#3B82F6',
+                                borderColor: isPast ? '#6B7280' : isToday ? '#EA580C' : '#2563EB',
+                                textColor: '#FFFFFF',
+                                extendedProps: {
+                                  shiftId: shift.shiftId,
+                                  storeId: shift.storeId,
+                                  storeName: shift.store?.name || shift.storeName || 'PDV',
+                                  startTime: startTimeFormatted,
+                                  endTime: endTimeFormatted,
+                                  status: shift.status,
+                                  shiftName: shift.shiftName,
+                                  isPast,
+                                  isToday
+                                }
+                              };
+                            });
+                          })()}
+                          eventClick={(info) => {
+                            const props = info.event.extendedProps;
+                            setSelectedShiftEvent({
+                              id: info.event.id,
+                              date: format(info.event.start!, 'EEEE d MMMM yyyy', { locale: it }),
+                              startTime: props.startTime,
+                              endTime: props.endTime,
+                              storeName: props.storeName,
+                              shiftName: props.shiftName,
+                              status: props.status,
+                              isPast: props.isPast,
+                              isToday: props.isToday
+                            });
+                            setShowShiftDetailModal(true);
+                          }}
+                          eventContent={(eventInfo) => (
+                            <div 
+                              className="px-1 py-0.5 text-xs font-medium truncate cursor-pointer hover:opacity-90"
+                              style={{
+                                backgroundColor: eventInfo.event.backgroundColor,
+                                borderRadius: '4px',
+                                color: '#FFFFFF'
+                              }}
+                            >
+                              <Clock className="inline h-3 w-3 mr-1" />
+                              {eventInfo.event.title}
+                            </div>
+                          )}
+                          dayCellClassNames={(arg) => {
+                            const dateStr = format(arg.date, 'yyyy-MM-dd');
+                            const shifts = Array.isArray(calendarShiftsData) ? calendarShiftsData : [];
+                            const hasShift = shifts.some((s: any) => s.shiftDate === dateStr);
+                            return hasShift ? 'has-shift-day' : '';
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-orange-500" />
+                        <span className="text-xs text-gray-600">Oggi</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <span className="text-xs text-gray-600">Turni futuri</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-gray-400" />
+                        <span className="text-xs text-gray-600">Turni passati</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Shift Detail Modal */}
+                <Dialog open={showShiftDetailModal} onOpenChange={setShowShiftDetailModal}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Calendar1 className="h-5 w-5 text-orange-500" />
+                        Dettaglio Turno
+                      </DialogTitle>
+                    </DialogHeader>
+                    {selectedShiftEvent && (
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-lg font-semibold text-gray-900 capitalize">
+                              {selectedShiftEvent.date}
+                            </p>
+                            <Badge 
+                              className={
+                                selectedShiftEvent.isToday 
+                                  ? 'bg-orange-500' 
+                                  : selectedShiftEvent.isPast 
+                                    ? 'bg-gray-400' 
+                                    : 'bg-blue-500'
+                              }
+                            >
+                              {selectedShiftEvent.isToday 
+                                ? 'Oggi' 
+                                : selectedShiftEvent.isPast 
+                                  ? 'Passato' 
+                                  : 'Futuro'}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <Clock className="h-5 w-5 text-blue-500" />
+                              <div>
+                                <p className="text-sm text-gray-500">Orario</p>
+                                <p className="font-medium text-gray-900">
+                                  {selectedShiftEvent.startTime} - {selectedShiftEvent.endTime}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <MapPin className="h-5 w-5 text-green-500" />
+                              <div>
+                                <p className="text-sm text-gray-500">Punto Vendita</p>
+                                <p className="font-medium text-gray-900">
+                                  {selectedShiftEvent.storeName}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {selectedShiftEvent.shiftName && (
+                              <div className="flex items-center gap-3">
+                                <Calendar1 className="h-5 w-5 text-purple-500" />
+                                <div>
+                                  <p className="text-sm text-gray-500">Tipo Turno</p>
+                                  <p className="font-medium text-gray-900">
+                                    {selectedShiftEvent.shiftName}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <DialogFooter>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setShowShiftDetailModal(false)}
+                          >
+                            Chiudi
+                          </Button>
+                        </DialogFooter>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
 
