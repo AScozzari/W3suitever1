@@ -179,44 +179,52 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
       // API returns { items: [...], total: ..., ... } - extract items array
       const items = response?.items || response || [];
       
-      // Normalize snake_case API response to camelCase for consistent frontend usage
+      // Normalize API response - support both flat and nested formats
+      // API currently returns FLAT format: { shiftDate, employeeId, employee: {...}, store: {...} }
+      // But could also return nested format: { shift: { date, ... }, user: {...}, template_version: {...} }
       const normalized = items.map((item: any) => ({
-        // Assignment fields (flatten from snake_case)
+        // Assignment fields - support both flat and snake_case
         id: item.id,
-        shiftId: item.shift_id || item.shiftId,
-        userId: item.user_id || item.userId,
-        employeeId: item.user_id || item.userId || item.employeeId, // Alias for compatibility
-        tenantId: item.tenant_id || item.tenantId,
+        shiftId: item.shiftId || item.shift_id,
+        userId: item.employeeId || item.user_id || item.userId,
+        employeeId: item.employeeId || item.user_id || item.userId, // Primary key for filtering
+        tenantId: item.tenantId || item.tenant_id,
         status: item.status,
-        assignedAt: item.assigned_at || item.assignedAt,
+        assignedAt: item.assignedAt || item.assigned_at,
         
-        // Nested shift data (already camelCase from json_build_object)
-        shiftDate: item.shift?.date,
-        startTime: item.shift?.startTime,
-        endTime: item.shift?.endTime,
-        shiftType: item.shift?.shiftType,
-        storeId: item.shift?.storeId,
-        shiftStatus: item.shift?.status,
-        templateId: item.shift?.templateId,
-        templateVersionId: item.shift?.templateVersionId,
+        // Shift data - FLAT format first (current API), then nested fallback
+        shiftDate: item.shiftDate || item.shift?.date,
+        startTime: item.startTime || item.shift?.startTime,
+        endTime: item.endTime || item.shift?.endTime,
+        shiftType: item.shiftType || item.shift?.shiftType,
+        storeId: item.storeId || item.shift?.storeId,
+        shiftStatus: item.shiftStatus || item.shift?.status,
+        templateId: item.templateId || item.shift?.templateId,
+        templateVersionId: item.templateVersionId || item.shift?.templateVersionId,
+        shiftName: item.shiftName,
         
-        // Nested user data
-        employee: item.user ? {
+        // Employee data - FLAT format (current API)
+        employee: item.employee ? {
+          id: item.employee.id,
+          email: item.employee.email,
+          firstName: item.employee.firstName,
+          lastName: item.employee.lastName,
+        } : (item.user ? {
           id: item.user.id,
           email: item.user.email,
           firstName: item.user.firstName,
           lastName: item.user.lastName,
-        } : null,
+        } : null),
         
-        // Nested store data
+        // Store data - FLAT format (current API)
         store: item.store ? {
           id: item.store.id,
-          nome: item.store.name || item.store.nome,
+          nome: item.store.nome || item.store.name,
           name: item.store.name || item.store.nome,
           code: item.store.code,
         } : null,
         
-        // Template version data for historical accuracy
+        // Template version data for historical accuracy (nested format)
         templateVersion: item.template_version ? {
           id: item.template_version.id,
           templateId: item.template_version.templateId,
