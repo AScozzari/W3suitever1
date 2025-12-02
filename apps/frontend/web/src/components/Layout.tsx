@@ -958,6 +958,40 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   </div>
                 </div>
 
+                {/* Dev Mode User Switcher */}
+                {import.meta.env.DEV && (
+                  <div style={{
+                    padding: '8px 12px',
+                    borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{ fontSize: '10px', color: '#888', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      🔧 Dev Mode - Cambia Utente
+                    </div>
+                    <select
+                      value={localStorage.getItem('demo_user_id') || 'admin-user'}
+                      onChange={(e) => {
+                        localStorage.setItem('demo_user_id', e.target.value);
+                        window.location.reload();
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        fontSize: '12px',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        background: '#fff',
+                        cursor: 'pointer'
+                      }}
+                      data-testid="select-demo-user"
+                    >
+                      <option value="admin-user">👑 Admin Demo</option>
+                      <option value="user-002">🏪 Mario Rossi (Store Manager)</option>
+                      <option value="user-003">💼 Laura Bianchi (Sales Agent)</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Menu items */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
 
