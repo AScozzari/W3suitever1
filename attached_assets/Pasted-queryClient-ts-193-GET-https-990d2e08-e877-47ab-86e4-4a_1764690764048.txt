@@ -1,0 +1,76 @@
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/entries?storeId=&userId=&status=pending&severity=all&month=12&year=2025 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/entries?storeId=&userId=&status=pending&severity=all&month=12&year=2025 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/entries?storeId=&userId=&status=pending&severity=all&month=11&year=2025 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+setOptions @ @tanstack_react-query.js?v=f4a34e1b:1392
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/entries?storeId=&userId=&status=pending&severity=all&month=11&year=2025 500 (Internal Server Error)

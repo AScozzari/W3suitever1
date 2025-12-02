@@ -1678,7 +1678,8 @@ router.get('/time-tracking/entries', requirePermission('hr.shifts.read'), async 
     }
     
     let statusFilter = sql``;
-    if (status && status !== 'all') {
+    const validStatuses = ['active', 'completed', 'edited', 'disputed'];
+    if (status && status !== 'all' && validStatuses.includes(status as string)) {
       statusFilter = sql`AND tt.status = ${status}`;
     }
 
