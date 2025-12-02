@@ -1660,60 +1660,152 @@ router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    const conditions = [eq(attendanceAnomalies.tenantId, tenantId)];
+    // Use raw SQL to properly JOIN with shifts and get occurredAt
+    // Filter by occurrence month (shift date), not detection month
+    const targetMonth = month ? parseInt(month as string) : null;
+    const targetYear = year ? parseInt(year as string) : null;
     
-    if (storeId && storeId !== 'all' && storeId !== '') {
-      conditions.push(eq(attendanceAnomalies.storeId, storeId as string));
-    }
-    if (userId && userId !== '') {
-      conditions.push(eq(attendanceAnomalies.userId, userId as string));
-    }
-    if (status && status !== 'all') {
-      conditions.push(eq(attendanceAnomalies.resolutionStatus, status as string));
-    }
-    if (severity && severity !== 'all') {
-      conditions.push(eq(attendanceAnomalies.severity, severity as string));
-    }
-    
-    // Month/year filtering
-    if (month && year) {
-      const targetMonth = parseInt(month as string);
-      const targetYear = parseInt(year as string);
+    let dateFilter = sql``;
+    if (targetMonth && targetYear) {
       const startDate = new Date(targetYear, targetMonth - 1, 1);
       const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
-      conditions.push(gte(attendanceAnomalies.detectedAt, startDate));
-      conditions.push(lte(attendanceAnomalies.detectedAt, endDate));
+      dateFilter = sql`AND (
+        (s.start_time IS NOT NULL AND s.start_time >= ${startDate} AND s.start_time <= ${endDate})
+        OR (s.start_time IS NULL AND aa.detected_at >= ${startDate} AND aa.detected_at <= ${endDate})
+      )`;
+    }
+    
+    let storeFilter = sql``;
+    if (storeId && storeId !== 'all' && storeId !== '') {
+      storeFilter = sql`AND aa.store_id = ${storeId}::uuid`;
+    }
+    
+    let userFilter = sql``;
+    if (userId && userId !== '') {
+      userFilter = sql`AND aa.user_id = ${userId}`;
+    }
+    
+    let statusFilter = sql``;
+    if (status && status !== 'all') {
+      statusFilter = sql`AND aa.resolution_status = ${status}`;
+    }
+    
+    let severityFilter = sql``;
+    if (severity && severity !== 'all') {
+      severityFilter = sql`AND aa.severity = ${severity}`;
     }
 
-    const anomalies = await db.query.attendanceAnomalies.findMany({
-      where: and(...conditions),
-      with: {
-        user: {
-          columns: { id: true, firstName: true, lastName: true, email: true }
-        },
-        store: {
-          columns: { id: true, nome: true }
-        },
-        attendance: true
-      },
-      orderBy: (anomalies, { desc }) => [desc(anomalies.detectedAt)],
-      limit: 100
-    });
+    const anomaliesQuery = sql`
+      SELECT 
+        aa.id,
+        aa.tenant_id,
+        aa.user_id,
+        aa.store_id,
+        aa.shift_id,
+        aa.attendance_id,
+        aa.anomaly_type,
+        aa.severity,
+        aa.expected_value,
+        aa.actual_value,
+        aa.deviation_minutes,
+        aa.detected_at,
+        aa.detection_method,
+        aa.resolution_status,
+        aa.resolution_notes,
+        aa.resolved_at,
+        aa.resolved_by,
+        aa.notified_supervisor,
+        aa.notified_at,
+        aa.created_at,
+        aa.updated_at,
+        -- Get occurredAt from shift or fallback to detected_at
+        COALESCE(s.start_time, aa.detected_at) as occurred_at,
+        s.name as shift_name,
+        s.start_time as shift_start_time,
+        s.end_time as shift_end_time,
+        -- User info
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
+        u.email as user_email,
+        -- Store info
+        st.nome as store_name
+      FROM w3suite.attendance_anomalies aa
+      LEFT JOIN w3suite.shifts s ON aa.shift_id = s.id
+      LEFT JOIN w3suite.users u ON aa.user_id = u.id
+      LEFT JOIN w3suite.stores st ON aa.store_id = st.id
+      WHERE aa.tenant_id = ${tenantId}::uuid
+        ${dateFilter}
+        ${storeFilter}
+        ${userFilter}
+        ${statusFilter}
+        ${severityFilter}
+      ORDER BY COALESCE(s.start_time, aa.detected_at) DESC
+      LIMIT 100
+    `;
+
+    const result = await db.execute(anomaliesQuery);
+    const rawAnomalies = result.rows || [];
+    
+    // Transform to expected format
+    const anomalies = rawAnomalies.map((row: any) => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      userId: row.user_id,
+      storeId: row.store_id,
+      shiftId: row.shift_id,
+      attendanceId: row.attendance_id,
+      anomalyType: row.anomaly_type,
+      severity: row.severity,
+      expectedValue: row.expected_value,
+      actualValue: row.actual_value,
+      deviationMinutes: row.deviation_minutes,
+      detectedAt: row.detected_at,
+      detectionMethod: row.detection_method,
+      resolutionStatus: row.resolution_status,
+      resolutionNotes: row.resolution_notes,
+      resolvedAt: row.resolved_at,
+      resolvedBy: row.resolved_by,
+      notifiedSupervisor: row.notified_supervisor,
+      notifiedAt: row.notified_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      // New field: occurrence date (when anomaly happened)
+      occurredAt: row.occurred_at,
+      // Shift info
+      shift: row.shift_id ? {
+        id: row.shift_id,
+        name: row.shift_name,
+        startTime: row.shift_start_time,
+        endTime: row.shift_end_time
+      } : null,
+      // User info
+      user: row.user_id ? {
+        id: row.user_id,
+        firstName: row.user_first_name,
+        lastName: row.user_last_name,
+        email: row.user_email
+      } : null,
+      // Store info
+      store: row.store_id ? {
+        id: row.store_id,
+        nome: row.store_name
+      } : null
+    }));
 
     const summary = {
       total: anomalies.length,
       bySeverity: {
-        critical: anomalies.filter(a => a.severity === 'critical').length,
-        high: anomalies.filter(a => a.severity === 'high').length,
-        medium: anomalies.filter(a => a.severity === 'medium').length,
-        low: anomalies.filter(a => a.severity === 'low').length
+        critical: anomalies.filter((a: any) => a.severity === 'critical').length,
+        high: anomalies.filter((a: any) => a.severity === 'high').length,
+        medium: anomalies.filter((a: any) => a.severity === 'medium').length,
+        low: anomalies.filter((a: any) => a.severity === 'low').length
       },
       byStatus: {
-        pending: anomalies.filter(a => a.resolutionStatus === 'pending').length,
-        acknowledged: anomalies.filter(a => a.resolutionStatus === 'acknowledged').length,
-        resolved: anomalies.filter(a => a.resolutionStatus === 'resolved').length
+        pending: anomalies.filter((a: any) => a.resolutionStatus === 'pending').length,
+        acknowledged: anomalies.filter((a: any) => a.resolutionStatus === 'acknowledged').length,
+        resolved: anomalies.filter((a: any) => a.resolutionStatus === 'resolved').length
       },
-      byType: anomalies.reduce((acc, a) => {
+      byType: anomalies.reduce((acc: Record<string, number>, a: any) => {
         acc[a.anomalyType] = (acc[a.anomalyType] || 0) + 1;
         return acc;
       }, {} as Record<string, number>)

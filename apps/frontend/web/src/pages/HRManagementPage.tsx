@@ -2192,7 +2192,36 @@ const HRManagementPage: React.FC = () => {
                       </AlertDescription>
                     </Alert>
                   ) : (
-                    filteredAnomalies.map((anomaly: any, i: number) => (
+                    filteredAnomalies.map((anomaly: any, i: number) => {
+                      // Format anomaly type in Italian
+                      const getAnomalyTypeLabel = (type: string) => {
+                        const labels: Record<string, string> = {
+                          'no_clock_in': 'Assenza Ingiustificata',
+                          'no_clock_out': 'Mancata Uscita',
+                          'late_clock_in': 'Ingresso in Ritardo',
+                          'early_clock_out': 'Uscita Anticipata',
+                          'overtime': 'Straordinario Non Autorizzato',
+                          'break_violation': 'Violazione Pausa'
+                        };
+                        return labels[type] || type?.replace(/_/g, ' ') || 'Anomalia';
+                      };
+                      
+                      // Format occurrence date
+                      const occurredAt = anomaly.occurredAt || anomaly.detectedAt;
+                      const occurredDate = occurredAt ? new Date(occurredAt) : null;
+                      const formattedOccurredDate = occurredDate 
+                        ? occurredDate.toLocaleDateString('it-IT', { 
+                            weekday: 'long', 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })
+                        : '-';
+                      const formattedOccurredTime = occurredDate
+                        ? occurredDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+                        : '';
+                        
+                      return (
                       <Card key={anomaly.id} className="border-l-4" style={{
                         borderLeftColor: anomaly.severity === 'critical' ? '#ef4444' : 
                                         anomaly.severity === 'high' ? '#f59e0b' : 
@@ -2207,7 +2236,7 @@ const HRManagementPage: React.FC = () => {
                                           anomaly.severity === 'high' ? 'default' : 'secondary'} 
                                   data-testid={`anomaly-type-${i}`}
                                 >
-                                  {anomaly.anomalyType?.replace(/_/g, ' ') || 'Anomalia'}
+                                  {getAnomalyTypeLabel(anomaly.anomalyType)}
                                 </Badge>
                                 <Badge 
                                   variant="outline"
@@ -2223,19 +2252,46 @@ const HRManagementPage: React.FC = () => {
                                    anomaly.severity === 'high' ? 'Alto' :
                                    anomaly.severity === 'medium' ? 'Medio' : 'Basso'}
                                 </Badge>
-                                <span className="text-sm text-slate-600" data-testid={`anomaly-user-${i}`}>
+                              </div>
+                              
+                              {/* Occurrence date - prominently displayed */}
+                              <div className="mt-2" data-testid={`anomaly-date-${i}`}>
+                                <p className="text-base font-medium text-slate-800 capitalize">
+                                  {formattedOccurredDate}
+                                  {formattedOccurredTime && <span className="text-slate-500"> • ore {formattedOccurredTime}</span>}
+                                </p>
+                              </div>
+                              
+                              {/* User and Store info */}
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm font-medium text-slate-700" data-testid={`anomaly-user-${i}`}>
                                   {anomaly.user?.firstName} {anomaly.user?.lastName}
                                 </span>
-                                <span className="text-sm text-slate-400" data-testid={`anomaly-store-${i}`}>
+                                <span className="text-sm text-slate-400">•</span>
+                                <span className="text-sm text-slate-500" data-testid={`anomaly-store-${i}`}>
                                   {anomaly.store?.nome || anomaly.store?.name}
                                 </span>
                               </div>
-                              <p className="text-sm text-slate-600 mt-2" data-testid={`anomaly-deviation-${i}`}>
-                                Deviazione: {anomaly.deviationMinutes || 0} minuti
+                              
+                              {/* Show shift name if available */}
+                              {anomaly.shift?.name && (
+                                <p className="text-sm text-slate-500" data-testid={`anomaly-shift-${i}`}>
+                                  Turno: {anomaly.shift.name}
+                                </p>
+                              )}
+                              
+                              {/* Only show deviation for relevant anomaly types */}
+                              {anomaly.anomalyType !== 'no_clock_in' && anomaly.anomalyType !== 'no_clock_out' && anomaly.deviationMinutes && (
+                                <p className="text-sm text-slate-600" data-testid={`anomaly-deviation-${i}`}>
+                                  Deviazione: {anomaly.deviationMinutes} minuti
+                                </p>
+                              )}
+                              
+                              {/* Detection info - secondary */}
+                              <p className="text-xs text-slate-400 mt-1" data-testid={`anomaly-detected-${i}`}>
+                                Rilevata automaticamente: {anomaly.detectedAt ? new Date(anomaly.detectedAt).toLocaleString('it-IT') : '-'}
                               </p>
-                              <p className="text-xs text-slate-400" data-testid={`anomaly-time-${i}`}>
-                                Rilevata: {anomaly.detectedAt ? new Date(anomaly.detectedAt).toLocaleString('it-IT') : '-'}
-                              </p>
+                              
                               {anomaly.resolutionStatus === 'resolved' && (
                                 <div className="mt-2 p-2 bg-green-50 rounded border border-green-200 text-sm text-green-700">
                                   Risolta: {anomaly.resolutionNotes || 'Nessuna nota'}
@@ -2265,7 +2321,8 @@ const HRManagementPage: React.FC = () => {
                           </div>
                         </CardContent>
                       </Card>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
