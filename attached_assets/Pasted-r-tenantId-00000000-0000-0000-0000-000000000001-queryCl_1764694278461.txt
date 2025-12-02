@@ -1,0 +1,118 @@
+r', tenantId: '00000000-0000-0000-0000-000000000001'}
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/chat/unread-count 403 (Forbidden)
+queryFn @ queryClient.ts:194
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=f4a34e1b:799
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:53
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=f4a34e1b:1671
+updateTimers_fn @ @tanstack_react-query.js?v=f4a34e1b:1678
+onQueryUpdate @ @tanstack_react-query.js?v=f4a34e1b:1634
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1262
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1261
+batch @ @tanstack_react-query.js?v=f4a34e1b:624
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:53
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=f4a34e1b:1671
+updateTimers_fn @ @tanstack_react-query.js?v=f4a34e1b:1678
+onQueryUpdate @ @tanstack_react-query.js?v=f4a34e1b:1634
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1262
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1261
+batch @ @tanstack_react-query.js?v=f4a34e1b:624
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:53
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=f4a34e1b:1671
+updateTimers_fn @ @tanstack_react-query.js?v=f4a34e1b:1678
+onQueryUpdate @ @tanstack_react-query.js?v=f4a34e1b:1634
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1262
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1261
+batch @ @tanstack_react-query.js?v=f4a34e1b:624
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:53
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=f4a34e1b:1671
+updateTimers_fn @ @tanstack_react-query.js?v=f4a34e1b:1678
+onQueryUpdate @ @tanstack_react-query.js?v=f4a34e1b:1634
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1262
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1261
+batch @ @tanstack_react-query.js?v=f4a34e1b:624
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:53
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=f4a34e1b:1671
+updateTimers_fn @ @tanstack_react-query.js?v=f4a34e1b:1678
+onQueryUpdate @ @tanstack_react-query.js?v=f4a34e1b:1634
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1262
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1261
+batch @ @tanstack_react-query.js?v=f4a34e1b:624
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:53
+setInterval @ @tanstack_react-query.js?v=f4a34e1b:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=f4a34e1b:1671
+updateTimers_fn @ @tanstack_react-query.js?v=f4a34e1b:1678
+onQueryUpdate @ @tanstack_react-query.js?v=f4a34e1b:1634
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1262
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:1261
+batch @ @tanstack_react-query.js?v=f4a34e1b:624
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1173
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this error
+queryClient.ts:330  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/current 403 (Forbidden)

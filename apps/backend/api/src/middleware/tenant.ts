@@ -271,8 +271,15 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
     }
     
     // In development mode with demo user, always give all permissions
-    if (process.env.NODE_ENV === 'development' && (req.user.id === 'admin-user' || req.user.email === 'demo-user')) {
-      console.log('[RBAC] 🔓 Development mode: Granting all permissions to demo/admin user');
+    // Includes admin-user and all demo users (user-xxx)
+    const demoUserHeader = req.headers['x-demo-user'] as string;
+    const isDemoUser = req.user.id === 'admin-user' || 
+                       req.user.email === 'demo-user' || 
+                       req.user.id?.startsWith('user-') ||
+                       (demoUserHeader && demoUserHeader.startsWith('user-'));
+    
+    if (process.env.NODE_ENV === 'development' && isDemoUser) {
+      console.log('[RBAC] 🔓 Development mode: Granting all permissions to demo user:', req.user.id || demoUserHeader);
       req.userPermissions = ['*'];
     } else {
       // Otteniamo i permessi dell'utente per questo tenant con lo scope corretto

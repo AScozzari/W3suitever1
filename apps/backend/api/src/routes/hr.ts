@@ -161,6 +161,94 @@ router.get('/shift-assignments', requirePermission('hr.shifts.read'), async (req
   }
 });
 
+// GET /api/hr/shift-assignments/my-assignments - Get current user's shift assignments
+// Note: Uses hr.shifts.read permission but filters to user's own assignments only
+router.get('/shift-assignments/my-assignments', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const demoUserId = req.headers['x-demo-user'] as string;
+    const { startDate, endDate } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Get current user ID from demo header or auth
+    const userId = demoUserId || (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    console.log('[MY-ASSIGNMENTS] Query:', { tenantId, userId, startDate, endDate });
+
+    // Build conditions for shifts
+    const shiftConditions = [eq(shifts.tenantId, tenantId)];
+    
+    if (startDate) {
+      shiftConditions.push(gte(shifts.date, startDate as string));
+    }
+    if (endDate) {
+      shiftConditions.push(lte(shifts.date, endDate as string));
+    }
+
+    // Get assignments for current user with shift and store info
+    const assignmentsData = await db.select({
+      id: shiftAssignments.id,
+      shiftId: shiftAssignments.shiftId,
+      employeeId: shiftAssignments.userId,
+      timeSlotId: shiftAssignments.timeSlotId,
+      status: shiftAssignments.status,
+      assignedAt: shiftAssignments.assignedAt,
+      shiftDate: shifts.date,
+      shiftName: shifts.name,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      storeId: shifts.storeId,
+      templateId: shifts.templateId,
+      storeName: stores.nome,
+    })
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(sql`${shiftAssignments.shiftId}::uuid`, shifts.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, userId),
+        ...(startDate ? [gte(shifts.date, startDate as string)] : []),
+        ...(endDate ? [lte(shifts.date, endDate as string)] : [])
+      ))
+      .orderBy(desc(shifts.date));
+
+    console.log('[MY-ASSIGNMENTS] Found assignments for user', userId, ':', assignmentsData.length);
+
+    // Format response
+    const formattedAssignments = assignmentsData.map(a => ({
+      id: a.id,
+      shiftId: a.shiftId,
+      employeeId: a.employeeId,
+      timeSlotId: a.timeSlotId,
+      status: a.status,
+      assignedAt: a.assignedAt,
+      shiftDate: a.shiftDate,
+      shiftName: a.shiftName,
+      startTime: a.startTime,
+      endTime: a.endTime,
+      storeId: a.storeId,
+      templateId: a.templateId,
+      store: {
+        id: a.storeId,
+        nome: a.storeName,
+        name: a.storeName,
+      },
+    }));
+
+    res.json(formattedAssignments);
+  } catch (error) {
+    console.error('Error fetching my shift assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch my shift assignments' });
+  }
+});
+
 // ==================== SHIFT TEMPLATE APPLICATION ====================
 
 // POST /api/hr/shifts/apply-template - Apply shift template to generate shifts

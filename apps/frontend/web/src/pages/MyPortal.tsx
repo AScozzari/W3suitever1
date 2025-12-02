@@ -148,11 +148,19 @@ export default function MyPortal() {
     limit: 5 
   });
   
-  // ✅ UPCOMING SHIFTS: Query for my upcoming shift assignments
+  // ✅ UPCOMING SHIFTS: Query for my upcoming shift assignments (next 7 days)
   const today = format(new Date(), 'yyyy-MM-dd');
   const nextWeek = format(addDays(new Date(), 7), 'yyyy-MM-dd');
   const { data: upcomingShiftsData, isLoading: upcomingShiftsLoading } = useQuery<any>({
     queryKey: ['/api/hr/shift-assignments/my-assignments', { startDate: today, endDate: nextWeek }],
+    enabled: !!hrQueriesEnabled
+  });
+  
+  // ✅ PAST SHIFTS: Query for my past shift assignments (last 30 days)
+  const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+  const { data: pastShiftsData, isLoading: pastShiftsLoading } = useQuery<any>({
+    queryKey: ['/api/hr/shift-assignments/my-assignments', { startDate: thirtyDaysAgo, endDate: yesterday }],
     enabled: !!hrQueriesEnabled
   });
   
@@ -688,6 +696,75 @@ export default function MyPortal() {
                                       Oggi
                                     </Badge>
                                   )}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* ✅ PAST SHIFTS SECTION - Shows last 30 days shifts */}
+                <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2" data-testid="section-past-shifts">
+                      <Clock className="h-5 w-5 text-gray-500" />
+                      Turni Passati
+                      {(Array.isArray(pastShiftsData) ? pastShiftsData : []).length > 0 && (
+                        <Badge variant="outline" className="ml-2" data-testid="badge-past-shift-count">
+                          {(Array.isArray(pastShiftsData) ? pastShiftsData : []).length}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>Ultimi 30 giorni</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {pastShiftsLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {(() => {
+                          const pastAssignments = Array.isArray(pastShiftsData) ? pastShiftsData : [];
+                          if (pastAssignments.length === 0) {
+                            return (
+                              <Alert>
+                                <AlertDescription className="text-gray-500 text-center">
+                                  Nessun turno negli ultimi 30 giorni
+                                </AlertDescription>
+                              </Alert>
+                            );
+                          }
+                          return pastAssignments.slice(0, 10).map((shift: any) => {
+                            const storeName = shift.storeName || shift.store?.name || 'PDV';
+                            const startTime = shift.startTime || '';
+                            const endTime = shift.endTime || '';
+                            
+                            return (
+                              <div 
+                                key={shift.id} 
+                                className="p-3 rounded-lg border border-gray-200 bg-gray-50/50"
+                                data-testid={`item-past-shift-${shift.id}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-gray-400" />
+                                    <div>
+                                      <div className="font-medium text-gray-700">
+                                        {format(new Date(shift.shiftDate || shift.date), 'EEEE d MMMM', { locale: it })}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {storeName} • {startTime} - {endTime}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline" className="text-gray-500" data-testid={`badge-past-shift-status-${shift.id}`}>
+                                    {shift.status === 'completed' ? 'Completato' : 'Passato'}
+                                  </Badge>
                                 </div>
                               </div>
                             );
