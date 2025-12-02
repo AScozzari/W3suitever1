@@ -192,3 +192,105 @@ export function getStorageQuotaStatus(used: number, total: number): {
     return { percentage, status: 'normal', color: 'green' };
   }
 }
+
+/**
+ * Formatta un timestamp ISO o stringa orario in formato HH:mm
+ * Gestisce sia "2025-11-24T09:00:00.000Z" che "09:00:00"
+ */
+export function formatShiftTime(time: string | null | undefined): string {
+  if (!time) return '--:--';
+  
+  // Se è un timestamp ISO completo (contiene "T")
+  if (time.includes('T')) {
+    try {
+      const date = new Date(time);
+      return date.toLocaleTimeString('it-IT', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    } catch {
+      return time.substring(0, 5);
+    }
+  }
+  
+  // Se è già in formato "HH:mm:ss" o "HH:mm"
+  return time.substring(0, 5);
+}
+
+/**
+ * Formatta una data per mostrare giorno della settimana e data in italiano
+ * Es: "martedì 25 novembre"
+ */
+export function formatShiftDate(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('it-IT', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    });
+  } catch {
+    return String(date);
+  }
+}
+
+/**
+ * Formatta una fascia oraria come "09:00 - 14:00"
+ */
+export function formatTimeRange(startTime: string | null | undefined, endTime: string | null | undefined): string {
+  return `${formatShiftTime(startTime)} - ${formatShiftTime(endTime)}`;
+}
+
+/**
+ * Determina lo stato di un turno (passato, presente, futuro) basandosi su data e orari
+ */
+export function getShiftStatus(date: string, startTime: string, endTime: string): 'past' | 'present' | 'future' {
+  const now = new Date();
+  const shiftDate = new Date(date);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const shiftDay = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate());
+  
+  if (shiftDay < today) return 'past';
+  if (shiftDay > today) return 'future';
+  
+  // Stesso giorno - controlla orari
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const startMinutes = parseInt(startTime.substring(0, 2)) * 60 + parseInt(startTime.substring(3, 5));
+  const endMinutes = parseInt(endTime.substring(0, 2)) * 60 + parseInt(endTime.substring(3, 5));
+  
+  if (nowMinutes < startMinutes) return 'future';
+  if (nowMinutes > endMinutes) return 'past';
+  return 'present';
+}
+
+/**
+ * Colori per badge stato turno
+ */
+export function getShiftStatusColor(status: 'past' | 'present' | 'future'): {
+  bg: string;
+  text: string;
+  border: string;
+} {
+  switch (status) {
+    case 'past':
+      return { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-300' };
+    case 'present':
+      return { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-400' };
+    case 'future':
+      return { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-400' };
+  }
+}
+
+/**
+ * Etichette in italiano per stato turno
+ */
+export function getShiftStatusLabel(status: 'past' | 'present' | 'future'): string {
+  switch (status) {
+    case 'past': return 'Passato';
+    case 'present': return 'In Corso';
+    case 'future': return 'Futuro';
+  }
+}

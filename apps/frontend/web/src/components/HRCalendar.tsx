@@ -33,6 +33,7 @@ import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { useShiftPlanningStore, type ResourceAssignment, type CoverageSlot } from '@/stores/shiftPlanningStore';
+import { formatShiftTime, formatTimeRange, getShiftStatusColor, getShiftStatusLabel } from '@/utils/formatters';
 
 // Schema per eventi turno
 const shiftEventSchema = z.object({
@@ -1198,19 +1199,19 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
                       {(() => {
                         const timeBands = new Map<string, any[]>();
                         dayDetailResources.forEach((resource: any) => {
-                          const bandKey = `${resource.startTime}-${resource.endTime}`;
-                          if (!timeBands.has(bandKey)) {
-                            timeBands.set(bandKey, []);
+                          const formattedBandKey = formatTimeRange(resource.startTime, resource.endTime);
+                          if (!timeBands.has(formattedBandKey)) {
+                            timeBands.set(formattedBandKey, []);
                           }
-                          timeBands.get(bandKey)!.push(resource);
+                          timeBands.get(formattedBandKey)!.push(resource);
                         });
                         
-                        return Array.from(timeBands.entries()).map(([bandKey, resources]) => (
-                          <div key={bandKey} className="border rounded-lg p-3">
+                        return Array.from(timeBands.entries()).map(([formattedBandKey, resources]) => (
+                          <div key={formattedBandKey} className="border rounded-lg p-3 bg-slate-50/50">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-blue-500" />
-                                <span className="font-medium">{bandKey}</span>
+                                <span className="font-semibold text-slate-800">{formattedBandKey}</span>
                               </div>
                               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 {resources.length} risorsa/e
@@ -1374,11 +1375,11 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
                             </div>
                             <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
                               <div className="flex items-center space-x-2">
-                                <Clock className="w-4 h-4" />
-                                <span>{resource.startTime} - {resource.endTime}</span>
+                                <Clock className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">{formatTimeRange(resource.startTime, resource.endTime)}</span>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <StoreIcon className="w-4 h-4" />
+                                <StoreIcon className="w-4 h-4 text-orange-500" />
                                 <span>{resource.storeName}</span>
                               </div>
                             </div>
@@ -1490,7 +1491,7 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
             <DialogDescription>
               {actionTarget && (
                 <span>
-                  Turno di <strong>{actionTarget.employeeName}</strong> ({actionTarget.startTime} - {actionTarget.endTime})
+                  Turno di <strong>{actionTarget.employeeName}</strong> ({formatTimeRange(actionTarget.startTime, actionTarget.endTime)})
                   {actionTarget.storeName && <> presso <strong>{actionTarget.storeName}</strong></>}
                 </span>
               )}
