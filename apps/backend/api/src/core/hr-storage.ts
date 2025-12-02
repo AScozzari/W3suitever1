@@ -15,6 +15,9 @@ import {
   users,
   userAssignments,
   stores,
+  resourceAvailability,
+  hrRequestImpacts,
+  notifications,
   CalendarEvent,
   Shift,
   ShiftTemplate,
@@ -2035,7 +2038,53 @@ export class HRStorage implements IHRStorage {
             validationResult.passed = false;
           }
 
-          // Check 3: Weekly hour limits
+          // Check 3: Blocking availability (ferie, malattia, permessi approvati)
+          const shiftDateStr = typeof shiftData.date === 'string' ? shiftData.date : shiftData.date.toISOString().split('T')[0];
+          const blockingAvailability = await db.select()
+            .from(resourceAvailability)
+            .where(and(
+              eq(resourceAvailability.tenantId, tenantId),
+              eq(resourceAvailability.userId, employeeId),
+              eq(resourceAvailability.blocksShiftAssignment, true),
+              eq(resourceAvailability.approvalStatus, 'approved'),
+              lte(resourceAvailability.startDate, shiftDateStr),
+              gte(resourceAvailability.endDate, shiftDateStr)
+            ));
+
+          if (blockingAvailability.length > 0) {
+            const availability = blockingAvailability[0];
+            const statusLabels: Record<string, string> = {
+              'vacation': 'Ferie approvate',
+              'sick_leave': 'Malattia',
+              'personal_leave': 'Permesso personale',
+              'training': 'Formazione',
+              'unavailable': 'Non disponibile'
+            };
+            const statusLabel = statusLabels[availability.availabilityStatus] || availability.availabilityStatus;
+            
+            conflicts.push({
+              type: 'availability_block',
+              severity: 'high', // BLOCCO - non può essere assegnato
+              shiftId,
+              employeeId,
+              availabilityId: availability.id,
+              availabilityStatus: availability.availabilityStatus,
+              startDate: availability.startDate,
+              endDate: availability.endDate,
+              message: `${statusLabel} dal ${availability.startDate} al ${availability.endDate}`,
+              leaveRequestId: availability.leaveRequestId
+            });
+            validationResult.passed = false;
+            
+            // Add to validation result for UI display
+            (validationResult as any).blockingConflict = {
+              type: availability.availabilityStatus,
+              label: statusLabel,
+              period: `${availability.startDate} - ${availability.endDate}`
+            };
+          }
+
+          // Check 4: Weekly hour limits
           const weekStart = new Date(shiftData.date);
           weekStart.setDate(weekStart.getDate() - weekStart.getDay());
           const weekEnd = new Date(weekStart);
@@ -2081,6 +2130,9 @@ export class HRStorage implements IHRStorage {
           }, {
             name: 'no_time_conflicts',
             passed: overlappingShifts.length === 0
+          }, {
+            name: 'no_availability_blocks',
+            passed: blockingAvailability.length === 0
           }, {
             name: 'within_weekly_limits',
             passed: currentWeeklyHours + shiftHours <= 40
