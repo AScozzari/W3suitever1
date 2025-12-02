@@ -773,24 +773,41 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
       const templateVersion = sa.templateVersion;
       const timeSlotsSnapshot = templateVersion?.timeSlotsSnapshot || [];
       
-      // Use shift times (already normalized and flattened)
-      let shiftStartTime = sa.startTime;
-      let shiftEndTime = sa.endTime;
+      // ✅ CRITICAL FIX: For historical data integrity, ALWAYS prioritize timeSlotsSnapshot
+      // This ensures past shifts display their ORIGINAL planning times, not modified template times
+      // Priority: 1) timeSlotsSnapshot (immutable historical data)
+      //           2) sa.startTime/endTime (fallback only if no snapshot)
+      let shiftStartTime: string | undefined;
+      let shiftEndTime: string | undefined;
       
-      // If times are ISO timestamps, extract just the time part
-      if (shiftStartTime && shiftStartTime.includes('T')) {
-        shiftStartTime = shiftStartTime.split('T')[1]?.substring(0, 5) || shiftStartTime;
-      }
-      if (shiftEndTime && shiftEndTime.includes('T')) {
-        shiftEndTime = shiftEndTime.split('T')[1]?.substring(0, 5) || shiftEndTime;
+      // FIRST: Try to get times from template version snapshot (historical accuracy)
+      if (timeSlotsSnapshot.length > 0) {
+        const snapshotStart = timeSlotsSnapshot[0]?.startTime;
+        const snapshotEnd = timeSlotsSnapshot[0]?.endTime;
+        
+        // Handle both time-only ("09:00") and ISO timestamp formats
+        if (snapshotStart) {
+          shiftStartTime = snapshotStart.includes('T') 
+            ? snapshotStart.split('T')[1]?.substring(0, 5) 
+            : snapshotStart.substring(0, 5);
+        }
+        if (snapshotEnd) {
+          shiftEndTime = snapshotEnd.includes('T') 
+            ? snapshotEnd.split('T')[1]?.substring(0, 5) 
+            : snapshotEnd.substring(0, 5);
+        }
       }
       
-      // Fallback to first time slot from version snapshot if shift times not available
-      if (!shiftStartTime && timeSlotsSnapshot.length > 0) {
-        shiftStartTime = timeSlotsSnapshot[0]?.startTime?.substring(0, 5) || '09:00';
+      // FALLBACK: Only use sa.startTime/endTime if no snapshot data available
+      if (!shiftStartTime && sa.startTime) {
+        shiftStartTime = sa.startTime.includes('T') 
+          ? sa.startTime.split('T')[1]?.substring(0, 5) 
+          : sa.startTime;
       }
-      if (!shiftEndTime && timeSlotsSnapshot.length > 0) {
-        shiftEndTime = timeSlotsSnapshot[0]?.endTime?.substring(0, 5) || '18:00';
+      if (!shiftEndTime && sa.endTime) {
+        shiftEndTime = sa.endTime.includes('T') 
+          ? sa.endTime.split('T')[1]?.substring(0, 5) 
+          : sa.endTime;
       }
       
       return {
