@@ -1964,7 +1964,10 @@ export const shiftAssignments = w3suiteSchema.table("shift_assignments", {
   assignedBy: varchar("assigned_by").notNull().references(() => users.id),
   
   // Status tracking
-  status: varchar("status", { length: 20 }).notNull().default("assigned"), // assigned, confirmed, rejected, completed
+  // Status values: assigned, confirmed, rejected, completed, override, cancelled
+  // - override: Assignment was overridden by approved leave/sick request
+  // - cancelled: Assignment was manually cancelled
+  status: varchar("status", { length: 20 }).notNull().default("assigned"),
   confirmedAt: timestamp("confirmed_at"),
   rejectedAt: timestamp("rejected_at"),
   rejectionReason: text("rejection_reason"),
@@ -1988,6 +1991,22 @@ export const shiftAssignments = w3suiteSchema.table("shift_assignments", {
   employeeNotes: text("employee_notes"), // Notes from employee
   managerNotes: text("manager_notes"), // Notes from manager
   
+  // ==================== OVERRIDE & ACKNOWLEDGEMENT SYSTEM ====================
+  // When HR approves a leave/sick request that conflicts with this assignment
+  overrideReason: text("override_reason"), // "Ferie approvate", "Malattia", etc.
+  overrideRequestId: uuid("override_request_id").references(() => universalRequests.id), // Link to the request that caused override
+  overrideAt: timestamp("override_at"), // When the override was applied
+  overrideBy: varchar("override_by").references(() => users.id), // Who applied the override
+  
+  // Employee acknowledgement of assignment (for notification tracking)
+  acknowledgedAt: timestamp("acknowledged_at"), // When employee saw/acknowledged the assignment
+  notifiedAt: timestamp("notified_at"), // When notification was sent
+  
+  // Validation results from assignment (stored for audit and display)
+  conflictReasons: jsonb("conflict_reasons").default([]), // [{type: 'leave', severity: 'block', message: '...'}]
+  validationWarnings: jsonb("validation_warnings").default([]), // [{type: 'hours_exceeded', message: '...', data: {...}}]
+  validationPassedAt: timestamp("validation_passed_at"), // When assignment passed validation
+  
   // Audit
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -2005,6 +2024,11 @@ export const shiftAssignments = w3suiteSchema.table("shift_assignments", {
   // Time-based indexes for reporting
   index("shift_assignments_assigned_date_idx").on(table.assignedAt),
   index("shift_assignments_expected_clock_in_idx").on(table.expectedClockIn),
+  
+  // Override and acknowledgement indexes
+  index("shift_assignments_override_idx").on(table.overrideRequestId),
+  index("shift_assignments_acknowledged_idx").on(table.acknowledgedAt),
+  index("shift_assignments_notified_idx").on(table.notifiedAt),
 ]);
 
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({ 
@@ -2882,7 +2906,7 @@ export type InsertUniversalRequest = z.infer<typeof insertUniversalRequestSchema
 export type UniversalRequest = typeof universalRequests.$inferSelect;
 
 // ✅ RELAZIONI ENTERPRISE per Universal Requests
-export const universalRequestsRelations = relations(universalRequests, ({ one }) => ({
+export const universalRequestsRelations = relations(universalRequests, ({ one, many }) => ({
   tenant: one(tenants, { fields: [universalRequests.tenantId], references: [tenants.id] }),
   requester: one(users, { fields: [universalRequests.requesterId], references: [users.id] }),
   currentApprover: one(users, { fields: [universalRequests.currentApproverId], references: [users.id] }),
@@ -2891,6 +2915,75 @@ export const universalRequestsRelations = relations(universalRequests, ({ one })
   store: one(stores, { fields: [universalRequests.storeId], references: [stores.id] }),
   createdByUser: one(users, { fields: [universalRequests.createdBy], references: [users.id] }),
   updatedByUser: one(users, { fields: [universalRequests.updatedBy], references: [users.id] }),
+  impacts: many(hrRequestImpacts),
+}));
+
+// ==================== HR REQUEST IMPACTS ====================
+// Stores impact analysis when HR requests (leave, sick, shift change) are evaluated
+// Used to show HR managers what shifts/coverage will be affected before approval
+export const hrRequestImpacts = w3suiteSchema.table("hr_request_impacts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  requestId: uuid("request_id").notNull().references(() => universalRequests.id, { onDelete: 'cascade' }),
+  
+  // Impact analysis results
+  affectedShiftIds: text("affected_shift_ids").array().default([]), // Shift IDs that will be overridden
+  affectedAssignmentIds: text("affected_assignment_ids").array().default([]), // Assignment IDs that will be overridden
+  
+  // Coverage gaps created by approval
+  coverageGaps: jsonb("coverage_gaps").default([]), 
+  // [{ storeId, storeName, date, startTime, endTime, hoursUncovered, currentStaff, requiredStaff }]
+  
+  // Overtime impact
+  overtimeImpact: jsonb("overtime_impact").default([]),
+  // [{ employeeId, employeeName, date, additionalHours, reason }]
+  
+  // Replacement suggestions
+  replacementSuggestions: jsonb("replacement_suggestions").default([]),
+  // [{ shiftId, suggestedEmployees: [{ id, name, availability, matchScore }] }]
+  
+  // Impact severity assessment
+  impactSeverity: varchar("impact_severity", { length: 20 }).notNull().default("none"),
+  // none, low, medium, high, critical
+  
+  impactSummary: text("impact_summary"), // Human-readable summary for HR display
+  
+  // Calculation metadata
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+  calculatedBy: varchar("calculated_by").references(() => users.id), // System or user who triggered calculation
+  
+  // Applied status - tracks if impacts were actually applied
+  appliedAt: timestamp("applied_at"), // When request was approved and impacts applied
+  appliedBy: varchar("applied_by").references(() => users.id),
+  overridesCreated: integer("overrides_created").default(0), // Number of shift overrides created
+  notificationsSent: integer("notifications_sent").default(0), // Number of notifications sent
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("hr_request_impacts_tenant_idx").on(table.tenantId),
+  index("hr_request_impacts_request_idx").on(table.requestId),
+  index("hr_request_impacts_severity_idx").on(table.impactSeverity),
+  index("hr_request_impacts_calculated_idx").on(table.calculatedAt),
+  index("hr_request_impacts_applied_idx").on(table.appliedAt),
+]);
+
+export const insertHrRequestImpactSchema = createInsertSchema(hrRequestImpacts).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  calculatedAt: true
+});
+export type InsertHrRequestImpact = z.infer<typeof insertHrRequestImpactSchema>;
+export type HrRequestImpact = typeof hrRequestImpacts.$inferSelect;
+
+// Relations for HR Request Impacts
+export const hrRequestImpactsRelations = relations(hrRequestImpacts, ({ one }) => ({
+  tenant: one(tenants, { fields: [hrRequestImpacts.tenantId], references: [tenants.id] }),
+  request: one(universalRequests, { fields: [hrRequestImpacts.requestId], references: [universalRequests.id] }),
+  calculatedByUser: one(users, { fields: [hrRequestImpacts.calculatedBy], references: [users.id] }),
+  appliedByUser: one(users, { fields: [hrRequestImpacts.appliedBy], references: [users.id] }),
 }));
 
 // Service Permissions - Definizione permessi per ogni servizio
