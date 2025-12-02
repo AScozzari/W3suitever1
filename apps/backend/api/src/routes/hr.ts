@@ -4,7 +4,7 @@ import { hrStorage } from '../core/hr-storage';
 import { webSocketService } from '../core/websocket-service';
 import { db } from '../core/db';
 import { users, shiftTemplates, shiftTimeSlots, shiftTemplateVersions, shiftAssignments, shiftAttendance, attendanceAnomalies, shifts, universalRequests, resourceAvailability, stores } from '../db/schema/w3suite';
-import { eq, and, gte, lte, inArray, sql, count, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, inArray, sql, count, desc, isNull } from 'drizzle-orm';
 
 const router = Router();
 
@@ -1720,6 +1720,282 @@ router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (
   }
 });
 
+// POST /api/hr/attendance/anomalies/:id/resolve - Resolve an anomaly with action
+router.post('/attendance/anomalies/:id/resolve', requirePermission('hr.timbrature.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id: anomalyId } = req.params;
+    const { resolution, notes } = req.body;
+    const resolvedBy = req.headers['x-user-id'] as string;
+    
+    if (!tenantId || !anomalyId) {
+      return res.status(400).json({ error: 'Tenant ID and Anomaly ID are required' });
+    }
+    
+    if (!resolution || !['justify', 'sanction', 'dismiss'].includes(resolution)) {
+      return res.status(400).json({ error: 'Valid resolution type is required (justify, sanction, dismiss)' });
+    }
+    
+    // Get current anomaly
+    const existingAnomaly = await db.select()
+      .from(attendanceAnomalies)
+      .where(and(
+        eq(attendanceAnomalies.id, anomalyId),
+        eq(attendanceAnomalies.tenantId, tenantId)
+      ))
+      .limit(1);
+    
+    if (existingAnomaly.length === 0) {
+      return res.status(404).json({ error: 'Anomaly not found' });
+    }
+    
+    if (existingAnomaly[0].resolutionStatus === 'resolved') {
+      return res.status(400).json({ error: 'Anomaly is already resolved' });
+    }
+    
+    // Update anomaly with resolution
+    const updated = await db.update(attendanceAnomalies)
+      .set({
+        resolutionStatus: 'resolved',
+        resolutionNotes: notes || `Resolution type: ${resolution}`,
+        resolvedAt: new Date(),
+        resolvedBy: resolvedBy || null
+      })
+      .where(and(
+        eq(attendanceAnomalies.id, anomalyId),
+        eq(attendanceAnomalies.tenantId, tenantId)
+      ))
+      .returning();
+    
+    // If resolution is 'sanction', log it for employee record
+    if (resolution === 'sanction') {
+      console.log(`[HR] Sanction applied to anomaly ${anomalyId} for user ${existingAnomaly[0].userId}`);
+      // TODO: Create employee sanction record in future iteration
+    }
+    
+    res.json({
+      success: true,
+      anomaly: updated[0],
+      resolution,
+      message: resolution === 'justify' ? 'Anomalia giustificata con successo' :
+               resolution === 'sanction' ? 'Sanzione applicata con successo' :
+               'Anomalia archiviata con successo'
+    });
+  } catch (error) {
+    console.error('Error resolving anomaly:', error);
+    res.status(500).json({ error: 'Failed to resolve anomaly' });
+  }
+});
+
+// POST /api/hr/clock-entries/validate - Pre-validate clock entry before recording
+// Returns potential anomalies without creating records
+router.post('/clock-entries/validate', requirePermission('hr.timbrature.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { userId, storeId, clockTime, entryType = 'clock_in' } = req.body;
+    
+    if (!tenantId || !userId) {
+      return res.status(400).json({ error: 'Tenant ID and User ID are required' });
+    }
+    
+    const clockTimestamp = clockTime ? new Date(clockTime) : new Date();
+    const warnings: Array<{
+      type: string;
+      severity: 'low' | 'medium' | 'high' | 'critical';
+      message: string;
+      expectedValue?: any;
+      actualValue?: any;
+    }> = [];
+    
+    let isValid = true;
+    let shiftInfo: any = null;
+    
+    // Find shift assignment for this user on this date
+    const dateStr = clockTimestamp.toISOString().split('T')[0];
+    const assignments = await db.select({
+      id: shiftAssignments.id,
+      shiftId: shiftAssignments.shiftId,
+      status: shiftAssignments.status,
+      shift: {
+        id: shifts.id,
+        storeId: shifts.storeId,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
+        name: shifts.name
+      }
+    })
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, userId),
+        eq(shifts.date, dateStr),
+        inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+      ));
+    
+    // 1. CHECK: No shift assigned
+    if (assignments.length === 0) {
+      warnings.push({
+        type: 'no_shift_assigned',
+        severity: 'high',
+        message: 'Nessun turno assegnato per questa data. La timbratura verrà registrata come anomalia.',
+        expectedValue: 'Turno assegnato',
+        actualValue: 'Nessun turno'
+      });
+      isValid = false;
+    } else {
+      const assignment = assignments[0];
+      shiftInfo = {
+        shiftId: assignment.shift.id,
+        shiftName: assignment.shift.name,
+        storeId: assignment.shift.storeId,
+        expectedStartTime: assignment.shift.startTime,
+        expectedEndTime: assignment.shift.endTime
+      };
+      
+      // 2. CHECK: Wrong store
+      if (storeId && assignment.shift.storeId !== storeId) {
+        warnings.push({
+          type: 'wrong_store',
+          severity: 'high',
+          message: 'Stai timbrando in un PDV diverso da quello assegnato per il turno.',
+          expectedValue: assignment.shift.storeId,
+          actualValue: storeId
+        });
+        isValid = false;
+      }
+      
+      // 3. CHECK: Clock-in timing (for clock_in type)
+      if (entryType === 'clock_in' && assignment.shift.startTime) {
+        const expectedStart = new Date(assignment.shift.startTime);
+        const deviationMs = clockTimestamp.getTime() - expectedStart.getTime();
+        const deviationMinutes = Math.round(deviationMs / 60000);
+        const tolerance = 15; // Default tolerance
+        
+        if (Math.abs(deviationMinutes) > tolerance) {
+          if (deviationMinutes > 0) {
+            warnings.push({
+              type: 'late_clock_in',
+              severity: deviationMinutes > 30 ? 'high' : 'medium',
+              message: `Ingresso in ritardo di ${deviationMinutes} minuti rispetto all'orario previsto.`,
+              expectedValue: expectedStart.toISOString(),
+              actualValue: clockTimestamp.toISOString()
+            });
+            if (deviationMinutes > 30) isValid = false;
+          } else {
+            warnings.push({
+              type: 'early_clock_in',
+              severity: 'low',
+              message: `Ingresso anticipato di ${Math.abs(deviationMinutes)} minuti rispetto all'orario previsto.`,
+              expectedValue: expectedStart.toISOString(),
+              actualValue: clockTimestamp.toISOString()
+            });
+          }
+        }
+      }
+      
+      // 4. CHECK: Clock-out timing (for clock_out type)
+      if (entryType === 'clock_out' && assignment.shift.endTime) {
+        const expectedEnd = new Date(assignment.shift.endTime);
+        const deviationMs = clockTimestamp.getTime() - expectedEnd.getTime();
+        const deviationMinutes = Math.round(deviationMs / 60000);
+        
+        if (deviationMinutes < -30) {
+          warnings.push({
+            type: 'early_clock_out',
+            severity: 'high',
+            message: `Uscita anticipata di ${Math.abs(deviationMinutes)} minuti rispetto all'orario previsto.`,
+            expectedValue: expectedEnd.toISOString(),
+            actualValue: clockTimestamp.toISOString()
+          });
+          isValid = false;
+        } else if (deviationMinutes > 120) {
+          warnings.push({
+            type: 'excessive_overtime',
+            severity: 'medium',
+            message: `Uscita con ${deviationMinutes} minuti di straordinario. Verificare con il responsabile.`,
+            expectedValue: expectedEnd.toISOString(),
+            actualValue: clockTimestamp.toISOString()
+          });
+        }
+      }
+    }
+    
+    // 5. CHECK: Double clock-in (check existing attendance for today)
+    if (entryType === 'clock_in') {
+      const existingAttendance = await db.select()
+        .from(shiftAttendance)
+        .where(and(
+          eq(shiftAttendance.tenantId, tenantId),
+          eq(shiftAttendance.userId, userId),
+          eq(sql`DATE(${shiftAttendance.actualStartTime})`, dateStr),
+          isNull(shiftAttendance.actualEndTime)
+        ))
+        .limit(1);
+      
+      if (existingAttendance.length > 0) {
+        warnings.push({
+          type: 'double_clock_in',
+          severity: 'critical',
+          message: 'Esiste già una timbratura di ingresso attiva per oggi senza uscita. Registra prima l\'uscita.',
+          expectedValue: 'Nessuna timbratura attiva',
+          actualValue: 'Timbratura attiva presente'
+        });
+        isValid = false;
+      }
+    }
+    
+    // 6. CHECK: Clock-out without clock-in
+    if (entryType === 'clock_out') {
+      const activeSession = await db.select()
+        .from(shiftAttendance)
+        .where(and(
+          eq(shiftAttendance.tenantId, tenantId),
+          eq(shiftAttendance.userId, userId),
+          eq(sql`DATE(${shiftAttendance.actualStartTime})`, dateStr),
+          isNull(shiftAttendance.actualEndTime)
+        ))
+        .limit(1);
+      
+      if (activeSession.length === 0) {
+        warnings.push({
+          type: 'clock_out_without_clock_in',
+          severity: 'critical',
+          message: 'Nessuna timbratura di ingresso attiva per oggi. Contattare il responsabile.',
+          expectedValue: 'Timbratura ingresso attiva',
+          actualValue: 'Nessuna timbratura'
+        });
+        isValid = false;
+      }
+    }
+    
+    // Determine overall validation status
+    const validationStatus = isValid ? 'valid' : (
+      warnings.some(w => w.severity === 'critical') ? 'blocked' :
+      warnings.some(w => w.severity === 'high') ? 'warning_high' : 'warning'
+    );
+    
+    res.json({
+      success: true,
+      isValid,
+      validationStatus,
+      clockTime: clockTimestamp.toISOString(),
+      entryType,
+      shiftInfo,
+      warnings,
+      summary: {
+        totalWarnings: warnings.length,
+        criticalCount: warnings.filter(w => w.severity === 'critical').length,
+        highCount: warnings.filter(w => w.severity === 'high').length,
+        canProceed: validationStatus !== 'blocked'
+      }
+    });
+  } catch (error) {
+    console.error('Error validating clock entry:', error);
+    res.status(500).json({ error: 'Failed to validate clock entry' });
+  }
+});
+
 // GET /api/hr/attendance/store-coverage - Get store coverage analysis
 router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
   try {
@@ -1871,6 +2147,173 @@ router.get('/attendance/logs', requirePermission('hr.shifts.read'), async (req: 
   }
 });
 
+// ==================== HR REQUEST IMPACT ANALYSIS ====================
+
+// GET /api/hr/requests/:id/impact - Calculate impact of HR request before approval
+router.get('/requests/:id/impact', requirePermission('hr.requests.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    
+    // Fetch the universal request
+    const [request] = await db.select()
+      .from(universalRequests)
+      .where(and(
+        eq(universalRequests.id, id),
+        eq(universalRequests.tenantId, tenantId)
+      ))
+      .limit(1);
+    
+    if (!request) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    
+    // Only calculate impact for leave requests with dates
+    if (request.department !== 'hr' || request.category !== 'leave' || !request.startDate || !request.endDate) {
+      return res.json({
+        success: true,
+        hasImpact: false,
+        message: 'Request type does not have shift impact'
+      });
+    }
+    
+    const startDateStr = new Date(request.startDate).toISOString().split('T')[0];
+    const endDateStr = new Date(request.endDate).toISOString().split('T')[0];
+    const requestData = request.requestData as any || {};
+    
+    // Get requester info
+    const [requester] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName
+    })
+      .from(users)
+      .where(eq(users.id, request.requesterId))
+      .limit(1);
+    
+    // Find all conflicting shift assignments
+    const conflictingAssignments = await db.select({
+      assignmentId: shiftAssignments.id,
+      shiftId: shifts.id,
+      shiftDate: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      storeId: shifts.storeId,
+      storeName: stores.nome,
+      status: shiftAssignments.status
+    })
+      .from(shiftAssignments)
+      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+      .leftJoin(stores, eq(shifts.storeId, stores.id))
+      .where(and(
+        eq(shiftAssignments.tenantId, tenantId),
+        eq(shiftAssignments.userId, request.requesterId),
+        gte(shifts.date, startDateStr),
+        lte(shifts.date, endDateStr),
+        inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+      ))
+      .orderBy(shifts.date, shifts.startTime);
+    
+    // Calculate coverage gaps per store/day
+    const coverageGaps: Array<{
+      storeId: string;
+      storeName: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      hoursUncovered: number;
+    }> = [];
+    
+    // Calculate total hours impacted
+    let totalHoursImpacted = 0;
+    
+    conflictingAssignments.forEach(assignment => {
+      if (assignment.startTime && assignment.endTime) {
+        const start = parseInt(assignment.startTime.split(':')[0]) * 60 + parseInt(assignment.startTime.split(':')[1] || '0');
+        const end = parseInt(assignment.endTime.split(':')[0]) * 60 + parseInt(assignment.endTime.split(':')[1] || '0');
+        const hours = (end - start) / 60;
+        totalHoursImpacted += hours;
+        
+        coverageGaps.push({
+          storeId: assignment.storeId,
+          storeName: assignment.storeName || 'Unknown',
+          date: assignment.shiftDate,
+          startTime: assignment.startTime,
+          endTime: assignment.endTime,
+          hoursUncovered: hours
+        });
+      }
+    });
+    
+    // Determine impact severity
+    let impactSeverity: 'none' | 'low' | 'medium' | 'high' | 'critical' = 'none';
+    if (conflictingAssignments.length === 0) {
+      impactSeverity = 'none';
+    } else if (conflictingAssignments.length <= 2) {
+      impactSeverity = 'low';
+    } else if (conflictingAssignments.length <= 5) {
+      impactSeverity = 'medium';
+    } else if (conflictingAssignments.length <= 10) {
+      impactSeverity = 'high';
+    } else {
+      impactSeverity = 'critical';
+    }
+    
+    // Generate summary message
+    const leaveTypeLabels: Record<string, string> = {
+      'vacation': 'Ferie',
+      'sick_leave': 'Malattia',
+      'personal_leave': 'Permesso personale',
+      'training': 'Formazione'
+    };
+    const leaveTypeLabel = leaveTypeLabels[requestData.leaveType] || 'Richiesta HR';
+    
+    const requesterName = `${requester?.firstName || ''} ${requester?.lastName || ''}`.trim() || 'Dipendente';
+    const impactSummary = conflictingAssignments.length === 0 
+      ? `Nessun turno in conflitto con la richiesta di ${leaveTypeLabel}`
+      : `Approvando questa richiesta, ${conflictingAssignments.length} turni di ${requesterName} saranno automaticamente messi in stato OVERRIDE. Totale ${totalHoursImpacted.toFixed(1)} ore impattate.`;
+    
+    res.json({
+      success: true,
+      hasImpact: conflictingAssignments.length > 0,
+      requestId: id,
+      requester: {
+        id: requester?.id,
+        name: requesterName
+      },
+      period: {
+        startDate: startDateStr,
+        endDate: endDateStr,
+        leaveType: requestData.leaveType || 'leave',
+        leaveTypeLabel
+      },
+      impact: {
+        totalAssignmentsAffected: conflictingAssignments.length,
+        totalHoursImpacted: Math.round(totalHoursImpacted * 10) / 10,
+        severity: impactSeverity,
+        summary: impactSummary,
+        assignments: conflictingAssignments.map(a => ({
+          assignmentId: a.assignmentId,
+          shiftId: a.shiftId,
+          date: a.shiftDate,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          storeName: a.storeName,
+          status: a.status
+        })),
+        coverageGaps
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating request impact:', error);
+    res.status(500).json({ error: 'Failed to calculate request impact' });
+  }
+});
+
 // ==================== HR REQUEST APPROVAL INTEGRATION ====================
 
 // POST /api/hr/requests/:id/approve - Approve HR request and create resource availability block
@@ -1923,14 +2366,18 @@ router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), a
       .where(eq(universalRequests.id, id));
     
     // If HR leave request with dates, create resource_availability block
+    let overriddenAssignmentsCount = 0;
+    
     if (request.department === 'hr' && request.category === 'leave' && request.startDate && request.endDate) {
       const requestData = request.requestData as any || {};
+      const startDateStr = new Date(request.startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(request.endDate).toISOString().split('T')[0];
       
       await db.insert(resourceAvailability).values({
         tenantId,
         userId: request.requesterId,
-        startDate: new Date(request.startDate).toISOString().split('T')[0],
-        endDate: new Date(request.endDate).toISOString().split('T')[0],
+        startDate: startDateStr,
+        endDate: endDateStr,
         availabilityStatus: requestData.leaveType || 'vacation',
         reasonType: 'approved_leave',
         reasonDescription: request.description || '',
@@ -1946,16 +2393,162 @@ router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), a
         notes: comments || request.notes || '',
         createdBy: userId
       });
+      
+      // ==================== AUTOMATIC OVERRIDE SYSTEM ====================
+      // Find and override all shift assignments for the user during the leave period
+      const leaveTypeLabels: Record<string, string> = {
+        'vacation': 'Ferie approvate',
+        'sick_leave': 'Malattia',
+        'personal_leave': 'Permesso personale',
+        'training': 'Formazione'
+      };
+      const overrideReason = leaveTypeLabels[requestData.leaveType] || 'Richiesta HR approvata';
+      
+      // Get all shifts in the period for this user
+      const conflictingShifts = await db.select({
+        shiftId: shifts.id,
+        shiftDate: shifts.date,
+        assignmentId: shiftAssignments.id,
+        assignmentStatus: shiftAssignments.status
+      })
+        .from(shiftAssignments)
+        .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
+        .where(and(
+          eq(shiftAssignments.tenantId, tenantId),
+          eq(shiftAssignments.userId, request.requesterId),
+          gte(shifts.date, startDateStr),
+          lte(shifts.date, endDateStr),
+          // Only override active assignments (not already completed/cancelled)
+          inArray(shiftAssignments.status, ['assigned', 'confirmed'])
+        ));
+      
+      if (conflictingShifts.length > 0) {
+        // Update all conflicting assignments to override status
+        const assignmentIds = conflictingShifts.map(s => s.assignmentId);
+        
+        await db.update(shiftAssignments)
+          .set({
+            status: 'override',
+            overrideReason,
+            overrideRequestId: request.id,
+            overrideAt: new Date(),
+            overrideBy: userId,
+            conflictReasons: [{ 
+              type: requestData.leaveType || 'leave', 
+              severity: 'block', 
+              message: overrideReason,
+              period: `${startDateStr} - ${endDateStr}`
+            }],
+            updatedAt: new Date()
+          })
+          .where(inArray(shiftAssignments.id, assignmentIds));
+        
+        overriddenAssignmentsCount = conflictingShifts.length;
+        
+        console.log(`[HR-APPROVAL] Overridden ${overriddenAssignmentsCount} shift assignments for user ${request.requesterId} due to approved leave request ${request.id}`);
+      }
     }
     
     res.json({
       success: true,
       message: 'Request approved successfully',
-      requestId: id
+      requestId: id,
+      overriddenAssignments: overriddenAssignmentsCount
     });
   } catch (error) {
     console.error('Error approving HR request:', error);
     res.status(500).json({ error: 'Failed to approve HR request' });
+  }
+});
+
+// ==================== RESOURCE AVAILABILITY FOR PLANNING ====================
+
+// GET /api/hr/resources/availability - Get blocking availability for resources in a period
+router.get('/resources/availability', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { resourceIds, startDate, endDate, storeId } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    // Parse resource IDs if provided
+    const resourceIdList = resourceIds ? (resourceIds as string).split(',') : null;
+
+    // Build query for blocking availability
+    const availabilityQuery = db.select({
+      id: resourceAvailability.id,
+      userId: resourceAvailability.userId,
+      startDate: resourceAvailability.startDate,
+      endDate: resourceAvailability.endDate,
+      availabilityStatus: resourceAvailability.availabilityStatus,
+      reasonType: resourceAvailability.reasonType,
+      reasonDescription: resourceAvailability.reasonDescription,
+      leaveRequestId: resourceAvailability.leaveRequestId,
+      isFullDay: resourceAvailability.isFullDay,
+      blocksShiftAssignment: resourceAvailability.blocksShiftAssignment,
+      approvalStatus: resourceAvailability.approvalStatus
+    })
+      .from(resourceAvailability)
+      .where(and(
+        eq(resourceAvailability.tenantId, tenantId),
+        eq(resourceAvailability.blocksShiftAssignment, true),
+        eq(resourceAvailability.approvalStatus, 'approved'),
+        lte(resourceAvailability.startDate, endDate as string),
+        gte(resourceAvailability.endDate, startDate as string),
+        ...(resourceIdList ? [inArray(resourceAvailability.userId, resourceIdList)] : [])
+      ));
+
+    const availability = await availabilityQuery;
+
+    // Group by resource for easier frontend consumption
+    const byResource: Record<string, typeof availability> = {};
+    availability.forEach(a => {
+      if (!byResource[a.userId]) {
+        byResource[a.userId] = [];
+      }
+      byResource[a.userId].push(a);
+    });
+
+    // Create status labels for UI
+    const statusLabels: Record<string, string> = {
+      'vacation': 'Ferie',
+      'sick_leave': 'Malattia',
+      'personal_leave': 'Permesso',
+      'training': 'Formazione',
+      'unavailable': 'Non disponibile',
+      'restricted': 'Restrizioni'
+    };
+
+    // Generate summary for each resource
+    const resourceSummary = Object.entries(byResource).map(([userId, items]) => ({
+      userId,
+      totalBlocks: items.length,
+      periods: items.map(item => ({
+        id: item.id,
+        type: item.availabilityStatus,
+        label: statusLabels[item.availabilityStatus] || item.availabilityStatus,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        isFullDay: item.isFullDay,
+        reason: item.reasonDescription
+      }))
+    }));
+
+    res.json({
+      success: true,
+      availability: resourceSummary,
+      totalResourcesWithBlocks: resourceSummary.length,
+      period: { startDate, endDate }
+    });
+  } catch (error) {
+    console.error('Error fetching resource availability:', error);
+    res.status(500).json({ error: 'Failed to fetch resource availability' });
   }
 });
 

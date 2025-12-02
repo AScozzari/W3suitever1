@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -35,7 +35,7 @@ import {
   PieChart, Activity, Target, Brain, Zap, ArrowRight,
   MapPin, Phone, Mail, Shield, Award, Briefcase,
   Coffee, Home, Plane, Car, DollarSign, AlertTriangle, Heart, UserCog,
-  RefreshCw
+  RefreshCw, Gavel, FileX, HelpCircle, Loader2
 } from 'lucide-react';
 import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 
@@ -535,6 +535,111 @@ const HRManagementPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFromFilter, setDateFromFilter] = useState<string>('');
     const [dateToFilter, setDateToFilter] = useState<string>('');
+    
+    // ✅ Impact Preview State
+    const [impactDialogOpen, setImpactDialogOpen] = useState(false);
+    const [selectedRequestForImpact, setSelectedRequestForImpact] = useState<HRRequest | null>(null);
+    const [impactData, setImpactData] = useState<{
+      affectedShifts: any[];
+      coverageGaps: any[];
+      overtimeImpact: number;
+      costImpact: number;
+    } | null>(null);
+    const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+    
+    // ✅ Mutation to calculate impact before approval
+    const calculateImpactMutation = useMutation({
+      mutationFn: async (requestId: string) => {
+        return apiRequest(`/api/hr/requests/${requestId}/calculate-impact`, {
+          method: 'POST'
+        });
+      }
+    });
+    
+    // ✅ Mutation to approve request
+    const approveRequestMutation = useMutation({
+      mutationFn: async (requestId: string) => {
+        return apiRequest(`/api/hr/universal-requests/${requestId}/approve`, {
+          method: 'POST'
+        });
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Richiesta Approvata',
+          description: 'La richiesta è stata approvata con successo. I turni in conflitto sono stati sovrascrittti.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/hr/universal-requests'] });
+        setImpactDialogOpen(false);
+        setSelectedRequestForImpact(null);
+        setImpactData(null);
+      },
+      onError: (error) => {
+        toast({
+          title: 'Errore',
+          description: 'Impossibile approvare la richiesta.',
+          variant: 'destructive'
+        });
+      }
+    });
+    
+    // ✅ Mutation to reject request
+    const rejectRequestMutation = useMutation({
+      mutationFn: async (requestId: string) => {
+        return apiRequest(`/api/hr/universal-requests/${requestId}/reject`, {
+          method: 'POST'
+        });
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Richiesta Rifiutata',
+          description: 'La richiesta è stata rifiutata.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/hr/universal-requests'] });
+      },
+      onError: (error) => {
+        toast({
+          title: 'Errore',
+          description: 'Impossibile rifiutare la richiesta.',
+          variant: 'destructive'
+        });
+      }
+    });
+    
+    // ✅ Handle approve button click - first calculate impact
+    const handleApproveClick = async (request: HRRequest) => {
+      setSelectedRequestForImpact(request);
+      setIsLoadingImpact(true);
+      setImpactDialogOpen(true);
+      
+      try {
+        const result = await calculateImpactMutation.mutateAsync(request.id);
+        setImpactData(result);
+      } catch (error) {
+        console.error('Failed to calculate impact:', error);
+        setImpactData({
+          affectedShifts: [],
+          coverageGaps: [],
+          overtimeImpact: 0,
+          costImpact: 0
+        });
+      } finally {
+        setIsLoadingImpact(false);
+      }
+    };
+    
+    // ✅ Handle reject button click
+    const handleRejectClick = (request: HRRequest) => {
+      if (confirm('Sei sicuro di voler rifiutare questa richiesta?')) {
+        rejectRequestMutation.mutate(request.id);
+      }
+    };
+    
+    // ✅ Handle confirm approval after seeing impact
+    const handleConfirmApproval = () => {
+      if (selectedRequestForImpact) {
+        approveRequestMutation.mutate(selectedRequestForImpact.id);
+      }
+    };
 
     // Extract unique categories from HR requests
     const uniqueCategories = useMemo(() => {
@@ -924,8 +1029,10 @@ const HRManagementPage: React.FC = () => {
                                 variant="ghost" 
                                 size="sm"
                                 className="text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                                onClick={() => handleApproveClick(request)}
+                                disabled={approveRequestMutation.isPending}
                                 data-testid={`approve-${request.id}`}
-                                title="Approva richiesta"
+                                title="Approva richiesta - Vedi impatto sui turni"
                               >
                                 <CheckCircle className="w-4 h-4" />
                               </Button>
@@ -933,6 +1040,8 @@ const HRManagementPage: React.FC = () => {
                                 variant="ghost" 
                                 size="sm"
                                 className="text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                                onClick={() => handleRejectClick(request)}
+                                disabled={rejectRequestMutation.isPending}
                                 data-testid={`reject-${request.id}`}
                                 title="Rifiuta richiesta"
                               >
@@ -964,6 +1073,136 @@ const HRManagementPage: React.FC = () => {
             )}
           </CardContent>
         </Card>
+        
+        {/* ✅ Impact Preview Dialog */}
+        <Dialog open={impactDialogOpen} onOpenChange={setImpactDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]" data-testid="dialog-impact-preview">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                Analisi Impatto Pre-Approvazione
+              </DialogTitle>
+              <DialogDescription>
+                Verifica l'impatto di questa richiesta sui turni pianificati prima di procedere
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedRequestForImpact && (
+              <div className="space-y-4 py-4">
+                {/* Request Summary */}
+                <div className="p-3 bg-slate-50 rounded-lg border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge>{getRequestTypeName(selectedRequestForImpact.type)}</Badge>
+                      <span className="font-medium">{selectedRequestForImpact.requesterName}</span>
+                    </div>
+                    <Badge variant="outline" className="bg-amber-50 border-amber-300 text-amber-700">
+                      In Attesa
+                    </Badge>
+                  </div>
+                  {selectedRequestForImpact.startDate && (
+                    <p className="text-sm text-slate-600">
+                      Periodo: {new Date(selectedRequestForImpact.startDate).toLocaleDateString('it-IT')}
+                      {selectedRequestForImpact.endDate && ` - ${new Date(selectedRequestForImpact.endDate).toLocaleDateString('it-IT')}`}
+                    </p>
+                  )}
+                </div>
+                
+                {isLoadingImpact ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                    <span className="ml-3 text-slate-600">Calcolo impatto in corso...</span>
+                  </div>
+                ) : impactData ? (
+                  <div className="space-y-4">
+                    {/* Impact Stats */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="p-3 bg-orange-50 rounded-lg border border-orange-200 text-center">
+                        <div className="text-2xl font-bold text-orange-600">{impactData.affectedShifts?.length || 0}</div>
+                        <div className="text-xs text-orange-700">Turni Interessati</div>
+                      </div>
+                      <div className="p-3 bg-red-50 rounded-lg border border-red-200 text-center">
+                        <div className="text-2xl font-bold text-red-600">{impactData.coverageGaps?.length || 0}</div>
+                        <div className="text-xs text-red-700">Gap Copertura</div>
+                      </div>
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                        <div className="text-2xl font-bold text-blue-600">{impactData.overtimeImpact || 0}h</div>
+                        <div className="text-xs text-blue-700">Ore Straord.</div>
+                      </div>
+                    </div>
+                    
+                    {/* Affected Shifts List */}
+                    {impactData.affectedShifts && impactData.affectedShifts.length > 0 ? (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Turni che verranno sovrascritti:</Label>
+                        <div className="max-h-40 overflow-y-auto space-y-2">
+                          {impactData.affectedShifts.map((shift: any, index: number) => (
+                            <div key={index} className="p-2 bg-amber-50 rounded border border-amber-200 flex justify-between items-center">
+                              <div>
+                                <span className="text-sm font-medium">{shift.shiftName || 'Turno'}</span>
+                                <span className="text-xs text-slate-500 ml-2">
+                                  {shift.date ? new Date(shift.date).toLocaleDateString('it-IT') : ''}
+                                </span>
+                              </div>
+                              <Badge variant="outline" className="text-amber-700 border-amber-300">
+                                → Override
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          Nessun turno in conflitto. L'approvazione non impatterà la pianificazione esistente.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Coverage Gaps Warning */}
+                    {impactData.coverageGaps && impactData.coverageGaps.length > 0 && (
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <AlertDescription className="text-red-800">
+                          <strong>Attenzione:</strong> L'approvazione creerà gap di copertura nei seguenti negozi/orari. 
+                          Considera di pianificare sostituzioni.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
+            
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setImpactDialogOpen(false);
+                  setSelectedRequestForImpact(null);
+                  setImpactData(null);
+                }}
+                data-testid="button-cancel-approval"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={handleConfirmApproval}
+                disabled={approveRequestMutation.isPending || isLoadingImpact}
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-confirm-approval"
+              >
+                {approveRequestMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                )}
+                Conferma Approvazione
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
@@ -1563,8 +1802,12 @@ const HRManagementPage: React.FC = () => {
 
   const AttendanceSection = () => {
     const [filters, setFilters] = useState({ storeId: '', userId: '', status: 'pending', severity: 'all' });
+    const [resolutionDialogOpen, setResolutionDialogOpen] = useState(false);
+    const [selectedAnomaly, setSelectedAnomaly] = useState<any>(null);
+    const [resolutionType, setResolutionType] = useState<'justify' | 'sanction' | 'dismiss'>('justify');
+    const [resolutionNotes, setResolutionNotes] = useState('');
     
-    const { data: anomalies, isLoading: loadingAnomalies } = useQuery({
+    const { data: anomalies, isLoading: loadingAnomalies, refetch: refetchAnomalies } = useQuery({
       queryKey: ['/api/hr/attendance/anomalies', filters],
       enabled: hrQueriesEnabled,
       staleTime: 30000
@@ -1576,6 +1819,92 @@ const HRManagementPage: React.FC = () => {
       enabled: hrQueriesEnabled,
       staleTime: 30000
     });
+    
+    // Mutation for resolving anomalies
+    const resolveAnomalyMutation = useMutation({
+      mutationFn: async (params: { anomalyId: string; resolution: string; notes: string }) => {
+        return apiRequest(`/api/hr/attendance/anomalies/${params.anomalyId}/resolve`, {
+          method: 'POST',
+          body: JSON.stringify({ resolution: params.resolution, notes: params.notes })
+        });
+      },
+      onSuccess: () => {
+        toast({
+          title: 'Anomalia Risolta',
+          description: 'L\'anomalia è stata processata con successo.',
+        });
+        refetchAnomalies();
+        setResolutionDialogOpen(false);
+        setSelectedAnomaly(null);
+        setResolutionNotes('');
+      },
+      onError: (error) => {
+        toast({
+          title: 'Errore',
+          description: 'Impossibile risolvere l\'anomalia.',
+          variant: 'destructive'
+        });
+      }
+    });
+    
+    // Handle opening resolution dialog
+    const handleResolveClick = (anomaly: any) => {
+      setSelectedAnomaly(anomaly);
+      setResolutionType('justify');
+      setResolutionNotes('');
+      setResolutionDialogOpen(true);
+    };
+    
+    // Handle resolution submission
+    const handleResolveSubmit = () => {
+      if (!selectedAnomaly) return;
+      resolveAnomalyMutation.mutate({
+        anomalyId: selectedAnomaly.id,
+        resolution: resolutionType,
+        notes: resolutionNotes
+      });
+    };
+    
+    // Severity filter options
+    const severityOptions = [
+      { value: 'all', label: 'Tutte le severità', color: 'bg-slate-500' },
+      { value: 'critical', label: 'Critiche', color: 'bg-red-500' },
+      { value: 'high', label: 'Alte', color: 'bg-orange-500' },
+      { value: 'medium', label: 'Medie', color: 'bg-amber-500' },
+      { value: 'low', label: 'Basse', color: 'bg-blue-500' }
+    ];
+    
+    // Status filter options
+    const statusOptions = [
+      { value: 'pending', label: 'In Attesa' },
+      { value: 'acknowledged', label: 'Presa Visione' },
+      { value: 'resolved', label: 'Risolte' },
+      { value: 'all', label: 'Tutte' }
+    ];
+    
+    // Get resolution type label and icon
+    const getResolutionInfo = (type: string) => {
+      switch (type) {
+        case 'justify':
+          return { label: 'Giustifica', icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-green-50 border-green-200' };
+        case 'sanction':
+          return { label: 'Sanzione', icon: AlertTriangle, color: 'text-red-600', bgColor: 'bg-red-50 border-red-200' };
+        case 'dismiss':
+          return { label: 'Archivia', icon: FileX, color: 'text-slate-600', bgColor: 'bg-slate-50 border-slate-200' };
+        default:
+          return { label: type, icon: HelpCircle, color: 'text-slate-600', bgColor: 'bg-slate-50 border-slate-200' };
+      }
+    };
+    
+    // Filter anomalies based on selected filters
+    const filteredAnomalies = React.useMemo(() => {
+      if (!anomalies?.anomalies) return [];
+      return anomalies.anomalies.filter((a: any) => {
+        if (filters.severity !== 'all' && a.severity !== filters.severity) return false;
+        if (filters.status !== 'all' && a.resolutionStatus !== filters.status) return false;
+        return true;
+      });
+    }, [anomalies, filters]);
 
     return (
       <div className="space-y-6">
@@ -1658,61 +1987,277 @@ const HRManagementPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Anomalies Section */}
+        {/* Anomalies Section with Enhanced Filters */}
         <Card className="backdrop-blur-md bg-white/10 border-white/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              Anomalie Presenze
-            </CardTitle>
-            <CardDescription>Anomalie rilevate e da risolvere</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  Anomalie Presenze
+                </CardTitle>
+                <CardDescription>Anomalie rilevate e da risolvere</CardDescription>
+              </div>
+              
+              {/* Severity and Status Filters */}
+              <div className="flex items-center gap-3">
+                <Select 
+                  value={filters.severity} 
+                  onValueChange={(value) => setFilters(f => ({ ...f, severity: value }))}
+                >
+                  <SelectTrigger className="w-[160px]" data-testid="select-severity-filter">
+                    <SelectValue placeholder="Severità" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {severityOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value} data-testid={`option-severity-${opt.value}`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${opt.color}`} />
+                          {opt.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select 
+                  value={filters.status} 
+                  onValueChange={(value) => setFilters(f => ({ ...f, status: value }))}
+                >
+                  <SelectTrigger className="w-[140px]" data-testid="select-status-filter">
+                    <SelectValue placeholder="Stato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value} data-testid={`option-status-${opt.value}`}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loadingAnomalies ? (
               <Skeleton className="h-64 w-full" data-testid="skeleton-anomalies" />
             ) : (
               <div className="space-y-4">
-                <Alert className="bg-blue-50 border-blue-200" data-testid="anomaly-summary">
-                  <AlertCircle className="w-4 h-4 text-blue-600" />
-                  <AlertDescription>
-                    {anomalies?.summary.total || 0} anomalie rilevate - 
-                    <strong className="ml-1">{anomalies?.summary.byStatus.pending || 0} in attesa</strong>
-                  </AlertDescription>
-                </Alert>
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-4" data-testid="anomaly-summary-stats">
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-200 text-center">
+                    <div className="text-2xl font-bold text-red-600">{anomalies?.summary?.bySeverity?.critical || 0}</div>
+                    <div className="text-xs text-red-700">Critiche</div>
+                  </div>
+                  <div className="p-3 bg-orange-50 rounded-lg border border-orange-200 text-center">
+                    <div className="text-2xl font-bold text-orange-600">{anomalies?.summary?.bySeverity?.high || 0}</div>
+                    <div className="text-xs text-orange-700">Alte</div>
+                  </div>
+                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-center">
+                    <div className="text-2xl font-bold text-amber-600">{anomalies?.summary?.bySeverity?.medium || 0}</div>
+                    <div className="text-xs text-amber-700">Medie</div>
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                    <div className="text-2xl font-bold text-blue-600">{anomalies?.summary?.bySeverity?.low || 0}</div>
+                    <div className="text-xs text-blue-700">Basse</div>
+                  </div>
+                </div>
 
+                {/* Anomalies List */}
                 <div className="grid gap-4">
-                  {anomalies?.anomalies.map((anomaly: any, i: number) => (
-                    <Card key={anomaly.id} className="border-l-4" style={{
-                      borderLeftColor: anomaly.severity === 'critical' ? '#ef4444' : 
-                                      anomaly.severity === 'high' ? '#f59e0b' : '#94a3b8'
-                    }} data-testid={`anomaly-card-${i}`}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={anomaly.severity === 'critical' ? 'destructive' : 'default'} data-testid={`anomaly-type-${i}`}>
-                                {anomaly.anomalyType.replace(/_/g, ' ')}
-                              </Badge>
-                              <span className="text-sm text-slate-600" data-testid={`anomaly-user-${i}`}>{anomaly.user?.fullName}</span>
-                              <span className="text-sm text-slate-400" data-testid={`anomaly-store-${i}`}>{anomaly.store?.name}</span>
+                  {filteredAnomalies.length === 0 ? (
+                    <Alert className="bg-green-50 border-green-200" data-testid="no-anomalies">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <AlertDescription>
+                        Nessuna anomalia trovata con i filtri selezionati.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    filteredAnomalies.map((anomaly: any, i: number) => (
+                      <Card key={anomaly.id} className="border-l-4" style={{
+                        borderLeftColor: anomaly.severity === 'critical' ? '#ef4444' : 
+                                        anomaly.severity === 'high' ? '#f59e0b' : 
+                                        anomaly.severity === 'medium' ? '#f59e0b' : '#94a3b8'
+                      }} data-testid={`anomaly-card-${i}`}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge 
+                                  variant={anomaly.severity === 'critical' ? 'destructive' : 
+                                          anomaly.severity === 'high' ? 'default' : 'secondary'} 
+                                  data-testid={`anomaly-type-${i}`}
+                                >
+                                  {anomaly.anomalyType?.replace(/_/g, ' ') || 'Anomalia'}
+                                </Badge>
+                                <Badge 
+                                  variant="outline"
+                                  className={
+                                    anomaly.severity === 'critical' ? 'border-red-300 text-red-700 bg-red-50' :
+                                    anomaly.severity === 'high' ? 'border-orange-300 text-orange-700 bg-orange-50' :
+                                    anomaly.severity === 'medium' ? 'border-amber-300 text-amber-700 bg-amber-50' :
+                                    'border-blue-300 text-blue-700 bg-blue-50'
+                                  }
+                                  data-testid={`anomaly-severity-${i}`}
+                                >
+                                  {anomaly.severity === 'critical' ? 'Critico' :
+                                   anomaly.severity === 'high' ? 'Alto' :
+                                   anomaly.severity === 'medium' ? 'Medio' : 'Basso'}
+                                </Badge>
+                                <span className="text-sm text-slate-600" data-testid={`anomaly-user-${i}`}>
+                                  {anomaly.user?.firstName} {anomaly.user?.lastName}
+                                </span>
+                                <span className="text-sm text-slate-400" data-testid={`anomaly-store-${i}`}>
+                                  {anomaly.store?.nome || anomaly.store?.name}
+                                </span>
+                              </div>
+                              <p className="text-sm text-slate-600 mt-2" data-testid={`anomaly-deviation-${i}`}>
+                                Deviazione: {anomaly.deviationMinutes || 0} minuti
+                              </p>
+                              <p className="text-xs text-slate-400" data-testid={`anomaly-time-${i}`}>
+                                Rilevata: {anomaly.detectedAt ? new Date(anomaly.detectedAt).toLocaleString('it-IT') : '-'}
+                              </p>
+                              {anomaly.resolutionStatus === 'resolved' && (
+                                <div className="mt-2 p-2 bg-green-50 rounded border border-green-200 text-sm text-green-700">
+                                  Risolta: {anomaly.resolutionNotes || 'Nessuna nota'}
+                                </div>
+                              )}
                             </div>
-                            <p className="text-sm text-slate-600 mt-2" data-testid={`anomaly-deviation-${i}`}>
-                              Deviazione: {anomaly.deviationMinutes} minuti
-                            </p>
-                            <p className="text-xs text-slate-400" data-testid={`anomaly-time-${i}`}>
-                              {new Date(anomaly.detectedAt).toLocaleString()}
-                            </p>
+                            
+                            {/* Resolution Actions */}
+                            {anomaly.resolutionStatus !== 'resolved' ? (
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleResolveClick(anomaly)}
+                                  data-testid={`button-resolve-${i}`}
+                                >
+                                  <Gavel className="w-4 h-4 mr-1" />
+                                  Risolvi
+                                </Button>
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Risolta
+                              </Badge>
+                            )}
                           </div>
-                          <Button variant="outline" size="sm" data-testid={`button-resolve-${i}`}>Risolvi</Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
+        
+        {/* Resolution Dialog */}
+        <Dialog open={resolutionDialogOpen} onOpenChange={setResolutionDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]" data-testid="dialog-resolve-anomaly">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Gavel className="w-5 h-5 text-orange-500" />
+                Risolvi Anomalia
+              </DialogTitle>
+              <DialogDescription>
+                Scegli come processare questa anomalia
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedAnomaly && (
+              <div className="space-y-4 py-4">
+                {/* Anomaly Summary */}
+                <div className="p-3 bg-slate-50 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant={selectedAnomaly.severity === 'critical' ? 'destructive' : 'default'}>
+                      {selectedAnomaly.anomalyType?.replace(/_/g, ' ')}
+                    </Badge>
+                    <span className="text-sm font-medium">
+                      {selectedAnomaly.user?.firstName} {selectedAnomaly.user?.lastName}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Deviazione: {selectedAnomaly.deviationMinutes || 0} minuti
+                  </p>
+                </div>
+                
+                {/* Resolution Type Selection */}
+                <div className="space-y-2">
+                  <Label>Tipo di Risoluzione</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['justify', 'sanction', 'dismiss'] as const).map((type) => {
+                      const info = getResolutionInfo(type);
+                      const IconComponent = info.icon;
+                      return (
+                        <Button
+                          key={type}
+                          variant={resolutionType === type ? 'default' : 'outline'}
+                          className={resolutionType === type ? '' : info.bgColor}
+                          onClick={() => setResolutionType(type)}
+                          data-testid={`button-resolution-${type}`}
+                        >
+                          <IconComponent className={`w-4 h-4 mr-1 ${resolutionType === type ? '' : info.color}`} />
+                          {info.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Resolution Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="resolution-notes">Note (opzionale)</Label>
+                  <Textarea
+                    id="resolution-notes"
+                    placeholder={
+                      resolutionType === 'justify' ? 'Es: Ritardo giustificato per visita medica documentata' :
+                      resolutionType === 'sanction' ? 'Es: Seconda infrazione nel mese, richiamo scritto' :
+                      'Es: Anomalia sistema, nessuna azione richiesta'
+                    }
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    rows={3}
+                    data-testid="textarea-resolution-notes"
+                  />
+                </div>
+                
+                {/* Warning for Sanction */}
+                {resolutionType === 'sanction' && (
+                  <Alert className="bg-red-50 border-red-200">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                    <AlertDescription className="text-red-800">
+                      La sanzione verrà registrata nel fascicolo del dipendente e sarà visibile nei report HR.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResolutionDialogOpen(false)} data-testid="button-cancel-resolution">
+                Annulla
+              </Button>
+              <Button 
+                onClick={handleResolveSubmit}
+                disabled={resolveAnomalyMutation.isPending}
+                className={
+                  resolutionType === 'justify' ? 'bg-green-600 hover:bg-green-700' :
+                  resolutionType === 'sanction' ? 'bg-red-600 hover:bg-red-700' :
+                  ''
+                }
+                data-testid="button-submit-resolution"
+              >
+                {resolveAnomalyMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : null}
+                Conferma {getResolutionInfo(resolutionType).label}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };

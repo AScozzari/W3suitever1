@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Clock, MapPin, Wifi, Smartphone, QrCode, CreditCard,
@@ -28,6 +29,8 @@ import { useTimeAttendanceFSM } from '@/hooks/useTimeAttendanceFSM';
 import { useTimeAttendanceStrategies } from '@/hooks/useTimeAttendanceStrategies';
 import { StrategyType, TrackingMethod } from '@/types/timeAttendanceFSM';
 import { NearbyStore } from '@/services/timeTrackingService';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 // Strategy imports
 import { 
@@ -222,6 +225,58 @@ export default function UnifiedClockingPanel({
 
   // Local state  
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // ✅ PDV MISMATCH DETECTION: State for mismatch popup
+  const [mismatchDialogOpen, setMismatchDialogOpen] = useState(false);
+  const [pendingStoreSelection, setPendingStoreSelection] = useState<{ storeId: string; store: NearbyStore | null }>({ storeId: '', store: null });
+  
+  // ✅ CLOCK ENTRY VALIDATION: Pre-validation state
+  const [validationDialogOpen, setValidationDialogOpen] = useState(false);
+  const [validationWarnings, setValidationWarnings] = useState<Array<{
+    type: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    expectedValue?: any;
+    actualValue?: any;
+  }>>([]);
+  const [pendingClockAction, setPendingClockAction] = useState<'clock_in' | 'clock_out' | null>(null);
+  
+  // ✅ Pre-validation mutation for clock entries
+  const validateClockMutation = useMutation({
+    mutationFn: async (params: { userId: string; storeId: string; clockTime?: string; entryType: 'clock_in' | 'clock_out' }) => {
+      return apiRequest('/api/hr/clock-entries/validate', {
+        method: 'POST',
+        body: JSON.stringify(params)
+      });
+    }
+  });
+  
+  // ✅ Query for today's shift assignment to detect PDV mismatch
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const { data: todayShiftData, isLoading: isLoadingShift } = useQuery({
+    queryKey: ['/api/hr/shift-assignments/my-assignments', { date: today }],
+    enabled: !!userId
+  });
+  
+  // ✅ Get assigned store info from today's shift
+  const assignedShiftInfo = React.useMemo(() => {
+    if (!todayShiftData) return null;
+    
+    // Handle both array and single object responses
+    const assignments = Array.isArray(todayShiftData) ? todayShiftData : (todayShiftData as any)?.assignments || [];
+    if (assignments.length === 0) return null;
+    
+    // Find assignment for today
+    const todayAssignment = assignments.find((a: any) => a.shiftDate === today || a.date === today);
+    if (!todayAssignment) return null;
+    
+    return {
+      storeId: todayAssignment.storeId || todayAssignment.shift?.storeId,
+      storeName: todayAssignment.storeName || todayAssignment.shift?.storeName || todayAssignment.store?.name || 'PDV Assegnato',
+      startTime: todayAssignment.startTime || todayAssignment.shift?.startTime || '',
+      endTime: todayAssignment.endTime || todayAssignment.shift?.endTime || ''
+    };
+  }, [todayShiftData, today]);
 
   // Timer per clock corrente
   useEffect(() => {
@@ -290,17 +345,110 @@ export default function UnifiedClockingPanel({
     }
   };
 
-  // Handler cambio store
+  // Handler cambio store - con mismatch detection
   const handleStoreChange = (storeId: string) => {
-    setSelectedStoreId(storeId);
     const store = nearbyStores.find(s => s.id === storeId);
+    
+    // ✅ PDV MISMATCH CHECK: If user has a shift today and selects different PDV
+    if (assignedShiftInfo && assignedShiftInfo.storeId && storeId !== assignedShiftInfo.storeId) {
+      // Store pending selection and show mismatch dialog
+      setPendingStoreSelection({ storeId, store: store || null });
+      setMismatchDialogOpen(true);
+      return;
+    }
+    
+    // No mismatch, proceed normally
+    setSelectedStoreId(storeId);
     if (store) {
       setSelectedStore(store);
       selectStore(store);
     }
   };
+  
+  // ✅ Handle mismatch confirmation
+  const handleMismatchConfirm = () => {
+    setSelectedStoreId(pendingStoreSelection.storeId);
+    if (pendingStoreSelection.store) {
+      setSelectedStore(pendingStoreSelection.store);
+      selectStore(pendingStoreSelection.store);
+    }
+    setMismatchDialogOpen(false);
+    setPendingStoreSelection({ storeId: '', store: null });
+    
+    toast({
+      title: 'PDV Alternativo Selezionato',
+      description: 'Stai timbrando in un PDV diverso da quello assegnato. Il responsabile sarà notificato.',
+      variant: 'default'
+    });
+  };
+  
+  // ✅ Handle mismatch cancel - select assigned store instead
+  const handleMismatchCancel = () => {
+    setMismatchDialogOpen(false);
+    setPendingStoreSelection({ storeId: '', store: null });
+    
+    // Auto-select assigned store
+    if (assignedShiftInfo?.storeId) {
+      const assignedStore = nearbyStores.find(s => s.id === assignedShiftInfo.storeId);
+      setSelectedStoreId(assignedShiftInfo.storeId);
+      if (assignedStore) {
+        setSelectedStore(assignedStore);
+        selectStore(assignedStore);
+      }
+    }
+  };
 
-  // Handler Clock In
+  // ✅ Pre-validate clock entry and show warnings if any
+  const preValidateClockEntry = async (entryType: 'clock_in' | 'clock_out') => {
+    try {
+      const result = await validateClockMutation.mutateAsync({
+        userId,
+        storeId: selectedStoreId,
+        entryType
+      });
+      
+      if (result.warnings && result.warnings.length > 0) {
+        setValidationWarnings(result.warnings);
+        setPendingClockAction(entryType);
+        setValidationDialogOpen(true);
+        return false; // Do not proceed, show dialog
+      }
+      
+      return true; // No warnings, proceed
+    } catch (error) {
+      console.error('Pre-validation error:', error);
+      // On validation error, allow to proceed but log
+      return true;
+    }
+  };
+  
+  // ✅ Execute actual clock action after validation approval
+  const executeClockAction = async (action: 'clock_in' | 'clock_out') => {
+    if (action === 'clock_in') {
+      await executeClockIn();
+    } else {
+      await executeClockOut();
+    }
+  };
+  
+  // ✅ Handle validation dialog confirmation
+  const handleValidationConfirm = async () => {
+    setValidationDialogOpen(false);
+    if (pendingClockAction) {
+      await executeClockAction(pendingClockAction);
+    }
+    setPendingClockAction(null);
+    setValidationWarnings([]);
+  };
+  
+  // ✅ Handle validation dialog cancel
+  const handleValidationCancel = () => {
+    setValidationDialogOpen(false);
+    setPendingClockAction(null);
+    setValidationWarnings([]);
+  };
+  
+  // Handler Clock In - Now with pre-validation
   const handleClockIn = async () => {
     if (!selectedStoreId || !selectedStrategyType) {
       toast({
@@ -311,6 +459,16 @@ export default function UnifiedClockingPanel({
       return;
     }
 
+    // ✅ Step 1: Pre-validate
+    const canProceed = await preValidateClockEntry('clock_in');
+    if (!canProceed) return; // Dialog will be shown
+    
+    // ✅ Step 2: Execute if no warnings
+    await executeClockIn();
+  };
+  
+  // ✅ Actual clock-in execution
+  const executeClockIn = async () => {
     try {
       // Validazione strategia
       if (strategiesState.selectedStrategy) {
@@ -366,8 +524,18 @@ export default function UnifiedClockingPanel({
     }
   };
 
-  // Handler Clock Out
+  // Handler Clock Out - Now with pre-validation
   const handleClockOut = async () => {
+    // ✅ Step 1: Pre-validate
+    const canProceed = await preValidateClockEntry('clock_out');
+    if (!canProceed) return; // Dialog will be shown
+    
+    // ✅ Step 2: Execute if no warnings
+    await executeClockOut();
+  };
+  
+  // ✅ Actual clock-out execution
+  const executeClockOut = async () => {
     try {
       await clockOut();
       toast({
@@ -713,8 +881,184 @@ export default function UnifiedClockingPanel({
               <AlertDescription>{strategiesState.validationResult.error}</AlertDescription>
             </Alert>
           )}
+          
+          {/* ✅ MISMATCH INFO BADGE: Show when shift is assigned to different PDV */}
+          {assignedShiftInfo && !isLoadingShift && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200" data-testid="assigned-shift-info">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Building className="h-4 w-4" />
+                <span className="text-sm">
+                  <strong>Turno di oggi:</strong> {assignedShiftInfo.storeName} 
+                  {assignedShiftInfo.startTime && ` (${assignedShiftInfo.startTime} - ${assignedShiftInfo.endTime})`}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
+      
+      {/* ✅ PDV MISMATCH DIALOG */}
+      <Dialog open={mismatchDialogOpen} onOpenChange={setMismatchDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]" data-testid="dialog-pdv-mismatch">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertCircle className="h-5 w-5" />
+              Attenzione: PDV Diverso
+            </DialogTitle>
+            <DialogDescription className="text-gray-700 pt-4">
+              <div className="space-y-3">
+                <p>
+                  Stai selezionando un Punto Vendita diverso da quello assegnato per il turno di oggi.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">PDV Assegnato</div>
+                    <div className="font-semibold text-green-700">{assignedShiftInfo?.storeName || 'N/A'}</div>
+                    {assignedShiftInfo?.startTime && (
+                      <div className="text-xs text-gray-600 mt-1">{assignedShiftInfo.startTime} - {assignedShiftInfo.endTime}</div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-1">PDV Selezionato</div>
+                    <div className="font-semibold text-orange-700">{pendingStoreSelection.store?.name || 'Diverso'}</div>
+                  </div>
+                </div>
+                
+                <p className="text-sm text-gray-600">
+                  Se confermi, il sistema registrerà la timbratura nel PDV selezionato e il tuo responsabile riceverà una notifica.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={handleMismatchCancel}
+              className="w-full sm:w-auto"
+              data-testid="button-mismatch-cancel"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Usa PDV Assegnato
+            </Button>
+            <Button
+              onClick={handleMismatchConfirm}
+              className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600"
+              data-testid="button-mismatch-confirm"
+            >
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Conferma PDV Diverso
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* ✅ CLOCK ENTRY VALIDATION DIALOG - Show anomaly warnings before clock action */}
+      <Dialog open={validationDialogOpen} onOpenChange={setValidationDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]" data-testid="dialog-clock-validation">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertCircle className="h-5 w-5" />
+              Attenzione: Anomalie Rilevate
+            </DialogTitle>
+            <DialogDescription className="text-gray-700 pt-4">
+              <div className="space-y-4">
+                <p className="text-sm">
+                  Il sistema ha rilevato le seguenti anomalie per questa timbratura:
+                </p>
+                
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {validationWarnings.map((warning, index) => (
+                    <div 
+                      key={index}
+                      className={cn(
+                        "p-3 rounded-lg border flex items-start gap-3",
+                        warning.severity === 'critical' && "bg-red-50 border-red-200",
+                        warning.severity === 'high' && "bg-orange-50 border-orange-200",
+                        warning.severity === 'medium' && "bg-amber-50 border-amber-200",
+                        warning.severity === 'low' && "bg-blue-50 border-blue-200"
+                      )}
+                      data-testid={`warning-${warning.type}`}
+                    >
+                      <div className={cn(
+                        "flex-shrink-0 p-1 rounded-full",
+                        warning.severity === 'critical' && "bg-red-100 text-red-600",
+                        warning.severity === 'high' && "bg-orange-100 text-orange-600",
+                        warning.severity === 'medium' && "bg-amber-100 text-amber-600",
+                        warning.severity === 'low' && "bg-blue-100 text-blue-600"
+                      )}>
+                        {warning.severity === 'critical' ? (
+                          <XCircle className="h-4 w-4" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className={cn(
+                          "text-sm font-medium",
+                          warning.severity === 'critical' && "text-red-800",
+                          warning.severity === 'high' && "text-orange-800",
+                          warning.severity === 'medium' && "text-amber-800",
+                          warning.severity === 'low' && "text-blue-800"
+                        )}>
+                          {warning.message}
+                        </div>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "mt-1 text-xs",
+                            warning.severity === 'critical' && "border-red-300 text-red-700",
+                            warning.severity === 'high' && "border-orange-300 text-orange-700",
+                            warning.severity === 'medium' && "border-amber-300 text-amber-700",
+                            warning.severity === 'low' && "border-blue-300 text-blue-700"
+                          )}
+                        >
+                          {warning.severity === 'critical' ? 'Critico' : 
+                           warning.severity === 'high' ? 'Alto' :
+                           warning.severity === 'medium' ? 'Medio' : 'Basso'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {validationWarnings.some(w => w.severity === 'critical') ? (
+                  <Alert variant="destructive" className="mt-4">
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Blocco:</strong> Non è possibile procedere con anomalie critiche. Contatta il responsabile.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <p className="text-sm text-gray-600 mt-4">
+                    Puoi comunque procedere con la timbratura. Le anomalie verranno segnalate al responsabile.
+                  </p>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={handleValidationCancel}
+              className="w-full sm:w-auto"
+              data-testid="button-validation-cancel"
+            >
+              Annulla
+            </Button>
+            {!validationWarnings.some(w => w.severity === 'critical') && (
+              <Button
+                onClick={handleValidationConfirm}
+                className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600"
+                data-testid="button-validation-confirm"
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Procedi Comunque
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

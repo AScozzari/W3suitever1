@@ -141,6 +141,21 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
+  // ✅ SHIFT NOTIFICATIONS: Query for shift-related notifications
+  const { data: shiftNotifications = [], isLoading: shiftNotificationsLoading } = useNotifications({ 
+    type: 'shift', 
+    status: 'unread',
+    limit: 5 
+  });
+  
+  // ✅ UPCOMING SHIFTS: Query for my upcoming shift assignments
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const nextWeek = format(addDays(new Date(), 7), 'yyyy-MM-dd');
+  const { data: upcomingShiftsData, isLoading: upcomingShiftsLoading } = useQuery<any>({
+    queryKey: ['/api/hr/shift-assignments/my-assignments', { startDate: today, endDate: nextWeek }],
+    enabled: !!hrQueriesEnabled
+  });
+  
   // ✅ DEFINITIVE SOLUTION: TanStack Query for HR requests with proper cache management
   const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
     queryKey: ['/api/universal-requests', { department: 'hr', mine: true }],
@@ -544,42 +559,144 @@ export default function MyPortal() {
                         color: '#FF6900',
                         onClick: () => {
                           setTab('requests');
-                          setHrRequestModal({ open: true, data: { type: 'leave' } });
+                          setHrRequestModal({ open: true, data: { type: 'leave', leaveType: 'vacation' } });
                         }
                       },
                       {
-                        id: 'expense-report',
-                        title: 'Nota Spese',
-                        description: 'Compila spese',
-                        icon: Receipt,
-                        color: '#7B2CBF',
+                        id: 'shift-change',
+                        title: 'Cambio Turno',
+                        description: 'Richiedi scambio',
+                        icon: RefreshCw,
+                        color: '#3B82F6',
                         onClick: () => {
                           setTab('requests');
-                          setHrRequestModal({ open: true, data: { type: 'expense' } });
+                          setUniversalRequestModal({ 
+                            open: true, 
+                            data: { 
+                              department: 'hr', 
+                              category: 'shift_change',
+                              title: 'Richiesta Cambio Turno',
+                              description: '' 
+                            } 
+                          });
                         }
                       },
                       {
-                        id: 'payslip',
-                        title: 'Buste Paga',
-                        description: 'Scarica PDF',
-                        icon: FileText,
-                        color: '#10B981',
-                        onClick: () => setTab('documents')
+                        id: 'sick-leave',
+                        title: 'Segnala Malattia',
+                        description: 'Comunicazione urgente',
+                        icon: AlertCircle,
+                        color: '#DC2626',
+                        onClick: () => {
+                          setTab('requests');
+                          setHrRequestModal({ open: true, data: { type: 'leave', leaveType: 'sick_leave', urgent: true } });
+                        }
                       },
                       {
                         id: 'timesheet',
                         title: 'Timbrature',
                         description: 'Registra ore',
                         icon: Clock,
-                        color: '#3B82F6',
+                        color: '#10B981',
                         onClick: () => setTab('time-attendance')
+                      },
+                      {
+                        id: 'payslip',
+                        title: 'Buste Paga',
+                        description: 'Scarica PDF',
+                        icon: FileText,
+                        color: '#7B2CBF',
+                        onClick: () => setTab('documents')
+                      },
+                      {
+                        id: 'expense-report',
+                        title: 'Nota Spese',
+                        description: 'Compila spese',
+                        icon: Receipt,
+                        color: '#6B7280',
+                        onClick: () => {
+                          setTab('requests');
+                          setHrRequestModal({ open: true, data: { type: 'expense' } });
+                        }
                       }
                     ] as QuickAction[]}
-                    columns={2}
+                    columns={3}
                     variant="compact"
                     className=""
                   />
                 </div>
+
+                {/* ✅ UPCOMING SHIFTS SECTION - Shows next 7 days shifts with badges */}
+                <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2" data-testid="section-upcoming-shifts">
+                      <Calendar1 className="h-5 w-5 text-blue-500" />
+                      Turni Prossimi
+                      {upcomingShiftsData?.assignments?.length > 0 && (
+                        <Badge variant="default" className="ml-2 bg-blue-500" data-testid="badge-shift-count">
+                          {upcomingShiftsData.assignments.length}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>Prossimi 7 giorni</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {upcomingShiftsLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {(() => {
+                          const assignments = upcomingShiftsData?.assignments || [];
+                          if (assignments.length === 0) {
+                            return (
+                              <Alert>
+                                <AlertDescription className="text-gray-500 text-center">
+                                  Nessun turno assegnato nei prossimi 7 giorni
+                                </AlertDescription>
+                              </Alert>
+                            );
+                          }
+                          return assignments.slice(0, 4).map((shift: any) => {
+                            const isToday = shift.shiftDate === today || shift.date === today;
+                            const storeName = shift.storeName || shift.shift?.storeName || shift.store?.name || 'PDV';
+                            const startTime = shift.startTime || shift.shift?.startTime || '';
+                            const endTime = shift.endTime || shift.shift?.endTime || '';
+                            
+                            return (
+                              <div 
+                                key={shift.id} 
+                                className={`p-3 rounded-lg border ${isToday ? 'border-orange-400 bg-orange-50' : 'border-gray-200 bg-gray-50'}`}
+                                data-testid={`item-shift-${shift.id}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-2 h-2 rounded-full ${isToday ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'}`} />
+                                    <div>
+                                      <div className="font-medium text-gray-900">
+                                        {format(new Date(shift.shiftDate || shift.date), 'EEEE d MMMM', { locale: it })}
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        {storeName} • {startTime} - {endTime}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {isToday && (
+                                    <Badge className="bg-orange-500" data-testid="badge-shift-today">
+                                      Oggi
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Notifications - WindTre Glass */}
                 <Card className="glass-card hover:shadow-xl transition-all duration-300">
@@ -587,6 +704,11 @@ export default function MyPortal() {
                     <CardTitle className="flex items-center gap-2" data-testid="section-notifications">
                       <Bell className="h-5 w-5 text-orange-500" />
                       Notifiche Recenti
+                      {(Array.isArray(notifications) ? notifications : []).length > 0 && (
+                        <Badge variant="destructive" className="ml-2" data-testid="badge-notification-count">
+                          {(Array.isArray(notifications) ? notifications : []).length}
+                        </Badge>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -598,23 +720,37 @@ export default function MyPortal() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {(Array.isArray(notifications) ? notifications : []).slice(0, 3).map((notification) => (
-                          <Alert key={notification.id} className="border-l-4 border-l-orange-500" data-testid={`item-notification-${notification.id}`}>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <AlertTitle className="text-sm font-medium" data-testid={`text-notification-title-${notification.id}`}>
-                                  {notification.title || notification.titolo}
-                                </AlertTitle>
-                                <AlertDescription className="text-xs text-gray-600 mt-1" data-testid={`text-notification-message-${notification.id}`}>
-                                  {notification.message || notification.messaggio}
-                                </AlertDescription>
+                        {(Array.isArray(notifications) ? notifications : []).slice(0, 3).map((notification) => {
+                          const isShiftNotification = notification.type === 'shift' || notification.category === 'shift';
+                          return (
+                            <Alert 
+                              key={notification.id} 
+                              className={`border-l-4 ${isShiftNotification ? 'border-l-blue-500 bg-blue-50/50' : 'border-l-orange-500'}`}
+                              data-testid={`item-notification-${notification.id}`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-2 flex-1">
+                                  {isShiftNotification && <Calendar1 className="h-4 w-4 text-blue-500 flex-shrink-0" />}
+                                  <div className="flex-1">
+                                    <AlertTitle className="text-sm font-medium" data-testid={`text-notification-title-${notification.id}`}>
+                                      {notification.title || notification.titolo}
+                                    </AlertTitle>
+                                    <AlertDescription className="text-xs text-gray-600 mt-1" data-testid={`text-notification-message-${notification.id}`}>
+                                      {notification.message || notification.messaggio}
+                                    </AlertDescription>
+                                  </div>
+                                </div>
+                                <Badge 
+                                  variant={notification.status === 'read' || notification.letto ? 'secondary' : 'default'} 
+                                  className={`ml-2 ${isShiftNotification ? 'bg-blue-500' : ''}`}
+                                  data-testid={`badge-notification-status-${notification.id}`}
+                                >
+                                  {notification.status === 'read' || notification.letto ? 'Letto' : 'Nuovo'}
+                                </Badge>
                               </div>
-                              <Badge variant={notification.status === 'read' || notification.letto ? 'secondary' : 'default'} className="ml-2" data-testid={`badge-notification-status-${notification.id}`}>
-                                {notification.status === 'read' || notification.letto ? 'Letto' : 'Nuovo'}
-                              </Badge>
-                            </div>
-                          </Alert>
-                        ))}
+                            </Alert>
+                          );
+                        })}
                         {(!Array.isArray(notifications) || notifications.length === 0) && (
                           <Alert>
                             <AlertDescription className="text-gray-500 text-center">

@@ -222,6 +222,68 @@ export default function ShiftPlanningWorkspace() {
     return selectedDates.sort((a, b) => a.getTime() - b.getTime());
   }, [daySelectionMode, dateRange, selectedDates]);
 
+  // ==================== RESOURCE AVAILABILITY (FERIE, MALATTIA) ====================
+  interface ResourceAvailabilityPeriod {
+    id: string;
+    type: string;
+    label: string;
+    startDate: string;
+    endDate: string;
+    isFullDay: boolean;
+    reason: string | null;
+  }
+  
+  interface ResourceAvailabilitySummary {
+    userId: string;
+    totalBlocks: number;
+    periods: ResourceAvailabilityPeriod[];
+  }
+  
+  const periodStartStr = periodDays.length > 0 ? format(periodDays[0], 'yyyy-MM-dd') : null;
+  const periodEndStr = periodDays.length > 0 ? format(periodDays[periodDays.length - 1], 'yyyy-MM-dd') : null;
+  
+  const { data: availabilityData } = useQuery<{
+    success: boolean;
+    availability: ResourceAvailabilitySummary[];
+    totalResourcesWithBlocks: number;
+  }>({
+    queryKey: ['/api/hr/resources/availability', { startDate: periodStartStr, endDate: periodEndStr }],
+    enabled: !!periodStartStr && !!periodEndStr,
+  });
+
+  // Create a map for quick lookup of resource availability blocks
+  const resourceAvailabilityMap = useMemo(() => {
+    const map = new Map<string, ResourceAvailabilitySummary>();
+    if (availabilityData?.availability) {
+      availabilityData.availability.forEach(item => {
+        map.set(item.userId, item);
+      });
+    }
+    return map;
+  }, [availabilityData]);
+
+  // Check if a resource has blocking availability for a specific date
+  const hasBlockingAvailability = useCallback((resourceId: string, dateStr: string): ResourceAvailabilityPeriod | null => {
+    const availability = resourceAvailabilityMap.get(resourceId);
+    if (!availability) return null;
+    
+    return availability.periods.find(period => {
+      const date = new Date(dateStr);
+      const start = new Date(period.startDate);
+      const end = new Date(period.endDate);
+      return date >= start && date <= end;
+    }) || null;
+  }, [resourceAvailabilityMap]);
+
+  // Get overall availability status for a resource in the period
+  const getResourceAvailabilityStatus = useCallback((resourceId: string): { hasBlocks: boolean; periods: ResourceAvailabilityPeriod[] } => {
+    const availability = resourceAvailabilityMap.get(resourceId);
+    return {
+      hasBlocks: !!availability && availability.totalBlocks > 0,
+      periods: availability?.periods || []
+    };
+  }, [resourceAvailabilityMap]);
+
   const resourceCalendarDays = useMemo(() => {
     const monthStart = startOfMonth(resourceCalendarMonth);
     const monthEnd = endOfMonth(resourceCalendarMonth);
@@ -453,11 +515,21 @@ export default function ShiftPlanningWorkspace() {
     
     let assignedCount = 0;
     let conflictCount = 0;
+    let availabilityBlockCount = 0;
     const conflictsFound: ConflictInfo[] = [];
+    const availabilityBlocksFound: Array<{ day: string; label: string }> = [];
     const resourceName = `${selectedResource.firstName || ''} ${selectedResource.lastName || ''}`.trim() || selectedResource.email;
     
     daysToAssign.forEach(day => {
       const dayStr = format(day, 'yyyy-MM-dd');
+      
+      // ✅ Check for blocking availability (ferie, malattia, permessi)
+      const blockingPeriod = hasBlockingAvailability(selectedResource.id, dayStr);
+      if (blockingPeriod) {
+        availabilityBlockCount++;
+        availabilityBlocksFound.push({ day: dayStr, label: blockingPeriod.label });
+        return; // Skip this day - resource is blocked
+      }
       
       template.slots.forEach(slot => {
         const alreadyAssigned = resourceAssignments.some(
@@ -488,6 +560,16 @@ export default function ShiftPlanningWorkspace() {
         }
       });
     });
+    
+    // Show availability block warning with details
+    if (availabilityBlockCount > 0) {
+      const firstBlock = availabilityBlocksFound[0];
+      toast({ 
+        title: "Giorni bloccati esclusi", 
+        description: `${availabilityBlockCount} ${availabilityBlockCount === 1 ? 'giorno escluso' : 'giorni esclusi'} per ${firstBlock.label}. Risorsa non disponibile in quelle date.`,
+        variant: "destructive"
+      });
+    }
     
     if (conflictCount > 0) {
       toast({ 
@@ -1385,6 +1467,7 @@ export default function ShiftPlanningWorkspace() {
                       <div className="space-y-1">
                         {suggestedResources.map(resource => {
                           const isSelected = selectedResourceId === resource.id;
+                          const availabilityStatus = getResourceAvailabilityStatus(resource.id);
                           
                           return (
                             <div
@@ -1394,7 +1477,9 @@ export default function ShiftPlanningWorkspace() {
                                 "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
                                 isSelected 
                                   ? "bg-primary/10 ring-1 ring-primary" 
-                                  : "hover:bg-amber-50 bg-amber-50/50"
+                                  : availabilityStatus.hasBlocks 
+                                    ? "hover:bg-red-50/80 bg-red-50/50 border border-red-200"
+                                    : "hover:bg-amber-50 bg-amber-50/50"
                               )}
                               data-testid={`suggested-resource-${resource.id}`}
                             >
@@ -1406,9 +1491,10 @@ export default function ShiftPlanningWorkspace() {
                                 </Avatar>
                                 <div className={cn(
                                   "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white",
-                                  resource.status === 'available' && "bg-green-500",
-                                  resource.status === 'busy' && "bg-amber-500",
-                                  resource.status === 'overtime' && "bg-red-500"
+                                  availabilityStatus.hasBlocks ? "bg-red-500" :
+                                  resource.status === 'available' ? "bg-green-500" :
+                                  resource.status === 'busy' ? "bg-amber-500" :
+                                  resource.status === 'overtime' ? "bg-red-500" : "bg-gray-400"
                                 )} />
                               </div>
                               
@@ -1416,16 +1502,27 @@ export default function ShiftPlanningWorkspace() {
                                 <p className="text-xs font-medium truncate">
                                   {resource.firstName} {resource.lastName}
                                 </p>
-                                <p className="text-[10px] text-muted-foreground truncate">
-                                  {resource.availableHours}h disp. • {resource.hoursAssigned}h ass.
-                                </p>
+                                {availabilityStatus.hasBlocks ? (
+                                  <p className="text-[10px] text-red-600 font-medium truncate flex items-center gap-1">
+                                    <AlertOctagon className="w-3 h-3" />
+                                    {availabilityStatus.periods[0]?.label}
+                                  </p>
+                                ) : (
+                                  <p className="text-[10px] text-muted-foreground truncate">
+                                    {resource.availableHours}h disp. • {resource.hoursAssigned}h ass.
+                                  </p>
+                                )}
                               </div>
                               
-                              {resource.assignmentsCount > 0 && (
+                              {availabilityStatus.hasBlocks ? (
+                                <Badge variant="destructive" className="h-5 text-[10px] px-1.5">
+                                  Blocco
+                                </Badge>
+                              ) : resource.assignmentsCount > 0 ? (
                                 <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
                                   {resource.assignmentsCount}
                                 </Badge>
-                              )}
+                              ) : null}
                             </div>
                           );
                         })}
@@ -1450,6 +1547,7 @@ export default function ShiftPlanningWorkspace() {
                             const assignmentsCount = resourceAssignments.filter(
                               ra => ra.resourceId === resource.id
                             ).length;
+                            const availabilityStatus = getResourceAvailabilityStatus(resource.id);
                             
                             return (
                               <div
@@ -1459,30 +1557,48 @@ export default function ShiftPlanningWorkspace() {
                                   "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
                                   isSelected 
                                     ? "bg-primary/10 ring-1 ring-primary" 
-                                    : "hover:bg-gray-50"
+                                    : availabilityStatus.hasBlocks 
+                                      ? "hover:bg-red-50/80 bg-red-50/50 border border-red-200"
+                                      : "hover:bg-gray-50"
                                 )}
                                 data-testid={`resource-${resource.id}`}
                               >
-                                <Avatar className={cn("h-8 w-8", getAvatarColor(resource.id))}>
-                                  <AvatarFallback className="text-white text-xs font-semibold">
-                                    {getInitials(resource.firstName, resource.lastName, resource.email)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <div className="relative">
+                                  <Avatar className={cn("h-8 w-8", getAvatarColor(resource.id))}>
+                                    <AvatarFallback className="text-white text-xs font-semibold">
+                                      {getInitials(resource.firstName, resource.lastName, resource.email)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {availabilityStatus.hasBlocks && (
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white bg-red-500" />
+                                  )}
+                                </div>
                                 
                                 <div className="flex-1 min-w-0">
                                   <p className="text-xs font-medium truncate">
                                     {resource.firstName} {resource.lastName}
                                   </p>
-                                  <p className="text-[10px] text-muted-foreground truncate">
-                                    {resource.role || 'Staff'}
-                                  </p>
+                                  {availabilityStatus.hasBlocks ? (
+                                    <p className="text-[10px] text-red-600 font-medium truncate flex items-center gap-1">
+                                      <AlertOctagon className="w-3 h-3" />
+                                      {availabilityStatus.periods[0]?.label}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[10px] text-muted-foreground truncate">
+                                      {resource.role || 'Staff'}
+                                    </p>
+                                  )}
                                 </div>
                                 
-                                {assignmentsCount > 0 && (
+                                {availabilityStatus.hasBlocks ? (
+                                  <Badge variant="destructive" className="h-5 text-[10px] px-1.5">
+                                    Blocco
+                                  </Badge>
+                                ) : assignmentsCount > 0 ? (
                                   <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
                                     {assignmentsCount}
                                   </Badge>
-                                )}
+                                ) : null}
                               </div>
                             );
                           })}
