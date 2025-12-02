@@ -29,7 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 // Icons
 import {
-  Users, Plus, Settings, Calendar, FileText, BarChart3, 
+  Users, User, Plus, Settings, Calendar, FileText, BarChart3, 
   Building, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp,
   Filter, Search, Download, Upload, Eye, MoreHorizontal,
   PieChart, Activity, Target, Brain, Zap, ArrowRight,
@@ -1953,6 +1953,7 @@ const HRManagementPage: React.FC = () => {
       return anomalies.anomalies.filter((a: any) => {
         if (filters.severity !== 'all' && a.severity !== filters.severity) return false;
         if (filters.status !== 'all' && a.resolutionStatus !== filters.status) return false;
+        if (filters.userId && a.userId !== filters.userId) return false;
         return true;
       });
     }, [anomalies, filters]);
@@ -1998,6 +1999,27 @@ const HRManagementPage: React.FC = () => {
                     <SelectItem value="all">Tutti i negozi</SelectItem>
                     {stores.map((store: any) => (
                       <SelectItem key={store.id} value={store.id}>{store.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* User Filter */}
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-slate-500" />
+                <Select 
+                  value={filters.userId || 'all'} 
+                  onValueChange={(val) => setFilters(f => ({ ...f, userId: val === 'all' ? '' : val }))}
+                >
+                  <SelectTrigger className="w-[200px] bg-white" data-testid="select-attendance-user">
+                    <SelectValue placeholder="Tutti i dipendenti" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i dipendenti</SelectItem>
+                    {employees.map((emp: any) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
