@@ -1813,7 +1813,7 @@ router.post('/attendance/detect-no-shows', requirePermission('hr.timbrature.mana
     
     // Calculate date range for the month
     const startDate = new Date(targetYear, targetMonth - 1, 1);
-    const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59); // Last day of month
+    const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
     const now = new Date();
     
     // Only scan past dates (before today)
@@ -1821,75 +1821,73 @@ router.post('/attendance/detect-no-shows', requirePermission('hr.timbrature.mana
     
     console.log(`[HR] Scanning no-shows from ${startDate.toISOString()} to ${effectiveEndDate.toISOString()}`);
     
-    // Find all confirmed shift assignments within the date range that have no attendance
-    let assignmentsQuery = db.select({
-      assignmentId: shiftAssignments.id,
-      userId: shiftAssignments.userId,
-      shiftId: shiftAssignments.shiftId,
-      shift: {
-        id: shifts.id,
-        name: shifts.name,
-        storeId: shifts.storeId,
-        date: shifts.date,
-        startTime: shifts.startTime,
-        endTime: shifts.endTime
-      }
-    })
-      .from(shiftAssignments)
-      .innerJoin(shifts, eq(shiftAssignments.shiftId, shifts.id))
-      .where(and(
-        eq(shiftAssignments.tenantId, tenantId),
-        inArray(shiftAssignments.status, ['assigned', 'confirmed']),
-        gte(shifts.startTime, startDate),
-        lte(shifts.startTime, effectiveEndDate),
-        ...(storeId ? [eq(shifts.storeId, storeId)] : [])
-      ));
+    // Use raw SQL to handle the type casting properly
+    const assignmentsQuery = sql`
+      SELECT 
+        sa.id as assignment_id,
+        sa.user_id,
+        sa.shift_id,
+        s.id as shift_uuid,
+        s.name as shift_name,
+        s.store_id,
+        s.date as shift_date,
+        s.start_time,
+        s.end_time
+      FROM w3suite.shift_assignments sa
+      JOIN w3suite.shifts s ON sa.shift_id::text = s.id::text
+      WHERE sa.tenant_id = ${tenantId}
+        AND sa.status IN ('assigned', 'confirmed')
+        AND s.start_time >= ${startDate}
+        AND s.start_time <= ${effectiveEndDate}
+        ${storeId ? sql`AND s.store_id = ${storeId}::uuid` : sql``}
+      ORDER BY s.start_time
+    `;
     
-    const assignmentsResult = await assignmentsQuery;
-    console.log(`[HR] Found ${assignmentsResult.length} shift assignments in date range`);
+    const assignmentsResult = await db.execute(assignmentsQuery);
+    const assignments = assignmentsResult.rows || [];
+    console.log(`[HR] Found ${assignments.length} shift assignments in date range`);
     
     let anomaliesCreated = 0;
     let alreadyExists = 0;
     
-    for (const assignment of assignmentsResult) {
+    for (const assignment of assignments) {
       // Check if attendance exists for this assignment
-      const existingAttendance = await db.select({ id: shiftAttendance.id })
-        .from(shiftAttendance)
-        .where(and(
-          eq(shiftAttendance.tenantId, tenantId),
-          eq(shiftAttendance.userId, assignment.userId),
-          eq(shiftAttendance.shiftId, assignment.shiftId)
-        ))
-        .limit(1);
+      const checkAttendance = await db.execute(sql`
+        SELECT id FROM w3suite.shift_attendance 
+        WHERE tenant_id = ${tenantId}::uuid 
+          AND assignment_id = ${assignment.assignment_id}
+        LIMIT 1
+      `);
       
-      if (existingAttendance.length === 0) {
-        // No attendance record - check if anomaly already exists
-        const existingAnomaly = await db.select({ id: attendanceAnomalies.id })
-          .from(attendanceAnomalies)
-          .where(and(
-            eq(attendanceAnomalies.tenantId, tenantId),
-            eq(attendanceAnomalies.userId, assignment.userId),
-            eq(attendanceAnomalies.shiftId, assignment.shiftId),
-            eq(attendanceAnomalies.anomalyType, 'no_clock_in')
-          ))
-          .limit(1);
+      if ((checkAttendance.rows || []).length === 0) {
+        // No attendance - check if anomaly already exists
+        const checkAnomaly = await db.execute(sql`
+          SELECT id FROM w3suite.attendance_anomalies 
+          WHERE tenant_id = ${tenantId}::uuid 
+            AND user_id = ${assignment.user_id}
+            AND shift_id = ${assignment.shift_uuid}::uuid
+            AND anomaly_type = 'no_clock_in'
+          LIMIT 1
+        `);
         
-        if (existingAnomaly.length === 0) {
+        if ((checkAnomaly.rows || []).length === 0) {
           // Create no-show anomaly
-          await db.insert(attendanceAnomalies).values({
-            id: crypto.randomUUID(),
-            tenantId,
-            userId: assignment.userId,
-            storeId: assignment.shift.storeId,
-            shiftId: assignment.shiftId,
-            anomalyType: 'no_clock_in',
-            severity: 'high',
-            description: `Turno "${assignment.shift.name}" del ${new Date(assignment.shift.startTime).toLocaleDateString('it-IT')} senza timbratura di ingresso`,
-            expectedValue: new Date(assignment.shift.startTime).toISOString(),
-            actualValue: 'Nessuna timbratura',
-            detectedAt: new Date(),
-            resolutionStatus: 'pending'
-          });
+          const anomalyId = crypto.randomUUID();
+          const shiftStartTime = new Date(assignment.start_time);
+          const expectedText = `Turno "${assignment.shift_name}" - Ingresso ore ${shiftStartTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+          const actualText = `Assenza ingiustificata - ${shiftStartTime.toLocaleDateString('it-IT')}`;
+          
+          await db.execute(sql`
+            INSERT INTO w3suite.attendance_anomalies (
+              id, tenant_id, user_id, store_id, shift_id, 
+              anomaly_type, severity, expected_value, actual_value,
+              detected_at, detection_method, resolution_status, notified_supervisor
+            ) VALUES (
+              ${anomalyId}::uuid, ${tenantId}::uuid, ${assignment.user_id}, ${assignment.store_id}::uuid, ${assignment.shift_uuid}::uuid,
+              'no_clock_in', 'high', ${expectedText}, ${actualText},
+              NOW(), 'automatic', 'pending', false
+            )
+          `);
           anomaliesCreated++;
         } else {
           alreadyExists++;
@@ -1903,7 +1901,7 @@ router.post('/attendance/detect-no-shows', requirePermission('hr.timbrature.mana
       success: true,
       month: targetMonth,
       year: targetYear,
-      assignmentsScanned: assignmentsResult.length,
+      assignmentsScanned: assignments.length,
       anomaliesCreated,
       alreadyExisted: alreadyExists,
       message: `Rilevate ${anomaliesCreated} nuove assenze ingiustificate per ${targetMonth}/${targetYear}`
