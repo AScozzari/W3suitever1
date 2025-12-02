@@ -37,7 +37,7 @@ import {
   Coffee, Home, Plane, Car, DollarSign, AlertTriangle, Heart, UserCog,
   RefreshCw, Gavel, FileX, HelpCircle, Loader2, Store, ChevronDown
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 
 // ==================== TYPES ====================
@@ -2567,6 +2567,7 @@ const HRManagementPage: React.FC = () => {
     };
 
     return (
+      <TooltipProvider>
       <div className="space-y-6">
         {/* Enhanced Filters Row */}
         <Card className="bg-white border shadow-sm">
@@ -3038,6 +3039,7 @@ const HRManagementPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      </TooltipProvider>
     );
   };
 
