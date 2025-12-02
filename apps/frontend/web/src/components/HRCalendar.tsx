@@ -34,6 +34,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { useShiftPlanningStore, type ResourceAssignment, type CoverageSlot } from '@/stores/shiftPlanningStore';
 import { formatShiftTime, formatTimeRange, getShiftStatusColor, getShiftStatusLabel } from '@/utils/formatters';
+import StoreCoverageView from '@/components/HR/StoreCoverageView';
 
 // Schema per eventi turno
 const shiftEventSchema = z.object({
@@ -1255,125 +1256,41 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: Vista Store Timeline (Gantt-style) */}
+            {/* TAB 1: Vista Store Timeline (Enhanced StoreCoverageView) */}
             <TabsContent value="store" className="flex-1 overflow-auto mt-4">
-              <div className="space-y-4">
-                {/* Store Filter */}
-                <div className="bg-gray-50 rounded-lg p-3 space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <Filter className="w-4 h-4" />
-                    Seleziona Punto Vendita
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {dayStoresForFilter.map((store: any) => (
-                      <Button
-                        key={store.id}
-                        size="sm"
-                        variant={selectedStoreFilters.includes(store.id) || selectedStoreFilters.length === 0 ? "default" : "outline"}
-                        className="h-7 text-xs"
-                        onClick={() => setSelectedStoreFilters([store.id])}
-                        data-testid={`btn-store-select-${store.id}`}
-                      >
-                        <StoreIcon className="w-3 h-3 mr-1" />
-                        {store.name}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Timeline Fasce Orarie */}
-                <div className="bg-white border rounded-lg p-4">
-                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-orange-500" />
-                    Fasce Orarie e Copertura
-                  </h4>
-                  
-                  {dayDetailResources.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
-                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>Nessun turno pianificato per questo giorno</p>
-                      <p className="text-sm mt-2">Vai a "Pianificazione Turni" per assegnare risorse</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {/* Raggruppa per fascia oraria */}
-                      {(() => {
-                        const timeBands = new Map<string, any[]>();
-                        dayDetailResources.forEach((resource: any) => {
-                          const formattedBandKey = formatTimeRange(resource.startTime, resource.endTime);
-                          if (!timeBands.has(formattedBandKey)) {
-                            timeBands.set(formattedBandKey, []);
-                          }
-                          timeBands.get(formattedBandKey)!.push(resource);
-                        });
-                        
-                        return Array.from(timeBands.entries()).map(([formattedBandKey, resources]) => {
-                          // Check if any resource in this band has version info
-                          const hasVersionInfo = resources.some((r: any) => r.versionNumber);
-                          const isPastShift = resources.some((r: any) => r.status === 'past');
-                          
-                          return (
-                            <div key={formattedBandKey} className="border rounded-lg p-3 bg-slate-50/50">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4 text-blue-500" />
-                                  <span className="font-semibold text-slate-800">{formattedBandKey}</span>
-                                  {/* Show version badge for historical shifts */}
-                                  {isPastShift && hasVersionInfo && (
-                                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300 text-[10px] h-5">
-                                      v{resources[0].versionNumber}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {/* Status badge for past/present/future */}
-                                  {resources[0]?.status === 'past' && (
-                                    <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 text-[10px] h-5">
-                                      Passato
-                                    </Badge>
-                                  )}
-                                  {resources[0]?.status === 'present' && (
-                                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-[10px] h-5">
-                                      In Corso
-                                    </Badge>
-                                  )}
-                                  {resources[0]?.status === 'future' && (
-                                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 text-[10px] h-5">
-                                      Futuro
-                                    </Badge>
-                                  )}
-                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                    {resources.length} risorsa/e
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {resources.map((resource: any) => (
-                                  <Button
-                                    key={resource.id}
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 text-xs border-blue-200 hover:bg-blue-50"
-                                    onClick={() => {
-                                      setSelectedResourceForContext(resource.employeeId);
-                                      setDayModalView('resource');
-                                      setSelectedResourceFilters([resource.employeeId]);
-                                    }}
-                                    data-testid={`btn-resource-timeline-${resource.id}`}
-                                  >
-                                    <Users className="w-3 h-3 mr-1 text-blue-600" />
-                                    {resource.employeeName}
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <StoreCoverageView
+                selectedDate={selectedDayDate || new Date()}
+                resources={dayDetailResources.map((r: any) => ({
+                  id: r.id,
+                  employeeId: r.employeeId,
+                  employeeName: r.employeeName,
+                  startTime: r.startTime,
+                  endTime: r.endTime,
+                  status: r.status,
+                  storeName: r.storeName,
+                  storeId: r.storeId,
+                  title: r.title,
+                  versionNumber: r.versionNumber,
+                  templateVersion: r.templateVersion ? {
+                    versionNumber: r.templateVersion.versionNumber || r.versionNumber,
+                    name: r.templateVersion.name || r.title,
+                    timeSlotsSnapshot: r.timeSlotsSnapshot || r.templateVersion.timeSlotsSnapshot,
+                  } : undefined,
+                }))}
+                stores={dayStoresForFilter.map((s: any) => ({
+                  id: s.id,
+                  name: s.name,
+                  openingTime: s.openingTime || '09:00',
+                  closingTime: s.closingTime || '20:00',
+                }))}
+                selectedStoreId={selectedStoreFilters.length > 0 ? selectedStoreFilters[0] : null}
+                onStoreSelect={(storeId) => setSelectedStoreFilters([storeId])}
+                onResourceClick={(resource) => {
+                  setSelectedResourceForContext(resource.employeeId);
+                  setDayModalView('resource');
+                  setSelectedResourceFilters([resource.employeeId]);
+                }}
+              />
             </TabsContent>
 
             {/* TAB 2: Vista Dettaglio Risorse (lista esistente) */}
