@@ -1310,7 +1310,7 @@ export class HRStorage implements IHRStorage {
           gte(shifts.date, todayStr),
           or(
             eq(shifts.status, 'draft'),
-            eq(shifts.status, 'scheduled'),
+            eq(shifts.status, 'published'),
             eq(shifts.status, 'in_progress')
           )
         ));
