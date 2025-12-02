@@ -232,7 +232,7 @@ export default function ShiftTemplateEditDialog({ isOpen, onClose, templateId }:
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="h-[65vh] max-h-[65vh] pr-4 overflow-y-auto">
             <div className="space-y-6">
               <Card>
                 <CardHeader className="pb-3">
