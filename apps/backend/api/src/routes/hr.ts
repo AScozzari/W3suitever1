@@ -1650,6 +1650,82 @@ router.post('/attendance/clock-in', requirePermission('hr.timbrature.manage'), a
   }
 });
 
+// GET /api/hr/time-tracking/entries - Get time tracking entries (timbrature)
+router.get('/time-tracking/entries', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, userId, month, year, status } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Build date range filter for month/year
+    const targetMonth = month ? parseInt(month as string) : new Date().getMonth() + 1;
+    const targetYear = year ? parseInt(year as string) : new Date().getFullYear();
+    const startDate = new Date(targetYear, targetMonth - 1, 1);
+    const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+
+    // Build dynamic filters
+    let storeFilter = sql``;
+    if (storeId && storeId !== 'all' && storeId !== '') {
+      storeFilter = sql`AND tt.store_id = ${storeId}::uuid`;
+    }
+    
+    let userFilter = sql``;
+    if (userId && userId !== '' && userId !== 'all') {
+      userFilter = sql`AND tt.user_id = ${userId}`;
+    }
+    
+    let statusFilter = sql``;
+    if (status && status !== 'all') {
+      statusFilter = sql`AND tt.status = ${status}`;
+    }
+
+    const entriesQuery = sql`
+      SELECT 
+        tt.id,
+        tt.tenant_id as "tenantId",
+        tt.user_id as "userId",
+        tt.store_id as "storeId",
+        tt.shift_id as "shiftId",
+        tt.clock_in as "clockIn",
+        tt.clock_out as "clockOut",
+        tt.tracking_method as "trackingMethod",
+        tt.status,
+        tt.total_minutes as "totalMinutes",
+        tt.break_minutes as "breakMinutes",
+        tt.overtime_minutes as "overtimeMinutes",
+        tt.notes,
+        tt.edit_reason as "editReason",
+        tt.approved_by as "approvedBy",
+        tt.approved_at as "approvedAt",
+        tt.created_at as "createdAt",
+        u.first_name as "userFirstName",
+        u.last_name as "userLastName",
+        s.nome as "storeName",
+        s.code as "storeCode"
+      FROM w3suite.time_tracking tt
+      LEFT JOIN w3suite.users u ON u.id = tt.user_id
+      LEFT JOIN w3suite.stores s ON s.id = tt.store_id
+      WHERE tt.tenant_id = ${tenantId}::uuid
+        AND tt.clock_in >= ${startDate}
+        AND tt.clock_in <= ${endDate}
+        ${storeFilter}
+        ${userFilter}
+        ${statusFilter}
+      ORDER BY tt.clock_in DESC
+    `;
+
+    const entries = await db.execute(entriesQuery);
+    
+    res.json(entries.rows || []);
+  } catch (error) {
+    console.error('Error fetching time tracking entries:', error);
+    res.status(500).json({ error: 'Failed to fetch time tracking entries' });
+  }
+});
+
 // GET /api/hr/attendance/anomalies - Get attendance anomalies with filters
 router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
   try {
