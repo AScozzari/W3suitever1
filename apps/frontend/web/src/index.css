@@ -675,3 +675,28 @@ button:focus-visible,
     transform: translateY(0);
   }
 }
+
+/* Time Input Picker Enhancement */
+input[type="time"] {
+  position: relative;
+  cursor: pointer;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 4px;
+  margin-right: -4px;
+  border-radius: 4px;
+  background-color: transparent;
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: hsl(var(--accent));
+}
+
+input[type="time"]:focus::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
