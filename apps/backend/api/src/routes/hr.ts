@@ -2782,11 +2782,43 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
     
     console.log('[PLANNING-API] Found assignments:', assignmentsData.length);
 
-    // Get unique template IDs
+    // Get unique template IDs and version IDs
     const templateIds = [...new Set(shiftsData.map(s => s.templateId).filter(Boolean))];
+    const templateVersionIds = [...new Set(shiftsData.map(s => s.templateVersionId).filter(Boolean))];
+    
+    console.log('[PLANNING-API] Template IDs:', templateIds);
+    console.log('[PLANNING-API] Template Version IDs:', templateVersionIds);
     
     // Get template info with time slots
     let templatesData: any[] = [];
+    let templateVersionsMap: Record<string, any> = {};
+    
+    // CRITICAL FIX: Fetch template versions with timeSlotsSnapshot for historical data
+    if (templateVersionIds.length > 0) {
+      const versions = await db.select({
+        id: shiftTemplateVersions.id,
+        templateId: shiftTemplateVersions.templateId,
+        versionNumber: shiftTemplateVersions.versionNumber,
+        name: shiftTemplateVersions.name,
+        timeSlotsSnapshot: shiftTemplateVersions.timeSlotsSnapshot,
+        effectiveFrom: shiftTemplateVersions.effectiveFrom,
+        effectiveUntil: shiftTemplateVersions.effectiveUntil
+      })
+        .from(shiftTemplateVersions)
+        .where(and(
+          eq(shiftTemplateVersions.tenantId, tenantId),
+          inArray(shiftTemplateVersions.id, templateVersionIds as string[])
+        ));
+      
+      // Build a map of version ID -> version data with timeSlotsSnapshot
+      versions.forEach(v => {
+        templateVersionsMap[v.id] = v;
+      });
+      
+      console.log('[PLANNING-API] Fetched template versions:', versions.length);
+      console.log('[PLANNING-API] Version map keys:', Object.keys(templateVersionsMap));
+    }
+    
     if (templateIds.length > 0) {
       const templates = await db.select()
         .from(shiftTemplates)
@@ -2795,7 +2827,7 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
           inArray(shiftTemplates.id, templateIds as string[])
         ));
       
-      // Get time slots for all templates
+      // Get CURRENT time slots for all templates (used only for future shifts)
       const timeSlots = await db.select()
         .from(shiftTimeSlots)
         .where(and(
@@ -2819,18 +2851,47 @@ router.get('/shifts/planning', requirePermission('hr.shifts.read'), async (req: 
           }))
       }));
       
-      console.log('[PLANNING-API] Templates with time slots:', templatesData.map(t => ({ 
+      console.log('[PLANNING-API] Templates with current time slots:', templatesData.map(t => ({ 
         id: t.id, 
         name: t.name, 
         slotsCount: t.timeSlots?.length || 0 
       })));
     }
 
+    // CRITICAL FIX: Enrich shifts with versioned time slots for historical data
+    // For shifts with templateVersionId, use timeSlotsSnapshot (historical)
+    // For shifts without version (future/draft), use current template slots
+    const enrichedShifts = shiftsData.map(shift => {
+      const versionId = shift.templateVersionId;
+      const version = versionId ? templateVersionsMap[versionId] : null;
+      
+      if (version && version.timeSlotsSnapshot) {
+        // Use historical time slots from version snapshot
+        console.log(`[PLANNING-API] Shift ${shift.id} (${shift.date}): Using versioned time slots from version ${version.versionNumber}`);
+        return {
+          ...shift,
+          versionedTimeSlots: version.timeSlotsSnapshot,
+          templateVersionNumber: version.versionNumber,
+          usingVersionedData: true
+        };
+      } else {
+        // No version data - use current template (for future/draft shifts)
+        console.log(`[PLANNING-API] Shift ${shift.id} (${shift.date}): No version data, using current template`);
+        return {
+          ...shift,
+          versionedTimeSlots: null,
+          templateVersionNumber: null,
+          usingVersionedData: false
+        };
+      }
+    });
+
     res.json({
       exists: true,
-      shifts: shiftsData,
+      shifts: enrichedShifts,
       assignments: assignmentsData,
-      templates: templatesData
+      templates: templatesData,
+      templateVersions: templateVersionsMap
     });
   } catch (error) {
     console.error('Error fetching shift planning:', error);
