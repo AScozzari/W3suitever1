@@ -2119,7 +2119,7 @@ router.get('/coverage/monthly', requirePermission('hr.shifts.read'), async (req:
     const storeFilter = (storeId && storeId !== 'all') ? `AND s.store_id = '${storeId}'` : '';
     
     // Query all shifts for the month with assignment counts
-    const shiftsData = await db.execute(sql`
+    const shiftsResult = await db.execute(sql`
       SELECT 
         s.id,
         s.store_id as "storeId",
@@ -2143,6 +2143,9 @@ router.get('/coverage/monthly', requirePermission('hr.shifts.read'), async (req:
       GROUP BY s.id, s.store_id, st.nome, s.name, s.start_time, s.end_time, s.required_staff, s.status
       ORDER BY s.start_time
     `);
+    
+    // Extract rows from db.execute result
+    const shiftsData = (shiftsResult as any).rows || shiftsResult || [];
 
     // Build day×hour heatmap matrix (days × 24 hours)
     const heatmapMatrix: { day: number; hour: number; coverage: number; shifts: number; details: any[] }[][] = [];
