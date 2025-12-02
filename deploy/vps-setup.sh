@@ -99,29 +99,43 @@ pm2 startup systemd -u $APP_USER --hp /home/$APP_USER
 log_success "PM2 installed and configured for startup"
 
 # =============================================================================
-# Step 5: Install PostgreSQL 16
+# Step 5: Install PostgreSQL 16 + pgvector (AI/RAG)
 # =============================================================================
-log_info "Step 5/10: Installing PostgreSQL $POSTGRES_VERSION..."
+log_info "Step 5/10: Installing PostgreSQL $POSTGRES_VERSION with pgvector..."
 sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
 apt-get update -y
 apt-get install -y postgresql-$POSTGRES_VERSION postgresql-contrib-$POSTGRES_VERSION
 
+# Install pgvector extension for AI embeddings/RAG
+apt-get install -y postgresql-$POSTGRES_VERSION-pgvector
+
 # Start and enable PostgreSQL
 systemctl start postgresql
 systemctl enable postgresql
 
-# Create database and user
+# Create database and user with all required extensions
 sudo -u postgres psql <<EOF
 CREATE USER $POSTGRES_USER WITH PASSWORD '$POSTGRES_PASSWORD';
 CREATE DATABASE $POSTGRES_DB OWNER $POSTGRES_USER;
 GRANT ALL PRIVILEGES ON DATABASE $POSTGRES_DB TO $POSTGRES_USER;
 \c $POSTGRES_DB
+
+-- Core extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Vector extension for AI embeddings (RAG system)
+CREATE EXTENSION IF NOT EXISTS "vector";
+
+-- Grant vector extension privileges
+GRANT USAGE ON SCHEMA public TO $POSTGRES_USER;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO $POSTGRES_USER;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO $POSTGRES_USER;
 EOF
 
-log_success "PostgreSQL $POSTGRES_VERSION installed and database created"
+log_success "PostgreSQL $POSTGRES_VERSION with pgvector installed"
+log_info "  └─ Extensions: uuid-ossp, pgcrypto, vector (AI/RAG)"
 
 # =============================================================================
 # Step 6: Install Redis 7
