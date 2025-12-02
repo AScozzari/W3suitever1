@@ -1363,15 +1363,17 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
                               >
                                 {resource.employeeName}
                               </button>
-                              <Badge variant={
-                                resource.status === 'past' ? 'secondary' :
-                                resource.status === 'present' ? 'default' :
-                                'outline'
-                              } data-testid={`badge-status-${resource.status}`}>
-                                {resource.status === 'past' ? 'Passato' :
-                                 resource.status === 'present' ? 'In Corso' :
-                                 'Futuro'}
-                              </Badge>
+                              {(() => {
+                                const statusColors = getShiftStatusColor(resource.status);
+                                return (
+                                  <Badge 
+                                    className={cn(statusColors.bg, statusColors.text, 'border', statusColors.border)}
+                                    data-testid={`badge-status-${resource.status}`}
+                                  >
+                                    {getShiftStatusLabel(resource.status)}
+                                  </Badge>
+                                );
+                              })()}
                             </div>
                             <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
                               <div className="flex items-center space-x-2">
