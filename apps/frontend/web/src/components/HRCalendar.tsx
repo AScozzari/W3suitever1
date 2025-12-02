@@ -163,6 +163,8 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
 
   // ✅ Task 8: Query shift assignments - carica TUTTI i turni per mostrare pallini nel calendario globale
   // NON filtrare per storeId nel calendario principale - mostra tutti i negozi
+  // ENHANCED: Include template version data for historical accuracy
+  // NORMALIZED: Convert snake_case API response to camelCase for consistent frontend usage
   const { data: rawShiftAssignments = [], isLoading: assignmentsLoading } = useQuery({
     queryKey: ['/api/hr/shift-assignments', { startDate, endDate }], // Rimuovo storeId dalla key
     queryFn: async () => {
@@ -174,8 +176,65 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
       const url = `/api/hr/shift-assignments${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('[HRCalendar] Fetching ALL shift assignments:', url);
       const response = await apiRequest(url);
-      console.log('[HRCalendar] Received assignments:', response?.length, response);
-      return response;
+      // API returns { items: [...], total: ..., ... } - extract items array
+      const items = response?.items || response || [];
+      
+      // Normalize snake_case API response to camelCase for consistent frontend usage
+      const normalized = items.map((item: any) => ({
+        // Assignment fields (flatten from snake_case)
+        id: item.id,
+        shiftId: item.shift_id || item.shiftId,
+        userId: item.user_id || item.userId,
+        employeeId: item.user_id || item.userId || item.employeeId, // Alias for compatibility
+        tenantId: item.tenant_id || item.tenantId,
+        status: item.status,
+        assignedAt: item.assigned_at || item.assignedAt,
+        
+        // Nested shift data (already camelCase from json_build_object)
+        shiftDate: item.shift?.date,
+        startTime: item.shift?.startTime,
+        endTime: item.shift?.endTime,
+        shiftType: item.shift?.shiftType,
+        storeId: item.shift?.storeId,
+        shiftStatus: item.shift?.status,
+        templateId: item.shift?.templateId,
+        templateVersionId: item.shift?.templateVersionId,
+        
+        // Nested user data
+        employee: item.user ? {
+          id: item.user.id,
+          email: item.user.email,
+          firstName: item.user.firstName,
+          lastName: item.user.lastName,
+        } : null,
+        
+        // Nested store data
+        store: item.store ? {
+          id: item.store.id,
+          nome: item.store.name || item.store.nome,
+          name: item.store.name || item.store.nome,
+          code: item.store.code,
+        } : null,
+        
+        // Template version data for historical accuracy
+        templateVersion: item.template_version ? {
+          id: item.template_version.id,
+          templateId: item.template_version.templateId,
+          versionNumber: item.template_version.versionNumber,
+          name: item.template_version.name,
+          timeSlotsSnapshot: item.template_version.timeSlotsSnapshot || [],
+          effectiveFrom: item.template_version.effectiveFrom,
+          effectiveUntil: item.template_version.effectiveUntil,
+        } : null,
+        
+        // Preserve raw data for debugging
+        _raw: item,
+      }));
+      
+      console.log('[HRCalendar] Normalized assignments:', normalized?.length, 
+        'with templateVersion:', normalized?.[0]?.templateVersion ? 'yes' : 'no',
+        'sample:', normalized?.[0]);
+      return normalized;
     },
     enabled: hrQueryReadiness.enabled,
   });
@@ -651,22 +710,23 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
   }, [actionTarget, actionType, newAssigneeId, newStartTime, newEndTime, reassignShiftMutation, removeShiftMutation, changeTimeShiftMutation]);
 
   // ✅ FASE 4/5: Calcola risorse in turno per il giorno selezionato DAI DATI BACKEND
+  // NORMALIZED: Data is already normalized in queryFn, using camelCase properties
   const dayDetailResources = useMemo(() => {
     if (!selectedDayDate) return [];
     
     const dayStr = selectedDayDate.toISOString().split('T')[0];
     const now = new Date();
     
-    // USA DATI BACKEND (shiftAssignments) come fonte primaria
+    // USA DATI BACKEND (shiftAssignments) come fonte primaria - già normalizzati
     const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
     
-    // Filtra assignment per il giorno corrente
+    // Filtra assignment per il giorno corrente (usa campo normalizzato shiftDate)
     let dayAssignments = assignmentsArray.filter((sa: any) => {
-      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      const shiftDate = sa.shiftDate?.split('T')[0];
       return shiftDate === dayStr;
     });
     
-    // FASE 4: Filtra per stores multi-select
+    // FASE 4: Filtra per stores multi-select (usa campo normalizzato storeId)
     if (selectedStoreFilters.length > 0) {
       dayAssignments = dayAssignments.filter((sa: any) => 
         sa.storeId && selectedStoreFilters.includes(sa.storeId)
@@ -677,16 +737,16 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
       );
     }
     
-    // FASE 4: Filtra per risorse multi-select
+    // FASE 4: Filtra per risorse multi-select (usa campo normalizzato employeeId)
     if (selectedResourceFilters.length > 0) {
       dayAssignments = dayAssignments.filter((sa: any) => 
         selectedResourceFilters.includes(sa.employeeId)
       );
     }
     
-    // Mappa a struttura risorsa con status
+    // Mappa a struttura risorsa con status usando dati normalizzati
     return dayAssignments.map((sa: any) => {
-      const shiftDate = new Date(sa.shiftDate || sa.date);
+      const shiftDate = new Date(sa.shiftDate);
       
       let status: 'past' | 'present' | 'future' = 'future';
       if (shiftDate < now) {
@@ -695,41 +755,70 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
         status = 'present';
       }
       
+      // Use normalized employee data
       const employeeName = sa.employee 
         ? `${sa.employee.firstName} ${sa.employee.lastName}` 
         : 'Risorsa';
       
+      // Extract time slots from template version (already normalized)
+      const templateVersion = sa.templateVersion;
+      const timeSlotsSnapshot = templateVersion?.timeSlotsSnapshot || [];
+      
+      // Use shift times (already normalized and flattened)
+      let shiftStartTime = sa.startTime;
+      let shiftEndTime = sa.endTime;
+      
+      // If times are ISO timestamps, extract just the time part
+      if (shiftStartTime && shiftStartTime.includes('T')) {
+        shiftStartTime = shiftStartTime.split('T')[1]?.substring(0, 5) || shiftStartTime;
+      }
+      if (shiftEndTime && shiftEndTime.includes('T')) {
+        shiftEndTime = shiftEndTime.split('T')[1]?.substring(0, 5) || shiftEndTime;
+      }
+      
+      // Fallback to first time slot from version snapshot if shift times not available
+      if (!shiftStartTime && timeSlotsSnapshot.length > 0) {
+        shiftStartTime = timeSlotsSnapshot[0]?.startTime?.substring(0, 5) || '09:00';
+      }
+      if (!shiftEndTime && timeSlotsSnapshot.length > 0) {
+        shiftEndTime = timeSlotsSnapshot[0]?.endTime?.substring(0, 5) || '18:00';
+      }
+      
       return {
         id: sa.id,
         employeeId: sa.employeeId,
-        title: sa.template?.name || 'Turno',
+        title: templateVersion?.name || 'Turno',
         employeeName,
-        storeName: sa.store?.nome || sa.store?.name || 'N/A',
+        storeName: sa.store?.name || sa.store?.nome || 'N/A',
         storeId: sa.storeId,
-        startTime: sa.startTime || '09:00',
-        endTime: sa.endTime || '18:00',
+        startTime: shiftStartTime || '09:00',
+        endTime: shiftEndTime || '18:00',
         status,
         type: 'shift',
         templateId: sa.templateId,
+        templateVersionId: sa.templateVersionId || templateVersion?.id,
+        versionNumber: templateVersion?.versionNumber,
+        timeSlotsSnapshot,
         hasConflict: sa.hasConflict,
       };
     });
   }, [selectedDayDate, shiftAssignments, dayDetailStoreFilter, selectedStoreFilters, selectedResourceFilters]);
 
   // FASE 4: Calcola statistiche copertura per ogni giorno DAI DATI BACKEND + conteggio per tipo evento
+  // NORMALIZED: Data is already normalized in queryFn, using camelCase properties
   const getDayCoverageInfo = useCallback((date: Date) => {
     const dayStr = date.toISOString().split('T')[0];
     
-    // USA DATI BACKEND (shiftAssignments) come fonte primaria
+    // USA DATI BACKEND (shiftAssignments) come fonte primaria - già normalizzati
     const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
     
-    // Filtra assignment per il giorno corrente
+    // Filtra assignment per il giorno corrente (usa campo normalizzato shiftDate)
     const dayAssignments = assignmentsArray.filter((sa: any) => {
-      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      const shiftDate = sa.shiftDate?.split('T')[0];
       return shiftDate === dayStr;
     });
     
-    // Trova le risorse uniche assegnate in questo giorno
+    // Trova le risorse uniche assegnate in questo giorno (usa campi normalizzati)
     const resourceIds = new Set(dayAssignments.map((sa: any) => sa.employeeId));
     const storeIds = new Set(dayAssignments.map((sa: any) => sa.storeId).filter(Boolean));
     
@@ -765,14 +854,16 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
   }, [shiftAssignments, backendEvents]);
   
   // FASE 4: Lista risorse uniche nel giorno per filtro DAI DATI BACKEND
+  // NORMALIZED: Data is already normalized in queryFn, using camelCase properties
   const dayResourcesForFilter = useMemo(() => {
     if (!selectedDayDate) return [];
     
     const dayStr = selectedDayDate.toISOString().split('T')[0];
     const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
     
+    // Filtra assignment per il giorno corrente (usa campo normalizzato shiftDate)
     const dayAssignments = assignmentsArray.filter((sa: any) => {
-      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      const shiftDate = sa.shiftDate?.split('T')[0];
       return shiftDate === dayStr;
     });
     
@@ -793,14 +884,16 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
   }, [selectedDayDate, shiftAssignments]);
 
   // FASE 4: Lista stores unici nel giorno per filtro DAI DATI BACKEND
+  // NORMALIZED: Data is already normalized in queryFn, using camelCase properties
   const dayStoresForFilter = useMemo(() => {
     if (!selectedDayDate) return [];
     
     const dayStr = selectedDayDate.toISOString().split('T')[0];
     const assignmentsArray = Array.isArray(shiftAssignments) ? shiftAssignments : [];
     
+    // Filtra assignment per il giorno corrente (usa campo normalizzato shiftDate)
     const dayAssignments = assignmentsArray.filter((sa: any) => {
-      const shiftDate = sa.shiftDate?.split('T')[0] || sa.date?.split('T')[0];
+      const shiftDate = sa.shiftDate?.split('T')[0];
       return shiftDate === dayStr;
     });
     
@@ -809,7 +902,7 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
       if (sa.storeId && !uniqueStores.has(sa.storeId)) {
         uniqueStores.set(sa.storeId, {
           id: sa.storeId,
-          name: sa.store?.nome || sa.store?.name || 'N/A',
+          name: sa.store?.name || sa.store?.nome || 'N/A',
         });
       }
     });
@@ -1206,38 +1299,68 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
                           timeBands.get(formattedBandKey)!.push(resource);
                         });
                         
-                        return Array.from(timeBands.entries()).map(([formattedBandKey, resources]) => (
-                          <div key={formattedBandKey} className="border rounded-lg p-3 bg-slate-50/50">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-blue-500" />
-                                <span className="font-semibold text-slate-800">{formattedBandKey}</span>
+                        return Array.from(timeBands.entries()).map(([formattedBandKey, resources]) => {
+                          // Check if any resource in this band has version info
+                          const hasVersionInfo = resources.some((r: any) => r.versionNumber);
+                          const isPastShift = resources.some((r: any) => r.status === 'past');
+                          
+                          return (
+                            <div key={formattedBandKey} className="border rounded-lg p-3 bg-slate-50/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-4 h-4 text-blue-500" />
+                                  <span className="font-semibold text-slate-800">{formattedBandKey}</span>
+                                  {/* Show version badge for historical shifts */}
+                                  {isPastShift && hasVersionInfo && (
+                                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300 text-[10px] h-5">
+                                      v{resources[0].versionNumber}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {/* Status badge for past/present/future */}
+                                  {resources[0]?.status === 'past' && (
+                                    <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 text-[10px] h-5">
+                                      Passato
+                                    </Badge>
+                                  )}
+                                  {resources[0]?.status === 'present' && (
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-[10px] h-5">
+                                      In Corso
+                                    </Badge>
+                                  )}
+                                  {resources[0]?.status === 'future' && (
+                                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 text-[10px] h-5">
+                                      Futuro
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    {resources.length} risorsa/e
+                                  </Badge>
+                                </div>
                               </div>
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                {resources.length} risorsa/e
-                              </Badge>
+                              <div className="flex flex-wrap gap-2">
+                                {resources.map((resource: any) => (
+                                  <Button
+                                    key={resource.id}
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 text-xs border-blue-200 hover:bg-blue-50"
+                                    onClick={() => {
+                                      setSelectedResourceForContext(resource.employeeId);
+                                      setDayModalView('resource');
+                                      setSelectedResourceFilters([resource.employeeId]);
+                                    }}
+                                    data-testid={`btn-resource-timeline-${resource.id}`}
+                                  >
+                                    <Users className="w-3 h-3 mr-1 text-blue-600" />
+                                    {resource.employeeName}
+                                  </Button>
+                                ))}
+                              </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {resources.map((resource: any) => (
-                                <Button
-                                  key={resource.id}
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 text-xs border-blue-200 hover:bg-blue-50"
-                                  onClick={() => {
-                                    setSelectedResourceForContext(resource.employeeId);
-                                    setDayModalView('resource');
-                                    setSelectedResourceFilters([resource.employeeId]);
-                                  }}
-                                  data-testid={`btn-resource-timeline-${resource.id}`}
-                                >
-                                  <Users className="w-3 h-3 mr-1 text-blue-600" />
-                                  {resource.employeeName}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        ));
+                          );
+                        });
                       })()}
                     </div>
                   )}

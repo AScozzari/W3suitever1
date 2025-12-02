@@ -4952,6 +4952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // WORKAROUND: Use raw SQL to bypass Drizzle ORM bug with shiftAssignments
       // NOTE: shift_assignments uses VARCHAR IDs, shifts/stores use UUID - explicit casts required
+      // ENHANCED: Include template version data for historical accuracy (time_slots_snapshot)
       const rawQuery = sql`
         SELECT 
           sa.*,
@@ -4962,7 +4963,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'endTime', s.end_time,
             'shiftType', s.shift_type,
             'storeId', s.store_id,
-            'status', s.status
+            'status', s.status,
+            'templateId', s.template_id,
+            'templateVersionId', s.template_version_id
           ) as shift,
           json_build_object(
             'id', u.id,
@@ -4974,11 +4977,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'id', st.id,
             'name', st.nome,
             'code', st.code
-          ) as store
+          ) as store,
+          CASE 
+            WHEN stv.id IS NOT NULL THEN json_build_object(
+              'id', stv.id,
+              'templateId', stv.template_id,
+              'versionNumber', stv.version_number,
+              'name', stv.name,
+              'timeSlotsSnapshot', stv.time_slots_snapshot,
+              'effectiveFrom', stv.effective_from,
+              'effectiveUntil', stv.effective_until
+            )
+            ELSE NULL
+          END as template_version
         FROM w3suite.shift_assignments sa
         LEFT JOIN w3suite.shifts s ON sa.shift_id::uuid = s.id
         LEFT JOIN w3suite.users u ON sa.user_id = u.id
         LEFT JOIN w3suite.stores st ON s.store_id = st.id
+        LEFT JOIN w3suite.shift_template_versions stv ON s.template_version_id = stv.id
         WHERE sa.tenant_id::uuid = ${tenantId}::uuid
         ${userId ? sql`AND sa.user_id = ${userId}` : sql``}
         ${storeId ? sql`AND s.store_id = ${storeId}::uuid` : sql``}
