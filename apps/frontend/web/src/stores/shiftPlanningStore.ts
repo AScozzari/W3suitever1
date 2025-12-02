@@ -556,8 +556,12 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
     });
     
     // Build template selections
+    // CRITICAL FIX: For historical shifts, use versionedTimeSlots from shift instead of current template slots
     const templateSelections: TemplateSelection[] = [];
     const templateDaysMap = new Map<string, Set<string>>();
+    
+    // Track versioned time slots per template (prioritize versioned data)
+    const templateVersionedSlotsMap = new Map<string, any[]>();
     
     planning.shifts.forEach(shift => {
       if (!shift.templateId) return;
@@ -566,18 +570,36 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
         templateDaysMap.set(shift.templateId, new Set());
       }
       templateDaysMap.get(shift.templateId)!.add(shift.date);
+      
+      // VERSIONING FIX: Store versioned time slots if available
+      // Historical shifts will have versionedTimeSlots from timeSlotsSnapshot
+      if (shift.versionedTimeSlots && shift.usingVersionedData) {
+        // Use versioned time slots for this template (from historical snapshot)
+        templateVersionedSlotsMap.set(shift.templateId, shift.versionedTimeSlots);
+        console.log(`[STORE] Using versioned time slots for template ${shift.templateId} from shift ${shift.id} (version ${shift.templateVersionNumber})`);
+      }
     });
     
     templateDaysMap.forEach((days, templateId) => {
       const template = templateMap.get(templateId);
       if (template) {
+        // VERSIONING FIX: Prefer versioned time slots (historical) over current template slots
+        const versionedSlots = templateVersionedSlotsMap.get(templateId);
+        const timeSlots = versionedSlots || template.timeSlots || [];
+        
+        if (versionedSlots) {
+          console.log(`[STORE] Template ${templateId}: Using VERSIONED time slots (${versionedSlots.length} slots)`);
+        } else {
+          console.log(`[STORE] Template ${templateId}: Using CURRENT time slots (${template.timeSlots?.length || 0} slots)`);
+        }
+        
         templateSelections.push({
           templateId,
           template: {
             id: template.id,
             name: template.name,
             color: template.color || '#f97316',
-            timeSlots: template.timeSlots || [],
+            timeSlots: timeSlots,
             storeId: template.storeId,
             scope: template.scope || 'store'
           },
