@@ -1283,8 +1283,14 @@ function HRCalendarComponent({ className, storeId, startDate, endDate }: HRCalen
                   openingTime: s.openingTime || '09:00',
                   closingTime: s.closingTime || '20:00',
                 }))}
-                selectedStoreId={selectedStoreFilters.length > 0 ? selectedStoreFilters[0] : null}
-                onStoreSelect={(storeId) => setSelectedStoreFilters([storeId])}
+                selectedStoreId={selectedStoreFilters.length > 0 ? selectedStoreFilters[0] : 'all'}
+                onStoreSelect={(storeId) => {
+                  if (storeId === 'all') {
+                    setSelectedStoreFilters([]);
+                  } else {
+                    setSelectedStoreFilters([storeId]);
+                  }
+                }}
                 onResourceClick={(resource) => {
                   setSelectedResourceForContext(resource.employeeId);
                   setDayModalView('resource');

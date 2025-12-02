@@ -64,19 +64,63 @@ interface StoreCoverageViewProps {
   className?: string;
 }
 
-function parseTime(timeStr: string): number {
-  if (!timeStr) return 0;
-  const time = timeStr.includes('T') ? timeStr.split('T')[1]?.substring(0, 5) : timeStr.substring(0, 5);
-  const [hours, minutes] = time.split(':').map(Number);
+function normalizeTimeString(timeStr: string | null | undefined): string {
+  if (!timeStr) return '09:00';
+  
+  const str = String(timeStr).trim();
+  
+  if (str.includes('T')) {
+    const timePart = str.split('T')[1];
+    if (timePart) {
+      const timeOnly = timePart.replace(/[Z+-].*$/, '').substring(0, 5);
+      if (/^\d{2}:\d{2}$/.test(timeOnly)) {
+        return timeOnly;
+      }
+    }
+  }
+  
+  if (str.includes(' ')) {
+    const parts = str.split(' ');
+    for (const part of parts) {
+      if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(part)) {
+        const [h, m] = part.split(':').map(Number);
+        if (!isNaN(h) && !isNaN(m) && h >= 0 && h < 24 && m >= 0 && m < 60) {
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+    }
+  }
+  
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
+    const [h, m] = str.split(':').map(Number);
+    if (!isNaN(h) && !isNaN(m) && h >= 0 && h < 24 && m >= 0 && m < 60) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+  }
+  
+  if (/^\d{1,2}$/.test(str)) {
+    const h = parseInt(str, 10);
+    if (h >= 0 && h < 24) {
+      return `${String(h).padStart(2, '0')}:00`;
+    }
+  }
+  
+  return '09:00';
+}
+
+function parseTime(timeStr: string | null | undefined): number {
+  const normalized = normalizeTimeString(timeStr);
+  const [hours, minutes] = normalized.split(':').map(Number);
+  
+  if (isNaN(hours) || isNaN(minutes)) {
+    return 9 * 60;
+  }
+  
   return hours * 60 + (minutes || 0);
 }
 
-function formatTime(timeStr: string): string {
-  if (!timeStr) return '--:--';
-  if (timeStr.includes('T')) {
-    return timeStr.split('T')[1]?.substring(0, 5) || timeStr;
-  }
-  return timeStr.substring(0, 5);
+function formatTime(timeStr: string | null | undefined): string {
+  return normalizeTimeString(timeStr);
 }
 
 function getInitials(name: string): string {
@@ -535,17 +579,32 @@ export default function StoreCoverageView({
   onResourceClick,
   className
 }: StoreCoverageViewProps) {
-  const storeResources = useMemo(() => {
-    if (!selectedStoreId) return resources;
-    return resources.filter(r => r.storeId === selectedStoreId);
-  }, [resources, selectedStoreId]);
+  const safeStores = stores || [];
+  const safeResources = resources || [];
   
-  const selectedStore = useMemo(() => {
-    if (!selectedStoreId) {
-      return stores[0] || { id: 'all', name: 'Tutti i Negozi', openingTime: '09:00', closingTime: '20:00' };
+  const storeResources = useMemo(() => {
+    if (!selectedStoreId) return safeResources;
+    return safeResources.filter(r => r.storeId === selectedStoreId);
+  }, [safeResources, selectedStoreId]);
+  
+  const selectedStore = useMemo((): StoreInfo => {
+    if (!selectedStoreId || selectedStoreId === 'all') {
+      return { 
+        id: 'all', 
+        name: 'Tutti i Negozi', 
+        openingTime: '09:00', 
+        closingTime: '20:00' 
+      };
     }
-    return stores.find(s => s.id === selectedStoreId) || stores[0];
-  }, [stores, selectedStoreId]);
+    const found = safeStores.find(s => s.id === selectedStoreId);
+    if (found) return found;
+    return safeStores[0] || { 
+      id: 'all', 
+      name: 'Tutti i Negozi', 
+      openingTime: '09:00', 
+      closingTime: '20:00' 
+    };
+  }, [safeStores, selectedStoreId]);
   
   const coverageStatus = useMemo(() => {
     if (!selectedStore?.requiredStaff) return 'good';
@@ -554,16 +613,37 @@ export default function StoreCoverageView({
     return 'critical';
   }, [storeResources.length, selectedStore?.requiredStaff]);
   
+  const hasNoStores = safeStores.length === 0;
+  const hasNoResources = storeResources.length === 0;
+  
   return (
     <div className={cn("space-y-4", className)}>
-      {stores.length > 1 && (
+      {safeStores.length >= 1 && (
         <div className="bg-slate-50 rounded-lg p-3">
           <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
             <MapPin className="w-4 h-4" />
             Seleziona Punto Vendita
           </h4>
           <div className="flex flex-wrap gap-2">
-            {stores.map(store => (
+            {safeStores.length > 1 && (
+              <Button
+                size="sm"
+                variant={!selectedStoreId || selectedStoreId === 'all' ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => onStoreSelect?.('all')}
+                data-testid="btn-select-store-all"
+              >
+                <Building2 className="w-3.5 h-3.5 mr-1.5" />
+                Tutti
+                <Badge 
+                  variant="secondary" 
+                  className="ml-2 h-5 text-[10px]"
+                >
+                  {safeResources.length}
+                </Badge>
+              </Button>
+            )}
+            {safeStores.map(store => (
               <Button
                 key={store.id}
                 size="sm"
@@ -578,7 +658,7 @@ export default function StoreCoverageView({
                   variant="secondary" 
                   className="ml-2 h-5 text-[10px]"
                 >
-                  {resources.filter(r => r.storeId === store.id).length}
+                  {safeResources.filter(r => r.storeId === store.id).length}
                 </Badge>
               </Button>
             ))}
@@ -586,14 +666,12 @@ export default function StoreCoverageView({
         </div>
       )}
       
-      {selectedStore && (
-        <StoreHeaderCard 
-          store={selectedStore}
-          resourceCount={storeResources.length}
-          selectedDate={selectedDate}
-          coverageStatus={coverageStatus}
-        />
-      )}
+      <StoreHeaderCard 
+        store={selectedStore}
+        resourceCount={storeResources.length}
+        selectedDate={selectedDate}
+        coverageStatus={coverageStatus}
+      />
       
       <CoverageTimeline 
         resources={storeResources}
