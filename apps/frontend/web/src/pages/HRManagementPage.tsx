@@ -2265,125 +2265,314 @@ const HRManagementPage: React.FC = () => {
   // ==================== STORE COVERAGE SECTION ====================
 
   const StoreCoverageSection = () => {
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    // Filter states - default to current month
+    const now = new Date();
+    const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState(now.getFullYear());
     const [selectedStore, setSelectedStore] = useState('all');
+    const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
 
-    const { data: coverage, isLoading } = useQuery({
-      queryKey: ['/api/hr/attendance/store-coverage', { date: selectedDate, storeId: selectedStore }],
+    // Fetch monthly coverage data
+    const { data: monthlyData, isLoading } = useQuery({
+      queryKey: ['/api/hr/coverage/monthly', { month: selectedMonth, year: selectedYear, storeId: selectedStore }],
       enabled: hrQueriesEnabled,
       staleTime: 60000
     });
 
-    // Generate hourly heatmap data
-    const hours = Array.from({ length: 24 }, (_, i) => i);
-    const heatmapData = hours.map(hour => {
-      const shiftsInHour = (coverage?.coverage || []).filter((shift: any) => {
-        const start = new Date(shift.time.start).getHours();
-        const end = new Date(shift.time.end).getHours();
-        return hour >= start && hour < end;
-      });
-      const avgCoverage = shiftsInHour.length > 0 
-        ? shiftsInHour.reduce((sum: number, s: any) => sum + s.staffing.coverageRate, 0) / shiftsInHour.length 
-        : 0;
-      return { hour, coverage: avgCoverage, shifts: shiftsInHour.length };
-    });
+    // Generate month options (last 12 months)
+    const monthOptions = useMemo(() => {
+      const options = [];
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        options.push({
+          month: d.getMonth() + 1,
+          year: d.getFullYear(),
+          label: d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+        });
+      }
+      return options;
+    }, []);
 
-    const getHeatColor = (coverage: number) => {
+    // Hourly heatmap from backend aggregate
+    const heatmapData = monthlyData?.hourlyAggregate || Array.from({ length: 24 }, (_, i) => ({ hour: i, coverage: 0, shifts: 0 }));
+
+    const getHeatColor = (coverage: number, hasData: boolean = true) => {
+      if (!hasData || coverage === 0) return 'bg-slate-100';
       if (coverage >= 100) return 'bg-green-500';
       if (coverage >= 80) return 'bg-green-300';
       if (coverage >= 60) return 'bg-yellow-300';
       if (coverage >= 40) return 'bg-orange-300';
-      if (coverage > 0) return 'bg-red-300';
-      return 'bg-slate-100';
+      return 'bg-red-300';
     };
+
+    // Day names for daily grid
+    const getDayName = (day: number, month: number, year: number) => {
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString('it-IT', { weekday: 'short' });
+    };
+
+    // Group shifts by date for daily view
+    const shiftsByDate = useMemo(() => {
+      const grouped: Record<string, any[]> = {};
+      (monthlyData?.shifts || []).forEach((shift: any) => {
+        const date = shift.date;
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push(shift);
+      });
+      return grouped;
+    }, [monthlyData?.shifts]);
 
     return (
       <div className="space-y-6">
-        {/* Hourly Heatmap */}
+        {/* Filters Row */}
         <Card className="backdrop-blur-md bg-white/10 border-white/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Heatmap Copertura Oraria
-            </CardTitle>
-            <CardDescription>Visualizzazione copertura per fasce orarie</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-24 w-full" data-testid="skeleton-heatmap" />
-            ) : (
-              <div className="space-y-2" data-testid="coverage-heatmap">
-                <div className="grid grid-cols-24 gap-1">
-                  {heatmapData.map((data, i) => (
-                    <div 
-                      key={i}
-                      className={`h-12 ${getHeatColor(data.coverage)} rounded hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer`}
-                      title={`${data.hour}:00 - ${data.coverage.toFixed(0)}% copertura (${data.shifts} turni)`}
-                      data-testid={`heatmap-hour-${i}`}
-                    >
-                      <div className="text-[8px] text-center pt-1 font-medium">{data.hour}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-end gap-4 text-xs text-slate-500">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-300 rounded"></div>
-                    <span>&lt;40%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-yellow-300 rounded"></div>
-                    <span>60-80%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-300 rounded"></div>
-                    <span>80-100%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    <span>100%+</span>
-                  </div>
-                </div>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Month/Year Selector */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Periodo:</Label>
+                <Select 
+                  value={`${selectedMonth}-${selectedYear}`}
+                  onValueChange={(val) => {
+                    const [m, y] = val.split('-').map(Number);
+                    setSelectedMonth(m);
+                    setSelectedYear(y);
+                  }}
+                >
+                  <SelectTrigger className="w-[200px]" data-testid="select-month">
+                    <SelectValue placeholder="Seleziona mese" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions.map(opt => (
+                      <SelectItem key={`${opt.month}-${opt.year}`} value={`${opt.month}-${opt.year}`}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+
+              {/* Store Selector */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Negozio:</Label>
+                <Select value={selectedStore} onValueChange={setSelectedStore}>
+                  <SelectTrigger className="w-[180px]" data-testid="select-store-coverage">
+                    <SelectValue placeholder="Tutti i negozi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i negozi</SelectItem>
+                    {stores.map((store: any) => (
+                      <SelectItem key={store.id} value={store.id}>{store.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-2 ml-auto">
+                <Button
+                  variant={viewMode === 'hourly' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('hourly')}
+                  data-testid="btn-view-hourly"
+                >
+                  <Clock className="w-4 h-4 mr-1" />
+                  Orario
+                </Button>
+                <Button
+                  variant={viewMode === 'daily' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('daily')}
+                  data-testid="btn-view-daily"
+                >
+                  <Calendar className="w-4 h-4 mr-1" />
+                  Giornaliero
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Hourly Heatmap - Aggregated view */}
+        {viewMode === 'hourly' && (
+          <Card className="backdrop-blur-md bg-white/10 border-white/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Heatmap Copertura Oraria - {monthOptions.find(o => o.month === selectedMonth && o.year === selectedYear)?.label}
+              </CardTitle>
+              <CardDescription>
+                Copertura media per fascia oraria nel mese selezionato
+                {selectedStore !== 'all' && stores.find((s: any) => s.id === selectedStore) && 
+                  ` - ${stores.find((s: any) => s.id === selectedStore)?.nome}`
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-24 w-full" data-testid="skeleton-heatmap" />
+              ) : (
+                <div className="space-y-2" data-testid="coverage-heatmap">
+                  <div className="grid grid-cols-24 gap-1">
+                    {heatmapData.map((data: any, i: number) => (
+                      <div 
+                        key={i}
+                        className={`h-14 ${getHeatColor(data.coverage, data.shifts > 0)} rounded hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer flex flex-col items-center justify-center`}
+                        title={`${data.hour}:00 - ${data.coverage}% copertura media (${data.shifts} turni totali nel mese)`}
+                        data-testid={`heatmap-hour-${i}`}
+                      >
+                        <div className="text-[10px] font-bold">{data.hour}</div>
+                        {data.shifts > 0 && (
+                          <div className="text-[8px] opacity-80">{data.coverage}%</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-500 mt-4">
+                    <span className="font-medium">Legenda copertura:</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-slate-100 rounded border"></div>
+                        <span>Nessun turno</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-red-300 rounded"></div>
+                        <span>&lt;40%</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-orange-300 rounded"></div>
+                        <span>40-60%</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-yellow-300 rounded"></div>
+                        <span>60-80%</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-green-300 rounded"></div>
+                        <span>80-100%</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-green-500 rounded"></div>
+                        <span>100%+</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Daily Grid Heatmap */}
+        {viewMode === 'daily' && (
+          <Card className="backdrop-blur-md bg-white/10 border-white/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Calendario Copertura - {monthOptions.find(o => o.month === selectedMonth && o.year === selectedYear)?.label}
+              </CardTitle>
+              <CardDescription>Copertura giornaliera con dettaglio turni</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-64 w-full" data-testid="skeleton-daily-grid" />
+              ) : (
+                <div className="space-y-4" data-testid="coverage-daily-grid">
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {/* Day headers */}
+                    {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(day => (
+                      <div key={day} className="text-center text-xs font-medium text-slate-500 py-2">{day}</div>
+                    ))}
+                    
+                    {/* Empty cells for first week offset */}
+                    {Array.from({ length: (new Date(selectedYear, selectedMonth - 1, 1).getDay() + 6) % 7 }, (_, i) => (
+                      <div key={`empty-${i}`} className="h-20"></div>
+                    ))}
+                    
+                    {/* Day cells */}
+                    {Array.from({ length: monthlyData?.daysInMonth || 30 }, (_, i) => {
+                      const day = i + 1;
+                      const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const dayShifts = shiftsByDate[dateStr] || [];
+                      const avgCoverage = dayShifts.length > 0
+                        ? Math.round(dayShifts.reduce((sum: number, s: any) => sum + s.coverageRate, 0) / dayShifts.length)
+                        : 0;
+                      const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                      
+                      return (
+                        <div
+                          key={day}
+                          className={`h-20 rounded-lg p-2 ${getHeatColor(avgCoverage, dayShifts.length > 0)} ${isToday ? 'ring-2 ring-blue-500' : ''} hover:ring-2 hover:ring-blue-300 cursor-pointer transition-all`}
+                          title={`${day}/${selectedMonth} - ${dayShifts.length} turni, ${avgCoverage}% copertura media`}
+                          data-testid={`day-cell-${day}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <span className={`text-sm font-bold ${dayShifts.length > 0 ? 'text-slate-800' : 'text-slate-400'}`}>{day}</span>
+                            {dayShifts.length > 0 && (
+                              <Badge variant="secondary" className="text-[10px] px-1">
+                                {dayShifts.length}
+                              </Badge>
+                            )}
+                          </div>
+                          {dayShifts.length > 0 && (
+                            <div className="mt-1">
+                              <div className="text-lg font-bold text-slate-800">{avgCoverage}%</div>
+                              <div className="text-[10px] text-slate-600">copertura</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* KPI Cards */}
         <Card className="backdrop-blur-md bg-white/10 border-white/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              KPI Copertura
+              KPI Copertura - {monthOptions.find(o => o.month === selectedMonth && o.year === selectedYear)?.label}
             </CardTitle>
-            <CardDescription>Metriche principali copertura turni</CardDescription>
+            <CardDescription>Metriche principali copertura turni del mese</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-32 w-full" data-testid="skeleton-kpi" />
             ) : (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="bg-blue-50" data-testid="kpi-total-shifts">
                   <CardContent className="pt-6">
-                    <div className="text-2xl font-bold text-blue-600" data-testid="value-total-shifts">{coverage?.summary.totalShifts || 0}</div>
+                    <div className="text-3xl font-bold text-blue-600" data-testid="value-total-shifts">
+                      {monthlyData?.summary?.totalShifts || 0}
+                    </div>
                     <p className="text-sm text-blue-600">Turni Totali</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-green-50" data-testid="kpi-fully-staffed">
                   <CardContent className="pt-6">
-                    <div className="text-2xl font-bold text-green-600" data-testid="value-fully-staffed">{coverage?.summary.fullyStaffed || 0}</div>
+                    <div className="text-3xl font-bold text-green-600" data-testid="value-fully-staffed">
+                      {monthlyData?.summary?.fullyStaffed || 0}
+                    </div>
                     <p className="text-sm text-green-600">Completamente Coperti</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-orange-50" data-testid="kpi-critical">
                   <CardContent className="pt-6">
-                    <div className="text-2xl font-bold text-orange-600" data-testid="value-critical-shifts">{coverage?.summary.criticalShifts || 0}</div>
+                    <div className="text-3xl font-bold text-orange-600" data-testid="value-critical-shifts">
+                      {monthlyData?.summary?.criticalShifts || 0}
+                    </div>
                     <p className="text-sm text-orange-600">Sotto Soglia Critica</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-purple-50" data-testid="kpi-average">
                   <CardContent className="pt-6">
-                    <div className="text-2xl font-bold text-purple-600" data-testid="value-avg-coverage">
-                      {Math.round(coverage?.summary.averageCoverageRate || 0)}%
+                    <div className="text-3xl font-bold text-purple-600" data-testid="value-avg-coverage">
+                      {monthlyData?.summary?.averageCoverageRate || 0}%
                     </div>
                     <p className="text-sm text-purple-600">Copertura Media</p>
                   </CardContent>
@@ -2393,31 +2582,57 @@ const HRManagementPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Shift List */}
+        {/* Shift List - Filtered by selected month */}
         <Card className="backdrop-blur-md bg-white/10 border-white/20">
           <CardHeader>
-            <CardTitle>Dettaglio Turni</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Dettaglio Turni del Mese</span>
+              <Badge variant="outline">{monthlyData?.shifts?.length || 0} turni</Badge>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-64 w-full" data-testid="skeleton-shifts" />
+            ) : (monthlyData?.shifts?.length || 0) === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p>Nessun turno trovato per il periodo selezionato</p>
+                <p className="text-sm mt-2">Prova a selezionare un altro mese o negozio</p>
+              </div>
             ) : (
-              <div className="space-y-3">
-                {coverage?.coverage.map((shift: any, i: number) => (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {(monthlyData?.shifts || []).map((shift: any, i: number) => (
                   <Card key={shift.shiftId} className="bg-white/50" data-testid={`shift-card-${i}`}>
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium" data-testid={`shift-name-${i}`}>{shift.shiftName}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium" data-testid={`shift-name-${i}`}>{shift.shiftName}</h4>
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                shift.status === 'fully_staffed' ? 'bg-green-100 text-green-700 border-green-300' :
+                                shift.status === 'adequate' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
+                                'bg-red-100 text-red-700 border-red-300'
+                              }
+                            >
+                              {shift.status === 'fully_staffed' ? 'Completo' : 
+                               shift.status === 'adequate' ? 'Adeguato' : 'Critico'}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-slate-600" data-testid={`shift-store-${i}`}>{shift.storeName}</p>
                           <p className="text-xs text-slate-400" data-testid={`shift-time-${i}`}>
-                            {new Date(shift.time.start).toLocaleTimeString()} - {new Date(shift.time.end).toLocaleTimeString()}
+                            {new Date(shift.startTime).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })} - 
+                            {new Date(shift.startTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} → 
+                            {new Date(shift.endTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold" data-testid={`shift-staffing-${i}`}>{shift.staffing.present}/{shift.staffing.required}</div>
-                          <Progress value={shift.staffing.coverageRate} className="w-24 mt-2" data-testid={`progress-coverage-${i}`} />
-                          <p className="text-xs text-slate-500 mt-1" data-testid={`shift-rate-${i}`}>{Math.round(shift.staffing.coverageRate)}%</p>
+                          <div className="text-2xl font-bold" data-testid={`shift-staffing-${i}`}>
+                            {shift.assignedStaff}/{shift.requiredStaff}
+                          </div>
+                          <Progress value={shift.coverageRate} className="w-24 mt-2" data-testid={`progress-coverage-${i}`} />
+                          <p className="text-xs text-slate-500 mt-1" data-testid={`shift-rate-${i}`}>{shift.coverageRate}%</p>
                         </div>
                       </div>
                     </CardContent>
