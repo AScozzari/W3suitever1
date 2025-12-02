@@ -201,6 +201,11 @@ export interface ShiftTemplate {
   clockOutToleranceMinutes?: number;
 }
 
+function formatTimeForForm(time: string | null | undefined): string {
+  if (!time) return '09:00';
+  return time.substring(0, 5);
+}
+
 export function getDefaultFormValues(template?: ShiftTemplate, mode: 'create' | 'edit' | 'duplicate' = 'create'): ShiftTemplateFormData {
   if (!template || mode === 'create') {
     return {
@@ -221,6 +226,30 @@ export function getDefaultFormValues(template?: ShiftTemplate, mode: 'create' | 
   
   const templateName = mode === 'duplicate' ? `${template.name || ''} (Copia)` : template.name || '';
   
+  const mappedTimeSlots = (template.timeSlots && template.timeSlots.length > 0) 
+    ? template.timeSlots.map((slot: any) => ({
+        segmentType: (slot.segmentType || 'continuous') as 'continuous' | 'split' | 'triple' | 'quad',
+        startTime: formatTimeForForm(slot.startTime),
+        endTime: formatTimeForForm(slot.endTime),
+        block2StartTime: slot.block2StartTime ? formatTimeForForm(slot.block2StartTime) : undefined,
+        block2EndTime: slot.block2EndTime ? formatTimeForForm(slot.block2EndTime) : undefined,
+        block3StartTime: slot.block3StartTime ? formatTimeForForm(slot.block3StartTime) : undefined,
+        block3EndTime: slot.block3EndTime ? formatTimeForForm(slot.block3EndTime) : undefined,
+        block4StartTime: slot.block4StartTime ? formatTimeForForm(slot.block4StartTime) : undefined,
+        block4EndTime: slot.block4EndTime ? formatTimeForForm(slot.block4EndTime) : undefined,
+        breakMinutes: slot.breakMinutes ?? 30,
+        clockInToleranceMinutes: slot.clockInTolerance ?? slot.clockInToleranceMinutes ?? 15,
+        clockOutToleranceMinutes: slot.clockOutTolerance ?? slot.clockOutToleranceMinutes ?? 15
+      }))
+    : (template.defaultStartTime ? [{
+        segmentType: 'continuous' as const,
+        startTime: formatTimeForForm(template.defaultStartTime),
+        endTime: formatTimeForForm(template.defaultEndTime),
+        breakMinutes: template.defaultBreakMinutes || 30,
+        clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
+        clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
+      }] : [{ segmentType: 'continuous' as const, startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }]);
+  
   return {
     name: templateName,
     description: template.description || '',
@@ -230,14 +259,7 @@ export function getDefaultFormValues(template?: ShiftTemplate, mode: 'create' | 
     globalClockInTolerance: template.globalClockInTolerance || 15,
     globalClockOutTolerance: template.globalClockOutTolerance || 15,
     globalBreakMinutes: template.globalBreakMinutes || 30,
-    timeSlots: template.timeSlots || (template.defaultStartTime ? [{
-      segmentType: 'continuous' as const,
-      startTime: template.defaultStartTime,
-      endTime: template.defaultEndTime || '17:00',
-      breakMinutes: template.defaultBreakMinutes || 30,
-      clockInToleranceMinutes: template.clockInToleranceMinutes || 15,
-      clockOutToleranceMinutes: template.clockOutToleranceMinutes || 15
-    }] : [{ segmentType: 'continuous' as const, startTime: '09:00', endTime: '17:00', breakMinutes: 30, clockInToleranceMinutes: 15, clockOutToleranceMinutes: 15 }]),
+    timeSlots: mappedTimeSlots,
     color: template.color || '#FF6900',
     isActive: template.isActive ?? true,
     notes: template.notes || ''

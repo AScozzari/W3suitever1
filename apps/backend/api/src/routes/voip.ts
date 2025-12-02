@@ -280,10 +280,15 @@ router.get('/trunks/status', rbacMiddleware, requirePermission('view_telephony')
     const result = await getTrunkRegistrationStatuses(tenantId);
 
     if (!result.success) {
-      return res.status(503).json({ 
-        error: 'Failed to get trunk statuses',
-        details: result.error
-      } as ApiErrorResponse);
+      logger.warn('EDGVoIP trunk status API failed, returning empty data', { 
+        tenantId, 
+        error: result.error 
+      });
+      return res.json({ 
+        success: true, 
+        data: [],
+        warning: 'EDGVoIP status API temporarily unavailable'
+      } as ApiSuccessResponse);
     }
 
     return res.json({ 
@@ -292,7 +297,11 @@ router.get('/trunks/status', rbacMiddleware, requirePermission('view_telephony')
     } as ApiSuccessResponse);
   } catch (error) {
     logger.error('Error fetching trunk statuses', { error, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to get trunk statuses' } as ApiErrorResponse);
+    return res.json({ 
+      success: true, 
+      data: [],
+      warning: 'Failed to fetch trunk statuses'
+    } as ApiSuccessResponse);
   }
 });
 
@@ -329,10 +338,16 @@ router.get('/trunks/:id/status', rbacMiddleware, requirePermission('view_telepho
     const result = await getTrunkRegistrationStatus(tenantId, trunk.externalId);
 
     if (!result.success) {
-      return res.status(503).json({ 
-        error: 'Failed to get trunk status',
-        details: result.error
-      } as ApiErrorResponse);
+      logger.warn('EDGVoIP trunk status API failed for single trunk', { 
+        tenantId, 
+        trunkId: id,
+        error: result.error 
+      });
+      return res.json({ 
+        success: true, 
+        data: { status: 'unknown', connection_type: 'unknown' },
+        warning: 'EDGVoIP status API temporarily unavailable'
+      } as ApiSuccessResponse);
     }
 
     return res.json({ 
@@ -341,7 +356,11 @@ router.get('/trunks/:id/status', rbacMiddleware, requirePermission('view_telepho
     } as ApiSuccessResponse);
   } catch (error) {
     logger.error('Error fetching trunk status', { error, trunkId: req.params.id, tenantId: getTenantId(req) });
-    return res.status(500).json({ error: 'Failed to get trunk status' } as ApiErrorResponse);
+    return res.json({ 
+      success: true, 
+      data: { status: 'unknown', connection_type: 'unknown' },
+      warning: 'Failed to fetch trunk status'
+    } as ApiSuccessResponse);
   }
 });
 
