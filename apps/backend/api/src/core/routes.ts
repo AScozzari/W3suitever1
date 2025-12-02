@@ -6692,7 +6692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
-      const { shiftTemplates } = await import('../db/schema/w3suite.js');
+      const { shiftTemplates, shiftTimeSlots } = await import('../db/schema/w3suite.js');
       
       const template = await db.select()
         .from(shiftTemplates)
@@ -6709,7 +6709,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      res.json(template[0]);
+      const timeSlots = await db.select()
+        .from(shiftTimeSlots)
+        .where(eq(shiftTimeSlots.templateId, id))
+        .orderBy(shiftTimeSlots.slotOrder);
+      
+      res.json({
+        ...template[0],
+        timeSlots
+      });
     } catch (error) {
       handleApiError(error, res, 'recupero template turno');
     }
