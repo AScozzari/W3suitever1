@@ -117,6 +117,10 @@ interface ShiftPlanningState {
   isLoadingPlanning: boolean;
   planningExists: boolean;
   
+  // Per-day versioned time slots: key = `${templateId}:${day}` -> timeSlots
+  // CRITICAL: For historical shifts, each day may have different versioned time slots
+  dayVersionedSlots: Record<string, TimeSlot[]>;
+  
   // Actions
   setStore: (storeId: string, storeName: string) => void;
   setPeriod: (start: Date, end: Date) => void;
@@ -204,6 +208,9 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
   loadedPlanning: null,
   isLoadingPlanning: false,
   planningExists: false,
+  
+  // Per-day versioned time slots (for historical planning)
+  dayVersionedSlots: {},
   
   // Store selection
   setStore: (storeId, storeName) => {
@@ -392,7 +399,7 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
   // Phase 1: Shows template coverage (which slots are planned)
   // Phase 2: Shows resource coverage (which slots have assigned staff)
   computeCoverage: () => {
-    const { templateSelections, resourceAssignments, currentPhase } = get();
+    const { templateSelections, resourceAssignments, currentPhase, dayVersionedSlots } = get();
     
     const coverageSlots: CoverageSlot[] = [];
     
@@ -402,8 +409,13 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       
       // For each selected day
       selectedDays.forEach(day => {
-        // For each time slot in template
-        (template.timeSlots || []).forEach((slot, slotIndex) => {
+        // VERSIONING FIX: Use day-specific versioned slots if available
+        // Key = `templateId:day` -> timeSlots from historical snapshot
+        const dayKey = `${template.id}:${day}`;
+        const daySlots = dayVersionedSlots[dayKey] || template.timeSlots || [];
+        
+        // For each time slot in template (or day-specific versioned slots)
+        (daySlots).forEach((slot: any, slotIndex: number) => {
           const requiredStaff = slot.requiredStaff || 1;
           const slotId = slot.id || `slot-${slotIndex}`;
           
@@ -560,7 +572,11 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
     const templateSelections: TemplateSelection[] = [];
     const templateDaysMap = new Map<string, Set<string>>();
     
-    // Track versioned time slots per template (prioritize versioned data)
+    // VERSIONING FIX: Track versioned time slots PER DAY (key = `templateId:day`)
+    // This ensures each historical day uses its own versionedTimeSlots snapshot
+    const dayVersionedSlotsMap: Record<string, any[]> = {};
+    
+    // Track first versioned slot per template for template-level display (fallback)
     const templateVersionedSlotsMap = new Map<string, any[]>();
     
     planning.shifts.forEach(shift => {
@@ -571,24 +587,33 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       }
       templateDaysMap.get(shift.templateId)!.add(shift.date);
       
-      // VERSIONING FIX: Store versioned time slots if available
+      // VERSIONING FIX: Store versioned time slots PER DAY
       // Historical shifts will have versionedTimeSlots from timeSlotsSnapshot
       if (shift.versionedTimeSlots && shift.usingVersionedData) {
-        // Use versioned time slots for this template (from historical snapshot)
-        templateVersionedSlotsMap.set(shift.templateId, shift.versionedTimeSlots);
-        console.log(`[STORE] Using versioned time slots for template ${shift.templateId} from shift ${shift.id} (version ${shift.templateVersionNumber})`);
+        // Store per-day versioned slots: key = `templateId:day`
+        const dayKey = `${shift.templateId}:${shift.date}`;
+        dayVersionedSlotsMap[dayKey] = shift.versionedTimeSlots;
+        
+        // Also store first occurrence for template-level display
+        if (!templateVersionedSlotsMap.has(shift.templateId)) {
+          templateVersionedSlotsMap.set(shift.templateId, shift.versionedTimeSlots);
+        }
+        
+        console.log(`[STORE] Day ${shift.date}: Using versioned time slots for template ${shift.templateId} (version ${shift.templateVersionNumber})`);
       }
     });
+    
+    console.log(`[STORE] Built dayVersionedSlotsMap with ${Object.keys(dayVersionedSlotsMap).length} day-specific slot entries`);
     
     templateDaysMap.forEach((days, templateId) => {
       const template = templateMap.get(templateId);
       if (template) {
-        // VERSIONING FIX: Prefer versioned time slots (historical) over current template slots
+        // Use first versioned slots for template-level display (or current if no versioning)
         const versionedSlots = templateVersionedSlotsMap.get(templateId);
         const timeSlots = versionedSlots || template.timeSlots || [];
         
         if (versionedSlots) {
-          console.log(`[STORE] Template ${templateId}: Using VERSIONED time slots (${versionedSlots.length} slots)`);
+          console.log(`[STORE] Template ${templateId}: Using VERSIONED time slots for template display (${versionedSlots.length} slots)`);
         } else {
           console.log(`[STORE] Template ${templateId}: Using CURRENT time slots (${template.timeSlots?.length || 0} slots)`);
         }
@@ -613,6 +638,7 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       planningExists: true,
       resourceAssignments: assignments,
       templateSelections,
+      dayVersionedSlots: dayVersionedSlotsMap, // CRITICAL: Store per-day versioned slots
       currentPhase: 2 // Go to resource phase since planning exists
     });
     
@@ -642,7 +668,8 @@ export const useShiftPlanningStore = create<ShiftPlanningState>((set, get) => ({
       hasConflicts: false,
       loadedPlanning: null,
       planningExists: false,
-      isLoadingPlanning: false
+      isLoadingPlanning: false,
+      dayVersionedSlots: {} // Reset per-day versioned slots
     });
   }
 }));
