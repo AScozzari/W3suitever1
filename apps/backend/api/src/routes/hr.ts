@@ -2096,6 +2096,161 @@ router.get('/attendance/store-coverage', requirePermission('hr.shifts.read'), as
   }
 });
 
+// GET /api/hr/coverage/monthly - Get monthly coverage data with day×hour heatmap
+router.get('/coverage/monthly', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { month, year, storeId } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Parse month/year or use current
+    const targetMonth = month ? parseInt(month as string) : new Date().getMonth() + 1;
+    const targetYear = year ? parseInt(year as string) : new Date().getFullYear();
+    
+    // Calculate start and end of month
+    const startOfMonth = new Date(targetYear, targetMonth - 1, 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
+    const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+
+    // Build store filter
+    const storeFilter = (storeId && storeId !== 'all') ? `AND s.store_id = '${storeId}'` : '';
+    
+    // Query all shifts for the month with assignment counts
+    const shiftsData = await db.execute(sql`
+      SELECT 
+        s.id,
+        s.store_id as "storeId",
+        st.nome as "storeName",
+        s.name,
+        s.start_time as "startTime",
+        s.end_time as "endTime",
+        s.required_staff as "requiredStaff",
+        s.status,
+        COUNT(sa.id)::integer as "assignedCount"
+      FROM w3suite.shifts s
+      LEFT JOIN w3suite.stores st ON st.id = s.store_id AND st.tenant_id = ${tenantId}
+      LEFT JOIN w3suite.shift_assignments sa 
+        ON sa.shift_id = s.id::text 
+        AND sa.tenant_id = ${tenantId}
+        AND sa.status NOT IN ('cancelled', 'override')
+      WHERE s.tenant_id = ${tenantId}
+        AND s.start_time >= ${startOfMonth}
+        AND s.end_time <= ${endOfMonth}
+        ${sql.raw(storeFilter)}
+      GROUP BY s.id, s.store_id, st.nome, s.name, s.start_time, s.end_time, s.required_staff, s.status
+      ORDER BY s.start_time
+    `);
+
+    // Build day×hour heatmap matrix (days × 24 hours)
+    const heatmapMatrix: { day: number; hour: number; coverage: number; shifts: number; details: any[] }[][] = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayData: { day: number; hour: number; coverage: number; shifts: number; details: any[] }[] = [];
+      for (let hour = 0; hour < 24; hour++) {
+        dayData.push({ day, hour, coverage: 0, shifts: 0, details: [] });
+      }
+      heatmapMatrix.push(dayData);
+    }
+
+    // Process each shift
+    const allShifts: any[] = [];
+    (shiftsData as any[]).forEach((shift: any) => {
+      const startTime = new Date(shift.startTime);
+      const endTime = new Date(shift.endTime);
+      const coverageRate = shift.requiredStaff > 0 
+        ? (shift.assignedCount / shift.requiredStaff) * 100 
+        : 0;
+      
+      const shiftInfo = {
+        shiftId: shift.id,
+        storeId: shift.storeId,
+        storeName: shift.storeName || 'N/A',
+        shiftName: shift.name,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        requiredStaff: shift.requiredStaff,
+        assignedStaff: shift.assignedCount,
+        coverageRate: Math.round(coverageRate),
+        status: coverageRate >= 100 ? 'fully_staffed' : coverageRate >= 75 ? 'adequate' : 'critical',
+        date: startTime.toISOString().split('T')[0]
+      };
+      allShifts.push(shiftInfo);
+      
+      // Add to heatmap for each hour the shift covers
+      const day = startTime.getDate();
+      const startHour = startTime.getHours();
+      const endHour = endTime.getHours() === 0 ? 24 : endTime.getHours();
+      
+      if (day >= 1 && day <= daysInMonth) {
+        for (let hour = startHour; hour < endHour && hour < 24; hour++) {
+          const cell = heatmapMatrix[day - 1][hour];
+          cell.shifts++;
+          cell.details.push({
+            shiftName: shift.name,
+            storeName: shift.storeName,
+            coverageRate: Math.round(coverageRate)
+          });
+          // Average coverage for the cell
+          const totalCoverage = cell.details.reduce((sum: number, d: any) => sum + d.coverageRate, 0);
+          cell.coverage = Math.round(totalCoverage / cell.details.length);
+        }
+      }
+    });
+
+    // Flatten heatmap for easy consumption
+    const heatmapFlat = heatmapMatrix.flatMap((dayRow, dayIndex) => 
+      dayRow.map(cell => ({
+        day: dayIndex + 1,
+        hour: cell.hour,
+        coverage: cell.coverage,
+        shiftsCount: cell.shifts,
+        hasData: cell.shifts > 0
+      }))
+    );
+
+    // Aggregate by hour (for 24-hour summary view)
+    const hourlyAggregate = Array.from({ length: 24 }, (_, hour) => {
+      const cellsForHour = heatmapMatrix.map(dayRow => dayRow[hour]).filter(c => c.shifts > 0);
+      const avgCoverage = cellsForHour.length > 0
+        ? Math.round(cellsForHour.reduce((sum, c) => sum + c.coverage, 0) / cellsForHour.length)
+        : 0;
+      const totalShifts = cellsForHour.reduce((sum, c) => sum + c.shifts, 0);
+      return { hour, coverage: avgCoverage, shifts: totalShifts };
+    });
+
+    // Calculate summary KPIs
+    const totalShifts = allShifts.length;
+    const averageCoverageRate = totalShifts > 0
+      ? Math.round(allShifts.reduce((sum, s) => sum + s.coverageRate, 0) / totalShifts)
+      : 0;
+    const criticalShifts = allShifts.filter(s => s.status === 'critical').length;
+    const fullyStaffed = allShifts.filter(s => s.status === 'fully_staffed').length;
+
+    res.json({
+      success: true,
+      month: targetMonth,
+      year: targetYear,
+      daysInMonth,
+      heatmap: heatmapFlat,
+      hourlyAggregate,
+      shifts: allShifts,
+      summary: {
+        totalShifts,
+        averageCoverageRate,
+        criticalShifts,
+        fullyStaffed,
+        adequateShifts: allShifts.filter(s => s.status === 'adequate').length
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching monthly coverage:', error);
+    res.status(500).json({ error: 'Failed to fetch monthly coverage' });
+  }
+});
+
 // GET /api/hr/attendance/logs - Get attendance/timbrature records with filters
 router.get('/attendance/logs', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
   try {
