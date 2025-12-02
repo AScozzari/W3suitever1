@@ -1654,7 +1654,7 @@ router.post('/attendance/clock-in', requirePermission('hr.timbrature.manage'), a
 router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
-    const { storeId, userId, status, severity, startDate, endDate } = req.query;
+    const { storeId, userId, status, severity, month, year } = req.query;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
@@ -1662,17 +1662,27 @@ router.get('/attendance/anomalies', requirePermission('hr.shifts.read'), async (
 
     const conditions = [eq(attendanceAnomalies.tenantId, tenantId)];
     
-    if (storeId) {
+    if (storeId && storeId !== 'all' && storeId !== '') {
       conditions.push(eq(attendanceAnomalies.storeId, storeId as string));
     }
-    if (userId) {
+    if (userId && userId !== '') {
       conditions.push(eq(attendanceAnomalies.userId, userId as string));
     }
-    if (status) {
+    if (status && status !== 'all') {
       conditions.push(eq(attendanceAnomalies.resolutionStatus, status as string));
     }
-    if (severity) {
+    if (severity && severity !== 'all') {
       conditions.push(eq(attendanceAnomalies.severity, severity as string));
+    }
+    
+    // Month/year filtering
+    if (month && year) {
+      const targetMonth = parseInt(month as string);
+      const targetYear = parseInt(year as string);
+      const startDate = new Date(targetYear, targetMonth - 1, 1);
+      const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+      conditions.push(gte(attendanceAnomalies.detectedAt, startDate));
+      conditions.push(lte(attendanceAnomalies.detectedAt, endDate));
     }
 
     const anomalies = await db.query.attendanceAnomalies.findMany({
