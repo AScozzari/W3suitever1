@@ -184,8 +184,8 @@ export default function MyPortal() {
   
   // ✅ DEFINITIVE SOLUTION: TanStack Query for HR requests with proper cache management
   const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
-    queryKey: ['/api/universal-requests', { department: 'hr', mine: true }],
-    queryFn: () => apiRequest('/api/universal-requests?department=hr&mine=true').then(res => res?.requests || res?.data || []),
+    queryKey: ['/api/workflows/requests', { department: 'hr', mine: true }],
+    queryFn: () => apiRequest('/api/workflows/requests?department=hr&mine=true').then(res => res?.requests || res?.data || []),
     enabled: !!hrQueriesEnabled,
     staleTime: 2 * 60 * 1000, // 2 minutes - HR requests change less frequently
   });
@@ -264,12 +264,12 @@ export default function MyPortal() {
   // ✅ DELETE Request Mutation
   const deleteRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      return await apiRequest(`/api/universal-requests/${requestId}`, {
+      return await apiRequest(`/api/workflows/requests/${requestId}`, {
         method: 'DELETE',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', { department: 'hr', mine: true }] });
+      queryClient.invalidateQueries({ queryKey: ['/api/workflows/requests', { department: 'hr', mine: true }] });
       toast({
         title: "Richiesta eliminata",
         description: "La richiesta è stata eliminata con successo.",
@@ -285,10 +285,10 @@ export default function MyPortal() {
     },
   });
 
-  // ✅ STEP 2: Create Universal Request Mutation
+  // ✅ STEP 2: Create Universal Request Mutation - FIXED ENDPOINT
   const createRequestMutation = useMutation({
     mutationFn: async (requestData: any) => {
-      return await apiRequest('/api/universal-requests', {
+      return await apiRequest('/api/workflows/requests', {
         method: 'POST',
         body: JSON.stringify(requestData),
         headers: {
@@ -297,10 +297,10 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', { department: 'hr', mine: true }] });
+      queryClient.invalidateQueries({ queryKey: ['/api/workflows/requests', { department: 'hr', mine: true }] });
       toast({
-        title: "Richiesta inviata",
-        description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
+        title: "Richiesta inviata con successo!",
+        description: "La tua richiesta è stata inviata e sarà esaminata dal manager.",
       });
       // Clear draft after successful submission
       try {
@@ -308,12 +308,14 @@ export default function MyPortal() {
       } catch (error) {
         // Silent fail for localStorage issues
       }
+      // Close both modals
       setHrRequestModal({ open: false, data: null });
+      setUniversalRequestModal({ open: false, data: null });
     },
     onError: (error: any) => {
       console.error('Errore creazione richiesta:', error);
       toast({
-        title: "Errore",
+        title: "Errore nell'invio",
         description: error?.message || "Errore durante l'invio della richiesta. Riprova.",
         variant: "destructive",
       });
