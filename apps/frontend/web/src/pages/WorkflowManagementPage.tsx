@@ -171,90 +171,88 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   });
 
   // 🎯 Coverage Dashboard API hooks - NEW 3-LEVEL STRUCTURE
+  // Note: queryClient auto-unwraps response.data, so we type the inner data directly
   const { 
     data: coverageData, 
     isLoading: coverageLoading,
     refetch: refetchCoverage 
   } = useQuery<{
-    success: boolean;
-    data: {
-      summary: {
-        overallHealth: 'critical' | 'warning' | 'healthy';
-        level1: {
-          name: string;
-          description: string;
-          totalDepartments: number;
-          coveredDepartments: number;
-          uncoveredDepartments: number;
-          status: 'ok' | 'warning' | 'critical';
-        };
-        level2: {
-          name: string;
-          description: string;
-          totalDepartments: number;
-          fullyConfigured: number;
-          partiallyConfigured: number;
-          notConfigured: number;
-          status: 'ok' | 'warning' | 'critical';
-        };
-        level3: {
-          name: string;
-          description: string;
-          totalUsers: number;
-          usersWithIssues: number;
-          usersOk: number;
-          status: 'ok' | 'warning' | 'critical';
-        };
+    summary: {
+      overallHealth: 'critical' | 'warning' | 'healthy';
+      level1: {
+        name: string;
+        description: string;
+        totalDepartments: number;
+        coveredDepartments: number;
+        uncoveredDepartments: number;
+        status: 'ok' | 'warning' | 'critical';
       };
-      level1: Array<{
-        department: string;
-        departmentLabel: string;
-        hasTeams: boolean;
-        teamCount: number;
-        teams: Array<{ id: string; name: string; memberCount: number }>;
+      level2: {
+        name: string;
+        description: string;
+        totalDepartments: number;
+        fullyConfigured: number;
+        partiallyConfigured: number;
+        notConfigured: number;
         status: 'ok' | 'warning' | 'critical';
-      }>;
-      level2: Array<{
-        department: string;
-        departmentLabel: string;
-        hasWorkflows: boolean;
-        workflowCount: number;
-        workflows: Array<{
-          id: string;
-          name: string;
-          actionTags: Array<{ value: string; label: string }>;
-          customAction?: string;
-        }>;
-        actionTags: {
-          expected: Array<{ value: string; label: string }>;
-          covered: Array<{ value: string; label: string }>;
-          missing: Array<{ value: string; label: string }>;
-          customActions: string[];
-          coveragePercent: number;
-        };
-        status: 'ok' | 'warning' | 'critical';
-      }>;
+      };
       level3: {
+        name: string;
+        description: string;
         totalUsers: number;
-        usersWithFullCoverage: number;
-        usersWithPartialCoverage: number;
-        orphanUsers: Array<{
-          id: string;
-          name: string;
-          email: string;
-          role: string;
-          coveredDepartments: string[];
-          missingDepartments: string[];
-        }>;
-        departmentBreakdown: Array<{
-          department: string;
-          departmentLabel: string;
-          usersWithCoverage: number;
-          usersWithoutCoverage: number;
-          coveragePercent: number;
-          isCritical: boolean;
-        }>;
+        usersWithIssues: number;
+        usersOk: number;
+        status: 'ok' | 'warning' | 'critical';
       };
+    };
+    level1: Array<{
+      department: string;
+      departmentLabel: string;
+      hasTeams: boolean;
+      teamCount: number;
+      teams: Array<{ id: string; name: string; memberCount: number }>;
+      status: 'ok' | 'warning' | 'critical';
+    }>;
+    level2: Array<{
+      department: string;
+      departmentLabel: string;
+      hasWorkflows: boolean;
+      workflowCount: number;
+      workflows: Array<{
+        id: string;
+        name: string;
+        actionTags: Array<{ value: string; label: string }>;
+        customAction?: string;
+      }>;
+      actionTags: {
+        expected: Array<{ value: string; label: string }>;
+        covered: Array<{ value: string; label: string }>;
+        missing: Array<{ value: string; label: string }>;
+        customActions: string[];
+        coveragePercent: number;
+      };
+      status: 'ok' | 'warning' | 'critical';
+    }>;
+    level3: {
+      totalUsers: number;
+      usersWithFullCoverage: number;
+      usersWithPartialCoverage: number;
+      orphanUsers: Array<{
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        coveredDepartments: string[];
+        missingDepartments: string[];
+      }>;
+      departmentBreakdown: Array<{
+        department: string;
+        departmentLabel: string;
+        usersWithCoverage: number;
+        usersWithoutCoverage: number;
+        coveragePercent: number;
+        isCritical: boolean;
+      }>;
     };
   }>({
     queryKey: ['/api/admin/coverage-dashboard'],
@@ -1640,8 +1638,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                   {/* Overall Summary Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Card className={`windtre-glass-panel border-l-4 ${
-                      coverageData?.data?.summary?.overallHealth === 'critical' ? 'border-l-red-500' :
-                      coverageData?.data?.summary?.overallHealth === 'warning' ? 'border-l-yellow-500' :
+                      coverageData?.summary?.overallHealth === 'critical' ? 'border-l-red-500' :
+                      coverageData?.summary?.overallHealth === 'warning' ? 'border-l-yellow-500' :
                       'border-l-green-500'
                     }`}>
                       <CardHeader className="pb-2">
@@ -1651,13 +1649,13 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       </CardHeader>
                       <CardContent>
                         <div className={`text-2xl font-bold ${
-                          coverageData?.data?.summary?.overallHealth === 'critical' ? 'text-red-600' :
-                          coverageData?.data?.summary?.overallHealth === 'warning' ? 'text-yellow-600' :
+                          coverageData?.summary?.overallHealth === 'critical' ? 'text-red-600' :
+                          coverageData?.summary?.overallHealth === 'warning' ? 'text-yellow-600' :
                           'text-green-600'
                         }`}>
                           {coverageLoading ? '...' : 
-                            coverageData?.data?.summary?.overallHealth === 'critical' ? 'Critico' :
-                            coverageData?.data?.summary?.overallHealth === 'warning' ? 'Attenzione' :
+                            coverageData?.summary?.overallHealth === 'critical' ? 'Critico' :
+                            coverageData?.summary?.overallHealth === 'warning' ? 'Attenzione' :
                             'OK'
                           }
                         </div>
@@ -1665,8 +1663,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                     </Card>
 
                     <Card className={`windtre-glass-panel border-l-4 ${
-                      coverageData?.data?.summary?.level1?.status === 'critical' ? 'border-l-red-500' :
-                      coverageData?.data?.summary?.level1?.status === 'warning' ? 'border-l-yellow-500' :
+                      coverageData?.summary?.level1?.status === 'critical' ? 'border-l-red-500' :
+                      coverageData?.summary?.level1?.status === 'warning' ? 'border-l-yellow-500' :
                       'border-l-green-500'
                     }`}>
                       <CardHeader className="pb-2">
@@ -1677,15 +1675,15 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {coverageLoading ? '...' : `${coverageData?.data?.summary?.level1?.coveredDepartments || 0}/${coverageData?.data?.summary?.level1?.totalDepartments || 0}`}
+                          {coverageLoading ? '...' : `${coverageData?.summary?.level1?.coveredDepartments || 0}/${coverageData?.summary?.level1?.totalDepartments || 0}`}
                         </div>
                         <p className="text-xs text-gray-500">Dipartimenti con Team</p>
                       </CardContent>
                     </Card>
 
                     <Card className={`windtre-glass-panel border-l-4 ${
-                      coverageData?.data?.summary?.level2?.status === 'critical' ? 'border-l-red-500' :
-                      coverageData?.data?.summary?.level2?.status === 'warning' ? 'border-l-yellow-500' :
+                      coverageData?.summary?.level2?.status === 'critical' ? 'border-l-red-500' :
+                      coverageData?.summary?.level2?.status === 'warning' ? 'border-l-yellow-500' :
                       'border-l-green-500'
                     }`}>
                       <CardHeader className="pb-2">
@@ -1696,15 +1694,15 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {coverageLoading ? '...' : `${coverageData?.data?.summary?.level2?.fullyConfigured || 0}/${coverageData?.data?.summary?.level2?.totalDepartments || 0}`}
+                          {coverageLoading ? '...' : `${coverageData?.summary?.level2?.fullyConfigured || 0}/${coverageData?.summary?.level2?.totalDepartments || 0}`}
                         </div>
                         <p className="text-xs text-gray-500">Dipartimenti con Workflow</p>
                       </CardContent>
                     </Card>
 
                     <Card className={`windtre-glass-panel border-l-4 ${
-                      coverageData?.data?.summary?.level3?.status === 'critical' ? 'border-l-red-500' :
-                      coverageData?.data?.summary?.level3?.status === 'warning' ? 'border-l-yellow-500' :
+                      coverageData?.summary?.level3?.status === 'critical' ? 'border-l-red-500' :
+                      coverageData?.summary?.level3?.status === 'warning' ? 'border-l-yellow-500' :
                       'border-l-green-500'
                     }`}>
                       <CardHeader className="pb-2">
@@ -1715,7 +1713,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {coverageLoading ? '...' : `${coverageData?.data?.summary?.level3?.usersOk || 0}/${coverageData?.data?.summary?.level3?.totalUsers || 0}`}
+                          {coverageLoading ? '...' : `${coverageData?.summary?.level3?.usersOk || 0}/${coverageData?.summary?.level3?.totalUsers || 0}`}
                         </div>
                         <p className="text-xs text-gray-500">Utenti OK</p>
                       </CardContent>
@@ -1730,7 +1728,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         Livello 1: Dipartimenti → Team
                       </CardTitle>
                       <CardDescription>
-                        {coverageData?.data?.summary?.level1?.description || 'Ogni dipartimento deve avere almeno un team assegnato'}
+                        {coverageData?.summary?.level1?.description || 'Ogni dipartimento deve avere almeno un team assegnato'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1738,7 +1736,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         <div className="text-center py-8 text-gray-500">Caricamento...</div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {coverageData?.data?.level1?.map((dept) => (
+                          {coverageData?.level1?.map((dept) => (
                             <div 
                               key={dept.department}
                               className={`p-4 rounded-lg border-2 ${
@@ -1788,14 +1786,14 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       )}
 
                       {/* Uncovered Departments Alert */}
-                      {coverageData?.data?.level1?.filter(d => d.status === 'critical')?.length > 0 && (
+                      {coverageData?.level1?.filter(d => d.status === 'critical')?.length > 0 && (
                         <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
                           <h4 className="font-medium text-red-700 mb-2 flex items-center gap-2">
                             <XCircle className="h-4 w-4" />
                             Dipartimenti senza Team
                           </h4>
                           <div className="flex flex-wrap gap-2">
-                            {coverageData.data.level1.filter(d => d.status === 'critical').map((dept) => (
+                            {coverageData.level1.filter(d => d.status === 'critical').map((dept) => (
                               <Badge key={dept.department} variant="destructive">{dept.departmentLabel}</Badge>
                             ))}
                           </div>
@@ -1812,7 +1810,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         Livello 2: Dipartimenti → Workflow con Action Tags
                       </CardTitle>
                       <CardDescription>
-                        {coverageData?.data?.summary?.level2?.description || 'Ogni dipartimento deve avere workflow configurati con action tags'}
+                        {coverageData?.summary?.level2?.description || 'Ogni dipartimento deve avere workflow configurati con action tags'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1820,7 +1818,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         <div className="text-center py-8 text-gray-500">Caricamento...</div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {coverageData?.data?.level2?.map((dept) => (
+                          {coverageData?.level2?.map((dept) => (
                             <div 
                               key={dept.department}
                               className={`p-4 rounded-lg border-2 ${
@@ -1898,7 +1896,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         Livello 3: Utenti → Copertura per Dipartimento
                       </CardTitle>
                       <CardDescription>
-                        {coverageData?.data?.summary?.level3?.description || 'Ogni utente deve avere accesso ai dipartimenti critici (HR)'}
+                        {coverageData?.summary?.level3?.description || 'Ogni utente deve avere accesso ai dipartimenti critici (HR)'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1911,33 +1909,33 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                             <div className="p-4 bg-gray-50 rounded-lg">
                               <p className="text-sm text-gray-600">Utenti Totali</p>
                               <p className="text-2xl font-bold text-gray-900">
-                                {coverageData?.data?.level3?.totalUsers || 0}
+                                {coverageData?.level3?.totalUsers || 0}
                               </p>
                             </div>
                             <div className={`p-4 rounded-lg ${
-                              (coverageData?.data?.level3?.orphanUsers?.length || 0) > 0 ? 'bg-red-50' : 'bg-green-50'
+                              (coverageData?.level3?.orphanUsers?.length || 0) > 0 ? 'bg-red-50' : 'bg-green-50'
                             }`}>
                               <p className="text-sm text-gray-600">Utenti con Problemi</p>
                               <p className={`text-2xl font-bold ${
-                                (coverageData?.data?.level3?.orphanUsers?.length || 0) > 0 ? 'text-red-600' : 'text-green-600'
+                                (coverageData?.level3?.orphanUsers?.length || 0) > 0 ? 'text-red-600' : 'text-green-600'
                               }`}>
-                                {coverageData?.data?.level3?.orphanUsers?.length || 0}
+                                {coverageData?.level3?.orphanUsers?.length || 0}
                               </p>
                             </div>
                             <div className="p-4 bg-green-50 rounded-lg">
                               <p className="text-sm text-gray-600">Copertura Completa</p>
                               <p className="text-2xl font-bold text-green-600">
-                                {coverageData?.data?.level3?.usersWithFullCoverage || 0}
+                                {coverageData?.level3?.usersWithFullCoverage || 0}
                               </p>
                             </div>
                           </div>
 
                           {/* Department Breakdown */}
-                          {coverageData?.data?.level3?.departmentBreakdown && (
+                          {coverageData?.level3?.departmentBreakdown && (
                             <div className="mb-6">
                               <h4 className="font-medium text-gray-700 mb-3">Copertura per Dipartimento</h4>
                               <div className="space-y-3">
-                                {coverageData.data.level3.departmentBreakdown.map((dept) => (
+                                {coverageData.level3.departmentBreakdown.map((dept) => (
                                   <div key={dept.department} className="flex items-center gap-4">
                                     <div className="w-28 text-sm font-medium text-gray-700">
                                       {dept.departmentLabel}
@@ -1969,14 +1967,14 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                           )}
 
                           {/* Orphan Users - Users missing critical department coverage */}
-                          {coverageData?.data?.level3?.orphanUsers?.length > 0 && (
+                          {coverageData?.level3?.orphanUsers?.length > 0 && (
                             <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                               <h4 className="font-medium text-red-700 mb-3 flex items-center gap-2">
                                 <XCircle className="h-4 w-4" />
-                                Utenti con Dipartimenti Critici Mancanti ({coverageData.data.level3.orphanUsers.length})
+                                Utenti con Dipartimenti Critici Mancanti ({coverageData.level3.orphanUsers.length})
                               </h4>
                               <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {coverageData.data.level3.orphanUsers.map((user) => (
+                                {coverageData.level3.orphanUsers.map((user) => (
                                   <div key={user.id} className="flex items-center justify-between p-2 bg-white rounded border border-red-100">
                                     <div className="flex items-center gap-3">
                                       <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
