@@ -966,7 +966,7 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
   }
 });
 
-// PATCH /api/teams/:id - Update team
+// PATCH /api/teams/:id - Update team with workflow assignments sync
 router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
@@ -977,12 +977,15 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
+    // 🎯 Extract workflowAssignments before update (not part of teams table)
+    const { workflowAssignments, ...teamData } = req.body;
+
     // 🎯 ENHANCED UPDATE: Support assignedDepartments updates
     await setTenantContext(tenantId);
     const [updatedTeam] = await db
       .update(teams)
       .set({
-        ...req.body,
+        ...teamData,
         updatedAt: new Date(),
         updatedBy: userId || 'system'
       })
@@ -996,10 +999,52 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       return res.status(404).json({ error: 'Team not found' });
     }
 
+    // 🎯 SYNC WORKFLOW ASSIGNMENTS: Replace all existing assignments with new ones
+    if (workflowAssignments !== undefined) {
+      // Step 1: Delete all existing assignments for this team
+      await db
+        .delete(teamWorkflowAssignments)
+        .where(and(
+          eq(teamWorkflowAssignments.teamId, teamId),
+          eq(teamWorkflowAssignments.tenantId, tenantId)
+        ));
+
+      logger.info('🗑️ Deleted existing workflow assignments for team', {
+        teamId,
+        tenantId
+      });
+
+      // Step 2: Insert new assignments if any
+      if (Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
+        const assignmentsToInsert = workflowAssignments.map((assignment: any) => ({
+          tenantId,
+          teamId,
+          templateId: assignment.templateId,
+          forDepartment: assignment.department,
+          autoAssign: assignment.autoAssign ?? true,
+          priority: assignment.priority ?? 100,
+          isActive: true,
+          createdBy: userId || 'system',
+          updatedBy: userId || 'system'
+        }));
+
+        await db
+          .insert(teamWorkflowAssignments)
+          .values(assignmentsToInsert);
+
+        logger.info('✅ Workflow assignments synced for updated team', {
+          teamId,
+          assignmentsCount: assignmentsToInsert.length,
+          departments: workflowAssignments.map((a: any) => a.department)
+        });
+      }
+    }
+
     logger.info('Team updated with department assignments', { 
       teamId: updatedTeam.id, 
       teamName: updatedTeam.name,
       assignedDepartments: updatedTeam.assignedDepartments,
+      workflowAssignmentsCount: workflowAssignments?.length || 0,
       tenantId, 
       userId 
     });
