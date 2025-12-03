@@ -50,8 +50,11 @@ const ITALIAN_HR_CATEGORIES = {
   }
 } as const;
 
+// Type for HR Type entry
+type HRTypeEntry = { name: string; desc: string };
+
 // 🇮🇹 Complete Italian HR Request Types
-const ITALIAN_HR_TYPES = {
+const ITALIAN_HR_TYPES: Record<string, Record<string, HRTypeEntry>> = {
   leave: {
     vacation: { name: 'Ferie Annuali', desc: 'Vacanze retribuite (min. 26gg/anno)' },
     rol_leave: { name: 'Permessi ROL', desc: 'Riduzione Orario Lavoro' },
@@ -94,7 +97,7 @@ const ITALIAN_HR_TYPES = {
     volunteer_leave: { name: 'Volontariato', desc: 'Attività di volontariato' },
     donation_leave: { name: 'Donazione', desc: 'Sangue, midollo, organi' }
   }
-} as const;
+};
 
 interface HRRequestFormProps {
   onSubmit: (data: any) => void;
@@ -122,9 +125,9 @@ export default function HRRequestForm({ onSubmit, onBack, isSubmitting }: HRRequ
     e.preventDefault();
 
     // Get type details for title
-    const category = formData.category as keyof typeof ITALIAN_HR_TYPES;
+    const category = formData.category as string;
     const typeKey = formData.type as string;
-    const typeDetails = ITALIAN_HR_TYPES[category]?.[typeKey as keyof typeof ITALIAN_HR_TYPES[typeof category]];
+    const typeDetails = ITALIAN_HR_TYPES[category]?.[typeKey];
     
     const baseData = {
       department: 'hr',
@@ -148,8 +151,8 @@ export default function HRRequestForm({ onSubmit, onBack, isSubmitting }: HRRequ
     onSubmit(baseData);
   };
 
-  const getAvailableTypes = () => {
-    const category = formData.category as keyof typeof ITALIAN_HR_TYPES;
+  const getAvailableTypes = (): Record<string, HRTypeEntry> => {
+    const category = formData.category as string;
     if (!category || !ITALIAN_HR_TYPES[category]) return {};
     return ITALIAN_HR_TYPES[category];
   };
@@ -206,9 +209,9 @@ export default function HRRequestForm({ onSubmit, onBack, isSubmitting }: HRRequ
               ))}
             </SelectContent>
           </Select>
-          {formData.type && getAvailableTypes()[formData.type as keyof ReturnType<typeof getAvailableTypes>] && (
+          {formData.type && getAvailableTypes()[formData.type] && (
             <p className="text-xs text-gray-500 mt-1">
-              {getAvailableTypes()[formData.type as keyof ReturnType<typeof getAvailableTypes>].desc}
+              {getAvailableTypes()[formData.type].desc}
             </p>
           )}
         </div>
