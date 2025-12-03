@@ -5,6 +5,7 @@ import {
   teams, 
   teamWorkflowAssignments,
   users,
+  userAssignments,
   userWorkflowAssignments,
   workflowInstances,
   workflowTemplates,
@@ -585,6 +586,7 @@ export class RequestTriggerService {
   /**
    * 📢 STEP 5: Notify Team Supervisors about new request
    * Sends in-app notification to team supervisor(s) when a new request is assigned
+   * Supports both user-based and role-based supervisor assignments
    */
   private static async notifyTeamSupervisors(
     teamId: string,
@@ -593,13 +595,15 @@ export class RequestTriggerService {
     tenantId: string
   ): Promise<void> {
     try {
-      // Get team with supervisor info
+      // Get team with supervisor info (both user and role based)
       const [team] = await db
         .select({
           id: teams.id,
           name: teams.name,
           primarySupervisorUser: teams.primarySupervisorUser,
-          secondarySupervisorUser: teams.secondarySupervisorUser
+          secondarySupervisorUser: teams.secondarySupervisorUser,
+          primarySupervisorRole: teams.primarySupervisorRole,
+          secondarySupervisorRoles: teams.secondarySupervisorRoles
         })
         .from(teams)
         .where(and(
@@ -626,26 +630,59 @@ export class RequestTriggerService {
         ? `${requester.firstName || ''} ${requester.lastName || ''}`.trim() || requester.email
         : 'Un utente';
 
-      // Collect supervisor IDs to notify
-      const supervisorIds: string[] = [];
+      // Collect supervisor IDs to notify (use Set to avoid duplicates)
+      const supervisorIds = new Set<string>();
       
+      // 1. Add user-based supervisors
       if (team.primarySupervisorUser) {
-        supervisorIds.push(team.primarySupervisorUser);
+        supervisorIds.add(team.primarySupervisorUser);
       }
-      if (team.secondarySupervisorUser && team.secondarySupervisorUser !== team.primarySupervisorUser) {
-        supervisorIds.push(team.secondarySupervisorUser);
+      if (team.secondarySupervisorUser) {
+        supervisorIds.add(team.secondarySupervisorUser);
       }
 
-      if (supervisorIds.length === 0) {
-        logger.warn('⚠️ No supervisors configured for team', { 
+      // 2. If no user-based supervisors, try role-based supervisors
+      if (supervisorIds.size === 0) {
+        const roleIds: string[] = [];
+        
+        if (team.primarySupervisorRole) {
+          roleIds.push(team.primarySupervisorRole);
+        }
+        if (team.secondarySupervisorRoles && team.secondarySupervisorRoles.length > 0) {
+          roleIds.push(...team.secondarySupervisorRoles);
+        }
+
+        if (roleIds.length > 0) {
+          // Find users assigned to these supervisor roles
+          const usersWithSupervisorRoles = await db
+            .select({ userId: userAssignments.userId })
+            .from(userAssignments)
+            .where(inArray(userAssignments.roleId, roleIds));
+
+          usersWithSupervisorRoles.forEach(u => supervisorIds.add(u.userId));
+
+          logger.info('🔍 Found role-based supervisors', {
+            teamId: team.id,
+            roleIds,
+            foundUsers: usersWithSupervisorRoles.length
+          });
+        }
+      }
+
+      // 3. If still no supervisors, log warning and return
+      if (supervisorIds.size === 0) {
+        logger.warn('⚠️ No supervisors (user or role-based) configured for team', { 
           teamId: team.id, 
-          teamName: team.name 
+          teamName: team.name,
+          hasUserSupervisors: !!(team.primarySupervisorUser || team.secondarySupervisorUser),
+          hasRoleSupervisors: !!(team.primarySupervisorRole || (team.secondarySupervisorRoles && team.secondarySupervisorRoles.length > 0))
         });
         return;
       }
 
       // Create notifications for all supervisors
-      const notificationsToInsert = supervisorIds.map(supervisorId => ({
+      const supervisorIdsArray = Array.from(supervisorIds);
+      const notificationsToInsert = supervisorIdsArray.map(supervisorId => ({
         tenantId,
         targetUserId: supervisorId,
         type: 'custom' as const,
@@ -676,8 +713,9 @@ export class RequestTriggerService {
         teamId: team.id,
         teamName: team.name,
         requestId: request.id,
-        supervisorCount: supervisorIds.length,
-        supervisorIds
+        supervisorCount: supervisorIdsArray.length,
+        supervisorIds: supervisorIdsArray,
+        notificationMethod: team.primarySupervisorUser || team.secondarySupervisorUser ? 'user-based' : 'role-based'
       });
 
     } catch (error) {

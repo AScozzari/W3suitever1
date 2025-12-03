@@ -359,6 +359,7 @@ router.get('/universal-requests', requirePermission('hr.requests.read'), async (
 // The canonical endpoint for creating requests is in workflows.ts with full workflow automation support
 // This endpoint is kept as redirect for backwards compatibility
 router.post('/universal-requests', requirePermission('hr.requests.create'), async (req: Request, res: Response) => {
+  res.setHeader('Location', '/api/workflows/requests');
   return res.status(301).json({
     error: 'Endpoint deprecated',
     message: 'Please use POST /api/workflows/requests instead. This endpoint provides full workflow automation.',
@@ -895,27 +896,45 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
 
     // 🎯 SYNC WORKFLOW ASSIGNMENTS: Save to team_workflow_assignments table
     if (workflowAssignments && Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
-      const assignmentsToInsert = workflowAssignments.map((assignment: any) => ({
-        tenantId,
-        teamId: newTeam.id,
-        templateId: assignment.templateId,
-        forDepartment: assignment.department,
-        autoAssign: assignment.autoAssign ?? true,
-        priority: assignment.priority ?? 100,
-        isActive: true,
-        createdBy: userId || 'system',
-        updatedBy: userId || 'system'
-      }));
+      // Valid department enum values (must match departmentEnum in schema)
+      const validDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+      
+      const assignmentsToInsert = workflowAssignments
+        .filter((assignment: any) => {
+          // Validate department is a valid enum value
+          const dept = assignment.department?.toLowerCase();
+          if (!dept || !validDepartments.includes(dept)) {
+            logger.warn('⚠️ Skipping invalid department in workflow assignment', {
+              department: assignment.department,
+              validOptions: validDepartments
+            });
+            return false;
+          }
+          return true;
+        })
+        .map((assignment: any) => ({
+          tenantId,
+          teamId: newTeam.id,
+          templateId: assignment.templateId,
+          forDepartment: assignment.department.toLowerCase(), // Normalize to lowercase
+          autoAssign: assignment.autoAssign ?? true,
+          priority: assignment.priority ?? 100,
+          isActive: true,
+          createdBy: userId || 'system',
+          updatedBy: userId || 'system'
+        }));
 
-      await db
-        .insert(teamWorkflowAssignments)
-        .values(assignmentsToInsert);
+      if (assignmentsToInsert.length > 0) {
+        await db
+          .insert(teamWorkflowAssignments)
+          .values(assignmentsToInsert);
 
-      logger.info('✅ Workflow assignments synced for new team', {
-        teamId: newTeam.id,
-        assignmentsCount: assignmentsToInsert.length,
-        departments: workflowAssignments.map((a: any) => a.department)
-      });
+        logger.info('✅ Workflow assignments synced for new team', {
+          teamId: newTeam.id,
+          assignmentsCount: assignmentsToInsert.length,
+          departments: assignmentsToInsert.map((a: any) => a.forDepartment)
+        });
+      }
     }
 
     logger.info('Team created with department assignments', { 
@@ -988,27 +1007,45 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
 
       // Step 2: Insert new assignments if any
       if (Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
-        const assignmentsToInsert = workflowAssignments.map((assignment: any) => ({
-          tenantId,
-          teamId,
-          templateId: assignment.templateId,
-          forDepartment: assignment.department,
-          autoAssign: assignment.autoAssign ?? true,
-          priority: assignment.priority ?? 100,
-          isActive: true,
-          createdBy: userId || 'system',
-          updatedBy: userId || 'system'
-        }));
+        // Valid department enum values (must match departmentEnum in schema)
+        const validDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+        
+        const assignmentsToInsert = workflowAssignments
+          .filter((assignment: any) => {
+            // Validate department is a valid enum value
+            const dept = assignment.department?.toLowerCase();
+            if (!dept || !validDepartments.includes(dept)) {
+              logger.warn('⚠️ Skipping invalid department in workflow assignment', {
+                department: assignment.department,
+                validOptions: validDepartments
+              });
+              return false;
+            }
+            return true;
+          })
+          .map((assignment: any) => ({
+            tenantId,
+            teamId,
+            templateId: assignment.templateId,
+            forDepartment: assignment.department.toLowerCase(), // Normalize to lowercase
+            autoAssign: assignment.autoAssign ?? true,
+            priority: assignment.priority ?? 100,
+            isActive: true,
+            createdBy: userId || 'system',
+            updatedBy: userId || 'system'
+          }));
 
-        await db
-          .insert(teamWorkflowAssignments)
-          .values(assignmentsToInsert);
+        if (assignmentsToInsert.length > 0) {
+          await db
+            .insert(teamWorkflowAssignments)
+            .values(assignmentsToInsert);
 
-        logger.info('✅ Workflow assignments synced for updated team', {
-          teamId,
-          assignmentsCount: assignmentsToInsert.length,
-          departments: workflowAssignments.map((a: any) => a.department)
-        });
+          logger.info('✅ Workflow assignments synced for updated team', {
+            teamId,
+            assignmentsCount: assignmentsToInsert.length,
+            departments: assignmentsToInsert.map((a: any) => a.forDepartment)
+          });
+        }
       }
     }
 
