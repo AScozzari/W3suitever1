@@ -1735,4 +1735,394 @@ router.get('/workflow-instances/:id/details', requirePermission('workflows.read'
   }
 });
 
+// ==================== ADMIN COVERAGE DASHBOARD ENDPOINTS ====================
+
+/**
+ * 📊 GET /api/admin/coverage-dashboard
+ * Returns complete coverage analysis:
+ * - Departments with their teams and workflow scopes
+ * - Critical issues (teams without workflows, departments without teams)
+ */
+router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    await setTenantContext(tenantId);
+
+    // 1. Get all active teams with their departments
+    const allTeams = await db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        description: teams.description,
+        teamType: teams.teamType,
+        assignedDepartments: teams.assignedDepartments,
+        userMembers: teams.userMembers,
+        roleMembers: teams.roleMembers,
+        primarySupervisorUser: teams.primarySupervisorUser,
+        primarySupervisorRole: teams.primarySupervisorRole,
+        isActive: teams.isActive
+      })
+      .from(teams)
+      .where(and(
+        eq(teams.tenantId, tenantId),
+        eq(teams.isActive, true)
+      ));
+
+    // 2. Get all workflow templates with their scopes
+    const allTemplates = await db
+      .select({
+        id: workflowTemplates.id,
+        name: workflowTemplates.name,
+        category: workflowTemplates.category,
+        templateType: workflowTemplates.templateType,
+        isActive: workflowTemplates.isActive
+      })
+      .from(workflowTemplates)
+      .where(and(
+        eq(workflowTemplates.tenantId, tenantId),
+        eq(workflowTemplates.isActive, true)
+      ));
+
+    // 3. Get all team workflow assignments
+    const allAssignments = await db
+      .select({
+        id: teamWorkflowAssignments.id,
+        teamId: teamWorkflowAssignments.teamId,
+        templateId: teamWorkflowAssignments.templateId,
+        forDepartment: teamWorkflowAssignments.forDepartment,
+        isActive: teamWorkflowAssignments.isActive
+      })
+      .from(teamWorkflowAssignments)
+      .where(and(
+        eq(teamWorkflowAssignments.tenantId, tenantId),
+        eq(teamWorkflowAssignments.isActive, true)
+      ));
+
+    // 4. Define all possible departments
+    const allDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+
+    // 5. Build coverage analysis per department
+    const departmentCoverage = allDepartments.map(dept => {
+      // Teams assigned to this department
+      const teamsForDept = allTeams.filter(t => 
+        t.assignedDepartments && t.assignedDepartments.includes(dept)
+      );
+
+      // Workflow templates for this department (by category)
+      const templatesForDept = allTemplates.filter(t => 
+        t.category?.toLowerCase() === dept
+      );
+
+      // Unique scopes available (templateType)
+      const availableScopes = [...new Set(templatesForDept.map(t => t.templateType))];
+
+      // Workflow assignments for teams in this department
+      const assignmentsForDept = allAssignments.filter(a => 
+        a.forDepartment?.toLowerCase() === dept
+      );
+
+      // Scopes covered by team assignments
+      const coveredScopes = assignmentsForDept
+        .map(a => {
+          const template = templatesForDept.find(t => t.id === a.templateId);
+          return template?.templateType;
+        })
+        .filter(Boolean);
+
+      // Scopes NOT covered
+      const uncoveredScopes = availableScopes.filter(s => !coveredScopes.includes(s));
+
+      // Calculate status
+      let status: 'ok' | 'warning' | 'critical' = 'ok';
+      if (teamsForDept.length === 0) {
+        status = 'critical';
+      } else if (uncoveredScopes.length > 0) {
+        status = 'warning';
+      }
+
+      // Count members in teams for this department
+      const totalMembers = teamsForDept.reduce((sum, t) => {
+        const userCount = (t.userMembers || []).length;
+        const roleCount = (t.roleMembers || []).length;
+        return sum + userCount + roleCount;
+      }, 0);
+
+      return {
+        department: dept,
+        departmentLabel: dept.charAt(0).toUpperCase() + dept.slice(1),
+        status,
+        teams: teamsForDept.map(t => ({
+          id: t.id,
+          name: t.name,
+          memberCount: (t.userMembers || []).length + (t.roleMembers || []).length,
+          hasSupervisor: !!(t.primarySupervisorUser || t.primarySupervisorRole)
+        })),
+        teamCount: teamsForDept.length,
+        totalMembers,
+        workflows: {
+          available: templatesForDept.map(t => ({
+            id: t.id,
+            name: t.name,
+            scope: t.templateType
+          })),
+          availableCount: templatesForDept.length,
+          coveredScopes,
+          uncoveredScopes,
+          coveragePercent: availableScopes.length > 0 
+            ? Math.round((coveredScopes.length / availableScopes.length) * 100) 
+            : 100
+        }
+      };
+    });
+
+    // 6. Calculate summary metrics
+    const criticalDepartments = departmentCoverage.filter(d => d.status === 'critical');
+    const warningDepartments = departmentCoverage.filter(d => d.status === 'warning');
+    const okDepartments = departmentCoverage.filter(d => d.status === 'ok');
+
+    // 7. Find teams without any workflow assignments
+    const teamsWithoutWorkflows = allTeams.filter(team => {
+      const hasAssignments = allAssignments.some(a => a.teamId === team.id);
+      return !hasAssignments;
+    }).map(t => ({
+      id: t.id,
+      name: t.name,
+      departments: t.assignedDepartments || []
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalDepartments: allDepartments.length,
+          criticalCount: criticalDepartments.length,
+          warningCount: warningDepartments.length,
+          okCount: okDepartments.length,
+          overallHealth: criticalDepartments.length > 0 ? 'critical' 
+            : warningDepartments.length > 0 ? 'warning' : 'healthy'
+        },
+        departments: departmentCoverage,
+        criticalIssues: {
+          departmentsWithoutTeams: criticalDepartments.map(d => d.department),
+          teamsWithoutWorkflows
+        }
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching coverage dashboard:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch coverage dashboard' });
+  }
+});
+
+/**
+ * 👤 GET /api/admin/orphan-users
+ * Returns users who are not members of any team for specific departments
+ * Helps identify employees who cannot submit requests for certain departments
+ */
+router.get('/admin/orphan-users', requirePermission('teams.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    await setTenantContext(tenantId);
+
+    // 1. Get all active users in tenant
+    const allUsers = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive
+      })
+      .from(users)
+      .where(and(
+        eq(users.tenantId, tenantId),
+        eq(users.isActive, true)
+      ));
+
+    // 2. Get all active teams with their members and departments
+    const allTeams = await db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        assignedDepartments: teams.assignedDepartments,
+        userMembers: teams.userMembers,
+        roleMembers: teams.roleMembers
+      })
+      .from(teams)
+      .where(and(
+        eq(teams.tenantId, tenantId),
+        eq(teams.isActive, true)
+      ));
+
+    // 3. Build user-to-department coverage map
+    const userCoverage = new Map<string, Set<string>>();
+    
+    // Initialize all users with empty coverage
+    allUsers.forEach(user => {
+      userCoverage.set(user.id, new Set());
+    });
+
+    // Add department coverage based on team membership
+    allTeams.forEach(team => {
+      const teamDepartments = team.assignedDepartments || [];
+      const teamMembers = team.userMembers || [];
+      
+      teamMembers.forEach(userId => {
+        const coverage = userCoverage.get(userId);
+        if (coverage) {
+          teamDepartments.forEach(dept => coverage.add(dept));
+        }
+      });
+    });
+
+    // 4. Critical departments that users should typically have coverage for
+    const criticalDepartments = ['hr']; // HR is critical - everyone should be able to submit HR requests
+
+    // 5. Find orphan users (no team membership at all)
+    const orphanUsers = allUsers.filter(user => {
+      const coverage = userCoverage.get(user.id);
+      return !coverage || coverage.size === 0;
+    });
+
+    // 6. Find users missing critical department coverage
+    const usersWithMissingCoverage = allUsers
+      .filter(user => {
+        const coverage = userCoverage.get(user.id);
+        if (!coverage) return true;
+        return criticalDepartments.some(dept => !coverage.has(dept));
+      })
+      .map(user => {
+        const coverage = userCoverage.get(user.id) || new Set();
+        const missingDepts = criticalDepartments.filter(dept => !coverage.has(dept));
+        return {
+          id: user.id,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          email: user.email,
+          role: user.role,
+          coveredDepartments: Array.from(coverage),
+          missingCriticalDepartments: missingDepts,
+          isOrphan: coverage.size === 0
+        };
+      });
+
+    // 7. Build department-wise breakdown
+    const allDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+    const departmentBreakdown = allDepartments.map(dept => {
+      const usersWithCoverage = allUsers.filter(user => {
+        const coverage = userCoverage.get(user.id);
+        return coverage && coverage.has(dept);
+      });
+      const usersWithoutCoverage = allUsers.filter(user => {
+        const coverage = userCoverage.get(user.id);
+        return !coverage || !coverage.has(dept);
+      });
+
+      return {
+        department: dept,
+        departmentLabel: dept.charAt(0).toUpperCase() + dept.slice(1),
+        coveredUsersCount: usersWithCoverage.length,
+        uncoveredUsersCount: usersWithoutCoverage.length,
+        coveragePercent: allUsers.length > 0 
+          ? Math.round((usersWithCoverage.length / allUsers.length) * 100) 
+          : 0,
+        isCritical: criticalDepartments.includes(dept)
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalUsers: allUsers.length,
+          orphanUsers: orphanUsers.length,
+          usersWithMissingCritical: usersWithMissingCoverage.filter(u => u.missingCriticalDepartments.length > 0).length
+        },
+        orphanUsers: orphanUsers.map(u => ({
+          id: u.id,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
+          email: u.email,
+          role: u.role
+        })),
+        usersWithMissingCoverage: usersWithMissingCoverage.filter(u => !u.isOrphan),
+        departmentBreakdown
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching orphan users:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch orphan users' });
+  }
+});
+
+/**
+ * 📋 GET /api/admin/workflow-scopes
+ * Returns all available workflow scopes (templateTypes) grouped by department
+ * Used to populate scope selection in UI
+ */
+router.get('/admin/workflow-scopes', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get all workflow templates grouped by category and templateType
+    const allTemplates = await db
+      .select({
+        category: workflowTemplates.category,
+        templateType: workflowTemplates.templateType,
+        name: workflowTemplates.name
+      })
+      .from(workflowTemplates)
+      .where(and(
+        eq(workflowTemplates.tenantId, tenantId),
+        eq(workflowTemplates.isActive, true)
+      ));
+
+    // Group by department (category)
+    const scopesByDepartment: Record<string, Array<{ scope: string; name: string; label: string }>> = {};
+    
+    allTemplates.forEach(template => {
+      const dept = template.category?.toLowerCase() || 'other';
+      if (!scopesByDepartment[dept]) {
+        scopesByDepartment[dept] = [];
+      }
+      
+      // Avoid duplicates
+      const exists = scopesByDepartment[dept].some(s => s.scope === template.templateType);
+      if (!exists && template.templateType) {
+        scopesByDepartment[dept].push({
+          scope: template.templateType,
+          name: template.name,
+          label: template.templateType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      data: scopesByDepartment
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching workflow scopes:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch workflow scopes' });
+  }
+});
+
 export default router;
