@@ -21,7 +21,7 @@ let backendServer: any = null;
 let isShuttingDown = false;
 
 // Feature flag for nginx management  
-const ENABLE_EMBEDDED_NGINX = true;
+const ENABLE_EMBEDDED_NGINX = process.env.DISABLE_EMBEDDED_NGINX !== 'true';
 
 // Stop all services cleanly before restart
 async function stopAllServices() {

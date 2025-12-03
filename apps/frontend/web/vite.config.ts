@@ -42,7 +42,7 @@ export default defineConfig({
           
           // Heavy UI libraries - split separately
           'calendar': ['@fullcalendar/core', '@fullcalendar/react', '@fullcalendar/daygrid', '@fullcalendar/timegrid', '@fullcalendar/list', '@fullcalendar/interaction'],
-          'flow': ['@xyflow/react', 'reactflow'],
+          'flow': ['@xyflow/react'],
           
           // Icons
           'icons': ['lucide-react', 'react-icons'],
@@ -54,14 +54,7 @@ export default defineConfig({
     },
     // Code splitting & minification
     chunkSizeWarningLimit: 1000,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false, // Keep console for debugging
-        drop_debugger: true,
-        pure_funcs: ['console.log'], // Remove console.log in production
-      },
-    },
+    minify: 'esbuild',
     // Source maps for debugging
     sourcemap: false, // Disable in production for smaller bundle
   },

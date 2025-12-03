@@ -1,5 +1,5 @@
 import { eq, and, desc } from 'drizzle-orm';
-import { db } from '../core/db.js';
+import { db, setTenantContext } from '../core/db.js';
 import { 
   crmLeads,
   crmDeals,
@@ -12,7 +12,6 @@ import {
   type InsertWorkflowInstance
 } from '../db/schema/w3suite.js';
 import { logger } from '../core/logger.js';
-import { setTenantContext } from '../core/tenant-context.js';
 
 export interface CampaignWorkflowResult {
   success: boolean;
