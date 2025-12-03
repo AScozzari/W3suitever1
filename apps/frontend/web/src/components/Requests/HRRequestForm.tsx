@@ -137,14 +137,14 @@ export default function HRRequestForm({ onSubmit, onBack, isSubmitting }: HRRequ
       description: formData.reason || '',
       requestData: {
         ...formData,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
         halfDay: {
           start: formData.halfDayStart,
           end: formData.halfDayEnd
         }
       },
-      startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
-      endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
-      attachments: [],
+      attachmentUrls: [],
       priority: formData.priority
     };
 
