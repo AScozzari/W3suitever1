@@ -1931,6 +1931,130 @@ export default function MyPortal() {
             }}
             isSubmitting={createRequestMutation.isPending}
           />
+
+          {/* ✅ View Request Modal - Shows request details */}
+          <Dialog open={hrRequestModal.open} onOpenChange={(open) => setHrRequestModal(open ? hrRequestModal : { open: false, data: null })}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-orange-500" />
+                  Dettaglio Richiesta
+                </DialogTitle>
+                <DialogDescription>
+                  Visualizza i dettagli della richiesta
+                </DialogDescription>
+              </DialogHeader>
+              
+              {hrRequestModal.data && (
+                <div className="space-y-4 py-4">
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">Stato</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                      (hrRequestModal.data as any).status === 'approved' ? 'bg-green-100 text-green-700' :
+                      (hrRequestModal.data as any).status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      (hrRequestModal.data as any).status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {getStatusLabel((hrRequestModal.data as any).status)}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <div className="p-4 bg-gradient-to-r from-orange-50 to-purple-50 rounded-lg border border-orange-100">
+                    <h3 className="font-semibold text-gray-900 text-lg">
+                      {(hrRequestModal.data as any).title || 'Richiesta HR'}
+                    </h3>
+                    {(hrRequestModal.data as any).description && (
+                      <p className="text-gray-600 mt-2 text-sm">
+                        {(hrRequestModal.data as any).description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xs text-gray-500 block mb-1">Dipartimento</span>
+                      <span className="font-medium text-gray-900 uppercase">
+                        {(hrRequestModal.data as any).department || 'HR'}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xs text-gray-500 block mb-1">Categoria</span>
+                      <span className="font-medium text-gray-900">
+                        {(hrRequestModal.data as any).category || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xs text-gray-500 block mb-1">Tipologia</span>
+                      <span className="font-medium text-gray-900">
+                        {(hrRequestModal.data as any).type || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-xs text-gray-500 block mb-1">Priorità</span>
+                      <span className={`font-medium ${
+                        (hrRequestModal.data as any).priority === 'urgent' ? 'text-red-600' :
+                        (hrRequestModal.data as any).priority === 'high' ? 'text-orange-600' :
+                        'text-gray-900'
+                      }`}>
+                        {(hrRequestModal.data as any).priority === 'urgent' ? 'Urgente' :
+                         (hrRequestModal.data as any).priority === 'high' ? 'Alta' :
+                         (hrRequestModal.data as any).priority === 'low' ? 'Bassa' : 'Normale'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dates */}
+                  {((hrRequestModal.data as any).startDate || (hrRequestModal.data as any).requestData?.startDate) && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar1 className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm font-medium text-blue-700">Date Richiesta</span>
+                      </div>
+                      <div className="flex gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Dal: </span>
+                          <span className="font-medium">
+                            {format(new Date((hrRequestModal.data as any).startDate || (hrRequestModal.data as any).requestData?.startDate), 'dd/MM/yyyy', { locale: it })}
+                          </span>
+                        </div>
+                        {((hrRequestModal.data as any).endDate || (hrRequestModal.data as any).requestData?.endDate) && (
+                          <div>
+                            <span className="text-gray-500">Al: </span>
+                            <span className="font-medium">
+                              {format(new Date((hrRequestModal.data as any).endDate || (hrRequestModal.data as any).requestData?.endDate), 'dd/MM/yyyy', { locale: it })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submission Info */}
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
+                    <span>
+                      Inviata il: {(hrRequestModal.data as any).createdAt ? 
+                        format(new Date((hrRequestModal.data as any).createdAt), 'dd/MM/yyyy HH:mm', { locale: it }) : 
+                        'N/A'
+                      }
+                    </span>
+                    <span>ID: {(hrRequestModal.data as any).id?.slice(0, 8) || 'N/A'}</span>
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setHrRequestModal({ open: false, data: null })}
+                >
+                  Chiudi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
       </div>
     </Layout>
   );
