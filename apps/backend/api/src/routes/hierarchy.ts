@@ -355,43 +355,15 @@ router.get('/universal-requests', requirePermission('hr.requests.read'), async (
   }
 });
 
-// POST /api/universal-requests - Create new request
+// 🚫 DEPRECATED: POST /api/universal-requests - Use POST /api/workflows/requests instead
+// The canonical endpoint for creating requests is in workflows.ts with full workflow automation support
+// This endpoint is kept as redirect for backwards compatibility
 router.post('/universal-requests', requirePermission('hr.requests.create'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    const userId = req.user?.id;
-    
-    if (!tenantId || !userId) {
-      return res.status(400).json({ error: 'Tenant ID and User ID are required' });
-    }
-
-    const validatedData = insertUniversalRequestSchema.parse({
-      ...req.body,
-      tenantId,
-      requesterId: userId,
-      createdBy: userId,
-      status: 'pending'
-    });
-
-    // ✅ SIMPLIFIED TEST: Skip workflow for now, just create the request
-    // Create request with minimal data
-    const [newRequest] = await db
-      .insert(universalRequests)
-      .values({
-        ...validatedData,
-        // Set default dueDate instead of calculating from workflow
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-      })
-      .returning();
-
-    res.json({
-      success: true,
-      request: newRequest
-    });
-  } catch (error) {
-    console.error('Error creating universal request:', error);
-    res.status(500).json({ error: 'Failed to create universal request' });
-  }
+  return res.status(301).json({
+    error: 'Endpoint deprecated',
+    message: 'Please use POST /api/workflows/requests instead. This endpoint provides full workflow automation.',
+    redirect: '/api/workflows/requests'
+  });
 });
 
 // DELETE /api/universal-requests/:id - Delete request (for drafts)
