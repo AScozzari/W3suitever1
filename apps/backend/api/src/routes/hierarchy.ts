@@ -894,7 +894,7 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
   }
 });
 
-// POST /api/teams - Create new team
+// POST /api/teams - Create new team with workflow assignments sync
 router.post('/teams', requirePermission('teams.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
@@ -904,9 +904,12 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
+    // 🎯 Extract workflowAssignments before validation (not part of teams table)
+    const { workflowAssignments, ...teamData } = req.body;
+
     // 🎯 ENHANCED VALIDATION: Include assignedDepartments in team creation
     const validatedData = insertTeamSchema.parse({
-      ...req.body,
+      ...teamData,
       tenantId,
       createdBy: userId || 'system',
       updatedBy: userId || 'system'
@@ -918,10 +921,36 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
       .values(validatedData)
       .returning();
 
+    // 🎯 SYNC WORKFLOW ASSIGNMENTS: Save to team_workflow_assignments table
+    if (workflowAssignments && Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
+      const assignmentsToInsert = workflowAssignments.map((assignment: any) => ({
+        tenantId,
+        teamId: newTeam.id,
+        templateId: assignment.templateId,
+        forDepartment: assignment.department,
+        autoAssign: assignment.autoAssign ?? true,
+        priority: assignment.priority ?? 100,
+        isActive: true,
+        createdBy: userId || 'system',
+        updatedBy: userId || 'system'
+      }));
+
+      await db
+        .insert(teamWorkflowAssignments)
+        .values(assignmentsToInsert);
+
+      logger.info('✅ Workflow assignments synced for new team', {
+        teamId: newTeam.id,
+        assignmentsCount: assignmentsToInsert.length,
+        departments: workflowAssignments.map((a: any) => a.department)
+      });
+    }
+
     logger.info('Team created with department assignments', { 
       teamId: newTeam.id, 
       teamName: newTeam.name,
       assignedDepartments: newTeam.assignedDepartments,
+      workflowAssignmentsCount: workflowAssignments?.length || 0,
       tenantId, 
       userId 
     });
