@@ -1948,7 +1948,7 @@ router.get('/admin/orphan-users', requirePermission('teams.read'), async (req: R
       .from(users)
       .where(and(
         eq(users.tenantId, tenantId),
-        eq(users.status, 'attivo')
+        sql`(${users.status} = 'attivo' OR ${users.status} = 'active')`
       ));
 
     // 2. Get all active teams with their members and departments
