@@ -50,17 +50,20 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  Activity
+  Activity,
+  TrendingUp,
+  Megaphone
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
 const DEPARTMENTS = {
   'hr': { icon: Users, label: 'HR', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
   'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'sales': { icon: Building2, label: 'Sales', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
+  'sales': { icon: TrendingUp, label: 'Sales', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
   'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
   'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' }
+  'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' }
 };
 
 // 🎯 Team types mapping
@@ -167,7 +170,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
     queryKey: ['/api/teams']
   });
 
-  // 🎯 Coverage Dashboard API hooks
+  // 🎯 Coverage Dashboard API hooks - NEW 3-LEVEL STRUCTURE
   const { 
     data: coverageData, 
     isLoading: coverageLoading,
@@ -176,30 +179,81 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
     success: boolean;
     data: {
       summary: {
-        totalDepartments: number;
-        criticalCount: number;
-        warningCount: number;
-        okCount: number;
         overallHealth: 'critical' | 'warning' | 'healthy';
+        level1: {
+          name: string;
+          description: string;
+          totalDepartments: number;
+          coveredDepartments: number;
+          uncoveredDepartments: number;
+          status: 'ok' | 'warning' | 'critical';
+        };
+        level2: {
+          name: string;
+          description: string;
+          totalDepartments: number;
+          fullyConfigured: number;
+          partiallyConfigured: number;
+          notConfigured: number;
+          status: 'ok' | 'warning' | 'critical';
+        };
+        level3: {
+          name: string;
+          description: string;
+          totalUsers: number;
+          usersWithIssues: number;
+          usersOk: number;
+          status: 'ok' | 'warning' | 'critical';
+        };
       };
-      departments: Array<{
+      level1: Array<{
         department: string;
         departmentLabel: string;
-        status: 'ok' | 'warning' | 'critical';
-        teams: Array<{ id: string; name: string; memberCount: number; hasSupervisor: boolean }>;
+        hasTeams: boolean;
         teamCount: number;
-        totalMembers: number;
-        workflows: {
-          available: Array<{ id: string; name: string; scope: string }>;
-          availableCount: number;
-          coveredScopes: string[];
-          uncoveredScopes: string[];
+        teams: Array<{ id: string; name: string; memberCount: number }>;
+        status: 'ok' | 'warning' | 'critical';
+      }>;
+      level2: Array<{
+        department: string;
+        departmentLabel: string;
+        hasWorkflows: boolean;
+        workflowCount: number;
+        workflows: Array<{
+          id: string;
+          name: string;
+          actionTags: Array<{ value: string; label: string }>;
+          customAction?: string;
+        }>;
+        actionTags: {
+          expected: Array<{ value: string; label: string }>;
+          covered: Array<{ value: string; label: string }>;
+          missing: Array<{ value: string; label: string }>;
+          customActions: string[];
           coveragePercent: number;
         };
+        status: 'ok' | 'warning' | 'critical';
       }>;
-      criticalIssues: {
-        departmentsWithoutTeams: string[];
-        teamsWithoutWorkflows: Array<{ id: string; name: string; departments: string[] }>;
+      level3: {
+        totalUsers: number;
+        usersWithFullCoverage: number;
+        usersWithPartialCoverage: number;
+        orphanUsers: Array<{
+          id: string;
+          name: string;
+          email: string;
+          role: string;
+          coveredDepartments: string[];
+          missingDepartments: string[];
+        }>;
+        departmentBreakdown: Array<{
+          department: string;
+          departmentLabel: string;
+          usersWithCoverage: number;
+          usersWithoutCoverage: number;
+          coveragePercent: number;
+          isCritical: boolean;
+        }>;
       };
     };
   }>({
@@ -1580,10 +1634,10 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                 </>
               )}
 
-              {/* 🎯 Coverage Dashboard View */}
+              {/* 🎯 Coverage Dashboard View - NEW 3-LEVEL STRUCTURE */}
               {teamsSubView === 'coverage' && (
                 <div className="space-y-6">
-                  {/* Summary Cards */}
+                  {/* Overall Summary Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Card className={`windtre-glass-panel border-l-4 ${
                       coverageData?.data?.summary?.overallHealth === 'critical' ? 'border-l-red-500' :
@@ -1592,7 +1646,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                     }`}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600">
-                          Overall Health
+                          Stato Generale
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -1610,61 +1664,73 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       </CardContent>
                     </Card>
 
-                    <Card className="windtre-glass-panel border-l-4 border-l-red-500">
+                    <Card className={`windtre-glass-panel border-l-4 ${
+                      coverageData?.data?.summary?.level1?.status === 'critical' ? 'border-l-red-500' :
+                      coverageData?.data?.summary?.level1?.status === 'warning' ? 'border-l-yellow-500' :
+                      'border-l-green-500'
+                    }`}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                          <XCircle className="h-4 w-4 text-red-500" />
-                          Critici
+                          <Building2 className="h-4 w-4" />
+                          Livello 1
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
-                          {coverageLoading ? '...' : coverageData?.data?.summary?.criticalCount || 0}
+                        <div className="text-2xl font-bold">
+                          {coverageLoading ? '...' : `${coverageData?.data?.summary?.level1?.coveredDepartments || 0}/${coverageData?.data?.summary?.level1?.totalDepartments || 0}`}
                         </div>
-                        <p className="text-xs text-gray-500">Dipartimenti senza team</p>
+                        <p className="text-xs text-gray-500">Dipartimenti con Team</p>
                       </CardContent>
                     </Card>
 
-                    <Card className="windtre-glass-panel border-l-4 border-l-yellow-500">
+                    <Card className={`windtre-glass-panel border-l-4 ${
+                      coverageData?.data?.summary?.level2?.status === 'critical' ? 'border-l-red-500' :
+                      coverageData?.data?.summary?.level2?.status === 'warning' ? 'border-l-yellow-500' :
+                      'border-l-green-500'
+                    }`}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                          <Activity className="h-4 w-4 text-yellow-500" />
-                          Attenzione
+                          <Settings className="h-4 w-4" />
+                          Livello 2
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold text-yellow-600">
-                          {coverageLoading ? '...' : coverageData?.data?.summary?.warningCount || 0}
+                        <div className="text-2xl font-bold">
+                          {coverageLoading ? '...' : `${coverageData?.data?.summary?.level2?.fullyConfigured || 0}/${coverageData?.data?.summary?.level2?.totalDepartments || 0}`}
                         </div>
-                        <p className="text-xs text-gray-500">Workflow mancanti</p>
+                        <p className="text-xs text-gray-500">Dipartimenti con Workflow</p>
                       </CardContent>
                     </Card>
 
-                    <Card className="windtre-glass-panel border-l-4 border-l-green-500">
+                    <Card className={`windtre-glass-panel border-l-4 ${
+                      coverageData?.data?.summary?.level3?.status === 'critical' ? 'border-l-red-500' :
+                      coverageData?.data?.summary?.level3?.status === 'warning' ? 'border-l-yellow-500' :
+                      'border-l-green-500'
+                    }`}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          Configurati
+                          <Users className="h-4 w-4" />
+                          Livello 3
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                          {coverageLoading ? '...' : coverageData?.data?.summary?.okCount || 0}
+                        <div className="text-2xl font-bold">
+                          {coverageLoading ? '...' : `${coverageData?.data?.summary?.level3?.usersOk || 0}/${coverageData?.data?.summary?.level3?.totalUsers || 0}`}
                         </div>
-                        <p className="text-xs text-gray-500">Dipartimenti pronti</p>
+                        <p className="text-xs text-gray-500">Utenti OK</p>
                       </CardContent>
                     </Card>
                   </div>
 
-                  {/* Department Coverage Grid */}
+                  {/* LEVEL 1: Departments → Teams */}
                   <Card className="windtre-glass-panel border-white/20">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-windtre-purple" />
-                        Copertura per Dipartimento
+                        Livello 1: Dipartimenti → Team
                       </CardTitle>
                       <CardDescription>
-                        Visualizza lo stato di configurazione per ogni dipartimento
+                        {coverageData?.data?.summary?.level1?.description || 'Ogni dipartimento deve avere almeno un team assegnato'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1672,7 +1738,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         <div className="text-center py-8 text-gray-500">Caricamento...</div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {coverageData?.data?.departments?.map((dept) => (
+                          {coverageData?.data?.level1?.map((dept) => (
                             <div 
                               key={dept.department}
                               className={`p-4 rounded-lg border-2 ${
@@ -1699,49 +1765,10 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                     {dept.teamCount}
                                   </span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-gray-600">Membri totali:</span>
-                                  <span className="font-medium text-gray-900">{dept.totalMembers}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-gray-600">Workflow disponibili:</span>
-                                  <span className="font-medium text-gray-900">{dept.workflows.availableCount}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-gray-600">Copertura workflow:</span>
-                                  <span className={`font-medium ${
-                                    dept.workflows.coveragePercent < 50 ? 'text-red-600' :
-                                    dept.workflows.coveragePercent < 100 ? 'text-yellow-600' : 'text-green-600'
-                                  }`}>
-                                    {dept.workflows.coveragePercent}%
-                                  </span>
-                                </div>
                               </div>
 
-                              {/* Workflow Scopes */}
-                              {dept.workflows.available.length > 0 && (
-                                <div className="mt-3 pt-3 border-t border-gray-200">
-                                  <p className="text-xs font-medium text-gray-600 mb-2">Scopes disponibili:</p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {dept.workflows.available.map((wf) => (
-                                      <Badge 
-                                        key={wf.id} 
-                                        variant="outline" 
-                                        className={`text-xs ${
-                                          dept.workflows.coveredScopes.includes(wf.scope) 
-                                            ? 'bg-green-100 text-green-700 border-green-300' 
-                                            : 'bg-gray-100 text-gray-500 border-gray-300'
-                                        }`}
-                                      >
-                                        {wf.scope?.replace(/_/g, ' ') || wf.name}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
                               {/* Teams List */}
-                              {dept.teams.length > 0 && (
+                              {dept.teams && dept.teams.length > 0 && (
                                 <div className="mt-3 pt-3 border-t border-gray-200">
                                   <p className="text-xs font-medium text-gray-600 mb-2">Team:</p>
                                   <div className="space-y-1">
@@ -1750,12 +1777,108 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                         <Users className="h-3 w-3 text-gray-400" />
                                         <span>{team.name}</span>
                                         <span className="text-gray-400">({team.memberCount} membri)</span>
-                                        {!team.hasSupervisor && (
-                                          <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-400">
-                                            No supervisor
-                                          </Badge>
-                                        )}
                                       </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Uncovered Departments Alert */}
+                      {coverageData?.data?.level1?.filter(d => d.status === 'critical')?.length > 0 && (
+                        <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                          <h4 className="font-medium text-red-700 mb-2 flex items-center gap-2">
+                            <XCircle className="h-4 w-4" />
+                            Dipartimenti senza Team
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {coverageData.data.level1.filter(d => d.status === 'critical').map((dept) => (
+                              <Badge key={dept.department} variant="destructive">{dept.departmentLabel}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* LEVEL 2: Departments → Workflows + Action Tags */}
+                  <Card className="windtre-glass-panel border-white/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5 text-windtre-orange" />
+                        Livello 2: Dipartimenti → Workflow con Action Tags
+                      </CardTitle>
+                      <CardDescription>
+                        {coverageData?.data?.summary?.level2?.description || 'Ogni dipartimento deve avere workflow configurati con action tags'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {coverageLoading ? (
+                        <div className="text-center py-8 text-gray-500">Caricamento...</div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {coverageData?.data?.level2?.map((dept) => (
+                            <div 
+                              key={dept.department}
+                              className={`p-4 rounded-lg border-2 ${
+                                dept.status === 'critical' ? 'border-red-300 bg-red-50' :
+                                dept.status === 'warning' ? 'border-yellow-300 bg-yellow-50' :
+                                'border-green-300 bg-green-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-gray-900">{dept.departmentLabel}</h4>
+                                <div className="text-right">
+                                  <Badge variant={
+                                    dept.status === 'critical' ? 'destructive' :
+                                    dept.status === 'warning' ? 'secondary' : 'default'
+                                  }>
+                                    {dept.actionTags?.coveragePercent || 0}%
+                                  </Badge>
+                                  <p className="text-xs text-gray-500 mt-1">{dept.workflowCount} workflow</p>
+                                </div>
+                              </div>
+                              
+                              {/* Workflow List */}
+                              {dept.workflows && dept.workflows.length > 0 && (
+                                <div className="mb-3">
+                                  <p className="text-xs font-medium text-gray-600 mb-1">Workflow:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {dept.workflows.map((wf) => (
+                                      <Badge key={wf.id} variant="outline" className="text-xs">
+                                        {wf.name}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Covered Action Tags */}
+                              {dept.actionTags?.covered && dept.actionTags.covered.length > 0 && (
+                                <div className="mb-2">
+                                  <p className="text-xs font-medium text-gray-600 mb-1">Azioni coperte:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {dept.actionTags.covered.map((tag) => (
+                                      <Badge key={tag.value} variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                                        {tag.label}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Missing Action Tags */}
+                              {dept.actionTags?.missing && dept.actionTags.missing.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-medium text-red-600 mb-1">Azioni mancanti:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {dept.actionTags.missing.map((tag) => (
+                                      <Badge key={tag.value} variant="outline" className="text-xs bg-red-100 text-red-700 border-red-300">
+                                        {tag.label}
+                                      </Badge>
                                     ))}
                                   </div>
                                 </div>
@@ -1767,157 +1890,117 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                     </CardContent>
                   </Card>
 
-                  {/* Critical Issues - Teams without Workflows */}
-                  {coverageData?.data?.criticalIssues?.teamsWithoutWorkflows?.length > 0 && (
-                    <Card className="windtre-glass-panel border-red-200 bg-red-50/50">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-red-700">
-                          <XCircle className="h-5 w-5" />
-                          Team senza Workflow Assignments
-                        </CardTitle>
-                        <CardDescription className="text-red-600">
-                          Questi team non hanno workflow configurati e non possono gestire richieste
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {coverageData.data.criticalIssues.teamsWithoutWorkflows.map((team) => (
-                            <div 
-                              key={team.id} 
-                              className="flex items-center justify-between p-3 bg-white rounded-lg border border-red-200"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Users className="h-5 w-5 text-red-500" />
-                                <div>
-                                  <p className="font-medium text-gray-900">{team.name}</p>
-                                  <div className="flex gap-1 mt-1">
-                                    {team.departments.map((dept: string) => (
-                                      <Badge key={dept} variant="outline" className="text-xs">
-                                        {dept}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 border-red-300 hover:bg-red-100"
-                                onClick={() => {
-                                  const teamToEdit = teams.find(t => t.id === team.id);
-                                  if (teamToEdit) {
-                                    handleManageWorkflows(teamToEdit);
-                                  }
-                                }}
-                              >
-                                <Settings className="h-4 w-4 mr-1" />
-                                Configura
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Orphan Users Section */}
+                  {/* LEVEL 3: Users → Teams per Department */}
                   <Card className="windtre-glass-panel border-white/20">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <UserPlus className="h-5 w-5 text-windtre-orange" />
-                        Copertura Utenti per Dipartimento
+                        <Users className="h-5 w-5 text-windtre-green" />
+                        Livello 3: Utenti → Copertura per Dipartimento
                       </CardTitle>
                       <CardDescription>
-                        Visualizza quanti utenti hanno accesso alle richieste per ogni dipartimento
+                        {coverageData?.data?.summary?.level3?.description || 'Ogni utente deve avere accesso ai dipartimenti critici (HR)'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {orphanUsersLoading ? (
+                      {coverageLoading ? (
                         <div className="text-center py-8 text-gray-500">Caricamento...</div>
                       ) : (
                         <>
-                          {/* Summary */}
+                          {/* Summary Stats */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div className="p-4 bg-gray-50 rounded-lg">
-                              <p className="text-sm text-gray-600">Utenti totali</p>
+                              <p className="text-sm text-gray-600">Utenti Totali</p>
                               <p className="text-2xl font-bold text-gray-900">
-                                {orphanUsersData?.data?.summary?.totalUsers || 0}
+                                {coverageData?.data?.level3?.totalUsers || 0}
                               </p>
                             </div>
                             <div className={`p-4 rounded-lg ${
-                              (orphanUsersData?.data?.summary?.orphanUsers || 0) > 0 ? 'bg-red-50' : 'bg-green-50'
+                              (coverageData?.data?.level3?.orphanUsers?.length || 0) > 0 ? 'bg-red-50' : 'bg-green-50'
                             }`}>
-                              <p className="text-sm text-gray-600">Utenti senza team</p>
+                              <p className="text-sm text-gray-600">Utenti con Problemi</p>
                               <p className={`text-2xl font-bold ${
-                                (orphanUsersData?.data?.summary?.orphanUsers || 0) > 0 ? 'text-red-600' : 'text-green-600'
+                                (coverageData?.data?.level3?.orphanUsers?.length || 0) > 0 ? 'text-red-600' : 'text-green-600'
                               }`}>
-                                {orphanUsersData?.data?.summary?.orphanUsers || 0}
+                                {coverageData?.data?.level3?.orphanUsers?.length || 0}
                               </p>
                             </div>
-                            <div className={`p-4 rounded-lg ${
-                              (orphanUsersData?.data?.summary?.usersWithMissingCritical || 0) > 0 ? 'bg-yellow-50' : 'bg-green-50'
-                            }`}>
-                              <p className="text-sm text-gray-600">Mancano dipartimenti critici (HR)</p>
-                              <p className={`text-2xl font-bold ${
-                                (orphanUsersData?.data?.summary?.usersWithMissingCritical || 0) > 0 ? 'text-yellow-600' : 'text-green-600'
-                              }`}>
-                                {orphanUsersData?.data?.summary?.usersWithMissingCritical || 0}
+                            <div className="p-4 bg-green-50 rounded-lg">
+                              <p className="text-sm text-gray-600">Copertura Completa</p>
+                              <p className="text-2xl font-bold text-green-600">
+                                {coverageData?.data?.level3?.usersWithFullCoverage || 0}
                               </p>
                             </div>
                           </div>
 
                           {/* Department Breakdown */}
-                          <div className="space-y-3">
-                            {orphanUsersData?.data?.departmentBreakdown?.map((dept) => (
-                              <div key={dept.department} className="flex items-center gap-4">
-                                <div className="w-24 text-sm font-medium text-gray-700">
-                                  {dept.departmentLabel}
-                                  {dept.isCritical && (
-                                    <Badge variant="outline" className="ml-1 text-xs text-red-600 border-red-300">
-                                      Critico
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                                    <div 
-                                      className={`h-full rounded-full ${
-                                        dept.coveragePercent === 100 ? 'bg-green-500' :
-                                        dept.coveragePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
-                                      style={{ width: `${dept.coveragePercent}%` }}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="w-32 text-sm text-right">
-                                  <span className="font-medium">{dept.coveredUsersCount}</span>
-                                  <span className="text-gray-400"> / {dept.coveredUsersCount + dept.uncoveredUsersCount}</span>
-                                  <span className="text-gray-500 ml-1">({dept.coveragePercent}%)</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Orphan Users List */}
-                          {(orphanUsersData?.data?.orphanUsers?.length || 0) > 0 && (
-                            <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
-                              <h4 className="font-medium text-red-700 mb-3 flex items-center gap-2">
-                                <XCircle className="h-4 w-4" />
-                                Utenti senza alcun team ({orphanUsersData?.data?.orphanUsers?.length})
-                              </h4>
-                              <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {orphanUsersData?.data?.orphanUsers?.map((user) => (
-                                  <div key={user.id} className="flex items-center gap-3 p-2 bg-white rounded border border-red-100">
-                                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                                      <span className="text-sm font-medium text-red-600">
-                                        {user.name?.charAt(0) || user.email?.charAt(0) || '?'}
-                                      </span>
+                          {coverageData?.data?.level3?.departmentBreakdown && (
+                            <div className="mb-6">
+                              <h4 className="font-medium text-gray-700 mb-3">Copertura per Dipartimento</h4>
+                              <div className="space-y-3">
+                                {coverageData.data.level3.departmentBreakdown.map((dept) => (
+                                  <div key={dept.department} className="flex items-center gap-4">
+                                    <div className="w-28 text-sm font-medium text-gray-700">
+                                      {dept.departmentLabel}
+                                      {dept.isCritical && (
+                                        <Badge variant="outline" className="ml-1 text-xs text-red-600 border-red-300">
+                                          Critico
+                                        </Badge>
+                                      )}
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-medium text-gray-900 text-sm">{user.name || 'N/A'}</p>
-                                      <p className="text-xs text-gray-500">{user.email}</p>
+                                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                                        <div 
+                                          className={`h-full rounded-full ${
+                                            dept.coveragePercent === 100 ? 'bg-green-500' :
+                                            dept.coveragePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                          }`}
+                                          style={{ width: `${dept.coveragePercent}%` }}
+                                        />
+                                      </div>
                                     </div>
-                                    <Badge variant="outline" className="text-xs">{user.role || 'No role'}</Badge>
+                                    <div className="w-24 text-sm text-right">
+                                      <span className="font-medium">{dept.usersWithCoverage}</span>
+                                      <span className="text-gray-400"> / {dept.usersWithCoverage + dept.usersWithoutCoverage}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Orphan Users - Users missing critical department coverage */}
+                          {coverageData?.data?.level3?.orphanUsers?.length > 0 && (
+                            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                              <h4 className="font-medium text-red-700 mb-3 flex items-center gap-2">
+                                <XCircle className="h-4 w-4" />
+                                Utenti con Dipartimenti Critici Mancanti ({coverageData.data.level3.orphanUsers.length})
+                              </h4>
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {coverageData.data.level3.orphanUsers.map((user) => (
+                                  <div key={user.id} className="flex items-center justify-between p-2 bg-white rounded border border-red-100">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                                        <span className="text-sm font-medium text-red-600">
+                                          {user.name?.charAt(0) || user.email?.charAt(0) || '?'}
+                                        </span>
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-medium text-gray-900 text-sm">{user.name || 'N/A'}</p>
+                                        <p className="text-xs text-gray-500">{user.email}</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <Badge variant="outline" className="text-xs mb-1">{user.role}</Badge>
+                                      {user.missingDepartments?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 justify-end">
+                                          {user.missingDepartments.map((dept) => (
+                                            <Badge key={dept} variant="destructive" className="text-xs">
+                                              {dept}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
                               </div>

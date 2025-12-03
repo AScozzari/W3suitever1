@@ -3137,6 +3137,11 @@ export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
   isActive: boolean("is_active").default(true),
   tags: text("tags").array().default([]),
   
+  // Action Tags - Define what this workflow DOES (e.g., 'richiesta_ferie', 'rimborso_spese')
+  // Predefined tags per department help Coverage Dashboard show which actions are covered
+  actionTags: text("action_tags").array().default([]), // ['richiesta_ferie', 'richiesta_permessi']
+  customAction: text("custom_action"), // Free text for non-standard actions
+  
   // Usage tracking
   usageCount: integer("usage_count").default(0),
   lastUsed: timestamp("last_used"),

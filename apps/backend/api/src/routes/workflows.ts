@@ -49,6 +49,7 @@ import {
 import { WorkflowAIConnector } from '../services/workflow-ai-connector';
 import { AIRegistryService } from '../services/ai-registry-service';
 import { RequestTriggerService } from '../services/request-trigger-service';
+import { DEPARTMENT_ACTION_TAGS, ALL_DEPARTMENTS, getActionTagsForDepartment, getAllActionTags } from '../lib/action-tags';
 
 // Initialize Workflow Engine
 const workflowEngine = new WorkflowEngine();
@@ -58,6 +59,50 @@ const router = express.Router();
 // Apply middleware to all routes
 router.use(correlationMiddleware);
 router.use(tenantMiddleware);
+
+// ==================== ACTION TAGS ====================
+
+/**
+ * GET /api/workflows/action-tags
+ * Get all predefined action tags organized by department
+ * Used in workflow editor to tag what the workflow DOES
+ */
+router.get('/action-tags', async (req, res) => {
+  try {
+    const { department } = req.query;
+    
+    if (department) {
+      // Return tags for specific department
+      const tags = getActionTagsForDepartment(department as string);
+      return res.json({
+        success: true,
+        data: {
+          department,
+          tags
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Return all action tags organized by department
+    const allTags = getAllActionTags();
+    return res.json({
+      success: true,
+      data: {
+        departments: ALL_DEPARTMENTS,
+        actionTagsByDepartment: allTags
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    logger.error('Error fetching action tags', { error: error.message });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch action tags',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // ==================== WORKFLOW TEMPLATES ====================
 

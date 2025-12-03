@@ -15,7 +15,7 @@ import { z } from 'zod';
 // ==================== SHARED ENUMS ====================
 
 export const WorkflowDepartmentEnum = z.enum([
-  'hr', 'finance', 'sales', 'operations', 'support', 'crm'
+  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing'
 ]);
 
 export const WorkflowStatusEnum = z.enum([
@@ -74,7 +74,10 @@ export const WorkflowTemplateSchema = z.object({
   edges: z.array(WorkflowEdgeSchema),
   isActive: z.boolean().default(true),
   version: z.number().int().default(1),
-  metadata: z.record(z.any()).default({})
+  metadata: z.record(z.any()).default({}),
+  // Action Tags - Define what this workflow DOES (e.g., 'richiesta_ferie', 'rimborso_spese')
+  actionTags: z.array(z.string()).default([]),
+  customAction: z.string().nullish() // Custom action description for non-standard workflows
 });
 
 export const CreateWorkflowTemplateSchema = WorkflowTemplateSchema.omit({

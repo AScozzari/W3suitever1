@@ -68,6 +68,7 @@ import NodeInspector from './workflow/NodeInspector';
 import { AIWorkflowChatModal } from './AIWorkflowChatModal';
 import { WorkflowTestResultDialog } from './WorkflowTestResultDialog';
 import { useTenant } from '../contexts/TenantContext';
+import { WorkflowSettingsModal, type WorkflowSettings } from './WorkflowSettingsModal';
 
 // ✅ REAL PROFESSIONAL NODE COMPONENTS - DEFINED OUTSIDE TO PREVENT RE-RENDERS
 const nodeTypes = {
@@ -154,6 +155,10 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  // 📝 WORKFLOW SETTINGS MODAL STATE
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [pendingWorkflowSettings, setPendingWorkflowSettings] = useState<WorkflowSettings | null>(null);
   
   // Department mapping for context
   const departmentInfo = {
@@ -330,6 +335,17 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       return;
     }
     
+    if (templateId && templateData) {
+      // 📝 UPDATE EXISTING TEMPLATE - Open settings modal for editing
+      setShowSettingsModal(true);
+    } else {
+      // 🆕 CREATE NEW TEMPLATE - Open settings modal
+      setShowSettingsModal(true);
+    }
+  };
+  
+  // 📝 Handle settings modal save
+  const handleSettingsSave = (settings: WorkflowSettings) => {
     // Clean nodes data before saving (remove onConfigClick function)
     const cleanNodes = nodes.map(node => ({
       ...node,
@@ -350,11 +366,13 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       console.log('📝 Updating template:', templateId);
       updateTemplateMutation.mutate({
         id: templateId,
-        name: templateData.name,
-        description: templateData.description,
-        category: templateData.category,
+        name: settings.name,
+        description: settings.description,
+        category: settings.category,
         definition: workflowDefinition,
-        tags: templateData.tags,
+        tags: templateData.tags || [],
+        actionTags: settings.actionTags,
+        customAction: settings.customAction || undefined,
         metadata: {
           ...templateData.metadata,
           nodeCount: cleanNodes.length,
@@ -364,16 +382,15 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       });
     } else {
       // 🆕 CREATE NEW TEMPLATE
-      console.log('🆕 Creating new template');
-      const templateName = prompt('📝 Nome del template:', 'Nuovo Workflow');
-      if (!templateName) return;
-      
+      console.log('🆕 Creating new template with action tags:', settings.actionTags);
       createTemplateMutation.mutate({
-        name: templateName,
-        description: 'Template workflow creato dal builder',
-        category: (initialCategory as any) || 'operations',
+        name: settings.name,
+        description: settings.description,
+        category: settings.category as any,
         definition: workflowDefinition,
         tags: [],
+        actionTags: settings.actionTags,
+        customAction: settings.customAction || undefined,
         metadata: {
           nodeCount: cleanNodes.length,
           edgeCount: edges.length,
@@ -381,6 +398,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         }
       });
     }
+    
+    // Close modal
+    setShowSettingsModal(false);
     
     // Also call onSave prop if provided (backward compatibility)
     onSave?.({
@@ -1772,6 +1792,22 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         result={testRunResult}
         open={testRunResult !== null}
         onOpenChange={(open) => !open && setTestRunResult(null)}
+      />
+
+      {/* 📝 WORKFLOW SETTINGS MODAL - Action Tags & Metadata */}
+      <WorkflowSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        onSave={handleSettingsSave}
+        mode={templateId && templateData ? 'edit' : 'create'}
+        initialSettings={{
+          name: templateData?.name || '',
+          description: templateData?.description || '',
+          category: templateData?.category || initialCategory || '',
+          actionTags: templateData?.actionTags || [],
+          customAction: templateData?.customAction || null
+        }}
+        isSaving={createTemplateMutation.isPending || updateTemplateMutation.isPending}
       />
 
         </div> {/* End Main Workflow Builder Container */}

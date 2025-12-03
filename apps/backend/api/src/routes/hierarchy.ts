@@ -34,6 +34,7 @@ import {
 import { z } from 'zod';
 import { workflowEngine } from '../services/workflow-engine';
 import { detectWorkflowRoutingNodes } from '../utils/workflow-routing-utils';
+import { DEPARTMENT_ACTION_TAGS, ALL_DEPARTMENTS as ACTION_TAG_DEPARTMENTS } from '../lib/action-tags';
 
 const router = Router();
 
@@ -1739,9 +1740,10 @@ router.get('/workflow-instances/:id/details', requirePermission('workflows.read'
 
 /**
  * 📊 GET /api/admin/coverage-dashboard
- * Returns complete coverage analysis:
- * - Departments with their teams and workflow scopes
- * - Critical issues (teams without workflows, departments without teams)
+ * Returns complete 3-level coverage analysis:
+ * - Level 1: Departments → Teams (Does each department have at least one team?)
+ * - Level 2: Departments → Workflows + Action Tags (What actions are covered per department?)
+ * - Level 3: Users → Teams per Department (Does each user have team coverage for required departments?)
  */
 router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (req: Request, res: Response) => {
   try {
@@ -1773,13 +1775,15 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
         eq(teams.isActive, true)
       ));
 
-    // 2. Get all workflow templates with their scopes
+    // 2. Get all workflow templates with action tags
     const allTemplates = await db
       .select({
         id: workflowTemplates.id,
         name: workflowTemplates.name,
         category: workflowTemplates.category,
         templateType: workflowTemplates.templateType,
+        actionTags: workflowTemplates.actionTags,
+        customAction: workflowTemplates.customAction,
         isActive: workflowTemplates.isActive
       })
       .from(workflowTemplates)
@@ -1788,129 +1792,248 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
         eq(workflowTemplates.isActive, true)
       ));
 
-    // 3. Get all team workflow assignments
-    const allAssignments = await db
+    // 3. Get all active users
+    const allUsers = await db
       .select({
-        id: teamWorkflowAssignments.id,
-        teamId: teamWorkflowAssignments.teamId,
-        templateId: teamWorkflowAssignments.templateId,
-        forDepartment: teamWorkflowAssignments.forDepartment,
-        isActive: teamWorkflowAssignments.isActive
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        role: users.role,
+        status: users.status
       })
-      .from(teamWorkflowAssignments)
+      .from(users)
       .where(and(
-        eq(teamWorkflowAssignments.tenantId, tenantId),
-        eq(teamWorkflowAssignments.isActive, true)
+        eq(users.tenantId, tenantId),
+        sql`(${users.status} = 'attivo' OR ${users.status} = 'active')`
       ));
 
-    // 4. Define all possible departments
-    const allDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+    // 4. Define all departments
+    const allDepartments = ['hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'];
+    const criticalDepartments = ['hr']; // Departments that all users should have access to
 
-    // 5. Build coverage analysis per department
-    const departmentCoverage = allDepartments.map(dept => {
-      // Teams assigned to this department
+    // ==================== LEVEL 1: Departments → Teams ====================
+    const level1_departmentsTeams = allDepartments.map(dept => {
       const teamsForDept = allTeams.filter(t => 
         t.assignedDepartments && t.assignedDepartments.includes(dept)
       );
+      
+      return {
+        department: dept,
+        departmentLabel: dept.charAt(0).toUpperCase() + dept.slice(1),
+        hasTeams: teamsForDept.length > 0,
+        teamCount: teamsForDept.length,
+        teams: teamsForDept.map(t => ({
+          id: t.id,
+          name: t.name,
+          memberCount: (t.userMembers || []).length
+        })),
+        status: teamsForDept.length > 0 ? 'ok' : 'critical'
+      };
+    });
 
-      // Workflow templates for this department (by category)
+    // ==================== LEVEL 2: Departments → Workflows + Action Tags ====================
+    const level2_departmentsWorkflows = allDepartments.map(dept => {
+      // Get workflow templates for this department
       const templatesForDept = allTemplates.filter(t => 
-        t.category?.toLowerCase() === dept
+        t.category?.toLowerCase() === dept.toLowerCase()
       );
 
-      // Unique scopes available (templateType)
-      const availableScopes = [...new Set(templatesForDept.map(t => t.templateType))];
+      // Get all action tags defined for this department
+      const deptKey = dept as keyof typeof DEPARTMENT_ACTION_TAGS;
+      const expectedActionTags = DEPARTMENT_ACTION_TAGS[deptKey] || [];
+      const expectedTagValues = expectedActionTags.map(t => t.value);
 
-      // Workflow assignments for teams in this department
-      const assignmentsForDept = allAssignments.filter(a => 
-        a.forDepartment?.toLowerCase() === dept
-      );
+      // Get action tags covered by workflows
+      const coveredActionTags: string[] = [];
+      const customActions: string[] = [];
+      
+      templatesForDept.forEach(template => {
+        if (template.actionTags) {
+          template.actionTags.forEach(tag => {
+            if (!coveredActionTags.includes(tag)) {
+              coveredActionTags.push(tag);
+            }
+          });
+        }
+        if (template.customAction) {
+          customActions.push(template.customAction);
+        }
+      });
 
-      // Scopes covered by team assignments
-      const coveredScopes = assignmentsForDept
-        .map(a => {
-          const template = templatesForDept.find(t => t.id === a.templateId);
-          return template?.templateType;
-        })
-        .filter(Boolean);
+      // Find missing action tags
+      const missingActionTags = expectedTagValues.filter(tag => !coveredActionTags.includes(tag));
 
-      // Scopes NOT covered
-      const uncoveredScopes = availableScopes.filter(s => !coveredScopes.includes(s));
+      // Build workflow list with their action tags
+      const workflows = templatesForDept.map(t => ({
+        id: t.id,
+        name: t.name,
+        actionTags: (t.actionTags || []).map(tagValue => {
+          const tagDef = expectedActionTags.find(et => et.value === tagValue);
+          return {
+            value: tagValue,
+            label: tagDef?.label || tagValue
+          };
+        }),
+        customAction: t.customAction
+      }));
 
-      // Calculate status
+      // Determine status
       let status: 'ok' | 'warning' | 'critical' = 'ok';
-      if (teamsForDept.length === 0) {
+      if (templatesForDept.length === 0) {
         status = 'critical';
-      } else if (uncoveredScopes.length > 0) {
+      } else if (missingActionTags.length > 0) {
         status = 'warning';
       }
-
-      // Count members in teams for this department
-      const totalMembers = teamsForDept.reduce((sum, t) => {
-        const userCount = (t.userMembers || []).length;
-        const roleCount = (t.roleMembers || []).length;
-        return sum + userCount + roleCount;
-      }, 0);
 
       return {
         department: dept,
         departmentLabel: dept.charAt(0).toUpperCase() + dept.slice(1),
-        status,
-        teams: teamsForDept.map(t => ({
-          id: t.id,
-          name: t.name,
-          memberCount: (t.userMembers || []).length + (t.roleMembers || []).length,
-          hasSupervisor: !!(t.primarySupervisorUser || t.primarySupervisorRole)
-        })),
-        teamCount: teamsForDept.length,
-        totalMembers,
-        workflows: {
-          available: templatesForDept.map(t => ({
-            id: t.id,
-            name: t.name,
-            scope: t.templateType
-          })),
-          availableCount: templatesForDept.length,
-          coveredScopes,
-          uncoveredScopes,
-          coveragePercent: availableScopes.length > 0 
-            ? Math.round((coveredScopes.length / availableScopes.length) * 100) 
-            : 100
-        }
+        hasWorkflows: templatesForDept.length > 0,
+        workflowCount: templatesForDept.length,
+        workflows,
+        actionTags: {
+          expected: expectedActionTags,
+          covered: coveredActionTags.map(tagValue => {
+            const tagDef = expectedActionTags.find(et => et.value === tagValue);
+            return { value: tagValue, label: tagDef?.label || tagValue };
+          }),
+          missing: missingActionTags.map(tagValue => {
+            const tagDef = expectedActionTags.find(et => et.value === tagValue);
+            return { value: tagValue, label: tagDef?.label || tagValue };
+          }),
+          customActions,
+          coveragePercent: expectedTagValues.length > 0
+            ? Math.round((coveredActionTags.length / expectedTagValues.length) * 100)
+            : (templatesForDept.length > 0 ? 100 : 0)
+        },
+        status
       };
     });
 
-    // 6. Calculate summary metrics
-    const criticalDepartments = departmentCoverage.filter(d => d.status === 'critical');
-    const warningDepartments = departmentCoverage.filter(d => d.status === 'warning');
-    const okDepartments = departmentCoverage.filter(d => d.status === 'ok');
+    // ==================== LEVEL 3: Users → Teams per Department ====================
+    // Build user-to-department coverage map
+    const userCoverageMap = new Map<string, Set<string>>();
+    
+    allUsers.forEach(user => {
+      userCoverageMap.set(user.id, new Set());
+    });
 
-    // 7. Find teams without any workflow assignments
-    const teamsWithoutWorkflows = allTeams.filter(team => {
-      const hasAssignments = allAssignments.some(a => a.teamId === team.id);
-      return !hasAssignments;
-    }).map(t => ({
-      id: t.id,
-      name: t.name,
-      departments: t.assignedDepartments || []
-    }));
+    allTeams.forEach(team => {
+      const teamDepartments = team.assignedDepartments || [];
+      const teamMembers = team.userMembers || [];
+      
+      teamMembers.forEach(userId => {
+        const coverage = userCoverageMap.get(userId);
+        if (coverage) {
+          teamDepartments.forEach(dept => coverage.add(dept));
+        }
+      });
+    });
+
+    // Analyze user coverage
+    const level3_usersCoverage = {
+      totalUsers: allUsers.length,
+      usersWithFullCoverage: 0,
+      usersWithPartialCoverage: 0,
+      orphanUsers: [] as Array<{
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        coveredDepartments: string[];
+        missingDepartments: string[];
+      }>,
+      departmentBreakdown: allDepartments.map(dept => {
+        const usersWithCoverage = allUsers.filter(user => {
+          const coverage = userCoverageMap.get(user.id);
+          return coverage && coverage.has(dept);
+        });
+
+        return {
+          department: dept,
+          departmentLabel: dept.charAt(0).toUpperCase() + dept.slice(1),
+          usersWithCoverage: usersWithCoverage.length,
+          usersWithoutCoverage: allUsers.length - usersWithCoverage.length,
+          coveragePercent: allUsers.length > 0 
+            ? Math.round((usersWithCoverage.length / allUsers.length) * 100) 
+            : 0,
+          isCritical: criticalDepartments.includes(dept)
+        };
+      })
+    };
+
+    // Find orphan users and users missing critical departments
+    allUsers.forEach(user => {
+      const coverage = userCoverageMap.get(user.id) || new Set();
+      const coveredDepts = Array.from(coverage);
+      const missingCriticalDepts = criticalDepartments.filter(dept => !coverage.has(dept));
+
+      if (coverage.size === 0 || missingCriticalDepts.length > 0) {
+        level3_usersCoverage.orphanUsers.push({
+          id: user.id,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          email: user.email,
+          role: user.role || 'N/A',
+          coveredDepartments: coveredDepts,
+          missingDepartments: missingCriticalDepts
+        });
+      }
+
+      if (coveredDepts.length >= allDepartments.length) {
+        level3_usersCoverage.usersWithFullCoverage++;
+      } else if (coveredDepts.length > 0) {
+        level3_usersCoverage.usersWithPartialCoverage++;
+      }
+    });
+
+    // ==================== Summary ====================
+    const level1Critical = level1_departmentsTeams.filter(d => d.status === 'critical').length;
+    const level2Critical = level2_departmentsWorkflows.filter(d => d.status === 'critical').length;
+    const level2Warning = level2_departmentsWorkflows.filter(d => d.status === 'warning').length;
+    const level3Issues = level3_usersCoverage.orphanUsers.length;
+
+    let overallHealth: 'healthy' | 'warning' | 'critical' = 'healthy';
+    if (level1Critical > 0 || level2Critical > 0) {
+      overallHealth = 'critical';
+    } else if (level2Warning > 0 || level3Issues > 0) {
+      overallHealth = 'warning';
+    }
 
     res.json({
       success: true,
       data: {
         summary: {
-          totalDepartments: allDepartments.length,
-          criticalCount: criticalDepartments.length,
-          warningCount: warningDepartments.length,
-          okCount: okDepartments.length,
-          overallHealth: criticalDepartments.length > 0 ? 'critical' 
-            : warningDepartments.length > 0 ? 'warning' : 'healthy'
+          overallHealth,
+          level1: {
+            name: 'Dipartimenti → Teams',
+            description: 'Ogni dipartimento ha almeno un team assegnato?',
+            totalDepartments: allDepartments.length,
+            coveredDepartments: allDepartments.length - level1Critical,
+            uncoveredDepartments: level1Critical,
+            status: level1Critical > 0 ? 'critical' : 'ok'
+          },
+          level2: {
+            name: 'Dipartimenti → Workflows + Azioni',
+            description: 'Ogni dipartimento ha workflow con azioni coperte?',
+            totalDepartments: allDepartments.length,
+            fullyConfigured: level2_departmentsWorkflows.filter(d => d.status === 'ok').length,
+            partiallyConfigured: level2Warning,
+            notConfigured: level2Critical,
+            status: level2Critical > 0 ? 'critical' : level2Warning > 0 ? 'warning' : 'ok'
+          },
+          level3: {
+            name: 'Utenti → Copertura Team',
+            description: 'Ogni utente ha accesso ai dipartimenti critici (HR)?',
+            totalUsers: allUsers.length,
+            usersWithIssues: level3Issues,
+            usersOk: allUsers.length - level3Issues,
+            status: level3Issues > 0 ? 'warning' : 'ok'
+          }
         },
-        departments: departmentCoverage,
-        criticalIssues: {
-          departmentsWithoutTeams: criticalDepartments.map(d => d.department),
-          teamsWithoutWorkflows
-        }
+        level1: level1_departmentsTeams,
+        level2: level2_departmentsWorkflows,
+        level3: level3_usersCoverage
       }
     });
 

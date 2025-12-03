@@ -15,7 +15,7 @@ export interface WorkflowTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'sales' | 'finance' | 'marketing' | 'support' | 'operations' | 'hr' | 'it' | 'legal';
+  category: 'sales' | 'finance' | 'marketing' | 'support' | 'operations' | 'hr' | 'it' | 'legal' | 'crm';
   definition: {
     nodes: Node[];
     edges: Edge[];
@@ -23,6 +23,8 @@ export interface WorkflowTemplate {
   };
   isActive: boolean;
   tags: string[];
+  actionTags: string[]; // Action tags to identify what the workflow DOES
+  customAction: string | null; // Custom action description for non-standard workflows
   metadata: Record<string, any>;
   version: number;
   createdAt: string;
@@ -42,6 +44,8 @@ export interface CreateTemplateData {
     viewport: Viewport;
   };
   tags?: string[];
+  actionTags?: string[]; // Action tags for this workflow
+  customAction?: string; // Custom action description
   metadata?: Record<string, any>;
 }
 
