@@ -52,7 +52,8 @@ import {
   XCircle,
   Activity,
   TrendingUp,
-  Megaphone
+  Megaphone,
+  AlertTriangle
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -1868,13 +1869,19 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                 </div>
                               )}
 
-                              {/* Missing Action Tags */}
+                              {/* Missing Action Tags - Enhanced visibility */}
                               {dept.actionTags?.missing && dept.actionTags.missing.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-medium text-red-600 mb-1">Azioni mancanti:</p>
-                                  <div className="flex flex-wrap gap-1">
+                                <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                                  <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-1">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    Azioni mancanti ({dept.actionTags.missing.length}):
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
                                     {dept.actionTags.missing.map((tag) => (
-                                      <Badge key={tag.value} variant="outline" className="text-xs bg-red-100 text-red-700 border-red-300">
+                                      <Badge 
+                                        key={tag.value} 
+                                        className="text-sm px-3 py-1 bg-red-200 text-gray-900 border border-red-300 font-medium"
+                                      >
                                         {tag.label}
                                       </Badge>
                                     ))}
@@ -1936,31 +1943,74 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               <h4 className="font-medium text-gray-700 mb-3">Copertura per Dipartimento</h4>
                               <div className="space-y-3">
                                 {coverageData.level3.departmentBreakdown.map((dept) => (
-                                  <div key={dept.department} className="flex items-center gap-4">
-                                    <div className="w-28 text-sm font-medium text-gray-700">
+                                  <div 
+                                    key={dept.department} 
+                                    className={`flex items-center gap-4 p-2 rounded-lg ${
+                                      dept.coveragePercent === 0 ? 'bg-red-50 border border-red-200' : ''
+                                    }`}
+                                  >
+                                    <div className="w-32 text-sm font-medium text-gray-700 flex items-center gap-1">
                                       {dept.departmentLabel}
                                       {dept.isCritical && (
                                         <Badge variant="outline" className="ml-1 text-xs text-red-600 border-red-300">
                                           Critico
                                         </Badge>
                                       )}
+                                      {dept.coveragePercent === 0 && !dept.isCritical && (
+                                        <Badge className="ml-1 text-xs bg-orange-100 text-orange-700 border border-orange-300">
+                                          Vuoto
+                                        </Badge>
+                                      )}
                                     </div>
                                     <div className="flex-1">
-                                      <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                                      <div className={`h-4 rounded-full overflow-hidden ${
+                                        dept.coveragePercent === 0 ? 'bg-red-200' : 'bg-gray-200'
+                                      }`}>
                                         <div 
                                           className={`h-full rounded-full ${
                                             dept.coveragePercent === 100 ? 'bg-green-500' :
-                                            dept.coveragePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                            dept.coveragePercent >= 50 ? 'bg-yellow-500' : 
+                                            dept.coveragePercent > 0 ? 'bg-red-500' : 'bg-red-300'
                                           }`}
-                                          style={{ width: `${dept.coveragePercent}%` }}
+                                          style={{ width: `${Math.max(dept.coveragePercent, dept.coveragePercent === 0 ? 100 : 0)}%` }}
                                         />
                                       </div>
                                     </div>
                                     <div className="w-24 text-sm text-right">
-                                      <span className="font-medium">{dept.usersWithCoverage}</span>
+                                      <span className={`font-medium ${dept.coveragePercent === 0 ? 'text-red-600' : ''}`}>
+                                        {dept.usersWithCoverage}
+                                      </span>
                                       <span className="text-gray-400"> / {dept.usersWithCoverage + dept.usersWithoutCoverage}</span>
                                     </div>
                                   </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Alert for Zero Coverage Departments */}
+                          {coverageData?.level3?.departmentBreakdown?.filter(d => d.coveragePercent === 0)?.length > 0 && (
+                            <div className="mb-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                              <h4 className="font-medium text-orange-700 mb-2 flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                Dipartimenti senza Copertura Utenti ({coverageData.level3.departmentBreakdown.filter(d => d.coveragePercent === 0).length})
+                              </h4>
+                              <p className="text-sm text-orange-600 mb-3">
+                                Nessun utente ha accesso a questi dipartimenti tramite team assegnati:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {coverageData.level3.departmentBreakdown.filter(d => d.coveragePercent === 0).map((dept) => (
+                                  <Badge 
+                                    key={dept.department} 
+                                    className={`text-sm px-3 py-1 ${
+                                      dept.isCritical 
+                                        ? 'bg-red-200 text-red-800 border border-red-400' 
+                                        : 'bg-orange-200 text-orange-800 border border-orange-400'
+                                    }`}
+                                  >
+                                    {dept.departmentLabel}
+                                    {dept.isCritical && ' (Critico)'}
+                                  </Badge>
                                 ))}
                               </div>
                             </div>
