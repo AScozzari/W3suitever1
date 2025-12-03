@@ -8,6 +8,7 @@ import {
   userWorkflowAssignments,
   workflowInstances,
   workflowTemplates,
+  notifications,
   type UniversalRequest,
   type InsertWorkflowInstance
 } from '../db/schema/w3suite.js';
@@ -90,6 +91,9 @@ export class RequestTriggerService {
 
       // STEP 4: Update universal request with workflow instance ID
       await this.linkRequestToWorkflow(request.id, workflowInstance.id, tenantId);
+
+      // STEP 5: Notify team supervisor(s) about the new request
+      await this.notifyTeamSupervisors(eligibleTeam.id, request, workflowInstance.id, tenantId);
 
       logger.info('✅ Request Trigger Service: Workflow automation completed successfully', {
         requestId: request.id,
@@ -575,6 +579,115 @@ export class RequestTriggerService {
         tenantId
       });
       return [];
+    }
+  }
+
+  /**
+   * 📢 STEP 5: Notify Team Supervisors about new request
+   * Sends in-app notification to team supervisor(s) when a new request is assigned
+   */
+  private static async notifyTeamSupervisors(
+    teamId: string,
+    request: UniversalRequest,
+    workflowInstanceId: string,
+    tenantId: string
+  ): Promise<void> {
+    try {
+      // Get team with supervisor info
+      const [team] = await db
+        .select({
+          id: teams.id,
+          name: teams.name,
+          primarySupervisorUser: teams.primarySupervisorUser,
+          secondarySupervisorUser: teams.secondarySupervisorUser
+        })
+        .from(teams)
+        .where(and(
+          eq(teams.id, teamId),
+          eq(teams.tenantId, tenantId)
+        ));
+
+      if (!team) {
+        logger.warn('⚠️ Team not found for notification', { teamId, tenantId });
+        return;
+      }
+
+      // Get requester info for notification message
+      const [requester] = await db
+        .select({
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email
+        })
+        .from(users)
+        .where(eq(users.id, request.requesterId));
+
+      const requesterName = requester 
+        ? `${requester.firstName || ''} ${requester.lastName || ''}`.trim() || requester.email
+        : 'Un utente';
+
+      // Collect supervisor IDs to notify
+      const supervisorIds: string[] = [];
+      
+      if (team.primarySupervisorUser) {
+        supervisorIds.push(team.primarySupervisorUser);
+      }
+      if (team.secondarySupervisorUser && team.secondarySupervisorUser !== team.primarySupervisorUser) {
+        supervisorIds.push(team.secondarySupervisorUser);
+      }
+
+      if (supervisorIds.length === 0) {
+        logger.warn('⚠️ No supervisors configured for team', { 
+          teamId: team.id, 
+          teamName: team.name 
+        });
+        return;
+      }
+
+      // Create notifications for all supervisors
+      const notificationsToInsert = supervisorIds.map(supervisorId => ({
+        tenantId,
+        targetUserId: supervisorId,
+        type: 'custom' as const,
+        title: 'Nuova Richiesta Ricevuta',
+        message: `${requesterName} ha inviato una nuova richiesta ${request.category ? `(${request.category})` : ''} per il dipartimento ${request.department}`,
+        priority: 'high' as const,
+        status: 'unread' as const,
+        data: {
+          notificationType: 'new_request_assigned',
+          requestId: request.id,
+          requestTitle: request.title,
+          requestCategory: request.category,
+          department: request.department,
+          workflowInstanceId,
+          teamId: team.id,
+          teamName: team.name,
+          requesterId: request.requesterId,
+          requesterName,
+          actionRequired: 'review',
+          link: `/hr/requests?requestId=${request.id}`
+        },
+        createdAt: new Date()
+      }));
+
+      await db.insert(notifications).values(notificationsToInsert);
+
+      logger.info('📢 Notified team supervisors about new request', {
+        teamId: team.id,
+        teamName: team.name,
+        requestId: request.id,
+        supervisorCount: supervisorIds.length,
+        supervisorIds
+      });
+
+    } catch (error) {
+      // Don't fail the request if notification fails
+      logger.error('❌ Failed to notify team supervisors', {
+        error: error instanceof Error ? error.message : String(error),
+        teamId,
+        requestId: request.id,
+        tenantId
+      });
     }
   }
 }
