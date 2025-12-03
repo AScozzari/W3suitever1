@@ -1,0 +1,49 @@
+~/workspace$ git add .
+git commit -m "Deploy VPS production"
+git push origin main
+On branch main
+Your branch is ahead of 'origin/main' by 1055 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+Enumerating objects: 8037, done.
+Counting objects: 100% (8037/8037), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (3607/3607), done.
+Writing objects: 100% (7880/7880), 15.35 MiB | 6.03 MiB/s, done.
+Total 7880 (delta 5499), reused 6142 (delta 4216), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (5499/5499), completed with 115 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Stripe API Key ————————————————————————————————————
+remote:        locations:
+remote:          - blob id: 7aac5f63e851bb28a6f2a80c0782b20fb9c12d08
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/AScozzari/W3suitever1/security/secret-scanning/unblock-secret/36LV6ej0Ralgk7k0PpNw7mGICBY
+remote:     
+remote:     
+remote:     ——[ WARNING ]—————————————————————————————————————————
+remote:      Scan incomplete: This push was large and we didn't finish on time.
+remote:      It can still contain undetected secrets.
+remote:     
+remote:      (?) Use the following command to find the path of the detected secret(s):
+remote:          git rev-list --objects --all | grep blobid
+remote:     ——————————————————————————————————————————————————————
+remote: 
+remote: 
+To https://github.com/AScozzari/W3suitever1.git
+ ! [remote rejected]   main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/AScozzari/W3suitever1.git'
+~/workspace$ 
