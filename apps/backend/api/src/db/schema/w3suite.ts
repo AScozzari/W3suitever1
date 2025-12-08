@@ -3422,6 +3422,69 @@ export const insertTenantWorkflowNodeOverrideSchema = createInsertSchema(tenantW
 export type InsertTenantWorkflowNodeOverride = z.infer<typeof insertTenantWorkflowNodeOverrideSchema>;
 export type TenantWorkflowNodeOverride = typeof tenantWorkflowNodeOverrides.$inferSelect;
 
+// ==================== DEPARTMENTS ====================
+// Departments table for organizational hierarchy
+export const departments = w3suiteSchema.table("departments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Department identification
+  code: varchar("code", { length: 50 }).notNull(), // 'hr', 'finance', 'sales', 'operations', etc.
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Store-specific department (optional - NULL = tenant-wide department)
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'cascade' }),
+  
+  // Configuration
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  
+  // Parent department for sub-departments (optional)
+  parentDepartmentId: uuid("parent_department_id"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("departments_tenant_code_store_unique").on(table.tenantId, table.code, table.storeId),
+  index("departments_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("departments_store_idx").on(table.storeId),
+]);
+
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type Department = typeof departments.$inferSelect;
+
+// ==================== TEAM DEPARTMENTS (Junction Table) ====================
+// Many-to-many relationship between teams and departments
+export const teamDepartments = w3suiteSchema.table("team_departments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  teamId: uuid("team_id").notNull(), // FK added after teams table definition
+  departmentId: uuid("department_id").notNull().references(() => departments.id, { onDelete: 'cascade' }),
+  
+  // Assignment metadata
+  isPrimary: boolean("is_primary").default(false), // Primary department for the team
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("team_departments_unique").on(table.teamId, table.departmentId),
+  index("team_departments_team_idx").on(table.teamId),
+  index("team_departments_department_idx").on(table.departmentId),
+  index("team_departments_tenant_idx").on(table.tenantId),
+]);
+
+export const insertTeamDepartmentSchema = createInsertSchema(teamDepartments).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertTeamDepartment = z.infer<typeof insertTeamDepartmentSchema>;
+export type TeamDepartment = typeof teamDepartments.$inferSelect;
+
 // Teams - Team ibridi con utenti e ruoli, supervisor RBAC-validated
 export const teams = w3suiteSchema.table("teams", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
