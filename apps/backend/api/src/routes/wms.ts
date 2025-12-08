@@ -7046,4 +7046,222 @@ router.get("/products/brands", rbacMiddleware, requirePermission('wms.stock.read
   }
 });
 
+// ============================================================================
+// WMS Movement Type Configuration API
+// ============================================================================
+
+/**
+ * GET /api/wms/movement-type-configs
+ * 
+ * Get all movement type configurations for tenant.
+ * Returns default configurations if none exist in database.
+ * 
+ * @permission wms.settings.read
+ */
+router.get("/movement-type-configs", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    // Query movement type configs from database
+    const configs = await db.execute(sql`
+      SELECT 
+        id,
+        tenant_id,
+        movement_type,
+        movement_direction,
+        label_it,
+        description,
+        icon,
+        color,
+        is_enabled,
+        requires_approval,
+        workflow_template_id,
+        required_documents,
+        display_order,
+        created_at,
+        updated_at
+      FROM w3suite.wms_movement_type_config
+      WHERE tenant_id = ${sessionTenantId}
+      ORDER BY display_order ASC
+    `);
+
+    res.json(configs.rows || []);
+
+  } catch (error) {
+    console.error("Error fetching movement type configs:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch movement type configs",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/movement-type-configs/bulk
+ * 
+ * Bulk upsert movement type configurations for tenant.
+ * Creates or updates all provided configs in a single transaction.
+ * 
+ * @permission wms.settings.write
+ */
+router.post("/movement-type-configs/bulk", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const { configs } = req.body;
+    
+    if (!Array.isArray(configs) || configs.length === 0) {
+      return res.status(400).json({ error: "configs array is required" });
+    }
+
+    // Upsert each config
+    const results = [];
+    for (const config of configs) {
+      const result = await db.execute(sql`
+        INSERT INTO w3suite.wms_movement_type_config (
+          id,
+          tenant_id,
+          movement_type,
+          movement_direction,
+          label_it,
+          description,
+          icon,
+          color,
+          is_enabled,
+          requires_approval,
+          workflow_template_id,
+          required_documents,
+          display_order,
+          created_by,
+          updated_by,
+          updated_at
+        ) VALUES (
+          COALESCE(${config.id?.startsWith('temp-') ? null : config.id}, gen_random_uuid()),
+          ${sessionTenantId},
+          ${config.movement_type},
+          ${config.movement_direction},
+          ${config.label_it},
+          ${config.description || null},
+          ${config.icon || null},
+          ${config.color || null},
+          ${config.is_enabled ?? true},
+          ${config.requires_approval ?? false},
+          ${config.workflow_template_id || null},
+          ${JSON.stringify(config.required_documents || [])}::jsonb,
+          ${config.display_order ?? 0},
+          ${userId || null},
+          ${userId || null},
+          NOW()
+        )
+        ON CONFLICT (tenant_id, movement_type) DO UPDATE SET
+          movement_direction = EXCLUDED.movement_direction,
+          label_it = EXCLUDED.label_it,
+          description = EXCLUDED.description,
+          icon = EXCLUDED.icon,
+          color = EXCLUDED.color,
+          is_enabled = EXCLUDED.is_enabled,
+          requires_approval = EXCLUDED.requires_approval,
+          workflow_template_id = EXCLUDED.workflow_template_id,
+          required_documents = EXCLUDED.required_documents,
+          display_order = EXCLUDED.display_order,
+          updated_by = EXCLUDED.updated_by,
+          updated_at = NOW()
+        RETURNING *
+      `);
+      results.push(result.rows?.[0]);
+    }
+
+    res.json({ 
+      success: true, 
+      message: `${results.length} configurations saved`,
+      data: results.filter(Boolean)
+    });
+
+  } catch (error) {
+    console.error("Error saving movement type configs:", error);
+    res.status(500).json({ 
+      error: "Failed to save movement type configs",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PATCH /api/wms/movement-type-configs/:movementType
+ * 
+ * Update a single movement type configuration.
+ * 
+ * @permission wms.settings.write
+ */
+router.patch("/movement-type-configs/:movementType", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { movementType } = req.params;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const updates = req.body;
+    
+    // Build SET clause dynamically
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    
+    if ('is_enabled' in updates) {
+      setClauses.push(`is_enabled = $${values.length + 1}`);
+      values.push(updates.is_enabled);
+    }
+    if ('requires_approval' in updates) {
+      setClauses.push(`requires_approval = $${values.length + 1}`);
+      values.push(updates.requires_approval);
+    }
+    if ('workflow_template_id' in updates) {
+      setClauses.push(`workflow_template_id = $${values.length + 1}`);
+      values.push(updates.workflow_template_id);
+    }
+    if ('required_documents' in updates) {
+      setClauses.push(`required_documents = $${values.length + 1}::jsonb`);
+      values.push(JSON.stringify(updates.required_documents));
+    }
+    
+    if (setClauses.length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
+    }
+    
+    setClauses.push(`updated_by = $${values.length + 1}`);
+    values.push(userId);
+    setClauses.push(`updated_at = NOW()`);
+
+    const result = await db.execute(sql.raw(`
+      UPDATE w3suite.wms_movement_type_config 
+      SET ${setClauses.join(', ')}
+      WHERE tenant_id = '${sessionTenantId}' AND movement_type = '${movementType}'
+      RETURNING *
+    `));
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: "Configuration not found" });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+
+  } catch (error) {
+    console.error("Error updating movement type config:", error);
+    res.status(500).json({ 
+      error: "Failed to update movement type config",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;

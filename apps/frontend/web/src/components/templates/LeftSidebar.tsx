@@ -7,7 +7,7 @@ import {
   BarChart3, UserCheck, Award, DollarSign, BookOpen,
   FileBarChart, Receipt, ChevronDown, ChevronUp,
   Target, Clipboard, TrendingUp, Shield, Package,
-  LayoutDashboard, FolderTree, Building2
+  LayoutDashboard, FolderTree, Building2, Cpu, Server
 } from 'lucide-react';
 // CompactCalendar rimosso - calendario integrato nel workspace
 
@@ -78,7 +78,19 @@ const defaultMenuItems: MenuItem[] = [
     ]
   },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
-  { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
+  { 
+    id: 'impostazioni', 
+    label: 'Impostazioni', 
+    icon: Settings, 
+    path: '/settings',
+    hasSubmenu: true,
+    submenuItems: [
+      { id: 'impostazioni-generali', label: 'Generali', icon: Settings, path: '/settings' },
+      { id: 'system-config', label: 'Config Sistema', icon: Cpu, path: '/settings/system' },
+      { id: 'canali', label: 'Canali', icon: Briefcase, path: '/settings/channels' },
+      { id: 'mcp-settings', label: 'Server MCP', icon: Server, path: '/settings/mcp' }
+    ]
+  }
 ];
 
 export default function LeftSidebar({
