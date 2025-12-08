@@ -5,6 +5,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { IdleDetectionProvider } from "./contexts/IdleDetectionContext";
 import { TenantShell } from "./components/TenantShell";
 import { useSessionKeepAlive } from "./hooks/useSessionKeepAlive";
+import { useProductionScale } from "./hooks/useProductionScale";
 import { lazy, Suspense } from "react";
 
 // Critical pages loaded immediately
@@ -37,6 +38,9 @@ const Login = lazy(() => import("./pages/Login"));
  * 3. Fine! Sicurezza automatica
  */
 export default function App() {
+  // 📐 PRODUCTION SCALE: Apply font-size from VITE_FONT_SCALE env var (e.g., 70%)
+  useProductionScale();
+  
   // 🔒 SECURITY POLICY: Auto-refresh session every 12 minutes to prevent timeout
   useSessionKeepAlive({
     enabled: true,
