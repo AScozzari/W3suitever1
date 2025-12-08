@@ -93,18 +93,18 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
     4. Restart: `pm2 delete w3-api && pm2 start current/server.cjs --name w3-api --update-env && pm2 save`
   - **SSH Access**: `ssh -i ~/.ssh/vps_deploy root@82.165.16.223`
   - **FRONTEND DEPLOY (OBBLIGATORIO)**:
-    1. Build: `cd apps/frontend/web && VITE_FONT_SCALE=70 npx vite build`
+    1. Build: `cd apps/frontend/web && VITE_FONT_SCALE=80 npx vite build`
     2. Upload: `scp -r apps/frontend/web/dist/* root@82.165.16.223:/var/www/w3suite/apps/frontend/web/dist/`
     3. VPS Path: `/var/www/w3suite/apps/frontend/web/dist/`
-    4. **⚠️ SEMPRE**: Includere `VITE_FONT_SCALE=70` nel comando build!
+    4. **⚠️ SEMPRE**: Includere `VITE_FONT_SCALE=80` nel comando build!
 - **VITE_FONT_SCALE (UI Zoom)**:
   - **Location**: Set at BUILD time, not runtime (Vite bakes env vars)
-  - **Current Value**: `VITE_FONT_SCALE=70` (70% = 30% smaller like browser zoom)
+  - **Current Value**: `VITE_FONT_SCALE=80` (80% = 20% smaller like browser zoom)
   - **Hook**: `useProductionScale()` in `App.tsx` applies `html { font-size: X% }`
   - **Values**: 100=normal, 90=10% smaller, 80=20% smaller, 70=30% smaller
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
-  - **❌ NEVER**: Forget `VITE_FONT_SCALE=70` when building frontend for VPS
+  - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
 - **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System, implemented with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. All pages maintain a consistent app structure with a header, sidebar, and white background.
