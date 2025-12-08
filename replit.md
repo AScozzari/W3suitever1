@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency and seize market opportunities by offering a scalable, secure, and comprehensive business solution with a distinct WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. Its core purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, distinguished by its WindTre glassmorphism design. The project aims to become the leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -62,41 +62,29 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **✅ Supervisore multi-team**: Un supervisore PUÒ supervisionare più team dello stesso dipartimento
   - **✅ Supervisore come membro altrove**: Un supervisore PUÒ essere membro di un ALTRO team (anche stesso dipartimento)
   - **❌ Auto-approvazione**: Prevenuta dal vincolo supervisore ≠ membro stesso team
-  - **API Validation**: `validateSupervisorNotMember()` in `apps/backend/api/src/routes/hierarchy.ts`
-  - **Endpoint protetti**: POST `/api/teams`, PATCH `/api/teams/:id`
 - **TEAM TYPE RULES (FUNCTIONAL vs TEMPORARY)**:
   - **🔒 Functional Teams**: Max 1 per dipartimento per utente - rappresenta il team "primario" permanente
   - **⏰ Temporary/Project Teams**: Nessun limite - l'utente può appartenere a multipli team temporanei per lo stesso dipartimento
-  - **API Validation**: `validateFunctionalTeamExclusivity()` in `apps/backend/api/src/routes/hierarchy.ts`
-  - **UI Badges**: 🔒 Lock icon = Functional (blue badge), ⏰ Clock icon = Temporary (yellow badge)
   - **Tooltip**: Spiega all'utente il significato di ogni tipo di team
 - **REQUEST ROUTING (FUNCTIONAL FIRST → FIRST WINS)**:
   - **Step 1**: Se l'utente ha un team FUNCTIONAL per il dipartimento della richiesta → route al supervisore primario
   - **Step 2**: Se nessun team functional, trova TUTTI i team temporanei dell'utente → notifica TUTTI i supervisori (First Wins)
   - **⚡ First Wins Pattern**: Il primo supervisore che risponde "vince" e gestisce la richiesta
-  - **Metadata Tracking**: `metadata.handledBy`, `metadata.handledAt`, `metadata.notifiedSupervisors` su `universal_requests`
   - **HTTP 409 Conflict**: Se un secondo supervisore prova ad approvare, riceve errore "Richiesta già gestita"
-  - **Service**: `RequestTriggerService.findTeamsForUserByDepartment()` in `apps/backend/api/src/services/request-trigger-service.ts`
 - **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
   - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
   - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
   - **📊 Data Queries**: Omettere storeId per vista cross-store, passare solo per filtri specifici
   - **👤 Admin Role**: Vede tutto, tutti gli utenti, tutti i negozi, senza filtri obbligatori
-  - **Moduli Cross-Store**: HR, CRM, Tasks, Workflows, Teams, WMS, Analytics, Campaigns
-  - **Pattern Query**: `useQuery({ queryKey: ['/api/endpoint'] })` senza storeId = cross-store
-  - **Filtro Opzionale**: `storeId?: string` o `storeIds: []` = tutti i negozi di default
   - **❌ MAI**: Auto-selezionare il primo negozio come default
   - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
   - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
 - **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
   - **🏢 Struttura**: Tenant → Commercial Area → Legal Entity → Store → Department → Team → User
-  - **🔗 FK Relationships**: `stores.commercialAreaId` → `public.commercial_areas.id`, `stores.legalEntityId` → `legal_entities.id`
   - **📊 Reference Data (public schema)**: `commercial_areas` (shared across tenants), no tenant filtering required
   - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `users` - always filtered by tenantId
   - **🎯 Cascading Filters (User Modal)**: Area selection → filters Legal Entities → filters Stores
   - **⚠️ Area Mismatch Validation (Team Modal)**: Warning when supervisor belongs to different commercial area than team members
-  - **API Endpoints**: `GET /api/commercial-areas`, `GET /api/legal-entities`, `GET /api/stores`
-  - **Helper Functions**: `getUserAreaId(user, stores)` returns user's commercial area via store chain
   - **✅ Pattern**: Validate area consistency in team assignments, show yellow warnings (not blockers)
 - **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
   - **📞 WebSocket URL Format**: SEMPRE `wss://{sipServer}/ws` sulla porta 443
@@ -116,12 +104,6 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
     - `.env.production` (secrets, DB, Redis, VITE_FONT_SCALE)
     - `.env` (local overrides)
     - `ecosystem.config.cjs` (PM2 config)
-  - **Deploy Steps**:
-    1. Build: `npx esbuild ... --outfile=dist/server.cjs`
-    2. Upload: `scp dist/server.cjs root@82.165.16.223:/var/www/w3suite/releases/TIMESTAMP/`
-    3. Symlink: `ln -s /var/www/w3suite/releases/TIMESTAMP /var/www/w3suite/current`
-    4. Restart: `pm2 delete w3-api && pm2 start current/server.cjs --name w3-api --update-env && pm2 save`
-  - **SSH Access**: `ssh -i ~/.ssh/vps_deploy root@82.165.16.223`
   - **FRONTEND DEPLOY (OBBLIGATORIO)**:
     1. Build: `cd apps/frontend/web && VITE_FONT_SCALE=80 npx vite build`
     2. Upload: `scp -r apps/frontend/web/dist/* root@82.165.16.223:/var/www/w3suite/apps/frontend/web/dist/`
@@ -137,41 +119,41 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System, utilizing `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS for a consistent UI with a fixed header, sidebar, and white backgrounds.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS for a consistent UI with fixed header, sidebar, and white backgrounds.
 - **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: A 3-schema approach (`w3suite`, `public`, `brand_interface`) powered by PostgreSQL and leveraging Row Level Security (RLS) for multi-tenancy.
-- **Security**: Implemented with OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC) system featuring Italian role templates and granular permissions.
-- **Core Systems**: Includes a Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management, and a Multi-Provider OAuth System (MCP).
-- **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder (using OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, an AI Tools Ecosystem (e.g., PDC Analyzer for PDF contract analysis), an AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), an AI Funnel Orchestration System (`funnel-orchestrator-assistant`), and an AI Voice Agent RAG System utilizing `pgvector` for WindTre offers.
-- **CRM Module**: Provides a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-- **Campaign Management**: Supports dual-mode campaign creation (wizard/advanced) with built-in GDPR Consent enforcement.
-- **Deployment & Governance**: Managed via a Deploy Center Auto-Commit System and Bidirectional Branch Linking.
-- **Brand Interface**: Incorporates a Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and a Master Catalog System (a hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Offers enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
-- **RBAC System**: Defines 10 Italian role templates with 215 granular permissions and default assignments.
-- **Workflow Database Operations**: Enables secure SELECT, INSERT, UPDATE, DELETE operations on the `w3suite` schema with a visual query builder, RLS, prepared statements, and validation.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, featuring dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, an immutable event log, a read model, historical snapshots, and document tables. The Enterprise Inventory Dashboard offers KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
-- **WMS Movement Type Configuration**: A taxonomy of 15 movement types (5 inbound, 6 outbound, 4 internal) configurable per-tenant via the System Config page, including approval workflow, linked workflow templates, and required documents.
-- **System Config Page**: A modular settings dashboard at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL and Row Level Security (RLS) for multi-tenancy.
+- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
+- **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
+- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), and AI Voice Agent RAG System (`pgvector`) for WindTre offers.
+- **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
+- **Campaign Management**: Dual-mode creation (wizard/advanced) with GDPR Consent enforcement.
+- **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking.
+- **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
+- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
+- **RBAC System**: 10 Italian role templates with 215 granular permissions and default assignments.
+- **Workflow Database Operations**: Secure SELECT, INSERT, UPDATE, DELETE on `w3suite` schema with visual query builder, RLS, prepared statements, and validation.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Enterprise Inventory Dashboard with KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
+- **WMS Movement Type Configuration**: Taxonomy of 15 movement types (5 inbound, 6 outbound, 4 internal) configurable per-tenant via System Config page, including approval workflow, linked workflow templates, and required documents.
+- **System Config Page**: Modular settings dashboard at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
 - **Redis**: For BullMQ and Unified Notification System.
-- **OAuth2/OIDC Enterprise**: For user authentication.
-- **SHADCN/UI**: For UI components.
-- **Radix UI**: For headless component primitives.
-- **Lucide React**: For icons.
-- **TanStack React Query**: For server state management.
-- **React Hook Form**: For form handling and validation.
+- **OAuth2/OIDC Enterprise**: User authentication.
+- **SHADCN/UI**: UI components.
+- **Radix UI**: Headless component primitives.
+- **Lucide React**: Icons.
+- **TanStack React Query**: Server state management.
+- **React Hook Form**: Form handling and validation.
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: For database schema management.
-- **PostCSS**: For CSS pre-processing.
-- **ESBuild**: For server-side code bundling.
-- **Nginx**: As a reverse proxy.
-- **OpenAI**: Used for AI Workflow Builder, PDC Analyzer, and AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
-- **Google Workspace**: For integration.
-- **AWS**: For cloud services.
-- **Meta/Instagram**: For social media integrations.
-- **Microsoft 365**: For Office suite integration.
-- **Stripe**: For payment processing.
-- **GTM/Analytics**: For Google Tag Manager and analytics services.
+- **Drizzle Kit**: Database schema management.
+- **PostCSS**: CSS pre-processing.
+- **ESBuild**: Server-side code bundling.
+- **Nginx**: Reverse proxy.
+- **OpenAI**: AI Workflow Builder, PDC Analyzer, AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
+- **Google Workspace**: Integration.
+- **AWS**: Cloud services.
+- **Meta/Instagram**: Social media integrations.
+- **Microsoft 365**: Office suite integration.
+- **Stripe**: Payment processing.
+- **GTM/Analytics**: Google Tag Manager and analytics services.
