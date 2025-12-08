@@ -75,6 +75,14 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **✅ wsPort**: Sempre 443 per WSS
   - **✅ wsPath**: Sempre `/ws`
   - **✅ URL Pattern**: `wss://{extension.sipServer}/ws`
+- **🔒 PENDING: VPS SSL/HTTPS Setup (TODO DOMANI)**:
+  - **Domain**: w3suite.it (comprato, su Aruba - da trasferire DNS a Cloudflare)
+  - **VPS IP**: 82.165.16.223
+  - **certbot**: Già installato su VPS
+  - **nginx**: Configurato per w3suite.it (server_name aggiornato)
+  - **Azione**: Configurare DNS A record su Cloudflare → 82.165.16.223 (proxy OFF)
+  - **Comando certbot**: `certbot --nginx -d w3suite.it --no-redirect`
+  - **VoIP richiede HTTPS**: WebRTC non funziona su HTTP (media devices blocked)
 - **VPS Deploy Rules (OBBLIGATORIO)**:
   - **❌ NEVER use `npm run build`** for VPS deploy - produces wrong output file
   - **✅ ALWAYS use `deploy/vps-deploy.sh`** or manual esbuild command below
