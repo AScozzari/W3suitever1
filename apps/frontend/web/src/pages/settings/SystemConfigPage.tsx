@@ -424,7 +424,7 @@ export default function SystemConfigPage() {
       </div>
       <div className="max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             <TabsTrigger 
               value="wms" 
               className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700"
@@ -432,6 +432,14 @@ export default function SystemConfigPage() {
             >
               <Package className="w-4 h-4" />
               <span className="hidden sm:inline">WMS</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sales" 
+              className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700"
+              data-testid="tab-sales"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span className="hidden sm:inline">Sales</span>
             </TabsTrigger>
             <TabsTrigger 
               value="voip" 
@@ -469,6 +477,21 @@ export default function SystemConfigPage() {
 
           <TabsContent value="wms" className="mt-6">
             <WMSMovementsTab />
+          </TabsContent>
+
+          <TabsContent value="sales" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-emerald-600" />
+                  Configurazione Sales
+                </CardTitle>
+                <CardDescription>Impostazioni POS, scontrini, pagamenti e promozioni</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500 text-sm">Configurazione Sales in arrivo.</p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="voip" className="mt-6">
