@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import {
   Dialog,
   DialogContent,
@@ -463,16 +464,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
     queryFn: async () => {
       if (!selectedItem?.productId) return null;
       const url = `/api/wms/product-serials/${selectedItem.productId}${selectedItem.storeId ? `?storeId=${selectedItem.storeId}` : ''}`;
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: {
-          'X-Tenant-ID': localStorage.getItem('currentTenantId') || '',
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user',
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch serials');
-      return response.json();
+      return await apiRequest(url);
     },
     enabled: isDetailModalOpen && !!selectedItem?.productId && (selectedItem?.serialCount ?? 0) > 0,
   });
