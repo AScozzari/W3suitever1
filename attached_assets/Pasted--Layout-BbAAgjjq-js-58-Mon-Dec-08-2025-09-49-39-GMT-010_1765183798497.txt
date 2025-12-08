@@ -1,0 +1,52 @@
+
+
+Layout-BbAAgjjq.js:58 Mon Dec 08 2025 09:49:39 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Registered
+Layout-BbAAgjjq.js:86 📡 Registration state: Registered
+Layout-BbAAgjjq.js:86 ✅ SIP Registered successfully
+Layout-BbAAgjjq.js:58 Mon Dec 08 2025 09:49:39 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+5index-YXx2i8Qr.js:2 🔍 Token expiry check: Current time: 09:49:42, Token expires: 10:04:25
+index-YXx2i8Qr.js:2  GET http://82.165.16.223/api/wms/products/brands 500 (Internal Server Error)
+queryFn @ index-YXx2i8Qr.js:2
+await in queryFn
+a @ query-DPk5WMjR.js:1
+M @ query-DPk5WMjR.js:1
+start @ query-DPk5WMjR.js:1
+fetch @ query-DPk5WMjR.js:1
+Lt @ query-DPk5WMjR.js:1
+onSubscribe @ query-DPk5WMjR.js:1
+subscribe @ query-DPk5WMjR.js:1
+(anonymous) @ query-DPk5WMjR.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-YXx2i8Qr.js:2 🔍 Token expiry check: Current time: 09:49:43, Token expires: 10:04:25
+index-YXx2i8Qr.js:2  GET http://82.165.16.223/api/wms/products/brands 500 (Internal Server Error)
+queryFn @ index-YXx2i8Qr.js:2
+await in queryFn
+a @ query-DPk5WMjR.js:1
+M @ query-DPk5WMjR.js:1
+(anonymous) @ query-DPk5WMjR.js:1
+Promise.then
+(anonymous) @ query-DPk5WMjR.js:1
+Promise.catch
+M @ query-DPk5WMjR.js:1
+start @ query-DPk5WMjR.js:1
+fetch @ query-DPk5WMjR.js:1
+Lt @ query-DPk5WMjR.js:1
+onSubscribe @ query-DPk5WMjR.js:1
+subscribe @ query-DPk5WMjR.js:1
+(anonymous) @ query-DPk5WMjR.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-YXx2i8Qr.js:2 🔍 Token expiry check: Current time: 09:49:49, Token expires: 10:04:25
