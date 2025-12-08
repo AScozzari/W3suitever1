@@ -93,16 +93,18 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
     4. Restart: `pm2 delete w3-api && pm2 start current/server.cjs --name w3-api --update-env && pm2 save`
   - **SSH Access**: `ssh -i ~/.ssh/vps_deploy root@82.165.16.223`
   - **FRONTEND DEPLOY (OBBLIGATORIO)**:
-    1. Build: `cd apps/frontend/web && npx vite build`
+    1. Build: `cd apps/frontend/web && VITE_FONT_SCALE=70 npx vite build`
     2. Upload: `scp -r apps/frontend/web/dist/* root@82.165.16.223:/var/www/w3suite/apps/frontend/web/dist/`
     3. VPS Path: `/var/www/w3suite/apps/frontend/web/dist/`
+    4. **⚠️ SEMPRE**: Includere `VITE_FONT_SCALE=70` nel comando build!
 - **VITE_FONT_SCALE (UI Zoom)**:
-  - **Location**: VPS `.env.production` only (not in Git)
+  - **Location**: Set at BUILD time, not runtime (Vite bakes env vars)
   - **Current Value**: `VITE_FONT_SCALE=70` (70% = 30% smaller like browser zoom)
   - **Hook**: `useProductionScale()` in `App.tsx` applies `html { font-size: X% }`
   - **Values**: 100=normal, 90=10% smaller, 80=20% smaller, 70=30% smaller
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
+  - **❌ NEVER**: Forget `VITE_FONT_SCALE=70` when building frontend for VPS
 
 # System Architecture
 - **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System, implemented with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. All pages maintain a consistent app structure with a header, sidebar, and white background.
@@ -115,18 +117,13 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Campaign Management**: Supports dual-mode campaign creation (wizard/advanced) and enforces GDPR Consent.
 - **Deployment & Governance**: Features a Deploy Center Auto-Commit System (Git-like versioning) and Bidirectional Branch Linking.
 - **Brand Interface**: Includes a Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and a Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Provides Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration for call actions, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys.
-- **VoIP Bidirectional Sync Architecture**: Each tenant uses encrypted API keys stored in `voip_tenant_config`. Sync direction is managed by `syncSource` (`edgvoip` for PULL, `w3suite` for PUSH) and `syncStatus` (`synced`, `pending`, `failed`, `local_only`). PULL syncs data from EDGVoIP, and PUSH syncs local records to EDGVoIP. Orphan cleanup removes EDGVoIP-sourced records not found remotely. `userId` and `storeId` are W3 Suite-only fields.
+- **VoIP Telephony**: Provides Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration for call actions, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. The VoIP architecture includes bidirectional sync with `edgvoip` as a potential `syncSource` and detailed `syncStatus`.
 - **RBAC System**: Offers 10 Italian role templates with 215 granular permissions, including default assignments for roles like Amministratore and Store Manager.
 - **Workflow Database Operations**: Provides secure SELECT, INSERT, UPDATE, DELETE operations on the `w3suite` schema with a visual query builder, RLS enforcement, prepared statements, and table/column validation.
-- **Store Working Stats API**: Aggregates working days and hours for stores using `store_opening_rules`, `store_calendar_settings`, `store_calendar_overrides`, and `public.italian_holidays` tables, with double-layer tenant isolation.
-- **Shift Template Versioning System**: Ensures immutable version tracking for shift templates. Updates create new versions, while past shifts retain their original reference. Future shifts are updated to the latest version.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE product types. Features dual-layer product versioning, 13 logistic states, management of serialized (`product_items`, `product_serials`) and non-serialized products (`product_batches`), an immutable `wms_stock_movements` event log, a `wms_inventory_balances` read model for real-time quantities, and historical snapshots (`wms_inventory_snapshots`). Includes document tables for purchase orders, sales, transfers, and returns. Designed for high scalability with PostgreSQL partitioning. **Enterprise Inventory Dashboard** (`/magazzino/inventario`) with KPI cards, traffic light stock status (green/yellow/red), 250-row pagination, multi-format export (CSV/Excel/JSON), and cross-store view for stores with `hasWarehouse=true`.
-- **WMS Core Definitions (DISTINZIONI FONDAMENTALI)**:
-  - **CONDIZIONE** = Stato fisico dell'articolo: `new` (Nuovo), `used` (Usato), `refurbished` (Ricondizionato), `demo` (Demo)
-  - **STATO LOGISTICO** = Posizione/fase nel flusso logistico (13 stati): `in_stock` (In Giacenza), `reserved` (Prenotato), `preparing` (In Preparazione), `shipping` (DDT/In Spedizione), `delivered` (Consegnato), `customer_return` (Reso Cliente), `doa_return` (Reso DOA), `in_service` (In Assistenza), `supplier_return` (Restituito Fornitore), `in_transfer` (In Trasferimento), `lost` (Smarrito), `damaged` (Danneggiato/Dismesso), `internal_use` (AD Uso Interno)
-  - **STOCK** = Quantità aggregate (solo vista aggregata): `quantity` (Disponibile), `reservedQuantity` (Riservato), `minStock` (per calcolo Sotto Scorta)
-  - **Vista Serializzata**: Mostra CONDIZIONE e STATO LOGISTICO per seriale, NON lo stock (che è aggregato). Header con anagrafica + tabella seriali, timeline eventi unificata in formato tabella.
+- **Store Working Stats API**: Aggregates working days and hours for stores using multiple tables with double-layer tenant isolation.
+- **Shift Template Versioning System**: Ensures immutable version tracking for shift templates.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE product types. Features dual-layer product versioning, 13 logistic states, management of serialized and non-serialized products, an immutable event log (`wms_stock_movements`), a read model (`wms_inventory_balances`) for real-time quantities, and historical snapshots (`wms_inventory_snapshots`). Includes document tables for purchase orders, sales, transfers, and returns. Designed for high scalability with PostgreSQL partitioning. The Enterprise Inventory Dashboard provides KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
+- **WMS Core Definitions**: Defines "CONDIZIONE" (physical state), "STATO LOGISTICO" (logistic phase), and "STOCK" (aggregated quantities), with distinct views for serialized items.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
