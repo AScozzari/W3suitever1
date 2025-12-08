@@ -1,0 +1,80 @@
+dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+useSIPRegistration.ts:205 WebSocket connection to 'wss://demo.edgvoip.it/ws' failed: 
+_connect @ sip__js.js?v=4d8c8bff:12290
+connect @ sip__js.js?v=4d8c8bff:12215
+start @ sip__js.js?v=4d8c8bff:12967
+setupSIP @ useSIPRegistration.ts:205
+(anonymous) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=4d8c8bff:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18627Understand this error
+installHook.js:1 Sat Dec 06 2025 21:53:37 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=4d8c8bff:6959
+genericLog @ sip__js.js?v=4d8c8bff:6941
+genericLog @ sip__js.js?v=4d8c8bff:6881
+error @ sip__js.js?v=4d8c8bff:6869
+onWebSocketError @ sip__js.js?v=4d8c8bff:12427
+(anonymous) @ sip__js.js?v=4d8c8bff:12293Understand this error
+installHook.js:1 Sat Dec 06 2025 21:53:37 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=4d8c8bff:6962
+genericLog @ sip__js.js?v=4d8c8bff:6941
+genericLog @ sip__js.js?v=4d8c8bff:6881
+warn @ sip__js.js?v=4d8c8bff:6872
+onWebSocketClose @ sip__js.js?v=4d8c8bff:12413
+(anonymous) @ sip__js.js?v=4d8c8bff:12292Understand this warning
+sip__js.js?v=4d8c8bff:6965 Sat Dec 06 2025 21:53:37 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+sip__js.js?v=4d8c8bff:6965 Sat Dec 06 2025 21:53:37 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+installHook.js:1 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=4d8c8bff:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=4d8c8bff:12292:49)
+overrideMethod @ installHook.js:1
+setupSIP @ useSIPRegistration.ts:234
+await in setupSIP
+(anonymous) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=4d8c8bff:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=4d8c8bff:103
+flush @ @tanstack_react-query.js?v=4d8c8bff:610
+batch @ @tanstack_react-query.js?v=4d8c8bff:628
+dispatch_fn @ @tanstack_react-query.js?v=4d8c8bff:1260
+setData @ @tanstack_react-query.js?v=4d8c8bff:931
+fetch @ @tanstack_react-query.js?v=4d8c8bff:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=4d8c8bff:1639
+setOptions @ @tanstack_react-query.js?v=4d8c8bff:1392
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+SettingsPage.tsx:687 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:700 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}

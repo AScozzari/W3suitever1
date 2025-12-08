@@ -1,0 +1,247 @@
+🌐 [WS] Throttled: too soon since last connection
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-AMKBJTH4.js?v=f4a34e1b:335:29)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at div (<anonymous>)
+    at HRCalendar (HRCalendar.tsx:43:38)
+    at div (<anonymous>)
+    at ShiftsSection (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at HRManagementPage (HRManagementPage.tsx:99:21)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-AMKBJTH4.js?v=f4a34e1b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-AMKBJTH4.js?v=f4a34e1b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-AMKBJTH4.js?v=f4a34e1b:335:29)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at div (<anonymous>)
+    at HRCalendar (HRCalendar.tsx:43:38)
+    at div (<anonymous>)
+    at ShiftsSection (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at HRManagementPage (HRManagementPage.tsx:99:21)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-AMKBJTH4.js?v=f4a34e1b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-AMKBJTH4.js?v=f4a34e1b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-AMKBJTH4.js?v=f4a34e1b:335:29)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:239:13
+    at chunk-AMKBJTH4.js?v=f4a34e1b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at chunk-AMKBJTH4.js?v=f4a34e1b:153:64
+    at chunk-TCRT5IO7.js?v=f4a34e1b:43:13
+    at chunk-TCRT5IO7.js?v=f4a34e1b:20:13
+    at chunk-7JN5FQRM.js?v=f4a34e1b:42:13
+    at chunk-R54IPKTL.js?v=f4a34e1b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=f4a34e1b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=f4a34e1b:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=f4a34e1b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=f4a34e1b:56:5)
+    at div (<anonymous>)
+    at HRCalendar (HRCalendar.tsx:43:38)
+    at div (<anonymous>)
+    at ShiftsSection (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at HRManagementPage (HRManagementPage.tsx:99:21)
+    at AuthenticatedRoute (TenantShell.tsx:535:72)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:231:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:86:59)
+    at Route (wouter.js?v=f4a34e1b:206:16)
+    at Switch (wouter.js?v=f4a34e1b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-AMKBJTH4.js?v=f4a34e1b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-AMKBJTH4.js?v=f4a34e1b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this warning

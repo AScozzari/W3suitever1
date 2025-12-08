@@ -1,0 +1,51 @@
+lugin:vite:react-babel] /home/runner/workspace/apps/frontend/web/src/components/settings/StoreConfigurationDialog.tsx: Unterminated string constant. (2:38)
+  5 | import { useForm } from 'react-hook-form';
+/home/runner/workspace/apps/frontend/web/src/components/settings/StoreConfigurationDialog.tsx:2:38
+1  |  import { useState } from 'react';
+2  |  import { useQuery, useMutation } from '@tantml:parameter>
+   |                                        ^
+3  |  <parameter name="content">import { useState } from 'react';
+4  |  import { useQuery, useMutation } from '@tanstack/react-query';
+    at constructor (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:367:19)
+    at TypeScriptParserMixin.raise (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:6630:19)
+    at Object.unterminated (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:5695:20)
+    at readStringContents (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:5437:16)
+    at TypeScriptParserMixin.readString (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:6529:9)
+    at TypeScriptParserMixin.getTokenFromCode (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:6289:14)
+    at TypeScriptParserMixin.getTokenFromCode (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:4830:11)
+    at TypeScriptParserMixin.getTokenFromCode (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:10009:11)
+    at TypeScriptParserMixin.nextToken (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:5813:10)
+    at TypeScriptParserMixin.next (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:5723:10)
+    at TypeScriptParserMixin.eatContextual (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:6899:12)
+    at TypeScriptParserMixin.expectContextual (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:6905:15)
+    at TypeScriptParserMixin.parseImportSpecifiersAndAfter (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14252:10)
+    at TypeScriptParserMixin.parseImport (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14244:17)
+    at TypeScriptParserMixin.parseImport (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:9441:26)
+    at TypeScriptParserMixin.parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12885:27)
+    at TypeScriptParserMixin.parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:9532:18)
+    at TypeScriptParserMixin.parseStatementLike (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12776:17)
+    at TypeScriptParserMixin.parseModuleItem (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12753:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:13325:36)
+    at TypeScriptParserMixin.parseBlockBody (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:13318:10)
+    at TypeScriptParserMixin.parseProgram (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12634:10)
+    at TypeScriptParserMixin.parseTopLevel (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:12624:25)
+    at TypeScriptParserMixin.parse (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14501:10)
+    at TypeScriptParserMixin.parse (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:10149:18)
+    at parse (/home/runner/workspace/node_modules/@babel/parser/lib/index.js:14535:38)
+    at parser (/home/runner/workspace/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (/home/runner/workspace/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (/home/runner/workspace/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/home/runner/workspace/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (/home/runner/workspace/node_modules/gensync/index.js:261:32)
+    at /home/runner/workspace/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/home/runner/workspace/node_modules/gensync/index.js:223:11)
+    at /home/runner/workspace/node_modules/gensync/index.js:189:28
+    at /home/runner/workspace/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+    at /home/runner/workspace/node_modules/gensync/index.js:113:33
+    at step (/home/runner/workspace/node_modules/gensync/index.js:287:14)
+    at /home/runner/workspace/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/home/runner/workspace/node_modules/gensync/index.js:223:11

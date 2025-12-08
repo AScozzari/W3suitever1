@@ -1,0 +1,324 @@
+Pianificazione Turni
+Milano Corso Buenos Aires - 24 nov - 30 nov 2025
+
+Copertura: 0%
+Reset
+Salva Pianificazione
+Negozio
+Giorni
+Template
+Risorse
+Suggeriti (1)
+Risorse assegnate a Milano Corso Buenos Aires
+
+GB
+Giulia Bianchi
+
+40h disp. • 0h ass.
+
+Altre risorse (25)
+AT
+Admin Tenant
+
+Staff
+
+SM
+Store Manager
+
+Staff
+
+LE
+Legal Entity
+
+Staff
+
+DU
+Demo User
+
+admin
+
+TU
+Test User API
+
+Test User
+
+ML
+Monica Lombardi
+
+Store Manager
+
+MB
+Marco Bianchi
+
+Direttore
+
+PG
+Paolo Gallo
+
+Direttore
+
+RE
+Roberto Esposito
+
+Store Manager
+
+SC
+Stefano Caruso
+
+Store Manager
+
+AM
+Andrea Mancini
+
+Store Manager
+
+FM
+Francesca Marino
+
+Store Specialist
+
+CB
+Chiara Bruno
+
+Store Specialist
+
+SF
+Sara Fontana
+
+Store Specialist
+
+LB
+Lorenzo Barbieri
+
+Student
+
+SC
+Silvia Conti
+
+Marketing
+
+GR
+Giulia Ricci
+
+Finance
+
+EF
+Elisa Ferrara
+
+Finance
+
+MC
+Matteo Costa
+
+Store Specialist
+
+DS
+Davide Santoro
+
+Store Specialist
+
+VM
+Valentina Marini
+
+Finance
+
+AG
+Alessandro Greco
+
+Store Manager
+
+LV
+Luca Verdi
+
+Student
+
+MR
+Mario Rossi
+
+Store Manager
+
+AU
+Admin User
+
+Admin
+
+MR
+Mario Rossi
+mario.rossi@windtre.it
+
+Store Manager
+0h
+
+Ore periodo
+
+7
+
+Liberi
+
+0
+
+Occupati
+
+0
+
+Turni
+
+Ore settimanali periodo
+
+(Contratto: 40h/sett.)
+
+Sett. 24 nov
+
+0h / 40h
+
+Calendario disponibilità
+
+novembre 2025
+
+L
+M
+M
+G
+V
+S
+D
+27
+28
+29
+30
+31
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+Libero
+Occupato
+Chiuso
+Periodo
+Coperto
+Parziale
+Assegna turno
+Turno
+
+Seleziona turno...
+Giorni
+Tutti (7)
+Singolo
+Assegna
+Apertura
+Template
+Gap
+Overflow
+Risorsa
+Mancanza
+lun 24 nov
+
+2 fasce
+6:00
+8:00
+10:00
+12:00
+14:00
+16:00
+18:00
+20:00
+22:00
+24:00
+Apertura
+09:30 - 19:30
+Turno Full Day
+Turno Full Day
+Mancano 1
+Mancano 1
+Turno Full Day
+Turno Full Day
+Mancano 1
+Mancano 1
+Gap
+Non coperto
+mar 25 nov
+
+2 fasce
+6:00
+8:00
+10:00
+12:00
+14:00
+16:00
+18:00
+20:00
+22:00
+24:00
+Apertura
+09:30 - 19:30
+Turno Full Day
+Turno Full Day
+Mancano 1
+Mancano 1
+Turno Full Day
+Turno Full Day
+Mancano 1
+Mancano 1
+Gap
+Non coperto
+mer 26 nov
+
+2 fasce
+6:00
+8:00
+10:00
+12:00
+14:00
+16:00
+18:00
+20:00
+22:00
+24:00
+Apertura
+09:30 - 19:30
+Turno Full Day
+Turno Full Day
+Mancano 1
+Mancano 1
+Turno Full Day
+Turno Full Day
+Mancano 1
+Mancano 1
+Gap
+Non coperto
+gio 27 nov
+
+2 fasce
+6:00
+8:00
+10:00
+12:00
+14:00
+16:00
+18:00

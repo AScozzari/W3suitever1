@@ -1,0 +1,3646 @@
+/**
+ * 🎯 ACTION EXECUTORS REGISTRY
+ * 
+ * Registro centrale per tutti gli executors che implementano le azioni 
+ * dei nodi ReactFlow. Mappa executor IDs ai servizi backend reali.
+ */
+
+import { logger } from '../core/logger';
+import { notificationService } from '../core/notification-service';
+import { UnifiedOpenAIService } from './unified-openai';
+import { AIRegistryService, RegistryAwareContext } from './ai-registry-service';
+import { mcpClientService } from './mcp-client-service';
+import { db } from '../core/db';
+import { userAssignments, legalEntities, stores, crmCampaigns, crmPipelines } from '../db/schema/w3suite';
+import { aiAgentsRegistry } from '../db/schema/brand-interface';
+import { eq, and } from 'drizzle-orm';
+
+// ==================== INTERFACES ====================
+
+/**
+ * Base interface for all action executors
+ */
+export interface ActionExecutor {
+  executorId: string;
+  description: string;
+  execute(
+    step: any, 
+    inputData?: Record<string, any>, 
+    context?: any
+  ): Promise<ActionExecutionResult>;
+}
+
+/**
+ * Standard result interface for all executors
+ */
+export interface ActionExecutionResult {
+  success: boolean;
+  message: string;
+  data?: Record<string, any>;
+  decision?: string; // For decision-type executors
+  nextAction?: string; // For routing executors
+  error?: string;
+}
+
+/**
+ * Execution context passed to executors
+ */
+export interface ExecutionContext {
+  tenantId: string;
+  requesterId: string;
+  instanceId: string;
+  templateId: string;
+  metadata?: Record<string, any>;
+}
+
+// ==================== SCOPE VALIDATION UTILITY ====================
+
+/**
+ * 🔒 Validates if user has permission to operate on a specific store/legal_entity
+ * This provides the second layer of defense (RBAC middleware is first)
+ */
+export async function validateUserScope(
+  userId: string,
+  tenantId: string,
+  storeId?: string,
+  legalEntityId?: string
+): Promise<{ hasAccess: boolean; message?: string }> {
+  try {
+    // Get user's scope assignments
+    const assignments = await db
+      .select({
+        scopeType: userAssignments.scopeType,
+        scopeId: userAssignments.scopeId
+      })
+      .from(userAssignments)
+      .where(
+        and(
+          eq(userAssignments.userId, userId),
+          eq((userAssignments as any).tenantId, tenantId)
+        )
+      );
+
+    if (assignments.length === 0) {
+      return {
+        hasAccess: false,
+        message: 'Utente non ha scope assignments configurati'
+      };
+    }
+
+    // Check if user has tenant-wide access (highest level)
+    const hasTenantAccess = assignments.some(a => a.scopeType === 'tenant');
+    if (hasTenantAccess) {
+      return { hasAccess: true };
+    }
+
+    // Check store-level access (most specific)
+    if (storeId) {
+      const hasStoreAccess = assignments.some(
+        a => a.scopeType === 'store' && a.scopeId === storeId
+      );
+      
+      if (hasStoreAccess) {
+        return { hasAccess: true };
+      }
+
+      // Get store's legal entity to check indirect access
+      const [store] = await db
+        .select({ legalEntityId: stores.legalEntityId })
+        .from(stores)
+        .where(eq(stores.id, storeId))
+        .limit(1);
+
+      if (store?.legalEntityId) {
+        const hasLegalEntityAccess = assignments.some(
+          a => a.scopeType === 'legal_entity' && a.scopeId === store.legalEntityId
+        );
+        
+        if (hasLegalEntityAccess) {
+          return { hasAccess: true };
+        }
+      }
+
+      return {
+        hasAccess: false,
+        message: `Non hai permessi per operare sul punto vendita specificato`
+      };
+    }
+
+    // Check legal_entity-level access
+    if (legalEntityId) {
+      const hasLegalEntityAccess = assignments.some(
+        a => a.scopeType === 'legal_entity' && a.scopeId === legalEntityId
+      );
+      
+      if (hasLegalEntityAccess) {
+        return { hasAccess: true };
+      }
+
+      return {
+        hasAccess: false,
+        message: `Non hai permessi per operare sulla ragione sociale specificata`
+      };
+    }
+
+    // No specific scope to check, user has some access
+    return { hasAccess: true };
+
+  } catch (error) {
+    logger.error('❌ Scope validation error', {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      tenantId,
+      storeId,
+      legalEntityId
+    });
+    return {
+      hasAccess: false,
+      message: 'Errore durante la validazione dello scope'
+    };
+  }
+}
+
+// ==================== CONCRETE EXECUTORS ====================
+
+/**
+ * 📧 EMAIL ACTION EXECUTOR
+ * Sends emails using the notification service
+ */
+export class EmailActionExecutor implements ActionExecutor {
+  executorId = 'email-action-executor';
+  description = 'Sends email notifications using notification service';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📧 [EXECUTOR] Executing email action', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const emailData = {
+        to: config.recipient || inputData?.email || context?.requesterEmail,
+        subject: config.subject || 'Workflow Notification',
+        message: config.message || 'A workflow action has been completed.',
+        type: 'workflow' as const,
+        priority: config.priority || 'medium' as const
+      };
+
+      // Validate required fields
+      if (!emailData.to) {
+        throw new Error('Email recipient is required');
+      }
+
+      // Use notification service to send email
+      await (notificationService as any).sendEmailNotification(
+        context?.tenantId || 'default',
+        emailData.to,
+        emailData.subject,
+        emailData.message,
+        emailData.type,
+        emailData.priority,
+        { 
+          stepId: step.nodeId,
+          instanceId: context?.instanceId,
+          ...inputData 
+        }
+      );
+
+      return {
+        success: true,
+        message: `Email sent successfully to ${emailData.to}`,
+        data: { 
+          recipient: emailData.to,
+          subject: emailData.subject,
+          sentAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Email action failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to send email',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * ✅ APPROVAL ACTION EXECUTOR
+ * Handles approval requests and workflow pausing
+ */
+export class ApprovalActionExecutor implements ActionExecutor {
+  executorId = 'approval-action-executor';
+  description = 'Handles approval requests and notifications';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('✅ [EXECUTOR] Executing approval action', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      // 🔒 SCOPE VALIDATION: Check if approver has access to this store/legal_entity
+      if (context?.currentAssigneeId && context.currentAssigneeId !== 'system') {
+        const scopeCheck = await validateUserScope(
+          context.currentAssigneeId,
+          context.tenantId,
+          context.storeId,
+          context.legalEntityId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          logger.warn('🚫 [EXECUTOR] Approval blocked - user lacks scope access', {
+            userId: context.currentAssigneeId,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId,
+            reason: scopeCheck.message
+          });
+
+          return {
+            success: false,
+            message: scopeCheck.message || 'Non hai permessi per approvare questa richiesta',
+            error: 'SCOPE_ACCESS_DENIED'
+          };
+        }
+      }
+
+      const config = step.config || {};
+      const approverRole = config.approverRole || 'manager';
+      const approvalMessage = config.message || `Approval required for: ${step.config?.label || 'Workflow Step'}`;
+
+      // Send approval notification to assigned approver
+      if (context?.currentAssigneeId && context.currentAssigneeId !== 'system') {
+        await notificationService.sendNotification(
+          context.tenantId,
+          context.currentAssigneeId,
+          'Approval Required',
+          approvalMessage,
+          'workflow_approval',
+          'high',
+          {
+            stepId: step.nodeId,
+            instanceId: context.instanceId,
+            actionRequired: 'approve_or_reject',
+            approverRole
+          }
+        );
+      }
+
+      return {
+        success: true,
+        message: 'Approval request sent successfully',
+        data: {
+          approverRole,
+          assigneeId: context?.currentAssigneeId,
+          status: 'waiting_approval',
+          requestedAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Approval action failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to send approval request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🤖 AUTO APPROVAL EXECUTOR
+ * Automatically approves based on conditions
+ */
+export class AutoApprovalExecutor implements ActionExecutor {
+  executorId = 'auto-approval-executor';
+  description = 'Automatically approves requests based on configured conditions';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing auto approval', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const conditions = config.conditions || {};
+      
+      // Simple rule-based auto approval
+      let shouldApprove = true;
+      let reason = 'Automatic approval - all conditions met';
+
+      // Check amount threshold
+      if (conditions.maxAmount && inputData?.amount) {
+        if (parseFloat(inputData.amount) > parseFloat(conditions.maxAmount)) {
+          shouldApprove = false;
+          reason = `Amount ${inputData.amount} exceeds threshold ${conditions.maxAmount}`;
+        }
+      }
+
+      // Check user role
+      if (conditions.allowedRoles && context?.requesterRole) {
+        if (!conditions.allowedRoles.includes(context.requesterRole)) {
+          shouldApprove = false;
+          reason = `User role ${context.requesterRole} not in allowed list`;
+        }
+      }
+
+      // Check time-based rules
+      if (conditions.businessHoursOnly) {
+        const now = new Date();
+        const hour = now.getHours();
+        if (hour < 9 || hour > 17) {
+          shouldApprove = false;
+          reason = 'Request outside business hours';
+        }
+      }
+
+      const result = shouldApprove ? 'approve' : 'reject';
+
+      return {
+        success: true,
+        message: `Auto ${result}: ${reason}`,
+        decision: result,
+        data: {
+          autoApproved: shouldApprove,
+          reason,
+          evaluatedAt: new Date().toISOString(),
+          conditions: conditions
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Auto approval failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Auto approval evaluation failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🤔 DECISION EVALUATOR
+ * Evaluates conditions and routes workflow
+ */
+export class DecisionEvaluator implements ActionExecutor {
+  executorId = 'decision-evaluator';
+  description = 'Evaluates conditions and determines workflow routing';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤔 [EXECUTOR] Executing decision evaluation', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const condition = config.condition || '';
+      const defaultDecision = config.defaultDecision || 'continue';
+      
+      let decision = defaultDecision;
+      let reason = 'Default decision';
+
+      // Parse simple conditions
+      if (condition.includes('amount >')) {
+        const match = condition.match(/amount\s*>\s*(\d+)/);
+        if (match && inputData?.amount) {
+          const threshold = parseFloat(match[1]);
+          const amount = parseFloat(inputData.amount);
+          decision = amount > threshold ? 'reject' : 'approve';
+          reason = `Amount ${amount} ${decision === 'reject' ? 'exceeds' : 'within'} threshold ${threshold}`;
+        }
+      } else if (condition.includes('days >')) {
+        const match = condition.match(/days\s*>\s*(\d+)/);
+        if (match && inputData?.days) {
+          const threshold = parseInt(match[1]);
+          const days = parseInt(inputData.days);
+          decision = days > threshold ? 'manager_approval' : 'auto_approve';
+          reason = `${days} days ${decision === 'manager_approval' ? 'requires' : 'allows'} manager approval (threshold: ${threshold})`;
+        }
+      } else if (condition.includes('role =')) {
+        const match = condition.match(/role\s*=\s*['"]([^'"]+)['"]/);
+        if (match && context?.requesterRole) {
+          const requiredRole = match[1];
+          decision = context.requesterRole === requiredRole ? 'approve' : 'reject';
+          reason = `Role ${context.requesterRole} ${decision === 'approve' ? 'matches' : 'does not match'} required ${requiredRole}`;
+        }
+      }
+
+      return {
+        success: true,
+        message: `Decision: ${decision} - ${reason}`,
+        decision,
+        data: {
+          condition,
+          evaluatedCondition: reason,
+          inputData,
+          evaluatedAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Decision evaluation failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Decision evaluation failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        decision: 'error'
+      };
+    }
+  }
+}
+
+/**
+ * 🧠 AI DECISION EXECUTOR
+ * Uses workflow-assistant agent from AI Registry for intelligent decision making
+ */
+export class AiDecisionExecutor implements ActionExecutor {
+  executorId = 'ai-decision-executor';
+  description = 'Uses workflow-assistant AI agent to make intelligent decisions based on context';
+  private aiRegistry: AIRegistryService | null = null;
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🧠 [EXECUTOR] Executing AI decision with workflow-assistant agent', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      // Initialize AI Registry if not already done
+      if (!this.aiRegistry) {
+        const { storage } = await import('../core/storage');
+        this.aiRegistry = new AIRegistryService(storage);
+      }
+
+      const config = step.config || {};
+      const userPrompt = config.prompt || 'Analyze this workflow decision request and provide a decision with clear reasoning.';
+      const maxTokens = config.parameters?.maxTokens || 500;
+
+      // Prepare message for AI with structured context
+      const aiInput = `
+Workflow Decision Request:
+- Step: ${step.config?.label || 'Decision Point'}
+- Request Data: ${JSON.stringify(inputData, null, 2)}
+- Context: Tenant ${context?.tenantId}, Requester ${context?.requesterId}
+
+${userPrompt}
+
+Please analyze this information and provide a decision. Respond in JSON format:
+{"decision": "approve|reject|escalate", "reason": "clear explanation", "confidence": "high|medium|low"}
+      `;
+
+      // Use workflow-assistant agent from registry
+      // Model and temperature are inherited from agent configuration
+      const aiSettings = {
+        openaiModel: '', // Will be overridden by agent's baseConfiguration
+        systemPrompt: '', // Will be overridden by agent's systemPrompt
+        maxTokens, // Respect UI configuration
+        temperature: 0 // Will be overridden by agent's baseConfiguration
+      };
+
+      const registryContext: RegistryAwareContext = {
+        agentId: 'workflow-assistant', // Use centralized workflow agent
+        tenantId: context?.tenantId || 'default',
+        userId: context?.requesterId || 'system',
+        moduleContext: 'general' as const,
+        businessEntityId: context?.instanceId
+      };
+
+      logger.info('🤖 [EXECUTOR] Calling workflow-assistant agent', {
+        agentId: 'workflow-assistant',
+        maxTokens
+      });
+
+      const response = await this.aiRegistry.createUnifiedResponse(
+        aiInput,
+        aiSettings as any,
+        registryContext
+      );
+
+      if (!response.success || !response.output) {
+        throw new Error('AI service returned unsuccessful response');
+      }
+
+      // Parse AI response
+      let decision = 'approve';
+      let reason = 'AI decision completed';
+      let confidence = 'medium';
+      
+      try {
+        const parsed = JSON.parse(response.output);
+        decision = parsed.decision || 'approve';
+        reason = parsed.reason || 'AI analysis completed';
+        confidence = parsed.confidence || 'medium';
+      } catch {
+        // Fallback: simple text parsing
+        const aiResponse = response.output.toLowerCase();
+        if (aiResponse.includes('reject')) {
+          decision = 'reject';
+        } else if (aiResponse.includes('escalate')) {
+          decision = 'escalate';
+        }
+        reason = response.output;
+      }
+
+      logger.info('✅ [EXECUTOR] AI decision completed', {
+        decision,
+        confidence,
+        agentUsed: 'workflow-assistant'
+      });
+
+      return {
+        success: true,
+        message: `AI Decision: ${decision} - ${reason}`,
+        decision,
+        data: {
+          aiResponse: response.output,
+          agentId: 'workflow-assistant',
+          confidence,
+          inputData,
+          evaluatedAt: new Date().toISOString(),
+          tokensUsed: response.tokensUsed,
+          cost: response.cost
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI decision failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Fallback to approve in case of AI failure
+      return {
+        success: true, // Still successful, just with fallback
+        message: 'AI decision failed, defaulting to approve',
+        decision: 'approve',
+        data: {
+          fallback: true,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+}
+
+/**
+ * 📝 FORM TRIGGER EXECUTOR
+ * Handles form submission triggers
+ */
+export class FormTriggerExecutor implements ActionExecutor {
+  executorId = 'form-trigger-executor';
+  description = 'Processes form submission triggers';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📝 [EXECUTOR] Executing form trigger', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const formData = inputData || {};
+
+      // Validate required fields
+      const requiredFields = config.requiredFields || [];
+      const missingFields = requiredFields.filter((field: string) => !formData[field]);
+
+      if (missingFields.length > 0) {
+        return {
+          success: false,
+          message: `Missing required fields: ${missingFields.join(', ')}`,
+          error: 'Validation failed'
+        };
+      }
+
+      // Process form data
+      const processedData = {
+        ...formData,
+        submittedAt: new Date().toISOString(),
+        submitterId: context?.requesterId,
+        tenantId: context?.tenantId
+      };
+
+      return {
+        success: true,
+        message: 'Form trigger processed successfully',
+        data: processedData
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Form trigger failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Form trigger processing failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * ⚙️ GENERIC ACTION EXECUTOR
+ * Fallback executor for simple actions
+ */
+export class GenericActionExecutor implements ActionExecutor {
+  executorId = 'generic-action-executor';
+  description = 'Generic fallback executor for simple actions';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    logger.info('⚙️ [EXECUTOR] Executing generic action', {
+      stepId: step.nodeId,
+      executorId: step.executorId,
+      context: context?.tenantId
+    });
+
+    return {
+      success: true,
+      message: `Generic action completed for step ${step.nodeId}`,
+      data: {
+        stepId: step.nodeId,
+        executorId: step.executorId,
+        inputData,
+        completedAt: new Date().toISOString()
+      }
+    };
+  }
+}
+
+/**
+ * 🔔 TASK TRIGGER EXECUTOR
+ * Handles task event triggers (created, status changed, assigned)
+ */
+export class TaskTriggerExecutor implements ActionExecutor {
+  executorId = 'task-trigger-executor';
+  description = 'Handles task-related triggers for workflow automation';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔔 [EXECUTOR] Executing task trigger', {
+        stepId: step.nodeId,
+        eventType: step.config?.eventType
+      });
+
+      const config = step.config || {};
+      const eventType = config.eventType;
+      const taskData = inputData?.task || inputData;
+
+      // Validate trigger conditions
+      let shouldTrigger = true;
+      let reason = 'Trigger conditions met';
+
+      // Filter by department
+      if (config.filters?.department && taskData?.department !== config.filters.department) {
+        shouldTrigger = false;
+        reason = `Department ${taskData?.department} does not match filter ${config.filters.department}`;
+      }
+
+      // Filter by status change
+      if (eventType === 'task_status_changed') {
+        const fromStatus = config.filters?.fromStatus;
+        const toStatus = config.filters?.toStatus;
+        
+        if (fromStatus && taskData?.oldStatus !== fromStatus) {
+          shouldTrigger = false;
+          reason = `Old status ${taskData?.oldStatus} does not match filter ${fromStatus}`;
+        }
+        
+        if (toStatus && taskData?.status !== toStatus) {
+          shouldTrigger = false;
+          reason = `New status ${taskData?.status} does not match filter ${toStatus}`;
+        }
+      }
+
+      // Filter by assigned user
+      if (eventType === 'task_assigned') {
+        const assignedTo = config.filters?.assignedTo;
+        if (assignedTo && taskData?.assigneeId !== assignedTo) {
+          shouldTrigger = false;
+          reason = `Assignee ${taskData?.assigneeId} does not match filter ${assignedTo}`;
+        }
+      }
+
+      if (!shouldTrigger) {
+        return {
+          success: true,
+          message: `Trigger skipped: ${reason}`,
+          data: {
+            triggered: false,
+            reason,
+            taskId: taskData?.id
+          }
+        };
+      }
+
+      return {
+        success: true,
+        message: `Task trigger activated: ${eventType}`,
+        data: {
+          triggered: true,
+          eventType,
+          taskId: taskData?.id,
+          taskTitle: taskData?.title,
+          triggeredAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Task trigger failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to process task trigger',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 📋 TASK ACTION EXECUTOR
+ * Handles task creation, assignment and updates within workflows
+ */
+export class TaskActionExecutor implements ActionExecutor {
+  executorId = 'task-action-executor';
+  description = 'Creates, assigns and updates tasks from workflow';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📋 [EXECUTOR] Executing task action', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const action = config.action || 'create';
+      const { TaskService } = await import('./task-service');
+
+      if (!context?.tenantId) {
+        throw new Error('Tenant ID is required for task actions');
+      }
+
+      // 🔒 SCOPE VALIDATION: Check if assignee has access to this store/legal_entity
+      const assigneeId = config.assignToUser || context.currentAssigneeId || context.requesterId;
+      if (assigneeId && assigneeId !== 'system') {
+        const scopeCheck = await validateUserScope(
+          assigneeId,
+          context.tenantId,
+          context.storeId,
+          context.legalEntityId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          logger.warn('🚫 [EXECUTOR] Task action blocked - user lacks scope access', {
+            userId: assigneeId,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId,
+            reason: scopeCheck.message
+          });
+
+          return {
+            success: false,
+            message: scopeCheck.message || 'Non hai permessi per gestire task su questo punto vendita',
+            error: 'SCOPE_ACCESS_DENIED'
+          };
+        }
+      }
+
+      // CREATE TASK
+      if (action === 'create') {
+        const taskData = {
+          tenantId: context.tenantId,
+          title: config.title || inputData?.title || 'Workflow Task',
+          description: config.description || inputData?.description,
+          status: config.status || 'todo',
+          priority: config.priority || 'medium',
+          urgency: config.urgency || 'medium',
+          department: config.department,
+          creatorId: context.requesterId,
+          dueDate: config.dueDate ? new Date(config.dueDate) : undefined,
+          linkedWorkflowInstanceId: context.instanceId
+        };
+
+        const task = await TaskService.createTask(taskData);
+
+        // Auto-assign if specified
+        if (config.assignToRole || config.assignToUser) {
+          const assigneeId = config.assignToUser || context.requesterId;
+          await (TaskService as any).assignTask(
+            task.id,
+            context.tenantId,
+            assigneeId,
+            'assignee'
+          );
+        }
+
+        return {
+          success: true,
+          message: `Task created successfully: ${task.title}`,
+          data: {
+            taskId: task.id,
+            title: task.title,
+            status: task.status,
+            createdAt: task.createdAt
+          }
+        };
+      }
+
+      // ASSIGN TASK
+      if (action === 'assign') {
+        const taskId = config.taskId || inputData?.taskId;
+        const assigneeId = config.assignToUser || inputData?.assignToUser;
+        
+        if (!taskId || !assigneeId) {
+          throw new Error('Task ID and assignee are required for assignment');
+        }
+
+        await (TaskService as any).assignTask(
+          taskId,
+          context.tenantId,
+          assigneeId,
+          config.role || 'assignee'
+        );
+
+        return {
+          success: true,
+          message: `Task assigned successfully to user ${assigneeId}`,
+          data: {
+            taskId,
+            assigneeId,
+            role: config.role || 'assignee'
+          }
+        };
+      }
+
+      // UPDATE TASK STATUS
+      if (action === 'update_status') {
+        const taskId = config.taskId || inputData?.taskId;
+        const newStatus = config.newStatus || inputData?.status;
+        
+        if (!taskId || !newStatus) {
+          throw new Error('Task ID and new status are required for update');
+        }
+
+        const updated = await TaskService.updateTask(
+          taskId,
+          context.tenantId,
+          { status: newStatus }
+        );
+
+        return {
+          success: true,
+          message: `Task status updated to ${newStatus}`,
+          data: {
+            taskId: updated.id,
+            oldStatus: config.oldStatus,
+            newStatus: updated.status,
+            updatedAt: updated.updatedAt
+          }
+        };
+      }
+
+      throw new Error(`Unknown task action: ${action}`);
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Task action failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to execute task action',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+// ==================== ROUTING EXECUTORS ====================
+
+/**
+ * 👥 TEAM ROUTING EXECUTOR
+ * Routes workflow to team based on team_workflow_assignments
+ */
+export class TeamRoutingExecutor implements ActionExecutor {
+  executorId = 'team-routing-executor';
+  description = 'Routes workflow to team (auto or manual)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('👥 [EXECUTOR] Executing team routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const mode = config.assignmentMode || 'auto';
+
+      // Auto mode: usa RequestTriggerService per selezionare team automaticamente
+      if (mode === 'auto') {
+        const { RequestTriggerService } = await import('./request-trigger-service');
+        const department = config.forDepartment || context?.department || 'operations';
+        
+        const selectedTeam = await (RequestTriggerService as any).findTeamForDepartment(
+          department,
+          context?.tenantId
+        );
+
+        if (!selectedTeam) {
+          throw new Error(`No team found for department: ${department}`);
+        }
+
+        return {
+          success: true,
+          message: `Workflow routed to team: ${selectedTeam.name}`,
+          data: {
+            teamId: selectedTeam.id,
+            teamName: selectedTeam.name,
+            department,
+            mode: 'auto'
+          },
+          nextAction: selectedTeam.id
+        };
+      }
+
+      // Manual mode: usa teamId specificato
+      if (mode === 'manual' && config.teamId) {
+        return {
+          success: true,
+          message: `Workflow routed to specific team`,
+          data: {
+            teamId: config.teamId,
+            mode: 'manual'
+          },
+          nextAction: config.teamId
+        };
+      }
+
+      throw new Error('Invalid team assignment configuration');
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Team routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route workflow to team',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 👤 USER ROUTING EXECUTOR
+ * Assigns workflow to specific users (auto or manual)
+ */
+export class UserRoutingExecutor implements ActionExecutor {
+  executorId = 'user-routing-executor';
+  description = 'Routes workflow to user(s) (auto or manual)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('👤 [EXECUTOR] Executing user routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const mode = config.assignmentMode || 'auto';
+      let userIds: string[] = [];
+      let assignmentType = config.assignmentType || 'all';
+
+      // Auto mode: usa RequestTriggerService per selezionare users automaticamente
+      if (mode === 'auto') {
+        const { RequestTriggerService } = await import('./request-trigger-service');
+        const department = config.forDepartment || context?.department || 'operations';
+        
+        const selectedUsers = await RequestTriggerService.findUsersForDepartment(
+          department,
+          context?.tenantId,
+          context?.templateId
+        );
+
+        if (!selectedUsers || selectedUsers.length === 0) {
+          throw new Error(`No users found for department: ${department}`);
+        }
+
+        userIds = selectedUsers.map(u => u.id);
+
+        logger.info('✅ [EXECUTOR] Auto-assigned users from workflow assignments', {
+          department,
+          userIds,
+          count: userIds.length
+        });
+      } 
+      // Manual mode: usa userIds specificati
+      else if (mode === 'manual' && config.userIds && config.userIds.length > 0) {
+        userIds = config.userIds;
+        
+        logger.info('✅ [EXECUTOR] Manual user assignment', {
+          userIds,
+          count: userIds.length
+        });
+      } 
+      else {
+        throw new Error('Invalid user assignment configuration: no users specified');
+      }
+
+      // 🔒 SCOPE VALIDATION: Filter users who have access to this store/legal_entity
+      const validUserIds: string[] = [];
+      const deniedUserIds: string[] = [];
+
+      for (const userId of userIds) {
+        const scopeCheck = await validateUserScope(
+          userId,
+          context.tenantId,
+          context.storeId,
+          context.legalEntityId
+        );
+
+        if (scopeCheck.hasAccess) {
+          validUserIds.push(userId);
+        } else {
+          deniedUserIds.push(userId);
+          logger.warn('🚫 [EXECUTOR] User excluded from routing - lacks scope access', {
+            userId,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId,
+            reason: scopeCheck.message
+          });
+        }
+      }
+
+      if (validUserIds.length === 0) {
+        return {
+          success: false,
+          message: 'Nessun utente ha permessi per operare su questo punto vendita',
+          error: 'ALL_USERS_SCOPE_DENIED',
+          data: {
+            deniedUsers: deniedUserIds.length,
+            storeId: context.storeId,
+            legalEntityId: context.legalEntityId
+          }
+        };
+      }
+
+      // Send notifications only to users with valid scope
+      for (const userId of validUserIds) {
+        await notificationService.sendNotification(
+          context?.tenantId,
+          userId,
+          'Workflow Assignment',
+          `You have been assigned to a workflow: ${step.config?.label || 'Workflow Task'}`,
+          'workflow_assignment',
+          'high',
+          {
+            stepId: step.nodeId,
+            instanceId: context?.instanceId,
+            assignmentType,
+            mode
+          }
+        );
+      }
+
+      return {
+        success: true,
+        message: `Workflow assigned to ${validUserIds.length} user(s) (${mode} mode)${deniedUserIds.length > 0 ? ` - ${deniedUserIds.length} excluded for scope restrictions` : ''}`,
+        data: {
+          userIds: validUserIds,
+          deniedUserIds: deniedUserIds.length > 0 ? deniedUserIds : undefined,
+          assignmentType,
+          mode,
+          assignedAt: new Date().toISOString()
+        },
+        nextAction: validUserIds[0] // Use first valid user as next action
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] User routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to assign workflow to users',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+// ==================== FLOW CONTROL EXECUTORS ====================
+
+/**
+ * 🔀 IF CONDITION EXECUTOR
+ * Evaluates condition and routes to true/false path
+ */
+export class IfConditionExecutor implements ActionExecutor {
+  executorId = 'if-condition-executor';
+  description = 'Evaluates IF condition and routes workflow';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔀 [EXECUTOR] Executing IF condition', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const conditions = config.conditions || [];
+      const logic = config.logic || 'AND';
+
+      // Evaluate all conditions
+      const results = conditions.map((cond: any) => {
+        const fieldValue = inputData?.[cond.field] || context?.metadata?.[cond.field];
+        return this.evaluateCondition(fieldValue, cond.operator, cond.value);
+      });
+
+      // Apply logic
+      const finalResult = logic === 'AND' 
+        ? results.every((r: boolean) => r) 
+        : results.some((r: boolean) => r);
+
+      const nextPath = finalResult ? config.truePath : config.falsePath;
+
+      return {
+        success: true,
+        message: `Condition evaluated to: ${finalResult}`,
+        data: {
+          result: finalResult,
+          nextPath,
+          conditions: results
+        },
+        decision: finalResult ? 'true' : 'false',
+        nextAction: nextPath
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] IF condition failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to evaluate condition',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  private evaluateCondition(value: any, operator: string, target: any): boolean {
+    switch (operator) {
+      case 'equals': return value === target;
+      case 'not_equals': return value !== target;
+      case 'greater_than': return Number(value) > Number(target);
+      case 'less_than': return Number(value) < Number(target);
+      case 'contains': return String(value).includes(String(target));
+      default: return false;
+    }
+  }
+}
+
+/**
+ * 🔄 SWITCH CASE EXECUTOR
+ * Multi-branch routing based on variable value
+ */
+export class SwitchCaseExecutor implements ActionExecutor {
+  executorId = 'switch-case-executor';
+  description = 'Routes workflow based on switch case';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔄 [EXECUTOR] Executing SWITCH case', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const variable = config.variable;
+      const cases = config.cases || [];
+      const value = inputData?.[variable] || context?.metadata?.[variable];
+
+      // Find matching case
+      const matchedCase = cases.find((c: any) => c.value === value);
+      const nextPath = matchedCase?.path || config.defaultPath;
+
+      return {
+        success: true,
+        message: `Matched case: ${matchedCase?.label || 'default'}`,
+        data: {
+          variable,
+          value,
+          matchedCase: matchedCase?.value,
+          nextPath
+        },
+        decision: matchedCase?.value || 'default',
+        nextAction: nextPath
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] SWITCH case failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to evaluate switch case',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔁 WHILE LOOP EXECUTOR
+ * Repeats execution while condition is true
+ */
+export class WhileLoopExecutor implements ActionExecutor {
+  executorId = 'while-loop-executor';
+  description = 'Executes loop while condition is true';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔁 [EXECUTOR] Executing WHILE loop', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const condition = config.condition;
+      const currentIteration = context?.metadata?.iteration || 0;
+      const maxIterations = config.maxIterations || 10;
+
+      // Check iteration limit
+      if (currentIteration >= maxIterations) {
+        return {
+          success: true,
+          message: 'Max iterations reached, exiting loop',
+          data: {
+            iterations: currentIteration,
+            exitReason: 'max_iterations'
+          },
+          nextAction: config.exitPath
+        };
+      }
+
+      // Evaluate condition
+      const value = inputData?.[condition.field] || context?.metadata?.[condition.field] || 0;
+      const conditionMet = this.evaluateCondition(value, condition.operator, condition.value);
+
+      if (conditionMet) {
+        // Continue loop
+        return {
+          success: true,
+          message: 'Condition true, continuing loop',
+          data: {
+            iterations: currentIteration + 1,
+            conditionValue: value
+          },
+          nextAction: config.loopBody
+        };
+      } else {
+        // Exit loop
+        return {
+          success: true,
+          message: 'Condition false, exiting loop',
+          data: {
+            iterations: currentIteration,
+            exitReason: 'condition_false'
+          },
+          nextAction: config.exitPath
+        };
+      }
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] WHILE loop failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to execute loop',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  private evaluateCondition(value: any, operator: string, target: any): boolean {
+    switch (operator) {
+      case 'less_than': return Number(value) < Number(target);
+      case 'greater_than': return Number(value) > Number(target);
+      case 'equals': return value === target;
+      default: return false;
+    }
+  }
+}
+
+/**
+ * 🌿 PARALLEL FORK EXECUTOR
+ * Executes multiple branches in parallel
+ */
+export class ParallelForkExecutor implements ActionExecutor {
+  executorId = 'parallel-fork-executor';
+  description = 'Forks workflow into parallel branches';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🌿 [EXECUTOR] Executing PARALLEL fork', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const branches = config.branches || [];
+
+      // Create parallel execution tracking
+      const branchNodes = branches.map((b: any) => b.startNode).filter(Boolean);
+
+      return {
+        success: true,
+        message: `Forked into ${branches.length} parallel branches`,
+        data: {
+          branches: branches.map((b: any) => ({
+            name: b.name,
+            startNode: b.startNode
+          })),
+          waitFor: config.waitFor,
+          timeout: config.timeout
+        },
+        nextAction: branchNodes.join(',') // Multiple next nodes
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] PARALLEL fork failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to fork parallel branches',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔗 JOIN SYNC EXECUTOR
+ * Synchronizes parallel branches
+ */
+export class JoinSyncExecutor implements ActionExecutor {
+  executorId = 'join-sync-executor';
+  description = 'Synchronizes parallel branches';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔗 [EXECUTOR] Executing JOIN sync', {
+        stepId: step.nodeId
+      });
+
+      const config = step.config || {};
+      const completedBranches = context?.metadata?.completedBranches || [];
+      const totalBranches = context?.metadata?.totalBranches || 0;
+
+      const allCompleted = config.waitForAll 
+        ? completedBranches.length === totalBranches
+        : completedBranches.length > 0;
+
+      if (allCompleted) {
+        return {
+          success: true,
+          message: 'All branches synchronized successfully',
+          data: {
+            completedBranches,
+            totalBranches,
+            aggregateResults: config.aggregateResults ? completedBranches : undefined
+          }
+        };
+      } else {
+        return {
+          success: true,
+          message: 'Waiting for branches to complete',
+          data: {
+            completedBranches: completedBranches.length,
+            totalBranches,
+            waiting: true
+          }
+        };
+      }
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] JOIN sync failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        success: false,
+        message: 'Failed to synchronize branches',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔌 MCP CONNECTOR EXECUTOR
+ * Executes tools via Model Context Protocol
+ */
+export class MCPConnectorExecutor implements ActionExecutor {
+  executorId = 'mcp-connector-executor';
+  description = 'Executes MCP tools with retry logic and error handling';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔌 [EXECUTOR] Executing MCP Connector', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      
+      // Validate required fields
+      if (!config.serverId || !config.toolName) {
+        throw new Error('MCP Connector requires serverId and toolName');
+      }
+
+      // Merge parameters with inputData for dynamic values
+      const parameters = this.resolveParameters(config.parameters || {}, inputData);
+      
+      // Extract configuration
+      const {
+        serverId,
+        toolName,
+        timeout = 30000,
+        retryPolicy = { enabled: true, maxRetries: 3, retryDelayMs: 1000 },
+        errorHandling = { onError: 'fail', fallbackValue: null }
+      } = config;
+
+      // Execute tool with retry logic (multi-user OAuth support)
+      const result = await this.executeWithRetry({
+        serverId,
+        toolName,
+        arguments: parameters,
+        tenantId: context.tenantId,
+        userId: context.requesterId, // REQUIRED for multi-user OAuth
+        timeout,
+        retryPolicy,
+        errorHandling
+      });
+
+      return result;
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] MCP Connector failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Apply error handling strategy
+      const errorHandling = step.config?.errorHandling || { onError: 'fail' };
+      
+      if (errorHandling.onError === 'continue') {
+        return {
+          success: true, // Continue workflow despite error
+          message: 'MCP execution failed but continuing workflow',
+          data: {
+            error: error instanceof Error ? error.message : String(error),
+            fallbackValue: errorHandling.fallbackValue
+          }
+        };
+      }
+
+      return {
+        success: false,
+        message: 'MCP tool execution failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Execute MCP tool with retry logic
+   * MULTI-USER OAUTH: Now requires userId for credential isolation
+   */
+  private async executeWithRetry(options: {
+    serverId: string;
+    toolName: string;
+    arguments: Record<string, any>;
+    tenantId: string;
+    userId: string; // REQUIRED for multi-user OAuth
+    timeout: number;
+    retryPolicy: { enabled: boolean; maxRetries: number; retryDelayMs: number };
+    errorHandling: { onError: 'fail' | 'continue' | 'retry'; fallbackValue: any };
+  }): Promise<ActionExecutionResult> {
+    const { serverId, toolName, arguments: args, tenantId, userId, timeout, retryPolicy, errorHandling } = options;
+    
+    let lastError: Error | null = null;
+    const maxAttempts = retryPolicy.enabled ? retryPolicy.maxRetries + 1 : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        logger.debug('🔌 [MCP] Executing tool', {
+          serverId,
+          toolName,
+          attempt,
+          maxAttempts
+        });
+
+        // Execute with timeout (multi-user OAuth support)
+        const result = await Promise.race([
+          mcpClientService.executeTool({
+            serverId,
+            toolName,
+            arguments: args,
+            tenantId,
+            userId // REQUIRED for multi-user OAuth
+          }),
+          this.createTimeout(timeout)
+        ]);
+
+        // Success!
+        logger.info('✅ [MCP] Tool executed successfully', {
+          serverId,
+          toolName,
+          attempt
+        });
+
+        return {
+          success: true,
+          message: `MCP tool '${toolName}' executed successfully`,
+          data: {
+            result,
+            serverId,
+            toolName,
+            executedAt: new Date().toISOString(),
+            attempts: attempt
+          }
+        };
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        logger.warn('⚠️ [MCP] Tool execution failed', {
+          serverId,
+          toolName,
+          attempt,
+          maxAttempts,
+          error: lastError.message
+        });
+
+        // If this was the last attempt, throw
+        if (attempt === maxAttempts) {
+          throw lastError;
+        }
+
+        // Wait before retry (exponential backoff)
+        const delay = retryPolicy.retryDelayMs * Math.pow(2, attempt - 1);
+        logger.debug('🔄 [MCP] Retrying after delay', {
+          attempt,
+          delayMs: delay
+        });
+        await this.sleep(delay);
+      }
+    }
+
+    // Should never reach here, but TypeScript needs it
+    throw lastError || new Error('MCP execution failed');
+  }
+
+  /**
+   * Resolve parameters by replacing template variables with inputData values
+   */
+  private resolveParameters(
+    parameters: Record<string, any>,
+    inputData?: Record<string, any>
+  ): Record<string, any> {
+    if (!inputData) return parameters;
+
+    const resolved: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(parameters)) {
+      if (typeof value === 'string' && value.includes('{{')) {
+        // Replace {{variable}} with inputData.variable
+        resolved[key] = value.replace(/\{\{(\w+)\}\}/g, (_, varName) => {
+          return inputData[varName] !== undefined ? String(inputData[varName]) : value;
+        });
+      } else {
+        resolved[key] = value;
+      }
+    }
+
+    return resolved;
+  }
+
+  /**
+   * Create timeout promise
+   */
+  private createTimeout(ms: number): Promise<never> {
+    return new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`MCP execution timeout after ${ms}ms`)), ms);
+    });
+  }
+
+  /**
+   * Sleep utility
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+/**
+ * 🤖 AI MCP EXECUTOR
+ * Executes AI-driven MCP tool orchestration with OpenAI function calling
+ */
+export class AIMCPExecutor implements ActionExecutor {
+  executorId = 'ai-mcp-executor';
+  description = 'AI-driven MCP tool orchestration using OpenAI function calling';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing AI MCP Node', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      
+      // Validate required fields
+      if (!config.mcpServerIds || config.mcpServerIds.length === 0) {
+        throw new Error('AI MCP Node requires at least one MCP server selected');
+      }
+
+      if (!config.aiInstructions || config.aiInstructions.trim() === '') {
+        throw new Error('AI MCP Node requires AI instructions');
+      }
+
+      // Extract configuration
+      const {
+        mcpServerIds,
+        aiInstructions,
+        model = 'gpt-4',
+        temperature = 0.7,
+        maxTokens = 1000,
+        topP,
+        frequencyPenalty,
+        fallbackResponse,
+        outputMapping = {}
+      } = config;
+
+      // Build user message from instructions + inputData
+      const userMessage = this.buildUserMessage(aiInstructions, inputData);
+
+      // Load MCP servers and build tools array (multi-user OAuth)
+      const mcpTools = await this.loadMCPTools(
+        mcpServerIds, 
+        context.tenantId,
+        context.requesterId // REQUIRED for multi-user OAuth
+      );
+
+      if (mcpTools.length === 0) {
+        logger.warn('⚠️ [AI-MCP] No MCP tools available from selected servers');
+        
+        // Use fallback if configured
+        if (fallbackResponse) {
+          return {
+            success: true,
+            message: 'No MCP tools available, using fallback response',
+            data: { response: fallbackResponse, fallbackUsed: true }
+          };
+        }
+        
+        throw new Error('No MCP tools available from selected servers');
+      }
+
+      logger.info('🔧 [AI-MCP] Loaded MCP tools', {
+        toolCount: mcpTools.length,
+        servers: mcpServerIds
+      });
+
+      // Get UnifiedOpenAIService storage (from context)
+      const storageModule = await import('../core/storage');
+      const storage = (storageModule as any).default || storageModule.storage;
+      const openaiService = new UnifiedOpenAIService(storage);
+
+      // 🤖 Load AI agent from Brand Interface registry (using main db connection)
+      const agentConfig = await db.select()
+        .from(aiAgentsRegistry)
+        .where(and(
+          eq(aiAgentsRegistry.agentId, 'mcp-orchestrator-assistant'),
+          eq(aiAgentsRegistry.status, 'active'),
+          eq((aiAgentsRegistry as any).deployToAllTenants, true)
+        ))
+        .limit(1);
+      
+      const agent = agentConfig[0];
+      const baseConfig = agent?.baseConfiguration as any || {};
+      
+      // Use agent config if available, otherwise fall back to node config
+      const finalModel = agent ? (baseConfig.default_model || 'gpt-4o') : model;
+      const finalTemperature = agent ? (baseConfig.temperature || 0.7) : temperature;
+      const finalMaxTokens = agent ? (baseConfig.max_tokens || 2000) : maxTokens;
+      const systemPrompt = agent?.systemPrompt || null;
+      
+      logger.info('🤖 [AI-MCP] AI agent loaded', {
+        agentId: agent?.agentId || 'fallback',
+        model: finalModel,
+        temperature: finalTemperature,
+        hasSystemPrompt: !!systemPrompt
+      });
+
+      // Build AI settings for OpenAI API (using agent config or defaults)
+      const aiSettings: any = {
+        tenantId: context.tenantId,
+        id: agent?.agentId || 'ai-mcp-executor',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        openaiModel: finalModel as any,
+        responseCreativity: Math.round(finalTemperature * 10), // Map 0-2.0 to 0-20
+        maxTokensPerResponse: finalMaxTokens,
+        featuresEnabled: {},
+        privacyMode: 'normal' as const,
+        streamingEnabled: false,
+        conversationContext: false,
+        maxConversationMessages: 10,
+        conversationSummaryEnabled: false,
+        ragEnabled: false,
+        ragSettings: {},
+        contextSettings: {},
+        customSystemPrompt: systemPrompt, // Use agent's system prompt
+        toolsEnabled: false
+      };
+
+      // Build OpenAI request context with MCP tools
+      const openaiContext = {
+        tenantId: context.tenantId,
+        availableTools: [], // No native tools, only MCP
+        mcpTools: mcpTools, // Pass MCP tools for function calling
+        moduleContext: 'general' as const
+      } as any;
+
+      // Execute AI with MCP tools
+      const aiResponse = await openaiService.createUnifiedResponse(
+        userMessage,
+        aiSettings,
+        openaiContext
+      );
+
+      if (!aiResponse.success) {
+        throw new Error(aiResponse.error || 'AI execution failed');
+      }
+
+      // Extract response text from output
+      const responseText = typeof aiResponse.output === 'string' 
+        ? aiResponse.output 
+        : JSON.stringify(aiResponse.output || '');
+
+      // Apply output mapping if configured
+      const mappedOutput = this.applyOutputMapping(responseText, outputMapping);
+
+      logger.info('✅ [AI-MCP] AI execution completed successfully', {
+        responseLength: responseText.length,
+        tokensUsed: aiResponse.tokensUsed,
+        mapped: Object.keys(mappedOutput).length > 0
+      });
+
+      return {
+        success: true,
+        message: 'AI MCP orchestration completed successfully',
+        data: {
+          response: responseText,
+          mappedOutput,
+          tokensUsed: aiResponse.tokensUsed || 0,
+          cost: aiResponse.cost || 0,
+          executedAt: new Date().toISOString()
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI MCP execution failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Try fallback response if configured
+      const fallbackResponse = step.config?.fallbackResponse;
+      if (fallbackResponse) {
+        return {
+          success: true,
+          message: 'AI MCP execution failed, using fallback response',
+          data: {
+            response: fallbackResponse,
+            fallbackUsed: true,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        };
+      }
+
+      return {
+        success: false,
+        message: 'AI MCP orchestration failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Build user message by resolving template variables
+   */
+  private buildUserMessage(instructions: string, inputData?: Record<string, any>): string {
+    if (!inputData) return instructions;
+
+    // Replace {{variable}} with inputData values
+    return instructions.replace(/\{\{(\w+)\}\}/g, (_, varName) => {
+      return inputData[varName] !== undefined ? String(inputData[varName]) : `{{${varName}}}`;
+    });
+  }
+
+  /**
+   * Load MCP servers and build tools array for OpenAI function calling
+   * 
+   * MULTI-USER OAUTH: Requires userId for credential isolation
+   */
+  private async loadMCPTools(
+    serverIds: string[], 
+    tenantId: string,
+    userId: string // REQUIRED for multi-user OAuth
+  ): Promise<Array<{
+    serverId: string;
+    serverName: string;
+    toolName: string;
+    toolDescription?: string;
+    schema?: any;
+  }>> {
+    const mcpTools: Array<any> = [];
+
+    for (const serverId of serverIds) {
+      try {
+        // List tools available from this server (multi-user OAuth support)
+        const tools = await mcpClientService.listTools({
+          serverId,
+          tenantId,
+          userId // REQUIRED for multi-user OAuth
+        });
+
+        if (!tools || tools.length === 0) {
+          logger.warn('⚠️ [AI-MCP] No tools available from server', { serverId });
+          continue;
+        }
+
+        // Load server info for serverName (optional, fallback to serverId)
+        let serverName = serverId;
+        try {
+          const { mcpServers } = await import('../db/schema/w3suite');
+          const { eq } = await import('drizzle-orm');
+          const { db } = await import('../core/db');
+          
+          const [server] = await db
+            .select()
+            .from(mcpServers)
+            .where(eq(mcpServers.id, serverId))
+            .limit(1);
+          
+          if (server) {
+            serverName = server.name;
+          }
+        } catch {
+          // Fallback to serverId if DB query fails
+        }
+
+        // Convert tools to MCPToolDefinition format
+        for (const tool of tools) {
+          mcpTools.push({
+            serverId,
+            serverName,
+            toolName: tool.name,
+            toolDescription: tool.description,
+            schema: tool.inputSchema // OpenAI function parameters format
+          });
+        }
+
+        logger.debug('🔧 [AI-MCP] Loaded tools from server', {
+          serverId,
+          serverName,
+          toolCount: tools.length
+        });
+
+      } catch (error) {
+        logger.error('❌ [AI-MCP] Failed to load tools from server', {
+          serverId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        // Continue with other servers
+      }
+    }
+
+    return mcpTools;
+  }
+
+  /**
+   * Apply output mapping to extract structured data from AI response
+   */
+  private applyOutputMapping(
+    responseText: string, 
+    mapping: Record<string, string>
+  ): Record<string, any> {
+    const output: Record<string, any> = {};
+
+    if (!mapping || Object.keys(mapping).length === 0) {
+      return output;
+    }
+
+    // For each mapping rule, extract value using regex or simple match
+    for (const [key, pattern] of Object.entries(mapping)) {
+      if (!pattern) continue;
+
+      // Try regex extraction: {{regex:/pattern/}}
+      const regexMatch = pattern.match(/\{\{regex:\/(.+)\/\}\}/);
+      if (regexMatch) {
+        const regex = new RegExp(regexMatch[1], 'i');
+        const match = responseText.match(regex);
+        output[key] = match ? match[1] || match[0] : null;
+        continue;
+      }
+
+      // Try JSON path extraction: {{json.path}}
+      if (pattern.startsWith('{{json.')) {
+        try {
+          const jsonData = JSON.parse(responseText);
+          const path = pattern.slice(7, -2).split('.');
+          let value = jsonData;
+          for (const p of path) {
+            value = value?.[p];
+          }
+          output[key] = value;
+        } catch {
+          output[key] = null;
+        }
+        continue;
+      }
+
+      // Simple string match
+      output[key] = responseText.includes(pattern) ? pattern : null;
+    }
+
+    return output;
+  }
+}
+
+// ==================== CRM ROUTING EXECUTORS ====================
+
+/**
+ * 📋 LEAD ROUTING EXECUTOR
+ * Routes leads based on source, status, score, age and assignment
+ */
+export class LeadRoutingExecutor implements ActionExecutor {
+  executorId = 'lead-routing-executor';
+  description = 'Routes leads based on CRM criteria (source, status, score, age)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📋 [EXECUTOR] Executing lead routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const leadData = inputData?.lead || inputData;
+
+      // Evaluate routing conditions
+      const conditions = config.outputBranches || [];
+      for (const branch of conditions) {
+        const branchConditions = branch.conditions || [];
+        let allConditionsMet = true;
+
+        for (const condition of branchConditions) {
+          const fieldValue = leadData?.[condition.field];
+          const conditionValue = condition.value;
+
+          switch (condition.operator) {
+            case 'equals':
+              if (fieldValue !== conditionValue) allConditionsMet = false;
+              break;
+            case 'greater_than':
+              if (!(fieldValue > conditionValue)) allConditionsMet = false;
+              break;
+            case 'less_than':
+              if (!(fieldValue < conditionValue)) allConditionsMet = false;
+              break;
+            case 'contains':
+              if (!String(fieldValue).includes(String(conditionValue))) allConditionsMet = false;
+              break;
+          }
+
+          if (!allConditionsMet) break;
+        }
+
+        if (allConditionsMet) {
+          return {
+            success: true,
+            message: `Lead routed to branch: ${branch.name}`,
+            data: { branch: branch.name, branchId: branch.id, leadId: leadData?.id },
+            nextAction: branch.id || branch.name
+          };
+        }
+      }
+
+      // Default branch if no conditions matched
+      return {
+        success: true,
+        message: 'Lead routed to default branch',
+        data: { branch: 'default', leadId: leadData?.id },
+        nextAction: 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Lead routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route lead',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 💰 DEAL ROUTING EXECUTOR
+ * Routes deals based on stage, value, probability, pipeline and age
+ */
+export class DealRoutingExecutor implements ActionExecutor {
+  executorId = 'deal-routing-executor';
+  description = 'Routes deals based on CRM criteria (stage, value, probability, pipeline, age)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('💰 [EXECUTOR] Executing deal routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+
+      // Evaluate routing conditions
+      const conditions = config.outputBranches || [];
+      for (const branch of conditions) {
+        const branchConditions = branch.conditions || [];
+        let allConditionsMet = true;
+
+        for (const condition of branchConditions) {
+          const fieldValue = dealData?.[condition.field];
+          const conditionValue = condition.value;
+
+          switch (condition.operator) {
+            case 'equals':
+              if (fieldValue !== conditionValue) allConditionsMet = false;
+              break;
+            case 'greater_than':
+              if (!(fieldValue > conditionValue)) allConditionsMet = false;
+              break;
+            case 'less_than':
+              if (!(fieldValue < conditionValue)) allConditionsMet = false;
+              break;
+            case 'between':
+              const [min, max] = (conditionValue as string).split('-').map(Number);
+              if (!(fieldValue >= min && fieldValue <= max)) allConditionsMet = false;
+              break;
+          }
+
+          if (!allConditionsMet) break;
+        }
+
+        if (allConditionsMet) {
+          return {
+            success: true,
+            message: `Deal routed to branch: ${branch.name}`,
+            data: { branch: branch.name, branchId: branch.id, dealId: dealData?.id, stage: dealData?.stage },
+            nextAction: branch.id || branch.name
+          };
+        }
+      }
+
+      // Default branch
+      return {
+        success: true,
+        message: 'Deal routed to default branch',
+        data: { branch: 'default', dealId: dealData?.id },
+        nextAction: 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Deal routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route deal',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 👥 CUSTOMER ROUTING EXECUTOR
+ * Routes customers based on type, segment, lifetime value and contract status
+ */
+export class CustomerRoutingExecutor implements ActionExecutor {
+  executorId = 'customer-routing-executor';
+  description = 'Routes customers based on CRM criteria (type, segment, lifetime value, contract status)';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('👥 [EXECUTOR] Executing customer routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const customerData = inputData?.customer || inputData;
+
+      // Evaluate routing conditions
+      const conditions = config.outputBranches || [];
+      for (const branch of conditions) {
+        const branchConditions = branch.conditions || [];
+        let allConditionsMet = true;
+
+        for (const condition of branchConditions) {
+          const fieldValue = customerData?.[condition.field];
+          const conditionValue = condition.value;
+
+          switch (condition.operator) {
+            case 'equals':
+              if (fieldValue !== conditionValue) allConditionsMet = false;
+              break;
+            case 'greater_than':
+              if (!(fieldValue > conditionValue)) allConditionsMet = false;
+              break;
+            case 'in':
+              const values = Array.isArray(conditionValue) ? conditionValue : [conditionValue];
+              if (!values.includes(fieldValue)) allConditionsMet = false;
+              break;
+          }
+
+          if (!allConditionsMet) break;
+        }
+
+        if (allConditionsMet) {
+          return {
+            success: true,
+            message: `Customer routed to branch: ${branch.name}`,
+            data: { 
+              branch: branch.name,
+              branchId: branch.id, 
+              customerId: customerData?.id,
+              type: customerData?.type,
+              segment: customerData?.segment
+            },
+            nextAction: branch.id || branch.name
+          };
+        }
+      }
+
+      // Default branch
+      return {
+        success: true,
+        message: 'Customer routed to default branch',
+        data: { branch: 'default', customerId: customerData?.id },
+        nextAction: 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Customer routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route customer',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 📥 CAMPAIGN LEAD INTAKE EXECUTOR
+ * Manages campaign lead intake with unified routing (automatic vs manual)
+ * Implements workflow execution with fallback and notification system
+ */
+export class CampaignLeadIntakeExecutor implements ActionExecutor {
+  executorId = 'campaign-lead-intake-executor';
+  description = 'Manages campaign lead intake with unified routing (automatic/manual) and notifications';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('📥 [EXECUTOR] Executing campaign lead intake with unified routing', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const leadData = inputData?.lead || inputData;
+      const campaignInput = inputData?.campaign || {};
+
+      if (!campaignInput.id) {
+        throw new Error('Campaign ID is required');
+      }
+
+      // 1. LEGGI LA CAMPAGNA DAL DB per ottenere i campi routing
+      logger.info('🔍 [EXECUTOR] Fetching campaign from DB', {
+        campaignId: campaignInput.id,
+        tenantId: context?.tenantId
+      });
+
+      const campaign = await db
+        .select()
+        .from(crmCampaigns)
+        .where(eq(crmCampaigns.id, campaignInput.id))
+        .limit(1);
+
+      if (!campaign[0]) {
+        throw new Error(`Campaign not found: ${campaignInput.id}`);
+      }
+
+      const campaignFull = campaign[0];
+
+      logger.info('✅ [EXECUTOR] Campaign loaded', {
+        campaignId: campaignFull.id,
+        routingMode: campaignFull.routingMode,
+        workflowId: campaignFull.workflowId,
+        storeId: campaignFull.storeId
+      });
+
+      // Validate store scope
+      if (campaignFull.storeId) {
+        const scopeCheck = await validateUserScope(
+          context.requesterId,
+          context.tenantId,
+          campaignFull.storeId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          return {
+            success: false,
+            message: 'User lacks permissions for campaign store scope',
+            error: 'SCOPE_DENIED',
+            data: { storeId: campaignFull.storeId, reason: scopeCheck.message }
+          };
+        }
+      }
+
+      // Determina routing mode (default: 'automatic' se non specificato)
+      const routingMode = campaignFull.routingMode || 'automatic';
+      
+      if (!campaignFull.routingMode) {
+        logger.warn('⚠️ [EXECUTOR] routingMode not defined, defaulting to automatic', {
+          campaignId: campaignFull.id
+        });
+      }
+
+      let assignedPipelineId: string | null = null;
+      let pipelineName: string | null = null;
+      let notificationSent = false;
+      let fallbackActivated = false;
+
+      // 2. MODALITÀ AUTOMATIC
+      if (routingMode === 'automatic') {
+        logger.info('🤖 [EXECUTOR] Processing AUTOMATIC routing mode', {
+          workflowId: campaignFull.workflowId,
+          fallbackPipelineId1: campaignFull.fallbackPipelineId1,
+          fallbackPipelineId2: campaignFull.fallbackPipelineId2
+        });
+
+        // Se c'è workflowId, prova ad eseguire il workflow
+        if (campaignFull.workflowId) {
+          try {
+            logger.info('🚀 [EXECUTOR] Executing workflow for automatic routing', {
+              workflowId: campaignFull.workflowId,
+              leadId: leadData?.id
+            });
+
+            // TODO: Esegui workflow con timeout
+            // const workflowResult = await workflowEngine.execute(campaignFull.workflowId, ...);
+            // Per ora, simula fallback
+            
+            logger.warn('⏱️ [EXECUTOR] Workflow execution not yet implemented, activating fallback', {
+              workflowId: campaignFull.workflowId
+            });
+
+            // Attiva fallback automatico
+            fallbackActivated = true;
+
+          } catch (workflowError) {
+            logger.error('❌ [EXECUTOR] Workflow execution failed, activating fallback', {
+              workflowId: campaignFull.workflowId,
+              error: workflowError instanceof Error ? workflowError.message : String(workflowError)
+            });
+            fallbackActivated = true;
+          }
+        } else {
+          logger.warn('⚠️ [EXECUTOR] workflowId missing in automatic mode, using fallback directly', {
+            campaignId: campaignFull.id
+          });
+          fallbackActivated = true;
+        }
+
+        // Assegna pipeline di fallback
+        if (fallbackActivated) {
+          assignedPipelineId = campaignFull.fallbackPipelineId1 || campaignFull.fallbackPipelineId2 || null;
+          
+          if (assignedPipelineId) {
+            // Ottieni nome pipeline
+            const [pipeline] = await db
+              .select({ name: crmPipelines.name })
+              .from(crmPipelines)
+              .where(eq(crmPipelines.id, assignedPipelineId))
+              .limit(1);
+            
+            pipelineName = pipeline?.name || 'Pipeline';
+
+            logger.info('✅ [EXECUTOR] Fallback pipeline assigned', {
+              pipelineId: assignedPipelineId,
+              pipelineName,
+              leadId: leadData?.id
+            });
+
+            // Crea notifica di fallback
+            try {
+              const notificationTargets: string[] = [];
+              
+              // Aggiungi notifyUserIds se presenti
+              if (campaignFull.notifyUserIds && Array.isArray(campaignFull.notifyUserIds)) {
+                notificationTargets.push(...campaignFull.notifyUserIds);
+              }
+
+              // Invia notifiche ai singoli utenti (il sistema non supporta team notifications direttamente)
+              for (const userId of notificationTargets) {
+                await notificationService.sendNotification(
+                  context.tenantId,
+                  userId,
+                  'Fallback Automatico Lead',
+                  `Fallback automatico attivato per lead ${leadData?.firstName || ''} ${leadData?.lastName || leadData?.id} assegnato a pipeline ${pipelineName}`,
+                  'custom',
+                  'medium',
+                  {
+                    leadId: leadData?.id,
+                    campaignId: campaignFull.id,
+                    pipelineId: assignedPipelineId,
+                    routingMode: 'automatic',
+                    fallbackActivated: true
+                  }
+                );
+              }
+
+              notificationSent = notificationTargets.length > 0;
+
+              logger.info('🔔 [EXECUTOR] Fallback notifications sent', {
+                count: notificationTargets.length,
+                leadId: leadData?.id
+              });
+
+            } catch (notifError) {
+              logger.error('❌ [EXECUTOR] Failed to send fallback notifications', {
+                error: notifError instanceof Error ? notifError.message : String(notifError)
+              });
+            }
+
+          } else {
+            logger.error('❌ [EXECUTOR] No fallback pipelines configured', {
+              campaignId: campaignFull.id
+            });
+          }
+        }
+      }
+
+      // 3. MODALITÀ MANUAL
+      else if (routingMode === 'manual') {
+        logger.info('👤 [EXECUTOR] Processing MANUAL routing mode', {
+          manualPipelineId1: campaignFull.manualPipelineId1,
+          manualPipelineId2: campaignFull.manualPipelineId2
+        });
+
+        // Assegna direttamente a manualPipelineId1 o manualPipelineId2
+        assignedPipelineId = campaignFull.manualPipelineId1 || campaignFull.manualPipelineId2 || null;
+
+        if (!assignedPipelineId) {
+          throw new Error('Manual routing mode requires at least one manual pipeline configured (manualPipelineId1 or manualPipelineId2)');
+        }
+
+        // Ottieni nome pipeline
+        const [pipeline] = await db
+          .select({ name: crmPipelines.name })
+          .from(crmPipelines)
+          .where(eq(crmPipelines.id, assignedPipelineId))
+          .limit(1);
+        
+        pipelineName = pipeline?.name || 'Pipeline';
+
+        logger.info('✅ [EXECUTOR] Manual pipeline assigned', {
+          pipelineId: assignedPipelineId,
+          pipelineName,
+          leadId: leadData?.id
+        });
+
+        // Crea notifica per assegnazione manuale
+        try {
+          const notificationTargets: string[] = [];
+          
+          // Aggiungi notifyUserIds se presenti
+          if (campaignFull.notifyUserIds && Array.isArray(campaignFull.notifyUserIds)) {
+            notificationTargets.push(...campaignFull.notifyUserIds);
+          }
+
+          // Invia notifiche ai singoli utenti
+          for (const userId of notificationTargets) {
+            await notificationService.sendNotification(
+              context.tenantId,
+              userId,
+              'Nuovo Lead',
+              `Nuovo lead ${leadData?.firstName || ''} ${leadData?.lastName || leadData?.id} assegnato alla pipeline ${pipelineName}`,
+              'custom',
+              'medium',
+              {
+                leadId: leadData?.id,
+                campaignId: campaignFull.id,
+                pipelineId: assignedPipelineId,
+                routingMode: 'manual'
+              }
+            );
+          }
+
+          notificationSent = notificationTargets.length > 0;
+
+          logger.info('🔔 [EXECUTOR] Manual assignment notifications sent', {
+            count: notificationTargets.length,
+            leadId: leadData?.id
+          });
+
+        } catch (notifError) {
+          logger.error('❌ [EXECUTOR] Failed to send manual assignment notifications', {
+            error: notifError instanceof Error ? notifError.message : String(notifError)
+          });
+        }
+      }
+
+      // Return standardizzato
+      return {
+        success: true,
+        message: 'Lead processed successfully',
+        data: {
+          leadId: leadData?.id,
+          campaignId: campaignFull.id,
+          assignedPipeline: assignedPipelineId,
+          pipelineName,
+          routingMode,
+          notificationSent,
+          fallbackActivated,
+          leadScore: leadData?.leadScore || 0
+        },
+        nextAction: 'lead-qualification'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Campaign lead intake failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to process campaign lead intake',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🎯 PIPELINE ASSIGNMENT EXECUTOR
+ * Assigns leads/deals to specific pipeline based on campaign rules
+ */
+export class PipelineAssignmentExecutor implements ActionExecutor {
+  executorId = 'pipeline-assignment-executor';
+  description = 'Assigns leads/deals to pipeline based on campaign routing rules';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🎯 [EXECUTOR] Executing pipeline assignment', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const leadData = inputData?.lead || inputData;
+      const campaignData = inputData?.campaign || {};
+
+      // Validate store scope for pipeline assignment
+      const storeId = campaignData.storeId || leadData?.storeId || config.storeId;
+      if (storeId) {
+        const scopeCheck = await validateUserScope(
+          context.requesterId,
+          context.tenantId,
+          storeId
+        );
+
+        if (!scopeCheck.hasAccess) {
+          return {
+            success: false,
+            message: 'User lacks permissions for pipeline store scope',
+            error: 'SCOPE_DENIED',
+            data: { storeId, reason: scopeCheck.message }
+          };
+        }
+      }
+
+      // Get pipeline assignment rules
+      const pipelineRules = config.pipelineRules || [];
+      const defaultPipelineId = campaignData.primaryPipelineId || config.defaultPipelineId;
+      const productInterest = leadData?.productInterest;
+
+      // Evaluate pipeline rules based on criteria
+      for (const rule of pipelineRules) {
+        let conditionsMet = true;
+
+        // Check product interest condition
+        if (rule.productInterest && productInterest !== rule.productInterest) {
+          conditionsMet = false;
+        }
+
+        // Check source channel condition
+        if (rule.sourceChannel && leadData?.sourceChannel !== rule.sourceChannel) {
+          conditionsMet = false;
+        }
+
+        // Check lead score threshold
+        if (rule.minScore !== undefined && (leadData?.leadScore || 0) < rule.minScore) {
+          conditionsMet = false;
+        }
+
+        // If all conditions met, assign to this pipeline
+        if (conditionsMet && rule.pipelineId) {
+          return {
+            success: true,
+            message: `Lead assigned to pipeline: ${rule.pipelineName || rule.pipelineId}`,
+            data: {
+              leadId: leadData?.id,
+              pipelineId: rule.pipelineId,
+              pipelineName: rule.pipelineName,
+              assignmentReason: `Matched rule: ${rule.name || 'Unnamed rule'}`,
+              productInterest,
+              leadScore: leadData?.leadScore
+            },
+            nextAction: rule.pipelineId
+          };
+        }
+      }
+
+      // No rules matched - use default pipeline
+      if (defaultPipelineId) {
+        return {
+          success: true,
+          message: 'Lead assigned to default campaign pipeline',
+          data: {
+            leadId: leadData?.id,
+            pipelineId: defaultPipelineId,
+            assignmentReason: 'No matching rules - using default pipeline',
+            productInterest,
+            leadScore: leadData?.leadScore
+          },
+          nextAction: defaultPipelineId
+        };
+      }
+
+      // No pipeline assignment possible
+      return {
+        success: false,
+        message: 'No pipeline assignment rules matched and no default pipeline configured',
+        error: 'NO_PIPELINE_CONFIGURED',
+        data: {
+          leadId: leadData?.id,
+          productInterest,
+          leadScore: leadData?.leadScore
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Pipeline assignment failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to assign pipeline',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🤖 AI LEAD ROUTING EXECUTOR
+ * Uses AI to analyze interactions and intelligently route leads
+ */
+export class AILeadRoutingExecutor implements ActionExecutor {
+  executorId = 'ai-lead-routing-executor';
+  description = 'AI-powered lead routing based on interaction analysis';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing AI lead routing', {
+        stepId: step.nodeId,
+        context: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const interactionData = inputData?.interaction || inputData;
+
+      // Import AI service
+      const { AILeadRoutingService } = await import('./ai-lead-routing.service');
+      const aiService = new AILeadRoutingService();
+
+      // Prepare AI routing input
+      const routingInput = {
+        tenantId: context?.tenantId || '',
+        leadId: interactionData?.leadId,
+        interactionType: interactionData?.type || config.interactionType || 'unknown',
+        interactionContent: interactionData?.content || config.interactionContent || '',
+        leadName: interactionData?.leadName,
+        leadEmail: interactionData?.leadEmail,
+        leadPhone: interactionData?.leadPhone,
+        leadCompany: interactionData?.leadCompany,
+        acquisitionSourceId: interactionData?.acquisitionSourceId,
+      };
+
+      // Call AI service
+      const routing = await aiService.routeLead(routingInput);
+
+      logger.info('✅ [EXECUTOR] AI Lead Routing completed', {
+        stepId: step.nodeId,
+        driver: routing.recommendedDriver,
+        confidence: routing.driverConfidence,
+        pipeline: routing.targetPipelineId,
+        channel: routing.primaryOutboundChannel,
+      });
+
+      return {
+        success: true,
+        message: `Lead routed by AI: ${routing.driverReasoning}`,
+        data: {
+          routing,
+          driver: routing.recommendedDriver,
+          driverConfidence: routing.driverConfidence,
+          pipeline: routing.targetPipelineId,
+          channel: routing.primaryOutboundChannel,
+          estimatedValue: routing.estimatedValue,
+          priority: routing.priority,
+        },
+        nextAction: routing.targetPipelineId || 'default'
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI Lead Routing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to route lead with AI',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+// ==================== FUNNEL ORCHESTRATION EXECUTORS ====================
+
+/**
+ * 🎯 FUNNEL STAGE TRANSITION EXECUTOR
+ * Handles stage changes within the same pipeline
+ */
+export class FunnelStageTransitionExecutor implements ActionExecutor {
+  executorId = 'funnel-stage-transition-executor';
+  description = 'Handles stage transition within pipeline with validation and workflow triggers';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🎯 [EXECUTOR] Executing funnel stage transition', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const dealId = dealData?.id || config.dealId;
+      const targetStage = config.targetStage;
+
+      if (!dealId || !targetStage) {
+        throw new Error('Deal ID and target stage are required');
+      }
+
+      // Validate conditions if configured
+      if (config.conditions) {
+        const { minDealValue, maxDaysInStage } = config.conditions;
+        
+        if (minDealValue && dealData?.value < minDealValue) {
+          return {
+            success: false,
+            message: `Deal value ${dealData.value} below minimum ${minDealValue}`,
+            error: 'CONDITION_NOT_MET'
+          };
+        }
+
+        if (maxDaysInStage && dealData?.daysInStage > maxDaysInStage) {
+          return {
+            success: false,
+            message: `Deal exceeded max days in stage (${maxDaysInStage})`,
+            error: 'CONDITION_NOT_MET'
+          };
+        }
+      }
+
+      // Update deal stage
+      const { db } = await import('../core/db');
+      const { crmDeals } = await import('../db/schema/w3suite');
+      const { eq, and } = await import('drizzle-orm');
+
+      const [updatedDeal] = await db
+        .update(crmDeals)
+        .set({
+          stage: targetStage,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(crmDeals.id, dealId),
+            eq(crmDeals.tenantId, context.tenantId)
+          )
+        )
+        .returning();
+
+      // Send notifications if configured
+      if (config.notifyTeam && (updatedDeal as any).teamId) {
+        await notificationService.sendNotification(
+          context.tenantId,
+          (updatedDeal as any).teamId,
+          'Deal Stage Changed',
+          `Deal moved to stage: ${targetStage}`,
+          'deal_stage_change',
+          'medium',
+          { dealId, stage: targetStage }
+        );
+      }
+
+      logger.info('✅ [EXECUTOR] Stage transition completed', {
+        dealId,
+        targetStage,
+        requiresApproval: config.requiresApproval
+      });
+
+      return {
+        success: true,
+        message: `Deal stage updated to: ${targetStage}`,
+        data: {
+          dealId: updatedDeal.id,
+          previousStage: dealData?.stage,
+          currentStage: targetStage,
+          requiresApproval: config.requiresApproval,
+          workflowsTriggered: config.triggerWorkflows || []
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Funnel stage transition failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to transition deal stage',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔀 FUNNEL PIPELINE TRANSITION EXECUTOR
+ * Handles pipeline changes within the same funnel
+ */
+export class FunnelPipelineTransitionExecutor implements ActionExecutor {
+  executorId = 'funnel-pipeline-transition-executor';
+  description = 'Handles pipeline transition within funnel with validation and history preservation';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔀 [EXECUTOR] Executing funnel pipeline transition', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const dealId = dealData?.id || config.dealId;
+      const targetPipelineId = config.targetPipelineId;
+      const funnelId = config.funnelId;
+
+      if (!dealId || !targetPipelineId || !funnelId) {
+        throw new Error('Deal ID, target pipeline ID and funnel ID are required');
+      }
+
+      const { db } = await import('../core/db');
+      const { crmDeals, crmPipelines, crmPipelineStages } = await import('../db/schema/w3suite');
+      const { eq, and } = await import('drizzle-orm');
+
+      // Validate target pipeline belongs to same funnel
+      const [targetPipeline] = await db
+        .select()
+        .from(crmPipelines)
+        .where(
+          and(
+            eq(crmPipelines.id, targetPipelineId),
+            eq(crmPipelines.funnelId, funnelId),
+            eq(crmPipelines.tenantId, context.tenantId)
+          )
+        )
+        .limit(1);
+
+      if (!targetPipeline) {
+        return {
+          success: false,
+          message: 'Target pipeline not found or not in the same funnel',
+          error: 'INVALID_PIPELINE'
+        };
+      }
+
+      // Get first stage of target pipeline if resetStage is true
+      let targetStage = dealData?.stage;
+      if (config.resetStage) {
+        const [firstStage] = await db
+          .select()
+          .from(crmPipelineStages)
+          .where(eq(crmPipelineStages.pipelineId, targetPipelineId))
+          .orderBy(crmPipelineStages.orderIndex)
+          .limit(1);
+
+        targetStage = firstStage?.name || targetStage;
+      }
+
+      // Update deal pipeline
+      const [updatedDeal] = await db
+        .update(crmDeals)
+        .set({
+          pipelineId: targetPipelineId,
+          stage: targetStage,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(crmDeals.id, dealId),
+            eq(crmDeals.tenantId, context.tenantId)
+          )
+        )
+        .returning();
+
+      // Re-score with AI if configured
+      if (config.triggerAIReScore) {
+        logger.info('🤖 [EXECUTOR] Triggering AI re-score after pipeline change', {
+          dealId
+        });
+        // AI re-scoring would be triggered here via workflow
+      }
+
+      // Notify assignee if configured
+      if (config.notifyAssignee && (updatedDeal as any).assignedToUserId) {
+        await notificationService.sendNotification(
+          context.tenantId,
+          (updatedDeal as any).assignedToUserId,
+          'Deal Pipeline Changed',
+          `Your deal has been moved to pipeline: ${targetPipeline.name}`,
+          'deal_pipeline_change',
+          'high',
+          {
+            dealId,
+            targetPipelineName: targetPipeline.name,
+            transitionReason: config.transitionReason
+          }
+        );
+      }
+
+      logger.info('✅ [EXECUTOR] Pipeline transition completed', {
+        dealId,
+        targetPipelineId,
+        transitionReason: config.transitionReason
+      });
+
+      return {
+        success: true,
+        message: `Deal moved to pipeline: ${targetPipeline.name}`,
+        data: {
+          dealId: updatedDeal.id,
+          previousPipelineId: dealData?.pipelineId,
+          currentPipelineId: targetPipelineId,
+          currentStage: targetStage,
+          transitionReason: config.transitionReason,
+          resetStage: config.resetStage,
+          preserveHistory: config.preserveHistory
+        },
+        nextAction: targetPipelineId
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Funnel pipeline transition failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to transition deal pipeline',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🤖 AI FUNNEL ORCHESTRATOR EXECUTOR
+ * Uses AI to decide next best pipeline
+ */
+export class AIFunnelOrchestratorExecutor implements ActionExecutor {
+  executorId = 'ai-funnel-orchestrator-executor';
+  description = 'AI-powered funnel orchestration for intelligent pipeline routing';
+  private aiRegistry: AIRegistryService | null = null;
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🤖 [EXECUTOR] Executing AI Funnel Orchestrator', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      // Initialize AI Registry if not already done
+      if (!this.aiRegistry) {
+        const { storage } = await import('../core/storage');
+        this.aiRegistry = new AIRegistryService(storage);
+      }
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const funnelId = config.funnelId;
+      const currentPipelineId = config.currentPipelineId || dealData?.pipelineId;
+
+      if (!funnelId || !currentPipelineId) {
+        throw new Error('Funnel ID and current pipeline ID are required');
+      }
+
+      const { db } = await import('../core/db');
+      const { crmPipelines, crmFunnels } = await import('../db/schema/w3suite');
+      const { eq } = await import('drizzle-orm');
+
+      // Get funnel pipelines
+      const funnelPipelines = await db
+        .select({
+          pipelineId: crmPipelines.id,
+          name: crmPipelines.name,
+          domain: crmPipelines.domain,
+          funnelStageOrder: crmPipelines.funnelStageOrder
+        })
+        .from(crmPipelines)
+        .where(eq(crmPipelines.funnelId, funnelId));
+
+      // Build AI input prompt
+      const aiInput = `
+Analizza questo deal e decidi la pipeline ottimale:
+
+${JSON.stringify({
+  dealId: dealData?.id,
+  currentPipelineId,
+  funnelId,
+  funnelPipelines,
+  dealData: {
+    value: dealData?.value || 0,
+    customerSegment: dealData?.customerType || 'b2c',
+    leadScore: dealData?.leadScore || 50,
+    daysInCurrentPipeline: dealData?.daysInStage || 0,
+    daysInFunnel: config.contextData?.daysInFunnel || 0,
+    probabilityToClose: dealData?.probability || 50,
+    customerLifetimeValue: config.contextData?.customerLifetimeValue || 0,
+    interactionQuality: config.contextData?.interactionQuality || 'medium'
+  },
+  customerHistory: config.contextData?.customerHistory || {}
+}, null, 2)}
+
+Rispondi con JSON strutturato secondo il formato richiesto.
+      `;
+
+      // Call AI agent
+      const registryContext: RegistryAwareContext = {
+        agentId: 'funnel-orchestrator-assistant',
+        tenantId: context.tenantId,
+        userId: context.requesterId,
+        moduleContext: 'general' as const,
+        businessEntityId: dealData?.id
+      };
+
+      const response = await this.aiRegistry.createUnifiedResponse(
+        aiInput,
+        { openaiModel: 'gpt-4o', maxTokens: 800, temperature: 0.3 } as any,
+        registryContext
+      );
+
+      if (!response.success || !response.output) {
+        throw new Error('AI orchestration failed');
+      }
+
+      // Parse AI response
+      const aiDecision = JSON.parse(response.output);
+      const autoAssignThreshold = config.autoAssignThreshold || 80;
+
+      logger.info('✅ [EXECUTOR] AI Funnel Orchestrator decision', {
+        targetPipelineId: aiDecision.targetPipelineId,
+        confidence: aiDecision.confidence,
+        reasoning: aiDecision.reasoning,
+        autoAssign: aiDecision.confidence >= autoAssignThreshold
+      });
+
+      // Auto-assign if confidence is high enough
+      if (aiDecision.confidence >= autoAssignThreshold) {
+        return {
+          success: true,
+          message: `AI recommends pipeline: ${aiDecision.reasoning}`,
+          data: {
+            ...aiDecision,
+            autoAssigned: true,
+            tokensUsed: response.tokensUsed,
+            cost: response.cost
+          },
+          nextAction: aiDecision.targetPipelineId
+        };
+      }
+
+      // Suggest to user (confidence too low for auto-assign)
+      return {
+        success: true,
+        message: `AI suggests pipeline (confidence ${aiDecision.confidence}%): ${aiDecision.reasoning}`,
+        data: {
+          ...aiDecision,
+          autoAssigned: false,
+          requiresManualConfirmation: true,
+          tokensUsed: response.tokensUsed,
+          cost: response.cost
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] AI Funnel Orchestrator failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      // Fallback to configured pipeline if AI fails
+      const fallbackPipelineId = step.config?.fallbackPipelineId;
+      if (fallbackPipelineId) {
+        return {
+          success: true,
+          message: 'AI orchestration failed, using fallback pipeline',
+          data: {
+            targetPipelineId: fallbackPipelineId,
+            confidence: 50,
+            reasoning: 'Fallback pipeline (AI failed)',
+            fallbackUsed: true,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          },
+          nextAction: fallbackPipelineId
+        };
+      }
+
+      return {
+        success: false,
+        message: 'AI funnel orchestration failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🏁 FUNNEL EXIT EXECUTOR
+ * Handles deal exit from funnel (won/lost/churned)
+ */
+export class FunnelExitExecutor implements ActionExecutor {
+  executorId = 'funnel-exit-executor';
+  description = 'Handles deal exit from funnel with customer record creation and analytics';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🏁 [EXECUTOR] Executing funnel exit', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const dealId = dealData?.id || config.dealId;
+      const exitReason = config.exitReason; // 'won' | 'lost' | 'churned' | 'disqualified'
+
+      if (!dealId || !exitReason) {
+        throw new Error('Deal ID and exit reason are required');
+      }
+
+      const { db } = await import('../core/db');
+      const { crmDeals, crmCustomers } = await import('../db/schema/w3suite');
+      const { eq, and } = await import('drizzle-orm');
+
+      // Update deal status
+      const newStatus = exitReason === 'won' ? 'won' : 'lost';
+      const [updatedDeal] = await db
+        .update(crmDeals)
+        .set({
+          status: newStatus,
+          lostReason: exitReason === 'lost' ? config.lostReason : null,
+          updatedAt: new Date()
+        } as any)
+        .where(
+          and(
+            eq(crmDeals.id, dealId),
+            eq(crmDeals.tenantId, context.tenantId)
+          )
+        )
+        .returning();
+
+      // Create customer record if won and configured
+      let customerId = null;
+      if (exitReason === 'won' && config.createCustomerRecord && dealData?.personId) {
+        // Customer creation logic would be here
+        logger.info('📝 [EXECUTOR] Creating customer record for won deal', {
+          dealId,
+          personId: dealData.personId
+        });
+      }
+
+      // Archive deal if configured
+      if (config.archiveDeal) {
+        await db
+          .update(crmDeals)
+          .set({ isArchived: true } as any)
+          .where(eq(crmDeals.id, dealId));
+      }
+
+      // Trigger retention workflow if churned
+      if (exitReason === 'churned' && config.triggerRetentionWorkflow) {
+        logger.info('🔄 [EXECUTOR] Triggering retention workflow', {
+          dealId,
+          customerId: dealData?.personId
+        });
+      }
+
+      // Send analytics event
+      if (config.notifyAnalytics) {
+        logger.info('📊 [EXECUTOR] Sending funnel exit analytics event', {
+          dealId,
+          exitReason,
+          value: (updatedDeal as any).value,
+          status: newStatus
+        });
+      }
+
+      logger.info('✅ [EXECUTOR] Funnel exit completed', {
+        dealId,
+        exitReason,
+        status: newStatus
+      });
+
+      return {
+        success: true,
+        message: `Deal ${exitReason}: ${newStatus}`,
+        data: {
+          dealId: updatedDeal.id,
+          exitReason,
+          status: newStatus,
+          value: (updatedDeal as any).value,
+          customerId,
+          closedAt: (updatedDeal as any).closedAt,
+          archived: config.archiveDeal
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Funnel exit failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to exit deal from funnel',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+/**
+ * 🔗 DEAL STAGE WEBHOOK TRIGGER EXECUTOR
+ * Sends webhook on stage/pipeline changes
+ */
+export class DealStageWebhookTriggerExecutor implements ActionExecutor {
+  executorId = 'deal-stage-webhook-trigger-executor';
+  description = 'Sends webhooks on deal stage/pipeline changes with retry policy';
+
+  async execute(step: any, inputData?: any, context?: any): Promise<ActionExecutionResult> {
+    try {
+      logger.info('🔗 [EXECUTOR] Executing deal stage webhook trigger', {
+        stepId: step.nodeId,
+        tenantId: context?.tenantId
+      });
+
+      const config = step.config || {};
+      const dealData = inputData?.deal || inputData;
+      const webhookUrl = config.webhookUrl;
+
+      if (!webhookUrl) {
+        throw new Error('Webhook URL is required');
+      }
+
+      // Check which events to trigger
+      const shouldTrigger =
+        (config.onStageChange && dealData?.stageChanged) ||
+        (config.onPipelineChange && dealData?.pipelineChanged) ||
+        (config.onDealWon && dealData?.status === 'won') ||
+        (config.onDealLost && dealData?.status === 'lost');
+
+      if (!shouldTrigger) {
+        return {
+          success: true,
+          message: 'Webhook not triggered (conditions not met)',
+          data: { triggered: false }
+        };
+      }
+
+      // Build webhook payload
+      const payload = {
+        event: dealData?.stageChanged ? 'deal.stage.changed' :
+               dealData?.pipelineChanged ? 'deal.pipeline.changed' :
+               dealData?.status === 'won' ? 'deal.won' :
+               dealData?.status === 'lost' ? 'deal.lost' : 'deal.updated',
+        tenantId: context.tenantId,
+        dealId: dealData?.id,
+        timestamp: new Date().toISOString(),
+        data: {
+          ...dealData,
+          ...(config.payload || {})
+        }
+      };
+
+      // Execute webhook with retry logic
+      const retryPolicy = config.retryPolicy || { maxRetries: 3, delayMs: 1000 };
+      let lastError: Error | null = null;
+
+      for (let attempt = 1; attempt <= retryPolicy.maxRetries + 1; attempt++) {
+        try {
+          const fetch = (await import('node-fetch')).default;
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(config.headers || {})
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            throw new Error(`Webhook returned ${response.status}: ${response.statusText}`);
+          }
+
+          logger.info('✅ [EXECUTOR] Webhook sent successfully', {
+            webhookUrl,
+            attempt,
+            status: response.status
+          });
+
+          return {
+            success: true,
+            message: 'Webhook sent successfully',
+            data: {
+              webhookUrl,
+              event: payload.event,
+              dealId: dealData?.id,
+              attempts: attempt,
+              status: response.status
+            }
+          };
+
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          
+          if (attempt < retryPolicy.maxRetries + 1) {
+            logger.warn('⚠️ [EXECUTOR] Webhook attempt failed, retrying', {
+              webhookUrl,
+              attempt,
+              error: lastError.message
+            });
+            
+            // Wait before retry (exponential backoff)
+            const delay = retryPolicy.delayMs * Math.pow(2, attempt - 1);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+
+      throw lastError;
+
+    } catch (error) {
+      logger.error('❌ [EXECUTOR] Deal stage webhook trigger failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+
+      return {
+        success: false,
+        message: 'Failed to send webhook',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+// ==================== DATABASE OPERATION EXECUTOR ====================
+
+/**
+ * 🗄️ DATABASE OPERATION EXECUTOR
+ * Executes database operations (SELECT, INSERT, UPDATE, DELETE) on w3suite schema
+ * with strict RLS enforcement and security validation
+ * 
+ * 🔒 SECURITY: Delegates to validated workflow-data-sources helpers that enforce:
+ * - Table/column validation via validateTableName/validateColumns
+ * - SQL injection prevention via sanitizeIdentifier
+ * - Prepared statements with proper parameter binding
+ * - w3suite schema restriction
+ */
+export class DatabaseOperationExecutor implements ActionExecutor {
+  executorId = 'database-operation-executor';
+  description = 'Executes secure database operations on w3suite schema with RLS enforcement';
+
+  async execute(step: any, inputData?: any, context?: ExecutionContext): Promise<ActionExecutionResult> {
+    try {
+      if (!context?.tenantId) {
+        throw new Error('Tenant context required for database operations');
+      }
+
+      const { config } = step;
+      if (!config || !config.operation) {
+        throw new Error('Database operation config is required');
+      }
+
+      // Set tenant context for RLS enforcement
+      const { setTenantContext } = await import('../core/db');
+      await setTenantContext(context.tenantId);
+
+      // Import validated execution functions from workflow-data-sources
+      const {
+        executeSelect,
+        executeInsert,
+        executeUpdate,
+        executeDelete
+      } = await import('../routes/workflow-data-sources');
+      
+      // Execute operation using validated helpers (all security checks applied)
+      let result;
+      switch (config.operation) {
+        case 'SELECT':
+          result = await executeSelect(config, context.tenantId);
+          break;
+        case 'INSERT':
+          result = await executeInsert(config, context.tenantId);
+          break;
+        case 'UPDATE':
+          result = await executeUpdate(config, context.tenantId);
+          break;
+        case 'DELETE':
+          result = await executeDelete(config, context.tenantId);
+          break;
+        default:
+          throw new Error(`Unsupported database operation: ${config.operation}`);
+      }
+
+      logger.info('✅ [DATABASE-EXECUTOR] Operation executed successfully', {
+        tenantId: context.tenantId,
+        operation: config.operation,
+        table: config.table,
+        rowCount: result.rowCount
+      });
+
+      return {
+        success: true,
+        message: `${config.operation} operation completed successfully`,
+        data: {
+          operation: config.operation,
+          rowCount: result.rowCount,
+          rows: result.data,
+          table: config.table
+        }
+      };
+
+    } catch (error) {
+      logger.error('❌ [DATABASE-EXECUTOR] Operation failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId,
+        config: step.config
+      });
+
+      return {
+        success: false,
+        message: 'Database operation failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+}
+
+// ==================== REGISTRY CLASS ====================
+
+/**
+ * 🎯 ACTION EXECUTORS REGISTRY
+ * Central registry for all action executors
+ */
+export class ActionExecutorsRegistry {
+  private executors = new Map<string, ActionExecutor>();
+
+  constructor() {
+    this.registerDefaultExecutors();
+  }
+
+  /**
+   * Register all default executors
+   */
+  private registerDefaultExecutors(): void {
+    // Action executors
+    this.register(new EmailActionExecutor());
+    this.register(new ApprovalActionExecutor());
+    this.register(new AutoApprovalExecutor());
+    this.register(new DecisionEvaluator());
+    this.register(new AiDecisionExecutor());
+    this.register(new FormTriggerExecutor());
+    this.register(new TaskTriggerExecutor());
+    this.register(new TaskActionExecutor());
+    this.register(new GenericActionExecutor());
+    
+    // Routing executors
+    this.register(new TeamRoutingExecutor());
+    this.register(new UserRoutingExecutor());
+    this.register(new LeadRoutingExecutor());
+    this.register(new AILeadRoutingExecutor());
+    this.register(new DealRoutingExecutor());
+    this.register(new CustomerRoutingExecutor());
+    
+    // Campaign intake executors
+    this.register(new CampaignLeadIntakeExecutor());
+    this.register(new PipelineAssignmentExecutor());
+    
+    // Funnel orchestration executors
+    this.register(new FunnelStageTransitionExecutor());
+    this.register(new FunnelPipelineTransitionExecutor());
+    this.register(new AIFunnelOrchestratorExecutor());
+    this.register(new FunnelExitExecutor());
+    this.register(new DealStageWebhookTriggerExecutor());
+    
+    // Flow control executors
+    this.register(new IfConditionExecutor());
+    this.register(new SwitchCaseExecutor());
+    this.register(new WhileLoopExecutor());
+    this.register(new ParallelForkExecutor());
+    this.register(new JoinSyncExecutor());
+    
+    // Integration executors
+    this.register(new MCPConnectorExecutor());
+    this.register(new AIMCPExecutor());
+    
+    // Database operation executor
+    this.register(new DatabaseOperationExecutor());
+
+    logger.info('🎯 [REGISTRY] Registered default action executors', {
+      count: this.executors.size,
+      executors: Array.from(this.executors.keys())
+    });
+  }
+
+  /**
+   * Register a new executor
+   */
+  register(executor: ActionExecutor): void {
+    this.executors.set(executor.executorId, executor);
+    logger.debug('📝 [REGISTRY] Registered executor', {
+      executorId: executor.executorId,
+      description: executor.description
+    });
+  }
+
+  /**
+   * Get executor by ID
+   */
+  getExecutor(executorId: string): ActionExecutor | null {
+    return this.executors.get(executorId) || null;
+  }
+
+  /**
+   * Execute action using registered executor
+   */
+  async executeAction(
+    executorId: string,
+    step: any,
+    inputData?: Record<string, any>,
+    context?: ExecutionContext
+  ): Promise<ActionExecutionResult> {
+    const executor = this.getExecutor(executorId);
+    
+    if (!executor) {
+      logger.warn('⚠️ [REGISTRY] Unknown executor, using generic fallback', {
+        requestedExecutorId: executorId,
+        stepId: step?.nodeId
+      });
+      
+      // Fallback to generic executor
+      const genericExecutor = this.getExecutor('generic-action-executor');
+      if (genericExecutor) {
+        return await genericExecutor.execute(step, inputData, context);
+      }
+      
+      throw new Error(`No executor found for ID: ${executorId}`);
+    }
+
+    return await executor.execute(step, inputData, context);
+  }
+
+  /**
+   * Execute step using registered executor (wrapper for executeAction)
+   */
+  async executeStep(
+    step: any,
+    inputData?: Record<string, any>,
+    context?: ExecutionContext
+  ): Promise<ActionExecutionResult> {
+    return await this.executeAction(step.executorId, step, inputData, context);
+  }
+
+  /**
+   * List all registered executors
+   */
+  listExecutors(): Array<{ id: string; description: string }> {
+    return Array.from(this.executors.values()).map(executor => ({
+      id: executor.executorId,
+      description: executor.description
+    }));
+  }
+
+  /**
+   * Check if executor exists
+   */
+  hasExecutor(executorId: string): boolean {
+    return this.executors.has(executorId);
+  }
+}
+
+// ==================== SINGLETON EXPORT ====================
+
+export const actionExecutorsRegistry = new ActionExecutorsRegistry();

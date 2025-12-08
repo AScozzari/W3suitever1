@@ -1,0 +1,185 @@
+onnected
+error-handler.ts:64 ⚠️ [SipMonitor] Socket.IO disconnected: io client disconnect
+error-handler.ts:33 API request failed: Error: Failed to fetch security events
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 3)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:238
+(anonymous) @ SecurityDashboard.tsx:266
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch blacklist
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 2)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:237
+(anonymous) @ SecurityDashboard.tsx:266
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch whitelist
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 1)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:236
+(anonymous) @ SecurityDashboard.tsx:266
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch security statistics
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 4)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:239
+(anonymous) @ SecurityDashboard.tsx:266
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch security overview
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 0)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:235
+(anonymous) @ SecurityDashboard.tsx:266
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch whitelist
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 1)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:236
+(anonymous) @ SecurityDashboard.tsx:272
+setInterval
+(anonymous) @ SecurityDashboard.tsx:271
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch security overview
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 0)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:235
+(anonymous) @ SecurityDashboard.tsx:272
+setInterval
+(anonymous) @ SecurityDashboard.tsx:271
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch security statistics
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 4)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:239
+(anonymous) @ SecurityDashboard.tsx:272
+setInterval
+(anonymous) @ SecurityDashboard.tsx:271
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch blacklist
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 2)
+    at async SecurityDashboard.tsx:234:11
+console.error @ error-handler.ts:33
+request @ api.ts:109
+await in request
+get @ api.ts:39
+(anonymous) @ SecurityDashboard.tsx:237
+(anonymous) @ SecurityDashboard.tsx:272
+setInterval
+(anonymous) @ SecurityDashboard.tsx:271
+uh @ react-dom.production.min.js:243
+Cl @ react-dom.production.min.js:285
+_C @ react-dom.production.min.js:272
+ts @ react-dom.production.min.js:127
+cW @ react-dom.production.min.js:282
+lo @ react-dom.production.min.js:280
+OC @ react-dom.production.min.js:269
+C @ scheduler.production.min.js:13
+D @ scheduler.production.min.js:14Understand this error
+error-handler.ts:33 API request failed: Error: Failed to fetch security events
+    at Dz.request (api.ts:101:15)
+    at async Promise.all (index 3)
+    at async SecurityDashboard.tsx:234:11

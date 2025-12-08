@@ -1,0 +1,125 @@
+Perfetto — versione **snella definitiva** (per partire subito) con **7 tabelle**.
+Ogni campo ha una descrizione corta (1 riga). Nessun fronzolo.
+
+---
+
+# 1) voip_trunks  *(trunk SIP per store/tenant)*
+
+* **id**: UUID del trunk.
+* **tenant_id**: UUID tenant proprietario.
+* **store_id**: UUID store (chi usa il trunk).
+* **sip_domain**: dominio PBX del tenant (es. `tenantA.pbx.w3suite.it`).
+* **provider**: nome carrier (es. Messagenet).
+* **proxy**: host/realm del registrar (es. `sip.messagenet.it`).
+* **port**: porta SIP del provider (5060/5061).
+* **transport**: protocollo (`udp|tcp|tls`).
+* **auth_username**: user/URI del trunk.
+* **secret_ref**: riferimento a segreto (vault/KMS), no password in chiaro.
+* **register**: `true/false` (registrato o IP auth).
+* **expiry_seconds**: tempo registrazione (es. 300).
+* **codec_set**: priorità codec verso carrier (es. `G729,PCMA,PCMU`).
+* **status**: stato ultimo check (REG_OK/FAIL).
+* **note**: testo libero (debug/info).
+
+---
+
+# 2) voip_dids  *(numerazioni in ingresso)*
+
+* **id**: UUID del DID.
+* **tenant_id**: UUID tenant proprietario.
+* **store_id**: UUID store assegnatario.
+* **trunk_id**: riferimento al trunk d’ingresso.
+* **e164**: numero in formato E.164 (es. `+39061234567`).
+* **sip_domain** *(opzionale)*: dominio PBX (utile per lookup).
+* **route_target_type**: destinazione (`ext|ivr|queue|ai`).
+* **route_target_ref**: riferimento concreto (es. `1001` o `ivr_main`).
+* **label**: alias descrittivo (es. “Main Line Roma”).
+* **active**: `true/false` (abilitato).
+
+---
+
+# 3) voip_extensions  *(interni del tenant)*
+
+* **id**: UUID dell’interno.
+* **tenant_id**: UUID tenant proprietario.
+* **store_id**: UUID store associato (se rilevante).
+* **sip_domain**: dominio PBX del tenant.
+* **ext_number**: numero interno (unico nel dominio).
+* **display_name**: nome mostrato (caller name).
+* **enabled**: `true/false` (registrabile e chiamabile).
+* **voicemail_enabled**: `true/false` (se abilita VM).
+* **forward_rules**: JSON semplice (busy/no-answer/off-hours → target).
+* **class_of_service**: profilo chiamate consentite (es. `agent|supervisor`).
+* **note**: testo libero (info/HR).
+
+---
+
+# 4) voip_routes  *(pochi pattern outbound, opzionale ma utile)*
+
+* **id**: UUID della rotta.
+* **tenant_id**: UUID tenant proprietario.
+* **name**: nome rotta (es. “Uscita nazionale”).
+* **pattern**: regex/pattern (es. `^9(\d+)$`).
+* **strip_digits**: numeri da rimuovere (es. `1` per togliere il 9).
+* **prepend**: prefisso da aggiungere (es. `0`).
+* **trunk_id**: trunk da usare per l’uscita.
+* **priority**: ordine di valutazione.
+* **active**: `true/false`.
+
+---
+
+# 5) contact_policies  *(policy minime di contatto in JSON)*
+
+* **id**: UUID policy.
+* **tenant_id**: UUID tenant proprietario.
+* **scope_type**: `tenant|store|did|ext` (ambito applicazione).
+* **scope_ref**: id di riferimento (es. store_id o e164 o ext).
+* **rules_json**: JSON con orari apertura/chiusura, fallback (VM/AI/queue), annunci.
+* **active**: `true/false`.
+* **label**: alias descrittivo (es. “Orari Roma”).
+
+---
+
+# 6) voip_activity_log  *(audit e provisioning/log applicativo)*
+
+* **id**: UUID log entry.
+* **tenant_id**: UUID tenant coinvolto.
+* **actor**: `user:<id>` o `system:w3-provisioner`.
+* **action**: `create|update|delete|provision|sync`.
+* **target_type**: `trunk|did|ext|route|policy`.
+* **target_id**: id dell’oggetto bersaglio.
+* **status**: `ok|fail`.
+* **details_json**: payload/diff/esito chiamate API verso PBX.
+* **ts**: timestamp evento (UTC).
+
+---
+
+# 7) voip_cdr  *(mirror CDR per report KPI)*
+
+* **id**: UUID record.
+* **tenant_id**: UUID tenant proprietario.
+* **store_id**: UUID store (se deducibile da DID/ext).
+* **sip_domain**: dominio PBX (per correlazione multi-tenant).
+* **call_id**: ID chiamata PBX.
+* **direction**: `in|out`.
+* **from_uri**: sorgente (E.164 o ext).
+* **to_uri**: destinazione (E.164 o ext).
+* **did_e164**: DID coinvolto (se inbound).
+* **ext_number**: interno coinvolto (se presente).
+* **start_ts / answer_ts / end_ts**: tempi chiamata.
+* **billsec**: secondi fatturati.
+* **disposition**: esito (`ANSWERED|NO_ANSWER|BUSY|FAILED`).
+* **recording_url**: link alla registrazione (se disponibile).
+* **meta_json**: extra (codec, mos, cause codes).
+
+---
+
+## NOTE operative
+
+* **Sicurezza**: le password dei trunk non vanno nel DB in chiaro → usa **secret_ref** (vault/KMS).
+* **Multi-tenant**: tutte le tabelle hanno `tenant_id` e **RLS**; nessun dato cross-tenant.
+* **Provisioning**: W3 espone solo le API per **trunks / dids / extensions / routes / policies** + **/provision/sync**; tutto il resto (codec/NAT/IVR) per ora **manuale nel PBX edge**.
+* **CDR**: il PBX posta su `/voip/cdr`; correlazione via `sip_domain`, DID e EXT.
+* **Log**: ogni operazione W3 → PBX scrive una riga in `voip_activity_log`.
+
+Se vuoi, ti preparo anche i **payload tipo** per le 5 API core (create trunk, create did, create extension, create route, provision/sync) in forma “spec funzionale” pronta da passare al team.

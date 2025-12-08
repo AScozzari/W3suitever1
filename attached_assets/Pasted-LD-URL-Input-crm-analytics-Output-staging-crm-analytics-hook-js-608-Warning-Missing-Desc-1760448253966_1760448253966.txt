@@ -1,0 +1,69 @@
+LD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-KLCGZ252.js?v=2f97fb70:335:29)
+    at chunk-KLCGZ252.js?v=2f97fb70:239:13
+    at chunk-KLCGZ252.js?v=2f97fb70:162:58
+    at Presence (chunk-3RPIZZKC.js?v=2f97fb70:24:11)
+    at chunk-KLCGZ252.js?v=2f97fb70:153:64
+    at chunk-TCRT5IO7.js?v=2f97fb70:43:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:20:13
+    at chunk-7IUWE4IP.js?v=2f97fb70:42:13
+    at chunk-Y5AAV5I6.js?v=2f97fb70:244:22
+    at Presence (chunk-3RPIZZKC.js?v=2f97fb70:24:11)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at DialogPortal (chunk-KLCGZ252.js?v=2f97fb70:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at Dialog (chunk-KLCGZ252.js?v=2f97fb70:56:5)
+    at PipelineSettingsDialog (PipelineSettingsDialog.tsx:52:42)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at PipelinePage (PipelinePage.tsx:234:45)
+    at AuthenticatedRoute (TenantShell.tsx:453:72)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:220:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:75:59)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (App.tsx:39:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KLCGZ252.js?v=2f97fb70:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=2f97fb70:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=2f97fb70:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=2f97fb70:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KLCGZ252.js?v=2f97fb70:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=2f97fb70:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=2f97fb70:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this warning
+useTe

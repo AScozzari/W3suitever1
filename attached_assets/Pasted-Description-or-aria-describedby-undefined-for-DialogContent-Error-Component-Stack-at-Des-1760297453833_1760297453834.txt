@@ -1,0 +1,107 @@
+Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-IVFQ3KVX.js?v=7676aa17:335:29)
+    at chunk-IVFQ3KVX.js?v=7676aa17:239:13
+    at chunk-IVFQ3KVX.js?v=7676aa17:162:58
+    at Presence (chunk-4346QGOE.js?v=7676aa17:24:11)
+    at chunk-IVFQ3KVX.js?v=7676aa17:153:64
+    at chunk-TCRT5IO7.js?v=7676aa17:43:13
+    at chunk-TCRT5IO7.js?v=7676aa17:20:13
+    at chunk-7IUWE4IP.js?v=7676aa17:42:13
+    at chunk-IEEZVV2F.js?v=7676aa17:244:22
+    at Presence (chunk-4346QGOE.js?v=7676aa17:24:11)
+    at Provider (chunk-3WVMON5O.js?v=7676aa17:38:15)
+    at DialogPortal (chunk-IVFQ3KVX.js?v=7676aa17:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=7676aa17:38:15)
+    at Dialog (chunk-IVFQ3KVX.js?v=7676aa17:56:5)
+    at EmployeeModal (EmployeeModal.tsx:138:33)
+    at HRManagementPage (HRManagementPage.tsx:99:21)
+    at AuthenticatedRoute (TenantShell.tsx:456:72)
+    at Route (wouter.js?v=7676aa17:206:16)
+    at Switch (wouter.js?v=7676aa17:262:17)
+    at TenantRoutes (TenantShell.tsx:200:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:55:59)
+    at Route (wouter.js?v=7676aa17:206:16)
+    at Switch (wouter.js?v=7676aa17:262:17)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=7676aa17:3081:3)
+    at App (App.tsx:36:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-IVFQ3KVX.js?v=7676aa17:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-IVFQ3KVX.js?v=7676aa17:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=7676aa17:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=7676aa17:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=7676aa17:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this warning
+EmployeeModal.tsx:146  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users/user-1760256175055-g7zek98zi 401 (Unauthorized)
+queryFn @ EmployeeModal.tsx:146
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+setOptions @ @tanstack_react-query.js?v=7676aa17:1392
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+EmployeeModal.tsx:146  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users/user-1760256175055-g7zek98zi 401 (Unauthorized)
+queryFn @ EmployeeModal.tsx:146
+fetchFn @ @tanstack_react-query.js?v=7676aa17:1097
+run @ @tanstack_react-query.js?v=7676aa17:795
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7676aa17:799
+start @ @tanstack_react-query.js?v=7676aa17:838
+fetch @ @tanstack_react-query.js?v=7676aa17:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7676aa17:1639
+setOptions @ @tanstack_react-query.js?v=7676aa17:1392
+(anonymous) @ @tanstack_react-query.js?v=7676aa17:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7676aa17:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7676aa17:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7676aa17:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7676aa17:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7676aa17:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7676aa17:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7676aa17:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7676aa17:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7676aa17:18627Understand this error
+EmployeeModal.tsx:146  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users/user-1760256175055-g7zek98zi 401 (Unauthorized)

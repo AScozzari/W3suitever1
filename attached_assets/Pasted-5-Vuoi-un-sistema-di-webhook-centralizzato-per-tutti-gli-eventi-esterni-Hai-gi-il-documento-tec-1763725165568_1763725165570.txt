@@ -1,0 +1,112 @@
+5️⃣ Vuoi un sistema di webhook centralizzato per tutti gli eventi esterni?
+
+Hai già il documento tecnico  per Meta/Google:
+→ mapping dinamico
+→ multi-tenant
+→ bull + redis
+
+Ottimo come base per TUTTI i trigger esterni.
+
+Domanda:
+👉 Confermi che vuoi un unico Webhook Gateway Multi-Tenant che distribuisce eventi ai workflow?
+
+
+---
+
+6️⃣ Come colleghi un Trigger al Workflow e al Tenant?
+
+Possibili modelli:
+
+trigger_id legato al workflow_id
+
+trigger configurato a livello di tenant, e il workflow lo “ascolta”
+
+subscriber pattern: workflow iscritto all’evento
+
+
+Domanda:
+👉 I trigger li immagini configurati nel workflow (nodo) o nel tenant (impostazioni globali)?
+
+
+---
+
+7️⃣ L’AI Agent cosa deve fare?
+
+Possibili ruoli:
+
+generare DSL su richiesta
+
+creare un workflow da prompt
+
+suggerire azioni/triggers tra i nodi
+
+interpretare contesto e decidere cosa fare (tipo agent autonoomo)
+
+analizzare log del workflow e ottimizzare
+
+
+Domanda:
+👉 L’agente AI deve solo assistere, o deve anche eseguire decisioni in runtime?
+
+
+---
+
+8️⃣ Il DSL: lo vuoi umano-leggibile o tecnico-compatto?
+
+Esempi:
+
+Humano-leggibile
+
+Quando arriva una richiesta ferie:
+ - invia notifica al supervisore
+ - manda email a HR
+ - cambia stato della richiesta in “in approvazione”
+
+Tecnico compatto (tipo n8n)
+
+trigger(form_submitted, "ferie_request")
+-> action(send_notification, supervisor)
+-> action(send_email, HR)
+-> action(update_state, "in_approvazione")
+
+Domanda:
+👉 Il DSL deve essere friendly per utenti non tecnici?
+
+
+---
+
+9️⃣ Ogni Trigger deve essere validato con Zod?
+
+Zod ti serve per:
+
+validare input
+
+normalizzare payload esterni
+
+creare definizioni dinamiche per l’AI
+
+generare schemi JSON compatibili col workflow engine
+
+
+Domanda:
+👉 Vuoi usare Zod come schema ufficiale dei nodi (trigger/azioni)?
+
+
+---
+
+🔟 Dove vivono i “Tools” (azioni)?
+
+Tipi:
+
+tools standard (send email, send whatsapp, update db)
+
+tools personalizzati del tenant (es: “crea lead in CRM specifico”, “notifica team Sales”)
+
+tools per marca (es: WindTre)
+
+tools forniti da app di terze parti (API-plugin, MCP Server, ecc.)
+
+
+Domanda:
+👉 I tools devono essere globali o specifici per tenant/brand?
+

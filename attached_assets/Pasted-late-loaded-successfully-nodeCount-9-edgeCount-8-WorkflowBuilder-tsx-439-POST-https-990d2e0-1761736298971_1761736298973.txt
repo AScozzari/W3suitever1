@@ -1,0 +1,167 @@
+late loaded successfully: {nodeCount: 9, edgeCount: 8}
+WorkflowBuilder.tsx:439  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflows/test-run 401 (Unauthorized)
+handleTestRun @ WorkflowBuilder.tsx:439
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=20cc9b00:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=20cc9b00:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=20cc9b00:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=20cc9b00:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=20cc9b00:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=20cc9b00:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=20cc9b00:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=20cc9b00:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5449Understand this error
+WorkflowBuilder.tsx:458 ❌ Test run failed: {error: 'development_auth_required', message: 'Development mode requires X-Auth-Session header', details: 'Frontend must send X-Auth-Session: authenticated header'}
+overrideMethod @ hook.js:608
+handleTestRun @ WorkflowBuilder.tsx:458
+await in handleTestRun
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=20cc9b00:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=20cc9b00:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=20cc9b00:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=20cc9b00:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=20cc9b00:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=20cc9b00:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=20cc9b00:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=20cc9b00:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5449Understand this error
+WorkflowTestResultDialog.tsx:93 Uncaught TypeError: Cannot read properties of undefined (reading 'executionResults')
+    at WorkflowTestResultDialog (WorkflowTestResultDialog.tsx:93:35)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=20cc9b00:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=20cc9b00:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=20cc9b00:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=20cc9b00:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=20cc9b00:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=20cc9b00:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=20cc9b00:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=20cc9b00:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=20cc9b00:19137:13)
+WorkflowTestResultDialog @ WorkflowTestResultDialog.tsx:93
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=20cc9b00:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=20cc9b00:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=20cc9b00:197
+flushWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=20cc9b00:384Understand this error
+WorkflowTestResultDialog.tsx:93 Uncaught TypeError: Cannot read properties of undefined (reading 'executionResults')
+    at WorkflowTestResultDialog (WorkflowTestResultDialog.tsx:93:35)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=20cc9b00:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=20cc9b00:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=20cc9b00:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=20cc9b00:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=20cc9b00:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=20cc9b00:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=20cc9b00:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=20cc9b00:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=20cc9b00:19137:13)
+WorkflowTestResultDialog @ WorkflowTestResultDialog.tsx:93
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=20cc9b00:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=20cc9b00:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=20cc9b00:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=20cc9b00:197
+flushWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=20cc9b00:384Understand this error
+hook.js:608 The above error occurred in the <WorkflowTestResultDialog> component:
+
+    at WorkflowTestResultDialog (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/WorkflowTestResultDialog.tsx:50:3)
+    at div
+    at WorkflowBuilderContent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/WorkflowBuilder.tsx:72:35)
+    at BatchProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@xyflow_react.js?v=20cc9b00:5970:36)
+    at ReactFlowProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@xyflow_react.js?v=20cc9b00:8027:44)
+    at WorkflowBuilder
+    at div
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:200:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:97:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:796:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=20cc9b00:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=20cc9b00:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:246:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:104:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=20cc9b00:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=20cc9b00:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=20cc9b00:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=20cc9b00:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=20cc9b00:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=20cc9b00:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=20cc9b00:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=20cc9b00:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=20cc9b00:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=20cc9b00:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=20cc9b00:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=20cc9b00:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=20cc9b00:197
+flushWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=20cc9b00:384Understand this error
+chunk-ZHRYBLGQ.js?v=20cc9b00:19413 Uncaught TypeError: Cannot read properties of undefined (reading 'executionResults')
+    at WorkflowTestResultDialog (WorkflowTestResultDialog.tsx:93:35)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=20cc9b00:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=20cc9b00:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=20cc9b00:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=20cc9b00:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=20cc9b00:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=20cc9b00:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=20cc9b00:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=20cc9b00:18736:28)
+    at performConcurrentWorkOnRoot (chunk-ZHRYBLGQ.js?v=20cc9b00:18684:30)
+WorkflowTestResultDialog @ WorkflowTestResultDialog.tsx:93
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=20cc9b00:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=20cc9b00:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=20cc9b00:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=20cc9b00:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=20cc9b00:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=20cc9b00:197
+flushWork @ chunk-ZHRYBLGQ.js?v=20cc9b00:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=20cc9b00:384Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped

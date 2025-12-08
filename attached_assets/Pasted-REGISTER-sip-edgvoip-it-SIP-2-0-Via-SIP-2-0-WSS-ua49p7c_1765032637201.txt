@@ -1,0 +1,86 @@
+REGISTER sip:edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS ua49p7ce64e9.invalid;branch=z9hG4bK5014777
+To: <sip:2000@edgvoip.it>
+From: "Extension 2000" <sip:2000@edgvoip.it>;tag=vtc64jt1uj
+CSeq: 2 REGISTER
+Call-ID: 002j8s2srgaau3oo6d00
+Max-Forwards: 70
+Contact: <sip:kgeo7b5h@ua49p7ce64e9.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+Layout-PJdFOx0w.js:58 Sat Dec 06 2025 15:50:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS ua49p7ce64e9.invalid;branch=z9hG4bK5014777;received=127.0.0.1;rport=42036
+From: "Extension 2000" <sip:2000@edgvoip.it>;tag=vtc64jt1uj
+To: <sip:2000@edgvoip.it>;tag=HtaHQ5ZtZ67tB
+Call-ID: 002j8s2srgaau3oo6d00
+CSeq: 2 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="edgvoip.it", nonce="2f97a096-f47f-4a98-a6cb-2819cc9215c4", algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+Layout-PJdFOx0w.js:58 Sat Dec 06 2025 15:50:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS ua49p7ce64e9.invalid;branch=z9hG4bK6687415
+To: <sip:2000@edgvoip.it>
+From: "Extension 2000" <sip:2000@edgvoip.it>;tag=vtc64jt1uj
+CSeq: 3 REGISTER
+Call-ID: 002j8s2srgaau3oo6d00
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="edgvoip.it", nonce="2f97a096-f47f-4a98-a6cb-2819cc9215c4", uri="sip:edgvoip.it", response="e7b608c5312638c587f197933e3d0dd8", qop=auth, cnonce="k90ohor8dceo", nc=00000001
+Contact: <sip:kgeo7b5h@ua49p7ce64e9.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+Layout-PJdFOx0w.js:58 Sat Dec 06 2025 15:50:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 403 Forbidden
+Via: SIP/2.0/WSS ua49p7ce64e9.invalid;branch=z9hG4bK6687415;received=127.0.0.1;rport=42036
+From: "Extension 2000" <sip:2000@edgvoip.it>;tag=vtc64jt1uj
+To: <sip:2000@edgvoip.it>;tag=j339r0gyvFyDQ
+Call-ID: 002j8s2srgaau3oo6d00
+CSeq: 3 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+installHook.js:1 Sat Dec 06 2025 15:50:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 403
+overrideMethod @ installHook.js:1
+print @ Layout-PJdFOx0w.js:58
+genericLog @ Layout-PJdFOx0w.js:58
+genericLog @ Layout-PJdFOx0w.js:58
+warn @ Layout-PJdFOx0w.js:58
+onReject @ Layout-PJdFOx0w.js:58
+receiveResponse @ Layout-PJdFOx0w.js:71
+receiveResponse @ Layout-PJdFOx0w.js:71
+receiveResponse @ Layout-PJdFOx0w.js:61
+receiveResponseFromTransport @ Layout-PJdFOx0w.js:71
+receiveIncomingResponseFromTransport @ Layout-PJdFOx0w.js:71
+onTransportMessage @ Layout-PJdFOx0w.js:86
+transport.onMessage @ Layout-PJdFOx0w.js:86
+onWebSocketMessage @ Layout-PJdFOx0w.js:84
+(anonymous) @ Layout-PJdFOx0w.js:75Understand this warning
+Layout-PJdFOx0w.js:58 Sat Dec 06 2025 15:50:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+Layout-PJdFOx0w.js:86 📡 Registration state: Unregistered
+Layout-PJdFOx0w.js:58 Sat Dec 06 2025 15:50:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+index-CIxknoaT.js:2 🔍 Token expiry check: Current time: 15:50:16, Token expires: 16:05:03
+index-CIxknoaT.js:2 🔍 Token expiry check: Current time: 15:50:22, Token expires: 16:05:03
+index-CIxknoaT.js:2 🔍 Token expiry check: Current time: 15:50:26, Token expires: 16:05:03

@@ -1,0 +1,480 @@
+interval)
+index-CB55pLTi.js:2 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+index-CB55pLTi.js:2 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+index-CB55pLTi.js:2 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+index-CB55pLTi.js:2 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications?status=unread&limit=5 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/chat/unread-count 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications/unread-count 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/voip/extensions/me 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+installHook.js:1 ❌ [SIP Hook] Query error: Error: 500: Internal Server Error
+    at queryFn (index-CB55pLTi.js:2:4517)
+overrideMethod @ installHook.js:1
+(anonymous) @ Layout-C0iDxyYD.js:86
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+Rd @ react-core-Dq7CL8eX.js:32
+wn @ react-core-Dq7CL8eX.js:32
+Bi @ react-core-Dq7CL8eX.js:32
+hn @ react-core-Dq7CL8eX.js:30
+(anonymous) @ react-core-Dq7CL8eX.js:32
+setTimeout
+ss @ query-LcQgiAmM.js:1
+u @ query-LcQgiAmM.js:1
+batch @ query-LcQgiAmM.js:1
+W @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+await in fetch
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/dashboard/stats 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/legal-entities 500 (Internal Server Error)
+jt @ index-CB55pLTi.js:2
+makeRequest @ ApiService-Cmrkx4Wz.js:1
+getLegalEntities @ ApiService-Cmrkx4Wz.js:1
+queryFn @ DashboardPage-dBK7EKPf.js:1
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+installHook.js:1 ⚠️ ApiService: Failed request to /api/legal-entities: 500: Internal Server Error
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-Cmrkx4Wz.js:1
+await in makeRequest
+getLegalEntities @ ApiService-Cmrkx4Wz.js:1
+queryFn @ DashboardPage-dBK7EKPf.js:1
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this warning
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/stores 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/users 500 (Internal Server Error)
+jt @ index-CB55pLTi.js:2
+makeRequest @ ApiService-Cmrkx4Wz.js:1
+getUsers @ ApiService-Cmrkx4Wz.js:1
+queryFn @ DashboardPage-dBK7EKPf.js:1
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/tasks/my-tasks 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+installHook.js:1 ⚠️ ApiService: Failed request to /api/users: 500: Internal Server Error
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-Cmrkx4Wz.js:1
+await in makeRequest
+getUsers @ ApiService-Cmrkx4Wz.js:1
+queryFn @ DashboardPage-dBK7EKPf.js:1
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this warning
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/hr/calendar/events 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+await in queryFn
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/chat/unread-count 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications?status=unread&limit=5 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications/unread-count 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/dashboard/stats 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/stores 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/tasks/my-tasks 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/hr/calendar/events 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+await in queryFn
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/stores 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/chat/unread-count 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+setInterval
+setInterval @ query-LcQgiAmM.js:1
+setInterval @ query-LcQgiAmM.js:1
+ae @ query-LcQgiAmM.js:1
+oe @ query-LcQgiAmM.js:1
+onQueryUpdate @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+batch @ query-LcQgiAmM.js:1
+W @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+await in fetch
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/chat/unread-count 500 (Internal Server Error)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+setInterval
+setInterval @ query-LcQgiAmM.js:1
+setInterval @ query-LcQgiAmM.js:1
+ae @ query-LcQgiAmM.js:1
+oe @ query-LcQgiAmM.js:1
+onQueryUpdate @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+batch @ query-LcQgiAmM.js:1
+W @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+await in fetch
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications/unread-count 500 (Internal Server Error)

@@ -1,0 +1,58 @@
+💾 Updating legal entity: {tenantId: '00000000-0000-0000-0000-000000000001', codice: '8000004', nome: 'Test Company SRL', formaGiuridica: 'SRL', pIva: 'IT98765432109', …}
+SettingsPage.tsx:5961  PUT https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities/656b962a-8857-41fd-b2cf-d1950c68366e 401 (Unauthorized)
+handleSaveRagioneSociale @ SettingsPage.tsx:5961
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5449Understand this error
+SettingsPage.tsx:5985 ❌ Error updating legal entity: Error: Failed to update legal entity: Unauthorized
+    at handleSaveRagioneSociale (SettingsPage.tsx:5971:15)
+overrideMethod @ hook.js:608
+handleSaveRagioneSociale @ SettingsPage.tsx:5985
+await in handleSaveRagioneSociale
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5449Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications/unread-count
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/notifications/unread-count
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+queryClient.ts:26 🔍 [HR-VALIDATION] Validating prerequisites for: /api/hr/calendar/events
+queryClien

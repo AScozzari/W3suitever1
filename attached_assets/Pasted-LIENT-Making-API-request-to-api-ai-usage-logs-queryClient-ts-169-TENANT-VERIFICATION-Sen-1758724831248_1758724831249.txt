@@ -1,0 +1,38 @@
+LIENT] 📡 Making API request to: /api/ai/usage/logs
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/ai/usage/logs
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: 
+{X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+AISettingsPage.tsx:1541 Uncaught ReferenceError: Dialog is not defined
+    at AISettingsPage (AISettingsPage.tsx:1541:8)
+AISettingsPage.tsx:1541 Uncaught ReferenceError: Dialog is not defined
+    at AISettingsPage (AISettingsPage.tsx:1541:8)
+hook.js:608 The above error occurred in the <AISettingsPage> component:
+
+    at AISettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/AI/AISettingsPage.tsx:53:21)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:347:27)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:425:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:186:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=11b0b4f3:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=11b0b4f3:9129 Uncaught ReferenceError: Dialog is not defined
+    at AISettingsPage (AISettingsPage.tsx:1541:8)

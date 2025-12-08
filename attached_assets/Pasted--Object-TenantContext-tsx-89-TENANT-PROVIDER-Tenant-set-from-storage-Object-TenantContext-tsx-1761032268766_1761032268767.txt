@@ -1,0 +1,57 @@
+: Object
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: Object
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: Object
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+2MCPSettingsTab.tsx:273 Uncaught ReferenceError: Cannot access 'connectedAccounts' before initialization
+    at MCPSettingsTab (MCPSettingsTab.tsx:273:7)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=841030c9:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=841030c9:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=841030c9:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=841030c9:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=841030c9:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=841030c9:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=841030c9:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=841030c9:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=841030c9:19137:13)Understand this error
+hook.js:608 The above error occurred in the <MCPSettingsTab> component:
+
+    at MCPSettingsTab (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/workflow/MCPSettingsTab.tsx:126:21)
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:200:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:94:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:768:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:244:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:102:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=841030c9:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=841030c9:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608Understand this error
+chunk-ZHRYBLGQ.js?v=841030c9:9129 Uncaught ReferenceError: Cannot access 'connectedAccounts' before initialization
+    at MCPSettingsTab (MCPSettingsTab.tsx:273:7)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=841030c9:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=841030c9:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=841030c9:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=841030c9:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=841030c9:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=841030c9:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=841030c9:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=841030c9:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=841030c9:18879:28)Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped

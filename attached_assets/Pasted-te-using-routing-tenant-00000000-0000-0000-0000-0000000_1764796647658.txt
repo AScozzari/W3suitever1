@@ -1,0 +1,211 @@
+te - using routing tenant: 00000000-0000-0000-0000-000000000001
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/chat/unread-count 403 (Forbidden)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications/unread-count 401 (Unauthorized)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications?status=unread&limit=5 401 (Unauthorized)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/voip/extensions/me 401 (Unauthorized)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+installHook.js:1 ❌ [SIP Hook] Query error: Error: 401: Unauthorized
+    at queryFn (index-CB55pLTi.js:2:4486)
+overrideMethod @ installHook.js:1
+(anonymous) @ Layout-C0iDxyYD.js:86
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+Rd @ react-core-Dq7CL8eX.js:32
+wn @ react-core-Dq7CL8eX.js:32
+Bi @ react-core-Dq7CL8eX.js:32
+hn @ react-core-Dq7CL8eX.js:30
+(anonymous) @ react-core-Dq7CL8eX.js:32
+setTimeout
+ss @ query-LcQgiAmM.js:1
+u @ query-LcQgiAmM.js:1
+batch @ query-LcQgiAmM.js:1
+W @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+await in fetch
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/tasks/my-tasks 403 (Forbidden)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/hr/calendar/events 401 (Unauthorized)
+queryFn @ index-CB55pLTi.js:2
+await in queryFn
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/chat/unread-count 403 (Forbidden)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications?status=unread&limit=5 401 (Unauthorized)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/notifications/unread-count 401 (Unauthorized)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/tasks/my-tasks 403 (Forbidden)
+queryFn @ index-CB55pLTi.js:2
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+index-CB55pLTi.js:2  GET http://82.165.16.223/api/hr/calendar/events 401 (Unauthorized)

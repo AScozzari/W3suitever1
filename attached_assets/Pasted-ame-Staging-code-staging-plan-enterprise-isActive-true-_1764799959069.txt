@@ -1,0 +1,38 @@
+ame: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:12  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:13  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:14  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/heuristicsRedefinitions.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+installHook.js:1 ⚠️ HTTP mode detected: Using PKCE plain method (less secure)
+overrideMethod @ installHook.js:1
+k @ index-DABHMm7b.js:2
+ce @ index-DABHMm7b.js:2
+Gc @ react-core-Dq7CL8eX.js:29
+Jc @ react-core-Dq7CL8eX.js:29
+qc @ react-core-Dq7CL8eX.js:29
+di @ react-core-Dq7CL8eX.js:29
+ta @ react-core-Dq7CL8eX.js:29
+(anonymous) @ react-core-Dq7CL8eX.js:29
+Pu @ react-core-Dq7CL8eX.js:32
+Ps @ react-core-Dq7CL8eX.js:29
+Il @ react-core-Dq7CL8eX.js:29
+eu @ react-core-Dq7CL8eX.js:29
+hf @ react-core-Dq7CL8eX.js:29Understand this warning
+index-DABHMm7b.js:2 🔐 PKCE method: plain
+index-DABHMm7b.js:2 🔍 Auth Response Status: 200
+index-DABHMm7b.js:2 🔍 Auth Response URL: http://82.165.16.223/auth/callback?code=R7Zl-sxrbKCQ3-3ebYnaHFntKbM3N5kJI8FqGtrs7f4
+installHook.js:1 OAuth2 Login error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+overrideMethod @ installHook.js:1
+ce @ index-DABHMm7b.js:2
+await in ce
+Gc @ react-core-Dq7CL8eX.js:29
+Jc @ react-core-Dq7CL8eX.js:29
+qc @ react-core-Dq7CL8eX.js:29
+di @ react-core-Dq7CL8eX.js:29
+ta @ react-core-Dq7CL8eX.js:29
+(anonymous) @ react-core-Dq7CL8eX.js:29
+Pu @ react-core-Dq7CL8eX.js:32
+Ps @ react-core-Dq7CL8eX.js:29
+Il @ react-core-Dq7CL8eX.js:29
+eu @ react-core-Dq7CL8eX.js:29
+hf @ react-core-Dq7CL8eX.js:29Understand this error
+installHook.js:1 Error details: Unexpected token '<', "<!DOCTYPE "... is not valid JSON

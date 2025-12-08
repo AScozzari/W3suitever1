@@ -1,0 +1,62 @@
+'Workflow complesso per testare routing nodes e flow control nodes', category: 'test', …}
+WorkflowBuilder.tsx:122 ✅ Template loaded successfully: {nodeCount: 9, edgeCount: 10}
+WorkflowBuilder.tsx:222 🎛️ Opening config panel for node: trigger-1
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-GVKGBQLT.js?v=53f69fa7:335:29)
+    at chunk-GVKGBQLT.js?v=53f69fa7:239:13
+    at chunk-GVKGBQLT.js?v=53f69fa7:162:58
+    at Presence (chunk-3RPIZZKC.js?v=53f69fa7:24:11)
+    at chunk-GVKGBQLT.js?v=53f69fa7:153:64
+    at chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at chunk-Y5AAV5I6.js?v=53f69fa7:244:22
+    at Presence (chunk-3RPIZZKC.js?v=53f69fa7:24:11)
+    at Provider (chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at DialogPortal (chunk-GVKGBQLT.js?v=53f69fa7:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at Dialog (chunk-GVKGBQLT.js?v=53f69fa7:56:5)
+    at NodeConfigPanel (NodeConfigPanel.tsx:23:43)
+    at div (<anonymous>)
+    at WorkflowBuilderContent (WorkflowBuilder.tsx:80:35)
+    at BatchProvider (@xyflow_react.js?v=53f69fa7:5970:36)
+    at ReactFlowProvider (@xyflow_react.js?v=53f69fa7:8027:44)
+    at WorkflowBuilder (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:116:50)
+    at AuthenticatedRoute (TenantShell.tsx:358:72)
+    at Route (wouter.js?v=53f69fa7:206:16)
+    at Switch (wouter.js?v=53f69fa7:262:17)
+    at TenantRoutes (TenantShell.tsx:186:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:41:59)
+    at Route (wouter.js?v=53f69fa7:206:16)
+    at Switch (wouter.js?v=53f69fa7:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=53f69fa7:3081:3)
+    at App (App.tsx:35:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-GVKGBQLT.js?v=53f69fa7:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=53f69fa7:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=53f69fa7:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=53f69fa7:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=53f69fa7:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

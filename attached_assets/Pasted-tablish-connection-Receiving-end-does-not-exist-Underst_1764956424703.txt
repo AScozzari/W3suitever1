@@ -1,0 +1,27 @@
+tablish connection. Receiving end does not exist.Understand this error
+Error handling response: TypeError: Cannot read properties of null (reading 'postMessage')
+    at chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/background.js:1:60174Understand this error
+Error handling response: TypeError: Cannot read properties of null (reading 'postMessage')
+    at chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/background.js:1:60174Understand this error
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+Error handling response: TypeError: Cannot read properties of null (reading 'postMessage')
+    at chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/background.js:1:60174Understand this error
+index-DRwXIUlM.js:21 [GTM] Initializing with container ID: GTM-XXXXXXX
+index-DRwXIUlM.js:21 [GTM] Initialized successfully
+index-DRwXIUlM.js:21 [APP-ROUTER] 🚀 Router component rendered
+index-DRwXIUlM.js:21 [APP-ROUTER] 📍 Route matched with params: Object
+index-DRwXIUlM.js:21 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+index-DRwXIUlM.js:21 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+index-DRwXIUlM.js:15 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+index-DRwXIUlM.js:2 [TENANT-PROVIDER] 📋 Tenant set from storage: Object
+utils.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+extensionState.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+heuristicsRedefinitions.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+index-DRwXIUlM.js:9 🔐 Generating PKCE code challenge with js-sha256
+index-DRwXIUlM.js:9 🔐 Code challenge generated: Yo8xnV4oamuFjMZYxGdW...
+index-DRwXIUlM.js:9 🔐 PKCE method: S256
+/oauth2/authorize:1  Failed to load resource: the server responded with a status of 405 (Not Allowed)Understand this error
+index-DRwXIUlM.js:9 🔍 Auth Response Status: 405
+index-DRwXIUlM.js:9 🔍 Auth Response URL: http://82.165.16.223/oauth2/authorize
+installHook.js:1 Error parsing response: SyntaxError: Unexpected token '<', "<html>
+<h"... is not valid JSON

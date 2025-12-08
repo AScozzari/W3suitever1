@@ -1,0 +1,562 @@
+V
+ChatGPT ha detto:
+Ragionato per 8s
+
+Perfetto. Qui sotto trovi la mappa completa (entità, relazioni, flussi, campi DB) per il tuo CRM multi-tenant con RLS e RBAC, allineata a: tenant → ragione sociale → store, campagne inbound, pipeline operative, GTM & Meta CAPI centralizzati, canali (SMS/WA/Telegram/Email/Telefono), utenti operativi, GDPR/consensi.
+
+Struttura gerarchica (multi-tenant)
+
+tenant → organization (ragione sociale) → store (attività/punto vendita / backoffice).
+
+Tutte le tabelle core hanno tenant_id e RLS attiva.
+
+Mapping sorgenti (Meta Page ID, WhatsApp Business phone_number_id, Google Ads customer_id, GA4 property_id, ecc.) → risoluzione tenant_id/store_id per i webhook centralizzati (GTM + CAPI).
+
+Entità core e campi (DB-ready)
+1) Campaign (contenitore inbound)
+
+Scopo: genera/ingaggia lead; attribuzione marketing; KPI.
+Campi chiave:
+
+id, tenant_id, name, type (media|crm|retention), status (planned|running|paused|completed)
+
+budget, start_at, end_at
+
+primary_pipeline_id? (opzionale per routing semplice)
+
+utm_defaults {source,medium,campaign,term,content}
+
+contact_policy_json (cadence/cap per nurturing lead, se serve)
+
+created_at, updated_at
+
+2) Lead (interesse qualificabile)
+
+Scopo: raccoglie l’interesse e origina il deal.
+Campi chiave (includo i tuoi item mappati):
+
+Identificazione & contesto
+
+id (lead_id), tenant_id, organization_id, store_id (activity_id), owner_user_id?
+
+channel_origin (online|in_store|call_center…)
+
+campaign_id (sorgente primaria)
+
+status (new|in_progress|qualified|converted|disqualified), score?
+
+event_name (lead_sent, …), event_source (GTM|CAPI|API|CRM)
+
+session_id, ip_address, browser_user_agent, device_type
+
+landing_page_url, referrer
+
+Persona & contatti (GDPR-aware)
+
+person_id (identity graph)
+
+first_name, last_name?, email, phone
+
+age_range?, gender? (solo se hai base giuridica)
+
+notes?
+
+Interesse & marketing
+
+product_interest, lead_type (fisso|mobile|energia|…)
+
+utm_* (source, medium, campaign, term, content)
+
+Consensi (snapshot)
+
+privacy_accepted (bool), marketing_optin (bool), profiling_optin (bool), consent_ts
+
+Timestamps & ops
+
+created_at, updated_at, processed_by? (system|user), event_batch_id?
+
+Relazioni accessorie
+
+raw_payload jsonb (per auditing)
+
+attributi multi-touch in tabella separata: lead_attributions
+
+3) Deal (opportunità in pipeline)
+
+Scopo: trattativa operativa con KPI di vendita/servizio.
+Campi chiave:
+
+Identificazione
+
+id (deal_id), tenant_id, organization_id, store_id, owner_user_id
+
+pipeline_id, stage, status (open|won|lost), expected_close_date?
+
+Origine (snapshot)
+
+lead_id? (nullable per walk-in)
+
+campaign_id? (copiato dal lead se esiste)
+
+source_channel (copiato da lead.channel_origin o 'in_store'/'manual')
+
+Valore
+
+value, currency, probability?
+
+Oggetti cliente agganciati
+
+account_id? (B2B), contact_id? (B2C), person_id (sempre presente, via lead o contact)
+
+Prodotto/servizio (minimo per forecast)
+
+product_id?, product_name?, product_category?
+
+Documenti/contratti (se già disponibili in trattativa)
+
+document_id?
+
+Timestamps
+
+created_at, updated_at
+
+Le informazioni di vendita più dettagliate (prezzo, sconto, quantità, metodo pagamento, totale, stato transazione, delivery) vanno nel sottomodulo “Order/Contract” collegato al deal (vedi § Supporto).
+
+4) Pipeline (processo operativo)
+
+Scopo: definisce dominio (Fisso/Energia/Mobile/Assistenza), fasi/stage e playbook di contatto.
+Campi chiave:
+
+id, tenant_id, name, domain (sales|service|retention), is_active
+
+stages[] (ordine, label, exit_rules?)
+
+Playbook per stage in tabella dedicata:
+
+pipeline_stage_playbooks(pipeline_id, stage, allowed_channels[], max_attempts_per_day, sla_hours, quiet_hours?, next_best_action_json?)
+
+5) Customer (Account/Contact)
+
+Scopo: gestione relazione economica/servizio post-vendita.
+Campi chiave:
+
+Account (B2B)
+
+id (account_id), tenant_id, legal_name, vat_number, billing_address, …
+
+ownership_scope (tenant|org|store)
+
+Contact (B2C o referente B2B)
+
+id (contact_id), tenant_id, account_id?, person_id, first_name, last_name, email, phone, preferences_json?
+
+Consensi/persona (centrale)
+
+people_consents(person_id, channel, status, scope, updated_at)
+
+people_preferences(person_id, preferred_channel?, quiet_hours?, language?, …)
+
+Entità di supporto (routing, canali, ordini, interazioni)
+Store & Canali
+
+store: id, tenant_id, organization_id, name, address, phone, …
+
+store_channels: store_id, channel (sms|wa|telegram|email|phone), endpoint/config (es. wa_phone_number_id, smtp pool, caller_id), is_active
+
+social_accounts: store_id, type (meta_page|instagram|google_business|google_ads), external_id, is_active
+
+source_mapping (per webhook GTM/CAPI): mappa external_id → tenant_id, organization_id?, store_id?
+
+Interazioni & Attività
+
+interactions (log operativo lead/deal):
+id, tenant_id, entity_type ('lead'|'deal'), entity_id, channel, direction (in|out), outcome (reached|no_answer|opt_out|…), user_id?, payload?, ts
+
+tasks/activities:
+id, tenant_id, deal_id?, lead_id?, type (call|wa|email|visit), due_at, assigned_to, status, notes
+
+Ordini/Contratti (post-closing o in trattativa)
+
+orders:
+id, tenant_id, deal_id, account_id/contact_id, total_amount, currency, payment_method, status (pending|paid|canceled), document_id?, delivery_method, created_at …
+
+order_items:
+order_id, product_id, product_name, product_category, unit_price, discount, quantity
+
+Questo sottomodulo recepisce i tuoi item “Vendita” senza sporcare il Deal con dettagli contabili.
+
+Relazioni (sintesi chiara)
+Tenant 1—N Organizations 1—N Stores
+Stores 1—N Leads, Deals, Interactions, Orders
+
+Campaign 1—N Leads
+Lead 1—N Interactions
+Lead 0..N Deals  (via automation alla qualifica)
+Deal 1—N Interactions
+Pipeline 1—N Deals
+Pipeline 1—N StagePlaybooks
+
+People (person_id) 1—N Leads / Contacts / Deals  (identity graph)
+Account 1—N Contacts ; Contact/Account ↔ Deals/Orders
+Store ↔ store_channels / social_accounts / source_mapping (webhook routing)
+
+Flusso corretto (operativo)
+
+Webhook centralizzato (GTM/CAPI) risolve tenant_id, store_id da source_mapping.
+
+Crea/Upsert Lead con campaign_id, channel_origin, utm, consensi.
+
+Rule engine (consensi OK + criteri lead) → crea Deal nella pipeline corretta; copia campaign_id e source_channel; set owner_user_id.
+
+Pipeline Playbook governa contatti su ogni stage (canali consentiti, max tentativi, SLA).
+
+Interazioni loggate su interactions (KPI e audit).
+
+Won → Order/Contract + Customer (Account/Contact) consolidati su person_id.
+
+Retention → nuove campagne (nuovi lead) o nuovi deal (cross-sell).
+
+Mappatura dei tuoi “item” (Lead vs Vendita)
+
+Lead (OK):
+
+Identificazione: tenant_id, organization_id, store_id, channel_origin, event_name, event_source, session_id, ip, user_agent, device_type, landing_page_url, referrer, event_batch_id
+
+Anagrafica: lead_id, person_id, first_name, last_name?, email, phone, age_range?, gender?
+
+Origine: campaign_id, utm_*
+
+Interessi: product_interest, lead_type, notes, marketing_segment?
+
+Privacy: privacy_accepted, marketing_optin, profiling_optin, consent_ts
+
+Timing: created_at, updated_at, processed_by
+
+Vendita (meglio in Order/Contract collegati al Deal):
+
+product_id, product_name, product_category, unit_price, discount, quantity, total_amount, payment_method, transaction_status, document_id, delivery_method
+
+Sul Deal tieni value/probability/pipeline/stage; i dettagli economici vanno in orders/order_items.
+
+RLS (PostgreSQL) — pattern minimo
+
+Ogni tabella core ha:
+
+tenant_id UUID NOT NULL DEFAULT current_setting('app.current_tenant_id')::uuid
+
+ENABLE RLS su tutte le tabelle multi-tenant.
+
+Policy tipica:
+
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY leads_isolation ON leads
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid)
+WITH CHECK (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+
+Per sotto-scopi (org/store): aggiungi clausole su organization_id/store_id dove serve.
+
+RBAC — linee guida
+
+Roles globali per tenant: owner, admin, sales_manager, sales_rep, marketer, support.
+
+Permessi granulari (namespace per dominio):
+
+marketing.campaigns.* (read/create/update/close)
+
+crm.leads.* (assign/qualify/convert/delete)
+
+sales.deals.* (create/update/reassign/close)
+
+sales.pipelines.* (manage_stages, manage_playbooks)
+
+customer.accounts.*, customer.contacts.*
+
+ops.interactions.*, ops.tasks.*
+
+dwh.read (read-only analytics)
+
+Scope: {tenant|organization_ids[]|store_ids[]}.
+
+Enforcement: middleware Auth → TenantGuard (SET LOCAL app.current_tenant_id) → RBAC guard → DB (RLS).
+
+GDPR & Consensi (pratico)
+
+Consensi per canale a livello persona (people_consents) con scope (marketing/servizio).
+
+Snapshot su Lead/Deal per auditing (copia dei flag con timestamp).
+
+Quiet hours e preferenze in people_preferences.
+
+Audit: conserva raw_payload dei webhook e interactions (minimizzare dati personali inutili).
+
+Data minimization: age_range/gender solo se strettamente necessario e con base giuridica.
+
+Snippet SQL (essenziale, sintetico)
+-- Esempio: LEADS
+CREATE TABLE leads (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL DEFAULT current_setting('app.current_tenant_id')::uuid,
+  organization_id UUID NOT NULL,
+  store_id UUID NOT NULL,
+  person_id UUID NOT NULL,
+  owner_user_id UUID,
+  campaign_id UUID,
+  channel_origin TEXT,
+  status TEXT CHECK (status IN ('new','in_progress','qualified','converted','disqualified')) NOT NULL DEFAULT 'new',
+  score INT,
+  first_name TEXT, last_name TEXT, email TEXT, phone TEXT,
+  age_range TEXT, gender TEXT,
+  product_interest TEXT, lead_type TEXT, notes TEXT,
+  utm_source TEXT, utm_medium TEXT, utm_campaign TEXT, utm_term TEXT, utm_content TEXT,
+  landing_page_url TEXT, referrer TEXT,
+  session_id TEXT, ip_address INET, browser_user_agent TEXT, device_type TEXT,
+  privacy_accepted BOOLEAN, marketing_optin BOOLEAN, profiling_optin BOOLEAN, consent_ts TIMESTAMPTZ,
+  event_name TEXT, event_source TEXT, event_batch_id TEXT,
+  raw_payload JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY leads_isolation ON leads
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid)
+WITH CHECK (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+
+Applica lo stesso pattern a campaigns, deals, pipelines, accounts, contacts, interactions, orders, order_items.
+
+Conclusione (one-liner)
+
+Campagna genera lead (attribuzione).
+
+Lead → regole/AI → Deal nella pipeline giusta (playbook canali).
+
+Deal vinto → Cliente + Order/Contract.
+
+Tutto multi-tenant con RLS e RBAC + mapping sorgenti per GTM/CAPI centralizzati.
+
+Se vuoi, nel prossimo passo preparo ERD compatto + JSON di esempio per pipeline_stage_playbooks (Fisso/Energia) e per contact_policy_json (Campagna).
+
+Hai detto:
+facendo screening sul mercato copiando info dai competitor come costruiresti ui e ux del crm di cui parliamo partendo dalla voce crm che ho in menu e quali componenti penderesti da shazcn e tailwind? considerando che ogni ragione sociale punti vendita avranno filti per le proprie campgan pipeline ecc ecc
+ChatGPT ha detto:
+Ragionato per 9s
+
+Perfetto: impostiamo IA e UX del modulo CRM (multi-tenant → ragione sociale → store) con stack React + Tailwind + shadcn/ui. Ti do mappa menu, pattern schermate, componenti shadcn da usare e filtri/scope per RS/store/campagne/pipeline.
+
+IA: struttura di navigazione (menu CRM)
+
+CRM
+
+Dashboard (overview cross RS/store)
+
+Campagne
+
+Leads
+
+Pipeline
+
+Board (Kanban per pipeline)
+
+Deals (tabellare)
+
+Clienti
+
+Accounts (B2B)
+
+Contacts (B2C/referenti)
+
+Attività (Tasks/Calls/Messaggi)
+
+Report (KPI marketing/sales)
+
+Impostazioni CRM
+
+Pipeline & Stage
+
+Regole di contatto (playbook)
+
+Campagne (parametri)
+
+Mappature sorgenti (GTM/CAPI)
+
+Campi personalizzati
+
+UX: pattern trasversali
+
+Scope bar fissa in alto:
+Tenant ▸ Ragione Sociale ▸ Store + Data range + Saved Views
+(RBAC: mostra solo scope consentiti).
+
+Filter dock a destra (Sheet/Drawer): filtri per campagna, pipeline, canale, owner, stato.
+
+List view ↔ Board ↔ Analytics: tre tab standard per ogni oggetto (dati/kanban/grafici).
+
+Create fast con Command Palette (⌘K): “Nuovo lead/deal/task”.
+
+Inline edit su celle chiave (owner, stage, priority).
+
+Mass actions (checkbox) per assign, change stage, tag, export.
+
+Schermate chiave
+1) CRM Dashboard
+
+Hero KPI: Leads (nuovi/qualificati), Deals (open/won), CVR, WinRate, Velocity, Revenue attribuito.
+
+Widget:
+
+Funnel: Campagna → Lead → Deal → Cliente (mini sankey/barre).
+
+Pipeline health (per pipeline/stage).
+
+Top campagne per ROI/CVR.
+
+To-do oggi (attività scadute/da fare).
+
+Componenti shadcn: Card, Tabs, Separator, Badge, Tooltip, DropdownMenu, Chart (via Recharts), Skeleton.
+
+2) Campagne (lista + dettaglio)
+
+Lista: tabella con nome, status, periodo, leads, CPL, deal creati, revenue attribuito.
+
+Dettaglio: KPI, UTM defaults, canali, collegamenti pipeline (N:N), timeline eventi (CAPI/GTM).
+
+Componenti: Table (TanStack Table), Badge (status), Tabs (Overview/Attribution/Leads/Deals), Dialog (edit), Accordion (UTM), Popover/Calendar (date), Textarea, Input.
+
+3) Leads (lista + dettaglio)
+
+Lista: stato, campagna, canale, product_interest, owner, created_at.
+Mass actions: assign, qualify, convert→deal.
+
+Dettaglio (Drawer full-height): anagrafica (GDPR), consensi, timeline interazioni, UTM, payload, pulsante “Crea Deal” (pipeline proposta da driver).
+
+Componenti: DataTable (Table + Toolbar), Sheet (dettaglio), Avatar, Badge, Command (assegnazione), Toast (Sonner), Separator, ScrollArea.
+
+4) Pipeline
+Board (Kanban per pipeline scelta)
+
+Colonne = stage, card = deal (value, owner, etichette, aging).
+Drag&drop → trigger regole (SLA, next-best-action).
+
+Header: selettore Pipeline + filtri (store/owner/campagna).
+
+Componenti: Tabs, Select, ScrollArea, Card, DropdownMenu (azioni card), ContextMenu, Tooltip, Dialog (edit rapida), Badge.
+(DnD: @dnd-kit/core o react-beautiful-dnd).
+
+Deals (tabellare)
+
+Colonne: nome, pipeline/stage, value, prob., owner, campagna, source_channel, updated.
+
+Bulk change stage/owner, export CSV.
+
+Componenti: Table, Input (search), Select (stage), Combobox (owner), Popover (filters), Button (export).
+
+5) Clienti (Accounts/Contacts)
+
+Accounts: ragione sociale, P.IVA, RS/store scope, deals attivi, LTV.
+
+Contacts: persona con consensi e canali preferiti (quiet hours).
+
+Dettaglio: timeline unica (lead→deal→order→ticket), contratti attivi, preferenze.
+
+Componenti: Table, Avatar, Badge, Tabs, Accordion, Switch (opt-in), Calendar, Textarea.
+
+6) Attività (Tasks/Interazioni)
+
+Vista inbox stile CRM: oggi/scadute/prossime, raggruppo per owner o store.
+
+Log interactions (call, WA, email, sms): outcome, durata, note, allegati.
+
+Componenti: Calendar (agenda), Card, Command (quick create), Select, Checkbox, Alert, Toast.
+
+7) Report
+
+Preimpostati: ROI per campagna, velocity per pipeline, conversion by channel, win-rate per store/owner.
+
+Componenti: Card, Tabs, Select, Chart (Recharts), Table (drill-down).
+
+8) Impostazioni CRM
+
+Pipeline & Stage (+ Playbook per stage: canali consentiti, max tentativi, SLA, quiet hours).
+
+Mappature sorgenti (Meta page_id, WA phone_id, Google Ads customer_id → tenant/RS/store).
+
+Campi custom (per lead/deal/clienti).
+
+Componenti: Form pattern con react-hook-form + zod, Accordion, CodeBlock (JSON), Switch, Input, Textarea, AlertDialog (azioni distruttive).
+
+Barra Scope & Filtri (multi-tenant)
+
+Scope Bar (top):
+Select(Tenant) ▸ Select(Ragione Sociale) ▸ Select(Store) ▸ DateRange ▸ SavedView ▸ Share/Link
+(componenti: Breadcrumb, Select, Popover+Calendar, Button, Command per cerca store/RS)
+
+Filter Dock (right Sheet) comune a tutte le liste/board:
+
+Campagna, Pipeline/Stage, Owner/Team, Canale, Status, Product/Driver, Tag, RS/Store (se non già fissati), Range date.
+
+Pulsanti: Reset, Save as View, Apply.
+
+Componenti shadcn/ui da usare (selezione)
+
+Base: Button, Input, Textarea, Select, Checkbox, RadioGroup, Switch, Badge, Avatar, Separator, Breadcrumb, Tabs, Accordion, Tooltip, DropdownMenu, Dialog, AlertDialog, Sheet, Popover, Calendar, Command, ScrollArea, Skeleton, Toast (sonner).
+
+Tabelle: Table + TanStack Table (sorting, column filters, column visibility, pagination, row selection).
+
+Forms: react-hook-form + zod (validazione coerente con GDPR e consensi).
+
+Grafici: Recharts (KPI dashboard/report).
+
+Tailwind: stile e pattern
+
+Layout: sidebar fissa (w-72), content fluid, header sticky con Scope Bar.
+
+Cards: rounded-2xl shadow-sm border bg-white/60 backdrop-blur (glassmorphism leggero come da tue linee).
+
+Spaziatura: grid 12 col, gap-6 su dashboard; liste con px-4 py-2.
+
+Stati: badge colori HSL per status/stage; ring soft su focus.
+
+Dark mode opzionale con class strategy.
+
+RBAC in UI
+
+Nascondi/disable azioni e tab in base a permessi:
+
+marketing.campaigns.*, crm.leads.*, sales.deals.*, sales.pipelines.*, customer.*, ops.*.
+
+Scope limiter: se ruolo ha store_ids[], filtra automaticamente lo Scope Bar.
+
+Routing suggerito
+/crm
+  /dashboard
+  /campaigns (list, :id)
+/leads (list, :id)
+/pipeline
+  /board?pipelineId=...
+  /deals
+/customers
+  /accounts (list, :id)
+/contacts (list, :id)
+/activities
+/reports
+/settings
+  /pipelines
+  /playbooks
+  /sources
+  /custom-fields
+
+Micro-interazioni che fanno la differenza
+
+Drag&Drop Kanban con auto-prompt N.B.A. (“Invia WA pre-offerta?”).
+
+Inline “quick convert” Lead→Deal (dialog con scelta pipeline + owner).
+
+Saved views condivisibili via URL (querystring).
+
+Command (⌘K) per creare lead/deal/task da ovunque.
+
+Empty states con CTA chiare (es. “Collega Meta CAPI / Aggiungi pipeline”).
+
+Toasts non intrusivi su azioni veloci; Skeleton per caricamenti.
+
+Se vuoi, preparo un mock React (pagina Leads + Pipeline Board) con i componenti shadcn già cablati (toolbar filtri, scope bar, tabella TanStack, Kanban).

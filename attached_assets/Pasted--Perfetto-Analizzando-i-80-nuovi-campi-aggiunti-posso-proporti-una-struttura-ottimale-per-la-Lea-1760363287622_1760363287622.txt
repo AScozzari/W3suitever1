@@ -1,0 +1,54 @@
+
+Perfetto! Analizzando i 80+ nuovi campi aggiunti, posso proporti una struttura ottimale per la Leads Data Table organizzata per priorità d'uso:
+
+🎯 COLONNE ESSENZIALI (Always Visible)
+Identificazione & Contatto
+Nome Completo (firstName + lastName)
+Email (email)
+Telefono (phone)
+Azienda (companyName) - per B2B
+Status (status) - badge colorato
+Lead Score (leadScore) - 0-100 con barra
+Attribution & Tracking
+Store Origine (originStoreName) - PDV che ha generato il lead
+Campagna (campaignId → nome campagna)
+Canale (sourceChannel) - form/social/phone/whatsapp
+GTM Client ID (gtmClientId) - per tracking univoco
+Engagement & Conversion
+Lifecycle Stage (lifecycleStage) - Subscriber/Lead/MQL/SQL
+Probabilità Conversione (conversionProbability) - % con grafico
+Data Creazione (createdAt)
+Owner (ownerUserId → nome venditore)
+📋 COLONNE OPZIONALI (Filtri/Espandibili)
+Business Intelligence
+Tipo Cliente (customerType) - B2B/B2C
+Budget Range (budgetRange.min - budgetRange.max)
+Settore (companySector)
+Timeframe Acquisto (purchaseTimeframe)
+Compliance Italiana
+Codice Fiscale (fiscalCode)
+Partita IVA (vatNumber)
+PEC (pecEmail)
+Analytics Avanzate
+Engagement Score (engagementScore)
+Form Completati (totalFormsCompleted / totalFormsStarted)
+PDV Visitati (storesVisited.length)
+Prodotti Visti (gtmProductsViewed)
+AI Insights
+AI Sentiment (aiSentimentScore) - grafico sentiment
+Valore Predetto (aiPredictedValue) - LTV stimato
+Intent Signals (aiIntentSignals) - badge segnali
+🎨 LAYOUT CONSIGLIATO
+┌─────────────────────────────────────────────────────────────┐
+│ [📊 Score] [👤 Nome] [📧 Email] [📱 Phone] [🏢 Store] [🎯 Status] │
+│    85      Mario    mario@...  +39...      PdV Roma   🟢 Hot     │
+│    72      Laura    laura@...  +39...      PdV Milano 🟡 Warm    │
+└─────────────────────────────────────────────────────────────┘
+      ↓ Espandibile per vedere dettagli completi ↓
+Azioni Quick:
+
+👁️ View Details → mostra tutti i campi in modal
+📞 Contatta → apre dialog con cronologia completa
+🔄 Converti → crea customer/deal
+🤖 AI Enrich → lancia enrichment automatico
+Vuoi che implementi questa struttura nella LeadsPage con filtri avanzati e visualizzazione intelligente?

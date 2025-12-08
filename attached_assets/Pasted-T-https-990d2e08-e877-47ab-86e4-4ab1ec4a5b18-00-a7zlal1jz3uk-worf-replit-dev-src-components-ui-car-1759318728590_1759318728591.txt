@@ -1,0 +1,44 @@
+T https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+NotFound.tsx:19  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/button.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:24  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/input.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:21  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:26  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/scroll-area.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:25  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/badge.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:27  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/select.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:29  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/use-toast.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:28  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/dialog.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:30  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useWorkflowTemplates.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:31  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useWorkflowDashboard.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:32  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/WorkflowBuilder.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:35  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/styles/workflow-builder.css net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:22  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useTabRouter.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:25  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useAuthReadiness.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:26  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useUsers.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:34  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/CreateTeamModal.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+WorkflowManagementPage.tsx:33  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/table.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:27  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useNotifications.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:34  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/avatar.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:33  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/progress.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:28  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/types/index.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:36  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/skeleton.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:35  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/alert.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:74  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/utils/request-status.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:77  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Documents/PayslipManager.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:76  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Shifts/ShiftsCalendar.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:38  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/label.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:75  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TimeTracking/UnifiedClockingPanel.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:78  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Documents/DocumentGrid.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:80  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Documents/DocumentViewer.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:79  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Documents/DocumentCategories.tsx 502 (Bad Gateway)Understand this error
+MyPortal.tsx:82  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/hooks/useLeaveManagement.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:87  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/QuickActions.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+DashboardPage.tsx:21  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/services/ApiService.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+MyPortal.tsx:86  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/AvatarSelector.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+StandardFieldsDemo.tsx:27  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Leave/forms/StandardFields.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+SettingsPage.tsx:28  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/AI/AISettingsPage.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+SettingsPage.tsx:35  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/lib/validation/italian-business-validation.ts net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=26-XUttaJCRv' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT

@@ -1,0 +1,70 @@
+ingsPage: useEffect triggered - loading data...
+SettingsPage.tsx:648 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+SettingsPage.tsx:645 🆕 SettingsPage: useEffect triggered - loading data...
+SettingsPage.tsx:648 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/attendance/store-coverage?date=2025-10-07&storeId=all 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=53f69fa7:1097
+run @ @tanstack_react-query.js?v=53f69fa7:795
+(anonymous) @ @tanstack_react-query.js?v=53f69fa7:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=53f69fa7:816
+Promise.catch
+run @ @tanstack_react-query.js?v=53f69fa7:799
+start @ @tanstack_react-query.js?v=53f69fa7:838
+fetch @ @tanstack_react-query.js?v=53f69fa7:1144
+executeFetch_fn @ @tanstack_react-query.js?v=53f69fa7:1639
+onSubscribe @ @tanstack_react-query.js?v=53f69fa7:1335
+subscribe @ @tanstack_react-query.js?v=53f69fa7:24
+(anonymous) @ @tanstack_react-query.js?v=53f69fa7:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=53f69fa7:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=53f69fa7:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=53f69fa7:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=53f69fa7:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=53f69fa7:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+flushSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:18959
+scheduleRefresh @ chunk-ZHRYBLGQ.js?v=53f69fa7:20004
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:228
+performReactRefresh @ @react-refresh:217
+(anonymous) @ @react-refresh:608
+setTimeout
+(anonymous) @ @react-refresh:598
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:648
+(anonymous) @ HRManagementPage.tsx:5289
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+SettingsPage.tsx:650 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, warnings: Array(1)}
+SettingsPage.tsx:663 📝 Setting state with data: {legalEntities: 16, users: 23, stores: 0}
+SettingsPage.tsx:650 📦 SettingsPage: loadSettingsData result: {success: false, data: {…}, warnings: Array(3)}
+SettingsPage.tsx:657 Failed to load settings data: undefined
+overrideMethod @ hook.js:608
+loadData @ SettingsPage.tsx:657
+await in loadData
+(anonymous) @ SettingsPage.tsx:684
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=53f69fa7:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=53f69fa7:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=53f69fa7:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=53f69fa7:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this error
+SettingsPage.tsx:677 📋 Suppliers will be loaded via TanStack Query automatically

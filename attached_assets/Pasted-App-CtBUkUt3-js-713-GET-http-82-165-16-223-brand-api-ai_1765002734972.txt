@@ -1,0 +1,124 @@
+App-CtBUkUt3.js:713  GET http://82.165.16.223/brand-api/ai/agents?page=1&limit=25 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:713
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:713  GET http://82.165.16.223/brand-api/ai/agents?page=1&limit=25 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:713
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:713  GET http://82.165.16.223/brand-api/ai/agents?page=1&limit=25 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:713
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:767  GET http://82.165.16.223/brand-api/wms/products 401 (Unauthorized)
+getProducts @ App-CtBUkUt3.js:767
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:767  GET http://82.165.16.223/brand-api/wms/categories 401 (Unauthorized)
+getCategories @ App-CtBUkUt3.js:767
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:767  GET http://82.165.16.223/brand-api/wms/suppliers 401 (Unauthorized)
+getSuppliers @ App-CtBUkUt3.js:767
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:767  GET http://82.165.16.223/brand-api/wms/product-types 401 (Unauthorized)

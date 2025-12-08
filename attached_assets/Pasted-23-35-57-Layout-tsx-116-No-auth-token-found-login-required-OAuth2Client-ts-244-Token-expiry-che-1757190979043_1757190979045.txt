@@ -1,0 +1,237 @@
+23:35:57
+Layout.tsx:116 No auth token found - login required
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:35:58, Token expires: 23:35:57
+Layout.tsx:116 No auth token found - login required
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:00, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:02, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:06, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error

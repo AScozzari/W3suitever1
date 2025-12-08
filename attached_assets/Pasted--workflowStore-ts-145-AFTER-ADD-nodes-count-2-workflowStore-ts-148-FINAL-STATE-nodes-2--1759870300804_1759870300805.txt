@@ -1,0 +1,165 @@
+
+workflowStore.ts:145 🏪 AFTER ADD: nodes count = 2
+workflowStore.ts:148 🏪 FINAL STATE: nodes = (2) [{…}, {…}]
+WorkflowBuilder.tsx:222 🎛️ Opening config panel for node: task-status-changed-1759870274720
+2@radix-ui_react-select.js?v=53f69fa7:879 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-select.js?v=53f69fa7:879:13
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=53f69fa7:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=53f69fa7:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=53f69fa7:15946:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=53f69fa7:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=53f69fa7:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=53f69fa7:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=53f69fa7:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=53f69fa7:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=53f69fa7:19137:13)
+(anonymous) @ @radix-ui_react-select.js?v=53f69fa7:879
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=53f69fa7:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=53f69fa7:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=53f69fa7:15946
+callCallback2 @ chunk-ZHRYBLGQ.js?v=53f69fa7:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=53f69fa7:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=53f69fa7:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=53f69fa7:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=53f69fa7:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this error
+2@radix-ui_react-select.js?v=53f69fa7:879 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-select.js?v=53f69fa7:879:13
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=53f69fa7:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=53f69fa7:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=53f69fa7:15946:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=53f69fa7:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=53f69fa7:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=53f69fa7:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=53f69fa7:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=53f69fa7:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=53f69fa7:19137:13)
+(anonymous) @ @radix-ui_react-select.js?v=53f69fa7:879
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=53f69fa7:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=53f69fa7:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=53f69fa7:15946
+callCallback2 @ chunk-ZHRYBLGQ.js?v=53f69fa7:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=53f69fa7:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=53f69fa7:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=53f69fa7:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=53f69fa7:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=53f69fa7:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=53f69fa7:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this error
+2hook.js:608 The above error occurred in the <SelectItem> component:
+
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=53f69fa7:852:7
+    at _c7 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/select.tsx:127:12)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-5CSRXGAS.js?v=53f69fa7:41:15
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=53f69fa7:763:13
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-5CSRXGAS.js?v=53f69fa7:41:15
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=53f69fa7:306:58
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-Y5AAV5I6.js?v=53f69fa7:244:22
+    at SelectPortal
+    at _c3 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/select.tsx:60:12)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at CollectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-5CSRXGAS.js?v=53f69fa7:31:13)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at Popper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-RYXUWBRH.js?v=53f69fa7:69:11)
+    at Select (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=53f69fa7:94:5)
+    at div
+    at div
+    at TaskTriggerConfig (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/NodeConfigPanel.tsx:2046:30)
+    at div
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-Y5AAV5I6.js?v=53f69fa7:47:7
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-ZPSUWVLR.js?v=53f69fa7:29:5
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-GVKGBQLT.js?v=53f69fa7:239:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-GVKGBQLT.js?v=53f69fa7:162:58
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=53f69fa7:24:11)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-GVKGBQLT.js?v=53f69fa7:153:64
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=53f69fa7:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7IUWE4IP.js?v=53f69fa7:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-Y5AAV5I6.js?v=53f69fa7:244:22
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=53f69fa7:24:11)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at DialogPortal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-GVKGBQLT.js?v=53f69fa7:115:11)
+    at _c3 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/dialog.tsx:45:12)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=53f69fa7:38:15)
+    at Dialog (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-GVKGBQLT.js?v=53f69fa7:56:5)
+    at NodeConfigPanel (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/NodeConfigPanel.tsx:24:43)
+    at div
+    at WorkflowBuilderContent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/WorkflowBuilder.tsx:63:35)
+    at BatchProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@xyflow_react.js?v=53f69fa7:5970:36)
+    at ReactFlowProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@xyflow_react.js?v=53f69fa7:8027:44)
+    at WorkflowBuilder
+    at div
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:198:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:94:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:532:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:177:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:35:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=53f69fa7:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=53f69fa7:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:28:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=53f69fa7:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=53f69fa7:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=53f69fa7:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=53f69fa7:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=53f69fa7:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=53f69fa7:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=53f69fa7:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=53f69fa7:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=53f69fa7:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=53f69fa7:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=53f69fa7:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=53f69fa7:18627Understand this error
+chunk-ZHRYBLGQ.js?v=53f69fa7:9129 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-select.js?v=53f69fa7:879:13
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=53f69fa7:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=53f69fa7:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=53f69fa7:15946:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=53f69fa7:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=53f69fa7:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=53f69fa7:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=53f69fa7:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=53f69fa7:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=53f69fa7:18879:28)

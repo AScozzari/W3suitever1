@@ -1,0 +1,58 @@
+Hai ragione, devo effettivamente implementare i cambiamenti. Sistemiamo sia il modal utenti che il modal ruoli con la stessa logica di gestione scope gerarchica.
+
+
+Created task list
+Iniziamo cercando il codice attuale per il modal utenti e la gestione dello scope:
+
+
+Executed rg -U --multiline-dotall -B 20 -A 100 -n 'scopeLevel.*ragioni_sociali.*Ragioni Sociali.*Seleziona' apps/frontend/web/src/pages/SettingsPage.tsx
+Ora cerchiamo dove c'è la selezione delle ragioni sociali e punti vendita con i tab:
+
+
+Executed rg -U --multiline-dotall -B 10 -A 150 -n 'activeSubTab.*setActiveSubTab.*Ragioni Sociali.*Punti Vendita' apps/frontend/web/src/pages/SettingsPage.tsx
+Cerchiamo meglio la sezione con i tab per ragioni sociali e punti vendita:
+
+
+Executed grep -n "activeTab === 'ragioni_sociali'" apps/frontend/web/src/pages/SettingsPage.tsx | head -5
+Cerchiamo la parte dove c'è la selezione dei punti vendita dopo la selezione delle ragioni sociali:
+
+
+Executed rg -B 30 -A 50 -n 'Seleziona Punti Vendita|selectedStores|punti_vendita.*checkbox' apps/frontend/web/src/pages/SettingsPage.tsx | head -n 50
+Cerchiamo dove viene mostrata effettivamente la selezione delle ragioni sociali e punti vendita nel modal utente:
+
+
+Executed grep -n "scopeLevel === 'ragioni_sociali'" apps/frontend/web/src/pages/SettingsPage.tsx | head -3
+Ora vediamo la sezione completa partendo dalla riga 4509:
+
+
+Opened apps/frontend/web/src/pages/SettingsPage.tsx
+Ora cerchiamo il modal dei ruoli per applicare la stessa logica:
+
+
+Executed rg -U --multiline-dotall -B 20 -A 100 -n 'showCreateRoleModal.*true.*Gestione Ruoli|selectedScope.*organization.*legalEntities' apps/frontend/web/src/pages/SettingsPage.tsx
+Ora vediamo il modal dei ruoli per capire la sua struttura:
+
+
+Executed grep -n "showCreateRoleModal &&" apps/frontend/web/src/pages/SettingsPage.tsx | head -1
+Ora cerchiamo dove c'è la gestione dei ruoli:
+
+
+Executed grep -n "gestione-ruoli" apps/frontend/web/src/pages/SettingsPage.tsx | head -5
+Vediamo la sezione gestione ruoli dalla riga 1280:
+
+
+Opened apps/frontend/web/src/pages/SettingsPage.tsx
+Continuiamo a vedere il modal dei ruoli per capire dove applicare i cambiamenti:
+
+
+Opened apps/frontend/web/src/pages/SettingsPage.tsx
+Ora applico i fix sia per il modal utenti che per il modal ruoli. Semplificherò l'interfaccia e rimuoverò la perdita delle selezioni quando si cambia scope:
+
+
+Edited apps/frontend/web/src/pages/SettingsPage.tsx
+Aggiorniamo i task:
+
+Fix persistenza selezioni quando si cambia scope level
+Rimuovere doppi tab e semplificare UI selezione gerarchica
+Applicare stessa logica al modal gestione ruoli
+Testare il comportamento completo

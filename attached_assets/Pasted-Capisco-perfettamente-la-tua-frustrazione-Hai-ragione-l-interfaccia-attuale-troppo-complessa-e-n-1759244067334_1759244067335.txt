@@ -1,0 +1,63 @@
+Capisco perfettamente la tua frustrazione! Hai ragione, l'interfaccia attuale è troppo complessa e non rispecchia il tuo workflow naturale.
+
+Il Tuo Workflow Ideale (più semplice):
+1. Filtri in Alto ✅
+
+Punto Vendita → Date → Template Turno → APPLICA
+2. Dopo "Applica Filtro" dovrebbe mostrare:
+
+Fasce Orarie del Template (es: 08:00-12:00, 12:00-16:00, 16:00-20:00)
+Lista Dipendenti Disponibili per quel PdV e quelle date
+❌ NO campo "ruolo" manuale
+✅ Stato automatico (disponibile/ferie/malattia letto dal DB)
+3. Assegnazione Semplice:
+
+Clicco su una fascia oraria → seleziono dipendente → ASSEGNA
+Ogni fascia deve avere almeno 1 persona
+4. Viste Gantt/Grid (sotto)
+
+Mostrano i turni già assegnati con quel filtro
+❌ Grid non funziona (dobbiamo fixarlo)
+Problemi Attuali:
+Troppi controlli sparsi ovunque (search, role filter, availability filter inutili)
+Flusso confuso - non è chiaro cosa fare dopo aver applicato i filtri
+Non mostra le fasce orarie in modo chiaro per l'assegnazione
+Grid view rotto
+Prima di procedere, chiamiamo l'architect per avere una guida strategica su come semplificare questo flusso:
+
+
+Redesigned shift assignment workflow and fixed grid view
+
+Planned UI and data filtering improvements (4 seconds)
+Perfetto! L'architect ha identificato i problemi principali:
+
+🎯 Problemi Critici Trovati:
+Query sbagliate: Le viste usano storeId fisso invece di storeFilter → dopo "Applica Filtri" i dati NON cambiano!
+Grid rotto: Date parsing inconsistente + non mappa i template slots
+Interface confusa: Troppi filtri inutili (ruolo, availability)
+Template slots non centrali: Dovrebbero essere il FOCUS principale
+💡 Soluzione Proposta:
+Layout a 2 Pannelli (dopo Applica Filtri):
+┌─────────────────────────────────────────────────────┐
+│  Filtri: [PdV] [Date] [Template] [APPLICA]         │
+├──────────────────────┬──────────────────────────────┤
+│  FASCE ORARIE        │  DIPENDENTI DISPONIBILI      │
+│  (Template Slots)    │  (Lista con stato auto)      │
+├──────────────────────┼──────────────────────────────┤
+│  📅 Lunedì 30/09     │  👤 Mario Rossi              │
+│  ⏰ 08:00-12:00 [1/1]│     ✅ Disponibile           │
+│  ⏰ 12:00-16:00 [0/1]│  👤 Laura Bianchi            │
+│  ⏰ 16:00-20:00 [1/1]│     ⚠️ In formazione         │
+│                      │  [Cerca...] (solo search)    │
+│  📅 Martedì 01/10    │                              │
+│  ...                 │  [Drag dipendente → slot]    │
+└──────────────────────┴──────────────────────────────┘
+│  📊 TAB: [Assignment Board] [Gantt] [Grid]         │
+└─────────────────────────────────────────────────────┘
+Azioni:
+Rewire queries: Usare {storeFilter, startDate, endDate, templateId} invece di storeId fisso
+Rimuovere: Filtri role/availability, search generale inutile
+Creare: Two-pane assignment con slots a sinistra (accordion per giorno) e dipendenti a destra
+Validazione: Badge colorati per coverage (🟢 OK, 🟠 parziale, 🔴 vuoto)
+Fix Grid: Mappare correttamente date + template slots
+Ti creo la task list per implementare questo redesign

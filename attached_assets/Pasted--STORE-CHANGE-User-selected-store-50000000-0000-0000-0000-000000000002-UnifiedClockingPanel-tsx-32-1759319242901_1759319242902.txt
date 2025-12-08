@@ -1,0 +1,53 @@
+[STORE-CHANGE] User selected store: 50000000-0000-0000-0000-000000000002
+UnifiedClockingPanel.tsx:326 [STORE-CHANGE] Store found, updating FSM context: Corso Buenos Aires, 33 50000000-0000-0000-0000-000000000002
+UnifiedClockingPanel.tsx:329 [STORE-CHANGE] FSM selectStore called
+UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: undefined Store: undefined
+3UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: undefined Store: undefined
+UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: undefined Store: undefined
+5UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: undefined Store: undefined
+UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: undefined Store: undefined
+useTimeAttendanceStrategies.ts:200 [StrategyManager] Selected strategy: qr
+UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: qr Store: undefined
+5UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: qr Store: undefined
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: qr Store: undefined
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/notifications/unread-count 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bceaa3d2:1097
+run @ @tanstack_react-query.js?v=bceaa3d2:795
+start @ @tanstack_react-query.js?v=bceaa3d2:838
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=bceaa3d2:53
+setInterval @ @tanstack_react-query.js?v=bceaa3d2:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=bceaa3d2:1671
+updateTimers_fn @ @tanstack_react-query.js?v=bceaa3d2:1678
+onQueryUpdate @ @tanstack_react-query.js?v=bceaa3d2:1634
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:1262
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:1261
+batch @ @tanstack_react-query.js?v=bceaa3d2:624
+dispatch_fn @ @tanstack_react-query.js?v=bceaa3d2:1260
+setData @ @tanstack_react-query.js?v=bceaa3d2:931
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bceaa3d2:1639
+fetch @ @tanstack_react-query.js?v=bceaa3d2:1449
+refetch @ @tanstack_react-query.js?v=bceaa3d2:1439
+onFocus @ @tanstack_react-query.js?v=bceaa3d2:998
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:2713
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:2712
+batch @ @tanstack_react-query.js?v=bceaa3d2:624
+onFocus @ @tanstack_react-query.js?v=bceaa3d2:2711
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:390
+onFocus @ @tanstack_react-query.js?v=bceaa3d2:389
+(anonymous) @ @tanstack_react-query.js?v=bceaa3d2:376
+listener @ @tanstack_react-query.js?v=bceaa3d2:347Understand this error
+11UnifiedClockingPanel.tsx:250 [QR-EFFECT] Strategy: qr Store: undefined

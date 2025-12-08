@@ -1,0 +1,125 @@
+Sistema Timbratura Avanzato
+Multi-metodo: GPS, NFC, QR, Smart
+00:00:00
+Fuori Turno
+Sistema Timbratura
+Milano Centro
+
+Demo User
+
+Metodo Timbratura
+
+App
+
+GPS
+
+Badge
+
+NFC
+REGISTRA ENTRATA
+🎭 Modalità Demo Attiva
+Database offline - seleziona da punti vendita dimostrativi per continuare. I dati verranno sincronizzati quando il sistema sarà di nuovo online.
+Selezione Punto Vendita (Demo)
+Sistema offline - seleziona uno dei punti vendita dimostrativi
+
+Punti vendita disponibili:
+Scegli un punto vendita demo...
+ℹ️ Le timbrature effettuate in modalità demo verranno salvate localmente e sincronizzate automaticamente quando il sistema tornerà online.
+Ora corrente
+
+21:00:05
+
+Stato
+
+Fuori turno
+Store
+
+Milano Centro
+
+Punto Vendita
+🎭 Modalità Demo Attiva
+Database offline - seleziona da punti vendita dimostrativi per continuare. I dati verranno sincronizzati quando il sistema sarà di nuovo online.
+Selezione Punto Vendita (Demo)
+Sistema offline - seleziona uno dei punti vendita dimostrativi
+
+Punti vendita disponibili:
+Scegli un punto vendita demo...
+ℹ️ Le timbrature effettuate in modalità demo verranno salvate localmente e sincronizzate automaticamente quando il sistema tornerà online.
+Statistiche Rapide
+Oggi
+0:00
+Settimana
+38:45
+Pause
+1:15
+Metodi di Timbratura
+
+GPS
+
+Posizione automatica
+
+
+QR Code
+
+Scansiona QR
+
+
+NFC
+
+Badge virtuale
+
+
+Web
+
+Da browser
+
+
+Smart
+
+Auto-detect
+
+ENTRATA
+GPS
+Rilevamento GPS...
+Ore Oggi
+0:00
+
+Settimana
+38:45
+
+Pause
+1:15
+
+Location
+Non rilevato
+
+Riepilogo
+Presenze
+Analytics
+Distribuzione Ore Settimanale
+Ore Regolari
+34h
+Straordinari
+4h 45m
+Pause
+4h 30m
+Metriche Prestazioni
+Puntualità
+95%
+Presenza
+98%
+Completezza
+92%
+Posizione e Mobilità
+Via Roma 123, Milano, MI
+
+📍 Lat: 45.4642
+📍 Lng: 9.1900
+🎯 Precisione: 15m
+Ultima sincronizzazione: 21:00:05
+
+Sicurezza e Conformità
+Geofencing attivo
+Crittografia SSL/TLS
+Audit log completo
+Sincronizzazione: 98%

@@ -1,0 +1,174 @@
+Ecco il flusso completo:
+
+📦 MCP Server Marketplace - Due Tipi
+┌─────────────────────────────────────────────┐
+│ 📦 NPM/PIP Packages (Auto-Install)          │
+├─────────────────────────────────────────────┤
+│ ✅ Slack (@modelcontextprotocol/slack)      │
+│ ✅ GitHub (npm package)                     │
+│ ✅ Stripe (pip package)                     │
+│ → Installazione: npm install / pip install  │
+└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ 💻 Codice Sorgente (Import Manuale)         │
+├─────────────────────────────────────────────┤
+│ 🔗 GitHub Repository                        │
+│ 📁 Upload ZIP                               │
+│ 📋 Copy & Paste Codice                      │
+│ → Installazione: Import in /mcp-servers/   │
+└─────────────────────────────────────────────┘
+🧙 Wizard Universale
+Step 1: Selezione Server
+Seleziona server MCP:
+○ 📦 Google Workspace (npm package)
+  Auto-install via npm
+○ 💻 Custom Webhook Server (Codice sorgente)
+  Import da GitHub/ZIP
+Step 2A: Auto-Install (Packages)
+🔄 Installando @modelcontextprotocol/slack...
+npm install @modelcontextprotocol/slack
+✅ Package installato
+✅ Dipendenze risolte
+✅ Server registrato
+Step 2B: Import Manuale (Codice)
+Importa codice server:
+• GitHub URL: https://github.com/user/custom-mcp
+  [Clone Repository]
+• Upload ZIP: [Drag & Drop]
+• Paste Codice: [Code Editor]
+→ Salva in: /mcp-servers/custom-mcp/
+Step 3: Configurazione (Identico per Entrambi)
+Configurazione OAuth/API Key
+Type: OAuth 2.0
+Provider: Google
+Scopes: gmail.send, drive.readonly
+[Avvia OAuth Flow]
+Step 4: Test & Summary
+✅ Server installato e configurato!
+Tools disponibili: 12
+- gmail_send
+- drive_upload
+...
+🎯 Struttura Backend
+// Registry supporta ENTRAMBI
+{
+  serverId: 'google-workspace',
+  sourceType: 'npm_package',  // ← o 'custom_source'
+  installMethod: 'npm install @modelcontextprotocol/slack',
+  location: 'node_modules/@modelcontextprotocol/slack'
+}
+{
+  serverId: 'custom-webhook',
+  sourceType: 'custom_source',
+  installMethod: 'manual_import',
+  location: '/mcp-servers/custom-webhook/'
+}
+🚀 Workflow Completo
+1. User clicca [+ Aggiungi] in MCP Dashboard
+   ↓
+2. Wizard mostra marketplace (packages + custom)
+   ↓
+3. User seleziona server
+   ↓
+4. Se package → npm/pip install automatico
+   Se custom → Import da GitHub/ZIP/Code
+   ↓
+5. Configurazione OAuth/API keys
+   ↓
+6. Test connessione + Discovery tools
+   ↓
+7. Server disponibile nei workflow nodes!
+✅ Chiarissimo!
+Quindi sviluppiamo:
+
+✅ Backend registry con support per npm_package e custom_source
+✅ Wizard universale che gestisce entrambi i casi
+✅ Auto-installer per pacchetti npm/pip
+✅ Manual importer per codice custom (GitHub clone, ZIP upload, code paste)
+✅ Unified config per OAuth/API keys (identico per tutti)
+Vuoi che proceda con il task list completo per implementare tutto questo? 🎯
+
+35 seconds of work
+quindi la pagina mcp setting ha bisogno di un refactor completo!!! abbiamo detto che tutti i nodi utilizzano un unico executor mcp anche ai agent mcp?
+
+3 hours ago
+
+Show less
+
+Decided on executor architecture (10 seconds)
+🎯 RISPOSTA CHIARA
+Sì, Refactor Completo MCP Settings!
+La pagina attuale è confusa, serve dashboard moderna con wizard come abbiamo detto.
+
+Executors: 2 Tipi (Non 1!)
+Attento, ci sono 2 executors MCP (non uno solo):
+
+// 1️⃣ MCP CONNECTOR EXECUTOR
+// Per nodi deterministici (singolo tool)
+{
+  nodeType: 'mcp-google-gmail-send',
+  executor: 'mcp-connector-executor',
+  config: {
+    serverId: 'google-workspace-server',
+    toolName: 'gmail_send',
+    parameters: { to: '{{lead.email}}' }
+  }
+}
+→ Esegue 1 tool MCP specifico
+// 2️⃣ AI MCP EXECUTOR  
+// Per orchestrazione AI (multi-tool)
+{
+  nodeType: 'ai-mcp-orchestrator',
+  executor: 'ai-mcp-executor', // ← Diverso!
+  config: {
+    mcpServerIds: ['google-workspace', 'slack'],
+    aiInstructions: 'Invia email e notifica team'
+  }
+}
+→ AI decide quali tool chiamare (può chiamarne 1, 5, 10...)
+MA... Stesso Sistema Sotto!
+Entrambi usano:
+
+✅ mcpClientService per comunicare con server MCP
+✅ mcpServerCredentials con serverId per auth
+✅ Stesso sistema di discovery tools
+✅ Stesse credenziali OAuth
+Differenza:
+
+Connector = Tu scegli tool → esecuzione diretta
+AI Agent = AI sceglie tool(s) → orchestrazione intelligente
+Da Rimuovere
+❌ Executors dedicati (questi vanno eliminati):
+
+gmail-send-executor (GmailSendExecutor)
+aws-s3-executor
+stripe-executor
+Tutti i file *-executors.ts legacy
+📋 Quindi il Refactor Include:
+Backend: Rimuovi executors dedicati, tieni solo mcp-connector-executor + ai-mcp-executor
+Frontend: Dashboard nuova con wizard installazione
+Credenziali: Tutte con serverId obbligatorio
+Nodi: Config con serverId per MCP Connector
+Discovery: Auto-rileva tools da server installati
+Vuoi che prepari il task list completo per tutto il refactor? 🚀
+
+29 seconds of work
+quindi dobbiamo sistemare i nodi dal codice diretto api e lasciare solo mcp ed eliminare gli executor dedicati ed riallineare il codice e db alla ns nuova visione ok?
+
+3 hours ago
+
+1 message & 1 action
+## ✅ **ESATTO! Hai Capito Perfettamente!** Ecco cosa faremo: ### 🎯 **Piano di Refactoring MCP** **ELIMINARE**: - ❌ `GmailSendExecutor` e tutti gli executors dedicati API dirette - ❌ File `google-workspace-executors.ts`, `aws-executors.ts` - ❌ Mapping nodi → executors dedicati nel registry - ❌ Credenziali senza `serverId` (query solo per `oauthProvider`) **MANTENERE**: - ✅ `MCPConnectorExecutor` (per nodi deterministici) - ✅ `AIMCPExecutor` (per orchestrazione AI) - ✅ `mcpClientService` (comunicazione con server MCP) **CREARE**: - 🆕 Dashboard MCP Settings moderna - 🆕 Wizard installazione server (npm packages + custom source) - 🆕 Discovery automatico tools - 🆕 Unified auth flow **AGGIORNARE**: - 🔄 Nodi workflow con `serverId` nella config - 🔄 DB: tutte credenziali con `serverId` obbligatorio - 🔄 Frontend nodi per includere selezione server + tool - 🔄 Seed MCP servers per installazione locale ### 📋 **Approccio Implementazione** 1. **Backend Cleanup** - Rimuovo executors dedicati, aggiorno mapping 2. **DB Migration** - Aggiungo `serverId` a credenziali esistenti 3. **Node Definitions** - Config con `serverId` + `toolName` 4. **MCP Dashboard** - UI moderna con server installati/disponibili 5. **Installation Wizard** - Multi-step per packages e custom source 6. **Testing** - Verifico Gmail, Slack funzionano con MCP puro Ti preparo la task list completa! 🚀
+quindi se installiamo server custom mcp ogni volta dobbiamo riconfigurare i nodi dedicati ?
+
+3 hours ago
+
+1 message & 1 action
+## ❌ **NO! Proprio il Contrario!** Con la nuova architettura **NON servono nodi dedicati**! Ecco perché: ### 🎯 **Architettura Pulita MCP** ```typescript // UNICO nodo generico "MCP Connector" { nodeType: 'mcp-connector', // ← Generico! executor: 'mcp-connector-executor', config: { serverId: 'custom-webhook-server', // ← Selezioni da dropdown toolName: 'send_notification', // ← Auto-discovery! parameters: { message: '{{lead.email}}', priority: 'high' } } } ``` ### 🔄 **Workflow Installazione → Uso** ``` 1. Installi server custom "Webhook MCP" ↓ 2. Sistema fa auto-discovery: GET /mcp/tools → [ {name: 'send_notification', schema: {...}}, {name: 'get_status', schema: {...}} ] ↓ 3. Salva in DB: mcpServers + lista tools ↓ 4. Nel workflow builder: - Aggiungi nodo "MCP Connector" - Server: [Webhook MCP ▼] ← Appare automaticamente! - Tool: [send_notification ▼] ← Appare automaticamente! - Parameters: [Form dinamico] ← Generato da schema! ``` ### 🎨 **UI Dinamica nel Workflow Builder** ``` ┌─────────────────────────────────────┐ │ Nodo: MCP Connector │ ├─────────────────────────────────────┤ │ Server MCP: │ │ [Google Workspace ▼] │ │ • Slack │ │ • Stripe │ │ • Custom Webhook │ │ │ │ Tool: │ │ [gmail_send ▼] │ │ • gmail_read │ │ • drive_upload │ │ • calendar_create │ │ │ │ Parametri (auto-generated): │ │ To: [{{lead.email}}] │ │ Subject: [Benvenuto] │ │ Body: [...] │ └─────────────────────────────────────┘ ``` ### ✅ **Vantaggi** **Un Solo Nodo** → Funziona con TUTTI i server MCP - Installi Google → Appare in dropdown - Installi Stripe → Appare in dropdown - Installi Custom → Appare in dropdown **Zero Codice** → Nessuna modifica al codice - Discovery automatico - Form generato da JSON schema - Validazione automatica **Scalabile** → Infiniti server, zero manutenzione - 1 server → 1 nodo generico - 100 server → 1 nodo generico (stesso!) ## 🎯 **Quindi NO, Non Riconfiguri Nodi!** Ogni volta che installi un server: 1. ✅ Wizard lo installa 2. ✅ Discovery rileva tools 3. ✅ Appare automaticamente nel dropdown del nodo "MCP Connector" 4. ✅ Selezioni server + tool + parametri 5. ✅ FATTO! **Un solo nodo MCP Connector per governarli tutti!** 💍 Vuoi che proceda con la task list per implementare questa architettura pulita? 🚀
+intendevo i nodi azione oltre ad essere configurati per l'azione come li colleghiamo al server mcp specifico?
+
+3 hours ago
+
+1 message & 1 action
+## 💡 **AH! Capito la Domanda!** Il collegamento avviene tramite **`serverId` nella config del nodo**! Ecco come: ### 🔗 **Collegamento Nodo → Server MCP** ```typescript // Nodo nel workflow { id: 'node-123', type: 'mcp-connector', config: { serverId: 'google-workspace-server', // ← COLLEGAMENTO! toolName: 'gmail_send', parameters: { to: '{{lead.email}}', subject: 'Test' } } } ``` ### 🔄 **Flusso Esecuzione** ``` 1. Workflow esegue nodo "node-123" ↓ 2. MCPConnectorExecutor riceve il nodo ↓ 3. Legge config.serverId = 'google-workspace-server' ↓ 4. Cerca credenziali nel DB: SELECT * FROM mcpServerCredentials WHERE serverId = 'google-workspace-server' AND tenantId = context.tenantId AND userId = context.userId ↓ 5. mcpClientService si connette al server ↓ 6. Esegue tool 'gmail_send' con parametri ``` ### 🎨 **UI nel Workflow Builder** Quando configuri il nodo: ``` ┌─────────────────────────────────────┐ │ Configura Nodo MCP Connector │ ├─────────────────────────────────────┤ │ Seleziona Server MCP: │ │ ┌─────────────────────────────────┐ │ │ │ ○ Google Workspace (✅ OAuth) │ │ │ │ 10 tools disponibili │ │ │ │ │ │ │ │ ○ Slack (⚠️ Non configurato) │ │ │ │ 5 tools disponibili │ │ │ │ │ │ │ │ ○ Custom Webhook (✅ API Key) │ │ │ │ 3 tools disponibili │ │ │ └─────────────────────────────────┘ │ │ │ │ Seleziona Tool: │ │ [gmail_send ▼] │ │ │ │ Parametri: │ │ To: [{{lead.email}}] │ └─────────────────────────────────────┘ Quando clicchi "Salva": → Salva serverId = 'google-workspace-server' → Il nodo è collegato a quel server! ``` ### 💾 **Database** ```sql -- mcpServers table id: 'google-workspace-server' name: 'Google Workspace' tenantId: 'tenant-123' connectionConfig: {...} -- mcpServerCredentials table serverId: 'google-workspace-server' ← Collega al server! oauthProvider: 'google' userId: 'user-456' encryptedCredentials: {...} -- Nodo nel workflow JSON config: { serverId: 'google-workspace-server' ← Stesso ID! toolName: 'gmail_send' } ``` ## ✅ **Quindi:** **Collegamento** = `serverId` nel nodo config - Ogni server MCP ha un ID univoco - Nodo specifica quale server usare tramite `serverId` - Executor usa `serverId` per trovare server + credenziali - **Zero ambiguità!** **Se installi nuovo server custom**: 1. Wizard crea record in `mcpServers` (id: `custom-webhook-server`) 2. Configuri auth → Record in `mcpServerCredentials` (serverId: `custom-webhook-server`) 3. Nel workflow builder → Selezioni "Custom Webhook" → Salva `serverId: 'custom-webhook-server'` 4. Esecuzione → Executor usa quel serverId per trovare tutto! Chiaro ora? 🎯
+prepara task list , unico dubbio e che qua

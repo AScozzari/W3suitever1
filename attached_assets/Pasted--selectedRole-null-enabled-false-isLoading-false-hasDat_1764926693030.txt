@@ -1,0 +1,186 @@
+{selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+index-Z14HA__T.js:2  GET http://82.165.16.223/api/rbac/permissions 403 (Forbidden)
+queryFn @ index-Z14HA__T.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+SettingsPage-BqE9xDri.js:1 [AI-SETTINGS] 🔍 Settings changed: {loading: false, error: null, hasData: false, dataReceived: undefined}
+index-Z14HA__T.js:2  GET http://82.165.16.223/api/ai/agents 500 (Internal Server Error)
+queryFn @ index-Z14HA__T.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-Z14HA__T.js:2 🔍 Token expiry check: Current time: 10:24:36, Token expires: 10:38:42
+index-Z14HA__T.js:2 🔍 Token expiry check: Current time: 10:24:36, Token expires: 10:38:42
+index-Z14HA__T.js:2  GET http://82.165.16.223/api/rbac/roles?0=v&1=3 500 (Internal Server Error)
+queryFn @ index-Z14HA__T.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-Z14HA__T.js:2 🔍 Token expiry check: Current time: 10:24:36, Token expires: 10:38:42
+index-Z14HA__T.js:2  GET http://82.165.16.223/api/reference/payment-methods 500 (Internal Server Error)
+Jt @ index-Z14HA__T.js:2
+await in Jt
+makeRequest @ ApiService-BOYM_EOv.js:1
+getPaymentMethods @ ApiService-BOYM_EOv.js:1
+queryFn @ SettingsPage-BqE9xDri.js:1
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+installHook.js:1 ⚠️ ApiService: Failed request to /api/reference/payment-methods: Errore interno durante recupero metodi di pagamento. Riprova più tardi.
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-BOYM_EOv.js:1
+await in makeRequest
+getPaymentMethods @ ApiService-BOYM_EOv.js:1
+queryFn @ SettingsPage-BqE9xDri.js:1
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this warning
+index-Z14HA__T.js:2  GET http://82.165.16.223/api/reference/payment-methods 500 (Internal Server Error)
+queryFn @ index-Z14HA__T.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-Z14HA__T.js:2 🔍 Token expiry check: Current time: 10:24:37, Token expires: 10:38:42
+index-Z14HA__T.js:2  GET http://82.165.16.223/api/ai/agents 500 (Internal Server Error)
+queryFn @ index-Z14HA__T.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-Z14HA__T.js:2 🔍 Token expiry check: Current time: 10:24:44, Token expires: 10:38:42
+installHook.js:1 Fri Dec 05 2025 10:24:44 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connect timed out. Exceeded time set in configuration.connectionTimeout: 10s.
+overrideMethod @ installHook.js:1
+print @ Layout-qWkoC8sD.js:58
+genericLog @ Layout-qWkoC8sD.js:58
+genericLog @ Layout-qWkoC8sD.js:58
+warn @ Layout-qWkoC8sD.js:58
+(anonymous) @ Layout-qWkoC8sD.js:75
+setTimeout
+(anonymous) @ Layout-qWkoC8sD.js:75
+_connect @ Layout-qWkoC8sD.js:75
+connect @ Layout-qWkoC8sD.js:75
+start @ Layout-qWkoC8sD.js:86
+(anonymous) @ Layout-qWkoC8sD.js:86
+(anonymous) @ Layout-qWkoC8sD.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this warning
+Layout-qWkoC8sD.js:75 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: WebSocket is closed before the connection is established.

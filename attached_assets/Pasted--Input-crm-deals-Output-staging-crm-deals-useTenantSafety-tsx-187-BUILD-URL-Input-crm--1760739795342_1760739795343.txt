@@ -1,0 +1,315 @@
+] Input: "crm/deals" → Output: "/staging/crm/deals"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/persons" → Output: "/staging/crm/persons"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/deals" → Output: "/staging/crm/deals"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+AnalyticsPage.tsx:140  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/executive-summary?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:140
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+AnalyticsPage.tsx:185  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/store-comparison?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:185
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+AnalyticsPage.tsx:149  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/campaign-performance?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:149
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+AnalyticsPage.tsx:158  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/channel-attribution?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:158
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+AnalyticsPage.tsx:167  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/ai-score-distribution?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:167
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+AnalyticsPage.tsx:176  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/gtm-events?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:176
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/gtm-events","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/executive-summary","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/store-comparison","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/campaign-performance","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/channel-attribution","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/ai-score-distribution","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+AnalyticsPage.tsx:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/analytics/conversion-funnel?dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z 401 (Unauthorized)
+queryFn @ AnalyticsPage.tsx:194
+fetchFn @ @tanstack_react-query.js?v=dc7ce058:1097
+run @ @tanstack_react-query.js?v=dc7ce058:795
+start @ @tanstack_react-query.js?v=dc7ce058:838
+fetch @ @tanstack_react-query.js?v=dc7ce058:1144
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+hook.js:608 Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["/api/crm/analytics/conversion-funnel","dateFrom=2025-09-17T22%3A21%3A55.062Z&dateTo=2025-10-17T22%3A21%3A55.062Z"]
+overrideMethod @ hook.js:608
+fetch @ @tanstack_react-query.js?v=dc7ce058:1147
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=dc7ce058:1639
+onSubscribe @ @tanstack_react-query.js?v=dc7ce058:1335
+subscribe @ @tanstack_react-query.js?v=dc7ce058:24
+(anonymous) @ @tanstack_react-query.js?v=dc7ce058:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=dc7ce058:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=dc7ce058:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=dc7ce058:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=dc7ce058:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=dc7ce058:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=dc7ce058:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=dc7ce058:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=dc7ce058:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=dc7ce058:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=dc7ce058:18627Understand this error
+5Error: <path> attribute d: Expected moveto path command ('M' or 'm'), "Z"

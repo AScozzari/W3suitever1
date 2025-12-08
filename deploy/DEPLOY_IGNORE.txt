@@ -1,0 +1,89 @@
+# =============================================================================
+# VPS DEPLOY IGNORE - Files NEVER overwritten during deployment
+# =============================================================================
+# These files are managed ONLY on the VPS and contain production-specific
+# configurations. The deploy script will NEVER touch these files.
+# =============================================================================
+
+# === ENVIRONMENT & SECRETS ===
+.env
+.env.production
+.env.local
+.env.backup
+
+# === PM2 CONFIGURATION ===
+ecosystem.config.js
+ecosystem.config.cjs
+pm2.config.js
+~/.pm2/*
+/root/.pm2/*
+
+# === NGINX CUSTOMIZATIONS ===
+/etc/nginx/sites-enabled/*
+/etc/nginx/sites-available/*
+/etc/nginx/conf.d/*
+nginx.conf.local
+
+# === SSL/TLS CERTIFICATES ===
+*.key
+*.pem
+*.crt
+*.csr
+/etc/letsencrypt/*
+
+# === VPS CUSTOM FILES ===
+custom/
+custom.css
+custom.js
+branding/
+uploads/
+media/
+
+# === SECRETS & KEYS ===
+*-secrets.json
+service-account*.json
+*.p12
+*.pfx
+google-credentials.json
+firebase-*.json
+
+# === NODE MODULES (managed on VPS) ===
+node_modules/
+package-lock.json
+
+# === LOCAL DEVELOPMENT ===
+.replit
+replit.nix
+.upm/
+.cache/
+.config/
+.local/
+
+# === LOGS & RUNTIME ===
+*.log
+logs/
+tmp/
+temp/
+.pm2/
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# === DATABASE ===
+*.sql
+*.dump
+backups/
+db-backup/
+
+# === GIT (deploy uses rsync, not git) ===
+.git/
+.gitignore
+
+# === GENERATED ON VPS ===
+CURRENT_RELEASE
+DEPLOY_HISTORY.log
+.deploy-lock
+postDeploy.sh

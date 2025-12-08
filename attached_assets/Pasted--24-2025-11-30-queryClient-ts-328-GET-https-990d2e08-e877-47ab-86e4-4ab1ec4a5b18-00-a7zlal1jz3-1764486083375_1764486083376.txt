@@ -1,0 +1,54 @@
+-24 -> 2025-11-30
+queryClient.ts:328  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts/planning?storeId=50000000-0000-0000-0000-000000000002&startDate=2025-11-24&endDate=2025-11-30 500 (Internal Server Error)
+apiRequest @ queryClient.ts:328
+loadPlanning @ ShiftPlanningWorkspace.tsx:566
+(anonymous) @ ShiftPlanningWorkspace.tsx:594
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+installHook.js:1 [PLANNING] Error loading planning: Error: 500: Internal Server Error
+    at apiRequest (queryClient.ts:365:19)
+    at async loadPlanning (ShiftPlanningWorkspace.tsx:566:26)
+overrideMethod @ installHook.js:1
+loadPlanning @ ShiftPlanningWorkspace.tsx:588
+await in loadPlanning
+(anonymous) @ ShiftPlanningWorkspace.tsx:594
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+queryClient.ts:328  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts/planning?storeId=50000000-0000-0000-0000-000000000002&startDate=2025-11-24&endDate=2025-11-30 500 (Internal Server Error)
+apiRequest @ queryClient.ts:328
+loadPlanning @ ShiftPlanningWorkspace.tsx:566
+(anonymous) @ ShiftPlanningWorkspace.tsx:594
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+installHook.js:1 [PLANNING] Error loading planning: Error: 500: Internal Server Error
+    at apiRequest (queryClient.ts:365:19)
+    at async loadPlanning (ShiftPlanningWorkspace.tsx:566:26)

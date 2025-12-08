@@ -1,0 +1,5 @@
+packages:
+  - "apps/frontend/*"
+  - "apps/backend/*"
+  - "packages/*"
+  - "apps/backend/workers/*"

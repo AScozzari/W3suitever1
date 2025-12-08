@@ -1,0 +1,34 @@
+memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:296 [API-REQUEST] 📡 Making API request to: /api/roles with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:228 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/payment-methods 404 (Not Found)
+2
+SettingsPage.tsx:624 📋 Suppliers will be loaded via TanStack Query automatically
+WorkflowManagementPage.tsx:2188 Uncaught ReferenceError: handleDrop is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:2188:25)
+WorkflowManagementPage.tsx:2188 Uncaught ReferenceError: handleDrop is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:2188:25)
+hook.js:608 The above error occurred in the <WorkflowBuilderView> component:
+
+    at WorkflowBuilderView (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:3292:21)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:98:34)
+    at ReactFlowProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/reactflow.js?v=9b35b141:6492:38)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:606:21)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=9b35b141:9129 Uncaught ReferenceError: handleDrop is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:2188:25)

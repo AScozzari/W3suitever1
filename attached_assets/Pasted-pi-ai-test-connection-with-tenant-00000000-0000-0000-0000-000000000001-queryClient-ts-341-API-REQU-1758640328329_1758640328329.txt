@@ -1,0 +1,36 @@
+pi/ai/test-connection with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:341 [API-REQUEST] 🔄 Serializing object body to JSON
+queryClient.ts:366  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/ai/test-connection 400 (Bad Request)
+apiRequest @ queryClient.ts:366
+testApiConnection @ AISettingsPage.tsx:259
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5449Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications/unread-count
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/notifications/unread-count
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=I0XWtFTkL4Nk' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/ai/test-connection with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:341 [API-REQUEST] 🔄 Serializing object body to JSON
+queryClient.ts:366  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/ai/test-connection 400 (Bad Request)

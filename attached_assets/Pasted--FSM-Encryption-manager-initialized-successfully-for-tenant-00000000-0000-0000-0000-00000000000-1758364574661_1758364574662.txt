@@ -1,0 +1,124 @@
+🔐 [FSM] Encryption manager initialized successfully for tenant: 00000000-0000-0000-0000-000000000001
+2TimeAttendancePage.tsx:857 Uncaught TypeError: Cannot read properties of undefined (reading 'filter')
+    at QuickStatsPanel (TimeAttendancePage.tsx:857:38)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=7ffe7278:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=7ffe7278:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=7ffe7278:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=7ffe7278:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=7ffe7278:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=7ffe7278:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=7ffe7278:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=7ffe7278:19198:20)
+    at workLoopConcurrent (chunk-ZHRYBLGQ.js?v=7ffe7278:19189:13)
+QuickStatsPanel @ TimeAttendancePage.tsx:857
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=7ffe7278:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=7ffe7278:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=7ffe7278:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=7ffe7278:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=7ffe7278:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=7ffe7278:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:19198
+workLoopConcurrent @ chunk-ZHRYBLGQ.js?v=7ffe7278:19189
+renderRootConcurrent @ chunk-ZHRYBLGQ.js?v=7ffe7278:19164
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7ffe7278:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=7ffe7278:197
+flushWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=7ffe7278:384Understand this error
+2TimeAttendancePage.tsx:857 Uncaught TypeError: Cannot read properties of undefined (reading 'filter')
+    at QuickStatsPanel (TimeAttendancePage.tsx:857:38)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=7ffe7278:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=7ffe7278:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=7ffe7278:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=7ffe7278:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=7ffe7278:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=7ffe7278:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=7ffe7278:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=7ffe7278:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=7ffe7278:19137:13)
+QuickStatsPanel @ TimeAttendancePage.tsx:857
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=7ffe7278:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=7ffe7278:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=7ffe7278:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=7ffe7278:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=7ffe7278:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=7ffe7278:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=7ffe7278:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=7ffe7278:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=7ffe7278:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7ffe7278:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=7ffe7278:197
+flushWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=7ffe7278:384Understand this error
+2hook.js:608 The above error occurred in the <QuickStatsPanel> component:
+
+    at QuickStatsPanel (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TimeTracking/TimeAttendancePage.tsx:1399:38)
+    at div
+    at div
+    at TimeAttendancePage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TimeTracking/TimeAttendancePage.tsx:64:46)
+    at Suspense
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:98:34)
+    at MyPortal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/MyPortal.tsx:132:44)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:648:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:459:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=7ffe7278:280:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=7ffe7278:336:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=7ffe7278:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=7ffe7278:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=7ffe7278:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=7ffe7278:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=7ffe7278:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=7ffe7278:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7ffe7278:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=7ffe7278:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=7ffe7278:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7ffe7278:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=7ffe7278:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=7ffe7278:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7ffe7278:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=7ffe7278:197
+flushWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=7ffe7278:384Understand this error
+chunk-ZHRYBLGQ.js?v=7ffe7278:19413 Uncaught TypeError: Cannot read properties of undefined (reading 'filter')
+    at QuickStatsPanel (TimeAttendancePage.tsx:857:38)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=7ffe7278:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=7ffe7278:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=7ffe7278:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=7ffe7278:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=7ffe7278:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=7ffe7278:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=7ffe7278:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=7ffe7278:18736:28)
+    at performConcurrentWorkOnRoot (chunk-ZHRYBLGQ.js?v=7ffe7278:18684:30)
+QuickStatsPanel @ TimeAttendancePage.tsx:857
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=7ffe7278:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=7ffe7278:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=7ffe7278:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=7ffe7278:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=7ffe7278:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=7ffe7278:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7ffe7278:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=7ffe7278:197
+flushWork @ chunk-ZHRYBLGQ.js?v=7ffe7278:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=7ffe7278:384Understand this error
+BaseStrategy.ts:75 [WEB_STRATEGY] Web strategy cleaned up undefined
+useTimeAttendanceStrategies.ts:3

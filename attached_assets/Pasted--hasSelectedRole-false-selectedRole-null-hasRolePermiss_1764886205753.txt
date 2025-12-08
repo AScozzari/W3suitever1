@@ -1,0 +1,242 @@
+{hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 23:09:25, Token expires: 23:24:19
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/workflow-actions 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/workflow-triggers 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/team-workflow-assignments 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/workflow-templates 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/teams 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/rbac/permissions 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+SettingsPage-fht5i5hN.js:1 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage-fht5i5hN.js:1 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 23:09:25, Token expires: 23:24:19
+index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 23:09:25, Token expires: 23:24:19
+6index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 23:09:26, Token expires: 23:24:19
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/workflow-triggers 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/team-workflow-assignments 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/workflow-actions 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/teams 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/workflow-templates 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/rbac/permissions 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+installHook.js:1 Thu Dec 04 2025 23:09:31 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | C

@@ -1,0 +1,38 @@
+evelopment mode: 
+{X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+index.ts:34 Uncaught ReferenceError: gpsStrategy is not defined
+    at getStrategyList (index.ts:34:5)
+    at getAvailableStrategies (index.ts:49:10)
+    at TimeAttendancePage (TimeAttendancePage.tsx:129:31)
+index.ts:34 Uncaught ReferenceError: gpsStrategy is not defined
+    at getStrategyList (index.ts:34:5)
+    at getAvailableStrategies (index.ts:49:10)
+    at TimeAttendancePage (TimeAttendancePage.tsx:129:31)
+hook.js:608 The above error occurred in the <TimeAttendancePage> component:
+
+    at TimeAttendancePage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TimeTracking/TimeAttendancePage.tsx:64:46)
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:99:34)
+    at MyPortal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/MyPortal.tsx:129:44)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:592:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:465:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=bdcbc0a8:280:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=bdcbc0a8:336:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=bdcbc0a8:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=bdcbc0a8:9129 Uncaught ReferenceError: gpsStrategy is not defined
+    at getStrategyList (index.ts:34:5)
+    at getAvailableStrategies (index.ts:49:10)
+    at TimeAttendancePage (TimeAttendancePage.tsx:129:31)

@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1757399062649,
+      "tag": "0000_magenta_mikhail_rasputin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1727740800000,
+      "tag": "0001_alter_teams_secondary_supervisor",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1728576000000,
+      "tag": "0002_crm_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1731067200000,
+      "tag": "0003_pipeline_hierarchical_permissions",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+OVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+CRMPage.tsx:22  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/CRMDashboardPage.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+CRMPage.tsx:23  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/CampaignsPage.tsx?t=1760506186809 net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+2chunk-L7SIRVDC.js?v=2f97fb70:903 Uncaught TypeError: Failed to fetch dynamically imported module: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/CRMPage.tsxUnderstand this error
+hook.js:608 The above error occurred in one of your React components:
+
+    at Lazy
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1760506186809:725:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1760506186809:236:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1760506186809:94:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=2f97fb70:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx?t=1760506186809:33:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=2f97fb70:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=2f97fb70:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=2f97fb70:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=2f97fb70:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=2f97fb70:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=2f97fb70:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=2f97fb70:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=2f97fb70:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=2f97fb70:197
+flushWork @ chunk-ZHRYBLGQ.js?v=2f97fb70:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=2f97fb70:384Understand this error
+chunk-ZHRYBLGQ.js?v=2f97fb70:19413 Uncaught TypeError: Failed to fetch dynamically imported module: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/CRMPage.tsxUnderstand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+CRMPage.tsx:27  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/ActivitiesPage.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+CRMPage.tsx:26  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/CustomersPage.tsx net::ERR_ABORTED 502 (Bad Gateway)Understand this error
+CRMPage.tsx:28  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/crm/AnalyticsPage.tsx net::ERR_ABORTED 502 (Bad Gateway)

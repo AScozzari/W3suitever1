@@ -1,0 +1,47 @@
+https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=86f5ea54:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=86f5ea54:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=86f5ea54:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=86f5ea54:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=86f5ea54:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=86f5ea54:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=86f5ea54:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=86f5ea54:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=86f5ea54:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=86f5ea54:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=86f5ea54:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=86f5ea54:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=86f5ea54:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=86f5ea54:18627Understand this error
+chunk-ZHRYBLGQ.js?v=86f5ea54:9129 Uncaught ReferenceError: currentLocation is not defined
+    at renderMethodWidget (TimbratureTab.tsx:381:16)
+    at TimbratureTab (TimbratureTab.tsx:688:8)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=86f5ea54:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=86f5ea54:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=86f5ea54:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=86f5ea54:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=86f5ea54:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=86f5ea54:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=86f5ea54:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=86f5ea54:18736:28)
+renderMethodWidget @ TimbratureTab.tsx:381
+TimbratureTab @ TimbratureTab.tsx:688
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=86f5ea54:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=86f5ea54:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=86f5ea54:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=86f5ea54:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=86f5ea54:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=86f5ea54:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=86f5ea54:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=86f5ea54:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=86f5ea54:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=86f5ea54:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=86f5ea54:18627Understand this error
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=wSmL9Lhw2feu' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...

@@ -1,0 +1,146 @@
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-IVFQ3KVX.js?v=bd45bd53:335:29)
+    at chunk-IVFQ3KVX.js?v=bd45bd53:239:13
+    at chunk-IVFQ3KVX.js?v=bd45bd53:162:58
+    at Presence (chunk-4346QGOE.js?v=bd45bd53:24:11)
+    at chunk-IVFQ3KVX.js?v=bd45bd53:153:64
+    at chunk-TCRT5IO7.js?v=bd45bd53:43:13
+    at chunk-TCRT5IO7.js?v=bd45bd53:20:13
+    at chunk-7IUWE4IP.js?v=bd45bd53:42:13
+    at chunk-IEEZVV2F.js?v=bd45bd53:244:22
+    at Presence (chunk-4346QGOE.js?v=bd45bd53:24:11)
+    at Provider (chunk-3WVMON5O.js?v=bd45bd53:38:15)
+    at DialogPortal (chunk-IVFQ3KVX.js?v=bd45bd53:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=bd45bd53:38:15)
+    at Dialog (chunk-IVFQ3KVX.js?v=bd45bd53:56:5)
+    at TaskDetailDialog (TaskDetailDialog.tsx:113:3)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:68:34)
+    at TasksPage (TasksPage.tsx:63:21)
+    at AuthenticatedRoute (TenantShell.tsx:351:72)
+    at Route (wouter.js?v=bd45bd53:206:16)
+    at Switch (wouter.js?v=bd45bd53:262:17)
+    at TenantRoutes (TenantShell.tsx:185:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:40:59)
+    at Route (wouter.js?v=bd45bd53:206:16)
+    at Switch (wouter.js?v=bd45bd53:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=bd45bd53:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-IVFQ3KVX.js?v=bd45bd53:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-IVFQ3KVX.js?v=bd45bd53:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=bd45bd53:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=bd45bd53:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=bd45bd53:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this warning
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561Understand this error
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin-user
+TenantContext.tsx:100 [TENANT-PROVIDER] 🏢 Tenant updated from session: {id: '00000000-0000-0000-0000-000000000001', name: 'Demo Organization', code: 'DEMO001', plan: 'Enterprise', isActive: true}
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/notifications/unread-count 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=bd45bd53:53
+setInterval @ @tanstack_react-query.js?v=bd45bd53:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=bd45bd53:1671
+updateTimers_fn @ @tanstack_react-query.js?v=bd45bd53:1678
+onQueryUpdate @ @tanstack_react-query.js?v=bd45bd53:1634
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1262
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1261
+batch @ @tanstack_react-query.js?v=bd45bd53:624
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+setData @ @tanstack_react-query.js?v=bd45bd53:931
+fetch @ @tanstack_react-query.js?v=bd45bd53:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=bd45bd53:53
+setInterval @ @tanstack_react-query.js?v=bd45bd53:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=bd45bd53:1671
+updateTimers_fn @ @tanstack_react-query.js?v=bd45bd53:1678
+onQueryUpdate @ @tanstack_react-query.js?v=bd45bd53:1634
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1262
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1261
+batch @ @tanstack_react-query.js?v=bd45bd53:624
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+setData @ @tanstack_react-query.js?v=bd45bd53:931
+fetch @ @tanstack_react-query.js?v=bd45bd53:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1673
+setInterval
+setInterval @ @tanstack_react-query.js?v=bd45bd53:53
+setInterval @ @tanstack_react-query.js?v=bd45bd53:95
+updateRefetchInterval_fn @ @tanstack_react-query.js?v=bd45bd53:1671
+updateTimers_fn @ @tanstack_react-query.js?v=bd45bd53:1678
+onQueryUpdate @ @tanstack_react-query.js?v=bd45bd53:1634
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1262
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:1261
+batch @ @tanstack_react-query.js?v=bd45bd53:624
+dispatch_fn @ @tanstack_react-query.js?v=bd45bd53:1260
+setData @ @tanstack_react-query.js?v=bd45bd53:931
+fetch @ @tanstack_react-query.js?v=bd45bd53:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+fetch @ @tanstack_react-query.js?v=bd45bd53:1449
+refetch @ @tanstack_react-query.js?v=bd45bd53:1439
+onFocus @ @tanstack_react-query.js?v=bd45bd53:998
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:2713
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:2712
+batch @ @tanstack_react-query.js?v=bd45bd53:624
+onFocus @ @tanstack_react-query.js?v=bd45bd53:2711
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:390
+onFocus @ @tanstack_react-query.js?v=bd45bd53:389
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:376
+listener @ @tanstack_react-query.js?v=bd45bd53:347Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/notifications/unread-count 502 (Bad Gateway)

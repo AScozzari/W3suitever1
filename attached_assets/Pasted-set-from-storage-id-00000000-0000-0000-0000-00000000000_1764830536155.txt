@@ -1,0 +1,76 @@
+set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:12  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:13  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:14  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/heuristicsRedefinitions.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/heuristicsRedefinitions.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:12  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:13  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:14  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/heuristicsRedefinitions.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+installHook.js:1 ⚠️ HTTP mode detected: Using pure JS SHA-256 for PKCE
+overrideMethod @ installHook.js:1
+$ @ index-CvCe-Xmf.js:2
+H @ index-CvCe-Xmf.js:2
+Gc @ react-core-Dq7CL8eX.js:29
+Jc @ react-core-Dq7CL8eX.js:29
+qc @ react-core-Dq7CL8eX.js:29
+di @ react-core-Dq7CL8eX.js:29
+ta @ react-core-Dq7CL8eX.js:29
+(anonymous) @ react-core-Dq7CL8eX.js:29
+Pu @ react-core-Dq7CL8eX.js:32
+Ps @ react-core-Dq7CL8eX.js:29
+Il @ react-core-Dq7CL8eX.js:29
+eu @ react-core-Dq7CL8eX.js:29
+hf @ react-core-Dq7CL8eX.js:29Understand this warning
+index-CvCe-Xmf.js:2 🔐 PKCE method: S256
+index-CvCe-Xmf.js:2 🔍 Auth Response Status: 200
+index-CvCe-Xmf.js:2 🔍 Auth Response URL: http://82.165.16.223/oauth2/authorize
+index-CvCe-Xmf.js:2 🔑 Authorization code from response: YES
+index-CvCe-Xmf.js:2  POST http://82.165.16.223/oauth2/token 400 (Bad Request)
+H @ index-CvCe-Xmf.js:2
+await in H
+Gc @ react-core-Dq7CL8eX.js:29
+Jc @ react-core-Dq7CL8eX.js:29
+qc @ react-core-Dq7CL8eX.js:29
+di @ react-core-Dq7CL8eX.js:29
+ta @ react-core-Dq7CL8eX.js:29
+(anonymous) @ react-core-Dq7CL8eX.js:29
+Pu @ react-core-Dq7CL8eX.js:32
+Ps @ react-core-Dq7CL8eX.js:29
+Il @ react-core-Dq7CL8eX.js:29
+eu @ react-core-Dq7CL8eX.js:29
+hf @ react-core-Dq7CL8eX.js:29Understand this error
+index-CvCe-Xmf.js:2 🎫 Token Response Status: 400
+installHook.js:1 Token exchange failed: {error: 'invalid_grant', error_description: 'PKCE validation failed'}
+overrideMethod @ installHook.js:1
+H @ index-CvCe-Xmf.js:2
+await in H
+Gc @ react-core-Dq7CL8eX.js:29
+Jc @ react-core-Dq7CL8eX.js:29
+qc @ react-core-Dq7CL8eX.js:29
+di @ react-core-Dq7CL8eX.js:29
+ta @ react-core-Dq7CL8eX.js:29
+(anonymous) @ react-core-Dq7CL8eX.js:29
+Pu @ react-core-Dq7CL8eX.js:32
+Ps @ react-core-Dq7CL8eX.js:29
+Il @ react-core-Dq7CL8eX.js:29
+eu @ react-core-Dq7CL8eX.js:29
+hf @ react-core-Dq7CL8eX.js:29Understand this error
+installHook.js:1 OAuth2 Login error: Error: Token exchange failed: invalid_grant
+    at H (index-CvCe-Xmf.js:2:25605)
+overrideMethod @ installHook.js:1
+H @ index-CvCe-Xmf.js:2
+await in H
+Gc @ react-core-Dq7CL8eX.js:29
+Jc @ react-core-Dq7CL8eX.js:29
+qc @ react-core-Dq7CL8eX.js:29
+di @ react-core-Dq7CL8eX.js:29
+ta @ react-core-Dq7CL8eX.js:29
+(anonymous) @ react-core-Dq7CL8eX.js:29
+Pu @ react-core-Dq7CL8eX.js:32
+Ps @ react-core-Dq7CL8eX.js:29
+Il @ react-core-Dq7CL8eX.js:29
+eu @ react-core-Dq7CL8eX.js:29
+hf @ react-core-Dq7CL8eX.js:29Understand this error
+installHook.js:1 Error details: Token exchange failed: invalid_grant

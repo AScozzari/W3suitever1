@@ -1,0 +1,40 @@
+nsitioned from Connecting to Disconnected
+installHook.js:1 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=f4a34e1b:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=f4a34e1b:12292:49)
+useTenantSafety.tsx:178 [TENANT-NAV] Navigating to: /staging/settings
+App.tsx:131 [APP-ROUTER] 📍 Route matched with params: 
+Object
+App.tsx:141 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:142 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+installHook.js:1 [APP-ROUTER] 📍 Route matched with params: 
+Object
+installHook.js:1 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+installHook.js:1 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+2
+SettingsPage.tsx:9075 Uncaught ReferenceError: currentTenantId is not defined
+    at SettingsPage (SettingsPage.tsx:9075:19)
+installHook.js:1 The above error occurred in the <SettingsPage> component:
+
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:341:27)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:870:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:254:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:112:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=f4a34e1b:19413 Uncaught ReferenceError: currentTenantId is not defined
+    at SettingsPage (SettingsPage.tsx:9075:19)
+

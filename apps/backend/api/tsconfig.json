@@ -1,0 +1,17 @@
+{
+  "extends": "../../../configs/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@api/core/*": ["./src/core/*"],
+      "@api/modules/*": ["./src/modules/*"],
+      "@ui/*": ["../../packages/ui/src/*"],
+      "@tokens/*": ["../../packages/tokens/*"],
+      "@sdk/*": ["../../packages/sdk/src/*"],
+      "@dwh/*": ["../../packages/dwh/*"],
+      "@cms-core/*": ["../../packages/cms-core/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
+}

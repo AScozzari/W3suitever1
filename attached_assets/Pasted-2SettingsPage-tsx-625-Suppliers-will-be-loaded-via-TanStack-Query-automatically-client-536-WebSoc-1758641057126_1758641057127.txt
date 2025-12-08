@@ -1,0 +1,81 @@
+2SettingsPage.tsx:625 📋 Suppliers will be loaded via TanStack Query automatically
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=nipV1YnkHWcu' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/ai/chat with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:341 [API-REQUEST] 🔄 Serializing object body to JSON
+queryClient.ts:366  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/ai/chat 500 (Internal Server Error)
+apiRequest @ queryClient.ts:366
+mutationFn @ ChatWidget.tsx:112
+fn @ @tanstack_react-query.js?v=11b0b4f3:1998
+run @ @tanstack_react-query.js?v=11b0b4f3:795
+start @ @tanstack_react-query.js?v=11b0b4f3:838
+execute @ @tanstack_react-query.js?v=11b0b4f3:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=11b0b4f3:2378
+(anonymous) @ @tanstack_react-query.js?v=11b0b4f3:3566
+handleSendMessage @ ChatWidget.tsx:197
+handleKeyPress @ ChatWidget.tsx:204
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5449Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications/unread-count
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/notifications/unread-count
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications?status=unread&limit=5
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/notifications?status=unread&limit=5
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+queryClient.ts:26 🔍 [HR-VALIDATION] Validating prerequisites for: /api/hr/calendar/events
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:64 🔧 [HR-VALIDATION] Development mode - checking required headers
+queryClient.ts:67 ✅ [HR-VALIDATION] All prerequisites validated for: /api/hr/calendar/events
+queryClient.ts:68 ✅ [HR-VALIDATION] Tenant: 00000000-0000-0000-0000-000000000001, Auth: development
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/hr/calendar/events
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/hr/calendar/events
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/ai/settings
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/ai/settings
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/ai/usage/logs
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/ai/usage/logs
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT

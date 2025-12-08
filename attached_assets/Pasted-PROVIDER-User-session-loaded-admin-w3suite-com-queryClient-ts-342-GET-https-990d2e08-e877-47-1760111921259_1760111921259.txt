@@ -1,0 +1,55 @@
+PROVIDER] 👤 User session loaded: admin@w3suite.com
+queryClient.ts:342  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/pdc/sessions/b1d2f271-c817-4e65-8121-37e55506bd85 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+loadSessionData @ PDCAnalyzerPage.tsx:260
+(anonymous) @ PDCAnalyzerPage.tsx:285
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18627Understand this error
+PDCAnalyzerPage.tsx:280 Error loading session data: Error: 500: Internal Server Error
+    at apiRequest (queryClient.ts:368:11)
+    at async loadSessionData (PDCAnalyzerPage.tsx:260:31)
+overrideMethod @ hook.js:608
+loadSessionData @ PDCAnalyzerPage.tsx:280
+await in loadSessionData
+(anonymous) @ PDCAnalyzerPage.tsx:285
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18627Understand this error
+queryClient.ts:342  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/pdc/sessions/2ae97f77-97dd-4f07-b756-9ef43cf238f5 500 (Internal Server Error)
+apiRequest @ queryClient.ts:342
+loadSessionData @ PDCAnalyzerPage.tsx:260
+(anonymous) @ PDCAnalyzerPage.tsx:285
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=ce5c3cbd:18627Understand this error
+PDCAnalyzerPage.tsx:280 Error loading session data: Error: 500: Internal Server Error
+    at apiRequest (queryClient.ts:368:11)
+    at async loadSessionData (PDCAnalyzerPage.tsx:260:31)

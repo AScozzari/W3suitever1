@@ -1,0 +1,212 @@
+load (not on Entity Management tab)
+SettingsPage-fht5i5hN.js:15 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/ai/agents 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/ai/settings 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+2index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 23:03:05, Token expires: 23:05:29
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/ai/agents 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/ai/settings 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 23:03:07, Token expires: 23:05:29
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/ai/settings 403 (Forbidden)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+SettingsPage-fht5i5hN.js:1 [AI-SETTINGS] 🔍 Settings changed: {loading: false, error: Error: 403: Forbidden
+    at queryFn (http://82.165.16.223/assets/index-D-nXJUUx.js:2:14241), hasData: false, dataReceived: undefined}
+SettingsPage-fht5i5hN.js:1 [AI-SETTINGS] ⚠️ No settings found, using defaults
+installHook.js:1 Thu Dec 04 2025 23:03:10 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connect timed out. Exceeded time set in configuration.connectionTimeout: 10s.
+overrideMethod @ installHook.js:1
+print @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+warn @ Layout-CTia58Vx.js:58
+(anonymous) @ Layout-CTia58Vx.js:75
+setTimeout
+(anonymous) @ Layout-CTia58Vx.js:75
+_connect @ Layout-CTia58Vx.js:75
+connect @ Layout-CTia58Vx.js:75
+start @ Layout-CTia58Vx.js:86
+(anonymous) @ Layout-CTia58Vx.js:86
+(anonymous) @ Layout-CTia58Vx.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this warning
+Layout-CTia58Vx.js:75 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: WebSocket is closed before the connection is established.
+(anonymous) @ Layout-CTia58Vx.js:75
+setTimeout
+(anonymous) @ Layout-CTia58Vx.js:75
+_connect @ Layout-CTia58Vx.js:75
+connect @ Layout-CTia58Vx.js:75
+start @ Layout-CTia58Vx.js:86
+(anonymous) @ Layout-CTia58Vx.js:86
+(anonymous) @ Layout-CTia58Vx.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this warning
+installHook.js:1 Thu Dec 04 2025 23:03:10 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ installHook.js:1
+print @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+error @ Layout-CTia58Vx.js:58
+onWebSocketError @ Layout-CTia58Vx.js:78
+(anonymous) @ Layout-CTia58Vx.js:75Understand this error
+installHook.js:1 Thu Dec 04 2025 23:03:10 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+warn @ Layout-CTia58Vx.js:58
+onWebSocketClose @ Layout-CTia58Vx.js:78
+(anonymous) @ Layout-CTia58Vx.js:75Understand this warning
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 23:03:10 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)

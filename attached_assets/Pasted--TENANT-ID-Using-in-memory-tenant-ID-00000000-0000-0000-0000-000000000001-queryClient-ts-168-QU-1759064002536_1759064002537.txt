@@ -1,0 +1,141 @@
+[TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications/unread-count
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/notifications/unread-count
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+@radix-ui_react-select.js?v=7a33128c:901 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-select.js?v=7a33128c:901:13
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=7a33128c:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=7a33128c:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=7a33128c:15946:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=7a33128c:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=7a33128c:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=7a33128c:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=7a33128c:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=7a33128c:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=7a33128c:19137:13)
+(anonymous) @ @radix-ui_react-select.js?v=7a33128c:901
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=7a33128c:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=7a33128c:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=7a33128c:15946
+callCallback2 @ chunk-ZHRYBLGQ.js?v=7a33128c:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=7a33128c:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=7a33128c:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=7a33128c:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=7a33128c:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=7a33128c:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=7a33128c:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7a33128c:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7a33128c:18627Understand this error
+@radix-ui_react-select.js?v=7a33128c:901 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-select.js?v=7a33128c:901:13
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=7a33128c:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=7a33128c:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=7a33128c:15946:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=7a33128c:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=7a33128c:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=7a33128c:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=7a33128c:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=7a33128c:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=7a33128c:19137:13)
+(anonymous) @ @radix-ui_react-select.js?v=7a33128c:901
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=7a33128c:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=7a33128c:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=7a33128c:15946
+callCallback2 @ chunk-ZHRYBLGQ.js?v=7a33128c:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=7a33128c:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=7a33128c:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=7a33128c:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=7a33128c:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=7a33128c:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=7a33128c:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=7a33128c:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7a33128c:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7a33128c:18627Understand this error
+hook.js:608 The above error occurred in the <SelectItem> component:
+
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=7a33128c:874:7
+    at _c7 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/select.tsx:127:12)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OGQABBY2.js?v=7a33128c:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:79:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:56:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-BTUB5X2M.js?v=7a33128c:39:15
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=7a33128c:785:13
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:79:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:56:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-BTUB5X2M.js?v=7a33128c:39:15
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=7a33128c:38:15)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=7a33128c:328:58
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:79:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:56:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OGQABBY2.js?v=7a33128c:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-FHN6I3I5.js?v=7a33128c:463:22
+    at SelectPortal
+    at _c3 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/select.tsx:60:12)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=7a33128c:38:15)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=7a33128c:38:15)
+    at CollectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-BTUB5X2M.js?v=7a33128c:29:13)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=7a33128c:38:15)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=7a33128c:38:15)
+    at Popper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-5NDFBLLQ.js?v=7a33128c:1921:11)
+    at Select (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-select.js?v=7a33128c:116:5)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:79:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-NN253QVW.js?v=7a33128c:56:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/form.tsx:122:9
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/form.tsx:72:6
+    at Controller (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-SNPXSC7A.js?v=7a33128c:345:35)
+    at FormField (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/form.tsx:33:6)
+    at div
+    at div
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OGQABBY2.js?v=7a33128c:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=7a33128c:116:13
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-OGQABBY2.js?v=7a33128c:42:13
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=7a33128c:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=7a33128c:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=7a33128c:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=7a33128c:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=7a33128c:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7a33128c:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=7a33128c:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=7a33128c:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7a33128c:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7a33128c:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7a33128c:18627Understand this error
+chunk-ZHRYBLGQ.js?v=7a33128c:9129 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-select.js?v=7a33128c:901:13
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=7a33128c:11548:26)
+    at updateForwardRef (chunk-ZHRYBLGQ.js?v=7a33128c:14325:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=7a33128c:15946:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=7a33128c:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=7a33128c:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=7a33128c:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=7a33128c:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=7a33128c:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=7a33128c:18879:28)
+(anonymous) @ @radix-ui_react-select.js?v=7a33128c:901
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=7a33128c:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=7a33128c:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=7a33128c:15946
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=7a33128c:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=7a33128c:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=7a33128c:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=7a33128c:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=7a33128c:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7a33128c:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7a33128c:18627Understand this error
+teams:1 Form submission canceled because the form is not connected

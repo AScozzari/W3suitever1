@@ -1,0 +1,324 @@
+ion. Receiving end does not exist.Understand this error
+background.js:1 Uncaught (in promise) FrameDoesNotExistError: Frame 7205 does not exist in tab 656138143
+    at DelayedMessageSender.<anonymous> (background.js:1:49079)Understand this error
+background.js:1 Uncaught (in promise) FrameDoesNotExistError: Frame 7222 does not exist in tab 656138115
+    at DelayedMessageSender.<anonymous> (background.js:1:49079)Understand this error
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+Error handling response: TypeError: Cannot read properties of null (reading 'postMessage')
+    at chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/background.js:1:60174Understand this error
+Error handling response: TypeError: Cannot read properties of null (reading 'postMessage')
+    at chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/background.js:1:60174Understand this error
+Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+Error handling response: TypeError: Cannot read properties of null (reading 'postMessage')
+    at chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/background.js:1:60174Understand this error
+completion_list.html?username=sbadmin@w3suite.com&colorScheme=&screenX=1537&screenY=1&effectiveWind…:12  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=sbadmin@w3suite.com&colorScheme=&screenX=1537&screenY=1&effectiveWind…:13  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=sbadmin@w3suite.com&colorScheme=&screenX=1537&screenY=1&effectiveWind…:14  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/heuristicsRedefinitions.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+App-CtBUkUt3.js:719  GET http://82.165.16.223/brand-api/organizations 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:719
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+/brand-api/structure/stats/stream?page=1&limit=25:1  GET http://82.165.16.223/brand-api/structure/stats/stream?page=1&limit=25 net::ERR_ABORTED 401 (Unauthorized)Understand this error
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697 Retrying SSE connection (1/3) in 2000ms
+App-CtBUkUt3.js:719  GET http://82.165.16.223/brand-api/organizations 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:719
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+/brand-api/structure/stats/stream?page=1&limit=25:1  GET http://82.165.16.223/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Understand this error
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697 Retrying SSE connection (2/3) in 2000ms
+App-CtBUkUt3.js:719  GET http://82.165.16.223/brand-api/organizations 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:719
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+stream:1  GET http://82.165.16.223/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Understand this error
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697 Retrying SSE connection (3/3) in 2000ms
+stream:1  GET http://82.165.16.223/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Understand this error
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697 Max retry attempts reached, falling back to polling
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+await in C
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:719  GET http://82.165.16.223/brand-api/organizations 401 (Unauthorized)
+queryFn @ App-CtBUkUt3.js:719
+a @ App-CtBUkUt3.js:1
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.then
+(anonymous) @ App-CtBUkUt3.js:1
+Promise.catch
+m @ App-CtBUkUt3.js:1
+start @ App-CtBUkUt3.js:1
+fetch @ App-CtBUkUt3.js:1
+Au @ App-CtBUkUt3.js:1
+onSubscribe @ App-CtBUkUt3.js:1
+subscribe @ App-CtBUkUt3.js:1
+(anonymous) @ App-CtBUkUt3.js:1
+va @ index-CpqMjaXl.js:39
+sl @ index-CpqMjaXl.js:41
+Gn @ index-CpqMjaXl.js:41
+xd @ index-CpqMjaXl.js:41
+gn @ index-CpqMjaXl.js:41
+Ai @ index-CpqMjaXl.js:41
+mn @ index-CpqMjaXl.js:39
+(anonymous) @ index-CpqMjaXl.js:41Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)
+overrideMethod @ installHook.js:1
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+App-CtBUkUt3.js:697  GET http://82.165.16.223/brand-api/structure/stats?page=1&limit=25 401 (Unauthorized)
+C @ App-CtBUkUt3.js:697
+setInterval
+k @ App-CtBUkUt3.js:697
+M.onerror @ App-CtBUkUt3.js:697Understand this error
+installHook.js:1 Fallback fetch failed: Error: HTTP 401
+    at C (App-CtBUkUt3.js:697:80636)

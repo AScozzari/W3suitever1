@@ -1,0 +1,107 @@
+LD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+DealsDataTable.tsx:441 [Table] Column with id 'createdAt' does not exist. Error Component Stack
+    at DealsDataTable (DealsDataTable.tsx:124:42)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at PipelineDetailPage (PipelineDetailPage.tsx:28:18)
+    at AuthenticatedRoute (TenantShell.tsx:429:72)
+    at TenantRoutes (TenantShell.tsx:217:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:72:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:39:3)
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+DealsDataTable.tsx:441 [Table] Column with id 'createdAt' does not exist. Error Component Stack
+    at DealsDataTable (DealsDataTable.tsx:124:42)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at PipelineDetailPage (PipelineDetailPage.tsx:28:18)
+    at AuthenticatedRoute (TenantShell.tsx:429:72)
+    at TenantRoutes (TenantShell.tsx:217:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:72:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:39:3)
+DealsDataTable.tsx:441 [Table] Column with id 'createdAt' does not exist. Error Component Stack
+    at DealsDataTable (DealsDataTable.tsx:124:42)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at PipelineDetailPage (PipelineDetailPage.tsx:28:18)
+    at AuthenticatedRoute (TenantShell.tsx:429:72)
+    at TenantRoutes (TenantShell.tsx:217:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:72:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:39:3)

@@ -1,0 +1,192 @@
+ARCHITETTURA WMS W3 SUITE - RIEPILOGO COMPLETO
+1. TIPOLOGIE PRODOTTO E GIACENZA
+Tipo	Esempio	Giacenza Fisica	Serializzato
+PHYSICAL	Smartphone, SIM, accessori, card ricarica	✅ Sì	Dipende
+VIRTUAL	Codici digitali puri (da sistema)	❌ No	❌ No
+CANVAS	Template offerte composite	❌ No	❌ No
+SERVICE	Attivazioni, installazioni	❌ No	❌ No
+Regola: Se lo puoi toccare → PHYSICAL → ha giacenza
+
+2. PRODUCT VERSIONING (Dual-Layer)
+Tabella products (anagrafica immutabile)
+├── id, tenantId
+├── sku (codice univoco)
+├── name, model, brand
+├── ean (codice a barre)
+├── type (PHYSICAL, VIRTUAL, CANVAS, SERVICE)
+├── isSerializable (true/false)
+├── serialType (imei, iccid, mac_address, other)
+├── categoryId, typeId
+└── isActive, createdAt
+→ Dati che NON cambiano mai
+
+Tabella product_versions (dati commerciali variabili)
+├── id, productId → products.id
+├── version (1, 2, 3...)
+├── monthlyFee (canone mensile)
+├── unitPrice (prezzo vendita)
+├── costPrice (costo base)
+├── validFrom, validTo
+├── changeReason ('correction' | 'business_change')
+├── createdBy, createdAt
+→ Quando cambia prezzo/canone, si crea nuova versione
+
+Nel modal modifica: sistema chiede "Correzione errore" o "Nuova versione commerciale"
+
+3. STATI LOGISTICI PRODOTTO
+Stato DB	Label IT	Impatto Giacenza
+in_stock	In giacenza	✅ Disponibile
+reserved	Prenotato	⚠️ Non disponibile, presente
+preparing	In preparazione	⚠️ Non disponibile
+shipping	DDT/In spedizione	❌ Fuori magazzino
+delivered	Consegnato	❌ Fuori magazzino
+customer_return	Reso cliente	⚠️ Da verificare
+doa_return	Reso DOA	⚠️ Da verificare
+in_service	In assistenza	❌ Fuori magazzino
+supplier_return	Restituito fornitore	❌ Fuori magazzino
+in_transfer	In trasferimento	⚠️ In transito
+lost	Smarrito	❌ Perdita
+damaged	Danneggiato/Dismesso	❌ Perdita
+internal_use	Ad uso interno	❌ Non vendibile
+Ogni cambio stato = 1 riga evento immutabile
+
+4. STRUTTURA MAGAZZINO
+A. Prodotti SERIALIZZATI (smartphone, SIM)
+Tabella product_items (ogni pezzo fisico)
+
+├── id, tenantId, storeId, productId
+├── serial (IMEI/ICCID/MAC) ← IDENTIFICATORE UNIVOCO
+├── logisticStatus (in_stock, reserved, etc.)
+├── batchId → product_batches.id (raggruppa stesso carico)
+├── lastSupplierId (ultimo fornitore)
+├── lastPurchaseCost (ultimo costo acquisto)
+├── lastPurchaseDate
+├── currentHolderId (cliente se venduto)
+├── warehouseLocation (ubicazione fisica)
+└── productVersionId (versione attiva)
+Esempio bulk SIM:
+
+Carico 100 SIM da TIM (DDT-2024-001)
+product_items:
+├── ICCID: 893901000001 → batchId: B001, cost: €2, status: in_stock
+├── ICCID: 893901000002 → batchId: B001, cost: €2, status: in_stock
+├── ... (98 altre righe)
+→ Ogni SIM tracciata singolarmente, lotto le raggruppa per carico
+
+B. Prodotti NON SERIALIZZATI (cover, cavi, accessori)
+Tabella product_batches (lotti per tracciare provenienza/costo)
+
+├── id, tenantId, storeId, productId
+├── batchCode (es. "B001-2024-12")
+├── supplierId (fornitore)
+├── purchaseCost (costo unitario)
+├── quantityReceived (caricati)
+├── quantityAvailable (disponibili)
+├── quantityReserved (prenotati)
+├── expirationDate (opzionale, prodotti deperibili)
+├── purchaseOrderId → DDT carico
+└── receivedAt
+Esempio cover:
+
+Prodotto: Cover iPhone 15 Nera
+Lotto B001: 100 pz da TIM, costo €5.00, disponibili: 85
+Lotto B002: 200 pz da Ingram, costo €4.50, disponibili: 200
+─────────────────────────────────────────────────────────
+TOTALE: 285 pz (ma so esattamente da dove e a che costo)
+Chiave identificazione:
+
+Tipo	Chiave Univoca
+Serializzato	productId + serial (IMEI)
+Non serializzato	productId + batchId
+5. ARCHITETTURA CQRS (Event Sourcing + Snapshot)
+A. Event Log Immutabile
+Tabella wms_inventory_events
+
+├── id, tenantId, storeId
+├── productItemId (se serializzato) / batchId (se non serial)
+├── productVersionId
+├── quantityDelta (+5, -1, etc.)
+├── direction ('inbound' | 'outbound')
+├── movementType ('purchase_in', 'sale_out', 'transfer', 'adjustment', 'return_in', 'damaged')
+├── fromStatus, toStatus
+├── documentType ('purchase_order', 'sale', 'transfer', 'return')
+├── documentId → FK tabella documento
+├── unitCost/unitPrice (valore al momento)
+├── actorId (chi ha fatto)
+├── occurredAt (timestamp preciso)
+└── notes
+→ MAI modificabile, solo INSERT. Audit trail perfetto.
+
+B. Saldo Real-Time
+Tabella wms_inventory_balances
+
+├── tenantId, storeId, productId
+├── quantityAvailable
+├── quantityReserved
+├── lastMovementAt
+└── updatedAt
+→ Aggiornato atomicamente via trigger/worker. Query veloci per operatività.
+
+C. Snapshot Giornalieri
+Tabella wms_inventory_snapshots
+
+├── id, tenantId, storeId, productId
+├── snapshotAt (2x/giorno: 12:00 e 23:00)
+├── quantityAtTime
+├── valueAtTime (valore economico)
+└── productVersionId (versione attiva)
+→ "Foto" del magazzino per commercialista/report storici.
+
+6. DOCUMENTI CORRELATI
+Tabella	Contiene
+purchase_orders	Ordini/DDT carico da fornitore
+purchase_order_items	Righe con productItemId o batchId, costo
+sales	Vendite/scontrini
+sale_items	Righe con productItemId o batchId, prezzo
+transfers	Trasferimenti tra store
+transfer_items	Righe con productItemId o batchId
+returns	Resi (cliente/DOA/fornitore)
+return_items	Righe con productItemId o batchId, motivo
+suppliers	Anagrafica fornitori
+7. FLUSSO OPERATIVO
+CARICO MERCE
+├── Crea purchase_order + items
+├── Crea/aggiorna product_items (serializzati) o product_batches (non serial)
+├── Aggiorna lastSupplierId, lastPurchaseCost su item
+├── Inserisce wms_inventory_event (inbound, purchase_in)
+└── Trigger aggiorna wms_inventory_balances
+VENDITA
+├── Crea sale + items
+├── Aggiorna product_item.status → delivered, currentHolderId
+├── Oppure decrementa product_batch.quantityAvailable
+├── Inserisce wms_inventory_event (outbound, sale_out)
+└── Trigger aggiorna wms_inventory_balances
+REPORT STORICO
+├── Query su wms_inventory_snapshots per data specifica
+└── Oppure replay wms_inventory_events fino a data X
+8. SCALABILITÀ (1000 store)
+Aspetto	Soluzione
+Volume	~36.5M eventi/anno (~25GB)
+Partitioning	Per tenant_id + occurred_at (mensile)
+Indexing	(tenant, store, product, occurred_at)
+Connection Pool	PgBouncer obbligatorio
+Snapshot Worker	2x/giorno (12:00, 23:00)
+VPS Requirements	8+ vCPU, 32GB RAM, NVMe SSD
+DWH Trigger	Quando > 50M eventi
+9. SCHEMA RELAZIONALE FINALE
+products (anagrafica)
+    └── product_versions (prezzi/canoni)
+            │
+            ├── product_items (pezzi serializzati: IMEI/ICCID)
+            │       └── wms_inventory_events
+            │
+            └── product_batches (lotti non serializzati)
+                    └── wms_inventory_events
+                            │
+                            ├── wms_inventory_balances (real-time)
+                            └── wms_inventory_snapshots (foto 2x/giorno)
+purchase_orders ─┐
+sales ───────────┼─→ documentId in wms_inventory_events
+transfers ───────┤
+returns ─────────┘
+suppliers ─→ supplierId in product_items/batches/purchase_orders

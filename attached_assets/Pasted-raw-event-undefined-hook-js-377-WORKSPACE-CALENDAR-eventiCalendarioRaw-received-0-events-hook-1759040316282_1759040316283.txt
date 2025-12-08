@@ -1,0 +1,32 @@
+raw event: undefined
+hook.js:377 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+hook.js:377 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+2WorkflowManagementPage.tsx:198 Uncaught ReferenceError: Select is not defined
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:198:16)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=274df904:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=274df904:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=274df904:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=274df904:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=274df904:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=274df904:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=274df904:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=274df904:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=274df904:19137:13)Understand this error
+hook.js:608 The above error occurred in the <WorkflowManagementPage> component:
+
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:67:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:425:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=274df904:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=274df904:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:186:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=274df904:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=274df904:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=274df904:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.

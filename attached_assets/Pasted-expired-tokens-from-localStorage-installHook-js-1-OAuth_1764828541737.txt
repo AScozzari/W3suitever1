@@ -1,0 +1,58 @@
+expired tokens from localStorage
+installHook.js:1 ❌ OAuth2 flow start failed: TypeError: Cannot read properties of undefined (reading 'digest')
+    at ve.generatePKCEChallenge (index-DABHMm7b.js:2:2762)
+    at ve.startAuthorizationFlow (index-DABHMm7b.js:2:3699)
+    at queryFn (index-DABHMm7b.js:2:11806)
+overrideMethod @ installHook.js:1
+startAuthorizationFlow @ index-DABHMm7b.js:2
+await in startAuthorizationFlow
+queryFn @ index-DABHMm7b.js:2
+await in queryFn
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+installHook.js:1 ❌ OAuth2 flow start failed: TypeError: Cannot read properties of undefined (reading 'digest')
+    at ve.generatePKCEChallenge (index-DABHMm7b.js:2:2762)
+    at ve.startAuthorizationFlow (index-DABHMm7b.js:2:3699)
+    at queryFn (index-DABHMm7b.js:2:11806)
+overrideMethod @ installHook.js:1
+startAuthorizationFlow @ index-DABHMm7b.js:2
+await in startAuthorizationFlow
+queryFn @ index-DABHMm7b.js:2
+await in queryFn
+a @ query-LcQgiAmM.js:1
+M @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.then
+(anonymous) @ query-LcQgiAmM.js:1
+Promise.catch
+M @ query-LcQgiAmM.js:1
+start @ query-LcQgiAmM.js:1
+fetch @ query-LcQgiAmM.js:1
+Lt @ query-LcQgiAmM.js:1
+onSubscribe @ query-LcQgiAmM.js:1
+subscribe @ query-LcQgiAmM.js:1
+(anonymous) @ query-LcQgiAmM.js:1
+ga @ react-core-Dq7CL8eX.js:30
+cl @ react-core-Dq7CL8eX.js:32
+Zn @ react-core-Dq7CL8eX.js:32
+(anonymous) @ react-core-Dq7CL8eX.js:32
+E @ react-core-Dq7CL8eX.js:17
+at @ react-core-Dq7CL8eX.js:17Understand this error
+login:1 Error in event handler: TypeError: Cannot set properties of null (setting 'shouldScanElementsForQRCodes')
+    at runtimeMessageHandler (chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/content_script.js:1:419746)Understand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:13  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/extensionState.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this error
+completion_list.html?username=admin@w3suite.com&colorScheme=&screenX=0&screenY=0&effectiveWindowWid…:12  GET chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js net::ERR_FILE_NOT_FOUNDUnderstand this error
+chrome-extension://pejdijmoenmkgeppbflobdenhhabjlaj/utils.js:1  Failed to load resource: net::ERR_FILE_NOT_FOUNDUnderstand this er

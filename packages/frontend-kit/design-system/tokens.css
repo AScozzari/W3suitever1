@@ -1,0 +1,267 @@
+:root {
+  /* WindTre Brand Colors - HSL Format */
+  --brand-orange: 24 100% 50%; /* #FF6900 */
+  --brand-purple: 273 58% 46%; /* #7B2CBF */
+  --brand-white: 0 0% 100%; /* #FFFFFF */
+  --brand-black: 0 0% 10%; /* #1A1A1A */
+  
+  /* Semantic Colors - HSL Format */
+  --primary: 24 100% 50%; /* var(--brand-orange) */
+  --primary-hover: 24 100% 45%;
+  --primary-active: 24 100% 40%;
+  --secondary: 273 58% 46%; /* var(--brand-purple) */
+  --secondary-hover: 273 58% 42%;
+  --secondary-active: 273 58% 38%;
+  --success: 162 47% 40%; /* #10b981 */
+  --success-hover: 162 47% 36%;
+  --success-active: 162 47% 32%;
+  --warning: 35 92% 50%; /* #f59e0b */
+  --warning-hover: 35 92% 47%;
+  --warning-active: 35 92% 43%;
+  --error: 0 72% 61%; /* #ef4444 */
+  --error-hover: 0 72% 51%;
+  --error-active: 0 65% 43%;
+  --info: 217 91% 60%; /* #3b82f6 */
+  --info-hover: 221 83% 53%;
+  --info-active: 224 76% 48%;
+  
+  /* Neutrals - HSL Format */
+  --neutral-50: 0 0% 98%; /* #fafafa */
+  --neutral-100: 0 0% 96%; /* #f5f5f5 */
+  --neutral-200: 0 0% 90%; /* #e5e5e5 */
+  --neutral-300: 0 0% 83%; /* #d4d4d4 */
+  --neutral-400: 0 0% 64%; /* #a3a3a3 */
+  --neutral-500: 0 0% 45%; /* #737373 */
+  --neutral-600: 0 0% 32%; /* #525252 */
+  --neutral-700: 0 0% 25%; /* #404040 */
+  --neutral-800: 0 0% 15%; /* #262626 */
+  --neutral-900: 0 0% 9%; /* #171717 */
+  
+  /* Background Colors */
+  --background: 0 0% 100%;
+  --background-secondary: 240 9% 98%;
+  --background-tertiary: 240 7% 95%;
+  --background-overlay: 0 0% 0% / 0.5;
+  
+  /* Text Colors */
+  --text-primary: 0 0% 10%;
+  --text-secondary: 0 0% 32%;
+  --text-tertiary: 0 0% 45%;
+  --text-disabled: 0 0% 64%;
+  --text-inverse: 0 0% 100%;
+  
+  /* Border Colors */
+  --border-light: 0 0% 90%;
+  --border-default: 0 0% 83%;
+  --border-dark: 0 0% 64%;
+  --border-focus: var(--primary);
+  
+  /* Glassmorphism */
+  --glass-bg: 0 0% 100% / 0.5;
+  --glass-bg-heavy: 0 0% 100% / 0.7;
+  --glass-bg-light: 0 0% 100% / 0.3;
+  --glass-border: 0 0% 100% / 0.2;
+  --glass-blur: 12px;
+  --glass-blur-heavy: 20px;
+  --glass-blur-light: 8px;
+  
+  /* Spacing Scale */
+  --space-xxs: 0.25rem;  /* 4px */
+  --space-xs: 0.5rem;    /* 8px */
+  --space-sm: 0.75rem;   /* 12px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+  --space-3xl: 4rem;     /* 64px */
+  --space-4xl: 6rem;     /* 96px */
+  
+  /* Sizes */
+  --size-xs: 20rem;     /* 320px */
+  --size-sm: 24rem;     /* 384px */
+  --size-md: 28rem;     /* 448px */
+  --size-lg: 32rem;     /* 512px */
+  --size-xl: 36rem;     /* 576px */
+  --size-2xl: 42rem;    /* 672px */
+  --size-3xl: 48rem;    /* 768px */
+  --size-4xl: 56rem;    /* 896px */
+  --size-5xl: 64rem;    /* 1024px */
+  --size-6xl: 72rem;    /* 1152px */
+  
+  /* Typography Scale */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  
+  /* Font Weights */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  --leading-loose: 2;
+  
+  /* Border Radius */
+  --radius-none: 0;
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-default: 0.375rem; /* 6px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+  --shadow-none: 0 0 #0000;
+  
+  /* Glass Shadows */
+  --shadow-glass: 0 8px 32px 0 rgb(31 38 135 / 0.37);
+  --shadow-glass-sm: 0 4px 16px 0 rgb(31 38 135 / 0.25);
+  --shadow-glass-lg: 0 12px 48px 0 rgb(31 38 135 / 0.45);
+  
+  /* Transition Durations */
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+  --duration-slowest: 1000ms;
+  
+  /* Transition Timing Functions */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Z-Index Scale */
+  --z-below: -1;
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+  --z-max: 9999;
+  
+  /* Tailwind-compatible CSS variables */
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary-foreground: 0 0% 100%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 10%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 0 0% 83%;
+  --ring: 24 100% 50%;
+}
+
+/* Dark Mode Theme */
+.dark {
+  /* WindTre Brand Colors - Adjusted for dark mode */
+  --brand-orange: 24 90% 45%;
+  --brand-purple: 273 50% 40%;
+  --brand-white: 0 0% 95%;
+  --brand-black: 0 0% 5%;
+  
+  /* Semantic Colors - Dark Mode */
+  --primary: 24 90% 45%;
+  --primary-hover: 24 90% 40%;
+  --primary-active: 24 90% 35%;
+  --secondary: 273 50% 40%;
+  --secondary-hover: 273 50% 36%;
+  --secondary-active: 273 50% 32%;
+  --success: 162 45% 35%;
+  --success-hover: 162 45% 31%;
+  --success-active: 162 45% 27%;
+  --warning: 35 85% 45%;
+  --warning-hover: 35 85% 40%;
+  --warning-active: 35 85% 35%;
+  --error: 0 65% 55%;
+  --error-hover: 0 65% 45%;
+  --error-active: 0 60% 38%;
+  --info: 217 85% 55%;
+  --info-hover: 221 78% 48%;
+  --info-active: 224 71% 43%;
+  
+  /* Neutrals - Dark Mode */
+  --neutral-50: 0 0% 5%;
+  --neutral-100: 0 0% 9%;
+  --neutral-200: 0 0% 15%;
+  --neutral-300: 0 0% 25%;
+  --neutral-400: 0 0% 45%;
+  --neutral-500: 0 0% 64%;
+  --neutral-600: 0 0% 83%;
+  --neutral-700: 0 0% 88%;
+  --neutral-800: 0 0% 93%;
+  --neutral-900: 0 0% 96%;
+  
+  /* Background Colors - Dark Mode */
+  --background: 0 0% 5%;
+  --background-secondary: 240 10% 8%;
+  --background-tertiary: 240 8% 12%;
+  --background-overlay: 0 0% 0% / 0.7;
+  
+  /* Text Colors - Dark Mode */
+  --text-primary: 0 0% 95%;
+  --text-secondary: 0 0% 83%;
+  --text-tertiary: 0 0% 64%;
+  --text-disabled: 0 0% 45%;
+  --text-inverse: 0 0% 5%;
+  
+  /* Border Colors - Dark Mode */
+  --border-light: 0 0% 15%;
+  --border-default: 0 0% 25%;
+  --border-dark: 0 0% 45%;
+  
+  /* Glassmorphism - Dark Mode */
+  --glass-bg: 0 0% 10% / 0.5;
+  --glass-bg-heavy: 0 0% 10% / 0.7;
+  --glass-bg-light: 0 0% 10% / 0.3;
+  --glass-border: 0 0% 100% / 0.1;
+  
+  /* Tailwind-compatible CSS variables - Dark Mode */
+  --foreground: 0 0% 95%;
+  --card: 0 0% 8%;
+  --card-foreground: 0 0% 95%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 95%;
+  --primary-foreground: 0 0% 95%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 0 65% 45%;
+  --destructive-foreground: 0 0% 95%;
+  --input: 0 0% 25%;
+  --ring: 24 90% 45%;
+}

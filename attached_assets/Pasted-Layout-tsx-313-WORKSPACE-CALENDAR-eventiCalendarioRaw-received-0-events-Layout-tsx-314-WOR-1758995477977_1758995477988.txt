@@ -1,0 +1,159 @@
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+workflowStore.ts:492 Warning: The result of getSnapshot should be cached to avoid an infinite loop Error Component Stack
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:1944:9)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:66:34)
+    at ReactFlowProvider (reactflow.js?v=191b42df:6492:38)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:666:21)
+    at AuthenticatedRoute (TenantShell.tsx:315:72)
+    at Route (wouter.js?v=191b42df:206:16)
+    at Switch (wouter.js?v=191b42df:262:17)
+    at TenantRoutes (TenantShell.tsx:200:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at Route (wouter.js?v=191b42df:206:16)
+    at Switch (wouter.js?v=191b42df:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=191b42df:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+printWarning @ chunk-ZHRYBLGQ.js?v=191b42df:521
+error @ chunk-ZHRYBLGQ.js?v=191b42df:505
+mountSyncExternalStore @ chunk-ZHRYBLGQ.js?v=191b42df:11891
+useSyncExternalStore @ chunk-ZHRYBLGQ.js?v=191b42df:12573
+useSyncExternalStore @ chunk-L7SIRVDC.js?v=191b42df:1120
+useStore @ zustand.js?v=191b42df:36
+useBoundStore @ zustand.js?v=191b42df:46
+useWorkflowHistory @ workflowStore.ts:492
+WorkflowBuilderView @ WorkflowManagementPage.tsx:2198
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=191b42df:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=191b42df:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=191b42df:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=191b42df:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=191b42df:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=191b42df:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=191b42df:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=191b42df:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=191b42df:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=191b42df:18627Understand this error
+chunk-ZHRYBLGQ.js?v=191b42df:19659 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-ZHRYBLGQ.js?v=191b42df:19659:19)
+    at scheduleUpdateOnFiber (chunk-ZHRYBLGQ.js?v=191b42df:18533:11)
+    at forceStoreRerender (chunk-ZHRYBLGQ.js?v=191b42df:11999:13)
+    at handleStoreChange (chunk-ZHRYBLGQ.js?v=191b42df:11981:15)
+    at reactflow.js?v=191b42df:137:39
+    at Set.forEach (<anonymous>)
+    at setState (reactflow.js?v=191b42df:137:17)
+    at reactflow.js?v=191b42df:3822:7
+    at commitHookEffectListMount (chunk-ZHRYBLGQ.js?v=191b42df:16915:34)
+    at commitPassiveMountOnFiber (chunk-ZHRYBLGQ.js?v=191b42df:18156:19)
+checkForNestedUpdates @ chunk-ZHRYBLGQ.js?v=191b42df:19659
+scheduleUpdateOnFiber @ chunk-ZHRYBLGQ.js?v=191b42df:18533
+forceStoreRerender @ chunk-ZHRYBLGQ.js?v=191b42df:11999
+handleStoreChange @ chunk-ZHRYBLGQ.js?v=191b42df:11981
+(anonymous) @ reactflow.js?v=191b42df:137
+setState @ reactflow.js?v=191b42df:137
+(anonymous) @ reactflow.js?v=191b42df:3822
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=191b42df:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=191b42df:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=191b42df:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=191b42df:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=191b42df:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=191b42df:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=191b42df:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=191b42df:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=191b42df:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=191b42df:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=191b42df:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=191b42df:18627Understand this error
+hook.js:608 The above error occurred in the <StoreUpdater> component:
+
+    at StoreUpdater (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/reactflow.js?v=191b42df:3826:23)
+    at Wrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/reactflow.js?v=191b42df:6500:28)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/reactflow.js?v=191b42df:6531:50
+    at div
+    at div
+    at _c9 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:99:12)
+    at div
+    at _c (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:19:11)
+    at div
+    at div
+    at div
+    at WorkflowBuilderView (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:2135:9)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at ReactFlowProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/reactflow.js?v=191b42df:6492:38)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:672:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:425:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:186:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=191b42df:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=191b42df:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=191b42df:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=191b42df:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=191b42df:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=191b42df:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=191b42df:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=191b42df:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=191b42df:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=191b42df:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=191b42df:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=191b42df:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=191b42df:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=191b42df:18627Understand this error
+chunk-ZHRYBLGQ.js?v=191b42df:19659 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-ZHRYBLGQ.js?v=191b42df:19659:19)
+    at scheduleUpdateOnFiber (chunk-ZHRYBLGQ.js?v=191b42df:18533:11)
+    at forceStoreRerender (chunk-ZHRYBLGQ.js?v=191b42df:11999:13)
+    at handleStoreChange (chunk-ZHRYBLGQ.js?v=191b42df:11981:15)
+    at reactflow.js?v=191b42df:137:39
+    at Set.forEach (<anonymous>)
+    at setState (reactflow.js?v=191b42df:137:17)
+    at reactflow.js?v=191b42df:3822:7
+    at commitHookEffectListMount (chunk-ZHRYBLGQ.js?v=191b42df:16915:34)
+    at commitPassiveMountOnFiber (chunk-ZHRYBLGQ.js?v=191b42df:18156:19)
+checkForNestedUpdates @ chunk-ZHRYBLGQ.js?v=191b42df:19659
+scheduleUpdateOnFiber @ chunk-ZHRYBLGQ.js?v=191b42df:18533
+forceStoreRerender @ chunk-ZHRYBLGQ.js?v=191b42df:11999
+handleStoreChange @ chunk-ZHRYBLGQ.js?v=191b42df:11981
+(anonymous) @ reactflow.js?v=191b42df:137
+setState @ reactflow.js?v=191b42df:137
+(anonymous) @ reactflow.js?v=191b42df:3822
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=191b42df:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=191b42df:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=191b42df:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=191b42df:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=191b42df:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=191b42df:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=191b42df:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=191b42df:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=191b42df:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=191b42df:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=191b42df:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=191b42df:18627Understand this error
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=n5dUn7TxRieR' failed:

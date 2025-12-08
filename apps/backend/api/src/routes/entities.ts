@@ -1,0 +1,1178 @@
+/**
+ * Entities API Routes
+ * 
+ * Provides REST endpoints for managing legal entities, stores, and users
+ * with full tenant isolation and RBAC integration.
+ */
+
+import express from 'express';
+import { z } from 'zod';
+import { createHash } from 'crypto';
+import { db, setTenantContext } from '../core/db';
+import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
+import { correlationMiddleware, logger } from '../core/logger';
+import { eq, and, sql, desc } from 'drizzle-orm';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules } from '../db/schema/w3suite';
+import { channels, commercialAreas, drivers } from '../db/schema/public';
+import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
+import { RBACStorage } from '../core/rbac-storage';
+
+const router = express.Router();
+
+router.use(correlationMiddleware);
+
+/**
+ * Generate a deterministic UUID v5 from a code string
+ * This allows code → id synchronization while maintaining UUID format
+ * Uses SHA-1 hash with W3Suite namespace UUID
+ */
+function codeToUUID(code: string): string {
+  // W3Suite namespace UUID (generated once, hardcoded)
+  const W3SUITE_NAMESPACE = '7f000000-0000-4000-8000-000000000000';
+  
+  // Create SHA-1 hash of namespace + code
+  const hash = createHash('sha1')
+    .update(W3SUITE_NAMESPACE + code)
+    .digest('hex');
+  
+  // Format as UUID v5: xxxxxxxx-xxxx-5xxx-yxxx-xxxxxxxxxxxx
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    '5' + hash.substring(13, 16), // version 5
+    ((parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16) + hash.substring(18, 20),
+    hash.substring(20, 32)
+  ].join('-');
+}
+
+// ==================== LEGAL ENTITIES ====================
+
+/**
+ * GET /api/legal-entities
+ * Get all legal entities for the current tenant
+ */
+router.get('/legal-entities', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    const entitiesList = await db.query.legalEntities.findMany({
+      where: eq(legalEntities.tenantId, tenantId),
+      orderBy: [desc(legalEntities.createdAt)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: entitiesList,
+      message: 'Legal entities retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving legal entities', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve legal entities',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/legal-entities
+ * Create a new legal entity
+ */
+router.post('/legal-entities', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const createSchema = z.object({
+      codice: z.string().min(1).max(20),
+      ragioneSociale: z.string().min(1).max(255), // Frontend field name
+      formaGiuridica: z.string().optional(),
+      partitaIva: z.string().optional(),
+      codiceFiscale: z.string().optional(),
+      settoreAttivita: z.string().optional()
+    }).transform(data => ({
+      ...data,
+      nome: data.ragioneSociale, // Map ragioneSociale → nome for database
+      pIva: data.partitaIva  // Map partitaIva → pIva for database
+    }));
+
+    const validation = createSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // RULE: Generate deterministic UUID from codice for code → id synchronization
+    const entityId = codeToUUID(validation.data.codice);
+    const entityData = {
+      ...validation.data,
+      id: entityId, // UUID generated from codice
+      tenantId
+    };
+
+    const [entity] = await db
+      .insert(legalEntities)
+      .values(entityData as any)
+      .returning();
+
+    logger.info('Legal entity created with code→UUID sync', { 
+      entityId: entity.id, 
+      codice: validation.data.codice,
+      generatedUUID: entityId,
+      tenantId 
+    });
+
+    res.status(201).json({
+      success: true,
+      data: entity,
+      message: 'Legal entity created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof entity>);
+
+  } catch (error: any) {
+    logger.error('Error creating legal entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create legal entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== STORES ====================
+
+/**
+ * GET /api/stores
+ * Get all stores for the current tenant
+ */
+router.get('/stores', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    const storesList = await db.query.stores.findMany({
+      where: eq(stores.tenantId, tenantId),
+      orderBy: [desc(stores.createdAt)]
+    });
+
+    // Map 'nome' to 'name' for frontend compatibility
+    const mappedStores = storesList.map(store => ({
+      ...store,
+      name: store.nome
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: mappedStores,
+      message: 'Stores retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving stores', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve stores',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/stores/:storeId/opening-rules
+ * Get opening rules for a specific store
+ */
+router.get('/stores/:storeId/opening-rules', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { storeId } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const rules = await db
+      .select()
+      .from(storeOpeningRules)
+      .where(
+        and(
+          eq(storeOpeningRules.storeId, storeId),
+          eq(storeOpeningRules.tenantId, tenantId)
+        )
+      );
+
+    const mappedRules = rules.map(rule => ({
+      id: rule.id,
+      storeId: rule.storeId,
+      dayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(rule.dayOfWeek),
+      openTime: rule.openTime || '09:00',
+      closeTime: rule.closeTime || '18:00',
+      isClosed: !rule.isOpen,
+      isOpen: rule.isOpen,
+      hasBreak: rule.hasBreak,
+      breakStartTime: rule.breakStartTime,
+      breakEndTime: rule.breakEndTime
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: mappedRules,
+      message: 'Opening rules retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving opening rules', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve opening rules',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/stores
+ * Create a new store
+ */
+router.post('/stores', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const createSchema = z.object({
+      code: z.string().min(1).max(50),
+      nome: z.string().min(1).max(255),
+      legalEntityId: z.string().uuid(),
+      channelId: z.string().uuid(),
+      commercialAreaId: z.string().uuid(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      province: z.string().optional(),
+      cap: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().email().optional()
+    });
+
+    const validation = createSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Auto-determine category based on code prefix
+    // 5xxxxxxxx = warehouse, 6xxxxxxxx = office, 9xxxxxxxx = sales_point
+    const firstChar = validation.data.code.charAt(0);
+    let category: 'warehouse' | 'office' | 'sales_point' = 'sales_point';
+    if (firstChar === '5') category = 'warehouse';
+    else if (firstChar === '6') category = 'office';
+    else if (firstChar === '9') category = 'sales_point';
+
+    // RULE: Generate deterministic UUID from code for code → id synchronization
+    const storeId = codeToUUID(validation.data.code);
+    const storeData = {
+      ...validation.data,
+      id: storeId, // UUID generated from code
+      tenantId,
+      category
+    };
+
+    const [store] = await db
+      .insert(stores)
+      .values(storeData as any)
+      .returning();
+
+    logger.info('Store created with code→UUID sync', { 
+      storeId: store.id, 
+      code: validation.data.code,
+      generatedUUID: storeId,
+      tenantId 
+    });
+
+    res.status(201).json({
+      success: true,
+      data: store,
+      message: 'Store created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof store>);
+
+  } catch (error: any) {
+    logger.error('Error creating store', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create store',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== USERS ====================
+
+/**
+ * GET /api/users
+ * Get all users for the current tenant
+ */
+router.get('/users', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    const usersList = await db.query.users.findMany({
+      where: eq(users.tenantId, tenantId),
+      orderBy: [desc(users.createdAt)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: usersList,
+      message: 'Users retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving users', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve users',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/users
+ * Create a new user with RBAC scope assignments
+ */
+router.post('/users', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // ✅ Schema che corrisponde ai campi inviati dal frontend
+    const createSchema = z.object({
+      username: z.string().min(1).max(100),
+      nome: z.string().min(1).max(100),
+      cognome: z.string().min(1).max(100),
+      email: z.string().email(),
+      telefono: z.string().optional(),
+      ruolo: z.string().min(1), // Nome del ruolo (non UUID)
+      stato: z.string().default('attivo'),
+      foto: z.string().nullable().optional(),
+      password: z.string().min(6),
+      // ✅ Scope piramidale dal frontend - UUID strings
+      selectAllLegalEntities: z.boolean().default(false),
+      selectedLegalEntities: z.array(z.string()).default([]), // UUID strings
+      selectedStores: z.array(z.string()).default([]), // UUID strings
+      // ✅ Extension VoIP (optional - 1:1 relationship con user)
+      extension: z.object({
+        extNumber: z.string().regex(/^\d{3,6}$/, "Extension must be 3-6 digits"),
+        sipDomain: z.string().min(1, "SIP domain required"),
+        classOfService: z.enum(['agent', 'supervisor', 'admin']).default('agent'),
+        voicemailEnabled: z.boolean().default(true),
+        storeId: z.string().uuid().optional(), // Optional store association
+      }).optional()
+    });
+
+    const validation = createSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const data = validation.data;
+
+    await setTenantContext(tenantId);
+
+    // 1️⃣ Cerca il ruolo per nome nel database
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(
+        and(
+          eq(roles.tenantId, tenantId),
+          eq(roles.name, data.ruolo)
+        )
+      )
+      .limit(1);
+
+    if (!role) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid role',
+        message: `Role '${data.ruolo}' not found for tenant`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // 2️⃣ Crea l'utente + extension in transaction atomica
+    const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // ✅ ATOMIC TRANSACTION: User + Extension creation (rollback on any failure)
+    const { user, extension } = await db.transaction(async (tx) => {
+      // Insert user
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          id: userId,
+          firstName: data.nome,
+          lastName: data.cognome,
+          email: data.email,
+          phoneNumber: data.telefono || null,
+          tenantId,
+          isActive: data.stato === 'attivo',
+          oauthProvider: 'manual'
+        } as any)
+        .returning();
+
+      // Auto-provision VoIP Extension (if data provided) - atomic with user creation
+      let createdExtension = null;
+      if (data.extension) {
+        // ✅ Validate extension data using insertVoipExtensionSchema
+        const extensionValidation = insertVoipExtensionSchema.safeParse({
+          tenantId,
+          userId: createdUser.id,
+          storeId: data.extension.storeId || null,
+          sipDomain: data.extension.sipDomain,
+          extNumber: data.extension.extNumber,
+          displayName: `${data.nome} ${data.cognome}`,
+          enabled: true,
+          voicemailEnabled: data.extension.voicemailEnabled,
+          classOfService: data.extension.classOfService,
+        });
+
+        if (!extensionValidation.success) {
+          throw new Error(`Extension validation failed: ${extensionValidation.error.issues.map(i => i.message).join(', ')}`);
+        }
+
+        const [ext] = await tx
+          .insert(voipExtensions)
+          .values(extensionValidation.data as any)
+          .returning();
+        
+        createdExtension = ext;
+        logger.info('VoIP extension auto-provisioned for user', { 
+          userId: createdUser.id, 
+          extNumber: (ext as any).extNumber, 
+          sipDomain: (ext as any).sipDomain,
+          tenantId 
+        });
+      }
+
+      return { user: createdUser, extension: createdExtension };
+    });
+
+    // 3️⃣ Crea userAssignments con logica scope piramidale
+    const rbacStorage = new RBACStorage();
+    
+    if (data.selectAllLegalEntities) {
+      // ✅ LIVELLO 1: Accesso completo tenant
+      await rbacStorage.assignRoleToUser({
+        userId: user.id,
+        roleId: role.id,
+        scopeType: 'tenant',
+        scopeId: tenantId
+      });
+      logger.info('User assigned tenant-wide access', { userId: user.id, roleId: role.id, tenantId });
+    } else if (data.selectedStores.length > 0) {
+      // ✅ LIVELLO 3: Accesso specifico a punti vendita
+      for (const storeId of data.selectedStores) {
+        await rbacStorage.assignRoleToUser({
+          userId: user.id,
+          roleId: role.id,
+          scopeType: 'store',
+          scopeId: storeId // UUID string
+        });
+      }
+      logger.info('User assigned store-level access', { userId: user.id, roleId: role.id, storeCount: data.selectedStores.length });
+    } else if (data.selectedLegalEntities.length > 0) {
+      // ✅ LIVELLO 2: Accesso specifico a ragioni sociali
+      for (const legalEntityId of data.selectedLegalEntities) {
+        await rbacStorage.assignRoleToUser({
+          userId: user.id,
+          roleId: role.id,
+          scopeType: 'legal_entity',
+          scopeId: legalEntityId // UUID string
+        });
+      }
+      logger.info('User assigned legal entity access', { userId: user.id, roleId: role.id, legalEntityCount: data.selectedLegalEntities.length });
+    } else {
+      // 🚫 VALIDATION ERROR: Nessuno scope selezionato
+      // L'utente DEVE selezionare almeno uno scope o richiedere esplicitamente accesso tenant
+      logger.error('User creation failed - no scope selected', { userId: user.id, roleId: role.id });
+      
+      // Rollback: elimina l'utente creato
+      await db.delete(users).where(eq(users.id, user.id));
+      
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: 'Devi selezionare almeno uno scope: accesso completo (tutte le legal entities), legal entities specifiche, o punti vendita specifici',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('User created with RBAC assignments', { userId: user.id, tenantId, role: role.name });
+
+    res.status(201).json({
+      success: true,
+      data: user,
+      message: 'User created successfully with role assignments',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof user>);
+
+  } catch (error: any) {
+    logger.error('Error creating user', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create user',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/users/:id/assignments
+ * Get user scope assignments with details
+ * RBAC: Requires admin permission
+ */
+router.get('/users/:id/assignments', requirePermission('users:read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get user assignments with role and scope details
+    const assignments = await db
+      .select({
+        userId: userAssignments.userId,
+        roleId: userAssignments.roleId,
+        roleName: roles.name,
+        roleDescription: roles.description,
+        scopeType: userAssignments.scopeType,
+        scopeId: userAssignments.scopeId,
+        expiresAt: userAssignments.expiresAt,
+        createdAt: userAssignments.createdAt
+      })
+      .from(userAssignments)
+      .innerJoin(roles, eq(userAssignments.roleId, roles.id))
+      .where(
+        and(
+          eq(userAssignments.userId, userId),
+          eq(roles.tenantId, tenantId)
+        )
+      );
+
+    // Enrich with scope details (legal entity or store names)
+    const enrichedAssignments = await Promise.all(
+      assignments.map(async (assignment) => {
+        let scopeDetails = null;
+
+        if (assignment.scopeType === 'legal_entity') {
+          const [legalEntity] = await db
+            .select({ id: legalEntities.id, name: legalEntities.nome, code: legalEntities.codice })
+            .from(legalEntities)
+            .where(eq(legalEntities.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = legalEntity;
+        } else if (assignment.scopeType === 'store') {
+          const [store] = await db
+            .select({ id: stores.id, name: stores.nome, code: stores.code })
+            .from(stores)
+            .where(eq(stores.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = store;
+        } else if (assignment.scopeType === 'tenant') {
+          const [tenant] = await db
+            .select({ id: tenants.id, name: tenants.name })
+            .from(tenants)
+            .where(eq(tenants.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = tenant;
+        }
+
+        return {
+          ...assignment,
+          scopeDetails
+        };
+      })
+    );
+
+    logger.info('User assignments retrieved', { userId, assignmentsCount: enrichedAssignments.length });
+
+    res.status(200).json({
+      success: true,
+      data: enrichedAssignments,
+      message: 'User assignments retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving user assignments', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      userId: req.params.id 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve user assignments',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/users/assignments-batch
+ * Get assignments for multiple users in a single request (performance optimization)
+ * RBAC: Requires users:read permission
+ */
+router.post('/users/assignments-batch', requirePermission('users:read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { userIds } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request',
+        message: 'userIds must be a non-empty array',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+    const rbacStorage = new RBACStorage();
+
+    // Fetch all assignments for all users in parallel
+    const assignmentPromises = userIds.map(async (userId: string) => {
+      const rawAssignments = await rbacStorage.getUserRoles(userId, tenantId);
+
+      // Enrich with scope details
+      const enrichedAssignments = await Promise.all(
+        rawAssignments.map(async (assignment: any) => {
+          let scopeDetails = null;
+
+          if (assignment.scopeType === 'legal_entity') {
+            const [legalEntity] = await db
+              .select({ id: legalEntities.id, name: legalEntities.nome, code: legalEntities.codice })
+              .from(legalEntities)
+              .where(eq(legalEntities.id, assignment.scopeId))
+              .limit(1);
+            scopeDetails = legalEntity;
+          } else if (assignment.scopeType === 'store') {
+            const [store] = await db
+              .select({ id: stores.id, name: stores.nome, code: stores.code })
+              .from(stores)
+              .where(eq(stores.id, assignment.scopeId))
+              .limit(1);
+            scopeDetails = store;
+          } else if (assignment.scopeType === 'tenant') {
+            const [tenant] = await db
+              .select({ id: tenants.id, name: tenants.name })
+              .from(tenants)
+              .where(eq(tenants.id, assignment.scopeId))
+              .limit(1);
+            scopeDetails = tenant;
+          }
+
+          return {
+            ...assignment,
+            scopeDetails
+          };
+        })
+      );
+
+      return {
+        userId,
+        assignments: enrichedAssignments
+      };
+    });
+
+    const results = await Promise.all(assignmentPromises);
+
+    logger.info('Batch user assignments retrieved', { 
+      userCount: userIds.length, 
+      totalAssignments: results.reduce((sum, r) => sum + r.assignments.length, 0) 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: results,
+      message: 'Batch user assignments retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving batch user assignments', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve batch user assignments',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/users/:id/permissions
+ * Get calculated permissions from user's role(s)
+ * RBAC: Requires admin permission
+ */
+router.get('/users/:id/permissions', requirePermission('users:read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Use RBACStorage to get calculated permissions
+    const rbacStorage = new RBACStorage();
+    const permissions = await rbacStorage.getUserPermissions(userId, tenantId);
+
+    logger.info('User permissions calculated', { userId, permissionsCount: permissions.length });
+
+    res.status(200).json({
+      success: true,
+      data: permissions,
+      message: 'User permissions calculated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error calculating user permissions', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      userId: req.params.id 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to calculate user permissions',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== ROLES ====================
+
+/**
+ * GET /api/roles
+ * Get all roles for the current tenant
+ */
+router.get('/roles', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get all roles for this tenant
+    const rolesList = await db.query.roles.findMany({
+      where: eq(roles.tenantId, tenantId),
+      orderBy: [desc(roles.createdAt)]
+    });
+
+    logger.info('Roles retrieved', { rolesCount: rolesList.length, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: rolesList,
+      message: 'Roles retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving roles', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve roles',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PUBLIC REFERENCE DATA ====================
+
+/**
+ * GET /api/drivers
+ * Get all active drivers from public schema (no tenant context needed)
+ */
+router.get('/drivers', async (req, res) => {
+  try {
+    // Query public.drivers - no tenant isolation needed
+    const driversList = await db.query.drivers.findMany({
+      where: eq(drivers.active, true),
+      orderBy: [desc(drivers.name)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: driversList,
+      message: 'Drivers retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving drivers', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve drivers',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== STORE TRACKING CONFIG ====================
+
+/**
+ * GET /api/stores/:id/tracking-config
+ * Get GTM tracking configuration for a store
+ */
+router.get('/stores/:id/tracking-config', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get tracking config
+    const [config] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    res.status(200).json({
+      success: true,
+      data: config || {
+        storeId,
+        tenantId,
+        gtmConfigured: false,
+        ga4MeasurementId: null,
+        googleAdsConversionId: null,
+        facebookPixelId: null,
+        tiktokPixelId: null
+      },
+      message: 'Store tracking config retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving store tracking config', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve store tracking config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/stores/:id/tracking-config
+ * Update GTM tracking configuration for a store
+ */
+router.put('/stores/:id/tracking-config', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const storeId = req.params.id;
+
+    const updateSchema = z.object({
+      ga4MeasurementId: z.string().optional().nullable(),
+      googleAdsConversionId: z.string().optional().nullable(),
+      facebookPixelId: z.string().optional().nullable(),
+      tiktokPixelId: z.string().optional().nullable()
+    });
+
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify store belongs to tenant
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if config exists
+    const [existingConfig] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    let config;
+
+    if (existingConfig) {
+      // Update existing config
+      [config] = await db
+        .update(storeTrackingConfig)
+        .set({
+          ...validation.data,
+          updatedAt: new Date()
+        })
+        .where(eq(storeTrackingConfig.id, existingConfig.id))
+        .returning();
+    } else {
+      // Create new config
+      [config] = await db
+        .insert(storeTrackingConfig)
+        .values({
+          storeId,
+          tenantId,
+          ...validation.data
+        } as any)
+        .returning();
+    }
+
+    logger.info('Store tracking config updated', { 
+      storeId,
+      tenantId,
+      hasGA4: !!validation.data.ga4MeasurementId,
+      hasGoogleAds: !!validation.data.googleAdsConversionId,
+      hasFacebook: !!validation.data.facebookPixelId,
+      hasTikTok: !!validation.data.tiktokPixelId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: config,
+      message: 'Store tracking config updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating store tracking config', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      storeId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update store tracking config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+export default router;

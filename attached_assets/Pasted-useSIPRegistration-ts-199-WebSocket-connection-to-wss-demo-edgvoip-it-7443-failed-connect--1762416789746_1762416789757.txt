@@ -1,0 +1,39 @@
+useSIPRegistration.ts:199 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: 
+_connect @ sip__js.js?v=fa95f4be:12290
+connect @ sip__js.js?v=fa95f4be:12215
+start @ sip__js.js?v=fa95f4be:12967
+setupSIP @ useSIPRegistration.ts:199
+(anonymous) @ useSIPRegistration.ts:235
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fa95f4be:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fa95f4be:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fa95f4be:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fa95f4be:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fa95f4be:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fa95f4be:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fa95f4be:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fa95f4be:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fa95f4be:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fa95f4be:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fa95f4be:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=fa95f4be:18627Understand this error
+hook.js:608 Thu Nov 06 2025 09:12:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=fa95f4be:6959
+genericLog @ sip__js.js?v=fa95f4be:6941
+genericLog @ sip__js.js?v=fa95f4be:6881
+error @ sip__js.js?v=fa95f4be:6869
+onWebSocketError @ sip__js.js?v=fa95f4be:12427
+(anonymous) @ sip__js.js?v=fa95f4be:12293Understand this error
+hook.js:608 Thu Nov 06 2025 09:12:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=fa95f4be:6962
+genericLog @ sip__js.js?v=fa95f4be:6941
+genericLog @ sip__js.js?v=fa95f4be:6881
+warn @ sip__js.js?v=fa95f4be:6872
+onWebSocketClose @ sip__js.js?v=fa95f4be:12413
+(anonymous) @ sip__js.js?v=fa95f4be:12292Understand this warning
+sip__js.js?v=fa95f4be:6965 Thu Nov 06 2025 09:12:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+sip__js.js?v=fa95f4be:6965 Thu Nov 06 2025 09:12:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+useSIPRegistration.ts:228 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=fa95f4be:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=fa95f4be:12292:49

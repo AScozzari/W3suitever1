@@ -1,0 +1,127 @@
+’Europa centrale) | sip.Registerer | · instanceId: ""
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:29:40 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · params: {}
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:29:40 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · regId: 0
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:29:40 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · registrar: sip:demo.edgvoip.it
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:29:40 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · refreshFrequency: 99
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:29:40 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:29:40 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS j510cbqto7qk.invalid;branch=z9hG4bK3729063
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=u4duvlsp6v
+CSeq: 2 REGISTER
+Call-ID: g7p1fdf5fljp3brt7dqh
+Max-Forwards: 70
+Contact: <sip:l3af3h9i@j510cbqto7qk.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:29:48, Token expires: 08:44:36
+index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:29:55, Token expires: 08:44:36
+index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:30:01, Token expires: 08:44:36
+index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:30:09, Token expires: 08:44:36
+2index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:30:10, Token expires: 08:44:36
+index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:30:11, Token expires: 08:44:36
+installHook.js:1 Sun Dec 07 2025 08:30:12 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request timed out. Generating internal 408 Request Timeout.
+overrideMethod @ installHook.js:1
+print @ Layout-BTKw3qq4.js:58
+genericLog @ Layout-BTKw3qq4.js:58
+genericLog @ Layout-BTKw3qq4.js:58
+warn @ Layout-BTKw3qq4.js:58
+onRequestTimeout @ Layout-BTKw3qq4.js:71
+onRequestTimeout @ Layout-BTKw3qq4.js:71
+onRequestTimeout @ Layout-BTKw3qq4.js:61
+timerF @ Layout-BTKw3qq4.js:61
+(anonymous) @ Layout-BTKw3qq4.js:61
+setTimeout
+Ie @ Layout-BTKw3qq4.js:61
+init @ Layout-BTKw3qq4.js:71
+xe @ Layout-BTKw3qq4.js:71
+Tn @ Layout-BTKw3qq4.js:71
+register @ Layout-BTKw3qq4.js:71
+register @ Layout-BTKw3qq4.js:58
+(anonymous) @ Layout-BTKw3qq4.js:86
+await in (anonymous)
+(anonymous) @ Layout-BTKw3qq4.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this warning
+installHook.js:1 Sun Dec 07 2025 08:30:12 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 408
+overrideMethod @ installHook.js:1
+print @ Layout-BTKw3qq4.js:58
+genericLog @ Layout-BTKw3qq4.js:58
+genericLog @ Layout-BTKw3qq4.js:58
+warn @ Layout-BTKw3qq4.js:58
+onReject @ Layout-BTKw3qq4.js:58
+receiveResponse @ Layout-BTKw3qq4.js:71
+onRequestTimeout @ Layout-BTKw3qq4.js:71
+onRequestTimeout @ Layout-BTKw3qq4.js:71
+onRequestTimeout @ Layout-BTKw3qq4.js:61
+timerF @ Layout-BTKw3qq4.js:61
+(anonymous) @ Layout-BTKw3qq4.js:61
+setTimeout
+Ie @ Layout-BTKw3qq4.js:61
+init @ Layout-BTKw3qq4.js:71
+xe @ Layout-BTKw3qq4.js:71
+Tn @ Layout-BTKw3qq4.js:71
+register @ Layout-BTKw3qq4.js:71
+register @ Layout-BTKw3qq4.js:58
+(anonymous) @ Layout-BTKw3qq4.js:86
+await in (anonymous)
+(anonymous) @ Layout-BTKw3qq4.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this warning
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:30:12 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+Layout-BTKw3qq4.js:86 📡 Registration state: Unregistered
+Layout-BTKw3qq4.js:58 Sun Dec 07 2025 08:30:12 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+index-Btmx18aq.js:2 🔍 Token expiry check: Current time: 08:30:24, Token expires: 08:44:36

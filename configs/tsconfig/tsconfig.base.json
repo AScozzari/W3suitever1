@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    /* Path aliases as specified in documents */
+    "baseUrl": "../../",
+    "paths": {
+      "@ui/*": ["packages/ui/src/*"],
+      "@tokens/*": ["packages/tokens/*"],
+      "@sdk/*": ["packages/sdk/*"],
+      "@dwh/*": ["packages/dwh/*"],
+      "@cms-core/*": ["packages/cms-core/*"],
+      "@/core/*": ["apps/frontend/web/src/core/*"],
+      "@/features/*": ["apps/frontend/web/src/features/*"],
+      "@/layout/*": ["apps/frontend/web/src/layout/*"],
+      "@/app/*": ["apps/frontend/web/src/app/*"],
+      "@brand/core/*": ["apps/frontend/brand-web/src/core/*"],
+      "@brand/features/*": ["apps/frontend/brand-web/src/features/*"],
+      "@api/core/*": ["apps/backend/api/src/core/*"],
+      "@api/modules/*": ["apps/backend/api/src/modules/*"],
+      "@brand-api/*": ["apps/backend/brand-api/src/*"]
+    }
+  },
+  "include": [],
+  "references": []
+}

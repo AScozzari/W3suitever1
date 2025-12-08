@@ -1,0 +1,167 @@
+🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/team-workflow-assignments
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+queryClient.ts:228  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/team-workflow-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:228
+fetchFn @ @tanstack_react-query.js?v=7a33128c:1097
+run @ @tanstack_react-query.js?v=7a33128c:795
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+start @ @tanstack_react-query.js?v=7a33128c:838
+fetch @ @tanstack_react-query.js?v=7a33128c:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7a33128c:1639
+fetch @ @tanstack_react-query.js?v=7a33128c:1449
+refetch @ @tanstack_react-query.js?v=7a33128c:1439
+onFocus @ @tanstack_react-query.js?v=7a33128c:998
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:2713
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:2712
+batch @ @tanstack_react-query.js?v=7a33128c:624
+onFocus @ @tanstack_react-query.js?v=7a33128c:2711
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:390
+onFocus @ @tanstack_react-query.js?v=7a33128c:389
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:376
+listener @ @tanstack_react-query.js?v=7a33128c:347Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+queryClient.ts:228  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24 500 (Internal Server Error)
+queryFn @ queryClient.ts:228
+fetchFn @ @tanstack_react-query.js?v=7a33128c:1097
+run @ @tanstack_react-query.js?v=7a33128c:795
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+start @ @tanstack_react-query.js?v=7a33128c:838
+fetch @ @tanstack_react-query.js?v=7a33128c:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7a33128c:1639
+setOptions @ @tanstack_react-query.js?v=7a33128c:1392
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7a33128c:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7a33128c:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7a33128c:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7a33128c:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7a33128c:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7a33128c:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7a33128c:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7a33128c:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7a33128c:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7a33128c:18627Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/team-workflow-assignments
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/team-workflow-assignments
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+queryClient.ts:228  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/team-workflow-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:228
+fetchFn @ @tanstack_react-query.js?v=7a33128c:1097
+run @ @tanstack_react-query.js?v=7a33128c:795
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+start @ @tanstack_react-query.js?v=7a33128c:838
+fetch @ @tanstack_react-query.js?v=7a33128c:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7a33128c:1639
+fetch @ @tanstack_react-query.js?v=7a33128c:1449
+refetch @ @tanstack_react-query.js?v=7a33128c:1439
+onFocus @ @tanstack_react-query.js?v=7a33128c:998
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:2713
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:2712
+batch @ @tanstack_react-query.js?v=7a33128c:624
+onFocus @ @tanstack_react-query.js?v=7a33128c:2711
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:2751
+await in (anonymous)
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:390
+onFocus @ @tanstack_react-query.js?v=7a33128c:389
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:376
+listener @ @tanstack_react-query.js?v=7a33128c:347Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+queryClient.ts:228  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24 500 (Internal Server Error)
+queryFn @ queryClient.ts:228
+fetchFn @ @tanstack_react-query.js?v=7a33128c:1097
+run @ @tanstack_react-query.js?v=7a33128c:795
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:816
+Promise.catch
+run @ @tanstack_react-query.js?v=7a33128c:799
+start @ @tanstack_react-query.js?v=7a33128c:838
+fetch @ @tanstack_react-query.js?v=7a33128c:1144
+executeFetch_fn @ @tanstack_react-query.js?v=7a33128c:1639
+setOptions @ @tanstack_react-query.js?v=7a33128c:1392
+(anonymous) @ @tanstack_react-query.js?v=7a33128c:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=7a33128c:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=7a33128c:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=7a33128c:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=7a33128c:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=7a33128c:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=7a33128c:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=7a33128c:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=7a33128c:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=7a33128c:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=7a33128c:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=7a33128c:18627Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications/unread-count
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/notifications/unread-count
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}

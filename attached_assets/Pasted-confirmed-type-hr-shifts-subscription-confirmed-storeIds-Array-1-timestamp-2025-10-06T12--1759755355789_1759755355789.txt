@@ -1,0 +1,381 @@
+confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-10-06T12:55:42.077Z'}
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users?storeId=50000000-0000-0000-0000-000000000008 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts?storeId=50000000-0000-0000-0000-000000000008&startDate=2025-10-06&endDate=2025-10-12 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments?storeId=50000000-0000-0000-0000-000000000008&startDate=2025-10-06&endDate=2025-10-12 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1692ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1759755343150-oquh3ht1b', timestamp: '2025-10-06T12:55:43.150Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1759755343150-oquh3ht1b
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/auth/session 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1453ms (attempt 1)
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflow-templates?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+onSubscribe @ @tanstack_react-query.js?v=bd45bd53:1335
+subscribe @ @tanstack_react-query.js?v=bd45bd53:24
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=bd45bd53:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=bd45bd53:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/universal-requests?department=hr 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+setOptions @ @tanstack_react-query.js?v=bd45bd53:1392
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bd45bd53:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bd45bd53:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bd45bd53:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bd45bd53:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shifts 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+setOptions @ @tanstack_react-query.js?v=bd45bd53:1392
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bd45bd53:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bd45bd53:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bd45bd53:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bd45bd53:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-templates 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+setOptions @ @tanstack_react-query.js?v=bd45bd53:1392
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bd45bd53:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bd45bd53:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bd45bd53:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bd45bd53:384Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/documents 502 (Bad Gateway)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=bd45bd53:1097
+run @ @tanstack_react-query.js?v=bd45bd53:795
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:816
+Promise.catch
+run @ @tanstack_react-query.js?v=bd45bd53:799
+start @ @tanstack_react-query.js?v=bd45bd53:838
+fetch @ @tanstack_react-query.js?v=bd45bd53:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bd45bd53:1639
+setOptions @ @tanstack_react-query.js?v=bd45bd53:1392
+(anonymous) @ @tanstack_react-query.js?v=bd45bd53:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bd45bd53:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bd45bd53:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bd45bd53:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bd45bd53:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bd45bd53:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bd45bd53:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bd45bd53:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=bd45bd53:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bd45bd53:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=bd45bd53:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bd45bd53:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bd45bd53:384Understand this error
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1759755343670-4qb2i7mp3', timestamp: '2025-10-06T12:55:43.670Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1759755343670-4qb2i7mp3
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-10-06T12:55:43.917Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-10-06T12:55:43.917Z'}
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1759755344181-au8idecxi', timestamp: '2025-10-06T12:55:44.181Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1759755344181-au8idecxi
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1640ms (attempt 1)
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4a

@@ -1,0 +1,43 @@
+Quando aggiorni un token di accesso o utilizzi l'autorizzazione incrementale, il token potrebbe essere scaduto o essere stato invalidato. Autentica di nuovo l'utente e chiedi il suo consenso per ottenere nuovi token. Se continui a visualizzare questo errore, assicurati che la tua applicazione sia stata configurata correttamente e che tu stia utilizzando i token e i parametri corretti nella tua richiesta. In caso contrario, l'account utente potrebbe essere stato eliminato o disattivato.
+
+redirect_uri_mismatch
+Il redirect_uri passato nella richiesta di autorizzazione non corrisponde a un URI di reindirizzamento autorizzato per l'ID client OAuth. Esamina gli URI di reindirizzamento autorizzati in Google Cloud Console Clients page.
+
+Il parametro redirect_uri potrebbe fare riferimento al flusso OAuth out-of-band (OOB) che è stato ritirato e non è più supportato. Consulta la guida alla migrazione per aggiornare l'integrazione.
+
+invalid_request
+Si è verificato un problema con la richiesta che hai effettuato. Ciò potrebbe essere dovuto a diversi motivi:
+
+La richiesta non è stata formattata correttamente
+Nella richiesta mancavano i parametri obbligatori
+La richiesta utilizza un metodo di autorizzazione non supportato da Google. Verifica che l'integrazione OAuth utilizzi un metodo di integrazione consigliato
+Passaggio 4: gestisci la risposta del server OAuth 2.0
+Importante: Prima di gestire la risposta OAuth 2.0 sul server, devi verificare che il state ricevuto da Google corrisponda al state inviato nella richiesta di autorizzazione. Questa verifica contribuisce a garantire che la richiesta venga effettuata dall'utente e non da uno script dannoso e riduce il rischio di attacchi CSRF.
+Il server OAuth 2.0 risponde alla richiesta di accesso della tua applicazione utilizzando l'URL specificato nella richiesta.
+
+Se l'utente approva la richiesta di accesso, la risposta contiene un codice di autorizzazione. Se l'utente non approva la richiesta, la risposta contiene un messaggio di errore. Il codice di autorizzazione o il messaggio di errore restituito al server web viene visualizzato nella stringa di query, come mostrato di seguito:
+
+Una risposta di errore:
+
+
+https://oauth2.example.com/auth?error=access_denied
+Una risposta con il codice di autorizzazione:
+
+
+https://oauth2.example.com/auth?code=4/P7q7W91a-oMsCeLvIaQm6bTrgtp7
+Importante: se l'endpoint di risposta esegue il rendering di una pagina HTML, tutte le risorse della pagina potranno visualizzare il codice di autorizzazione nell'URL. Gli script possono leggere direttamente l'URL e l'URL nell'intestazione HTTP Referer può essere inviato a una o tutte le risorse della pagina.
+Valuta attentamente se vuoi inviare le credenziali di autorizzazione a tutte le risorse della pagina (in particolare script di terze parti come plug-in social e analisi). Per evitare questo problema, consigliamo al server di gestire prima la richiesta, quindi di reindirizzare a un altro URL che non includa i parametri di risposta.
+
+Esempio di risposta del server OAuth 2.0
+Puoi testare questo flusso facendo clic sul seguente URL di esempio, che richiede l'accesso di sola lettura per visualizzare i metadati dei file in Google Drive e l'accesso di sola lettura per visualizzare gli eventi di Google Calendar:
+
+
+https://accounts.google.com/o/oauth2/v2/auth?
+ scope=https%3A//www.googleapis.com/auth/drive.metadata.readonly%20https%3A//www.googleapis.com/auth/calendar.readonly&
+ access_type=offline&
+ include_granted_scopes=true&
+ response_type=code&
+ state=state_parameter_passthrough_value&
+ redirect_uri=https%3A//oauth2.example.com/code&
+ client_id=client_id
+Dopo aver completato il flusso OAuth 2.0, dovresti essere reindirizzato a http://localhost/oauth2callback, che probabilmente genererà un errore 404 NOT FOUND a meno che la tua macchina locale non fornisca un file a quell'indirizzo. Il passaggio successivo fornisce maggiori dettagli sulle informazioni restituite nell'URI quando l'utente viene reindirizzato alla tua applicazione.

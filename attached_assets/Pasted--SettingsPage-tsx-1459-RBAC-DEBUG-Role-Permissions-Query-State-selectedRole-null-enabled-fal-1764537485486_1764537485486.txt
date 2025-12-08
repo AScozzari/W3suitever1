@@ -1,0 +1,57 @@
+.
+SettingsPage.tsx:1459 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+SettingsPage.tsx:1722 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voip/extensions/me 404 (Not Found)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=f4a34e1b:1097
+run @ @tanstack_react-query.js?v=f4a34e1b:795
+start @ @tanstack_react-query.js?v=f4a34e1b:838
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=f4a34e1b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=f4a34e1b:384Understand this error
+SettingsPage.tsx:1722 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage.tsx:684 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:697 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+SettingsPage.tsx:684 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:697 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+SettingsPage.tsx:669 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage.tsx:1459 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonymous) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Understand this error
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonymous) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Understand this error
+6content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)

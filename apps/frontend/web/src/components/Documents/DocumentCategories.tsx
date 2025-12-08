@@ -1,0 +1,350 @@
+import { FileText, FolderOpen, Clock, Shield, Archive, Trash2, Star, Share2, Calendar, User, Users, Settings } from 'lucide-react';
+
+interface Category {
+  id: string;
+  name: string;
+  icon: any;
+  count?: number;
+  color: string;
+  gradient: string;
+}
+
+interface DocumentCategoriesProps {
+  categories: Category[];
+  selectedCategory: string | null;
+  onSelectCategory: (categoryId: string | null) => void;
+  onCategorySelect?: (category: any) => void; // Added missing prop
+  documentCounts: Record<string, number>;
+  sourceStats?: Record<string, number>; // New prop for source statistics
+}
+
+export default function DocumentCategories({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+  documentCounts,
+  sourceStats = {}
+}: DocumentCategoriesProps) {
+  const defaultCategories: Category[] = [
+    {
+      id: 'all',
+      name: 'Tutti i Documenti',
+      icon: FileText,
+      color: 'text-gray-600',
+      gradient: 'from-gray-400 to-gray-600'
+    },
+    {
+      id: 'payslip',
+      name: 'Buste Paga',
+      icon: '💰',
+      color: 'text-green-600',
+      gradient: 'from-green-400 to-emerald-600'
+    },
+    {
+      id: 'contract',
+      name: 'Contratti',
+      icon: '📄',
+      color: 'text-blue-600',
+      gradient: 'from-blue-400 to-indigo-600'
+    },
+    {
+      id: 'certificate',
+      name: 'Certificati',
+      icon: '🏆',
+      color: 'text-purple-600',
+      gradient: 'from-purple-400 to-violet-600'
+    },
+    {
+      id: 'id_document',
+      name: 'Documenti ID',
+      icon: '🆔',
+      color: 'text-slate-600',
+      gradient: 'from-gray-400 to-slate-600'
+    },
+    {
+      id: 'cv',
+      name: 'CV/Resume',
+      icon: '📋',
+      color: 'text-teal-600',
+      gradient: 'from-teal-400 to-cyan-600'
+    },
+    {
+      id: 'evaluation',
+      name: 'Valutazioni',
+      icon: '⭐',
+      color: 'text-yellow-600',
+      gradient: 'from-yellow-400 to-amber-600'
+    },
+    {
+      id: 'warning',
+      name: 'Richiami',
+      icon: '⚠️',
+      color: 'text-orange-600',
+      gradient: 'from-orange-400 to-red-600'
+    }
+  ];
+
+  const quickFilters = [
+    {
+      id: 'recent',
+      name: 'Recenti',
+      icon: Clock,
+      color: 'text-blue-600',
+      count: 5
+    },
+    {
+      id: 'confidential',
+      name: 'Confidenziali',
+      icon: Shield,
+      color: 'text-red-600',
+      count: documentCounts['confidential'] || 0
+    },
+    {
+      id: 'shared',
+      name: 'Condivisi',
+      icon: Share2,
+      color: 'text-green-600',
+      count: 0
+    },
+    {
+      id: 'favorites',
+      name: 'Preferiti',
+      icon: Star,
+      color: 'text-yellow-600',
+      count: 0
+    },
+    {
+      id: 'expiring',
+      name: 'In Scadenza',
+      icon: Calendar,
+      color: 'text-orange-600',
+      count: documentCounts['expiring'] || 0
+    }
+  ];
+
+  const archiveFilters = [
+    {
+      id: 'archived',
+      name: 'Archivio',
+      icon: Archive,
+      color: 'text-gray-600',
+      count: 0
+    },
+    {
+      id: 'trash',
+      name: 'Cestino',
+      icon: Trash2,
+      color: 'text-gray-600',
+      count: 0
+    }
+  ];
+
+  // Source filters for document origin tracking
+  const sourceFilters = [
+    {
+      id: 'source:employee',
+      name: 'I Miei Documenti',
+      icon: User,
+      color: 'text-blue-600',
+      gradient: 'from-blue-400 to-blue-600',
+      count: sourceStats['employee'] || 0,
+      description: 'Documenti caricati da te'
+    },
+    {
+      id: 'source:hr',
+      name: 'Da HR',
+      icon: Users,
+      color: 'text-orange-600',
+      gradient: 'from-orange-400 to-orange-600',
+      count: sourceStats['hr'] || 0,
+      description: 'Documenti assegnati da HR'
+    },
+    {
+      id: 'source:system',
+      name: 'Di Sistema',
+      icon: Settings,
+      color: 'text-purple-600',
+      gradient: 'from-purple-400 to-purple-600',
+      count: sourceStats['system'] || 0,
+      description: 'Documenti generati automaticamente'
+    }
+  ];
+
+  const getTotalCount = () => {
+    return Object.values(documentCounts).reduce((sum, count) => sum + count, 0);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Categories */}
+      <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
+        <h3 className="font-medium text-gray-700 mb-3">Categorie</h3>
+        <div className="space-y-1">
+          {defaultCategories.map((category) => {
+            const isSelected = selectedCategory === (category.id === 'all' ? null : category.id);
+            const count = category.id === 'all' ? getTotalCount() : (documentCounts[category.id] || 0);
+            
+            return (
+              <button
+                key={category.id}
+                onClick={() => onSelectCategory(category.id === 'all' ? null : category.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+                  isSelected 
+                    ? 'bg-gradient-to-r ' + category.gradient + ' text-white shadow-md'
+                    : 'hover:bg-gray-50'
+                }`}
+                data-testid={`button-category-${category.id}`}
+              >
+                <div className="flex items-center gap-3">
+                  {typeof category.icon === 'string' ? (
+                    <span className="text-xl">{category.icon}</span>
+                  ) : (
+                    <category.icon className={`h-5 w-5 ${isSelected ? 'text-white' : category.color}`} />
+                  )}
+                  <span className={`font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                    {category.name}
+                  </span>
+                </div>
+                {count > 0 && (
+                  <span className={`text-sm ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Source Filters - Document Origin */}
+      <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
+        <h3 className="font-medium text-gray-700 mb-3">Origine Documenti</h3>
+        <div className="space-y-1">
+          {sourceFilters.map((source) => {
+            const isSelected = selectedCategory === source.id;
+            
+            return (
+              <button
+                key={source.id}
+                onClick={() => onSelectCategory(source.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+                  isSelected 
+                    ? 'bg-gradient-to-r ' + source.gradient + ' text-white shadow-md'
+                    : 'hover:bg-gray-50'
+                }`}
+                data-testid={`button-source-${source.id}`}
+                title={source.description}
+              >
+                <div className="flex items-center gap-3">
+                  <source.icon className={`h-5 w-5 ${isSelected ? 'text-white' : source.color}`} />
+                  <div className="text-left">
+                    <span className={`font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                      {source.name}
+                    </span>
+                    <div className={`text-xs ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                      {source.description}
+                    </div>
+                  </div>
+                </div>
+                {source.count > 0 && (
+                  <span className={`text-sm ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                    {source.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Quick Filters - Horizontal Layout */}
+      <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
+        <h3 className="font-medium text-gray-700 mb-4">Filtri Rapidi</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
+          {quickFilters.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => onSelectCategory(filter.id)}
+              className={`group relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl transition-all duration-300 transform hover:translate-y-[-2px] active:scale-95 ${
+                selectedCategory === filter.id
+                  ? 'bg-gradient-to-br from-orange-500 to-purple-600 text-white shadow-lg scale-105 ring-2 ring-orange-200'
+                  : 'bg-gray-50/50 hover:bg-gray-100/70 hover:shadow-md hover:scale-102 text-gray-700 border border-gray-200/50'
+              }`}
+              data-testid={`button-filter-${filter.id}`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className={`p-2 rounded-lg ${
+                  selectedCategory === filter.id 
+                    ? 'bg-white/20' 
+                    : 'bg-white group-hover:bg-white'
+                } transition-all duration-300`}>
+                  <filter.icon className={`h-5 w-5 ${
+                    selectedCategory === filter.id 
+                      ? 'text-white' 
+                      : filter.color
+                  }`} />
+                </div>
+                <span className={`text-sm font-medium text-center leading-tight ${
+                  selectedCategory === filter.id 
+                    ? 'text-white' 
+                    : 'text-gray-700 group-hover:text-gray-900'
+                }`}>
+                  {filter.name}
+                </span>
+                {filter.count > 0 && (
+                  <span className={`absolute -top-1 -right-1 h-6 w-6 text-xs font-bold rounded-full flex items-center justify-center ${
+                    selectedCategory === filter.id
+                      ? 'bg-white text-orange-500'
+                      : 'bg-orange-500 text-white'
+                  } shadow-sm`}>
+                    {filter.count}
+                  </span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Archive & Trash */}
+      <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
+        <div className="space-y-1">
+          {archiveFilters.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => onSelectCategory(filter.id)}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+                selectedCategory === filter.id
+                  ? 'bg-gray-100'
+                  : 'hover:bg-gray-50'
+              }`}
+              data-testid={`button-archive-${filter.id}`}
+            >
+              <div className="flex items-center gap-3">
+                <filter.icon className={`h-4 w-4 ${filter.color}`} />
+                <span className="text-gray-700">{filter.name}</span>
+              </div>
+              {filter.count > 0 && (
+                <span className="text-sm text-gray-500">{filter.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Storage Info */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 text-white">
+        <h4 className="font-medium mb-2">Spazio Utilizzato</h4>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Utilizzato</span>
+            <span>245 MB / 1 GB</span>
+          </div>
+          <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-full bg-white rounded-full" style={{ width: '24.5%' }}></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

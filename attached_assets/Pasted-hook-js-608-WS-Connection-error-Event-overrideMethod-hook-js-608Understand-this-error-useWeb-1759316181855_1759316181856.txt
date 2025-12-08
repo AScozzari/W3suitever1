@@ -1,0 +1,62 @@
+hook.js:608 🌐 [WS] Connection error: Event
+overrideMethod @ hook.js:608Understand this error
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1006 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1042ms (attempt 1)
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+hook.js:377 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+2ShiftAssignmentDashboard.tsx:340 Uncaught TypeError: assignments.reduce is not a function
+    at ShiftAssignmentDashboard.tsx:340:47
+    at updateMemo (chunk-ZHRYBLGQ.js?v=bceaa3d2:12210:27)
+    at Object.useMemo (chunk-ZHRYBLGQ.js?v=bceaa3d2:12726:24)
+    at useMemo (chunk-L7SIRVDC.js?v=bceaa3d2:1094:29)
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:323:29)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=bceaa3d2:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=bceaa3d2:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=bceaa3d2:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=bceaa3d2:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=bceaa3d2:3699:24)Understand this error
+hook.js:608 The above error occurred in the <ShiftAssignmentDashboard> component:
+
+    at ShiftAssignmentDashboard (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Shifts/ShiftAssignmentDashboard.tsx:85:3)
+    at div
+    at _c9 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:99:12)
+    at div
+    at _c (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:19:11)
+    at div
+    at ShiftsSection
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at HRManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx:79:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:504:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=bceaa3d2:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=bceaa3d2:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:175:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=bceaa3d2:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=bceaa3d2:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=bceaa3d2:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608Understand this error
+chunk-ZHRYBLGQ.js?v=bceaa3d2:9129 Uncaught TypeError: assignments.reduce is not a function
+    at ShiftAssignmentDashboard.tsx:340:47
+    at updateMemo (chunk-ZHRYBLGQ.js?v=bceaa3d2:12210:27)
+    at Object.useMemo (chunk-ZHRYBLGQ.js?v=bceaa3d2:12726:24)
+    at useMemo (chunk-L7SIRVDC.js?v=bceaa3d2:1094:29)
+    at ShiftAssignmentDashboard (ShiftAssignmentDashboard.tsx:323:29)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=bceaa3d2:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=bceaa3d2:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=bceaa3d2:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=bceaa3d2:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=bceaa3d2:19198:20)Understand this error
+useWebSocket.ts:211 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token' failed: WebSocket is closed before the connection is established.
+disconnect @ useWebSocket.ts:211Understand this warning
+hook.js:608 🌐 [WS] Connection error: Event

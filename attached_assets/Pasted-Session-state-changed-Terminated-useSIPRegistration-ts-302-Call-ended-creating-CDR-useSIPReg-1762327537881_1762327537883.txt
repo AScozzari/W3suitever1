@@ -1,0 +1,28 @@
+Session state changed: Terminated
+useSIPRegistration.ts:302 📊 Call ended, creating CDR...
+useSIPRegistration.ts:110 📊 Creating CDR: {sipDomain: 'demo.edgvoip.it', callId: '8apheldlmfjr7a3274u074vbf6aor4', direction: 'outbound', fromUri: '2000@demo.edgvoip.it', toUri: 'sip:+393297626144@demo.edgvoip.it', …}
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS pvhp0e6eocms.invalid;branch=z9hG4bK8494561;received=212.105.153.147;rport=49748
+From: "Admin User" <sip:2000@demo.edgvoip.it>;tag=74vbf6aor4
+To: <sip:+393297626144@demo.edgvoip.it>;tag=4663a36ypQBKH
+Call-ID: 8apheldlmfjr7a3274u0
+CSeq: 2 BYE
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of subscriptions
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of publishers
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of transport
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Disconnecting wss://demo.edgvoip.it:7443
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnecting
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1000)
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnecting to Disconnected
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of core
+sip__js.js?v=9094e2fe:6965 Wed Nov 05 2025 08:24:35 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Started to Stopped
+useSIPRegistration.ts:128 ✅ CDR created: 586aa520-91e4-4d33-b4fd-8bb2c88d085b

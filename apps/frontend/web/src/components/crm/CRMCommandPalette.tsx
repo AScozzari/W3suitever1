@@ -1,0 +1,168 @@
+import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command';
+import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { 
+  UserPlus, 
+  Target, 
+  CheckSquare, 
+  Megaphone,
+  BarChart3,
+  User,
+  Settings
+} from 'lucide-react';
+import { CreateLeadDialog } from './CreateLeadDialog';
+import { CreateDealDialog } from './CreateDealDialog';
+
+export function CRMCommandPalette() {
+  const [open, setOpen] = useState(false);
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
+  const [createDealOpen, setCreateDealOpen] = useState(false);
+  const [, setLocation] = useLocation();
+  const { navigate, buildUrl } = useTenantNavigation();
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
+
+  const handleSelect = (callback: () => void) => {
+    setOpen(false);
+    callback();
+  };
+
+  return (
+    <>
+    <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandInput placeholder="Cerca o crea..." />
+      <CommandList>
+        <CommandEmpty>Nessun risultato trovato.</CommandEmpty>
+        
+        <CommandGroup heading="Quick Create">
+          <CommandItem
+            onSelect={() => handleSelect(() => setCreateLeadOpen(true))}
+            data-testid="cmd-create-lead"
+          >
+            <UserPlus className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-purple))' }} />
+            <span>Nuovo Lead</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => setCreateDealOpen(true))}
+            data-testid="cmd-create-deal"
+          >
+            <Target className="mr-2 h-4 w-4" style={{ color: 'hsl(var(--brand-orange))' }} />
+            <span>Nuovo Deal</span>
+          </CommandItem>
+        </CommandGroup>
+        
+        <CommandSeparator />
+        
+        <CommandGroup heading="Navigazione CRM">
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm'))}
+            data-testid="cmd-nav-dashboard"
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            <span>Dashboard CRM</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/leads'))}
+            data-testid="cmd-nav-leads"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            <span>Lead</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/pipeline/board'))}
+            data-testid="cmd-nav-pipeline"
+          >
+            <Target className="mr-2 h-4 w-4" />
+            <span>Pipeline Board</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/deals'))}
+            data-testid="cmd-nav-deals"
+          >
+            <Target className="mr-2 h-4 w-4" />
+            <span>Deals</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/customers'))}
+            data-testid="cmd-nav-customers"
+          >
+            <User className="mr-2 h-4 w-4" />
+            <span>Clienti</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/activities'))}
+            data-testid="cmd-nav-activities"
+          >
+            <CheckSquare className="mr-2 h-4 w-4" />
+            <span>Attività</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/campaigns'))}
+            data-testid="cmd-nav-campaigns"
+          >
+            <Megaphone className="mr-2 h-4 w-4" />
+            <span>Campagne</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate('crm/analytics'))}
+            data-testid="cmd-nav-analytics"
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            <span>Report</span>
+          </CommandItem>
+        </CommandGroup>
+        
+        <CommandSeparator />
+        
+        <CommandGroup heading="Impostazioni">
+          <CommandItem
+            onSelect={() => handleSelect(() => console.log('Pipeline settings'))}
+            data-testid="cmd-settings-pipeline"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Pipeline & Stage</span>
+          </CommandItem>
+          
+          <CommandItem
+            onSelect={() => handleSelect(() => console.log('Playbook settings'))}
+            data-testid="cmd-settings-playbook"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Playbook Regole</span>
+          </CommandItem>
+        </CommandGroup>
+      </CommandList>
+    </CommandDialog>
+
+    <CreateLeadDialog open={createLeadOpen} onOpenChange={setCreateLeadOpen} />
+    <CreateDealDialog open={createDealOpen} onOpenChange={setCreateDealOpen} />
+  </>
+  );
+}

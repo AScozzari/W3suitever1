@@ -1,0 +1,140 @@
+744chunk-3WVMON5O.js?v=f4a34e1b:50 Uncaught Error: `Tooltip` must be used within `TooltipProvider`
+    at useContext2 (chunk-3WVMON5O.js?v=f4a34e1b:50:13)
+    at Tooltip (@radix-ui_react-tooltip.js?v=f4a34e1b:120:27)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=f4a34e1b:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=f4a34e1b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=f4a34e1b:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=f4a34e1b:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:19198:20)
+useContext2 @ chunk-3WVMON5O.js?v=f4a34e1b:50
+Tooltip @ @radix-ui_react-tooltip.js?v=f4a34e1b:120
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=f4a34e1b:103
+flush @ @tanstack_react-query.js?v=f4a34e1b:610
+batch @ @tanstack_react-query.js?v=f4a34e1b:628
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+setData @ @tanstack_react-query.js?v=f4a34e1b:931
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+744installHook.js:1 The above error occurred in the <Tooltip> component:
+
+    at Tooltip (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=f4a34e1b:112:5)
+    at div
+    at div
+    at div
+    at div
+    at div
+    at _c9 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:99:12)
+    at div
+    at _c (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/card.tsx:19:11)
+    at div
+    at StoreCoverageSection (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx:4671:47)
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:206:34)
+    at HRManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx:87:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:870:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:254:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:112:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=f4a34e1b:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=f4a34e1b:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=f4a34e1b:103
+flush @ @tanstack_react-query.js?v=f4a34e1b:610
+batch @ @tanstack_react-query.js?v=f4a34e1b:628
+dispatch_fn @ @tanstack_react-query.js?v=f4a34e1b:1260
+setData @ @tanstack_react-query.js?v=f4a34e1b:931
+fetch @ @tanstack_react-query.js?v=f4a34e1b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=f4a34e1b:1639
+onSubscribe @ @tanstack_react-query.js?v=f4a34e1b:1335
+subscribe @ @tanstack_react-query.js?v=f4a34e1b:24
+(anonymous) @ @tanstack_react-query.js?v=f4a34e1b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=f4a34e1b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=f4a34e1b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=f4a34e1b:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f4a34e1b:18627Understand this error
+chunk-ZHRYBLGQ.js?v=f4a34e1b:9129 Uncaught Error: `Tooltip` must be used within `TooltipProvider`
+    at useContext2 (chunk-3WVMON5O.js?v=f4a34e1b:50:13)
+    at Tooltip (@radix-ui_react-tooltip.js?v=f4a34e1b:120:27)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=f4a34e1b:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=f4a34e1b:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=f4a34e1b:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=f4a34e1b:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=f4a34e1b:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=f4a34e1b:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=f4a34e1b:18736:28)

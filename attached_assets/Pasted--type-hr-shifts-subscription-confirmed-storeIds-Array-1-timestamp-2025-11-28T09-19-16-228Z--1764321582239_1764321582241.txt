@@ -1,0 +1,55 @@
+{type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:16.228Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1808ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321557388-sjqfdlyih', timestamp: '2025-11-28T09:19:17.388Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321557388-sjqfdlyih
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:17.524Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:17.524Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1482ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321559317-ail13nsnp', timestamp: '2025-11-28T09:19:19.317Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321559317-ail13nsnp
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:19.455Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:19.455Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1023ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321560933-ozofzjb7s', timestamp: '2025-11-28T09:19:20.933Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321560933-ozofzjb7s
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:21.066Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:21.066Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1676ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321562083-utjmgt6pt', timestamp: '2025-11-28T09:19:22.083Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321562083-utjmgt6pt
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:22.224Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:22.224Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1174ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321563887-ln8j815xm', timestamp: '2025-11-28T09:19:23.887Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321563887-ln8j815xm
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:24.024Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:24.024Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1288ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321565195-6t6agv4wn', timestamp: '2025-11-28T09:19:25.195Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321565195-6t6agv4wn
+useWebSocket.ts:78 🌐 [WS] Message received: hr_shifts_subscription_confirmed {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:25.344Z'}
+useWebSocket.ts:127 🌐 [WS] HR shifts subscription confirmed: {type: 'hr_shifts_subscription_confirmed', storeIds: Array(1), timestamp: '2025-11-28T09:19:25.344Z'}
+useWebSocket.ts:56 🌐 [WS] Connecting to: wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/ws/notifications?userId=admin-user&tenantId=00000000-0000-0000-0000-000000000001&token=dev-token
+useWebSocket.ts:143 🌐 [WS] Connection closed: 1005 
+useWebSocket.ts:189 🌐 [WS] Scheduling reconnect in 1401ms (attempt 1)
+useWebSocket.ts:62 🌐 [WS] Connected successfully
+useWebSocket.ts:78 🌐 [WS] Message received: connection_established {type: 'connection_established', sessionId: 'admin-user-1764321566614-rsnlkk5is', timestamp: '2025-11-28T09:19:26.614Z'}
+useWebSocket.ts:106 🌐 [WS] Session established: admin-user-1764321566614-rsnlkk5i

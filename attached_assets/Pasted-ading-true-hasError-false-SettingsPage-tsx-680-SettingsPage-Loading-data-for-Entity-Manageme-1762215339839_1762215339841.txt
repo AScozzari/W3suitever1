@@ -1,0 +1,126 @@
+ading: true, hasError: false}
+SettingsPage.tsx:680 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:683 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+useSIPRegistration.ts:73 🔍 [SIP Hook] Query state: {isLoading: true, hasError: false, hasCredentials: false, credentials: undefined}
+useSIPRegistration.ts:141 ⏸️ [SIP Hook] Skipping setup: {hasCredentials: false, isLoading: true, hasError: false}
+SettingsPage.tsx:680 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:683 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+useSIPRegistration.ts:73 🔍 [SIP Hook] Query state: {isLoading: false, hasError: false, hasCredentials: true, credentials: {…}}
+useSIPRegistration.ts:151 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 7443, extension: '2000', transport: 'wss'}
+useSIPRegistration.ts:165 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it:7443
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+useSIPRegistration.ts:191 Tue Nov 04 2025 01:15:04 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connect timed out. Exceeded time set in configuration.connectionTimeout: 5s.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=9094e2fe:6962
+genericLog @ sip__js.js?v=9094e2fe:6941
+genericLog @ sip__js.js?v=9094e2fe:6881
+warn @ sip__js.js?v=9094e2fe:6872
+(anonymous) @ sip__js.js?v=9094e2fe:12311
+setTimeout
+(anonymous) @ sip__js.js?v=9094e2fe:12310
+_connect @ sip__js.js?v=9094e2fe:12307
+connect @ sip__js.js?v=9094e2fe:12215
+start @ sip__js.js?v=9094e2fe:12967
+setupSIP @ useSIPRegistration.ts:191
+(anonymous) @ useSIPRegistration.ts:227
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=9094e2fe:103
+flush @ @tanstack_react-query.js?v=9094e2fe:610
+batch @ @tanstack_react-query.js?v=9094e2fe:628
+dispatch_fn @ @tanstack_react-query.js?v=9094e2fe:1260
+setData @ @tanstack_react-query.js?v=9094e2fe:931
+fetch @ @tanstack_react-query.js?v=9094e2fe:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this warning
+useSIPRegistration.ts:191 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: WebSocket is closed before the connection is established.
+(anonymous) @ sip__js.js?v=9094e2fe:12312
+setTimeout
+(anonymous) @ sip__js.js?v=9094e2fe:12310
+_connect @ sip__js.js?v=9094e2fe:12307
+connect @ sip__js.js?v=9094e2fe:12215
+start @ sip__js.js?v=9094e2fe:12967
+setupSIP @ useSIPRegistration.ts:191
+(anonymous) @ useSIPRegistration.ts:227
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=9094e2fe:103
+flush @ @tanstack_react-query.js?v=9094e2fe:610
+batch @ @tanstack_react-query.js?v=9094e2fe:628
+dispatch_fn @ @tanstack_react-query.js?v=9094e2fe:1260
+setData @ @tanstack_react-query.js?v=9094e2fe:931
+fetch @ @tanstack_react-query.js?v=9094e2fe:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this warning
+hook.js:608 Tue Nov 04 2025 01:15:04 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=9094e2fe:6959
+genericLog @ sip__js.js?v=9094e2fe:6941
+genericLog @ sip__js.js?v=9094e2fe:6881
+error @ sip__js.js?v=9094e2fe:6869
+onWebSocketError @ sip__js.js?v=9094e2fe:12427
+(anonymous) @ sip__js.js?v=9094e2fe:12293Understand this error
+hook.js:608 Tue Nov 04 2025 01:15:04 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=9094e2fe:6962
+genericLog @ sip__js.js?v=9094e2fe:6941
+genericLog @ sip__js.js?v=9094e2fe:6881
+warn @ sip__js.js?v=9094e2fe:6872
+onWebSocketClose @ sip__js.js?v=9094e2fe:12413
+(anonymous) @ sip__js.js?v=9094e2fe:12292Understand this warning
+useSIPRegistration.ts:220 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=9094e2fe:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=9094e2fe:12292:49)

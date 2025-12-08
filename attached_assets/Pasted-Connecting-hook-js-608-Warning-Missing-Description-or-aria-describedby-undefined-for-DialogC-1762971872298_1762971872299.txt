@@ -1,0 +1,331 @@
+Connecting
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-7ILD7SYD.js?v=c1a355d0:335:29)
+    at chunk-7ILD7SYD.js?v=c1a355d0:239:13
+    at chunk-7ILD7SYD.js?v=c1a355d0:162:58
+    at Presence (chunk-3RPIZZKC.js?v=c1a355d0:24:11)
+    at chunk-7ILD7SYD.js?v=c1a355d0:153:64
+    at chunk-TCRT5IO7.js?v=c1a355d0:43:13
+    at chunk-TCRT5IO7.js?v=c1a355d0:20:13
+    at chunk-7JN5FQRM.js?v=c1a355d0:42:13
+    at chunk-R54IPKTL.js?v=c1a355d0:244:22
+    at Presence (chunk-3RPIZZKC.js?v=c1a355d0:24:11)
+    at Provider (chunk-3WVMON5O.js?v=c1a355d0:38:15)
+    at DialogPortal (chunk-7ILD7SYD.js?v=c1a355d0:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=c1a355d0:38:15)
+    at Dialog (chunk-7ILD7SYD.js?v=c1a355d0:56:5)
+    at ProductFormModal (ProductFormModal.tsx:96:36)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:143:34)
+    at ProductsPage (ProductsPage.tsx:61:33)
+    at AuthenticatedRoute (TenantShell.tsx:523:72)
+    at Route (wouter.js?v=c1a355d0:206:16)
+    at Switch (wouter.js?v=c1a355d0:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:230:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:85:59)
+    at Route (wouter.js?v=c1a355d0:206:16)
+    at Switch (wouter.js?v=c1a355d0:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=c1a355d0:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7ILD7SYD.js?v=c1a355d0:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-7ILD7SYD.js?v=c1a355d0:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=c1a355d0:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=c1a355d0:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=c1a355d0:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this warning
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/product-types 404 (Not Found)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=c1a355d0:1097
+run @ @tanstack_react-query.js?v=c1a355d0:795
+start @ @tanstack_react-query.js?v=c1a355d0:838
+fetch @ @tanstack_react-query.js?v=c1a355d0:1144
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+setOptions @ @tanstack_react-query.js?v=c1a355d0:1392
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/categories 404 (Not Found)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=c1a355d0:1097
+run @ @tanstack_react-query.js?v=c1a355d0:795
+start @ @tanstack_react-query.js?v=c1a355d0:838
+fetch @ @tanstack_react-query.js?v=c1a355d0:1144
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+setOptions @ @tanstack_react-query.js?v=c1a355d0:1392
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/product-types 404 (Not Found)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=c1a355d0:1097
+run @ @tanstack_react-query.js?v=c1a355d0:795
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:816
+Promise.catch
+run @ @tanstack_react-query.js?v=c1a355d0:799
+start @ @tanstack_react-query.js?v=c1a355d0:838
+fetch @ @tanstack_react-query.js?v=c1a355d0:1144
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+setOptions @ @tanstack_react-query.js?v=c1a355d0:1392
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/categories 404 (Not Found)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=c1a355d0:1097
+run @ @tanstack_react-query.js?v=c1a355d0:795
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:816
+Promise.catch
+run @ @tanstack_react-query.js?v=c1a355d0:799
+start @ @tanstack_react-query.js?v=c1a355d0:838
+fetch @ @tanstack_react-query.js?v=c1a355d0:1144
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+setOptions @ @tanstack_react-query.js?v=c1a355d0:1392
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627Understand this error
+useSIPRegistration.ts:199 Wed Nov 12 2025 19:24:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connect timed out. Exceeded time set in configuration.connectionTimeout: 10s.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=c1a355d0:6962
+genericLog @ sip__js.js?v=c1a355d0:6941
+genericLog @ sip__js.js?v=c1a355d0:6881
+warn @ sip__js.js?v=c1a355d0:6872
+(anonymous) @ sip__js.js?v=c1a355d0:12311
+setTimeout
+(anonymous) @ sip__js.js?v=c1a355d0:12310
+_connect @ sip__js.js?v=c1a355d0:12307
+connect @ sip__js.js?v=c1a355d0:12215
+start @ sip__js.js?v=c1a355d0:12967
+setupSIP @ useSIPRegistration.ts:199
+(anonymous) @ useSIPRegistration.ts:235
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=c1a355d0:103
+flush @ @tanstack_react-query.js?v=c1a355d0:610
+batch @ @tanstack_react-query.js?v=c1a355d0:628
+dispatch_fn @ @tanstack_react-query.js?v=c1a355d0:1260
+setData @ @tanstack_react-query.js?v=c1a355d0:931
+fetch @ @tanstack_react-query.js?v=c1a355d0:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+onSubscribe @ @tanstack_react-query.js?v=c1a355d0:1335
+subscribe @ @tanstack_react-query.js?v=c1a355d0:24
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=c1a355d0:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=c1a355d0:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=c1a355d0:197
+flushWork @ chunk-ZHRYBLGQ.js?v=c1a355d0:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=c1a355d0:384Understand this warning
+useSIPRegistration.ts:199 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: WebSocket is closed before the connection is established.
+(anonymous) @ sip__js.js?v=c1a355d0:12312
+setTimeout
+(anonymous) @ sip__js.js?v=c1a355d0:12310
+_connect @ sip__js.js?v=c1a355d0:12307
+connect @ sip__js.js?v=c1a355d0:12215
+start @ sip__js.js?v=c1a355d0:12967
+setupSIP @ useSIPRegistration.ts:199
+(anonymous) @ useSIPRegistration.ts:235
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=c1a355d0:103
+flush @ @tanstack_react-query.js?v=c1a355d0:610
+batch @ @tanstack_react-query.js?v=c1a355d0:628
+dispatch_fn @ @tanstack_react-query.js?v=c1a355d0:1260
+setData @ @tanstack_react-query.js?v=c1a355d0:931
+fetch @ @tanstack_react-query.js?v=c1a355d0:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+onSubscribe @ @tanstack_react-query.js?v=c1a355d0:1335
+subscribe @ @tanstack_react-query.js?v=c1a355d0:24
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=c1a355d0:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=c1a355d0:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=c1a355d0:197
+flushWork @ chunk-ZHRYBLGQ.js?v=c1a355d0:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=c1a355d0:384Understand this warning
+hook.js:608 Wed Nov 12 2025 19:24:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=c1a355d0:6959
+genericLog @ sip__js.js?v=c1a355d0:6941
+genericLog @ sip__js.js?v=c1a355d0:6881
+error @ sip__js.js?v=c1a355d0:6869
+onWebSocketError @ sip__js.js?v=c1a355d0:12427
+(anonymous) @ sip__js.js?v=c1a355d0:12293Understand this error
+hook.js:608 Wed Nov 12 2025 19:24:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ hook.js:608
+print @ sip__js.js?v=c1a355d0:6962
+genericLog @ sip__js.js?v=c1a355d0:6941
+genericLog @ sip__js.js?v=c1a355d0:6881
+warn @ sip__js.js?v=c1a355d0:6872
+onWebSocketClose @ sip__js.js?v=c1a355d0:12413
+(anonymous) @ sip__js.js?v=c1a355d0:12292Understand this warning
+sip__js.js?v=c1a355d0:6965 Wed Nov 12 2025 19:24:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+sip__js.js?v=c1a355d0:6965 Wed Nov 12 2025 19:24:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+useSIPRegistration.ts:228 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=c1a355d0:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=c1a355d0:12292:49)
+overrideMethod @ hook.js:608
+setupSIP @ useSIPRegistration.ts:228
+await in setupSIP
+(anonymous) @ useSIPRegistration.ts:235
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=c1a355d0:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=c1a355d0:103
+flush @ @tanstack_react-query.js?v=c1a355d0:610
+batch @ @tanstack_react-query.js?v=c1a355d0:628
+dispatch_fn @ @tanstack_react-query.js?v=c1a355d0:1260
+setData @ @tanstack_react-query.js?v=c1a355d0:931
+fetch @ @tanstack_react-query.js?v=c1a355d0:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=c1a355d0:1639
+onSubscribe @ @tanstack_react-query.js?v=c1a355d0:1335
+subscribe @ @tanstack_react-query.js?v=c1a355d0:24
+(anonymous) @ @tanstack_react-query.js?v=c1a355d0:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=c1a355d0:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=c1a355d0:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=c1a355d0:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=c1a355d0:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=c1a355d0:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=c1a355d0:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=c1a355d0:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=c1a355d0:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=c1a355d0:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=c1a355d0:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=c1a355d0:197
+flushWork @ chunk-ZHRYBLGQ.js?v=c1a355d0:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=c1a355d0:384Understand this error

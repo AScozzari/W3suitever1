@@ -1,0 +1,137 @@
+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · gracefulShutdown: true
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackAllowUnregisteredOptionTags: false
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackIpInContact: false
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackViaTcp: false
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceId: ""
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceIdAlwaysAdded: false
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logBuiltinEnabled: true
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConfiguration: true
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConnector: undefined
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logLevel: "debug"
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · noAnswerTimeout: 60
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · preloadedRouteSet: []
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionAttempts: 0
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionDelay: 4
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sendInitialProvisionalResponse: true
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactory: (e,t)=>{o===void 0&&(o=$n());const s={iceGatheringTimeout:(t==null?void 0:t.iceGatheringTimeout)!==void 0?t==null?void 0:t.iceGatheringTimeout:5e3,peerConnectionConfiguration:Object.assign(Object.assign({},Rn()),t==null?void 0:t.peerConnectionConfiguration)},n=e.userAgent.getLogger("sip.SessionDescriptionHandler");return new Be(n,o,s)}
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactoryOptions: {}
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtension100rel: "Unsupported"
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionReplaces: "Unsupported"
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionExtraSupported: []
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipjsId: "b99c8"
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportConstructor: Ft
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportOptions: {"server":"wss://demo.edgvoip.it:7443","connectionTimeout":10}
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · uri: sip:2000@demo.edgvoip.it
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · userAgentString: "SIP.js/0.21.1"
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "flhi553n4aq9.invalid"
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it:7443
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/auth/permissions 404 (Not Found)
+queryFn @ index-D-nXJUUx.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+setOptions @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 07:46:13, Token expires: 08:01:11
+2index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 07:46:13, Token expires: 08:01:11
+Layout-CTia58Vx.js:75 WebSocket connection to 'wss://demo.edgvoip.it:7443/' failed: 
+_connect @ Layout-CTia58Vx.js:75
+connect @ Layout-CTia58Vx.js:75
+start @ Layout-CTia58Vx.js:86
+(anonymous) @ Layout-CTia58Vx.js:86
+(anonymous) @ Layout-CTia58Vx.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+installHook.js:1 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ installHook.js:1
+print @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+error @ Layout-CTia58Vx.js:58
+onWebSocketError @ Layout-CTia58Vx.js:78
+(anonymous) @ Layout-CTia58Vx.js:75Understand this error
+installHook.js:1 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+genericLog @ Layout-CTia58Vx.js:58
+warn @ Layout-CTia58Vx.js:58
+onWebSocketClose @ Layout-CTia58Vx.js:78
+(anonymous) @ Layout-CTia58Vx.js:75Understand this warning
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+Layout-CTia58Vx.js:58 Thu Dec 04 2025 07:46:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+installHook.js:1 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:7443 (code: 1006)
+    at Ft.onWebSocketClose (Layout-CTia58Vx.js:78:422)
+    at WebSocket.<anonymous> (Layout-CTia58Vx.js:75:7499)
+overrideMethod @ installHook.js:1
+(anonymous) @ Layout-CTia58Vx.js:86
+await in (anonymous)
+(anonymous) @ Layout-CTia58Vx.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-D-nXJUUx.js:2 🔍 Token expiry check: Current time: 07:46:14, Token expires: 08:01:11
+index-D-nXJUUx.js:2  GET http://82.165.16.223/api/chat/unread-count 403 (Forbidden)

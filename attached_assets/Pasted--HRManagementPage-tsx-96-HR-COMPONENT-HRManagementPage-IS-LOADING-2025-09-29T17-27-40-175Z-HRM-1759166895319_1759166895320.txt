@@ -1,0 +1,211 @@
+
+HRManagementPage.tsx:96 🚨 [HR-COMPONENT] HRManagementPage IS LOADING! 2025-09-29T17:27:40.175Z
+HRManagementPage.tsx:106 🔍 [HR-DEBUG] Query readiness status: {hrQueriesEnabled: true, attempts: 0, debugInfo: {…}, timestamp: '2025-09-29T17:27:40.175Z'}
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+useAuthReadiness.ts:107 🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (@radix-ui_react-dialog.js?v=9690aaab:339:29)
+    at @radix-ui_react-dialog.js?v=9690aaab:243:13
+    at @radix-ui_react-dialog.js?v=9690aaab:166:58
+    at Presence (chunk-3RPIZZKC.js?v=9690aaab:24:11)
+    at @radix-ui_react-dialog.js?v=9690aaab:157:64
+    at chunk-TCRT5IO7.js?v=9690aaab:43:13
+    at chunk-TCRT5IO7.js?v=9690aaab:20:13
+    at chunk-7IUWE4IP.js?v=9690aaab:42:13
+    at chunk-Y5AAV5I6.js?v=9690aaab:244:22
+    at Presence (chunk-3RPIZZKC.js?v=9690aaab:24:11)
+    at Provider (chunk-3WVMON5O.js?v=9690aaab:38:15)
+    at DialogPortal (@radix-ui_react-dialog.js?v=9690aaab:119:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=9690aaab:38:15)
+    at Dialog (@radix-ui_react-dialog.js?v=9690aaab:60:5)
+    at ShiftTemplateModal (ShiftTemplateModal.tsx:118:46)
+    at div (<anonymous>)
+    at ShiftTemplateManager (ShiftTemplateManager.tsx:63:3)
+    at div (<anonymous>)
+    at _c9 (card.tsx:52:6)
+    at div (<anonymous>)
+    at _c (card.tsx:6:6)
+    at div (<anonymous>)
+    at ShiftsSection (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:68:34)
+    at HRManagementPage (HRManagementPage.tsx:98:21)
+    at AuthenticatedRoute (TenantShell.tsx:344:72)
+    at Route (wouter.js?v=9690aaab:206:16)
+    at Switch (wouter.js?v=9690aaab:262:17)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at Route (wouter.js?v=9690aaab:206:16)
+    at Switch (wouter.js?v=9690aaab:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=9690aaab:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+(anonymous) @ @radix-ui_react-dialog.js?v=9690aaab:347
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ @radix-ui_react-dialog.js?v=9690aaab:347
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=9690aaab:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=9690aaab:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=9690aaab:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this warning
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=g9gHsCu6RYMN' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+queryClient.ts:342  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-templates 500 (Internal Server Error)

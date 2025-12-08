@@ -1,0 +1,242 @@
+SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:698 📝 Setting state with data: {legalEntities: 19, users: 26, stores: 22}
+SettingsPage.tsx:685 📦 SettingsPage: loadSettingsData result: {success: false, data: {…}, error: 'Legal entities service unavailable, Users service unavailable, Stores service unavailable', warnings: Array(3)}
+SettingsPage.tsx:692 Failed to load settings data: Legal entities service unavailable, Users service unavailable, Stores service unavailable
+overrideMethod @ hook.js:608
+loadData @ SettingsPage.tsx:692
+await in loadData
+(anonymous) @ SettingsPage.tsx:719
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=9094e2fe:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=9094e2fe:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=9094e2fe:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9094e2fe:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9094e2fe:384Understand this error
+PhoneVoIPConfig.tsx:1086 Uncaught ReferenceError: Trash2 is not defined
+    at PhoneVoIPConfig.tsx:1086:30
+    at Array.map (<anonymous>)
+    at PhoneVoIPConfig (PhoneVoIPConfig.tsx:999:28)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9094e2fe:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=9094e2fe:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9094e2fe:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9094e2fe:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9094e2fe:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9094e2fe:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9094e2fe:19765:15)
+(anonymous) @ PhoneVoIPConfig.tsx:1086
+PhoneVoIPConfig @ PhoneVoIPConfig.tsx:999
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9094e2fe:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=9094e2fe:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9094e2fe:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9094e2fe:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9094e2fe:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9094e2fe:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=9094e2fe:103
+flush @ @tanstack_react-query.js?v=9094e2fe:610
+batch @ @tanstack_react-query.js?v=9094e2fe:628
+dispatch_fn @ @tanstack_react-query.js?v=9094e2fe:1260
+setData @ @tanstack_react-query.js?v=9094e2fe:931
+fetch @ @tanstack_react-query.js?v=9094e2fe:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+PhoneVoIPConfig.tsx:1086 Uncaught ReferenceError: Trash2 is not defined
+    at PhoneVoIPConfig.tsx:1086:30
+    at Array.map (<anonymous>)
+    at PhoneVoIPConfig (PhoneVoIPConfig.tsx:999:28)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9094e2fe:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=9094e2fe:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9094e2fe:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9094e2fe:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9094e2fe:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9094e2fe:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9094e2fe:19765:15)
+(anonymous) @ PhoneVoIPConfig.tsx:1086
+PhoneVoIPConfig @ PhoneVoIPConfig.tsx:999
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9094e2fe:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=9094e2fe:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9094e2fe:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9094e2fe:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9094e2fe:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9094e2fe:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9094e2fe:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=9094e2fe:103
+flush @ @tanstack_react-query.js?v=9094e2fe:610
+batch @ @tanstack_react-query.js?v=9094e2fe:628
+dispatch_fn @ @tanstack_react-query.js?v=9094e2fe:1260
+setData @ @tanstack_react-query.js?v=9094e2fe:931
+fetch @ @tanstack_react-query.js?v=9094e2fe:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+hook.js:608 The above error occurred in the <PhoneVoIPConfig> component:
+
+    at PhoneVoIPConfig (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/crm/PhoneVoIPConfig.tsx?t=1762210372787:80:35)
+    at div
+    at MotionComponent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/framer-motion.js?v=9094e2fe:945:40)
+    at div
+    at ChannelSettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/settings/ChannelSettingsPage.tsx?t=1762210372787:118:49)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:200:34)
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx?t=1762210372787:344:27)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1762210372787:796:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1762210372787:246:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx?t=1762210372787:104:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9094e2fe:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9094e2fe:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx?t=1762210372787:35:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=9094e2fe:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=9094e2fe:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=9094e2fe:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=9094e2fe:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=9094e2fe:103
+flush @ @tanstack_react-query.js?v=9094e2fe:610
+batch @ @tanstack_react-query.js?v=9094e2fe:628
+dispatch_fn @ @tanstack_react-query.js?v=9094e2fe:1260
+setData @ @tanstack_react-query.js?v=9094e2fe:931
+fetch @ @tanstack_react-query.js?v=9094e2fe:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+chunk-ZHRYBLGQ.js?v=9094e2fe:9129 Uncaught ReferenceError: Trash2 is not defined
+    at PhoneVoIPConfig.tsx:1086:30
+    at Array.map (<anonymous>)
+    at PhoneVoIPConfig (PhoneVoIPConfig.tsx:999:28)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9094e2fe:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=9094e2fe:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9094e2fe:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9094e2fe:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=9094e2fe:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=9094e2fe:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=9094e2fe:19116:15)
+(anonymous) @ PhoneVoIPConfig.tsx:1086
+PhoneVoIPConfig @ PhoneVoIPConfig.tsx:999
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9094e2fe:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=9094e2fe:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9094e2fe:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9094e2fe:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9094e2fe:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9094e2fe:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=9094e2fe:103
+flush @ @tanstack_react-query.js?v=9094e2fe:610
+batch @ @tanstack_react-query.js?v=9094e2fe:628
+dispatch_fn @ @tanstack_react-query.js?v=9094e2fe:1260
+setData @ @tanstack_react-query.js?v=9094e2fe:931
+fetch @ @tanstack_react-query.js?v=9094e2fe:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=9094e2fe:1639
+onSubscribe @ @tanstack_react-query.js?v=9094e2fe:1335
+subscribe @ @tanstack_react-query.js?v=9094e2fe:24
+(anonymous) @ @tanstack_react-query.js?v=9094e2fe:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9094e2fe:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9094e2fe:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9094e2fe:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9094e2fe:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9094e2fe:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9094e2fe:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9094e2fe:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9094e2fe:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9094e2fe:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9094e2fe:18627Understand this error
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+SettingsPage.tsx:712 📋 Suppliers will be loaded via TanStack Query automatically

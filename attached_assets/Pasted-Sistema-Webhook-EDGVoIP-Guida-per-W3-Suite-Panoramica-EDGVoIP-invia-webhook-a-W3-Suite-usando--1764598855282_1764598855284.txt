@@ -1,0 +1,98 @@
+Sistema Webhook EDGVoIP - Guida per W3 Suite
+Panoramica
+EDGVoIP invia webhook a W3 Suite usando:
+URL fisso: https://edgvoip.it/api/webhooks (uguale per tutti i tenant)
+Autenticazione: HMAC-SHA256 signature nell'header X-Webhook-Signature
+Identificazione tenant: tenant_external_id nel payload JSON
+Configurazione iniziale
+1. Database W3 Suite
+Aggiungi il campo webhook_secret alla tabella tenants:
+ALTER TABLE tenants ADD COLUMN webhook_secret VARCHAR(255);CREATE INDEX idx_tenants_webhook_secret ON tenants(webhook_secret);
+2. Recupero del Webhook Secret
+Il secret viene generato in EDGVoIP Developer Settings > Integration. Per ogni tenant:
+Vai su EDGVoIP Developer Settings > Integration
+Clicca "Generate" per creare il webhook secret
+Copia il secret generato (mostrato una sola volta)
+Salva il secret nel database W3 Suite nella tabella tenants usando tenant_external_id come chiave
+Esempio:
+UPDATE tenants SET webhook_secret = '55d2d376b4c94e8e5394bcacae17076c670e0950d70a015ebf47d2e51482c595'WHERE tenant_external_id = 'w3suite-tenant-001';
+Endpoint webhook
+URL
+POST https://edgvoip.it/api/webhooks
+Headers ricevuti
+Header	Descrizione	Esempio
+X-Webhook-Signature	HMAC-SHA256 signature del payload	sha256=abc123...
+X-Webhook-Event	Tipo di evento	call.ended
+X-Request-ID	ID univoco della delivery	UUID
+X-Tenant-ID	ID interno tenant EDGVoIP	UUID (opzionale, non usare)
+Content-Type	Sempre application/json	application/json
+Payload JSON
+Struttura base:
+{  "type": "call.ended",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:05:00Z",  "data": {    // Dati specifici dell'evento  }}
+Verifica HMAC signature
+Algoritmo
+Ricevi il webhook con il payload JSON raw (prima del parsing)
+Estrai tenant_external_id dal payload JSON (dopo il parsing)
+Recupera webhook_secret dal database usando tenant_external_id
+Calcola HMAC-SHA256 del payload raw usando il secret
+Confronta con X-Webhook-Signature usando timing-safe comparison
+Esempio Node.js/Express
+const express = require('express');const bodyParser = require('body-parser');const crypto = require('crypto');const app = express();// IMPORTANTE: Usa raw body parser per la verifica della signatureapp.use('/api/webhooks', bodyParser.json({  verify: (req, res, buf) => {    // Salva il body raw per la verifica HMAC    req.rawBody = buf.toString('utf8');  }}));// Funzione per recuperare il webhook secret dal databaseasync function getTenantWebhookSecret(tenantExternalId) {  // Sostituisci con la tua query al database  const result = await db.query(    'SELECT webhook_secret FROM tenants WHERE tenant_external_id = $1',    [tenantExternalId]  );  return result.rows[0]?.webhook_secret;}// Funzione per verificare HMAC signaturefunction verifyWebhookSignature(rawBody, signature, secret) {  if (!signature || !secret) {    return false;  }  // Rimuovi il prefisso "sha256=" se presente  const providedSignature = signature.replace('sha256=', '');  // Calcola la signature attesa  const expectedSignature = crypto    .createHmac('sha256', secret)    .update(rawBody) // IMPORTANTE: usa il body raw, non il JSON parsato    .digest('hex');  // Confronto timing-safe per prevenire timing attacks  if (expectedSignature.length !== providedSignature.length) {    return false;  }  return crypto.timingSafeEqual(    Buffer.from(expectedSignature, 'hex'),    Buffer.from(providedSignature, 'hex')  );}// Endpoint webhookapp.post('/api/webhooks', async (req, res) => {  try {    // 1. Estrai signature dall'header    const receivedSignature = req.headers['x-webhook-signature'];    const eventType = req.headers['x-webhook-event'];    const requestId = req.headers['x-request-id'];    if (!receivedSignature || !req.rawBody) {      console.warn(`[${requestId}] Missing signature or raw body`);      return res.status(401).json({         success: false,         error: 'Missing signature or payload'       });    }    // 2. Parse del JSON per estrarre tenant_external_id    let payload;    try {      payload = JSON.parse(req.rawBody);    } catch (parseError) {      console.error(`[${requestId}] Invalid JSON payload:`, parseError);      return res.status(400).json({         success: false,         error: 'Invalid JSON payload'       });    }    const tenantExternalId = payload.tenant_external_id;    if (!tenantExternalId) {      console.warn(`[${requestId}] Missing tenant_external_id in payload`);      return res.status(400).json({         success: false,         error: 'Missing tenant_external_id in payload'       });    }    // 3. Recupera webhook secret dal database    const tenantSecret = await getTenantWebhookSecret(tenantExternalId);    if (!tenantSecret) {      console.warn(`[${requestId}] Tenant not found or webhook secret not configured: ${tenantExternalId}`);      return res.status(404).json({         success: false,         error: 'Tenant not found or webhook secret not configured'       });    }    // 4. Verifica HMAC signature    const isValid = verifyWebhookSignature(      req.rawBody, // Body raw (stringa)      receivedSignature, // Signature dall'header      tenantSecret // Secret dal database    );    if (!isValid) {      console.warn(`[${requestId}] Invalid webhook signature for tenant ${tenantExternalId}, event ${eventType}`);      return res.status(401).json({         success: false,         error: 'Invalid webhook signature'       });    }    // 5. Webhook verificato! Processa l'evento    console.log(`✅ [${requestId}] Webhook verified for tenant ${tenantExternalId}, event ${eventType}`);    // IMPORTANTE: Processa l'evento in modo asincrono (non bloccare la risposta)    // Usa una coda (Redis, RabbitMQ, etc.) o un worker thread    processWebhookEvent(payload, eventType, requestId).catch(err => {      console.error(`[${requestId}] Error processing webhook:`, err);    });    // Rispondi immediatamente con 200 OK    res.status(200).json({       success: true,       message: 'Webhook received and verified',      request_id: requestId    });  } catch (error) {    console.error('Error in webhook endpoint:', error);    res.status(500).json({       success: false,       error: 'Internal server error'     });  }});// Funzione per processare l'evento (da implementare)async function processWebhookEvent(payload, eventType, requestId) {  const { type, tenant_external_id, data, timestamp } = payload;  console.log(`Processing webhook: ${type} for tenant ${tenant_external_id}`);  switch (type) {    case 'call.start':      // Gestisci inizio chiamata      await handleCallStart(data, tenant_external_id);      break;    case 'call.answered':      // Gestisci chiamata risposta      await handleCallAnswered(data, tenant_external_id);      break;    case 'call.ended':      // Gestisci fine chiamata      await handleCallEnded(data, tenant_external_id);      break;    case 'trunk.status':      // Gestisci cambio stato trunk      await handleTrunkStatus(data, tenant_external_id);      break;    case 'extension.status':      // Gestisci cambio stato extension      await handleExtensionStatus(data, tenant_external_id);      break;    default:      console.warn(`Unknown webhook event type: ${type}`);  }}app.listen(3001, () => {  console.log('W3 Suite Webhook Listener running on port 3001');});
+Tipi di eventi
+1. call.start
+Chiamata iniziata.
+Payload:
+{  "type": "call.start",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:00:00Z",  "data": {    "call_uuid": "550e8400-e29b-41d4-a716-446655440010",    "caller_id_number": "+39123456789",    "caller_id_name": "John Doe",    "destination_number": "2000",    "call_direction": "inbound",    "context": "demo.edgvoip.it"  }}
+2. call.ringing
+Chiamata in squillo.
+Payload:
+{  "type": "call.ringing",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:00:02Z",  "data": {    "call_uuid": "550e8400-e29b-41d4-a716-446655440010",    "caller_id_number": "+39123456789",    "destination_number": "2000",    "call_direction": "inbound"  }}
+3. call.answered
+Chiamata risposta.
+Payload:
+{  "type": "call.answered",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:00:05Z",  "data": {    "call_uuid": "550e8400-e29b-41d4-a716-446655440010",    "caller_id_number": "+39123456789",    "caller_id_name": "John Doe",    "destination_number": "2000",    "call_direction": "inbound",    "answer_time": "2025-11-30T12:00:05Z"  }}
+4. call.ended
+Chiamata terminata.
+Payload:
+{  "type": "call.ended",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:05:00Z",  "data": {    "call_uuid": "550e8400-e29b-41d4-a716-446655440010",    "call_direction": "inbound",    "caller_id_number": "+39123456789",    "destination_number": "2000",    "start_time": "2025-11-30T12:00:00Z",    "answer_time": "2025-11-30T12:00:05Z",    "end_time": "2025-11-30T12:05:00Z",    "duration": 300,    "bill_sec": 295,    "hangup_cause": "NORMAL_CLEARING",    "hangup_disposition": "answered"  }}
+5. trunk.status
+Cambio stato trunk.
+Payload:
+{  "type": "trunk.status",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:00:00Z",  "data": {    "trunk_id": "550e8400-e29b-41d4-a716-446655440000",    "trunk_external_id": "550e8400-e29b-41d4-a716-446655440000",    "trunk_name": "Warian Trunk",    "previous_status": "unregistered",    "current_status": "registered"  }}
+6. extension.status
+Cambio stato extension.
+Payload:
+{  "type": "extension.status",  "tenant_id": "550e8400-e29b-41d4-a716-446655440001",  "tenant_external_id": "w3suite-tenant-001",  "timestamp": "2025-11-30T12:00:00Z",  "data": {    "extension_id": "550e8400-e29b-41d4-a716-446655440000",    "extension_external_id": "550e8400-e29b-41d4-a716-446655440000",    "extension": "2000",    "previous_status": "unregistered",    "current_status": "registered",    "connection_type": "sip",    "registration_ip": "192.168.1.100",    "registration_port": 5060  }}
+Best practices
+1. Timing-safe comparison
+Usa sempre crypto.timingSafeEqual() per confrontare le signature.
+2. Raw body
+Usa sempre il body raw (stringa) per calcolare l'HMAC, non il JSON parsato.
+3. Processamento asincrono
+Rispondi con 200 OK subito e processa l'evento in background (coda/worker).
+4. Logging
+Registra tentativi di verifica falliti per monitoraggio sicurezza.
+5. Error handling
+Rispondi sempre con 200 OK se la signature è valida, anche se il processamento fallisce.
+6. Retry logic
+EDGVoIP ritenta automaticamente con exponential backoff (2s, 4s, 8s) in caso di errori 500+ o timeout.
+Test
+Test manuale con curl
+# 1. Genera un payload di testPAYLOAD='{"type":"call.ended","tenant_id":"test","tenant_external_id":"w3suite-tenant-001","timestamp":"2025-11-30T12:00:00Z","data":{"call_uuid":"test-123"}}'# 2. Calcola HMAC signature (usa il secret del tenant)SECRET="your-webhook-secret-here"SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')# 3. Invia webhookcurl -X POST https://your-w3-suite-url.com/api/webhooks \  -H "Content-Type: application/json" \  -H "X-Webhook-Signature: sha256=$SIGNATURE" \  -H "X-Webhook-Event: call.ended" \  -H "X-Request-ID: test-request-123" \  -d "$PAYLOAD"
+Checklist implementazione
+[ ] Aggiunto campo webhook_secret alla tabella tenants
+[ ] Implementato endpoint POST /api/webhooks
+[ ] Implementato raw body parser per la verifica HMAC
+[ ] Implementata funzione getTenantWebhookSecret(tenant_external_id)
+[ ] Implementata funzione verifyWebhookSignature(rawBody, signature, secret)
+[ ] Implementato processamento asincrono degli eventi
+[ ] Implementati handler per tutti i tipi di eventi
+[ ] Aggiunto logging per sicurezza
+[ ] Testato con webhook reali da EDGVoIP
+Note importanti
+URL fisso: tutti i tenant usano lo stesso URL https://edgvoip.it/api/webhooks
+Identificazione tenant: usa sempre tenant_external_id dal payload per identificare il tenant
+Secret per tenant: ogni tenant ha il proprio webhook_secret salvato nel database W3 Suite
+HMAC signature: sempre verificare la signature prima di processare l'evento
+Risposta rapida: rispondere con 200 OK entro 5 secondi per evitare timeout
+Questa documentazione è pronta per essere data in pasto a Replit per aggiornare W3 Suite.

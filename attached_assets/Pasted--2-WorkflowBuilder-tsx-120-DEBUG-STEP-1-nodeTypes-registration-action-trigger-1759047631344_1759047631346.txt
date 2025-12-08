@@ -1,0 +1,39 @@
+ (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:120 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:119 🔍 DEBUG STEP 1: testNodes going to ReactFlow: 

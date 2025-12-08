@@ -1,0 +1,81 @@
+[404] Page not found - segment: crm Error Component Stack
+    at NotFound (NotFound.tsx:11:27)
+    at Route (wouter.js?v=fca92316:206:16)
+    at Switch (wouter.js?v=fca92316:262:17)
+    at TenantRoutes (TenantShell.tsx:195:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:50:59)
+    at Route (wouter.js?v=fca92316:206:16)
+    at Switch (wouter.js?v=fca92316:262:17)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fca92316:3081:3)
+    at App (App.tsx:36:3)
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fca92316:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fca92316:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fca92316:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fca92316:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fca92316:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fca92316:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fca92316:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fca92316:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fca92316:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=fca92316:18627Understand this warning
+NotFound.tsx:24 [404] Page not found - segment: crm
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fca92316:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=fca92316:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=fca92316:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=fca92316:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fca92316:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fca92316:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fca92316:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fca92316:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=fca92316:18627Understand this warning
+TenantShell.tsx:67  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/tenants/resolve?slug=crm 404 (Not Found)
+resolveTenant @ TenantShell.tsx:67
+(anonymous) @ TenantShell.tsx:144
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fca92316:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fca92316:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fca92316:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fca92316:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fca92316:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fca92316:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fca92316:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fca92316:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fca92316:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=fca92316:18627Understand this error
+NotFound.tsx:24 [404] Page not found - segment: crm Error Component Stack
+    at NotFound (NotFound.tsx:11:27)
+    at TenantShell (TenantShell.tsx:50:59)
+    at Route (wouter.js?v=fca92316:206:16)
+    at Switch (wouter.js?v=fca92316:262:17)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fca92316:3081:3)
+    at App (App.tsx:36:3)
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fca92316:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fca92316:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fca92316:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fca92316:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fca92316:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fca92316:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fca92316:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=fca92316:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=fca92316:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fca92316:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fca92316:384Understand this warning
+NotFound.tsx:24 [404] Page not found - segment: crm

@@ -1,0 +1,169 @@
+Perfetto: impostiamo **IA e UX del modulo CRM** (multi-tenant → ragione sociale → store) con stack **React + Tailwind + shadcn/ui**. Ti do **mappa menu**, **pattern schermate**, **componenti shadcn** da usare e **filtri/scope** per RS/store/campagne/pipeline.
+
+# IA: struttura di navigazione (menu CRM)
+
+* **CRM**
+
+  * **Dashboard** (overview cross RS/store)
+  * **Campagne**
+  * **Leads**
+  * **Pipeline**
+
+    * **Board** (Kanban per pipeline)
+    * **Deals** (tabellare)
+  * **Clienti**
+
+    * **Accounts** (B2B)
+    * **Contacts** (B2C/referenti)
+  * **Attività** (Tasks/Calls/Messaggi)
+  * **Report** (KPI marketing/sales)
+  * **Impostazioni CRM**
+
+    * Pipeline & Stage
+    * Regole di contatto (playbook)
+    * Campagne (parametri)
+    * Mappature sorgenti (GTM/CAPI)
+    * Campi personalizzati
+
+# UX: pattern trasversali
+
+* **Scope bar** fissa in alto:
+  **Tenant ▸ Ragione Sociale ▸ Store** + **Data range** + **Saved Views**
+  (RBAC: mostra solo scope consentiti).
+* **Filter dock** a destra (Sheet/Drawer): filtri per **campagna, pipeline, canale, owner, stato**.
+* **List view ↔ Board ↔ Analytics**: tre tab standard per ogni oggetto (dati/kanban/grafici).
+* **Create fast** con **Command Palette** (⌘K): “Nuovo lead/deal/task”.
+* **Inline edit** su celle chiave (owner, stage, priority).
+* **Mass actions** (checkbox) per assign, change stage, tag, export.
+
+# Schermate chiave
+
+## 1) CRM Dashboard
+
+* **Hero KPI**: Leads (nuovi/qualificati), Deals (open/won), CVR, WinRate, Velocity, Revenue attribuito.
+* **Widget**:
+
+  * Funnel: **Campagna → Lead → Deal → Cliente** (mini sankey/barre).
+  * **Pipeline health** (per pipeline/stage).
+  * **Top campagne** per ROI/CVR.
+  * **To-do oggi** (attività scadute/da fare).
+* **Componenti shadcn**: `Card`, `Tabs`, `Separator`, `Badge`, `Tooltip`, `DropdownMenu`, `Chart` (via Recharts), `Skeleton`.
+
+## 2) Campagne (lista + dettaglio)
+
+* **Lista**: tabella con nome, status, periodo, leads, CPL, deal creati, revenue attribuito.
+* **Dettaglio**: KPI, UTM defaults, canali, collegamenti pipeline (N:N), timeline eventi (CAPI/GTM).
+* **Componenti**: `Table` (TanStack Table), `Badge` (status), `Tabs` (Overview/Attribution/Leads/Deals), `Dialog` (edit), `Accordion` (UTM), `Popover/Calendar` (date), `Textarea`, `Input`.
+
+## 3) Leads (lista + dettaglio)
+
+* **Lista**: stato, campagna, canale, product_interest, owner, created_at.
+  Mass actions: assign, qualify, convert→deal.
+* **Dettaglio** (Drawer full-height): anagrafica (GDPR), consensi, timeline interazioni, UTM, payload, pulsante **“Crea Deal”** (pipeline proposta da driver).
+* **Componenti**: `DataTable` (Table + Toolbar), `Sheet` (dettaglio), `Avatar`, `Badge`, `Command` (assegnazione), `Toast` (Sonner), `Separator`, `ScrollArea`.
+
+## 4) Pipeline
+
+### Board (Kanban per pipeline scelta)
+
+* Colonne = **stage**, card = **deal** (value, owner, etichette, aging).
+  Drag&drop → trigger regole (SLA, next-best-action).
+* **Header**: selettore **Pipeline** + filtri (store/owner/campagna).
+* **Componenti**: `Tabs`, `Select`, `ScrollArea`, `Card`, `DropdownMenu` (azioni card), `ContextMenu`, `Tooltip`, `Dialog` (edit rapida), `Badge`.
+  (DnD: `@dnd-kit/core` o `react-beautiful-dnd`).
+
+### Deals (tabellare)
+
+* Colonne: nome, pipeline/stage, value, prob., owner, campagna, source_channel, updated.
+* Bulk change stage/owner, export CSV.
+* **Componenti**: `Table`, `Input` (search), `Select` (stage), `Combobox` (owner), `Popover` (filters), `Button` (export).
+
+## 5) Clienti (Accounts/Contacts)
+
+* **Accounts**: ragione sociale, P.IVA, RS/store scope, deals attivi, LTV.
+* **Contacts**: persona con consensi e canali preferiti (quiet hours).
+* **Dettaglio**: timeline unica (lead→deal→order→ticket), contratti attivi, preferenze.
+* **Componenti**: `Table`, `Avatar`, `Badge`, `Tabs`, `Accordion`, `Switch` (opt-in), `Calendar`, `Textarea`.
+
+## 6) Attività (Tasks/Interazioni)
+
+* Vista **inbox stile CRM**: oggi/scadute/prossime, raggruppo per owner o store.
+* Log **interactions** (call, WA, email, sms): outcome, durata, note, allegati.
+* **Componenti**: `Calendar` (agenda), `Card`, `Command` (quick create), `Select`, `Checkbox`, `Alert`, `Toast`.
+
+## 7) Report
+
+* Preimpostati: **ROI per campagna**, **velocity per pipeline**, **conversion by channel**, **win-rate per store/owner**.
+* **Componenti**: `Card`, `Tabs`, `Select`, `Chart` (Recharts), `Table` (drill-down).
+
+## 8) Impostazioni CRM
+
+* **Pipeline & Stage** (+ Playbook per stage: canali consentiti, max tentativi, SLA, quiet hours).
+* **Mappature sorgenti** (Meta page_id, WA phone_id, Google Ads customer_id → tenant/RS/store).
+* **Campi custom** (per lead/deal/clienti).
+* **Componenti**: `Form` pattern con `react-hook-form + zod`, `Accordion`, `CodeBlock` (JSON), `Switch`, `Input`, `Textarea`, `AlertDialog` (azioni distruttive).
+
+# Barra Scope & Filtri (multi-tenant)
+
+* **Scope Bar (top)**:
+  `Select(Tenant)` ▸ `Select(Ragione Sociale)` ▸ `Select(Store)` ▸ `DateRange` ▸ `SavedView` ▸ `Share/Link`
+  (componenti: `Breadcrumb`, `Select`, `Popover+Calendar`, `Button`, `Command` per cerca store/RS)
+* **Filter Dock (right Sheet)** comune a tutte le liste/board:
+
+  * Campagna, Pipeline/Stage, Owner/Team, Canale, Status, Product/Driver, Tag, RS/Store (se non già fissati), Range date.
+  * **Pulsanti**: `Reset`, `Save as View`, `Apply`.
+
+# Componenti shadcn/ui da usare (selezione)
+
+* **Base**: `Button`, `Input`, `Textarea`, `Select`, `Checkbox`, `RadioGroup`, `Switch`, `Badge`, `Avatar`, `Separator`, `Breadcrumb`, `Tabs`, `Accordion`, `Tooltip`, `DropdownMenu`, `Dialog`, `AlertDialog`, `Sheet`, `Popover`, `Calendar`, `Command`, `ScrollArea`, `Skeleton`, `Toast (sonner)`.
+* **Tabelle**: `Table` + **TanStack Table** (sorting, column filters, column visibility, pagination, row selection).
+* **Forms**: `react-hook-form` + **`zod`** (validazione coerente con GDPR e consensi).
+* **Grafici**: Recharts (KPI dashboard/report).
+
+# Tailwind: stile e pattern
+
+* **Layout**: sidebar fissa (w-72), content fluid, **header sticky** con Scope Bar.
+* **Cards**: `rounded-2xl shadow-sm border bg-white/60 backdrop-blur` (glassmorphism leggero come da tue linee).
+* **Spaziatura**: grid 12 col, `gap-6` su dashboard; liste con `px-4 py-2`.
+* **Stati**: badge colori HSL per status/stage; `ring` soft su focus.
+* **Dark mode** opzionale con `class` strategy.
+
+# RBAC in UI
+
+* Nascondi/disable azioni e tab in base a permessi:
+
+  * `marketing.campaigns.*`, `crm.leads.*`, `sales.deals.*`, `sales.pipelines.*`, `customer.*`, `ops.*`.
+* Scope limiter: se ruolo ha `store_ids[]`, filtra automaticamente lo Scope Bar.
+
+# Routing suggerito
+
+```
+/crm
+  /dashboard
+  /campaigns (list, :id)
+/leads (list, :id)
+/pipeline
+  /board?pipelineId=...
+  /deals
+/customers
+  /accounts (list, :id)
+/contacts (list, :id)
+/activities
+/reports
+/settings
+  /pipelines
+  /playbooks
+  /sources
+  /custom-fields
+```
+
+# Micro-interazioni che fanno la differenza
+
+* **Drag&Drop Kanban** con **auto-prompt N.B.A.** (“Invia WA pre-offerta?”).
+* **Inline “quick convert”** Lead→Deal (dialog con scelta pipeline + owner).
+* **Saved views** condivisibili via URL (querystring).
+* **Command (⌘K)** per creare lead/deal/task da ovunque.
+* **Empty states** con CTA chiare (es. “Collega Meta CAPI / Aggiungi pipeline”).
+* **Toasts** non intrusivi su azioni veloci; `Skeleton` per caricamenti.
+
+Se vuoi, preparo un **mock React** (pagina Leads + Pipeline Board) con i componenti shadcn già cablati (toolbar filtri, scope bar, tabella TanStack, Kanban).

@@ -1,0 +1,99 @@
+Le mie Richieste
+Nuova Richiesta
+
+Tutte le richieste
+
+Tutto il periodo
+Nome Richiesta	Dipartimento	Categoria	Tipologia	Data	Stato	Azioni
+Scambio Turno per Emergenza
+Richiesta scambio turno con collega per emergenza familiare imprevista. Disponibilità recupero nelle settimane successive.
+N/A	
+📋
+cambio_turno
+scambio_temporaneo	25/09/2024 22:15	Approvata	
+
+Congedo per Matrimonio
+Richiesta congedo matrimoniale di 15 giorni come previsto da CCNL. Matrimonio programmato per il 12 novembre 2024.
+N/A	
+📋
+matrimonio
+congedo_matrimoniale	25/09/2024 18:20	Bozza	
+
+
+Permessi Legge 104/92
+Richiesta permessi mensili Legge 104 per assistenza genitore anziano. Richiesta di 3 giorni mensili come previsto dalla normativa.
+N/A	
+📋
+legge_104
+assistenza_familiare	24/09/2024 10:15	Pending	
+
+Permesso ROL - Roberto Esposito
+Richiesta permesso ROL per visite mediche personali. Necessario il venerdì pomeriggio dalle 14:00.
+N/A	
+📋
+rol_leave
+personal_hours	22/09/2024 11:45	Pending	
+
+Smart Working Settimanale
+Richiesta smart working per 2 giorni a settimana (martedì e giovedì) per migliorare work-life balance e ridurre tempi di spostamento.
+N/A	
+📋
+smart_working
+Lavoro Agile	20/09/2024 13:45	Pending	
+
+Congedo per Malattia - Paolo Gallo
+Richiesta congedo per malattia a causa di influenza con complicazioni. Certificato medico allegato con prognosi di 5 giorni.
+N/A	
+📋
+sick
+medical_leave	19/09/2024 10:15	Pending	
+
+Congedo Malattia Figlio
+Richiesta congedo per malattia figlio di 8 anni (influenza stagionale). Necessaria assistenza domiciliare per 3 giorni.
+N/A	
+📋
+figli_malattia
+malattia_bambino	18/09/2024 09:45	Rifiutata	
+
+Corso Leadership e Management - Stefano Caruso
+Richiesta partecipazione al corso "Leadership Avanzata per Store Manager" presso SDA Bocconi. Durata 3 giorni, costo €1.200.
+N/A	
+📋
+training_request
+professional_development	15/09/2024 14:20	Approvata	
+
+Corso Finanza Digitale
+Partecipazione al corso "Digital Finance Transformation" presso SDA Bocconi. Corso strategico per evoluzione digitale del dipartimento Finance.
+N/A	
+📋
+formazione
+Corsi Esterni	10/09/2024 16:30	Approvata	
+
+Congedo di Maternità - Valentina Marini
+Richiesta congedo obbligatorio di maternità secondo Legge 151/2001. Periodo pre-parto 2 mesi e post-parto 3 mesi.
+N/A	
+📋
+maternity_leave
+italian_legal	10/09/2024 09:00	Approvata	
+
+Ferie Estive 2024
+Richiesta ferie per periodo estivo dal 15 al 30 agosto 2024. Periodo di maggior tranquillità lavorativa.
+N/A	
+📋
+vacation
+ferie_annuali	15/07/2024 11:30	Approvata	
+
+Ferie Extra Agosto - Roberto Esposito
+Richiesta ferie aggiuntive per agosto oltre al budget annuale disponibile. Già utilizzate 20 giorni su 22 disponibili.
+N/A	
+📋
+vacation
+personal_leave	10/07/2024 16:30	Rifiutata	
+
+Richiesta Ferie Estive - Marco Bianchi
+Richiesta ferie per periodo estivo dal 15 al 30 luglio per vacanze in famiglia. 15 giorni lavorativi totali.
+N/A	
+📋
+vacation
+annual_leave	05/06/2024 09:30	Approvata	
+

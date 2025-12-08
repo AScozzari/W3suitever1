@@ -1,0 +1,160 @@
+creiamo prima l'entità fornitore  quali campi /items per questa entità inseriresti? anagrafici, amministrativi contatti ecc ecc, consideriamo una cosa che alcuni fornitori sono pushati dalla brand interface e non possono essere modificati altri li puoi creare all'interno del tuo tenant
+ChatGPT ha detto:
+
+Perfetto—partiamo dall’entità Fornitore con una struttura solida, multi-tenant e “brand-controlled aware” (alcuni fornitori arrivano dalla Brand Interface e sono locked). Ti propongo:
+
+Obiettivi chiave
+
+Supporto multi-tenant con RLS.
+
+Locking per fornitori creati/gestiti dalla Brand Interface (non modificabili dal tenant).
+
+Dati completi: anagrafica legale, billing & pagamenti, logistica, contatti, contratti, documenti, metriche.
+
+Estensibilità (campi extra per settori/regole Italia: P.IVA, SDI/Codice destinatario, PEC).
+
+Campi / Items consigliati
+1) Identità & classifica
+
+id (UUID), tenant_id (UUID) — RLS.
+
+origin ('brand' | 'tenant') – se brand ⇒ locked.
+
+external_id (string) – id sorgente Brand Interface (se presente).
+
+code (string, univoco per tenant) – Codice fornitore interno.
+
+name (string) – Ragione sociale commerciale.
+
+Classificazioni:
+
+supplier_type ('distributore' | 'produttore' | 'servizi' | 'logistica' | ...)
+
+channels (array enum: franchising, dealer, top_dealer, …)
+
+categories (array: categorie merceologiche servite)
+
+brands_supplied (array: marche servite)
+
+2) Dati legali/fiscali (IT-ready)
+
+legal_name (Ragione sociale legale)
+
+vat_number (P.IVA) — validazione paese.
+
+tax_code (CF, opzionale)
+
+sdi_code (Codice Destinatario) / pec_email (per e-fattura)
+
+rea_number, chamber_of_commerce (opzionali)
+
+3) Indirizzi
+
+registered_address (JSON: via, cap, città, provincia, stato)
+
+operational_addresses (array JSON) – magazzini/centri logistici
+
+4) Contatti
+
+contacts (array di oggetti): name, role, email, phone, mobile, notes
+
+tag: amministrazione, ordini, logistica, commerciale
+
+5) Pagamenti & amministrazione
+
+payment_terms (es. 30DFFM, 60GGDF, immediato)
+
+payment_method (bonifico/SEPA, RID, carta, portale)
+
+iban_list (array) + beneficiary_name
+
+currency (es. EUR)
+
+billing_email (dove inviare fatture) / billing_portal_url (se c’è)
+
+fiscal_notes (testo) – es. split payment, reverse charge
+
+6) Logistica / ordini
+
+lead_time_days (int) – medio
+
+min_order_value / min_order_qty (decimal/int)
+
+shipping_terms (Incoterms opzionale)
+
+returns_policy (testo/URL)
+
+dropship_supported (boolean)
+
+labels_required (boolean) – es. etichette IMEI/EAN
+
+edi_support (boolean) + edi_spec (URL/note)
+
+7) Contratti & compliance
+
+contract_number, contract_start, contract_end, auto_renew (bool)
+
+sla (JSON) – KPI contrattuali
+
+documents (array: type, url, version, uploaded_at) – es. contratto, NDA, certificazioni
+
+8) Stato, audit & note
+
+status ('active' | 'suspended' | 'blocked')
+
+locked_fields (array string) – se origin=brand, elenco campi non editabili dal tenant
+
+created_by, updated_by, created_at, updated_at
+
+notes (testo)
+
+9) Metriche (aggiornate da job)
+
+metrics (JSON): on_time_rate, fill_rate, avg_lead_time, defect_rate, returns_rate
+
+Regole Brand Interface vs Tenant
+
+origin = 'brand': fornitore pushato dalla Brand Interface; il tenant lo vede ma:
+
+Non può modificare campi “critici” (nome/PIva/indirizzi ecc.).
+
+Solo campi locali “safe” (es. note interne) se previsti.
+
+origin = 'tenant': creato dall’organizzazione; gestione completa nel perimetro tenant.
+
+locked_fields permette granularità (il brand può bloccare singoli campi).
+
+RBAC essenziale (suite)
+
+suppliers.read – elenco/dettaglio.
+
+suppliers.create – solo se origin='tenant'.
+
+suppliers.update – solo se origin='tenant' o se il campo non è in locked_fields.
+
+suppliers.block – sospensione (tenant-level).
+
+suppliers.attach-document – upload documenti.
+(Scope: in genere tenant-wide; nessuno store/RS.)
+
+API (bozza)
+
+Base: /:tenantSlug/api/v1/suppliers
+
+GET / → suppliers.read (filtri: status, category, brand, q)
+
+GET /:id → suppliers.read
+
+POST / → suppliers.create (consente solo origin='tenant')
+
+PATCH /:id → suppliers.update (enforce lock/brand)
+
+POST /:id/documents → suppliers.attach-document
+
+POST /:id/block → suppliers.block
+
+Brand API (cross-tenant): /brand-api/suppliers
+
+POST / → crea/aggiorna con origin='brand', imposta locked_fields
+
+POST /:id/deploy → propaga a uno o più tenant

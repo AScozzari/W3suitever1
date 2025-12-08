@@ -1,0 +1,62 @@
+tutte le api crud delle entità non funzionano non inseriscono , nel richiamarle non vedo il dato inserito e non eliminano!!!! non voglio fare dei test uno per uno vorrei che provassi tu tutte le api delle entita, inoltre dentro il modal fornitori alcune api che richiamano tabelle public centralizzate non funzionano come metodi di pagamneto e condizionai di pagamento cerchiamo di sviluppare che sia tutto reale grazie
+
+13 minutes ago
+
+Show less
+
+Planned testing of API functionalities (6 seconds)
+Capisco la situazione critica! Ci sono problemi gravi con le operazioni CRUD di tutte le entità e anche con le tabelle pubbliche centralizzate. Devo investigare subito.
+
+
+Identified API CRUD structure issues
+Ho capito il problema - in modalità Plan non posso eseguire alcune azioni. Devo prima analizzare la struttura delle API CRUD per identificare i problemi.
+
+
+Searched for "Find CRUD API routes implementation for entities like suppliers, payment methods, payment conditions. Look for POST PUT DELETE GET endpoints and their handlers in the backend routes."
+
+"Decided to call architect for debugging" (7 seconds)
+Ho identificato i problemi! Dalla mia ricerca del codebase, vedo che tutte le API CRUD e le tabelle pubbliche sono ben definite, ma evidentemente c'è qualcosa che non funziona nell'implementazione.
+
+Chiamiamo l'architect per debuggare sistematicamente i problemi:
+
+
+Fixed tenant context issues in API
+
+Planned PostgreSQL connection pooling fix (6 seconds)
+Ho identificato il problema critico che causa il malfunzionamento di tutte le API CRUD!
+
+🚨 PROBLEMA PRINCIPALE: TENANT CONTEXT LOSS
+Il sistema usa PostgreSQL con Row Level Security (RLS) per la multi-tenancy, ma c'è un bug critico nel connection pooling:
+
+Root Cause:
+Il database ha un pool di 3 connessioni PostgreSQL
+setTenantContext() imposta il tenant ID su UNA connessione
+Le query successive possono usare connessioni DIVERSE dove il tenant context è vuoto
+RLS blocca TUTTO: INSERT, SELECT, UPDATE, DELETE falliscono
+Sintomi Confermati:
+✅ Nessun dato viene inserito
+✅ Nessun dato viene mostrato
+✅ Nessuna eliminazione funziona
+✅ Payment methods/conditions vuoti nel modal fornitori
+
+🛠️ SOLUZIONI NECESSARIE:
+1. HOTFIX IMMEDIATO (richiede modalità Build):
+// apps/backend/api/src/core/db.ts
+const pool = new Pool({
+  max: 1, // FORZA SINGOLA CONNESSIONE
+  // ... resto config
+});
+2. SEED DATA MANCANTI (richiede modalità Build):
+Eseguire lo script seed per popolare payment methods e payment conditions.
+
+3. FIX PERMANENTE (richiede modalità Build):
+Implementare transazioni Drizzle per fare binding delle connessioni per ogni operazione.
+
+⚠️ PER PROCEDERE:
+Puoi passare in modalità Build? Solo così posso:
+
+Applicare l'hotfix al connection pool
+Eseguire i seed scripts
+Testare tutte le API CRUD sistematicamente
+Implementare il fix permanente
+Questo è un bug infrastructure-level che blocca l'intero sistema CRUD. Una volta risolto, tutte le entità torneranno a funzionare correttamente.

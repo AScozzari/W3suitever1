@@ -1,0 +1,171 @@
+Perfetto, con queste nuove info ti propongo la via più “easy e solida”:
+
+Cosa vuoi fare
+
+Solo API in GET per CDR e analytics (lettura).
+
+Multi-tenant per SIP domain (1 dominio per tenant), con possibilità di dimensione store.
+
+W3 Suite mantiene policy di chiamata e ricontattabilità (workflow CRM).
+
+Scelta consigliata (subito)
+
+👉 Soluzione light (PBX-first): lascia tutto il routing/config su edgvoip e espone solo API GET di lettura che W3 Suite consuma per:
+
+storico CDR,
+
+KPI/analytics (per tenant/store/utente),
+
+liste “missed” per ricontattabilità,
+
+(opz) live calls dashboard.
+
+Vantaggi: zero provisioning da sviluppare ora, time-to-value rapido, nessun rischio sul dialplan.
+Quando vorrai l’AI inbound, aggiungeremo 1 endpoint di resolve e un piccolo Voice Gateway.
+
+Design API (GET) — lato edgvoip (consumate da W3)
+
+Tutte le chiamate autenticate con JWT e scoped per tenant via sip_domain (claim + query).
+Pagination: page, page_size (default 50). Date ISO: from, to.
+
+1) CDR (dettaglio/ricerca)
+GET /api/cdr?sip_domain=tenantA.edvoip.it&from=2025-10-01&to=2025-10-30
+    [&direction=in|out]
+    [&disposition=ANSWERED|NO_ANSWER|BUSY|FAILED]
+    [&did_e164=+3906...]
+    [&ext=1001]
+    [&store_id=uuid-store]
+    [&page=1&page_size=50]
+
+
+Response (estratto):
+
+{
+  "items": [{
+    "call_id":"abc123",
+    "sip_domain":"tenantA.edvoip.it",
+    "tenant_id":"uuid-tenantA",
+    "store_id":"uuid-store01",
+    "direction":"in",
+    "from_uri":"+39061234567",
+    "to_uri":"1001",
+    "did_e164":"+39061234567",
+    "ext_number":"1001",
+    "start_ts":"2025-10-30T09:12:05Z",
+    "answer_ts":"2025-10-30T09:12:12Z",
+    "end_ts":"2025-10-30T09:14:20Z",
+    "billsec":128,
+    "disposition":"ANSWERED",
+    "recording_url":null,
+    "qos":{"mos":4.3,"jitter_ms":9,"loss_pct":0.1}
+  }],
+  "page":1,"page_size":50,"total":482
+}
+
+2) CDR by id
+GET /api/cdr/{call_id}?sip_domain=tenantA.edvoip.it
+
+3) Analytics — summary KPI
+GET /api/analytics/summary?sip_domain=tenantA.edvoip.it&from=...&to=...[&store_id=...]
+
+
+Response (esempio):
+
+{
+  "total_calls": 1320,
+  "answered_rate": 0.78,
+  "avg_handle_time_sec": 214,
+  "avg_ring_time_sec": 12,
+  "asr": 0.92,
+  "missed_calls": 289,
+  "callbacks_due": 96
+}
+
+4) Analytics — per store
+GET /api/analytics/by-store?sip_domain=tenantA.edvoip.it&from=...&to=...
+
+
+Restituisce array con store_id, store_name, total/answered/missed, AHT, ASR.
+
+5) Analytics — per agente (extension=user 1:1)
+GET /api/analytics/by-agent?sip_domain=tenantA.edvoip.it&from=...&to=...
+
+
+Per ogni ext/user_id: total, answered, missed, aht, avg_mos.
+
+6) Missed per ricontattabilità
+GET /api/analytics/missed?sip_domain=tenantA.edvoip.it&from=...&to=...
+    [&did_e164=...] [&store_id=...] [&only_unique=true]
+
+
+Serve alla UI W3 per creare task/lead di richiamo (in W3, non sul PBX).
+
+7) QoS / qualità (opzionale)
+GET /api/analytics/qos?sip_domain=tenantA.edvoip.it&from=...&to=...
+
+
+Media MOS, jitter, loss per periodo/store/agent.
+
+8) (Opz) Live calls dashboard
+GET /api/monitor/active-calls?sip_domain=tenantA.edvoip.it
+
+
+Nota: se preferisci che W3 conservi i CDR, puoi invertire (PBX → POST verso W3). Ma visto che chiedi solo GET, meglio W3 chiama edgvoip.
+
+Come gestire store nella multi-tenancy
+
+Extensions portano store_id (dato che sono 1:1 con user, mappa user→store).
+
+DID può avere store_id (linea store).
+
+In CDR calcoli store_id così: inbound da DID→store; outbound da ext→store dell’utente.
+
+Tutte le API sopra supportano store_id per filtrare/aggregare.
+
+Policy chiamata & ricontattabilità (restano in W3)
+
+Policy di chiamata: tienile in W3 (UI/CRM). Con soluzione light non fai enforcement nel dialplan; filtri rubrica/azioni UI (chi può chiamare chi/prefissi).
+
+Ricontattabilità: W3 chiama GET /analytics/missed e genera task CRM (lead di richiamo) con SLA/ownership. Non serve API POST sul PBX.
+
+Sicurezza
+
+JWT con claim sip_domain e tenant_id; RLS lato edgvoip: i GET rispondono solo al tenant del token.
+
+Rate limit per IP/tenant.
+
+Pagination ovunque per evitare dump.
+
+Decisione: Light vs “tutto su edgvoip”
+
+Con il tuo requisito “solo GET” e policy/recall in W3:
+
+Vai con la soluzione light (PBX-first + GET read APIs).
+
+È la più veloce, non tocca il dialplan attuale.
+
+Ti dà immediatamente KPI multi-tenant/store/agent in W3.
+
+Sblocca la ricontattabilità (missed → task CRM) senza scrivere su PBX.
+
+Più avanti, quando vuoi AI inbound solo per alcuni numeri, aggiungi:
+
+GET /api/voip/routes/inbound?... (resolve)
+
+microservizio Voice Gateway.
+
+Mini checklist di implementazione
+
+edgvoip: esponi le 7–8 GET sopra (DB CDR locale o vista).
+
+Auth: JWT per tenant; mapping sip_domain↔tenant_id.
+
+W3:
+
+pagina CDR (search + export),
+
+dashboard KPI (summary/by-store/by-agent),
+
+Missed → “Crea richiamo” (task/lead in CRM),
+
+softphone integrato (WSS) se vuoi telefonare dalla UI.

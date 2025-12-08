@@ -1,0 +1,247 @@
+/* W3 Suite Design Tokens - WindTre Brand Colors */
+/* Based on WindTre brand palette: Orange #FF6900, Purple #7B2CBF, Black/White */
+
+:root {
+  /* ==================== BRAND COLORS ==================== */
+  /* Primary WindTre Orange */
+  --color-primary-50: 255 245 235;   /* #fff5eb */
+  --color-primary-100: 255 234 213;  /* #ffeadd */
+  --color-primary-200: 254 215 170;  /* #fed7aa */
+  --color-primary-300: 253 186 116;  /* #fdba74 */
+  --color-primary-400: 251 146 60;   /* #fb923c */
+  --color-primary-500: 255 105 0;    /* #ff6900 - WindTre Orange */
+  --color-primary-600: 234 88 12;    /* #ea580c */
+  --color-primary-700: 194 65 12;    /* #c2410c */
+  --color-primary-800: 154 52 18;    /* #9a3412 */
+  --color-primary-900: 124 45 18;    /* #7c2d12 */
+  --color-primary-950: 67 20 7;      /* #431407 */
+
+  /* Secondary WindTre Purple */
+  --color-secondary-50: 250 245 255;  /* #faf5ff */
+  --color-secondary-100: 243 232 255; /* #f3e8ff */
+  --color-secondary-200: 233 213 255; /* #e9d5ff */
+  --color-secondary-300: 216 180 254; /* #d8b4fe */
+  --color-secondary-400: 196 141 252; /* #c48dfc */
+  --color-secondary-500: 123 44 191;  /* #7b2cbf - WindTre Purple */
+  --color-secondary-600: 124 58 237;  /* #7c3aed */
+  --color-secondary-700: 109 40 217;  /* #6d28d9 */
+  --color-secondary-800: 91 33 182;   /* #5b21b6 */
+  --color-secondary-900: 76 29 149;   /* #4c1d95 */
+  --color-secondary-950: 46 16 101;   /* #2e1065 */
+
+  /* ==================== NEUTRAL GRAYS ==================== */
+  /* For enterprise interface */
+  --color-neutral-50: 250 250 250;   /* #fafafa */
+  --color-neutral-100: 245 245 245;  /* #f5f5f5 */
+  --color-neutral-200: 229 229 229;  /* #e5e5e5 */
+  --color-neutral-300: 212 212 212;  /* #d4d4d4 */
+  --color-neutral-400: 163 163 163;  /* #a3a3a3 */
+  --color-neutral-500: 115 115 115;  /* #737373 */
+  --color-neutral-600: 82 82 82;     /* #525252 */
+  --color-neutral-700: 64 64 64;     /* #404040 */
+  --color-neutral-800: 38 38 38;     /* #262626 */
+  --color-neutral-900: 23 23 23;     /* #171717 */
+  --color-neutral-950: 10 10 10;     /* #0a0a0a */
+
+  /* ==================== SEMANTIC COLORS ==================== */
+  /* Success - Green */
+  --color-success-50: 240 253 244;   /* #f0fdf4 */
+  --color-success-100: 220 252 231;  /* #dcfce7 */
+  --color-success-200: 187 247 208;  /* #bbf7d0 */
+  --color-success-300: 134 239 172;  /* #86efac */
+  --color-success-400: 74 222 128;   /* #4ade80 */
+  --color-success-500: 34 197 94;    /* #22c55e */
+  --color-success-600: 22 163 74;    /* #16a34a */
+  --color-success-700: 21 128 61;    /* #15803d */
+  --color-success-800: 22 101 52;    /* #166534 */
+  --color-success-900: 20 83 45;     /* #14532d */
+
+  /* Warning - Amber */
+  --color-warning-50: 255 251 235;   /* #fffbeb */
+  --color-warning-100: 254 243 199;  /* #fef3c7 */
+  --color-warning-200: 253 230 138;  /* #fde68a */
+  --color-warning-300: 252 211 77;   /* #fcd34d */
+  --color-warning-400: 251 191 36;   /* #fbbf24 */
+  --color-warning-500: 245 158 11;   /* #f59e0b */
+  --color-warning-600: 217 119 6;    /* #d97706 */
+  --color-warning-700: 180 83 9;     /* #b45309 */
+  --color-warning-800: 146 64 14;    /* #92400e */
+  --color-warning-900: 120 53 15;    /* #78350f */
+
+  /* Error - Red */
+  --color-error-50: 254 242 242;     /* #fef2f2 */
+  --color-error-100: 254 226 226;    /* #fee2e2 */
+  --color-error-200: 254 202 202;    /* #fecaca */
+  --color-error-300: 252 165 165;    /* #fca5a5 */
+  --color-error-400: 248 113 113;    /* #f87171 */
+  --color-error-500: 239 68 68;      /* #ef4444 */
+  --color-error-600: 220 38 38;      /* #dc2626 */
+  --color-error-700: 185 28 28;      /* #b91c1c */
+  --color-error-800: 153 27 27;      /* #991b1b */
+  --color-error-900: 127 29 29;      /* #7f1d1d */
+
+  /* Info - Blue */
+  --color-info-50: 239 246 255;      /* #eff6ff */
+  --color-info-100: 219 234 254;     /* #dbeafe */
+  --color-info-200: 191 219 254;     /* #bfdbfe */
+  --color-info-300: 147 197 253;     /* #93c5fd */
+  --color-info-400: 96 165 250;      /* #60a5fa */
+  --color-info-500: 59 130 246;      /* #3b82f6 */
+  --color-info-600: 37 99 235;       /* #2563eb */
+  --color-info-700: 29 78 216;       /* #1d4ed8 */
+  --color-info-800: 30 64 175;       /* #1e40af */
+  --color-info-900: 30 58 138;       /* #1e3a8a */
+
+  /* ==================== GLASSMORPHISM PROPERTIES ==================== */
+  /* Glass backgrounds with transparency */
+  --glass-bg-white: rgba(255, 255, 255, 0.85);
+  --glass-bg-white-light: rgba(255, 255, 255, 0.6);
+  --glass-bg-black: rgba(0, 0, 0, 0.85);
+  --glass-bg-black-light: rgba(0, 0, 0, 0.6);
+  --glass-bg-primary: rgba(255, 105, 0, 0.15);
+  --glass-bg-secondary: rgba(123, 44, 191, 0.15);
+
+  /* Glass borders */
+  --glass-border-white: rgba(255, 255, 255, 0.2);
+  --glass-border-black: rgba(0, 0, 0, 0.2);
+  --glass-border-primary: rgba(255, 105, 0, 0.3);
+  --glass-border-secondary: rgba(123, 44, 191, 0.3);
+
+  /* Glass shadows */
+  --glass-shadow-light: 0 8px 32px rgba(31, 38, 135, 0.37);
+  --glass-shadow-primary: 0 8px 32px rgba(255, 105, 0, 0.37);
+  --glass-shadow-secondary: 0 8px 32px rgba(123, 44, 191, 0.37);
+
+  /* Backdrop blur filters */
+  --glass-blur-sm: blur(4px);
+  --glass-blur-md: blur(8px);
+  --glass-blur-lg: blur(16px);
+  --glass-blur-xl: blur(24px);
+
+  /* ==================== SPACING & SIZING ==================== */
+  /* W3 Suite specific spacing scale */
+  --space-xs: 0.25rem;     /* 4px */
+  --space-sm: 0.5rem;      /* 8px */
+  --space-md: 1rem;        /* 16px */
+  --space-lg: 1.5rem;      /* 24px */
+  --space-xl: 2rem;        /* 32px */
+  --space-2xl: 3rem;       /* 48px */
+  --space-3xl: 4rem;       /* 64px */
+  --space-4xl: 6rem;       /* 96px */
+
+  /* ==================== TYPOGRAPHY SCALE ==================== */
+  /* WindTre font sizing */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+  --text-5xl: 3rem;        /* 48px */
+  --text-6xl: 3.75rem;     /* 60px */
+
+  /* ==================== BORDER RADIUS ==================== */
+  /* Glass design border radii */
+  --radius-sm: 0.375rem;   /* 6px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-3xl: 2rem;      /* 32px */
+  --radius-full: 9999px;   /* circle */
+
+  /* ==================== ANIMATIONS ==================== */
+  /* Smooth transitions for glass effects */
+  --transition-fast: all 0.15s ease-in-out;
+  --transition-normal: all 0.3s ease-in-out;
+  --transition-slow: all 0.5s ease-in-out;
+
+  /* Glass hover effects */
+  --scale-hover: 1.02;
+  --scale-press: 0.98;
+}
+
+/* Dark mode overrides */
+.dark {
+  /* Adjust glass backgrounds for dark mode */
+  --glass-bg-white: rgba(255, 255, 255, 0.1);
+  --glass-bg-white-light: rgba(255, 255, 255, 0.05);
+  --glass-bg-black: rgba(0, 0, 0, 0.9);
+  --glass-bg-black-light: rgba(0, 0, 0, 0.7);
+
+  /* Adjust borders for dark mode */
+  --glass-border-white: rgba(255, 255, 255, 0.1);
+  --glass-border-black: rgba(0, 0, 0, 0.3);
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+/* Glass morphism utility classes */
+.glass {
+  background: var(--glass-bg-white);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border-white);
+  box-shadow: var(--glass-shadow-light);
+}
+
+.glass-primary {
+  background: var(--glass-bg-primary);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border-primary);
+  box-shadow: var(--glass-shadow-primary);
+}
+
+.glass-secondary {
+  background: var(--glass-bg-secondary);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border-secondary);
+  box-shadow: var(--glass-shadow-secondary);
+}
+
+.glass-black {
+  background: var(--glass-bg-black);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border-black);
+  box-shadow: var(--glass-shadow-light);
+}
+
+/* Glass hover effects */
+.glass-hover {
+  transition: var(--transition-normal);
+}
+
+.glass-hover:hover {
+  transform: scale(var(--scale-hover));
+  box-shadow: var(--glass-shadow-light), 0 0 0 1px var(--glass-border-white);
+}
+
+.glass-hover:active {
+  transform: scale(var(--scale-press));
+}
+
+/* Text gradients for WindTre branding */
+.text-gradient-primary {
+  background: linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-secondary {
+  background: linear-gradient(135deg, rgb(var(--color-secondary-500)) 0%, rgb(var(--color-secondary-600)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-brand {
+  background: linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-secondary-500)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

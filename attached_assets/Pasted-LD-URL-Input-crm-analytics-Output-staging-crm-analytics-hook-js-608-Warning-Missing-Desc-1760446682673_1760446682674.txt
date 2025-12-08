@@ -1,0 +1,112 @@
+LD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-KLCGZ252.js?v=2f97fb70:335:29)
+    at chunk-KLCGZ252.js?v=2f97fb70:239:13
+    at chunk-KLCGZ252.js?v=2f97fb70:162:58
+    at Presence (chunk-3RPIZZKC.js?v=2f97fb70:24:11)
+    at chunk-KLCGZ252.js?v=2f97fb70:153:64
+    at chunk-TCRT5IO7.js?v=2f97fb70:43:13
+    at chunk-TCRT5IO7.js?v=2f97fb70:20:13
+    at chunk-7IUWE4IP.js?v=2f97fb70:42:13
+    at chunk-Y5AAV5I6.js?v=2f97fb70:244:22
+    at Presence (chunk-3RPIZZKC.js?v=2f97fb70:24:11)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at DialogPortal (chunk-KLCGZ252.js?v=2f97fb70:115:11)
+    at _c3 (dialog.tsx:28:6)
+    at Provider (chunk-3WVMON5O.js?v=2f97fb70:38:15)
+    at Dialog (chunk-KLCGZ252.js?v=2f97fb70:56:5)
+    at PipelineSettingsDialog (PipelineSettingsDialog.tsx:52:42)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at PipelinePage (PipelinePage.tsx:228:45)
+    at AuthenticatedRoute (TenantShell.tsx:453:72)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:220:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:75:59)
+    at Route (wouter.js?v=2f97fb70:206:16)
+    at Switch (wouter.js?v=2f97fb70:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=2f97fb70:3081:3)
+    at App (App.tsx:39:3)
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KLCGZ252.js?v=2f97fb70:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=2f97fb70:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=2f97fb70:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=2f97fb70:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this warning
+hook.js:608 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ hook.js:608
+(anonymous) @ chunk-KLCGZ252.js?v=2f97fb70:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=2f97fb70:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=2f97fb70:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=2f97fb70:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this warning
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm" → Output: "/staging/crm"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/campaigns" → Output: "/staging/crm/campaigns"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/pipeline" → Output: "/staging/crm/pipeline"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/leads" → Output: "/staging/crm/leads"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/customers" → Output: "/staging/crm/customers"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/activities" → Output: "/staging/crm/activities"
+useTenantSafety.tsx:187 [BUILD-URL] Input: "crm/analytics" → Output: "/staging/crm/analytics"
+App.tsx:130 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'crm/pipelines/30000000-0000-0000-0000-000000000003', tenant: 'staging', *: 'crm/pipelines/30000000-0000-0000-0000-000000000003'}
+App.tsx:140 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:141 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+App.tsx:130 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'crm/pipelines/30000000-0000-0000-0000-000000000003', tenant: 'staging', *: 'crm/pipelines/30000000-0000-0000-0000-000000000003'}
+App.tsx:140 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:141 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/pipelines/30000000-0000-0000-0000-000000000003/channel-stats 500 (Internal Server Error)
+queryFn @ queryClient.ts:193
+fetchFn @ @tanstack_react-query.js?v=2f97fb70:1097
+run @ @tanstack_react-query.js?v=2f97fb70:795
+start @ @tanstack_react-query.js?v=2f97fb70:838
+fetch @ @tanstack_react-query.js?v=2f97fb70:1144
+executeFetch_fn @ @tanstack_react-query.js?v=2f97fb70:1639
+onSubscribe @ @tanstack_react-query.js?v=2f97fb70:1335
+subscribe @ @tanstack_react-query.js?v=2f97fb70:24
+(anonymous) @ @tanstack_react-query.js?v=2f97fb70:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=2f97fb70:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=2f97fb70:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=2f97fb70:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=2f97fb70:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=2f97fb70:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=2f97fb70:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=2f97fb70:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=2f97fb70:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=2f97fb70:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=2f97fb70:18627Understand this error
+queryClient.ts:193  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/crm/pipelines/30000000-0000-0000-0000-000000000003/channel-stats 500 (Internal Server Error)

@@ -1,0 +1,756 @@
+/* ===== LOCAL INTER FONT - No external dependencies ===== */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/inter-light.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter-medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter-semibold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/inter-bold.woff2') format('woff2');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== FONT SIZE NORMALIZATION ===== */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* W3 Suite WindTre Design System - Glassmorphism Integration */
+
+:root {
+  /* WindTre Brand Colors - HSL Format */
+  --brand-orange: 24 100% 50%; /* #FF6900 */
+  --brand-purple: 268 58% 46%; /* #7B2CBF - Corrected hue */
+  --brand-white: 0 0% 100%; /* #FFFFFF */
+  --brand-black: 0 0% 10%; /* #1A1A1A */
+  
+  /* Semantic Colors - HSL Format */
+  --primary: 24 100% 50%; /* var(--brand-orange) */
+  --primary-hover: 24 100% 45%;
+  --primary-active: 24 100% 40%;
+  --secondary: 268 58% 46%; /* var(--brand-purple) - Corrected */
+  --secondary-hover: 268 58% 42%;
+  --secondary-active: 268 58% 38%;
+  --success: 162 47% 40%; /* #10b981 */
+  --warning: 35 92% 50%; /* #f59e0b */
+  --error: 0 72% 61%; /* #ef4444 */
+  --info: 217 91% 60%; /* #3b82f6 */
+  
+  /* SHADCN/UI Standard Tokens - CRITICAL FOR COMPONENT RENDERING */
+  --background: 0 0% 100%; /* White background */
+  --foreground: 0 0% 10%; /* Dark text */
+  --card: 0 0% 100%; /* Card background */
+  --card-foreground: 0 0% 10%; /* Card text */
+  --popover: 0 0% 100%; /* Popover background */
+  --popover-foreground: 0 0% 10%; /* Popover text */
+  --primary-foreground: 0 0% 100%; /* White text on orange */
+  --secondary-foreground: 0 0% 100%; /* White text on purple */
+  --muted: 0 0% 96%; /* Light gray background */
+  --muted-foreground: 0 0% 45%; /* Muted text */
+  --accent: 0 0% 96%; /* Accent background */
+  --accent-foreground: 0 0% 10%; /* Accent text */
+  --destructive: 0 84% 60%; /* Red for errors */
+  --destructive-foreground: 0 0% 98%; /* White text on red */
+  --border: 0 0% 90%; /* Border color */
+  --input: 0 0% 90%; /* Input border */
+  --ring: 24 100% 50%; /* Focus ring - orange */
+  
+  /* Sidebar Colors - Required by Tailwind */
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 10%;
+  --sidebar-primary: 24 100% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 10%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 24 100% 50%;
+  
+  /* WindTre Colors - Required by Tailwind */
+  --windtre-orange: 24 100% 50%;
+  --windtre-orange-light: 24 100% 60%;
+  --windtre-orange-dark: 24 100% 40%;
+  --windtre-purple: 268 58% 46%;
+  --windtre-purple-light: 268 58% 56%;
+  --windtre-purple-dark: 268 58% 36%;
+  
+  /* WindTre Glassmorphism System - Exact Specification */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-heavy: rgba(255, 255, 255, 0.15);
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-brand: rgba(255, 105, 0, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-blur: blur(10px);
+  --glass-blur-heavy: blur(15px);
+  --glass-blur-light: blur(8px);
+  
+  /* WindTre Brand Glass Effects */
+  --brand-glass-orange: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(255, 105, 0, 0.05));
+  --brand-glass-purple: linear-gradient(135deg, rgba(123, 44, 191, 0.1), rgba(123, 44, 191, 0.05));
+  --brand-glass-gradient: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(123, 44, 191, 0.1));
+  
+  /* Modal positioning fix */
+  --modal-z-index: 50;
+  --select-content-z-index: 60;
+  --tooltip-z-index: 70;
+  
+  /* Professional Glass Cards */
+  --glass-card-bg: rgba(255, 255, 255, 0.12);
+  --glass-card-border: rgba(255, 255, 255, 0.18);
+  --glass-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-card-hover-bg: rgba(255, 255, 255, 0.18);
+  
+  /* Glass Transitions */
+  --glass-transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-hover-transform: translateY(-2px);
+  --glass-hover-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  
+  /* Shadows */
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --shadow-glass-sm: 0 4px 16px 0 rgba(31, 38, 135, 0.25);
+  --shadow-glass-lg: 0 12px 48px 0 rgba(31, 38, 135, 0.45);
+  
+  /* Text Colors */
+  --text-primary: hsl(0 0% 10%);
+  --text-secondary: hsl(0 0% 32%);
+  --text-tertiary: hsl(0 0% 45%);
+  
+  /* Border Radius - CRITICAL FIX for shadcn/ui */
+  --radius: 0.5rem; /* REQUIRED by Tailwind config borderRadius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  
+  /* Transitions */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🚀 MODAL POSITION FIX - Stabilizza modal e select */
+[data-radix-portal] {
+  position: fixed !important;
+  z-index: var(--modal-z-index) !important;
+}
+
+/* Stabilizza Select Content per evitare che si muova */
+[data-radix-select-content] {
+  position: fixed !important;
+  z-index: var(--select-content-z-index) !important;
+  pointer-events: auto !important;
+  transform-origin: center !important;
+  will-change: transform !important;
+}
+
+/* Stabilizza Dialog Overlay */
+[data-radix-dialog-overlay] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: var(--modal-z-index) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Stabilizza Dialog Content */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: calc(var(--modal-z-index) + 1) !important;
+  pointer-events: auto !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  will-change: transform !important;
+}
+
+/* 🎯 DEPARTMENT SELECTION MODAL - FIX DEFINITIVO */
+.department-selection-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  will-change: transform !important;
+  
+  /* WindTre Glassmorphism Styling */
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-radius: 16px !important;
+  
+  /* Stabilizzazione assoluta */
+  max-width: 32rem !important;
+  width: 90vw !important;
+  max-height: 80vh !important;
+  overflow: hidden !important;
+}
+
+/* Teams filter select stabilization */
+[data-testid="select-department-filter"] [data-radix-select-content] {
+  position: fixed !important;
+  z-index: 70 !important;
+  will-change: transform !important;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #ffffff; /* Stable white background to prevent purple-blue flash */
+  min-height: 100vh;
+  transition: background 0.3s ease-in-out;
+}
+
+/* Apply WindTre gradient background after initial load to prevent flash */
+body.loaded {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Glassmorphism Classes */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
+}
+
+.glass-heavy {
+  background: var(--glass-bg-heavy);
+  backdrop-filter: var(--glass-blur-heavy);
+  -webkit-backdrop-filter: var(--glass-blur-heavy);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
+}
+
+.glass-light {
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--glass-blur-light));
+  -webkit-backdrop-filter: blur(var(--glass-blur-light));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: var(--glass-card-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 12px;
+  border: 1px solid var(--glass-card-border);
+  box-shadow: var(--glass-card-shadow);
+  transition: var(--glass-transition);
+}
+
+.glass-card:hover {
+  background: var(--glass-card-hover-bg);
+  box-shadow: var(--glass-hover-shadow);
+  transform: var(--glass-hover-transform);
+  border-color: var(--glass-border-brand);
+}
+
+/* HR Card Specific - 50% Opacity Glassmorphism */
+.windtre-glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
+}
+
+.windtre-glass-panel:hover {
+  background: var(--glass-bg-heavy);
+  box-shadow: var(--glass-hover-shadow);
+  transform: var(--glass-hover-transform);
+  border-color: var(--glass-border-brand);
+}
+
+/* Modal Panel - NO TRANSFORM on hover to prevent jitter */
+.windtre-modal-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.windtre-modal-panel:hover {
+  background: var(--glass-bg-heavy);
+  box-shadow: var(--glass-hover-shadow);
+  border-color: var(--glass-border-brand);
+}
+
+.windtre-brand-accent {
+  background: var(--brand-glass-gradient);
+  border: 1px solid var(--glass-border-brand);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
+}
+
+/* WindTre Gradient Background */
+.windtre-bg {
+  background: linear-gradient(135deg, hsl(24, 100%, 50%) 0%, hsl(268, 58%, 46%) 100%);
+}
+
+.windtre-glow {
+  box-shadow: 0 0 40px rgba(255, 105, 0, 0.3), 0 0 80px rgba(123, 44, 191, 0.2);
+}
+
+/* Override Tailwind Colors for WindTre */
+.text-windtre-orange {
+  color: hsl(24, 100%, 50%);
+}
+
+.text-windtre-purple {
+  color: hsl(268, 58%, 46%);
+}
+
+.bg-windtre-orange {
+  background-color: hsl(24, 100%, 50%);
+}
+
+.bg-windtre-purple {
+  background-color: hsl(268, 58%, 46%);
+}
+
+.border-windtre-orange {
+  border-color: hsl(24, 100%, 50%);
+}
+
+.border-windtre-purple {
+  border-color: hsl(268, 58%, 46%);
+}
+
+/* Animazioni fluide per modal e transizioni */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Glass Shimmer Effect */
+.glass-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shimmer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+/* Glass Glow Effect */
+.glass-glow {
+  position: relative;
+}
+
+.glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    45deg,
+    hsl(24, 100%, 50%),
+    hsl(273, 58%, 46%),
+    hsl(24, 100%, 50%)
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-in-out);
+  z-index: -1;
+  filter: blur(10px);
+}
+
+.glass-glow:hover::after {
+  opacity: 0.3;
+}
+
+/* Transizioni ottimizzate - solo per elementi animati */
+.animate, .animate-in, .animate-out, .hover\:animate-in:hover {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 250ms;
+}
+
+/* ARCHITECT REQUIREMENTS - FOCUS ACCESSIBILITY STYLES */
+/* Focus-visible styles for interactive elements */
+.glass-card:focus-visible,
+.windtre-glass-panel:focus-visible,
+.windtre-brand-accent:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(24, 100%, 50%);
+  outline-offset: 2px;
+  border-color: hsl(24, 100%, 50%);
+  box-shadow: 0 0 0 4px hsla(24, 100%, 50%, 0.2);
+  transition: all 200ms ease-in-out;
+}
+
+/* Tab navigation focus styles */
+.tabs-trigger:focus-visible {
+  outline: 2px solid hsl(24, 100%, 50%);
+  outline-offset: 2px;
+  background: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(255, 105, 0, 0.05));
+}
+
+/* Card hover focus states for keyboard navigation */
+.glass-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 4px hsla(24, 100%, 50%, 0.2), 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* ARCHITECT REQUIREMENTS - PERFORMANCE OPTIMIZATIONS */
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .glass-card, 
+  .windtre-glass-panel, 
+  .windtre-brand-accent,
+  .glass,
+  .glass-heavy,
+  .glass-light {
+    backdrop-filter: none;
+    animation: none;
+    transition: none;
+  }
+  
+  /* Remove transforms and animations for accessibility */
+  .glass-card:hover,
+  .windtre-glass-panel:hover,
+  .windtre-brand-accent:hover {
+    transform: none;
+  }
+  
+  /* Disable framer-motion animations */
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  .glass-card, 
+  .windtre-glass-panel, 
+  .windtre-brand-accent,
+  .glass,
+  .glass-heavy {
+    backdrop-filter: blur(8px); /* reduced from 12px */
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Reduce shadow intensity on mobile for performance */
+  .glass-card,
+  .windtre-glass-panel {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .glass-card:hover,
+  .windtre-glass-panel:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* Ultra-low performance devices */
+@media (max-width: 480px) {
+  .glass-card, 
+  .windtre-glass-panel, 
+  .windtre-brand-accent {
+    backdrop-filter: blur(4px); /* further reduced */
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ARCHITECT REQUIREMENTS - ENHANCED ACCESSIBILITY CONTRAST */
+/* High contrast text for glass backgrounds - WCAG AA compliant */
+.glass-text-primary {
+  color: hsl(0, 0%, 15%); /* Replaces text-gray-600 */
+  font-weight: 500;
+}
+
+.glass-text-secondary {
+  color: hsl(0, 0%, 25%); /* Replaces text-gray-600 */
+  font-weight: 400;
+}
+
+.glass-text-muted {
+  color: hsl(0, 0%, 35%); /* Still readable on glass */
+  font-weight: 400;
+}
+
+/* Interactive element contrast */
+.glass-card .text-gray-600,
+.windtre-glass-panel .text-gray-600 {
+  color: hsl(0, 0%, 15%) !important; /* Override to meet WCAG AA */
+}
+
+/* ARCHITECT REQUIREMENTS - ENHANCED WINDTRE BRAND INTEGRATION */
+/* Professional WindTre gradient backgrounds */
+.windtre-bg-gradient {
+  background: linear-gradient(135deg, 
+    hsl(24, 100%, 50%) 0%, 
+    hsl(268, 58%, 46%) 100%);
+}
+
+.windtre-bg-subtle {
+  background: linear-gradient(135deg, 
+    hsla(24, 100%, 50%, 0.05) 0%, 
+    hsla(268, 58%, 46%, 0.05) 100%);
+}
+
+/* Enhanced brand accent variations */
+.windtre-brand-accent-orange {
+  background: linear-gradient(135deg, rgba(255, 105, 0, 0.12), rgba(255, 105, 0, 0.06));
+  border: 1px solid rgba(255, 105, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.windtre-brand-accent-purple {
+  background: linear-gradient(135deg, rgba(123, 44, 191, 0.12), rgba(123, 44, 191, 0.06));
+  border: 1px solid rgba(123, 44, 191, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* WindTre HR Modal Custom Styling */
+.glass-modal {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    0 1px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  will-change: transform !important;
+}
+
+/* Dialog Overlay Fix */
+[data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.15) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
+/* Dialog Content Positioning - Fixed mouse escape behavior */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 51 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.15),
+    0 1px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  pointer-events: auto !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+/* HR Information Panel with Animation */
+.hr-info-panel {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Time Input Picker Enhancement */
+input[type="time"] {
+  position: relative;
+  cursor: pointer;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 4px;
+  margin-right: -4px;
+  border-radius: 4px;
+  background-color: transparent;
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: hsl(var(--accent));
+}
+
+input[type="time"]:focus::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}

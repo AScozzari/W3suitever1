@@ -1,0 +1,132 @@
+Template Turni
+Nuovo Template
+Punto Vendita
+
+Tutti i punti vendita
+Stato
+
+Tutti gli stati
+Risultati: 17 di 17
+Nome	Punto Vendita	Fasce Orarie	Giorni	Pattern	Stato	Azioni
+Mattina
+test
+Milano Corso Buenos Aires
+09:00 - 17:00
+30min pausa
+Lun
+Mar
+Mer
+Gio
+Ven
+Settimanale	Attivo	
+Turno Mattina Standard
+Turno mattutino classico per negozi retail - apertura e gestione clienti mattutini
+Torino Lingotto
+08:00 - 14:00
+30min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Mattina Presto
+Turno early morning per preparazione negozio e magazzino
+Torino Lingotto
+06:00 - 12:00
+30min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Pomeriggio Standard
+Turno pomeridiano per gestione picco clienti e chiusura
+Genova De Ferrari
+14:00 - 20:00
+30min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Pomeriggio Esteso
+Turno pomeridiano lungo per centri commerciali
+Genova De Ferrari
+13:00 - 21:00
+45min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Notturno
+Turno notturno per servizi H24 e sicurezza
+Bologna Centrale
+22:00 - 06:00
+60min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Giornata Intera
+Turno completo per responsabili e manager
+Bologna Centrale
+09:00 - 18:00
+60min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Spezzato Ristorazione
+Turno tipico ristorante: pranzo + cena con pausa
+Bari Centrale
+11:00 - 15:00
+0
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Spezzato Retail
+Turno mattina + sera con pausa centrale
+Cagliari Via Roma
+09:00 - 13:00
+0
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Weekend Lungo
+Turno weekend per alta affluenza clienti
+Milano Corso Buenos Aires
+10:00 - 20:00
+60min pausa
+Tutti i giorni
+Settimanale	Attivo	
+Turno Part-Time Mattina
+Turno ridotto mattutino per studenti/part-time
+Roma Termini
+09:00 - 13:00
+15min pausa
+Tutti i giorni
+Personalizzato	Attivo	
+Turno Part-Time Pomeriggio
+Turno ridotto pomeridiano per part-time
+Roma Termini
+15:00 - 19:00
+15min pausa
+Tutti i giorni
+Personalizzato	Attivo	
+Turno Reperibilità
+Turno on-call per emergenze e supporto
+Napoli Centro
+00:00 - 23:59
+0
+Tutti i giorni
+Personalizzato	Attivo	
+Turno Black Friday
+Turno speciale eventi con personale extra
+Napoli Centro
+08:00 - 22:00
+60min pausa
+Tutti i giorni
+Mensile	Attivo	
+Turno Logistica Mattina
+Turno dedicato scarico merci e rifornimento
+Palermo Politeama
+05:00 - 10:00
+30min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+Turno Supervisore
+Turno supervisione e coordinamento team
+Palermo Politeama
+08:00 - 17:00
+60min pausa
+Tutti i giorni
+Giornaliero	Attivo	
+test1
+Bologna Centrale
+09:00 - 11:00
+30min pausa
+Tutti i giorni
+Settimanale	Attivo	

@@ -1,0 +1,211 @@
+Gestione Turni
+Template e assegnazioni turni
+
+Calendario Turni e Risorse
+Vista professionale con gestione completa
+
+Nuovo Turno
+
+Oggi
+
+Mese
+Settimana
+Giorno
+lun
+mar
+mer
+gio
+ven
+sab
+dom
+44
+27
+28
+29
+30
+31
+1
+2
+45
+3
+4
+5
+6
+7
+8
+9
+46
+10
+11
+12
+13
+14
+15
+16
+47
+17
+18
+19
+20
+21
+22
+23
+48
+24
+25
+26
+27
+28
+29
+30
+49
+1
+2
+3
+4
+5
+6
+7
+Template Turni
+Nuovo Template
+Punto Vendita
+
+Tutti i punti vendita
+Stato
+
+Tutti gli stati
+Risultati: 17 di 17
+Nome	Punto Vendita	Fasce Orarie	Stato	Azioni
+Mattina
+test
+Milano Corso Buenos Aires
+07:00:00 - 15:00:0030min pausa
+Attivo	
+Turno Mattina Standard
+Turno mattutino classico per negozi retail - apertura e gestione clienti mattutini
+Torino Lingotto
+09:00:00 - 13:00:0030min pausa
+Attivo	
+Turno Mattina Presto
+Turno early morning per preparazione negozio e magazzino
+Torino Lingotto
+06:00:00 - 14:00:0030min pausa
+Attivo	
+Turno Pomeriggio Standard
+Turno pomeridiano per gestione picco clienti e chiusura
+Genova De Ferrari
+14:00:00 - 22:00:0030min pausa
+Attivo	
+Turno Pomeriggio Esteso
+Turno pomeridiano lungo per centri commerciali
+Genova De Ferrari
+13:00:00 - 23:00:0045min pausa
+Attivo	
+Turno Notturno
+Turno notturno per servizi H24 e sicurezza
+Bologna Centrale
+22:00:00 - 06:00:0030min pausa
+Attivo	
+Turno Giornata Intera
+Turno completo per responsabili e manager
+Bologna Centrale
+09:00:00 - 13:00:0030min pausa
+14:00:00 - 18:00:00
+Attivo	
+Turno Spezzato Ristorazione
+Turno tipico ristorante: pranzo + cena con pausa
+Bari Centrale
+12:00:00 - 15:00:00+19:00 - 23:00Spezzato15min pausa
+Attivo	
+Turno Spezzato Retail
+Turno mattina + sera con pausa centrale
+Cagliari Via Roma
+09:00:00 - 13:00:00+15:00 - 19:00Spezzato15min pausa
+Attivo	
+Turno Weekend Lungo
+Turno weekend per alta affluenza clienti
+Milano Corso Buenos Aires
+10:00:00 - 20:00:0060min pausa
+Attivo	
+Turno Part-Time Mattina
+Turno ridotto mattutino per studenti/part-time
+Roma Termini
+09:00:00 - 13:00:00
+Attivo	
+Turno Part-Time Pomeriggio
+Turno ridotto pomeridiano per part-time
+Roma Termini
+14:00:00 - 18:00:00
+Attivo	
+Turno Reperibilità
+Turno on-call per emergenze e supporto
+Napoli Centro
+00:00:00 - 23:59:00
+Attivo	
+Turno Black Friday
+Turno speciale eventi con personale extra
+Napoli Centro
+08:00:00 - 22:00:0090min pausa
+Attivo	
+Turno Logistica Mattina
+Turno dedicato scarico merci e rifornimento
+Palermo Politeama
+06:00:00 - 13:00:0030min pausa
+Attivo	
+Turno Supervisore
+Turno supervisione e coordinamento team
+Palermo Politeama
+08:00:00 - 12:00:00+14:00 - 20:00Spezzato30min pausa
+Attivo	
+test1
+Bologna Centrale
+09:00:00 - 11:00:00+11:01 - 16:50Spezzato30min pausa
+Attivo	
+Assegnazione Turni - Vista Gantt & Grid
+Assegna turni alle risorse con controllo conflitti
+
+Sistema Attivo
+Filtri Turni & Template
+Punto Vendita
+Test Store Milano
+Data Inizio
+28/11/2025
+Data Fine
+04/12/2025
+Template Turno
+Nessun template
+Applica Filtri
+Filtrato per: Test Store Milano
+2025-11-28 → 2025-12-04
+Assignment Dashboard Enterprise
+Gestione avanzata assegnazioni con drag & drop e conflict detection
+
+Conflitti
+Cerca dipendenti...
+Assegnazione
+Gantt
+Griglia
+Turni della Settimana
+
+lunedì 24 nov
+0 turni
+Nessun turno previsto
+
+
+martedì 25 nov
+0 turni
+
+mercoledì 26 nov
+0 turni
+
+giovedì 27 nov
+0 turni
+
+venerdì 28 nov
+0 turni
+
+sabato 29 nov
+0 turni
+
+domenica 30 nov
+0 turni

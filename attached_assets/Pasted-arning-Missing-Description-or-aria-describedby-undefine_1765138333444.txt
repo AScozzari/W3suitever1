@@ -1,0 +1,67 @@
+arning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-ZITEFGXQ.js?v=15ec0853:335:29)
+    at chunk-ZITEFGXQ.js?v=15ec0853:239:13
+    at chunk-ZITEFGXQ.js?v=15ec0853:162:58
+    at Presence (chunk-3RPIZZKC.js?v=15ec0853:24:11)
+    at chunk-ZITEFGXQ.js?v=15ec0853:153:64
+    at chunk-TCRT5IO7.js?v=15ec0853:43:13
+    at chunk-TCRT5IO7.js?v=15ec0853:20:13
+    at chunk-7JN5FQRM.js?v=15ec0853:42:13
+    at chunk-FERAWOCH.js?v=15ec0853:38:22
+    at Presence (chunk-3RPIZZKC.js?v=15ec0853:24:11)
+    at Provider (chunk-3WVMON5O.js?v=15ec0853:38:15)
+    at DialogPortal (chunk-ZITEFGXQ.js?v=15ec0853:115:11)
+    at _c3 (sheet.tsx:57:6)
+    at Provider (chunk-3WVMON5O.js?v=15ec0853:38:15)
+    at Dialog (chunk-ZITEFGXQ.js?v=15ec0853:56:5)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at ProductsPage (ProductsPage.tsx:120:33)
+    at Suspense (<anonymous>)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=15ec0853:42:13
+    at Presence (chunk-3RPIZZKC.js?v=15ec0853:24:11)
+    at @radix-ui_react-tabs.js?v=15ec0853:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=15ec0853:42:13
+    at Provider (chunk-3WVMON5O.js?v=15ec0853:38:15)
+    at @radix-ui_react-tabs.js?v=15ec0853:55:7
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WMSProductsAndListsPage (WMSProductsAndListsPage.tsx:35:45)
+    at AuthenticatedRoute (TenantShell.tsx:550:72)
+    at Route (wouter.js?v=15ec0853:206:16)
+    at Switch (wouter.js?v=15ec0853:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:233:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:88:59)
+    at Route (wouter.js?v=15ec0853:206:16)
+    at Switch (wouter.js?v=15ec0853:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=15ec0853:3081:3)
+    at App (App.tsx:41:3)
+overrideMethod @ installHook.js:1
+(anonymous) @ chunk-ZITEFGXQ.js?v=15ec0853:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=15ec0853:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=15ec0853:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=15ec0853:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=15ec0853:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=15ec0853:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=15ec0853:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=15ec0853:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=15ec0853:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=15ec0853:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=15ec0853:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=15ec0853:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=15ec0853:18627Understand this warning
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

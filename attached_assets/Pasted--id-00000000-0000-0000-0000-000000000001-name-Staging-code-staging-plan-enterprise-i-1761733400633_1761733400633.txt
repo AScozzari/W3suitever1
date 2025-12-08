@@ -1,0 +1,43 @@
+{id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+WorkflowManagementPage.tsx:309  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflows/test-run 401 (Unauthorized)
+handleRunWorkflow @ WorkflowManagementPage.tsx:309
+onClick @ WorkflowManagementPage.tsx:874
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=20cc9b00:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=20cc9b00:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=20cc9b00:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=20cc9b00:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=20cc9b00:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=20cc9b00:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=20cc9b00:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=20cc9b00:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5449Understand this error
+WorkflowManagementPage.tsx:329 ❌ Test run failed: {error: 'development_auth_required', message: 'Development mode requires X-Auth-Session header', details: 'Frontend must send X-Auth-Session: authenticated header'}
+overrideMethod @ hook.js:608
+handleRunWorkflow @ WorkflowManagementPage.tsx:329
+await in handleRunWorkflow
+onClick @ WorkflowManagementPage.tsx:874
+callCallback2 @ chunk-ZHRYBLGQ.js?v=20cc9b00:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=20cc9b00:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=20cc9b00:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=20cc9b00:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=20cc9b00:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=20cc9b00:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=20cc9b00:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=20cc9b00:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=20cc9b00:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=20cc9b00:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=20cc9b00:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=20cc9b00:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=20cc9b00:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=20cc9b00:5449Understand this error
+workflow-management:1 Blocked aria-hidden on an element because its descendant retained focus. The focus must not be hidden from assistive technology users. Avoid using aria-hidden on a focused element or its ancestor. Consider using the inert attribute instead, which will also prevent focus. For more details, see the aria-hidden section of the WAI-ARIA specification at https://w3c.github.io/aria/#aria-hidden.
+Element with focus: <button.inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-xs>
+Ancestor with aria-hidden: <div#root> <div id=​"root" data-aria-hidden=​"true" aria-hidden=​"true">​…​</div>​

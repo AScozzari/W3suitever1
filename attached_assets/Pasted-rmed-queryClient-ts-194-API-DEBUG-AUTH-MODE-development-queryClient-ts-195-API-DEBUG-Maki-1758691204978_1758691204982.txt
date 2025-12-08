@@ -1,0 +1,57 @@
+rmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/ai/usage/stats
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: Object
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/ai/usage/logs
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/ai/usage/logs
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: Object
+2AISettingsPage.tsx:1542 Uncaught ReferenceError: totalCostCents is not defined
+    at AISettingsPage.tsx:1542:58
+    at Array.map (<anonymous>)
+    at renderAnalyticsTab (AISettingsPage.tsx:1535:15)
+    at AISettingsPage (AISettingsPage.tsx:1880:39)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=11b0b4f3:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=11b0b4f3:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=11b0b4f3:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=11b0b4f3:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=11b0b4f3:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=11b0b4f3:3733:39)Understand this error
+hook.js:608 The above error occurred in the <AISettingsPage> component:
+
+    at AISettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/AI/AISettingsPage.tsx:57:21)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:347:27)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=11b0b4f3:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608Understand this error
+chunk-ZHRYBLGQ.js?v=11b0b4f3:9129 Uncaught ReferenceError: totalCostCents is not defined
+    at AISettingsPage.tsx:1542:58
+    at Array.map (<anonymous>)
+    at renderAnalyticsTab (AISettingsPage.tsx:1535:15)
+    at AISettingsPage (AISettingsPage.tsx:1880:39)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=11b0b4f3:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=11b0b4f3:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=11b0b4f3:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=11b0b4f3:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=11b0b4f3:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=11b0b4f3:19137:13)Understand this error
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=nJlnLSMmj2VZ' failed: 

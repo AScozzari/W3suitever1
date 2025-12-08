@@ -1,0 +1,1082 @@
+/**
+ * 👥 CREATE TEAM MODAL - WindTre Design System
+ * 
+ * Modal completo per creazione team con assegnazione dipartimenti,
+ * membri ibridi, supervisori e validation enterprise
+ */
+
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { 
+  Users, 
+  UserPlus, 
+  Shield, 
+  Building2, 
+  DollarSign, 
+  HeadphonesIcon, 
+  Settings,
+  Plus,
+  X,
+  Info,
+  Save,
+  UserCheck
+} from 'lucide-react';
+
+// 🎯 WindTre department mapping - VERI dipartimenti dal sistema
+const DEPARTMENTS = {
+  'hr': { icon: Users, label: 'HR', color: 'bg-windtre-purple/10', textColor: 'text-windtre-purple', borderColor: 'border-windtre-purple/20' },
+  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' },
+  'sales': { icon: Building2, label: 'Sales', color: 'bg-windtre-purple/10', textColor: 'text-windtre-purple', borderColor: 'border-windtre-purple/20' },
+  'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' },
+  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple/10', textColor: 'text-windtre-purple', borderColor: 'border-windtre-purple/20' },
+  'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' }
+};
+
+// 🎯 Team types mapping
+const TEAM_TYPES = {
+  'functional': { label: 'Funzionale', description: 'Team specifici per dipartimento' },
+  'cross_functional': { label: 'Cross-Funzionale', description: 'Team multi-dipartimento' },
+  'project': { label: 'Progetto', description: 'Team temporanei per progetto' },
+  'temporary': { label: 'Temporaneo', description: 'Team a breve termine' },
+  'specialized': { label: 'Specializzato', description: 'Team di esperti/specialisti' }
+};
+
+// 🎯 Form validation schema
+const createTeamSchema = z.object({
+  name: z.string().min(1, 'Il nome del team è obbligatorio').max(200, 'Nome troppo lungo'),
+  description: z.string().optional(),
+  teamType: z.enum(['functional', 'cross_functional', 'project', 'temporary', 'specialized']),
+  assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'È richiesto almeno un dipartimento'),
+  userMembers: z.array(z.string()).default([]),
+  roleMembers: z.array(z.string()).default([]),
+  primarySupervisorUser: z.string().nullable().optional(),
+  primarySupervisorRole: z.string().nullable().optional(),
+  secondarySupervisorUser: z.string().nullable().optional(), // Changed from array to single user
+  secondarySupervisorRoles: z.array(z.string()).default([]),
+  workflowAssignments: z.array(z.object({
+    department: z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm']),
+    templateId: z.string(),
+    autoAssign: z.boolean().default(true)
+  })).default([]),
+  isActive: z.boolean().default(true)
+}).refine((data) => {
+  // ✅ Validation: Members cannot be supervisors
+  const members = data.userMembers;
+  const primarySup = data.primarySupervisorUser;
+  const secondarySup = data.secondarySupervisorUser;
+  
+  // Check if primary supervisor is in members
+  if (primarySup && members.includes(primarySup)) {
+    return false;
+  }
+  
+  // Check if secondary supervisor is in members
+  if (secondarySup && members.includes(secondarySup)) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Un membro del team non può essere anche supervisore dello stesso team",
+  path: ["userMembers"] // Show error on members field
+}).refine((data) => {
+  // ✅ Validation: Primary and secondary supervisors cannot be the same user
+  const primarySup = data.primarySupervisorUser;
+  const secondarySup = data.secondarySupervisorUser;
+  
+  if (primarySup && secondarySup && primarySup === secondarySup) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Il supervisore principale e il secondo supervisore non possono essere la stessa persona",
+  path: ["secondarySupervisorUser"]
+}).refine((data) => {
+  // ✅ Validation: XOR between primarySupervisorUser and primarySupervisorRole
+  const hasUserPrimary = !!data.primarySupervisorUser;
+  const hasRolePrimary = !!data.primarySupervisorRole;
+  
+  // Both cannot be set at the same time (mutual exclusion enforced by UI but validated here too)
+  if (hasUserPrimary && hasRolePrimary) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Puoi selezionare solo un supervisore principale (utente O ruolo, non entrambi)",
+  path: ["primarySupervisorUser"]
+}).refine((data) => {
+  // ✅ Validation: XOR between secondarySupervisorUser and secondarySupervisorRoles
+  const hasUserSecondary = !!data.secondarySupervisorUser;
+  const hasRoleSecondary = data.secondarySupervisorRoles.length > 0;
+  
+  // Both cannot be set at the same time
+  if (hasUserSecondary && hasRoleSecondary) {
+    return false;
+  }
+  
+  return true;
+}, {
+  message: "⚠️ CONFLITTO: Puoi selezionare solo un supervisore secondario (utente O ruoli, non entrambi)",
+  path: ["secondarySupervisorUser"]
+});
+
+type CreateTeamData = z.infer<typeof createTeamSchema>;
+
+// 🎯 Real data loaded via useQuery - no more mock data!
+
+interface CreateTeamModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editTeam?: any; // Team to edit, if provided
+}
+
+export default function CreateTeamModal({ open, onOpenChange, editTeam }: CreateTeamModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // 🎯 Fixed form setup - prevent re-initialization issues
+  const defaultValues: CreateTeamData = {
+    name: '',
+    description: '',
+    teamType: 'functional',
+    assignedDepartments: [],
+    userMembers: [],
+    roleMembers: [],
+    primarySupervisorUser: null,
+    primarySupervisorRole: null,
+    secondarySupervisorUser: null, // Changed from array to single user
+    secondarySupervisorRoles: [],
+    workflowAssignments: [],
+    isActive: true
+  };
+
+  const form = useForm<CreateTeamData>({
+    resolver: zodResolver(createTeamSchema),
+    defaultValues,
+    mode: 'onChange' // Enable real-time validation
+  });
+
+  // 🎯 Reset form when editTeam changes or modal opens
+  React.useEffect(() => {
+    if (open) {
+      if (editTeam) {
+        const formData = {
+          name: editTeam.name || '',
+          description: editTeam.description || '',
+          teamType: editTeam.teamType || 'functional',
+          assignedDepartments: editTeam.assignedDepartments || [],
+          userMembers: editTeam.userMembers || [],
+          roleMembers: editTeam.roleMembers || [],
+          primarySupervisorUser: editTeam.primarySupervisorUser || null,
+          primarySupervisorRole: editTeam.primarySupervisorRole || null,
+          // Handle both old (array) and new (single) format for backward compatibility
+          secondarySupervisorUser: editTeam.secondarySupervisorUser || 
+            (editTeam.secondarySupervisorUsers && editTeam.secondarySupervisorUsers[0]) || null,
+          secondarySupervisorRoles: editTeam.secondarySupervisorRoles || [],
+          workflowAssignments: editTeam.workflowAssignments || [],
+          isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
+        };
+        form.reset(formData);
+      } else {
+        form.reset(defaultValues);
+      }
+      setCurrentStep(1);
+    }
+  }, [open, editTeam]);
+
+  // 🎯 Load real data from API with proper typing - prevent query refresh issues
+  const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({ 
+    queryKey: ['/api/users'],
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+  });
+  
+  const { data: roles = [], isLoading: rolesLoading } = useQuery<any[]>({ 
+    queryKey: ['/api/roles'],
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+  });
+
+  // 🎯 Load workflow templates for department assignment
+  const { data: workflowTemplates = [], isLoading: templatesLoading } = useQuery<any[]>({ 
+    queryKey: ['/api/workflow-templates'],
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+  });
+
+  // 🎯 Create team mutation
+  const createTeamMutation = useMutation({
+    mutationFn: async (teamData: CreateTeamData) => {
+      return await apiRequest('/api/teams', {
+        method: 'POST',
+        body: JSON.stringify(teamData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
+      toast({
+        title: 'Team Creato',
+        description: 'Nuovo team creato con successo',
+      });
+      onOpenChange(false);
+      form.reset();
+      setCurrentStep(1);
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Creazione del team fallita',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🎯 Update team mutation
+  const updateTeamMutation = useMutation({
+    mutationFn: async (teamData: CreateTeamData) => {
+      return await apiRequest(`/api/teams/${editTeam.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(teamData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
+      toast({
+        title: 'Team Aggiornato',
+        description: 'Team aggiornato con successo',
+      });
+      onOpenChange(false);
+      form.reset();
+      setCurrentStep(1);
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Aggiornamento del team fallito',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🎯 Handle form submission
+  const onSubmit = (data: CreateTeamData) => {
+    // Clean data for backend - convert null to undefined for optional fields
+    const processedData = {
+      ...data,
+      primarySupervisorUser: data.primarySupervisorUser || undefined,
+      primarySupervisorRole: data.primarySupervisorRole || undefined
+    };
+    
+    if (editTeam) {
+      updateTeamMutation.mutate(processedData);
+    } else {
+      createTeamMutation.mutate(processedData);
+    }
+  };
+
+  // 🎯 Handle form errors
+  const onFormError = (errors: any) => {
+    toast({
+      title: 'Errore di Validazione',
+      description: 'Controlla tutti i campi obbligatori',
+      variant: 'destructive'
+    });
+  };
+
+  // 🎯 Department selection helpers
+  const selectedDepartments = form.watch('assignedDepartments');
+  const toggleDepartment = (department: keyof typeof DEPARTMENTS) => {
+    const current = selectedDepartments;
+    const updated = current.includes(department)
+      ? current.filter(d => d !== department)
+      : [...current, department];
+    form.setValue('assignedDepartments', updated);
+  };
+
+  // 🎯 Member selection helpers
+  const selectedUserMembers = form.watch('userMembers');
+  const selectedRoleMembers = form.watch('roleMembers');
+
+  const toggleUserMember = (userId: string) => {
+    const current = selectedUserMembers;
+    const updated = current.includes(userId)
+      ? current.filter(id => id !== userId)
+      : [...current, userId];
+    form.setValue('userMembers', updated);
+  };
+
+  const toggleRoleMember = (roleId: string) => {
+    const current = selectedRoleMembers;
+    const updated = current.includes(roleId)
+      ? current.filter(id => id !== roleId)
+      : [...current, roleId];
+    form.setValue('roleMembers', updated);
+  };
+
+  // 🎯 Workflow assignment helpers
+  const selectedAssignments = form.watch('workflowAssignments');
+  
+  const addWorkflowAssignment = (department: 'hr' | 'finance' | 'sales' | 'operations' | 'support' | 'crm', templateId: string) => {
+    const current = selectedAssignments;
+    const exists = current.find(a => a.department === department && a.templateId === templateId);
+    if (!exists) {
+      const updated = [...current, { department, templateId, autoAssign: true }];
+      form.setValue('workflowAssignments', updated);
+    }
+  };
+
+  const removeWorkflowAssignment = (department: 'hr' | 'finance' | 'sales' | 'operations' | 'support' | 'crm', templateId: string) => {
+    const current = selectedAssignments;
+    const updated = current.filter(a => !(a.department === department && a.templateId === templateId));
+    form.setValue('workflowAssignments', updated);
+  };
+
+  const toggleAutoAssign = (department: 'hr' | 'finance' | 'sales' | 'operations' | 'support' | 'crm', templateId: string) => {
+    const current = selectedAssignments;
+    const updated = current.map(a => 
+      a.department === department && a.templateId === templateId
+        ? { ...a, autoAssign: !a.autoAssign }
+        : a
+    );
+    form.setValue('workflowAssignments', updated);
+  };
+
+  // 🎯 Step navigation
+  const nextStep = () => {
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  // 🎯 Step validation
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        return form.watch('name') && form.watch('teamType');
+      case 2:
+        return selectedDepartments.length > 0;
+      case 3:
+        return true; // Optional step
+      case 4:
+        return true; // Optional step
+      case 5:
+        return true; // Final step
+      default:
+        return false;
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="glass-modal max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-windtre-orange" />
+            {editTeam ? 'Modifica Team' : 'Crea Nuovo Team'}
+          </DialogTitle>
+          <DialogDescription>
+            {editTeam ? 'Modifica i dettagli del team e aggiorna le assegnazioni' : 'Crea un nuovo team e assegnalo ai dipartimenti per la gestione dei workflow'}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* 🎯 Step Indicator */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center space-x-4">
+            {[1, 2, 3, 4, 5].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step === currentStep 
+                    ? 'bg-windtre-orange text-white' 
+                    : step < currentStep 
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {step < currentStep ? '✓' : step}
+                </div>
+                {step < 5 && (
+                  <div className={`w-12 h-0.5 mx-2 ${
+                    step < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="space-y-6">
+            <ScrollArea className="max-h-[60vh] pr-4">
+              
+              {/* 🎯 STEP 1: Basic Information */}
+              {currentStep === 1 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Info className="w-5 h-5 text-windtre-purple" />
+                    <h3 className="text-lg font-semibold">Informazioni di Base</h3>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Team *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Inserisci nome team" 
+                            {...field} 
+                            data-testid="input-team-name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrizione</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Descrivi lo scopo e le responsabilità del team" 
+                            {...field} 
+                            data-testid="textarea-team-description"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Descrizione opzionale dello scopo e degli obiettivi del team
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="teamType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo Team *</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger data-testid="select-team-type">
+                              <SelectValue placeholder="Seleziona tipo team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(TEAM_TYPES).map(([key, type]) => (
+                                <SelectItem key={key} value={key}>
+                                  <div>
+                                    <div className="font-medium">{type.label}</div>
+                                    <div className="text-sm text-gray-500">{type.description}</div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* 🎯 STEP 2: Department Assignment */}
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building2 className="w-5 h-5 text-windtre-orange" />
+                    <h3 className="text-lg font-semibold">Assegnazione Dipartimento</h3>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="assignedDepartments"
+                    render={() => (
+                      <FormItem>
+                        <FormLabel>Dipartimenti Assegnati *</FormLabel>
+                        <FormDescription>
+                          Seleziona i dipartimenti per cui questo team gestirà i workflow
+                        </FormDescription>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                          {Object.entries(DEPARTMENTS).map(([key, dept]) => {
+                            const Icon = dept.icon;
+                            const isSelected = selectedDepartments.includes(key as keyof typeof DEPARTMENTS);
+                            
+                            return (
+                              <div
+                                key={key}
+                                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                  isSelected
+                                    ? `${dept.color} ${dept.borderColor} ring-2 ring-offset-2 ring-windtre-orange/50`
+                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                }`}
+                                onClick={() => toggleDepartment(key as keyof typeof DEPARTMENTS)}
+                                data-testid={`department-${key}`}
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <Icon className={`w-6 h-6 ${isSelected ? dept.textColor : 'text-gray-500'}`} />
+                                  <div>
+                                    <div className={`font-medium ${isSelected ? dept.textColor : 'text-gray-700'}`}>
+                                      {dept.label}
+                                    </div>
+                                    {isSelected && (
+                                      <div className="text-sm text-green-600">✓ Selezionato</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {selectedDepartments.length > 0 && (
+                          <div className="mt-4">
+                            <div className="text-sm font-medium text-gray-700 mb-2">Dipartimenti Selezionati:</div>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedDepartments.map((dept) => (
+                                <Badge 
+                                  key={dept} 
+                                  className={`${DEPARTMENTS[dept].color} ${DEPARTMENTS[dept].textColor}`}
+                                  data-testid={`selected-department-${dept}`}
+                                >
+                                  {DEPARTMENTS[dept].label}
+                                  <X 
+                                    className="w-3 h-3 ml-1 cursor-pointer" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleDepartment(dept);
+                                    }}
+                                  />
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* 🎯 STEP 3: Team Members */}
+              {currentStep === 3 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-5 h-5 text-windtre-purple" />
+                    <h3 className="text-lg font-semibold">Membri del Team</h3>
+                  </div>
+
+                  {/* 🎯 Effective Members Preview */}
+                  {(selectedUserMembers.length > 0 || selectedRoleMembers.length > 0) && (
+                    <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                      <h4 className="text-sm font-medium text-windtre-purple mb-2">👥 Effective Team Members</h4>
+                      <p className="text-xs text-gray-600 mb-3">
+                        This team includes <strong>{selectedUserMembers.length} direct users</strong> + all users with <strong>{selectedRoleMembers.length} selected roles</strong>
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedUserMembers.slice(0, 3).map(userId => {
+                          const user = users.find(u => u.id === userId);
+                          return user ? (
+                            <Badge key={userId} variant="outline" className="text-xs bg-windtre-purple/10">
+                              👤 {user.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                        {selectedUserMembers.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{selectedUserMembers.length - 3} more users</Badge>
+                        )}
+                        {selectedRoleMembers.slice(0, 2).map(roleId => {
+                          const role = roles.find(r => r.id === roleId);
+                          return role ? (
+                            <Badge key={roleId} variant="outline" className="text-xs bg-windtre-orange/10">
+                              🛡️ All {role.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                        {selectedRoleMembers.length > 2 && (
+                          <Badge variant="outline" className="text-xs">+{selectedRoleMembers.length - 2} more roles</Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* User Members */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Individual Users</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Add specific users to the team. These users will always be team members regardless of role changes.
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {users.map((user: any) => {
+                        const isSelected = selectedUserMembers.includes(user.id);
+                        return (
+                          <div
+                            key={user.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isSelected
+                                ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => toggleUserMember(user.id)}
+                            data-testid={`user-member-${user.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
+                                {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Role Members */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Role-Based Members</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Add users by role. All current and future users with these roles will automatically be team members.
+                    </p>
+                    <div className="space-y-2">
+                      {roles.map((role: any) => {
+                        const isSelected = selectedRoleMembers.includes(role.id);
+                        return (
+                          <div
+                            key={role.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isSelected
+                                ? 'bg-windtre-orange/10 border-windtre-orange text-windtre-orange'
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => toggleRoleMember(role.id)}
+                            data-testid={`role-member-${role.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{role.name}</div>
+                                <div className="text-sm text-gray-500">{role.description}</div>
+                              </div>
+                              {isSelected && <Shield className="w-4 h-4 text-green-600" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 🎯 STEP 4: Supervisors */}
+              {currentStep === 4 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Shield className="w-5 h-5 text-windtre-orange" />
+                    <h3 className="text-lg font-semibold">Supervisori</h3>
+                  </div>
+
+                  {/* 🎯 PRIMARY SUPERVISOR SECTION */}
+                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Primary Supervisor</h4>
+                    <p className="text-xs text-gray-600">
+                      Main supervisor responsible for team oversight
+                    </p>
+                  </div>
+
+                  {/* Primary Supervisor - User */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Supervisore Utente</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Seleziona un utente specifico come supervisore principale
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {users.map((user: any) => {
+                        const primaryUser = form.watch('primarySupervisorUser');
+                        const primaryRole = form.watch('primarySupervisorRole');
+                        const userMembers = form.watch('userMembers');
+                        const isSelected = primaryUser === user.id;
+                        const isMember = userMembers.includes(user.id);
+                        const isDisabled = !!primaryRole || isMember; // Disabled if role is selected OR user is a member
+                        
+                        return (
+                          <div
+                            key={user.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isDisabled
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              if (!isDisabled) {
+                                form.setValue('primarySupervisorUser', isSelected ? null : user.id);
+                              } else if (isMember && !primaryRole) {
+                                // Show conflict warning for members
+                                toast({
+                                  title: '⚠️ Conflitto Rilevato',
+                                  description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                            data-testid={`primary-supervisor-user-${user.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">
+                                  {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
+                                    ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                    : 'No Dept'}
+                                </Badge>
+                                {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
+                                {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Primary Supervisor - Role */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Supervisore per Ruolo</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Seleziona un ruolo - tutti gli utenti con questo ruolo saranno supervisori principali
+                    </p>
+                    <div className="space-y-2">
+                      {roles.map((role: any) => {
+                        const primaryRole = form.watch('primarySupervisorRole');
+                        const primaryUser = form.watch('primarySupervisorUser');
+                        const isSelected = primaryRole === role.id;
+                        const isDisabled = !!primaryUser; // Disabled if user is selected
+                        
+                        return (
+                          <div
+                            key={role.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              isDisabled
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-windtre-orange/10 border-windtre-orange text-windtre-orange'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              if (!isDisabled) {
+                                form.setValue('primarySupervisorRole', isSelected ? null : role.id);
+                              }
+                            }}
+                            data-testid={`primary-supervisor-role-${role.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{role.name}</div>
+                                <div className="text-sm text-gray-500">{role.description}</div>
+                              </div>
+                              {isSelected && <Shield className="w-4 h-4 text-green-600" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator className="my-8" />
+
+                  {/* 🎯 SECONDARY SUPERVISOR SECTION - Single User Only (Optional) */}
+                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Secondo Supervisore (Opzionale)</h4>
+                    <p className="text-xs text-gray-600">
+                      Seleziona un ulteriore utente come supervisore di supporto per questo team
+                    </p>
+                  </div>
+
+                  {/* Secondary Supervisor - Single User */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Secondo Supervisore Utente</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Seleziona un utente specifico come secondo supervisore (opzionale)
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {users.map((user: any) => {
+                        const secondaryUser = form.watch('secondarySupervisorUser');
+                        const primaryUser = form.watch('primarySupervisorUser');
+                        const userMembers = form.watch('userMembers');
+                        const isSelected = secondaryUser === user.id;
+                        const isPrimary = primaryUser === user.id;
+                        const isMember = userMembers.includes(user.id);
+                        
+                        return (
+                          <div
+                            key={user.id}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                              (isPrimary || isMember)
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              if (!isPrimary && !isMember) {
+                                form.setValue('secondarySupervisorUser', isSelected ? null : user.id);
+                              } else if (isMember) {
+                                // Show conflict warning
+                                toast({
+                                  title: '⚠️ Conflitto Rilevato',
+                                  description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                  variant: 'destructive'
+                                });
+                              }
+                            }}
+                            data-testid={`secondary-supervisor-user-${user.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">
+                                  {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
+                                    ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                    : 'No Dept'}
+                                </Badge>
+                                {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
+                                {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
+                                {isSelected && !isPrimary && !isMember && <UserCheck className="w-4 h-4 text-green-600" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 🎯 STEP 5: Workflow Template Assignment */}
+              {currentStep === 5 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Settings className="w-5 h-5 text-windtre-orange" />
+                    <h3 className="text-lg font-semibold">Assegnazione Template Workflow</h3>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Department-Specific Workflows</h4>
+                    <p className="text-xs text-gray-600">
+                      Assign workflow templates to each department. When a request comes from these departments, the team will automatically handle it using the assigned templates.
+                    </p>
+                  </div>
+
+                  {selectedDepartments.length === 0 ? (
+                    <div className="text-center p-8 bg-gray-50 rounded-lg">
+                      <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-500">Please select departments in Step 2 first</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {selectedDepartments.map((department) => {
+                        const departmentTemplates = workflowTemplates.filter(
+                          (template: any) => template.category === department || !template.category
+                        );
+                        const assignedTemplates = selectedAssignments.filter(a => a.department === department);
+                        
+                        return (
+                          <div key={department} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center gap-3 mb-4">
+                              {React.createElement(DEPARTMENTS[department].icon, { 
+                                className: `w-6 h-6 ${DEPARTMENTS[department].textColor}` 
+                              })}
+                              <h4 className="text-lg font-semibold">{DEPARTMENTS[department].label} Department</h4>
+                              <Badge className={`${DEPARTMENTS[department].color} ${DEPARTMENTS[department].textColor}`}>
+                                {assignedTemplates.length} templates assigned
+                              </Badge>
+                            </div>
+
+                            {/* Template Selection */}
+                            <div className="space-y-3">
+                              <h5 className="text-md font-medium">Available Workflow Templates</h5>
+                              {departmentTemplates.length === 0 ? (
+                                <p className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
+                                  No templates available for {DEPARTMENTS[department].label} department
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-1 gap-3">
+                                  {departmentTemplates.map((template: any) => {
+                                    const isAssigned = assignedTemplates.some(a => a.templateId === template.id);
+                                    const assignment = assignedTemplates.find(a => a.templateId === template.id);
+                                    
+                                    return (
+                                      <div
+                                        key={template.id}
+                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                          isAssigned
+                                            ? 'bg-green-50 border-green-200'
+                                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                        onClick={() => {
+                                          if (isAssigned) {
+                                            removeWorkflowAssignment(department, template.id);
+                                          } else {
+                                            addWorkflowAssignment(department, template.id);
+                                          }
+                                        }}
+                                        data-testid={`template-${department}-${template.id}`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex-1">
+                                            <div className="font-medium">{template.name}</div>
+                                            <div className="text-sm text-gray-600">{template.description}</div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Badge variant="outline" className="text-xs">
+                                                {template.templateType || 'workflow'}
+                                              </Badge>
+                                              {template.category && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  {template.category}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            {isAssigned && assignment && (
+                                              <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1">
+                                                  <Checkbox
+                                                    checked={assignment.autoAssign}
+                                                    onCheckedChange={() => toggleAutoAssign(department, template.id)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                  />
+                                                  <span className="text-xs text-gray-600">Auto-assign</span>
+                                                </div>
+                                              </div>
+                                            )}
+                                            <div className={`w-4 h-4 rounded-full ${
+                                              isAssigned ? 'bg-green-500' : 'bg-gray-300'
+                                            }`} />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Assignment Summary */}
+                            {assignedTemplates.length > 0 && (
+                              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                                <h6 className="text-sm font-medium text-green-800 mb-2">Assigned Templates</h6>
+                                <div className="space-y-1">
+                                  {assignedTemplates.map((assignment) => {
+                                    const template = workflowTemplates.find((t: any) => t.id === assignment.templateId);
+                                    return template ? (
+                                      <div key={assignment.templateId} className="flex items-center justify-between text-sm">
+                                        <span className="text-green-700">✓ {template.name}</span>
+                                        <Badge variant={assignment.autoAssign ? 'default' : 'secondary'} className="text-xs">
+                                          {assignment.autoAssign ? 'Auto-assign' : 'Manual'}
+                                        </Badge>
+                                      </div>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </ScrollArea>
+
+            {/* 🎯 Footer Actions */}
+            <div className="flex justify-between pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                data-testid="button-previous-step"
+              >
+                Indietro
+              </Button>
+
+              <div className="flex items-center gap-2">
+                {currentStep < 5 ? (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!canProceedToNextStep()}
+                    className="bg-windtre-orange hover:bg-windtre-orange/90"
+                    data-testid="button-next-step"
+                  >
+                    Avanti
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={createTeamMutation.isPending || updateTeamMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                    data-testid="button-create-team"
+                  >
+                    {(createTeamMutation.isPending || updateTeamMutation.isPending) ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        {editTeam ? 'Aggiornamento...' : 'Creazione...'}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {editTeam ? 'Aggiorna Team' : 'Crea Team'}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

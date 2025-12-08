@@ -1,0 +1,54 @@
+N-KEEPALIVE] 🛑 Session keep-alive stopped
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+TenantShell.tsx:97  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/tenants/resolve?slug=DEMO001 404 (Not Found)
+resolveTenant @ TenantShell.tsx:97
+(anonymous) @ TenantShell.tsx:174
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9490c3af:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9490c3af:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9490c3af:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9490c3af:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9490c3af:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9490c3af:384Understand this error
+NotFound.tsx:24 [404] Page not found - segment: DEMO001 Error Component Stack
+    at NotFound (NotFound.tsx:11:27)
+    at TenantShell (TenantShell.tsx:80:59)
+    at Route (wouter.js?v=9490c3af:206:16)
+    at Switch (wouter.js?v=9490c3af:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=9490c3af:3081:3)
+    at App (App.tsx:40:3)
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9490c3af:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9490c3af:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9490c3af:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9490c3af:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9490c3af:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9490c3af:384Understand this warning
+NotFound.tsx:24 [404] Page not found - segment: DEMO001
+overrideMethod @ hook.js:608
+(anonymous) @ NotFound.tsx:24
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9490c3af:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=9490c3af:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=9490c3af:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=9490c3af:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9490c3af:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9490c3af:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9490c3af:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=9490c3af:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9490c3af:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9490c3af:384Understand this warning
+TenantShell.tsx:97  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/tenants/resolve?slug=DEMO001 404 (Not Found)

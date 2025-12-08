@@ -1,0 +1,64 @@
+[QUERY-CLIENT] 📡 Making API request to: /api/stores
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/stores
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+queryClient.ts:26 🔍 [HR-VALIDATION] Validating prerequisites for: /api/hr/calendar/events
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:64 🔧 [HR-VALIDATION] Development mode - checking required headers
+queryClient.ts:67 ✅ [HR-VALIDATION] All prerequisites validated for: /api/hr/calendar/events
+queryClient.ts:68 ✅ [HR-VALIDATION] Tenant: 00000000-0000-0000-0000-000000000001, Auth: development
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/workflows/templates with tenant: 00000000-0000-0000-0000-000000000001
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/hr/calendar/events
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/hr/calendar/events
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin-user'}
+TenantShell.tsx:63 [TENANT-SHELL] 📡 API response status: 200
+TenantShell.tsx:112 [TENANT-SHELL] ✅ Tenant resolution successful: {tenantId: '00000000-0000-0000-0000-000000000001', name: 'Staging Environment', slug: 'staging', resolved: true, timestamp: '2025-09-28T10:06:40.808Z', …}
+TenantShell.tsx:120 [TENANT-SHELL] 🔒 Tenant UUID resolved: "00000000-0000-0000-0000-000000000001"
+TenantShell.tsx:121 [TENANT-SHELL] 📋 Tenant name: "Staging Environment"
+TenantShell.tsx:122 [TENANT-SHELL] ✅ Ready for authenticated operations
+TenantShell.tsx:40 [TENANT-SHELL] 🎯 Component rendered with slug: "staging"
+TenantShell.tsx:40 [TENANT-SHELL] 🎯 Component rendered with slug: "staging"
+TenantShell.tsx:208 [TENANT-ROUTES] 🛣️ Location: /staging/workflow-management, SubPath: workflow-management, CurrentPath: workflow-management
+TenantShell.tsx:208 [TENANT-ROUTES] 🛣️ Location: /staging/workflow-management, SubPath: workflow-management, CurrentPath: workflow-management
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+WorkflowBuilder.tsx:566 🎯 Fitting view to nodes: (2) [{…}, {…}]
+WorkflowBuilder.tsx:249 🚀 DRAG START: approve-request
+WorkflowBuilder.tsx:197 🎯 DROP EVENT TRIGGERED
+WorkflowBuilder.tsx:198 reactFlowInstance: {zoomIn: ƒ, zoomOut: ƒ, zoomTo: ƒ, getZoom: ƒ, setViewport: ƒ, …}
+WorkflowBuilder.tsx:199 draggedNodeType: approve-request
+WorkflowBuilder.tsx:215 📍 Position calculated: {x: 143.51171875, y: 66.3125}
+WorkflowBuilder.tsx:218 🔍 Node definition found: {id: 'approve-request', name: 'Approval Request', description: 'Request approval from users, roles or teams with escalation', category: 'action', icon: 'CheckCircle', …}
+WorkflowBuilder.tsx:239 ✨ New node created: {id: 'approve-request-1759054009045', type: 'action', position: {…}, data: {…}, draggable: true, …}
+workflowStore.ts:141 🏪 STORE: Adding node: {id: 'approve-request-1759054009045', type: 'action', position: {…}, data: {…}, draggable: true, …}
+workflowStore.ts:143 🏪 BEFORE ADD: nodes count = 0
+workflowStore.ts:145 🏪 AFTER ADD: nodes count = 1
+workflowStore.ts:148 🏪 FINAL STATE: nodes = [{…}]
+WorkflowBuilder.tsx:241 ✅ Node added to store

@@ -1,0 +1,41 @@
+ [DEV-AUTH] Headers aggiunti per development mode: 
+{X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=aVHsbnVx4f1u' failed: 
+client:560 [vite] server connection lost. Polling for restart...
+AISettingsPage.tsx:676 Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at AISettingsPage.tsx:676:80
+    at Array.map (<anonymous>)
+    at renderAnalyticsTab (AISettingsPage.tsx:672:35)
+    at AISettingsPage (AISettingsPage.tsx:892:39)
+AISettingsPage.tsx:676 Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at AISettingsPage.tsx:676:80
+    at Array.map (<anonymous>)
+    at renderAnalyticsTab (AISettingsPage.tsx:672:35)
+    at AISettingsPage (AISettingsPage.tsx:892:39)
+hook.js:608 The above error occurred in the <AISettingsPage> component:
+
+    at AISettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/AI/AISettingsPage.tsx:47:37)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:100:34)
+    at SettingsPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/SettingsPage.tsx:347:27)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=92a9a5b0:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=92a9a5b0:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=92a9a5b0:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=92a9a5b0:9129 Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at AISettingsPage.tsx:676:80
+    at Array.map (<anonymous>)
+    at renderAnalyticsTab (AISettingsPage.tsx:672:35)
+    at AISettingsPage (AISettingsPage.tsx:892:39)
+

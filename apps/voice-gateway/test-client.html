@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ Test AI Voice Agent - W3 Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .status.disconnected {
+            background: #fee;
+            color: #c00;
+        }
+        
+        .status.connecting {
+            background: #ffc;
+            color: #880;
+        }
+        
+        .status.connected {
+            background: #efe;
+            color: #080;
+        }
+        
+        .status.speaking {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #connectBtn {
+            background: #667eea;
+            color: white;
+        }
+        
+        #disconnectBtn {
+            background: #f44336;
+            color: white;
+        }
+        
+        #talkBtn {
+            background: #4caf50;
+            color: white;
+            font-size: 18px;
+            padding: 20px;
+        }
+        
+        #talkBtn.recording {
+            background: #ff5722;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .log {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #ddd;
+            padding-left: 10px;
+        }
+        
+        .log-entry.info {
+            border-color: #2196f3;
+            color: #1976d2;
+        }
+        
+        .log-entry.success {
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+        
+        .log-entry.error {
+            border-color: #f44336;
+            color: #c62828;
+        }
+        
+        .log-entry.ai {
+            border-color: #9c27b0;
+            color: #7b1fa2;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Test AI Voice Agent</h1>
+        <div class="subtitle">W3 Suite - OpenAI Realtime API</div>
+        
+        <div id="status" class="status disconnected">
+            ⚫ Disconnesso
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn">🔌 Connetti</button>
+            <button id="disconnectBtn" disabled>⏹️ Disconnetti</button>
+        </div>
+        
+        <button id="talkBtn" disabled>
+            🎤 Tieni Premuto per Parlare
+        </button>
+        
+        <div class="instructions">
+            <h3>📋 Come Usare:</h3>
+            <ol>
+                <li>Clicca "Connetti" per collegarti al Voice Gateway</li>
+                <li>Permetti l'accesso al microfono quando richiesto</li>
+                <li>Tieni premuto "Parla" e parla in italiano</li>
+                <li>Rilascia per ascoltare la risposta dell'AI</li>
+            </ol>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let audioContext = null;
+        
+        const statusEl = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const talkBtn = document.getElementById('talkBtn');
+        const logEl = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString('it-IT');
+            entry.textContent = `[${timestamp}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateStatus(text, className) {
+            statusEl.textContent = text;
+            statusEl.className = `status ${className}`;
+        }
+        
+        async function connect() {
+            try {
+                updateStatus('🟡 Connessione...', 'connecting');
+                log('Connessione al Voice Gateway...', 'info');
+                
+                // Get WebSocket URL (use current host)
+                const wsUrl = `ws://${window.location.hostname}:3005`;
+                log(`WebSocket URL: ${wsUrl}`, 'info');
+                
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = async () => {
+                    updateStatus('🟢 Connesso - Pronto!', 'connected');
+                    log('✅ Connesso al Voice Gateway!', 'success');
+                    
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    talkBtn.disabled = false;
+                    
+                    // Request microphone access
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: {
+                                sampleRate: 16000,
+                                channelCount: 1,
+                                echoCancellation: true,
+                                noiseSuppression: true
+                            } 
+                        });
+                        
+                        log('🎤 Microfono attivato', 'success');
+                        
+                        // Setup audio context
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                            sampleRate: 16000
+                        });
+                        
+                        // Keep stream for later use
+                        window.audioStream = stream;
+                        
+                    } catch (err) {
+                        log(`❌ Errore microfono: ${err.message}`, 'error');
+                    }
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (err) {
+                        log(`❌ Errore parsing messaggio: ${err.message}`, 'error');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    log(`❌ Errore WebSocket: ${error.message || 'Connessione fallita'}`, 'error');
+                    updateStatus('🔴 Errore Connessione', 'disconnected');
+                };
+                
+                ws.onclose = () => {
+                    updateStatus('⚫ Disconnesso', 'disconnected');
+                    log('Disconnesso dal Voice Gateway', 'info');
+                    
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    talkBtn.disabled = true;
+                };
+                
+            } catch (err) {
+                log(`❌ Errore: ${err.message}`, 'error');
+                updateStatus('🔴 Errore', 'disconnected');
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            if (window.audioStream) {
+                window.audioStream.getTracks().forEach(track => track.stop());
+            }
+        }
+        
+        function handleWebSocketMessage(data) {
+            console.log('WebSocket message:', data);
+            
+            switch (data.type) {
+                case 'session.created':
+                    log('📞 Sessione AI creata', 'success');
+                    break;
+                    
+                case 'response.audio_transcript.done':
+                    if (data.transcript) {
+                        log(`🤖 AI: "${data.transcript}"`, 'ai');
+                    }
+                    break;
+                    
+                case 'response.audio.delta':
+                    // Play audio chunk
+                    if (data.delta) {
+                        playAudioChunk(data.delta);
+                    }
+                    break;
+                    
+                case 'input_audio_buffer.speech_started':
+                    log('👂 AI sta ascoltando...', 'info');
+                    break;
+                    
+                case 'input_audio_buffer.speech_stopped':
+                    log('⏸️ Pausa rilevata', 'info');
+                    break;
+                    
+                case 'conversation.item.input_audio_transcription.completed':
+                    if (data.transcript) {
+                        log(`👤 Tu: "${data.transcript}"`, 'info');
+                    }
+                    break;
+                    
+                case 'error':
+                    log(`❌ ${data.error?.message || 'Errore sconosciuto'}`, 'error');
+                    break;
+            }
+        }
+        
+        async function playAudioChunk(base64Audio) {
+            try {
+                const audioData = atob(base64Audio);
+                const arrayBuffer = new Uint8Array(audioData.length);
+                
+                for (let i = 0; i < audioData.length; i++) {
+                    arrayBuffer[i] = audioData.charCodeAt(i);
+                }
+                
+                // Decode and play
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.buffer);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start();
+                
+            } catch (err) {
+                console.error('Error playing audio:', err);
+            }
+        }
+        
+        // Talk button handlers
+        talkBtn.addEventListener('mousedown', startRecording);
+        talkBtn.addEventListener('mouseup', stopRecording);
+        talkBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startRecording();
+        });
+        talkBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stopRecording();
+        });
+        
+        async function startRecording() {
+            if (!window.audioStream || !ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Connessione non pronta', 'error');
+                return;
+            }
+            
+            updateStatus('🎤 Sto Ascoltando...', 'speaking');
+            talkBtn.classList.add('recording');
+            talkBtn.textContent = '🔴 STO ASCOLTANDO...';
+            
+            log('🎙️ Inizio registrazione...', 'info');
+            
+            audioChunks = [];
+            
+            mediaRecorder = new MediaRecorder(window.audioStream, {
+                mimeType: 'audio/webm'
+            });
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.start(100); // Collect chunks every 100ms
+        }
+        
+        function stopRecording() {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+            
+            updateStatus('🟢 Connesso - Pronto!', 'connected');
+            talkBtn.classList.remove('recording');
+            talkBtn.textContent = '🎤 Tieni Premuto per Parlare';
+            
+            log('⏹️ Fine registrazione', 'info');
+            
+            mediaRecorder.stop();
+            
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                
+                // Convert to PCM16 and send
+                const arrayBuffer = await audioBlob.arrayBuffer();
+                const audioContext = new AudioContext({ sampleRate: 16000 });
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Get PCM16 data
+                const pcmData = audioBuffer.getChannelData(0);
+                const pcm16 = new Int16Array(pcmData.length);
+                
+                for (let i = 0; i < pcmData.length; i++) {
+                    pcm16[i] = Math.max(-32768, Math.min(32767, Math.floor(pcmData[i] * 32768)));
+                }
+                
+                // Convert to base64
+                const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
+                
+                // Send to WebSocket
+                ws.send(JSON.stringify({
+                    type: 'input_audio_buffer.append',
+                    audio: base64Audio
+                }));
+                
+                log(`📤 Audio inviato (${(base64Audio.length / 1024).toFixed(1)} KB)`, 'success');
+            };
+        }
+        
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+        
+        // Auto-connect on load
+        window.addEventListener('load', () => {
+            log('🚀 Test Client caricato', 'info');
+            log('💡 Clicca "Connetti" per iniziare', 'info');
+        });
+    </script>
+</body>
+</html>

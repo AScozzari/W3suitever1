@@ -1,0 +1,68 @@
+onnecting wss://demo.edgvoip.it:443/ws
+Layout-B0cU4mFp.js:58 Sat Dec 06 2025 13:01:44 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+2index-DrqhWkwo.js:2 🔍 Token expiry check: Current time: 13:01:45, Token expires: 13:16:42
+Layout-B0cU4mFp.js:75 WebSocket connection to 'wss://demo.edgvoip.it/ws' failed: 
+_connect @ Layout-B0cU4mFp.js:75
+connect @ Layout-B0cU4mFp.js:75
+start @ Layout-B0cU4mFp.js:86
+(anonymous) @ Layout-B0cU4mFp.js:86
+(anonymous) @ Layout-B0cU4mFp.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+installHook.js:1 Sat Dec 06 2025 13:01:45 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ installHook.js:1
+print @ Layout-B0cU4mFp.js:58
+genericLog @ Layout-B0cU4mFp.js:58
+genericLog @ Layout-B0cU4mFp.js:58
+error @ Layout-B0cU4mFp.js:58
+onWebSocketError @ Layout-B0cU4mFp.js:78
+(anonymous) @ Layout-B0cU4mFp.js:75Understand this error
+installHook.js:1 Sat Dec 06 2025 13:01:45 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ Layout-B0cU4mFp.js:58
+genericLog @ Layout-B0cU4mFp.js:58
+genericLog @ Layout-B0cU4mFp.js:58
+warn @ Layout-B0cU4mFp.js:58
+onWebSocketClose @ Layout-B0cU4mFp.js:78
+(anonymous) @ Layout-B0cU4mFp.js:75Understand this warning
+Layout-B0cU4mFp.js:58 Sat Dec 06 2025 13:01:45 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it:443/ws (code: 1006)
+Layout-B0cU4mFp.js:58 Sat Dec 06 2025 13:01:45 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+installHook.js:1 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it:443/ws (code: 1006)
+    at Ft.onWebSocketClose (Layout-B0cU4mFp.js:78:422)
+    at WebSocket.<anonymous> (Layout-B0cU4mFp.js:75:7499)
+overrideMethod @ installHook.js:1
+(anonymous) @ Layout-B0cU4mFp.js:86
+await in (anonymous)
+(anonymous) @ Layout-B0cU4mFp.js:86
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-BNy7z5T9.js:1
+u @ query-BNy7z5T9.js:1
+batch @ query-BNy7z5T9.js:1
+W @ query-BNy7z5T9.js:1
+setData @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+await in fetch
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+index-DrqhWkwo.js:2 🔍 Token expiry check: Current time: 13:01:54, Token expires: 13:16:42
+index-DrqhWkwo.js:2 🔍 Token expiry check: Current time: 13:02:00, Token expires: 13:16:42

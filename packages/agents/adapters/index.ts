@@ -1,0 +1,1 @@
+// Integrazione replit/lovable/… (opz)

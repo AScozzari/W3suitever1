@@ -1,0 +1,91 @@
+alization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+index-J0JpsgXA.js:2 🔍 Token expiry check: Current time: 12:29:30, Token expires: 12:44:14
+index-J0JpsgXA.js:2  GET http://82.165.16.223/api/voip/extensions/me 404 (Not Found)
+queryFn @ index-J0JpsgXA.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonymous) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Understand this error
+SettingsPage-CL-feCpd.js:1 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage-CL-feCpd.js:1 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+index-J0JpsgXA.js:2 🔍 Token expiry check: Current time: 12:29:30, Token expires: 12:44:14
+SettingsPage-CL-feCpd.js:15 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+index-J0JpsgXA.js:2 🔍 Token expiry check: Current time: 12:29:30, Token expires: 12:44:14
+SettingsPage-CL-feCpd.js:1 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage-CL-feCpd.js:15 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+5index-J0JpsgXA.js:2 🔍 Token expiry check: Current time: 12:29:33, Token expires: 12:44:14
+index-J0JpsgXA.js:2  GET http://82.165.16.223/api/voip/connection-status 500 (Internal Server Error)
+queryFn @ index-J0JpsgXA.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-J0JpsgXA.js:2  GET http://82.165.16.223/api/voip/extensions 500 (Internal Server Error)
+queryFn @ index-J0JpsgXA.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+2index-J0JpsgXA.js:2 🔍 Token expiry check: Current time: 12:29:34, Token expires: 12:44:14
+index-J0JpsgXA.js:2  GET http://82.165.16.223/api/voip/connection-status 500 (Internal Server Error)
+queryFn @ index-J0JpsgXA.js:2
+await in queryFn
+a @ query-BNy7z5T9.js:1
+M @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.then
+(anonymous) @ query-BNy7z5T9.js:1
+Promise.catch
+M @ query-BNy7z5T9.js:1
+start @ query-BNy7z5T9.js:1
+fetch @ query-BNy7z5T9.js:1
+Lt @ query-BNy7z5T9.js:1
+onSubscribe @ query-BNy7z5T9.js:1
+subscribe @ query-BNy7z5T9.js:1
+(anonymous) @ query-BNy7z5T9.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonymous) @ react-core-DamieDW-.js:32Understand this error
+index-J0JpsgXA.js:2  GET http://82.165.16.223/api/voip/extensions 500 (Internal Server Error)

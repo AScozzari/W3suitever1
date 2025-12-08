@@ -1,0 +1,585 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { useSIPRegistration } from '@/hooks/useSIPRegistration';
+import { SessionState } from 'sip.js';
+import { 
+  Phone, 
+  PhoneOff,
+  PhoneIncoming,
+  PhoneOutgoing,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Minimize2,
+  Maximize2,
+  X,
+  Clock,
+  User,
+  Sun,
+  Moon,
+  Delete,
+  PhoneForwarded,
+  Hash,
+  Grid3x3,
+  WifiOff,
+  Wifi,
+  Pin,
+  PinOff
+} from 'lucide-react';
+
+interface SoftphoneWidgetProps {
+  extensionId?: string;
+  onClose?: () => void;
+}
+
+type CallState = 'idle' | 'ringing' | 'connecting' | 'active' | 'ended';
+
+export function SoftphoneWidget({ extensionId, onClose }: SoftphoneWidgetProps) {
+  // SIP.js integration
+  const sip = useSIPRegistration();
+  
+  const [isMinimized, setIsMinimized] = useState(true); // Start collapsed
+  const [callState, setCallState] = useState<CallState>('idle');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [callDuration, setCallDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [showDialpad, setShowDialpad] = useState(false);
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const [isPinned, setIsPinned] = useState(() => {
+    // Restore pinned state from localStorage
+    return localStorage.getItem('softphone-pinned') === 'true';
+  });
+
+  // Call duration timer
+  useEffect(() => {
+    if (callState === 'active') {
+      const interval = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setCallDuration(0);
+    }
+  }, [callState]);
+
+  // Format call duration (MM:SS)
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // DTMF tone frequencies (row, column)
+  const dtmfFrequencies: Record<string, [number, number]> = {
+    '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+    '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+    '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+    '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+  };
+
+  // Initialize AudioContext on first user interaction
+  useEffect(() => {
+    if (!audioContext) {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      setAudioContext(ctx);
+    }
+  }, []);
+
+  // Play DTMF tone
+  const playDTMFTone = (digit: string) => {
+    const frequencies = dtmfFrequencies[digit];
+    if (!frequencies || !audioContext) return;
+
+    const [freq1, freq2] = frequencies;
+
+    // Create two oscillators for dual-tone
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    osc1.frequency.value = freq1;
+    osc2.frequency.value = freq2;
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+    
+    gainNode.gain.value = 0.3; // Volume control (increased for better audibility)
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    const now = audioContext.currentTime;
+    osc1.start(now);
+    osc2.start(now);
+
+    // Stop after 150ms (classic DTMF duration)
+    osc1.stop(now + 0.15);
+    osc2.stop(now + 0.15);
+  };
+
+  // Sync call state with SIP.js session
+  useEffect(() => {
+    if (!sip.currentSession) {
+      setCallState('idle');
+      return;
+    }
+
+    switch (sip.currentSession.state) {
+      case SessionState.Initial:
+        setCallState(sip.currentSession.direction === 'inbound' ? 'ringing' : 'connecting');
+        break;
+      case SessionState.Establishing:
+        setCallState('connecting');
+        break;
+      case SessionState.Established:
+        setCallState('active');
+        break;
+      case SessionState.Terminated:
+        setCallState('ended');
+        setTimeout(() => setCallState('idle'), 1000);
+        break;
+      default:
+        break;
+    }
+  }, [sip.currentSession]);
+
+  // Auto-collapse after 30 seconds of inactivity (when idle and not pinned)
+  useEffect(() => {
+    if (callState === 'idle' && !isMinimized && !isPinned) {
+      const timeout = setTimeout(() => {
+        const now = Date.now();
+        if (now - lastActivityTime > 30000) { // 30 seconds
+          setIsMinimized(true);
+        }
+      }, 30000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [callState, isMinimized, lastActivityTime, isPinned]);
+
+  // Update activity time on any interaction
+  const updateActivity = () => {
+    setLastActivityTime(Date.now());
+  };
+
+  // Toggle pin state with localStorage persistence
+  const togglePin = () => {
+    const newPinnedState = !isPinned;
+    setIsPinned(newPinnedState);
+    localStorage.setItem('softphone-pinned', String(newPinnedState));
+  };
+
+  const handleCall = async () => {
+    if (!phoneNumber || !sip.isRegistered) return;
+    updateActivity();
+    
+    try {
+      await sip.makeCall(phoneNumber);
+    } catch (error) {
+      console.error('Failed to make call:', error);
+      setCallState('idle');
+    }
+  };
+
+  const handleHangup = async () => {
+    try {
+      await sip.hangup();
+      setPhoneNumber('');
+    } catch (error) {
+      console.error('Failed to hangup:', error);
+    }
+  };
+
+  const handleAnswer = async () => {
+    try {
+      await sip.answer();
+    } catch (error) {
+      console.error('Failed to answer call:', error);
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await sip.reject();
+    } catch (error) {
+      console.error('Failed to reject call:', error);
+    }
+  };
+
+  const addDigit = (digit: string) => {
+    updateActivity();
+    playDTMFTone(digit);
+    
+    // If in call, send DTMF; otherwise add to dialed number
+    if (callState === 'active') {
+      sip.sendDTMF(digit);
+    } else {
+      setPhoneNumber((prev) => prev + digit);
+    }
+  };
+
+  const toggleMute = () => {
+    if (isMuted) {
+      sip.unmute();
+    } else {
+      sip.mute();
+    }
+    setIsMuted(!isMuted);
+  };
+
+  const handleBackspace = () => {
+    setPhoneNumber((prev) => prev.slice(0, -1));
+  };
+
+  if (isMinimized) {
+    return (
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="fixed bottom-6 left-6 z-50"
+        data-testid="softphone-widget-minimized"
+      >
+        <Button
+          onClick={() => setIsMinimized(false)}
+          className="rounded-full w-16 h-16 bg-green-600 hover:bg-green-700 shadow-lg"
+          data-testid="button-maximize-softphone"
+        >
+          <Phone className="w-6 h-6 text-green-100" />
+        </Button>
+        {callState === 'active' && (
+          <Badge className="absolute -top-1 -right-1 bg-red-600 text-white animate-pulse">
+            {formatDuration(callDuration)}
+          </Badge>
+        )}
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      className="fixed bottom-6 left-6 z-50"
+      data-testid="softphone-widget"
+    >
+      <Card className={`w-80 ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-300'} shadow-2xl overflow-hidden`}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-green-600 to-emerald-700 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-white" />
+              <span className="font-semibold text-white">Softphone</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className={`h-8 w-8 p-0 text-white hover:bg-white/20 ${isPinned ? 'bg-white/30' : ''}`}
+                onClick={togglePin}
+                data-testid="button-pin-softphone"
+                title={isPinned ? 'Unpin (Auto-collapse after 30s)' : 'Pin (Keep open)'}
+              >
+                {isPinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                data-testid="button-theme-toggle"
+                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                onClick={() => setIsMinimized(true)}
+                data-testid="button-minimize-softphone"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </Button>
+              {onClose && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                  onClick={onClose}
+                  data-testid="button-close-softphone"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Status Badge */}
+          <Badge 
+            variant="outline" 
+            className={`${
+              sip.isRegistered 
+                ? 'bg-green-500/20 text-green-300 border-green-500/30' 
+                : sip.registrationError
+                ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+            }`}
+          >
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              sip.isRegistered ? 'bg-green-400 animate-pulse' : 
+              sip.registrationError ? 'bg-red-400' :
+              'bg-yellow-400 animate-pulse'
+            }`} />
+            {sip.isRegistered ? (
+              <>
+                <Wifi className="w-3 h-3 mr-1" />
+                Ext {sip.credentials?.extension}
+              </>
+            ) : sip.registrationError ? (
+              <>
+                <WifiOff className="w-3 h-3 mr-1" />
+                Offline
+              </>
+            ) : (
+              'Connecting...'
+            )}
+          </Badge>
+        </div>
+
+        {/* Call Info / Dialer */}
+        <div className="p-4 space-y-4">
+          {callState === 'idle' && (
+            <>
+              <Input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+                className={`text-lg text-center ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-400' : 'bg-gray-100 border-gray-300 text-black placeholder:text-gray-500'}`}
+                data-testid="input-phone-number"
+              />
+
+              {/* Dialpad */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
+                    <Button
+                      key={digit}
+                      variant="outline"
+                      className={`h-12 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-black'}`}
+                      onClick={() => addDigit(digit)}
+                      data-testid={`button-dial-${digit}`}
+                    >
+                      {digit}
+                    </Button>
+                  ))}
+                </div>
+                
+                {/* Backspace Button */}
+                <Button
+                  variant="outline"
+                  className={`w-full h-10 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-gray-600'}`}
+                  onClick={handleBackspace}
+                  disabled={!phoneNumber}
+                  data-testid="button-backspace"
+                >
+                  <Delete className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              </div>
+
+              {/* Call Button */}
+              <button
+                style={{ 
+                  width: '100%',
+                  backgroundColor: '#FF6900',
+                  color: 'white',
+                  fontWeight: '500',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  border: 'none',
+                  cursor: phoneNumber && sip.isRegistered ? 'pointer' : 'not-allowed',
+                  opacity: phoneNumber && sip.isRegistered ? 1 : 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'opacity 0.2s'
+                }}
+                onClick={handleCall}
+                disabled={!phoneNumber || !sip.isRegistered}
+                data-testid="button-call"
+                onMouseEnter={(e) => {
+                  if (phoneNumber && sip.isRegistered) {
+                    e.currentTarget.style.opacity = '0.9';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (phoneNumber && sip.isRegistered) {
+                    e.currentTarget.style.opacity = '1';
+                  }
+                }}
+              >
+                <Phone style={{ width: '20px', height: '20px' }} />
+                Call
+              </button>
+            </>
+          )}
+
+          {callState === 'ringing' && (
+            <div className="text-center py-8">
+              <PhoneIncoming className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
+              <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-2`}>Incoming Call</p>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-6`}>{sip.currentSession?.remoteIdentity || 'Unknown'}</p>
+              <div className="flex gap-4 justify-center">
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  onClick={handleAnswer}
+                  data-testid="button-answer"
+                >
+                  <Phone className="w-5 h-5 mr-2" />
+                  Answer
+                </Button>
+                <Button
+                  className="bg-red-600 hover:bg-red-700"
+                  size="lg"
+                  onClick={handleReject}
+                  data-testid="button-reject"
+                >
+                  <PhoneOff className="w-5 h-5 mr-2" />
+                  Reject
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {callState === 'connecting' && (
+            <div className="text-center py-8">
+              <PhoneOutgoing className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
+              <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-2`}>Connecting...</p>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{phoneNumber}</p>
+            </div>
+          )}
+
+          {callState === 'active' && (
+            <div className="text-center py-4">
+              <div className="mb-6">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mx-auto mb-4 flex items-center justify-center">
+                  <User className="w-8 h-8 text-white" />
+                </div>
+                <p className={`${isDarkMode ? 'text-white' : 'text-black'} font-semibold mb-1`}>{sip.currentSession?.remoteIdentity || phoneNumber}</p>
+                <div className="flex items-center justify-center gap-2 text-green-400">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-lg font-mono">{formatDuration(callDuration)}</span>
+                </div>
+              </div>
+
+              {/* Call Controls */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full ${isMuted ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
+                  onClick={toggleMute}
+                  data-testid="button-mute"
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? <MicOff className="w-5 h-5 text-red-400" /> : <Mic className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} />}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full ${!isSpeakerOn ? 'bg-red-600/20 border-red-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
+                  onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+                  data-testid="button-speaker"
+                  title={isSpeakerOn ? 'Turn Off Speaker' : 'Turn On Speaker'}
+                >
+                  {isSpeakerOn ? <Volume2 className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} /> : <VolumeX className="w-5 h-5 text-red-400" />}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full ${showDialpad ? 'bg-blue-600/20 border-blue-600' : isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
+                  onClick={() => setShowDialpad(!showDialpad)}
+                  data-testid="button-toggle-dialpad"
+                  title="Toggle Dialpad"
+                >
+                  <Grid3x3 className={`w-5 h-5 ${showDialpad ? 'text-blue-400' : isDarkMode ? 'text-white' : 'text-black'}`} />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`rounded-full ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-200 border-gray-300'}`}
+                  onClick={() => {/* TODO: Implement transfer */}}
+                  data-testid="button-transfer"
+                  title="Transfer Call"
+                >
+                  <PhoneForwarded className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-black'}`} />
+                </Button>
+              </div>
+
+              {/* In-call Dialpad */}
+              {showDialpad && (
+                <div className="mb-4 space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
+                      <Button
+                        key={digit}
+                        variant="outline"
+                        size="sm"
+                        className={`h-10 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' : 'bg-gray-200 border-gray-300 hover:bg-gray-300 text-black'}`}
+                        onClick={() => playDTMFTone(digit)}
+                        data-testid={`button-dtmf-${digit}`}
+                      >
+                        {digit}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hangup Button */}
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700"
+                size="lg"
+                onClick={handleHangup}
+                data-testid="button-hangup"
+              >
+                <PhoneOff className="w-5 h-5 mr-2" />
+                End Call
+              </Button>
+            </div>
+          )}
+
+          {callState === 'ended' && (
+            <div className="text-center py-8">
+              <PhoneOff className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-white font-semibold">Call Ended</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Note */}
+        <div className="px-4 pb-4">
+          <p className="text-xs text-gray-500 text-center">
+            WebRTC Softphone (Beta) - SIP.js integration pending
+          </p>
+        </div>
+      </Card>
+    </motion.div>
+  );
+}

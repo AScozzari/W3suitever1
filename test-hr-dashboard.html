@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HR Dashboard Test</title>
+    <script>
+        // Test if HR Dashboard is accessible
+        async function testHRDashboard() {
+            const results = [];
+            
+            try {
+                // Test if the app is running
+                const response = await fetch('http://localhost:5000/staging/hr-dashboard');
+                results.push({
+                    test: 'Page Accessibility',
+                    status: response.ok ? 'SUCCESS' : 'FAILED',
+                    details: `Status: ${response.status}`
+                });
+                
+                // Check if HTML contains expected elements
+                const html = await response.text();
+                
+                // Check for Layout wrapper
+                results.push({
+                    test: 'Layout Wrapper',
+                    status: html.includes('Layout') ? 'SUCCESS' : 'FAILED',
+                    details: 'Layout component presence'
+                });
+                
+                // Check for Card components
+                results.push({
+                    test: 'Card Components',
+                    status: html.includes('Card') || html.includes('bg-white/80') ? 'SUCCESS' : 'FAILED',
+                    details: 'Card glassmorphism styling'
+                });
+                
+                // Check for Tabs
+                results.push({
+                    test: 'Tabs Component',
+                    status: html.includes('Tabs') || html.includes('TabsList') ? 'SUCCESS' : 'FAILED',
+                    details: 'Tabs navigation'
+                });
+                
+                // Check for Table
+                results.push({
+                    test: 'Table Component',
+                    status: html.includes('Table') || html.includes('TableHead') ? 'SUCCESS' : 'FAILED',
+                    details: 'Table data display'
+                });
+                
+                // Check for Badge
+                results.push({
+                    test: 'Badge Components',
+                    status: html.includes('Badge') || html.includes('badge') ? 'SUCCESS' : 'FAILED',
+                    details: 'Badge status indicators'
+                });
+                
+            } catch (error) {
+                results.push({
+                    test: 'Connection',
+                    status: 'FAILED',
+                    details: error.message
+                });
+            }
+            
+            // Display results
+            console.table(results);
+            document.getElementById('results').innerHTML = results.map(r => 
+                `<div style="padding: 10px; margin: 5px; background: ${r.status === 'SUCCESS' ? '#d4edda' : '#f8d7da'}; border-radius: 5px;">
+                    <strong>${r.test}:</strong> ${r.status}<br>
+                    <small>${r.details}</small>
+                </div>`
+            ).join('');
+        }
+        
+        window.onload = testHRDashboard;
+    </script>
+</head>
+<body>
+    <h1>HR Dashboard Component Test</h1>
+    <div id="results">Testing...</div>
+    <hr>
+    <h2>Direct Link Test:</h2>
+    <iframe src="http://localhost:5000/staging/hr-dashboard" width="100%" height="600px" style="border: 2px solid #333;"></iframe>
+</body>
+</html>

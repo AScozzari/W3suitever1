@@ -1,0 +1,367 @@
+P-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'magazzino/inventario', tenant: 'staging', *: 'magazzino/inventario'}
+installHook.js:1 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+installHook.js:1 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+queryClient.ts:334  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores 500 (Internal Server Error)
+apiRequest @ queryClient.ts:334
+makeRequest @ ApiService.ts:49
+getStores @ ApiService.ts:166
+loadSettingsData @ ApiService.ts:269
+loadData @ SettingsPage.tsx:686
+(anonymous) @ SettingsPage.tsx:718
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+installHook.js:1 ⚠️ ApiService: Failed request to /api/stores: column "has_warehouse" does not exist
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService.ts:124
+await in makeRequest
+getStores @ ApiService.ts:166
+loadSettingsData @ ApiService.ts:269
+loadData @ SettingsPage.tsx:686
+(anonymous) @ SettingsPage.tsx:718
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this warning
+SettingsPage.tsx:687 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(1)}
+SettingsPage.tsx:700 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 0}
+SettingsPage.tsx:687 📦 SettingsPage: loadSettingsData result: {success: false, data: {…}, error: 'Legal entities service unavailable, Users service unavailable, Stores service unavailable', warnings: Array(3)}
+installHook.js:1 Failed to load settings data: Legal entities service unavailable, Users service unavailable, Stores service unavailable
+overrideMethod @ installHook.js:1
+loadData @ SettingsPage.tsx:694
+await in loadData
+(anonymous) @ SettingsPage.tsx:718
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+installHook.js:1 Warning: validateDOMNesting(...): <div> cannot appear as a descendant of <p>. Error Component Stack
+    at div (<anonymous>)
+    at Skeleton (skeleton.tsx:4:3)
+    at p (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at InventoryPage (InventoryPage.tsx:103:33)
+    at AuthenticatedRoute (TenantShell.tsx:548:72)
+    at Route (wouter.js?v=4d8c8bff:206:16)
+    at Switch (wouter.js?v=4d8c8bff:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:232:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:87:59)
+    at Route (wouter.js?v=4d8c8bff:206:16)
+    at Switch (wouter.js?v=4d8c8bff:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=4d8c8bff:3081:3)
+    at App (App.tsx:41:3)
+overrideMethod @ installHook.js:1
+printWarning @ chunk-ZHRYBLGQ.js?v=4d8c8bff:521
+error @ chunk-ZHRYBLGQ.js?v=4d8c8bff:505
+validateDOMNesting @ chunk-ZHRYBLGQ.js?v=4d8c8bff:8256
+createInstance @ chunk-ZHRYBLGQ.js?v=4d8c8bff:8328
+completeWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16290
+completeUnitOfWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19224
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19206
+workLoopConcurrent @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19189
+renderRootConcurrent @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19164
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+useSIPRegistration.ts:154 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+useSIPRegistration.ts:178 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it/ws (transport: wss)
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Configuration:
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · allowLegacyNotifications: false
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationHa1: ""
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationPassword: NOT SHOWN
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationUsername: "2000"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · delegate: {}
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactName: ""
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactParams: {"transport":"ws"}
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · displayName: "Extension 2000"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · forceRport: false
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · gracefulShutdown: true
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackAllowUnregisteredOptionTags: false
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackIpInContact: false
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackViaTcp: false
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceId: ""
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceIdAlwaysAdded: false
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logBuiltinEnabled: true
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConfiguration: true
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConnector: undefined
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logLevel: "debug"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · noAnswerTimeout: 60
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · preloadedRouteSet: []
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionAttempts: 0
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionDelay: 4
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sendInitialProvisionalResponse: true
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactory: (session, options) => {
+    if (mediaStreamFactory === void 0) {
+      mediaStreamFactory = defaultMediaStreamFactory();
+    }
+    const iceGatheringTimeout = (options === null || options === void 0 ? void 0 : options.iceGatheringTimeout) !== void 0 ? options === null || options === void 0 ? void 0 : options.iceGatheringTimeout : 5e3;
+    const sessionDescriptionHandlerConfiguration = {
+      iceGatheringTimeout,
+      peerConnectionConfiguration: Object.assign(Object.assign({}, defaultPeerConnectionConfiguration()), options === null || options === void 0 ? void 0 : options.peerConnectionConfiguration)
+    };
+    const logger = session.userAgent.getLogger("sip.SessionDescriptionHandler");
+    return new SessionDescriptionHandler(logger, mediaStreamFactory, sessionDescriptionHandlerConfiguration);
+  }
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactoryOptions: {}
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtension100rel: "Unsupported"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionReplaces: "Unsupported"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionExtraSupported: []
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipjsId: "hvvhn"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportConstructor: _Transport
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportOptions: {"server":"wss://demo.edgvoip.it/ws","connectionTimeout":10}
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · uri: sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · userAgentString: "SIP.js/0.21.1"
+useSIPRegistration.ts:181 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "j2c20bosd19h.invalid"
+useSIPRegistration.ts:205 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:205 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+useSIPRegistration.ts:205 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it/ws
+useSIPRegistration.ts:205 Sun Dec 07 2025 10:41:29 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket opened wss://demo.edgvoip.it/ws
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Connected
+useSIPRegistration.ts:206 ✅ SIP UserAgent started
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Configuration:
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · expires: 600
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraContactHeaderParams: []
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraHeaders: []
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · logConfiguration: true
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · instanceId: ""
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · params: {}
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · regId: 0
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · registrar: sip:demo.edgvoip.it
+useSIPRegistration.ts:209 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · refreshFrequency: 99
+useSIPRegistration.ts:227 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+useSIPRegistration.ts:227 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS j2c20bosd19h.invalid;branch=z9hG4bK9238379
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=tksn02ghkq
+CSeq: 2 REGISTER
+Call-ID: hvvhnu2o008l6vjh3tnj
+Max-Forwards: 70
+Contact: <sip:a5d01dj0@j2c20bosd19h.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS j2c20bosd19h.invalid;branch=z9hG4bK9238379;received=127.0.0.1;rport=45110
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=tksn02ghkq
+To: <sip:2000@demo.edgvoip.it>;tag=S4jp6ajXSj97r
+Call-ID: hvvhnu2o008l6vjh3tnj
+CSeq: 2 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="4693a220-10e2-455d-a6ad-12bca4a9e843", algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS j2c20bosd19h.invalid;branch=z9hG4bK48851
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=tksn02ghkq
+CSeq: 3 REGISTER
+Call-ID: hvvhnu2o008l6vjh3tnj
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="4693a220-10e2-455d-a6ad-12bca4a9e843", uri="sip:demo.edgvoip.it", response="76aaf907ab54323cdf43ca120b208186", qop=auth, cnonce="j8h0j84u7fnd", nc=00000001
+Contact: <sip:a5d01dj0@j2c20bosd19h.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS j2c20bosd19h.invalid;branch=z9hG4bK48851;received=127.0.0.1;rport=45110
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=tksn02ghkq
+To: <sip:2000@demo.edgvoip.it>;tag=tDcF8520pUZtm
+Call-ID: hvvhnu2o008l6vjh3tnj
+CSeq: 3 REGISTER
+Contact: <sip:a5d01dj0@j2c20bosd19h.invalid;transport=ws>;expires=600
+Date: Sun, 07 Dec 2025 09:41:31 GMT
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Registered
+useSIPRegistration.ts:213 📡 Registration state: Registered
+useSIPRegistration.ts:219 ✅ SIP Registered successfully
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+NOTIFY sip:a5d01dj0@j2c20bosd19h.invalid;transport=ws SIP/2.0
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bKvtyyX9ym4KSyp
+Route: <sip:a5d01dj0@127.0.0.1:45110>;transport=wss
+Max-Forwards: 70
+From: <sip:2000@demo.edgvoip.it>;tag=Up5790K4K4NDg
+To: <sip:2000@demo.edgvoip.it>
+Call-ID: c0d85fe3-4df3-123f-2398-0050560ce942
+CSeq: 107996453 NOTIFY
+Contact: <sip:mod_sofia@82.165.21.122:5060>
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Event: message-summary
+Allow-Events: talk, hold, conference, presence, as-feature-event, dialog, line-seize, call-info, sla, include-session-description, presence.winfo, message-summary, refer
+Subscription-State: terminated;reason=noresource
+Content-Type: application/simple-message-summary
+Content-Length: 67
+
+Messages-Waiting: no
+Message-Account: sip:2000@demo.edgvoip.it
+
+
+
+sip__js.js?v=4d8c8bff:6965 Sun Dec 07 2025 10:41:30 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+SIP/2.0 481 Call/Transaction Does Not Exist
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bKvtyyX9ym4KSyp
+From: <sip:2000@demo.edgvoip.it>;tag=Up5790K4K4NDg
+To: <sip:2000@demo.edgvoip.it>;tag=ou1lsmg4hc
+CSeq: 107996453 NOTIFY
+Call-ID: c0d85fe3-4df3-123f-2398-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores 500 (Internal Server Error)
+queryFn @ queryClient.ts:194
+fetchFn @ @tanstack_react-query.js?v=4d8c8bff:1097
+run @ @tanstack_react-query.js?v=4d8c8bff:795
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:816
+Promise.catch
+run @ @tanstack_react-query.js?v=4d8c8bff:799
+start @ @tanstack_react-query.js?v=4d8c8bff:838
+fetch @ @tanstack_react-query.js?v=4d8c8bff:1144
+executeFetch_fn @ @tanstack_react-query.js?v=4d8c8bff:1639
+onSubscribe @ @tanstack_react-query.js?v=4d8c8bff:1335
+subscribe @ @tanstack_react-query.js?v=4d8c8bff:24
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=4d8c8bff:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+(anonymous) @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view?storeId=&status=all&search=&page=1&limit=250&sortBy=name&sortOrder=asc 401 (Unauthorized)
+queryFn @ queryClient.ts:194
+fetchFn @ @tanstack_react-query.js?v=4d8c8bff:1097
+run @ @tanstack_react-query.js?v=4d8c8bff:795
+start @ @tanstack_react-query.js?v=4d8c8bff:838
+fetch @ @tanstack_react-query.js?v=4d8c8bff:1144
+executeFetch_fn @ @tanstack_react-query.js?v=4d8c8bff:1639
+onSubscribe @ @tanstack_react-query.js?v=4d8c8bff:1335
+subscribe @ @tanstack_react-query.js?v=4d8c8bff:24
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=4d8c8bff:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=4d8c8bff:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view?storeId=&status=all&search=&page=1&limit=250&sortBy=name&sortOrder=asc 401 (Unauthorized)
+queryFn @ queryClient.ts:194
+fetchFn @ @tanstack_react-query.js?v=4d8c8bff:1097
+run @ @tanstack_react-query.js?v=4d8c8bff:795
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:816
+Promise.catch
+run @ @tanstack_react-query.js?v=4d8c8bff:799
+start @ @tanstack_react-query.js?v=4d8c8bff:838
+fetch @ @tanstack_react-query.js?v=4d8c8bff:1144
+executeFetch_fn @ @tanstack_react-query.js?v=4d8c8bff:1639
+onSubscribe @ @tanstack_react-query.js?v=4d8c8bff:1335
+subscribe @ @tanstack_react-query.js?v=4d8c8bff:24
+(anonymous) @ @tanstack_react-query.js?v=4d8c8bff:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=4d8c8bff:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=4d8c8bff:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=4d8c8bff:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=4d8c8bff:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=4d8c8bff:197
+flushWork @ chunk-ZHRYBLGQ.js?v=4d8c8bff:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=4d8c8bff:384Understand this error
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores 500 (Internal Server Error)

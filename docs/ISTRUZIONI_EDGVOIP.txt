@@ -1,0 +1,147 @@
+═══════════════════════════════════════════════════════════════
+📞 ISTRUZIONI INSTALLAZIONE AI VOICE AGENT - EDGVOIP
+═══════════════════════════════════════════════════════════════
+
+TRUNK: Messagenet Bologna Centrale
+DID: 0510510510
+edgvoip Trunk ID: b773a426-c646-47e4-ba13-1320dc8724cb
+
+---
+
+STEP 1: CARICARE SCRIPT LUA
+───────────────────────────
+
+File da caricare: ai_http_streaming_realtime_FIXED.lua
+
+Percorso destinazione:
+/usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua
+
+Comando SSH:
+scp edgvoip_scripts/ai_http_streaming_realtime_FIXED.lua \
+  root@pbx.edgvoip.it:/usr/share/freeswitch/scripts/
+
+Permessi:
+chmod 644 /usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua
+chown freeswitch:freeswitch /usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua
+
+---
+
+STEP 2: CONFIGURARE DIALPLAN
+────────────────────────────
+
+Aggiungere in: /etc/freeswitch/dialplan/default.xml
+
+<extension name="ai-voice-agent-messagenet">
+  <condition field="destination_number" expression="^(0510510510)$">
+    <action application="set" data="bypass_media=false"/>
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="lua" data="ai_http_streaming_realtime_FIXED.lua"/>
+  </condition>
+</extension>
+
+IMPORTANTE:
+- bypass_media=false → Necessario per registrare audio!
+- answer → Risponde alla chiamata prima dello script
+- sleep 500 → Stabilizza la connessione
+- lua → Esegue lo script
+
+---
+
+STEP 3: VERIFICARE PERMESSI /tmp/
+──────────────────────────────────
+
+Lo script scrive file temporanei in /tmp/
+
+Comando:
+chmod 777 /tmp
+
+Verifica:
+ls -ld /tmp/
+# Deve mostrare: drwxrwxrwx
+
+---
+
+STEP 4: RICARICARE DIALPLAN
+───────────────────────────
+
+Comando FreeSWITCH CLI:
+fs_cli -x "reloadxml"
+
+Verifica:
+fs_cli
+> xml_locate dialplan
+# Cerca "ai-voice-agent-messagenet"
+
+---
+
+STEP 5: TEST CHIAMATA
+─────────────────────
+
+1. Chiama: 0510510510
+
+2. Controlla logs FreeSWITCH:
+   fs_cli -x "console loglevel debug"
+   # Cerca: [AI_REALTIME_FIXED]
+
+3. Dovresti vedere:
+   [AI_REALTIME_FIXED] ========== STARTING REALTIME SESSION (FIXED) ==========
+   [AI_REALTIME_FIXED] ✅ Session created successfully
+   [AI_REALTIME_FIXED] ✅ Chunk 1 sent (RAW PCM16)
+   [AI_REALTIME_FIXED] 🎙️ AI SPEAKING! Playing RAW PCM16 response...
+   [AI_REALTIME_FIXED] ✅ AI audio played (RAW PCM16 @ 16kHz mono)
+
+---
+
+TROUBLESHOOTING COMUNE
+──────────────────────
+
+❌ Errore: "Permission denied" su /tmp/
+✅ Fix: chmod 777 /tmp
+
+❌ Errore: "curl: command not found"
+✅ Fix: apt-get install curl
+
+❌ Errore: "base64: command not found"
+✅ Fix: apt-get install coreutils
+
+❌ Errore: "cannot open /usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua"
+✅ Fix: Verifica percorso e permessi script
+
+❌ Nessun audio inviato al Voice Gateway
+✅ Fix: Verifica bypass_media=false nel dialplan
+
+---
+
+VERIFICHE POST-INSTALLAZIONE
+────────────────────────────
+
+1. Script caricato:
+   ls -la /usr/share/freeswitch/scripts/ai_http_streaming_realtime_FIXED.lua
+
+2. Dialplan configurato:
+   fs_cli -x "xml_locate dialplan" | grep ai-voice-agent
+
+3. Permessi /tmp/ corretti:
+   ls -ld /tmp/ | grep drwxrwxrwx
+
+4. Voice Gateway raggiungibile:
+   curl https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/health
+
+   Deve rispondere:
+   {"status":"healthy","service":"w3-voice-gateway",...}
+
+---
+
+CONTATTI SUPPORTO
+────────────────
+
+Voice Gateway: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev
+API Key: openssl rand -hex 32
+Tenant ID: 00000000-0000-0000-0000-000000000001
+
+Endpoint diagnostica sessione:
+curl -H "X-API-Key: openssl rand -hex 32" \
+  https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/voice/diagnostic/CALL_ID
+
+═══════════════════════════════════════════════════════════════
