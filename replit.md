@@ -81,10 +81,15 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
 - **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
   - **🏢 Struttura**: Tenant → Commercial Area → Legal Entity → Store → Department → Team → User
-  - **📊 Reference Data (public schema)**: `commercial_areas` (shared across tenants), no tenant filtering required
-  - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `users` - always filtered by tenantId
+  - **📊 Reference Data (public schema)**: `commercial_areas` (4 aree: AREA1-4), shared across tenants
+  - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `departments`, `teams`, `users`
+  - **🏬 Departments Table**: `w3suite.departments` con FK opzionale `store_id` per dipartimenti store-specific
+  - **🔗 Team-Departments**: Tabella junction `team_departments` per relazione many-to-many
+  - **📍 Hierarchy Path**: Campo `stores.hierarchy_path` formato `tenant_slug/area_code/store_code` per query veloci
   - **🎯 Cascading Filters (User Modal)**: Area selection → filters Legal Entities → filters Stores
-  - **⚠️ Area Mismatch Validation (Team Modal)**: Warning when supervisor belongs to different commercial area than team members
+  - **⚠️ Area Mismatch Validation (Team Modal)**: Warning quando supervisor appartiene a area diversa dai membri
+  - **API Endpoints**: `GET /api/commercial-areas`, `GET /api/legal-entities`, `GET /api/stores`, `GET /api/departments`
+  - **Default Departments**: hr, finance, sales, operations, marketing, it, customer_service
   - **✅ Pattern**: Validate area consistency in team assignments, show yellow warnings (not blockers)
 - **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
   - **📞 WebSocket URL Format**: SEMPRE `wss://{sipServer}/ws` sulla porta 443
