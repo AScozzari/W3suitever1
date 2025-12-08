@@ -1,0 +1,262 @@
+Team Management
+Manage enterprise teams and workflow assignments
+
+Teams List
+Coverage Dashboard
+Stato Generale
+Critico
+Livello 1
+5/7
+Dipartimenti con Team
+
+Livello 2
+0/7
+Dipartimenti con Workflow
+
+Livello 3
+4/21
+Utenti OK
+
+Livello 1: Dipartimenti → Team
+Ogni dipartimento ha almeno un team assegnato?
+
+Hr
+OK
+Team assegnati:
+5
+Team:
+
+Team HR
+(1 membri)
+Test Team HR Funzionale
+(1 membri)
+Team HR Temporaneo 1
+(1 membri)
+ghjdfg
+(4 membri)
+Team HR Temporaneo 2
+(1 membri)
+Finance
+OK
+Team assegnati:
+2
+Team:
+
+Finance Team Test
+(0 membri)
+Team Finance
+(1 membri)
+Operations
+OK
+Team assegnati:
+1
+Team:
+
+Team Operations
+(1 membri)
+Support
+OK
+Team assegnati:
+1
+Team:
+
+Team Support
+(1 membri)
+Crm
+Critico
+Team assegnati:
+0
+Sales
+OK
+Team assegnati:
+1
+Team:
+
+Team Sales
+(1 membri)
+Marketing
+Critico
+Team assegnati:
+0
+Dipartimenti senza Team
+Crm
+Marketing
+Livello 2: Dipartimenti → Workflow con Action Tags
+Ogni dipartimento ha workflow con azioni coperte?
+
+Hr
+11%
+1 workflow
+
+Workflow:
+
+Vacation Approval Workflow
+Azioni coperte:
+
+Richiesta Ferie
+Azioni mancanti (8):
+
+Richiesta Permessi
+Gestione Malattia
+Cambio Turno
+Richiesta Straordinario
+Onboarding Dipendente
+Offboarding Dipendente
+Valutazione Performance
+Richiesta Formazione
+Finance
+33%
+2 workflow
+
+Workflow:
+
+Test Budget Approval Manual
+Approvazione Spesa
+Azioni coperte:
+
+Approvazione Budget
+Rimborso Spese
+Azioni mancanti (4):
+
+Gestione Fatture
+Anticipo Contanti
+Nota di Credito
+Pagamento Fornitore
+Operations
+60%
+2 workflow
+
+Workflow:
+
+Richiesta Acquisto
+Gestione Inventario
+Azioni coperte:
+
+Richiesta Acquisti
+Gestione Inventario
+Ordine Materiale
+Azioni mancanti (2):
+
+Richiesta Manutenzione
+Trasferimento Merce
+Support
+40%
+1 workflow
+
+Workflow:
+
+Gestione Ticket Support
+Azioni coperte:
+
+Ticket Supporto
+Escalation Problema
+Azioni mancanti (3):
+
+Risoluzione Problema
+Assistenza Cliente
+Gestione Reclamo
+Crm
+40%
+4 workflow
+
+Workflow:
+
+Gestione Lead CRM
+Send Email via Gmail MCP
+Gmail MCP Workflow (FIXED)
+📧 Gmail MCP - FINAL
+Azioni coperte:
+
+Gestione Lead
+Follow-up Cliente
+Azioni mancanti (3):
+
+Qualifica Lead
+Nurturing Campagna
+Conversione Lead
+Sales
+40%
+1 workflow
+
+Workflow:
+
+Lead Qualification
+Azioni coperte:
+
+Proposta Commerciale
+Chiusura Deal
+Azioni mancanti (3):
+
+Approvazione Sconto
+Generazione Preventivo
+Approvazione Contratto
+Marketing
+0%
+0 workflow
+
+Azioni mancanti (5):
+
+Approvazione Campagna
+Richiesta Materiale Marketing
+Organizzazione Evento
+Pubblicazione Contenuto
+Budget Campagna
+Livello 3: Utenti → Copertura per Dipartimento
+Ogni utente ha accesso ai dipartimenti critici (HR)?
+
+Utenti Totali
+
+21
+
+Utenti con Problemi
+
+17
+
+Copertura Completa
+
+0
+
+Copertura per Dipartimento
+Hr
+Critico
+4 / 21
+Finance
+Vuoto
+0 / 21
+Operations
+Vuoto
+0 / 21
+Support
+Vuoto
+0 / 21
+Crm
+Vuoto
+0 / 21
+Sales
+Vuoto
+0 / 21
+Marketing
+Vuoto
+0 / 21
+Dipartimenti senza Copertura Utenti (6)
+Nessun utente ha accesso a questi dipartimenti tramite team assegnati:
+
+Finance
+Operations
+Support
+Crm
+Sales
+Marketing
+Utenti con Dipartimenti Critici Mancanti (17)
+M
+Mario Rossi
+
+mario.rossi@windtre.it
+
+Store Manager
+hr
+D
+Davide Santoro
+
+davide.santoro@windtre.it
+

@@ -27,6 +27,7 @@ import MCPSettingsDashboard from './settings/MCPSettingsDashboard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
 import { WorkflowTestResultDialog } from '../components/WorkflowTestResultDialog';
+import { getActionTagLabel } from '@/lib/action-tags';
 import '../styles/workflow-builder.css';
 import { 
   Play, 
@@ -54,7 +55,8 @@ import {
   Activity,
   TrendingUp,
   Megaphone,
-  AlertTriangle
+  AlertTriangle,
+  Tags
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -328,6 +330,83 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
     queryKey: ['/api/admin/orphan-users'],
     enabled: activeView === 'teams' && teamsSubView === 'coverage'
   });
+
+  // 🎯 Team Workflow Assignments - carica gli assignments esistenti per il team selezionato
+  const { 
+    data: teamAssignments = [], 
+    isLoading: assignmentsLoading 
+  } = useQuery<Array<{
+    id: string;
+    teamId: string;
+    templateId: string;
+    forDepartment: string;
+    autoAssign: boolean;
+    priority: number;
+    conditions: Record<string, any>;
+    isActive: boolean;
+  }>>({
+    queryKey: ['/api/team-workflow-assignments', { tenantId: currentTenant?.id }],
+    enabled: showWorkflowModal && !!selectedTeamForWorkflows && !!currentTenant?.id
+  });
+
+  // 🎯 Calcola gli actionTags già coperti per il team selezionato per ogni dipartimento
+  const getCoveredActionTagsForDepartment = (department: string): { templateId: string; templateName: string; actionTags: string[] }[] => {
+    if (!selectedTeamForWorkflows || !teamAssignments.length) return [];
+    
+    // Filtra gli assignments per questo team e dipartimento
+    const deptAssignments = teamAssignments.filter(a => 
+      a.teamId === selectedTeamForWorkflows.id && 
+      a.forDepartment === department &&
+      a.isActive
+    );
+    
+    // Per ogni assignment, trova il template e i suoi actionTags
+    return deptAssignments.map(assignment => {
+      const template = templates.find((t: any) => t.id === assignment.templateId);
+      return {
+        templateId: assignment.templateId,
+        templateName: template?.name || 'Unknown',
+        actionTags: template?.actionTags || []
+      };
+    }).filter(item => item.actionTags.length > 0);
+  };
+
+  // 🎯 Verifica se un workflow è già assegnato al team per quel dipartimento
+  const isWorkflowAssigned = (templateId: string, department: string): boolean => {
+    if (!selectedTeamForWorkflows || !teamAssignments.length) return false;
+    return teamAssignments.some(a => 
+      a.teamId === selectedTeamForWorkflows.id && 
+      a.templateId === templateId &&
+      a.forDepartment === department &&
+      a.isActive
+    );
+  };
+
+  // 🎯 Trova conflitti di actionTags per un workflow
+  const findActionTagConflicts = (templateActionTags: string[], department: string, excludeTemplateId?: string): { 
+    hasConflict: boolean; 
+    conflicts: Array<{ tag: string; conflictingTemplate: string }> 
+  } => {
+    const coveredTemplates = getCoveredActionTagsForDepartment(department);
+    const conflicts: Array<{ tag: string; conflictingTemplate: string }> = [];
+    
+    for (const templateAction of templateActionTags) {
+      for (const covered of coveredTemplates) {
+        if (excludeTemplateId && covered.templateId === excludeTemplateId) continue;
+        if (covered.actionTags.includes(templateAction)) {
+          conflicts.push({
+            tag: templateAction,
+            conflictingTemplate: covered.templateName
+          });
+        }
+      }
+    }
+    
+    return {
+      hasConflict: conflicts.length > 0,
+      conflicts
+    };
+  };
 
   // 🎯 Archive team mutation
   const archiveTeamMutation = useMutation({
@@ -2228,42 +2307,162 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                       Select templates that this team should handle automatically for {deptInfo?.label} department requests:
                                     </p>
                                     <div className="grid grid-cols-1 gap-3">
-                                      {departmentTemplates.map((template: any) => (
-                                        <div
-                                          key={template.id}
-                                          className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-                                        >
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                              <div className="font-medium">{template.name}</div>
-                                              <div className="text-sm text-gray-600">{template.description}</div>
-                                              <div className="flex items-center gap-2 mt-1">
-                                                <Badge variant="outline" className="text-xs">
-                                                  {template.templateType || 'workflow'}
-                                                </Badge>
-                                                {template.category && (
-                                                  <Badge variant="outline" className="text-xs">
-                                                    {template.category}
-                                                  </Badge>
+                                      {departmentTemplates.map((template: any) => {
+                                        const templateActionTags = template.actionTags || [];
+                                        const hasActionTags = templateActionTags.length > 0 || template.customAction;
+                                        const alreadyAssigned = isWorkflowAssigned(template.id, department);
+                                        const conflictInfo = !alreadyAssigned ? findActionTagConflicts(templateActionTags, department) : { hasConflict: false, conflicts: [] };
+                                        
+                                        return (
+                                          <div
+                                            key={template.id}
+                                            className={`p-3 rounded-lg border transition-colors ${
+                                              alreadyAssigned 
+                                                ? 'border-green-300 bg-green-50' 
+                                                : conflictInfo.hasConflict 
+                                                  ? 'border-yellow-300 bg-yellow-50' 
+                                                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                                            }`}
+                                          >
+                                            <div className="flex items-center justify-between">
+                                              <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                  <div className="font-medium">{template.name}</div>
+                                                  {alreadyAssigned && (
+                                                    <Badge className="text-xs bg-green-600 text-white">
+                                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                                      Assegnato
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                                <div className="text-sm text-gray-600">{template.description}</div>
+                                                
+                                                {/* Action Tags (Scopo del Workflow) */}
+                                                {hasActionTags && (
+                                                  <div className="mt-2">
+                                                    <div className="flex items-center gap-1 mb-1">
+                                                      <Tags className="w-3 h-3 text-gray-500" />
+                                                      <span className="text-xs text-gray-500 font-medium">Scopo:</span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1">
+                                                      {templateActionTags.map((tagValue: string) => {
+                                                        const isConflicting = conflictInfo.conflicts.some(c => c.tag === tagValue);
+                                                        return (
+                                                          <TooltipProvider key={tagValue}>
+                                                            <Tooltip>
+                                                              <TooltipTrigger asChild>
+                                                                <Badge 
+                                                                  variant="secondary"
+                                                                  className={`text-xs ${
+                                                                    isConflicting 
+                                                                      ? 'bg-yellow-200 text-yellow-900 border border-yellow-400' 
+                                                                      : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                                                  }`}
+                                                                >
+                                                                  {isConflicting && <AlertTriangle className="w-3 h-3 mr-1" />}
+                                                                  {getActionTagLabel(tagValue, department)}
+                                                                </Badge>
+                                                              </TooltipTrigger>
+                                                              <TooltipContent>
+                                                                {isConflicting ? (
+                                                                  <p className="text-yellow-800">
+                                                                    ⚠️ Conflitto: già coperto da "{conflictInfo.conflicts.find(c => c.tag === tagValue)?.conflictingTemplate}"
+                                                                  </p>
+                                                                ) : (
+                                                                  <p>Questo workflow gestisce: {getActionTagLabel(tagValue, department)}</p>
+                                                                )}
+                                                              </TooltipContent>
+                                                            </Tooltip>
+                                                          </TooltipProvider>
+                                                        );
+                                                      })}
+                                                      {template.customAction && (
+                                                        <TooltipProvider>
+                                                          <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                              <Badge 
+                                                                variant="outline"
+                                                                className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                                                              >
+                                                                {template.customAction}
+                                                              </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                              <p>Azione personalizzata: {template.customAction}</p>
+                                                            </TooltipContent>
+                                                          </Tooltip>
+                                                        </TooltipProvider>
+                                                      )}
+                                                    </div>
+                                                  </div>
                                                 )}
-                                                <Badge variant="outline" className="text-xs text-blue-600">
-                                                  {template.instanceCount || 0} instances
-                                                </Badge>
+                                                
+                                                {!hasActionTags && (
+                                                  <div className="mt-2">
+                                                    <Badge variant="outline" className="text-xs text-gray-400 border-gray-300">
+                                                      Nessuno scopo definito
+                                                    </Badge>
+                                                  </div>
+                                                )}
+
+                                                {/* Alert conflitto */}
+                                                {conflictInfo.hasConflict && !alreadyAssigned && (
+                                                  <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-md">
+                                                    <div className="flex items-start gap-2">
+                                                      <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                                      <div className="text-xs text-yellow-800">
+                                                        <span className="font-medium">Attenzione:</span> Alcune azioni sono già coperte da altri workflow assegnati:
+                                                        <ul className="mt-1 list-disc list-inside">
+                                                          {conflictInfo.conflicts.map((conflict, idx) => (
+                                                            <li key={idx}>
+                                                              "{getActionTagLabel(conflict.tag, department)}" → {conflict.conflictingTemplate}
+                                                            </li>
+                                                          ))}
+                                                        </ul>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )}
+                                                
+                                                <div className="flex items-center gap-2 mt-2">
+                                                  <Badge variant="outline" className="text-xs">
+                                                    {template.templateType || 'workflow'}
+                                                  </Badge>
+                                                  <Badge variant="outline" className="text-xs text-blue-600">
+                                                    {template.instanceCount || 0} instances
+                                                  </Badge>
+                                                </div>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                {alreadyAssigned ? (
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="text-red-600 border-red-300 hover:bg-red-50"
+                                                    data-testid={`button-unassign-workflow-${template.id}`}
+                                                  >
+                                                    <XCircle className="w-4 h-4 mr-1" />
+                                                    Rimuovi
+                                                  </Button>
+                                                ) : (
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className={conflictInfo.hasConflict 
+                                                      ? "text-yellow-700 border-yellow-400 hover:bg-yellow-100" 
+                                                      : "text-windtre-orange border-windtre-orange hover:bg-windtre-orange/10"
+                                                    }
+                                                    data-testid={`button-assign-workflow-${template.id}`}
+                                                  >
+                                                    <Plus className="w-4 h-4 mr-1" />
+                                                    {conflictInfo.hasConflict ? 'Assegna comunque' : 'Assegna'}
+                                                  </Button>
+                                                )}
                                               </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-windtre-orange border-windtre-orange hover:bg-windtre-orange/10"
-                                              >
-                                                <Plus className="w-4 h-4 mr-1" />
-                                                Assign
-                                              </Button>
-                                            </div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
