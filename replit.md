@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency and seize market opportunities by offering a scalable, secure, and comprehensive business solution featuring a distinct WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency and seize market opportunities by offering a scalable, secure, and comprehensive business solution with a distinct WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -150,9 +150,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **VoIP Telephony**: Offers enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
 - **RBAC System**: Defines 10 Italian role templates with 215 granular permissions and default assignments.
 - **Workflow Database Operations**: Enables secure SELECT, INSERT, UPDATE, DELETE operations on the `w3suite` schema with a visual query builder, RLS, prepared statements, and validation.
-- **Store Working Stats API**: Aggregates working days and hours with double-layer tenant isolation.
-- **Shift Template Versioning System**: Provides immutable version tracking for shift templates.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, featuring dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, an immutable event log (`wms_stock_movements`), a read model (`wms_inventory_balances`), historical snapshots (`wms_inventory_snapshots`), and document tables. The Enterprise Inventory Dashboard offers KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, featuring dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, an immutable event log, a read model, historical snapshots, and document tables. The Enterprise Inventory Dashboard offers KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
 - **WMS Movement Type Configuration**: A taxonomy of 15 movement types (5 inbound, 6 outbound, 4 internal) configurable per-tenant via the System Config page, including approval workflow, linked workflow templates, and required documents.
 - **System Config Page**: A modular settings dashboard at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
 
