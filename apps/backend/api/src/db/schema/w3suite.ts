@@ -465,16 +465,76 @@ export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
 export const serialTypeEnum = pgEnum('serial_type', ['imei', 'iccid', 'mac_address', 'other']);
 export const productBatchStatusEnum = pgEnum('product_batch_status', ['available', 'reserved', 'damaged', 'expired']);
 export const stockMovementTypeEnum = pgEnum('stock_movement_type', [
-  'purchase_in',        // Acquisto da fornitore
-  'sale_out',           // Vendita
-  'return_in',          // Reso da cliente
-  'transfer',           // Trasferimento (crea coppia inbound/outbound)
-  'adjustment',         // Rettifica inventario
-  'damaged'             // Danneggiato
+  // INBOUND (5)
+  'purchase',           // Acquisto/Ricezione da fornitore
+  'customer_return',    // Reso Cliente
+  'transfer_in',        // Trasferimento IN (da altro negozio)
+  'warranty_return',    // Rientro Garanzia
+  'trade_in',           // Trade-In (ritiro usato)
+  
+  // OUTBOUND (6)
+  'sale',               // Vendita
+  'supplier_return',    // Reso Fornitore
+  'transfer_out',       // Trasferimento OUT (verso altro negozio)
+  'doa',                // DOA (Dead on Arrival - difettoso all'arrivo)
+  'pullback',           // Pullback (richiamo prodotto dal brand)
+  'loan',               // Comodato d'Uso
+  
+  // INTERNAL (4)
+  'adjustment',         // Rettifica Inventario
+  'damage',             // Danneggiamento
+  'demo',               // Demo/Esposizione
+  'internal_use',       // Uso Interno
+  
+  // LEGACY (backwards compatibility - deprecated)
+  'purchase_in',        // @deprecated use 'purchase'
+  'sale_out',           // @deprecated use 'sale'
+  'return_in',          // @deprecated use 'customer_return'
+  'transfer',           // @deprecated use 'transfer_in' or 'transfer_out'
+  'damaged'             // @deprecated use 'damage'
 ]);
+
 export const stockMovementDirectionEnum = pgEnum('stock_movement_direction', [
   'inbound',            // Entrata (aumenta stock)
-  'outbound'            // Uscita (diminuisce stock)
+  'outbound',           // Uscita (diminuisce stock)
+  'internal'            // Interno (non cambia quantità, solo stato)
+]);
+
+// WMS Movement Documents - Types of documents that can be attached to movements
+export const wmsMovementDocumentTypeEnum = pgEnum('wms_movement_document_type', [
+  // Specific movement documents
+  'ddt',                    // Documento di Trasporto
+  'photo',                  // Foto
+  'loan_contract',          // Contratto Comodato
+  'tradein_form',           // Modulo Trade-In
+  'warranty_certificate',   // Certificato Garanzia
+  'doa_report',             // Verbale DOA
+  'return_form',            // Modulo Reso
+  'transfer_note',          // Nota di Trasferimento
+  'adjustment_report',      // Report Rettifica
+  'other',                  // Altro
+  
+  // Administrative documents (reference only - actual docs in future admin_documents table)
+  'invoice',                // Fattura
+  'credit_note',            // Nota di Credito
+  'debit_note',             // Nota di Debito
+  'receipt'                 // Scontrino Fiscale
+]);
+
+// WMS Movement Document Category
+export const wmsMovementDocumentCategoryEnum = pgEnum('wms_movement_document_category', [
+  'movement_specific',      // Documento specifico del movimento (allegato file)
+  'administrative'          // Documento amministrativo (riferimento)
+]);
+
+// WMS Movement Status (for approval workflow)
+export const wmsMovementStatusEnum = pgEnum('wms_movement_status', [
+  'draft',                  // Bozza
+  'pending_approval',       // In attesa approvazione
+  'approved',               // Approvato
+  'rejected',               // Rifiutato
+  'completed',              // Completato
+  'cancelled'               // Annullato
 ]);
 export const priceListTypeEnum = pgEnum('price_list_type', ['b2c', 'b2b', 'wholesale']);
 
@@ -7932,11 +7992,24 @@ export const wmsStockMovements = w3suiteSchema.table("wms_stock_movements", {
   // Timestamps
   occurredAt: timestamp("occurred_at").defaultNow().notNull(), // When movement happened
   
+  // Movement number for display
+  movementNumber: varchar("movement_number", { length: 50 }), // MOV-2024-000001
+  
+  // Approval workflow integration
+  movementStatus: wmsMovementStatusEnum("movement_status").default('completed').notNull(), // draft, pending_approval, approved, rejected, completed, cancelled
+  workflowInstanceId: uuid("workflow_instance_id"), // FK to workflow_instances when approval required
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  
   // Audit trail
   notes: text("notes"),
   metadata: jsonb("metadata").default({}), // Extensibility for custom data
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   // Performance indexes
   index("wms_stock_mov_tenant_idx").on(table.tenantId),
@@ -7949,6 +8022,9 @@ export const wmsStockMovements = w3suiteSchema.table("wms_stock_movements", {
   index("wms_stock_mov_version_idx").on(table.productVersionId),
   index("wms_stock_mov_document_idx").on(table.documentType, table.documentId),
   index("wms_stock_mov_status_idx").on(table.fromStatus, table.toStatus),
+  index("wms_stock_mov_movement_status_idx").on(table.tenantId, table.movementStatus),
+  index("wms_stock_mov_workflow_idx").on(table.workflowInstanceId),
+  index("wms_stock_mov_number_idx").on(table.tenantId, table.movementNumber),
   
   // Prevent duplicate postings for same reference
   uniqueIndex("wms_stock_mov_reference_unique").on(table.referenceType, table.referenceId, table.movementDirection).where(sql`reference_type IS NOT NULL AND reference_id IS NOT NULL`),
@@ -7957,13 +8033,23 @@ export const wmsStockMovements = w3suiteSchema.table("wms_stock_movements", {
 export const insertStockMovementSchema = createInsertSchema(wmsStockMovements).omit({ 
   id: true,
   tenantId: true,
-  createdAt: true 
+  createdAt: true,
+  updatedAt: true,
 }).extend({
-  movementType: z.enum(['purchase_in', 'sale_out', 'return_in', 'transfer', 'adjustment', 'damaged']),
-  movementDirection: z.enum(['inbound', 'outbound']),
+  movementType: z.enum([
+    // New types
+    'purchase', 'customer_return', 'transfer_in', 'warranty_return', 'trade_in',
+    'sale', 'supplier_return', 'transfer_out', 'doa', 'pullback', 'loan',
+    'adjustment', 'damage', 'demo', 'internal_use',
+    // Legacy types (backwards compatibility)
+    'purchase_in', 'sale_out', 'return_in', 'transfer', 'damaged'
+  ]),
+  movementDirection: z.enum(['inbound', 'outbound', 'internal']),
+  movementStatus: z.enum(['draft', 'pending_approval', 'approved', 'rejected', 'completed', 'cancelled']).optional(),
   quantityDelta: z.number().int().refine((val) => val !== 0, "Quantity delta non può essere zero"),
-  productId: z.string().min(1, "Product ID obbligatorio").max(100), // varchar(100) format
-  occurredAt: z.string().datetime().or(z.date()).optional(), // ISO string or Date object
+  productId: z.string().min(1, "Product ID obbligatorio").max(100),
+  movementNumber: z.string().max(50).optional(),
+  occurredAt: z.string().datetime().or(z.date()).optional(),
 });
 export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
 export type StockMovement = typeof wmsStockMovements.$inferSelect;
@@ -8749,3 +8835,147 @@ export const insertWmsReturnItemSchema = createInsertSchema(wmsReturnItems).omit
 });
 export type InsertWmsReturnItem = z.infer<typeof insertWmsReturnItemSchema>;
 export type WmsReturnItem = typeof wmsReturnItems.$inferSelect;
+
+// ==================== WMS MOVEMENT DOCUMENTS ====================
+// 19) wms_movement_documents - Documents attached to stock movements
+export const wmsMovementDocuments = w3suiteSchema.table("wms_movement_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  movementId: uuid("movement_id").notNull().references(() => wmsStockMovements.id, { onDelete: 'cascade' }),
+  
+  // Document classification
+  documentCategory: wmsMovementDocumentCategoryEnum("document_category").notNull(),
+  documentType: wmsMovementDocumentTypeEnum("document_type").notNull(),
+  
+  // Document identification
+  documentNumber: varchar("document_number", { length: 100 }), // e.g., DDT-2024-001234
+  documentDate: date("document_date").notNull(), // Date on the document itself
+  
+  // File storage (for movement_specific category)
+  fileName: varchar("file_name", { length: 255 }),
+  filePath: varchar("file_path", { length: 500 }), // Path in Object Storage
+  fileSize: integer("file_size"), // Size in bytes
+  mimeType: varchar("mime_type", { length: 100 }),
+  
+  // Administrative document reference (for administrative category - future FK)
+  adminDocumentType: varchar("admin_document_type", { length: 50 }), // invoice, credit_note, debit_note, receipt
+  adminDocumentId: uuid("admin_document_id"), // Future FK to administrative_documents table
+  
+  // Metadata
+  notes: text("notes"),
+  metadata: jsonb("metadata").default({}),
+  
+  // Audit
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // Performance indexes
+  index("wms_mov_docs_tenant_idx").on(table.tenantId),
+  index("wms_mov_docs_movement_idx").on(table.movementId),
+  index("wms_mov_docs_tenant_movement_idx").on(table.tenantId, table.movementId),
+  index("wms_mov_docs_category_idx").on(table.documentCategory),
+  index("wms_mov_docs_type_idx").on(table.documentType),
+  index("wms_mov_docs_document_date_idx").on(table.documentDate.desc()),
+  index("wms_mov_docs_admin_doc_idx").on(table.adminDocumentId),
+]);
+
+export const insertWmsMovementDocumentSchema = createInsertSchema(wmsMovementDocuments).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+  uploadedAt: true,
+}).extend({
+  documentCategory: z.enum(['movement_specific', 'administrative']),
+  documentType: z.enum([
+    'ddt', 'photo', 'loan_contract', 'tradein_form', 'warranty_certificate',
+    'doa_report', 'return_form', 'transfer_note', 'adjustment_report', 'other',
+    'invoice', 'credit_note', 'debit_note', 'receipt'
+  ]),
+  documentNumber: z.string().max(100).optional(),
+  documentDate: z.coerce.date(),
+  fileName: z.string().max(255).optional(),
+  filePath: z.string().max(500).optional(),
+  fileSize: z.number().int().positive().optional(),
+  mimeType: z.string().max(100).optional(),
+  adminDocumentType: z.enum(['invoice', 'credit_note', 'debit_note', 'receipt']).optional(),
+  notes: z.string().optional(),
+});
+export type InsertWmsMovementDocument = z.infer<typeof insertWmsMovementDocumentSchema>;
+export type WmsMovementDocument = typeof wmsMovementDocuments.$inferSelect;
+
+// ==================== WMS MOVEMENT TYPE CONFIGURATION ====================
+// 20) wms_movement_type_config - Tenant-level configuration for movement types
+export const wmsMovementTypeConfig = w3suiteSchema.table("wms_movement_type_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Movement type this config applies to
+  movementType: stockMovementTypeEnum("movement_type").notNull(),
+  movementDirection: stockMovementDirectionEnum("movement_direction").notNull(),
+  
+  // Display
+  labelIt: varchar("label_it", { length: 100 }).notNull(), // Italian label for UI
+  description: text("description"), // Description for help text
+  icon: varchar("icon", { length: 50 }), // Lucide icon name
+  color: varchar("color", { length: 20 }), // CSS color class/variable
+  
+  // Configuration
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  requiresApproval: boolean("requires_approval").default(false).notNull(),
+  
+  // Workflow integration (when requires_approval = true)
+  workflowTemplateId: uuid("workflow_template_id").references(() => workflowTemplates.id, { onDelete: 'set null' }),
+  
+  // Required documents for this movement type
+  requiredDocuments: jsonb("required_documents").default([]), // [{type: "ddt", label: "DDT", required: true}]
+  
+  // Sorting/display order
+  displayOrder: integer("display_order").default(0).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // Unique movement type per tenant
+  uniqueIndex("wms_mov_type_config_tenant_type_unique").on(table.tenantId, table.movementType),
+  
+  // Performance indexes
+  index("wms_mov_type_config_tenant_idx").on(table.tenantId),
+  index("wms_mov_type_config_direction_idx").on(table.movementDirection),
+  index("wms_mov_type_config_enabled_idx").on(table.tenantId, table.isEnabled),
+  index("wms_mov_type_config_approval_idx").on(table.tenantId, table.requiresApproval),
+  index("wms_mov_type_config_workflow_idx").on(table.workflowTemplateId),
+]);
+
+export const insertWmsMovementTypeConfigSchema = createInsertSchema(wmsMovementTypeConfig).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  movementType: z.enum([
+    'purchase', 'customer_return', 'transfer_in', 'warranty_return', 'trade_in',
+    'sale', 'supplier_return', 'transfer_out', 'doa', 'pullback', 'loan',
+    'adjustment', 'damage', 'demo', 'internal_use'
+  ]),
+  movementDirection: z.enum(['inbound', 'outbound', 'internal']),
+  labelIt: z.string().min(1, "Label italiano obbligatorio").max(100),
+  description: z.string().optional(),
+  icon: z.string().max(50).optional(),
+  color: z.string().max(20).optional(),
+  isEnabled: z.boolean().optional(),
+  requiresApproval: z.boolean().optional(),
+  requiredDocuments: z.array(z.object({
+    type: z.string(),
+    label: z.string(),
+    required: z.boolean(),
+  })).optional(),
+  displayOrder: z.number().int().optional(),
+});
+export type InsertWmsMovementTypeConfig = z.infer<typeof insertWmsMovementTypeConfigSchema>;
+export type WmsMovementTypeConfig = typeof wmsMovementTypeConfig.$inferSelect;
