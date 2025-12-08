@@ -1,0 +1,152 @@
+ 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Inviter.invite
+installHook.js:1 Mon Dec 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.SessionDescriptionHandler | SessionDescriptionHandler.getDescription failed - Error: Media devices not available in insecure contexts.
+overrideMethod @ installHook.js:1
+print @ Layout-BSJAMbqF.js:58
+genericLog @ Layout-BSJAMbqF.js:58
+genericLog @ Layout-BSJAMbqF.js:58
+error @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:71
+Promise.catch
+getDescription @ Layout-BSJAMbqF.js:71
+getOffer @ Layout-BSJAMbqF.js:58
+invite @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:86
+B @ Layout-BSJAMbqF.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+installHook.js:1 Mon Dec 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session.getOffer: SDH getDescription rejected...
+overrideMethod @ installHook.js:1
+print @ Layout-BSJAMbqF.js:58
+genericLog @ Layout-BSJAMbqF.js:58
+genericLog @ Layout-BSJAMbqF.js:58
+error @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:58
+Promise.catch
+getOffer @ Layout-BSJAMbqF.js:58
+invite @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:86
+B @ Layout-BSJAMbqF.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+installHook.js:1 Mon Dec 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Media devices not available in insecure contexts.
+overrideMethod @ installHook.js:1
+print @ Layout-BSJAMbqF.js:58
+genericLog @ Layout-BSJAMbqF.js:58
+genericLog @ Layout-BSJAMbqF.js:58
+error @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:58
+Promise.catch
+getOffer @ Layout-BSJAMbqF.js:58
+invite @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:86
+B @ Layout-BSJAMbqF.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+Layout-BSJAMbqF.js:58 Mon Dec 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Media devices not available in insecure contexts.
+Layout-BSJAMbqF.js:58 Mon Dec 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session c2ubtmirb3gagqu8jg54aucjhrb3pn transitioned to state Terminated
+Layout-BSJAMbqF.js:86 📞 Session state changed: Terminated
+Layout-BSJAMbqF.js:86 📊 Call ended, creating CDR...
+Layout-BSJAMbqF.js:86 📊 Creating CDR: {sipDomain: 'demo.edgvoip.it', callId: 'c2ubtmirb3gagqu8jg54aucjhrb3pn', direction: 'outbound', fromUri: '2000@demo.edgvoip.it', toUri: 'sip:+393297626144@demo.edgvoip.it', …}
+Layout-BSJAMbqF.js:58 Mon Dec 08 2025 11:29:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session c2ubtmirb3gagqu8jg54aucjhrb3pn in state Terminated is being disposed
+installHook.js:1 ❌ Failed to make call: Error: Media devices not available in insecure contexts.
+    at Be.mediaStreamFactory (Layout-BSJAMbqF.js:71:47805)
+    at Be.getLocalMediaStream (Layout-BSJAMbqF.js:71:55206)
+    at Be.getDescription (Layout-BSJAMbqF.js:71:50194)
+    at os.getOffer (Layout-BSJAMbqF.js:58:20536)
+    at os.invite (Layout-BSJAMbqF.js:58:41773)
+    at Object.makeCall (Layout-BSJAMbqF.js:86:19951)
+    at B (Layout-BSJAMbqF.js:86:23805)
+    at Object.Gc (react-core-DamieDW-.js:29:9852)
+    at Jc (react-core-DamieDW-.js:29:10006)
+    at qc (react-core-DamieDW-.js:29:10063)
+overrideMethod @ installHook.js:1
+(anonime) @ Layout-BSJAMbqF.js:86
+await in (anonime)
+B @ Layout-BSJAMbqF.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+installHook.js:1 Failed to make call: Error: Media devices not available in insecure contexts.
+    at Be.mediaStreamFactory (Layout-BSJAMbqF.js:71:47805)
+    at Be.getLocalMediaStream (Layout-BSJAMbqF.js:71:55206)
+    at Be.getDescription (Layout-BSJAMbqF.js:71:50194)
+    at os.getOffer (Layout-BSJAMbqF.js:58:20536)
+    at os.invite (Layout-BSJAMbqF.js:58:41773)
+    at Object.makeCall (Layout-BSJAMbqF.js:86:19951)
+    at B (Layout-BSJAMbqF.js:86:23805)
+    at Object.Gc (react-core-DamieDW-.js:29:9852)
+    at Jc (react-core-DamieDW-.js:29:10006)
+    at qc (react-core-DamieDW-.js:29:10063)
+overrideMethod @ installHook.js:1
+B @ Layout-BSJAMbqF.js:86
+await in B
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+Layout-BSJAMbqF.js:86  POST http://82.165.16.223/api/voip/cdr/client 401 (Unauthorized)
+(anonime) @ Layout-BSJAMbqF.js:86
+(anonime) @ Layout-BSJAMbqF.js:86
+(anonime) @ Layout-BSJAMbqF.js:37
+emit @ Layout-BSJAMbqF.js:37
+stateTransition @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:58
+Promise.catch
+invite @ Layout-BSJAMbqF.js:58
+(anonime) @ Layout-BSJAMbqF.js:86
+B @ Layout-BSJAMbqF.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+installHook.js:1 ❌ Failed to create CDR: Error: Failed to create CDR
+    at Layout-BSJAMbqF.js:86:16470
