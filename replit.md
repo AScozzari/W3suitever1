@@ -88,6 +88,16 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ MAI**: Auto-selezionare il primo negozio come default
   - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
   - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
+- **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
+  - **🏢 Struttura**: Tenant → Commercial Area → Legal Entity → Store → Department → Team → User
+  - **🔗 FK Relationships**: `stores.commercialAreaId` → `public.commercial_areas.id`, `stores.legalEntityId` → `legal_entities.id`
+  - **📊 Reference Data (public schema)**: `commercial_areas` (shared across tenants), no tenant filtering required
+  - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `users` - always filtered by tenantId
+  - **🎯 Cascading Filters (User Modal)**: Area selection → filters Legal Entities → filters Stores
+  - **⚠️ Area Mismatch Validation (Team Modal)**: Warning when supervisor belongs to different commercial area than team members
+  - **API Endpoints**: `GET /api/commercial-areas`, `GET /api/legal-entities`, `GET /api/stores`
+  - **Helper Functions**: `getUserAreaId(user, stores)` returns user's commercial area via store chain
+  - **✅ Pattern**: Validate area consistency in team assignments, show yellow warnings (not blockers)
 - **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
   - **📞 WebSocket URL Format**: SEMPRE `wss://{sipServer}/ws` sulla porta 443
   - **❌ MAI usare porta 8443** - non esiste, usare sempre 443
