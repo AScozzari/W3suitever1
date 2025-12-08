@@ -7125,6 +7125,21 @@ router.post("/movement-type-configs/bulk", rbacMiddleware, requirePermission('wm
     // Upsert each config
     const results = [];
     for (const config of configs) {
+      // Prepare ID - use existing or generate new
+      const configId = (config.id && !config.id.startsWith('temp-')) ? config.id : null;
+      const movementType = config.movement_type || null;
+      const movementDirection = config.movement_direction || null;
+      const labelIt = config.label_it || null;
+      const description = config.description || null;
+      const icon = config.icon || null;
+      const color = config.color || null;
+      const isEnabled = config.is_enabled ?? true;
+      const requiresApproval = config.requires_approval ?? false;
+      const workflowTemplateId = config.workflow_template_id || null;
+      const requiredDocuments = JSON.stringify(config.required_documents || []);
+      const displayOrder = config.display_order ?? 0;
+      const userIdVal = userId || null;
+      
       const result = await db.execute(sql`
         INSERT INTO w3suite.wms_movement_type_config (
           id,
@@ -7144,21 +7159,21 @@ router.post("/movement-type-configs/bulk", rbacMiddleware, requirePermission('wm
           updated_by,
           updated_at
         ) VALUES (
-          COALESCE(${config.id?.startsWith('temp-') ? null : config.id}, gen_random_uuid()),
-          ${sessionTenantId},
-          ${config.movement_type},
-          ${config.movement_direction},
-          ${config.label_it},
-          ${config.description || null},
-          ${config.icon || null},
-          ${config.color || null},
-          ${config.is_enabled ?? true},
-          ${config.requires_approval ?? false},
-          ${config.workflow_template_id || null},
-          ${JSON.stringify(config.required_documents || [])}::jsonb,
-          ${config.display_order ?? 0},
-          ${userId || null},
-          ${userId || null},
+          COALESCE(${configId}::uuid, gen_random_uuid()),
+          ${sessionTenantId}::uuid,
+          ${movementType}::w3suite.stock_movement_type,
+          ${movementDirection},
+          ${labelIt},
+          ${description},
+          ${icon},
+          ${color},
+          ${isEnabled},
+          ${requiresApproval},
+          ${workflowTemplateId}::uuid,
+          ${requiredDocuments}::jsonb,
+          ${displayOrder},
+          ${userIdVal},
+          ${userIdVal},
           NOW()
         )
         ON CONFLICT (tenant_id, movement_type) DO UPDATE SET
@@ -7213,47 +7228,42 @@ router.patch("/movement-type-configs/:movementType", rbacMiddleware, requirePerm
 
     const updates = req.body;
     
-    // Build SET clause dynamically
-    const setClauses: string[] = [];
-    const values: any[] = [];
+    // First get the current config
+    const current = await db.execute(sql`
+      SELECT * FROM w3suite.wms_movement_type_config 
+      WHERE tenant_id = ${sessionTenantId}::uuid 
+        AND movement_type = ${movementType}::w3suite.stock_movement_type
+    `);
     
-    if ('is_enabled' in updates) {
-      setClauses.push(`is_enabled = $${values.length + 1}`);
-      values.push(updates.is_enabled);
-    }
-    if ('requires_approval' in updates) {
-      setClauses.push(`requires_approval = $${values.length + 1}`);
-      values.push(updates.requires_approval);
-    }
-    if ('workflow_template_id' in updates) {
-      setClauses.push(`workflow_template_id = $${values.length + 1}`);
-      values.push(updates.workflow_template_id);
-    }
-    if ('required_documents' in updates) {
-      setClauses.push(`required_documents = $${values.length + 1}::jsonb`);
-      values.push(JSON.stringify(updates.required_documents));
-    }
-    
-    if (setClauses.length === 0) {
-      return res.status(400).json({ error: "No valid fields to update" });
-    }
-    
-    setClauses.push(`updated_by = $${values.length + 1}`);
-    values.push(userId);
-    setClauses.push(`updated_at = NOW()`);
-
-    const result = await db.execute(sql.raw(`
-      UPDATE w3suite.wms_movement_type_config 
-      SET ${setClauses.join(', ')}
-      WHERE tenant_id = '${sessionTenantId}' AND movement_type = '${movementType}'
-      RETURNING *
-    `));
-
-    if (!result.rows || result.rows.length === 0) {
+    if (!current.rows || current.rows.length === 0) {
       return res.status(404).json({ error: "Configuration not found" });
     }
+    
+    const existing = current.rows[0] as any;
+    
+    // Merge updates with existing values
+    const isEnabled = 'is_enabled' in updates ? updates.is_enabled : existing.is_enabled;
+    const requiresApproval = 'requires_approval' in updates ? updates.requires_approval : existing.requires_approval;
+    const workflowTemplateId = 'workflow_template_id' in updates ? (updates.workflow_template_id || null) : existing.workflow_template_id;
+    const description = 'description' in updates ? updates.description : existing.description;
+    const requiredDocs = 'required_documents' in updates ? JSON.stringify(updates.required_documents) : JSON.stringify(existing.required_documents || []);
+    
+    const result = await db.execute(sql`
+      UPDATE w3suite.wms_movement_type_config 
+      SET 
+        is_enabled = ${isEnabled},
+        requires_approval = ${requiresApproval},
+        workflow_template_id = ${workflowTemplateId}::uuid,
+        description = ${description},
+        required_documents = ${requiredDocs}::jsonb,
+        updated_by = ${userId},
+        updated_at = NOW()
+      WHERE tenant_id = ${sessionTenantId}::uuid 
+        AND movement_type = ${movementType}::w3suite.stock_movement_type
+      RETURNING *
+    `);
 
-    res.json({ success: true, data: result.rows[0] });
+    res.json({ success: true, data: result.rows?.[0] });
 
   } catch (error) {
     console.error("Error updating movement type config:", error);
