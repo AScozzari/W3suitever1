@@ -872,6 +872,33 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
   }
 });
 
+// 🔒 VALIDATION: Supervisor cannot be a member of the same team
+function validateSupervisorNotMember(teamData: {
+  userMembers?: string[] | null;
+  primarySupervisorUser?: string | null;
+  secondarySupervisorUser?: string | null;
+}): { valid: boolean; error?: string } {
+  const members = teamData.userMembers || [];
+  const primarySupervisor = teamData.primarySupervisorUser;
+  const secondarySupervisor = teamData.secondarySupervisorUser;
+
+  if (primarySupervisor && members.includes(primarySupervisor)) {
+    return {
+      valid: false,
+      error: 'Il supervisore primario non può essere anche membro dello stesso team'
+    };
+  }
+
+  if (secondarySupervisor && members.includes(secondarySupervisor)) {
+    return {
+      valid: false,
+      error: 'Il supervisore secondario non può essere anche membro dello stesso team'
+    };
+  }
+
+  return { valid: true };
+}
+
 // POST /api/teams - Create new team with workflow assignments sync
 router.post('/teams', requirePermission('teams.write'), async (req: Request, res: Response) => {
   try {
@@ -884,6 +911,12 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
 
     // 🎯 Extract workflowAssignments before validation (not part of teams table)
     const { workflowAssignments, ...teamData } = req.body;
+
+    // 🔒 VALIDATION: Supervisor cannot be member of same team
+    const supervisorValidation = validateSupervisorNotMember(teamData);
+    if (!supervisorValidation.valid) {
+      return res.status(400).json({ error: supervisorValidation.error });
+    }
 
     // 🎯 ENHANCED VALIDATION: Include assignedDepartments in team creation
     const validatedData = insertTeamSchema.parse({
@@ -976,8 +1009,35 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
     // 🎯 Extract workflowAssignments before update (not part of teams table)
     const { workflowAssignments, ...teamData } = req.body;
 
-    // 🎯 ENHANCED UPDATE: Support assignedDepartments updates
     await setTenantContext(tenantId);
+
+    // 🔒 VALIDATION: Fetch existing team to merge with updates for proper validation
+    const [existingTeam] = await db
+      .select()
+      .from(teams)
+      .where(and(
+        eq(teams.id, teamId),
+        eq(teams.tenantId, tenantId)
+      ));
+
+    if (!existingTeam) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // Merge existing data with updates for validation
+    const mergedData = {
+      userMembers: teamData.userMembers ?? existingTeam.userMembers,
+      primarySupervisorUser: teamData.primarySupervisorUser ?? existingTeam.primarySupervisorUser,
+      secondarySupervisorUser: teamData.secondarySupervisorUser ?? existingTeam.secondarySupervisorUser,
+    };
+
+    // 🔒 VALIDATION: Supervisor cannot be member of same team
+    const supervisorValidation = validateSupervisorNotMember(mergedData);
+    if (!supervisorValidation.valid) {
+      return res.status(400).json({ error: supervisorValidation.error });
+    }
+
+    // 🎯 ENHANCED UPDATE: Support assignedDepartments updates
     const [updatedTeam] = await db
       .update(teams)
       .set({
