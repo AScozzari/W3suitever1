@@ -2706,6 +2706,7 @@ export default function SettingsPage() {
                 paese: 'Italia',
                 scopeLevel: 'organizzazione',
                 selectAllLegalEntities: false,
+                selectedAreas: [] as string[],
                 selectedLegalEntities: [] as number[],
                 selectedStores: [] as number[],
                 tipoDocumento: 'Carta Identità',
@@ -4983,8 +4984,9 @@ export default function SettingsPage() {
     // ✅ SCOPE PIRAMIDALE NUOVO SISTEMA  
     scopeLevel: 'organizzazione',          // Mantento per compatibilità
     selectAllLegalEntities: false,         // "Seleziona tutto" ragioni sociali = accesso completo organizzazione
-    selectedLegalEntities: [] as number[], // Ragioni sociali selezionate (primo livello)
-    selectedStores: [] as number[],        // Punti vendita filtrati (secondo livello)
+    selectedAreas: [] as string[],         // 🆕 Aree commerciali selezionate (PRIMO livello - filtra RS)
+    selectedLegalEntities: [] as number[], // Ragioni sociali selezionate (secondo livello)
+    selectedStores: [] as number[],        // Punti vendita filtrati (terzo livello)
     
     // Informazioni personali
     nome: '',
@@ -8337,6 +8339,7 @@ export default function SettingsPage() {
                         setNewUser({
                           ...newUser,
                           selectAllLegalEntities: selectAll,
+                          selectedAreas: selectAll ? [] : newUser.selectedAreas,
                           selectedLegalEntities: selectAll ? [] : newUser.selectedLegalEntities,
                           selectedStores: selectAll ? [] : newUser.selectedStores
                         });
@@ -8391,6 +8394,101 @@ export default function SettingsPage() {
                   </label>
                 </div>
 
+                {/* 📍 PRIMO LIVELLO PIRAMIDALE: Selezione Aree Commerciali */}
+                {!newUser.selectAllLegalEntities && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px'
+                    }}>
+                      📍 Filtra per Area Commerciale
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        (Opzionale - filtra ragioni sociali e sedi)
+                      </span>
+                    </label>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      padding: '12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      background: '#f9fafb'
+                    }}>
+                      {(commercialAreas as any[]).map((area: any) => (
+                        <label key={area.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '8px 14px',
+                          cursor: 'pointer',
+                          borderRadius: '20px',
+                          transition: 'all 0.2s ease',
+                          background: newUser.selectedAreas.includes(area.id) ? '#dbeafe' : '#ffffff',
+                          border: `2px solid ${newUser.selectedAreas.includes(area.id) ? '#3b82f6' : '#e5e7eb'}`,
+                          fontSize: '13px',
+                          fontWeight: newUser.selectedAreas.includes(area.id) ? '600' : '400',
+                          color: newUser.selectedAreas.includes(area.id) ? '#1d4ed8' : '#374151'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={newUser.selectedAreas.includes(area.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedAreas: [...newUser.selectedAreas, area.id],
+                                  selectedLegalEntities: [],
+                                  selectedStores: []
+                                });
+                              } else {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedAreas: newUser.selectedAreas.filter(id => id !== area.id),
+                                  selectedLegalEntities: [],
+                                  selectedStores: []
+                                });
+                              }
+                            }}
+                            style={{ display: 'none' }}
+                          />
+                          <MapPin size={14} />
+                          {area.name || area.code}
+                          {newUser.selectedAreas.includes(area.id) && (
+                            <span style={{ marginLeft: '4px' }}>✓</span>
+                          )}
+                        </label>
+                      ))}
+                      {(commercialAreas as any[]).length === 0 && (
+                        <span style={{ color: '#9ca3af', fontSize: '13px' }}>
+                          Nessuna area commerciale configurata
+                        </span>
+                      )}
+                    </div>
+                    {newUser.selectedAreas.length > 0 && (
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '12px',
+                        color: '#3b82f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Filter size={12} />
+                        {newUser.selectedAreas.length} area/e selezionate - le ragioni sociali saranno filtrate
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
                 {!newUser.selectAllLegalEntities && (
                   <div style={{ marginBottom: '20px' }}>
@@ -8408,7 +8506,7 @@ export default function SettingsPage() {
                         color: '#6b7280',
                         marginLeft: '8px'
                       }}>
-                        (Primo livello - filtra i punti vendita)
+                        (Secondo livello - filtra i punti vendita)
                       </span>
                     </label>
                     <div style={{
@@ -8419,7 +8517,14 @@ export default function SettingsPage() {
                       padding: '12px',
                       background: '#ffffff'
                     }}>
-                      {ragioneSocialiList.filter(rs => rs.stato === 'Attiva').map(rs => (
+                      {ragioneSocialiList
+                        .filter(rs => rs.stato === 'Attiva')
+                        .filter(rs => {
+                          if (newUser.selectedAreas.length === 0) return true;
+                          const rsStores = puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id);
+                          return rsStores.some(store => newUser.selectedAreas.includes(store.commercial_area_id));
+                        })
+                        .map(rs => (
                         <label key={rs.id} style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -8790,6 +8895,7 @@ export default function SettingsPage() {
                           tenant_id: getCurrentTenantId(),
                           // ✅ SCOPE DATA - Invia dati scope piramidale al backend
                           selectAllLegalEntities: newUser.selectAllLegalEntities,
+                          selectedAreas: newUser.selectedAreas,
                           selectedLegalEntities: newUser.selectedLegalEntities,
                           selectedStores: newUser.selectedStores,
                           // ✅ VOIP EXTENSION DATA (optional, only if enabled)
@@ -8839,6 +8945,7 @@ export default function SettingsPage() {
                           stato: 'attivo',
                           scopeLevel: 'organizzazione',
                           selectAllLegalEntities: true,
+                          selectedAreas: [],
                           selectedLegalEntities: [],
                           selectedStores: [],
                           avatar: null,
