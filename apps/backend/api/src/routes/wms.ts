@@ -7058,7 +7058,7 @@ router.get("/products/brands", rbacMiddleware, requirePermission('wms.stock.read
  * 
  * @permission wms.settings.read
  */
-router.get("/movement-type-configs", rbacMiddleware, async (req: Request, res: Response) => {
+router.get("/movement-type-configs", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
   try {
     const sessionTenantId = req.user?.tenantId;
     if (!sessionTenantId) {
@@ -7107,7 +7107,7 @@ router.get("/movement-type-configs", rbacMiddleware, async (req: Request, res: R
  * 
  * @permission wms.settings.write
  */
-router.post("/movement-type-configs/bulk", rbacMiddleware, async (req: Request, res: Response) => {
+router.post("/movement-type-configs/bulk", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
   try {
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
@@ -7201,7 +7201,7 @@ router.post("/movement-type-configs/bulk", rbacMiddleware, async (req: Request, 
  * 
  * @permission wms.settings.write
  */
-router.patch("/movement-type-configs/:movementType", rbacMiddleware, async (req: Request, res: Response) => {
+router.patch("/movement-type-configs/:movementType", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
   try {
     const sessionTenantId = req.user?.tenantId;
     const userId = req.user?.id;
