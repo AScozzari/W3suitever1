@@ -753,8 +753,11 @@ export const stores = w3suiteSchema.table("stores", {
   tiktok: varchar("tiktok", { length: 255 }),
   googleMapsUrl: text("google_maps_url"),
   telegram: varchar("telegram", { length: 255 }),
+  // Hierarchical path for organizational scoping (format: tenant_slug/area_code/store_code)
+  hierarchyPath: varchar("hierarchy_path", { length: 500 }),
 }, (table) => [
   uniqueIndex("stores_tenant_code_unique").on(table.tenantId, table.code),
+  index("stores_hierarchy_path_idx").on(table.hierarchyPath),
 ]);
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 
