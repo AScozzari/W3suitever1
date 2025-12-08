@@ -74,6 +74,7 @@ interface WorkflowTemplate {
   id: string;
   name: string;
   description: string | null;
+  category: string;
 }
 
 const DEFAULT_MOVEMENT_TYPES: Omit<MovementTypeConfig, 'id' | 'tenant_id'>[] = [
@@ -122,9 +123,12 @@ function WMSMovementsTab() {
     queryKey: ['/api/wms/movement-type-configs', STAGING_TENANT_ID],
   });
 
-  const { data: workflows } = useQuery<WorkflowTemplate[]>({
+  const { data: allWorkflows } = useQuery<WorkflowTemplate[]>({
     queryKey: ['/api/workflow-templates', STAGING_TENANT_ID],
   });
+  
+  // Filter workflows to only show 'operations' category for WMS
+  const workflows = allWorkflows?.filter(wf => wf.category === 'operations');
 
   useEffect(() => {
     if (!configsLoading) {
@@ -364,10 +368,20 @@ function WMSMovementsTab() {
                               </div>
                               
                               <div className="flex flex-col gap-1 min-w-[180px]">
-                                <Label className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                  <Workflow className="w-3 h-3" />
-                                  Workflow Template
-                                </Label>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Label className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1 cursor-help">
+                                        <Workflow className="w-3 h-3" />
+                                        Workflow Template
+                                        <Info className="w-3 h-3" />
+                                      </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="text-xs">Solo workflow della categoria <strong>Operations</strong> sono disponibili per i movimenti WMS</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                                 <Select
                                   value={config.workflow_template_id || 'none'}
                                   onValueChange={(val) => handleWorkflowChange(config.movement_type, val === 'none' ? null : val)}
