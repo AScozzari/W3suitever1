@@ -57,6 +57,13 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **CRITICAL BUG PREVENTION: Double Tenant Slug in URLs**
   - **✅ ALWAYS use `useTenantNavigation` hook**
   - **❌ FORBIDDEN - Template Literals with tenantSlug**
+- **TEAM MEMBERSHIP RULES (ANTI SELF-APPROVAL)**:
+  - **🔒 Regola**: Se sei supervisore (primario o secondario) di un team, NON puoi essere membro (`userMembers`) dello stesso team
+  - **✅ Supervisore multi-team**: Un supervisore PUÒ supervisionare più team dello stesso dipartimento
+  - **✅ Supervisore come membro altrove**: Un supervisore PUÒ essere membro di un ALTRO team (anche stesso dipartimento)
+  - **❌ Auto-approvazione**: Prevenuta dal vincolo supervisore ≠ membro stesso team
+  - **API Validation**: `validateSupervisorNotMember()` in `apps/backend/api/src/routes/hierarchy.ts`
+  - **Endpoint protetti**: POST `/api/teams`, PATCH `/api/teams/:id`
 - **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
   - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
   - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
@@ -75,14 +82,6 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **✅ wsPort**: Sempre 443 per WSS
   - **✅ wsPath**: Sempre `/ws`
   - **✅ URL Pattern**: `wss://{extension.sipServer}/ws`
-- **🔒 PENDING: VPS SSL/HTTPS Setup (TODO DOMANI)**:
-  - **Domain**: w3suite.it (comprato, su Aruba - da trasferire DNS a Cloudflare)
-  - **VPS IP**: 82.165.16.223
-  - **certbot**: Già installato su VPS
-  - **nginx**: Configurato per w3suite.it (server_name aggiornato)
-  - **Azione**: Configurare DNS A record su Cloudflare → 82.165.16.223 (proxy OFF)
-  - **Comando certbot**: `certbot --nginx -d w3suite.it --no-redirect`
-  - **VoIP richiede HTTPS**: WebRTC non funziona su HTTP (media devices blocked)
 - **VPS Deploy Rules (OBBLIGATORIO)**:
   - **❌ NEVER use `npm run build`** for VPS deploy - produces wrong output file
   - **✅ ALWAYS use `deploy/vps-deploy.sh`** or manual esbuild command below
@@ -115,25 +114,25 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System, implemented with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. All pages maintain a consistent app structure with a header, sidebar, and white background.
-- **Monorepo Structure**: Centralized code organization for efficient management.
-- **Database Architecture**: Employs a 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL and Row Level Security (RLS) to ensure robust multitenancy and tenant isolation.
-- **Security**: Implements OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC) system with Italian role templates and granular permissions.
-- **Core Systems**: Includes a Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management System, and a Multi-Provider OAuth System (MCP).
-- **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder (using OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, an AI Tools Ecosystem with PDC Analyzer (GPT-4 for PDF contract analysis), an AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), and an AI Funnel Orchestration System (`funnel-orchestrator-assistant`). An AI Voice Agent RAG System leveraging `pgvector` for WindTre offers is also integrated.
-- **CRM Module**: Focuses on a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-- **Campaign Management**: Supports dual-mode campaign creation (wizard/advanced) and enforces GDPR Consent.
-- **Deployment & Governance**: Features a Deploy Center Auto-Commit System (Git-like versioning) and Bidirectional Branch Linking.
-- **Brand Interface**: Includes a Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and a Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Provides Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration for call actions, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. The VoIP architecture includes bidirectional sync with `edgvoip` as a potential `syncSource` and detailed `syncStatus`.
-- **RBAC System**: Offers 10 Italian role templates with 215 granular permissions, including default assignments for roles like Amministratore and Store Manager.
-- **Workflow Database Operations**: Provides secure SELECT, INSERT, UPDATE, DELETE operations on the `w3suite` schema with a visual query builder, RLS enforcement, prepared statements, and table/column validation.
-- **Store Working Stats API**: Aggregates working days and hours for stores using multiple tables with double-layer tenant isolation.
-- **Shift Template Versioning System**: Ensures immutable version tracking for shift templates.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE product types. Features dual-layer product versioning, 13 logistic states, management of serialized and non-serialized products, an immutable event log (`wms_stock_movements`), a read model (`wms_inventory_balances`) for real-time quantities, and historical snapshots (`wms_inventory_snapshots`). Includes document tables for purchase orders, sales, transfers, and returns. Designed for high scalability with PostgreSQL partitioning. The Enterprise Inventory Dashboard provides KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
-- **WMS Core Definitions**: Defines "CONDIZIONE" (physical state), "STATO LOGISTICO" (logistic phase), and "STOCK" (aggregated quantities), with distinct views for serialized items.
-- **WMS Movement Type Configuration**: 15 movement types taxonomy (5 inbound, 6 outbound, 4 internal) with per-tenant configuration via System Config page. Movement types include: purchase, customer_return, transfer_in, warranty_return, trade_in (inbound); sale, supplier_return, transfer_out, doa, pullback, loan (outbound); adjustment, damage, demo, internal_use (internal). Each type supports: enabled/disabled toggle, approval workflow requirement, linked workflow template, and required documents. API endpoints: `/api/wms/movement-type-configs` (GET/POST/PATCH) with RBAC protection via `wms.settings.read/write` permissions.
-- **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, Notifications. WMS tab displays collapsible sections by direction with toggle controls and workflow template selectors.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System, implemented with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. All pages maintain consistent header, sidebar, and white background.
+- **Monorepo Structure**: Centralized code organization.
+- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL and Row Level Security (RLS) for multitenancy.
+- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
+- **Core Systems**: Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management, and Multi-Provider OAuth System (MCP).
+- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), AI Funnel Orchestration System (`funnel-orchestrator-assistant`), and an AI Voice Agent RAG System using `pgvector` for WindTre offers.
+- **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
+- **Campaign Management**: Dual-mode campaign creation (wizard/advanced) with GDPR Consent enforcement.
+- **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking.
+- **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and a Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
+- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
+- **RBAC System**: 10 Italian role templates with 215 granular permissions and default assignments.
+- **Workflow Database Operations**: Secure SELECT, INSERT, UPDATE, DELETE on `w3suite` schema with visual query builder, RLS, prepared statements, and validation.
+- **Store Working Stats API**: Aggregates working days and hours with double-layer tenant isolation.
+- **Shift Template Versioning System**: Immutable version tracking for shift templates.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products. Features dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log (`wms_stock_movements`), read model (`wms_inventory_balances`), historical snapshots (`wms_inventory_snapshots`), and document tables. Designed for scalability with PostgreSQL partitioning. Enterprise Inventory Dashboard provides KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
+- **WMS Core Definitions**: Defines "CONDIZIONE", "STATO LOGISTICO", and "STOCK".
+- **WMS Movement Type Configuration**: 15 movement types taxonomy (5 inbound, 6 outbound, 4 internal) with per-tenant configuration via System Config page, including approval workflow, linked workflow template, and required documents. API endpoints: `/api/wms/movement-type-configs` (GET/POST/PATCH) with RBAC protection.
+- **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, Notifications.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
