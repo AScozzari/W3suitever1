@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to significantly enhance operational efficiency and capitalize on market opportunities by providing a scalable, secure, and comprehensive business solution with a distinctive WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency and seize market opportunities by offering a scalable, secure, and comprehensive business solution featuring a distinct WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -137,24 +137,24 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. Consistent header, sidebar, and white background across all pages.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System, utilizing `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS for a consistent UI with a fixed header, sidebar, and white backgrounds.
 - **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL and Row Level Security (RLS) for multitenancy.
-- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
-- **Core Systems**: Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management, and Multi-Provider OAuth System (MCP).
-- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), AI Funnel Orchestration System (`funnel-orchestrator-assistant`), and an AI Voice Agent RAG System using `pgvector` for WindTre offers.
-- **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
-- **Campaign Management**: Dual-mode campaign creation (wizard/advanced) with GDPR Consent enforcement.
-- **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking.
-- **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and a Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
-- **RBAC System**: 10 Italian role templates with 215 granular permissions and default assignments.
-- **Workflow Database Operations**: Secure SELECT, INSERT, UPDATE, DELETE on `w3suite` schema with visual query builder, RLS, prepared statements, and validation.
+- **Database Architecture**: A 3-schema approach (`w3suite`, `public`, `brand_interface`) powered by PostgreSQL and leveraging Row Level Security (RLS) for multi-tenancy.
+- **Security**: Implemented with OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC) system featuring Italian role templates and granular permissions.
+- **Core Systems**: Includes a Universal Workflow System, Unified Notification System, Centralized Webhook System, Task Management, and a Multi-Provider OAuth System (MCP).
+- **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder (using OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, an AI Tools Ecosystem (e.g., PDC Analyzer for PDF contract analysis), an AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), an AI Funnel Orchestration System (`funnel-orchestrator-assistant`), and an AI Voice Agent RAG System utilizing `pgvector` for WindTre offers.
+- **CRM Module**: Provides a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+- **Campaign Management**: Supports dual-mode campaign creation (wizard/advanced) with built-in GDPR Consent enforcement.
+- **Deployment & Governance**: Managed via a Deploy Center Auto-Commit System and Bidirectional Branch Linking.
+- **Brand Interface**: Incorporates a Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and a Master Catalog System (a hybrid architecture for template governance using JSON files with Git versioning).
+- **VoIP Telephony**: Offers enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
+- **RBAC System**: Defines 10 Italian role templates with 215 granular permissions and default assignments.
+- **Workflow Database Operations**: Enables secure SELECT, INSERT, UPDATE, DELETE operations on the `w3suite` schema with a visual query builder, RLS, prepared statements, and validation.
 - **Store Working Stats API**: Aggregates working days and hours with double-layer tenant isolation.
-- **Shift Template Versioning System**: Immutable version tracking for shift templates.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products. Features dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log (`wms_stock_movements`), read model (`wms_inventory_balances`), historical snapshots (`wms_inventory_snapshots`), and document tables. Enterprise Inventory Dashboard provides KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
-- **WMS Movement Type Configuration**: 15 movement types taxonomy (5 inbound, 6 outbound, 4 internal) with per-tenant configuration via System Config page, including approval workflow, linked workflow template, and required documents.
-- **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, Notifications.
+- **Shift Template Versioning System**: Provides immutable version tracking for shift templates.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, featuring dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, an immutable event log (`wms_stock_movements`), a read model (`wms_inventory_balances`), historical snapshots (`wms_inventory_snapshots`), and document tables. The Enterprise Inventory Dashboard offers KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
+- **WMS Movement Type Configuration**: A taxonomy of 15 movement types (5 inbound, 6 outbound, 4 internal) configurable per-tenant via the System Config page, including approval workflow, linked workflow templates, and required documents.
+- **System Config Page**: A modular settings dashboard at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
