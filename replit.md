@@ -83,7 +83,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **VPS Symlink**: `/var/www/w3suite/current/server.cjs` → release folder
   - **PM2 Script Path**: `/var/www/w3suite/current/server.cjs`
   - **❌ NEVER overwrite on VPS**:
-    - `.env.production` (secrets, DB, Redis credentials)
+    - `.env.production` (secrets, DB, Redis, VITE_FONT_SCALE)
     - `.env` (local overrides)
     - `ecosystem.config.cjs` (PM2 config)
   - **Deploy Steps**:
@@ -96,6 +96,13 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
     1. Build: `cd apps/frontend/web && npx vite build`
     2. Upload: `scp -r apps/frontend/web/dist/* root@82.165.16.223:/var/www/w3suite/apps/frontend/web/dist/`
     3. VPS Path: `/var/www/w3suite/apps/frontend/web/dist/`
+- **VITE_FONT_SCALE (UI Zoom)**:
+  - **Location**: VPS `.env.production` only (not in Git)
+  - **Current Value**: `VITE_FONT_SCALE=70` (70% = 30% smaller like browser zoom)
+  - **Hook**: `useProductionScale()` in `App.tsx` applies `html { font-size: X% }`
+  - **Values**: 100=normal, 90=10% smaller, 80=20% smaller, 70=30% smaller
+  - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
+  - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
 
 # System Architecture
 - **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System, implemented with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. All pages maintain a consistent app structure with a header, sidebar, and white background.
