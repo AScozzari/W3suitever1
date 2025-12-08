@@ -34,8 +34,11 @@ import {
   X,
   Info,
   Save,
-  UserCheck
+  UserCheck,
+  AlertTriangle,
+  MapPin
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
 const DEPARTMENTS = {
@@ -246,6 +249,59 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     queryKey: ['/api/workflow-templates'],
     staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
+
+  // 🎯 Load stores for area mismatch validation
+  const { data: stores = [] } = useQuery<any[]>({ 
+    queryKey: ['/api/stores'],
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+  });
+
+  // 🎯 Load commercial areas for area name display
+  const { data: commercialAreas = [] } = useQuery<any[]>({ 
+    queryKey: ['/api/commercial-areas'],
+    staleTime: 10 * 60 * 1000 // Cache for 10 minutes
+  });
+
+  // 🎯 AREA MISMATCH VALIDATION HELPERS
+  // Get user's commercial area via their store assignment
+  const getUserAreaId = (userId: string): string | null => {
+    const user = users.find((u: any) => u.id === userId);
+    if (!user?.storeId) return null;
+    const store = stores.find((s: any) => s.id === user.storeId);
+    return store?.commercialAreaId || null;
+  };
+
+  // Get commercial area name by ID
+  const getAreaName = (areaId: string | null): string => {
+    if (!areaId) return 'Nessuna area';
+    const area = commercialAreas.find((a: any) => a.id === areaId);
+    return area?.name || area?.nome || 'Area sconosciuta';
+  };
+
+  // Check if supervisor has area mismatch with any team member
+  const checkAreaMismatch = (supervisorId: string | null): { hasMismatch: boolean; mismatchDetails: { memberId: string; memberName: string; memberArea: string; supervisorArea: string }[] } => {
+    if (!supervisorId) return { hasMismatch: false, mismatchDetails: [] };
+    
+    const supervisorAreaId = getUserAreaId(supervisorId);
+    const selectedMembers = form.watch('userMembers');
+    const mismatchDetails: { memberId: string; memberName: string; memberArea: string; supervisorArea: string }[] = [];
+    
+    for (const memberId of selectedMembers) {
+      const memberAreaId = getUserAreaId(memberId);
+      // Both must have areas assigned for comparison
+      if (supervisorAreaId && memberAreaId && supervisorAreaId !== memberAreaId) {
+        const member = users.find((u: any) => u.id === memberId);
+        mismatchDetails.push({
+          memberId,
+          memberName: member?.name || member?.email || 'Utente',
+          memberArea: getAreaName(memberAreaId),
+          supervisorArea: getAreaName(supervisorAreaId)
+        });
+      }
+    }
+    
+    return { hasMismatch: mismatchDetails.length > 0, mismatchDetails };
+  };
 
   // 🎯 Create team mutation
   const createTeamMutation = useMutation({
@@ -830,6 +886,46 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         );
                       })}
                     </div>
+                    
+                    {/* 🚨 AREA MISMATCH WARNING - Primary Supervisor */}
+                    {(() => {
+                      const primarySup = form.watch('primarySupervisorUser');
+                      const mismatchInfo = checkAreaMismatch(primarySup);
+                      if (mismatchInfo.hasMismatch && primarySup) {
+                        const supervisor = users.find((u: any) => u.id === primarySup);
+                        return (
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm">
+                                <div className="font-medium text-yellow-800 flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  Attenzione: Mismatch Area Territoriale
+                                </div>
+                                <p className="text-yellow-700 mt-1">
+                                  Il supervisore <strong>{supervisor?.name || supervisor?.email}</strong> ({mismatchInfo.mismatchDetails[0]?.supervisorArea}) 
+                                  appartiene a un'area diversa rispetto ad alcuni membri del team:
+                                </p>
+                                <ul className="mt-2 text-xs text-yellow-600 list-disc list-inside">
+                                  {mismatchInfo.mismatchDetails.slice(0, 3).map((detail) => (
+                                    <li key={detail.memberId}>
+                                      {detail.memberName} → {detail.memberArea}
+                                    </li>
+                                  ))}
+                                  {mismatchInfo.mismatchDetails.length > 3 && (
+                                    <li>...e altri {mismatchInfo.mismatchDetails.length - 3} membri</li>
+                                  )}
+                                </ul>
+                                <p className="text-xs text-yellow-600 mt-2 italic">
+                                  💡 È possibile procedere, ma le richieste potrebbero richiedere più tempo per essere gestite.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   <Separator />
@@ -946,6 +1042,43 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         );
                       })}
                     </div>
+                    
+                    {/* 🚨 AREA MISMATCH WARNING - Secondary Supervisor */}
+                    {(() => {
+                      const secondarySup = form.watch('secondarySupervisorUser');
+                      const mismatchInfo = checkAreaMismatch(secondarySup);
+                      if (mismatchInfo.hasMismatch && secondarySup) {
+                        const supervisor = users.find((u: any) => u.id === secondarySup);
+                        return (
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm">
+                                <div className="font-medium text-yellow-800 flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  Attenzione: Mismatch Area (Secondo Supervisore)
+                                </div>
+                                <p className="text-yellow-700 mt-1">
+                                  Il secondo supervisore <strong>{supervisor?.name || supervisor?.email}</strong> ({mismatchInfo.mismatchDetails[0]?.supervisorArea}) 
+                                  appartiene a un'area diversa rispetto ad alcuni membri del team.
+                                </p>
+                                <ul className="mt-2 text-xs text-yellow-600 list-disc list-inside">
+                                  {mismatchInfo.mismatchDetails.slice(0, 3).map((detail) => (
+                                    <li key={detail.memberId}>
+                                      {detail.memberName} → {detail.memberArea}
+                                    </li>
+                                  ))}
+                                  {mismatchInfo.mismatchDetails.length > 3 && (
+                                    <li>...e altri {mismatchInfo.mismatchDetails.length - 3} membri</li>
+                                  )}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               )}

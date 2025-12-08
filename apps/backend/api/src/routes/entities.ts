@@ -45,6 +45,41 @@ function codeToUUID(code: string): string {
   ].join('-');
 }
 
+// ==================== COMMERCIAL AREAS ====================
+
+/**
+ * GET /api/commercial-areas
+ * Get all commercial areas (from public schema - shared reference data)
+ * Used for area-based filtering in user/team management
+ */
+router.get('/commercial-areas', async (req, res) => {
+  try {
+    // Commercial areas are in public schema - no tenant filtering needed
+    const areasList = await db.query.commercialAreas.findMany({
+      orderBy: [desc(commercialAreas.createdAt)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: areasList,
+      message: 'Commercial areas retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving commercial areas', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve commercial areas',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== LEGAL ENTITIES ====================
 
 /**
