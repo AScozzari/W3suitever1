@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics } from '../hooks/useWorkflowDashboard';
@@ -67,13 +68,45 @@ const DEPARTMENTS = {
   'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' }
 };
 
-// 🎯 Team types mapping
+// 🎯 Team types mapping with exclusivity indicator
+// FUNCTIONAL teams: 1 user = max 1 team per department (primary/exclusive)
+// Other team types: Allow multiple memberships per department (flexible)
 const TEAM_TYPES = {
-  'functional': { label: 'Functional', color: 'bg-blue-100 text-blue-800' },
-  'cross_functional': { label: 'Cross-Functional', color: 'bg-green-100 text-green-800' },
-  'project': { label: 'Project', color: 'bg-purple-100 text-purple-800' },
-  'temporary': { label: 'Temporary', color: 'bg-yellow-100 text-yellow-800' },
-  'specialized': { label: 'Specialized', color: 'bg-orange-100 text-orange-800' }
+  'functional': { 
+    label: 'Funzionale', 
+    color: 'bg-blue-600 text-white', 
+    exclusive: true,
+    description: 'Primario - 1 utente = 1 team per dipartimento',
+    icon: '🔒'
+  },
+  'cross_functional': { 
+    label: 'Cross-Funzionale', 
+    color: 'bg-green-100 text-green-800', 
+    exclusive: false,
+    description: 'Multi-dipartimento',
+    icon: '🔗'
+  },
+  'project': { 
+    label: 'Progetto', 
+    color: 'bg-purple-100 text-purple-800', 
+    exclusive: false,
+    description: 'Team temporaneo per progetto',
+    icon: '📋'
+  },
+  'temporary': { 
+    label: 'Temporaneo', 
+    color: 'bg-yellow-100 text-yellow-800', 
+    exclusive: false,
+    description: 'Membership multipla consentita',
+    icon: '⏰'
+  },
+  'specialized': { 
+    label: 'Specializzato', 
+    color: 'bg-orange-100 text-orange-800', 
+    exclusive: false,
+    description: 'Esperti/specialisti',
+    icon: '⭐'
+  }
 };
 
 // 🎯 TypeScript interfaces for teams
@@ -1548,9 +1581,29 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge className={TEAM_TYPES[team.teamType]?.color}>
-                                {TEAM_TYPES[team.teamType]?.label}
-                              </Badge>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge className={`${TEAM_TYPES[team.teamType]?.color} cursor-help`}>
+                                      <span className="mr-1">{TEAM_TYPES[team.teamType]?.icon}</span>
+                                      {TEAM_TYPES[team.teamType]?.label}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs">
+                                    <div className="text-sm">
+                                      <p className="font-semibold mb-1">
+                                        {TEAM_TYPES[team.teamType]?.exclusive ? '🔒 Team Primario' : '🔓 Team Flessibile'}
+                                      </p>
+                                      <p>{TEAM_TYPES[team.teamType]?.description}</p>
+                                      {TEAM_TYPES[team.teamType]?.exclusive && (
+                                        <p className="text-yellow-600 mt-1 text-xs">
+                                          Un utente può appartenere a max 1 team funzionale per dipartimento
+                                        </p>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">

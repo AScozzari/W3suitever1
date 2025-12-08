@@ -899,6 +899,82 @@ function validateSupervisorNotMember(teamData: {
   return { valid: true };
 }
 
+// 🔒 VALIDATION: User can only belong to ONE functional team per department
+// Temporary/project teams allow multiple memberships per department
+async function validateFunctionalTeamExclusivity(
+  tenantId: string,
+  teamType: string | null | undefined,
+  assignedDepartments: string[] | null | undefined,
+  userMembers: string[] | null | undefined,
+  excludeTeamId?: string
+): Promise<{ valid: boolean; error?: string; conflicts?: { userId: string; department: string; existingTeam: string }[] }> {
+  // Only validate for functional teams
+  if (teamType !== 'functional') {
+    return { valid: true };
+  }
+
+  // Skip if no members or departments
+  if (!userMembers || userMembers.length === 0 || !assignedDepartments || assignedDepartments.length === 0) {
+    return { valid: true };
+  }
+
+  // Query existing functional teams that overlap with this team's departments and members
+  // Uses Postgres array operators: && (overlap) to check intersections
+  // Cast to text[] to ensure type compatibility
+  const conflictQuery = await db.execute(sql`
+    SELECT 
+      t.id as team_id,
+      t.name as team_name,
+      t.assigned_departments,
+      t.user_members
+    FROM w3suite.teams t
+    WHERE t.tenant_id = ${tenantId}
+      AND t.team_type = 'functional'
+      AND t.is_active = true
+      ${excludeTeamId ? sql`AND t.id != ${excludeTeamId}` : sql``}
+      AND t.assigned_departments::text[] && ${sql`ARRAY[${sql.join(assignedDepartments.map(d => sql`${d}`), sql`, `)}]::text[]`}
+      AND t.user_members::text[] && ${sql`ARRAY[${sql.join(userMembers.map(m => sql`${m}`), sql`, `)}]::text[]`}
+  `);
+
+  if (conflictQuery.rows.length === 0) {
+    return { valid: true };
+  }
+
+  // Build detailed conflict list
+  const conflicts: { userId: string; department: string; existingTeam: string }[] = [];
+  
+  for (const row of conflictQuery.rows as any[]) {
+    const existingDepts = row.assigned_departments || [];
+    const existingMembers = row.user_members || [];
+    
+    // Find which users conflict in which departments
+    for (const userId of userMembers) {
+      if (existingMembers.includes(userId)) {
+        for (const dept of assignedDepartments) {
+          if (existingDepts.includes(dept)) {
+            conflicts.push({
+              userId,
+              department: dept,
+              existingTeam: row.team_name
+            });
+          }
+        }
+      }
+    }
+  }
+
+  if (conflicts.length > 0) {
+    const firstConflict = conflicts[0];
+    return {
+      valid: false,
+      error: `L'utente non può appartenere a più team funzionali per lo stesso dipartimento. Conflitto: l'utente è già membro del team "${firstConflict.existingTeam}" per il dipartimento "${firstConflict.department}"`,
+      conflicts
+    };
+  }
+
+  return { valid: true };
+}
+
 // POST /api/teams - Create new team with workflow assignments sync
 router.post('/teams', requirePermission('teams.write'), async (req: Request, res: Response) => {
   try {
@@ -916,6 +992,20 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
     const supervisorValidation = validateSupervisorNotMember(teamData);
     if (!supervisorValidation.valid) {
       return res.status(400).json({ error: supervisorValidation.error });
+    }
+
+    // 🔒 VALIDATION: User can only belong to ONE functional team per department
+    const exclusivityValidation = await validateFunctionalTeamExclusivity(
+      tenantId,
+      teamData.teamType,
+      teamData.assignedDepartments,
+      teamData.userMembers
+    );
+    if (!exclusivityValidation.valid) {
+      return res.status(400).json({ 
+        error: exclusivityValidation.error,
+        conflicts: exclusivityValidation.conflicts 
+      });
     }
 
     // 🎯 ENHANCED VALIDATION: Include assignedDepartments in team creation
@@ -1029,12 +1119,29 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       userMembers: teamData.userMembers ?? existingTeam.userMembers,
       primarySupervisorUser: teamData.primarySupervisorUser ?? existingTeam.primarySupervisorUser,
       secondarySupervisorUser: teamData.secondarySupervisorUser ?? existingTeam.secondarySupervisorUser,
+      teamType: teamData.teamType ?? existingTeam.teamType,
+      assignedDepartments: teamData.assignedDepartments ?? existingTeam.assignedDepartments,
     };
 
     // 🔒 VALIDATION: Supervisor cannot be member of same team
     const supervisorValidation = validateSupervisorNotMember(mergedData);
     if (!supervisorValidation.valid) {
       return res.status(400).json({ error: supervisorValidation.error });
+    }
+
+    // 🔒 VALIDATION: User can only belong to ONE functional team per department
+    const exclusivityValidation = await validateFunctionalTeamExclusivity(
+      tenantId,
+      mergedData.teamType,
+      mergedData.assignedDepartments,
+      mergedData.userMembers,
+      teamId // Exclude current team from check
+    );
+    if (!exclusivityValidation.valid) {
+      return res.status(400).json({ 
+        error: exclusivityValidation.error,
+        conflicts: exclusivityValidation.conflicts 
+      });
     }
 
     // 🎯 ENHANCED UPDATE: Support assignedDepartments updates

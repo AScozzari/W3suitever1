@@ -47,13 +47,41 @@ const DEPARTMENTS = {
   'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' }
 };
 
-// 🎯 Team types mapping
+// 🎯 Team types mapping with exclusivity rules
+// FUNCTIONAL teams: 1 user = max 1 team per department (primary/exclusive)
+// Other team types: Allow multiple memberships per department (flexible)
 const TEAM_TYPES = {
-  'functional': { label: 'Funzionale', description: 'Team specifici per dipartimento' },
-  'cross_functional': { label: 'Cross-Funzionale', description: 'Team multi-dipartimento' },
-  'project': { label: 'Progetto', description: 'Team temporanei per progetto' },
-  'temporary': { label: 'Temporaneo', description: 'Team a breve termine' },
-  'specialized': { label: 'Specializzato', description: 'Team di esperti/specialisti' }
+  'functional': { 
+    label: 'Funzionale', 
+    description: '🔒 Team primario per dipartimento',
+    exclusive: true,
+    warning: 'Un utente può appartenere a max 1 team funzionale per dipartimento',
+    icon: '🔒'
+  },
+  'cross_functional': { 
+    label: 'Cross-Funzionale', 
+    description: 'Team multi-dipartimento',
+    exclusive: false,
+    icon: '🔗'
+  },
+  'project': { 
+    label: 'Progetto', 
+    description: 'Team temporanei per progetto specifico',
+    exclusive: false,
+    icon: '📋'
+  },
+  'temporary': { 
+    label: 'Temporaneo', 
+    description: '⏰ Membership multipla consentita',
+    exclusive: false,
+    icon: '⏰'
+  },
+  'specialized': { 
+    label: 'Specializzato', 
+    description: 'Team di esperti/specialisti',
+    exclusive: false,
+    icon: '⭐'
+  }
 };
 
 // 🎯 Form validation schema
@@ -485,15 +513,47 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             <SelectContent>
                               {Object.entries(TEAM_TYPES).map(([key, type]) => (
                                 <SelectItem key={key} value={key}>
-                                  <div>
-                                    <div className="font-medium">{type.label}</div>
-                                    <div className="text-sm text-gray-500">{type.description}</div>
+                                  <div className="flex items-start gap-2">
+                                    <span className="text-lg">{type.icon}</span>
+                                    <div>
+                                      <div className="font-medium">{type.label}</div>
+                                      <div className="text-sm text-gray-500">{type.description}</div>
+                                    </div>
                                   </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </FormControl>
+                        {/* Alert for functional teams */}
+                        {field.value === 'functional' && (
+                          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <span className="text-yellow-600">⚠️</span>
+                              <div className="text-sm text-yellow-800">
+                                <strong>Team Funzionale (Primario)</strong>
+                                <p className="mt-1">
+                                  Un utente può appartenere a max <strong>1 team funzionale</strong> per ogni dipartimento.
+                                  Le richieste saranno gestite prima dal supervisore di questo team.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {field.value === 'temporary' && (
+                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <span className="text-blue-600">ℹ️</span>
+                              <div className="text-sm text-blue-800">
+                                <strong>Team Temporaneo (Flessibile)</strong>
+                                <p className="mt-1">
+                                  Un utente può appartenere a <strong>più team temporanei</strong> dello stesso dipartimento.
+                                  Il primo supervisore che gestisce la richiesta diventa responsabile (First Wins).
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}

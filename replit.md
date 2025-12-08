@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It features a distinctive WindTre glassmorphism design, robust security measures, and utilizes PostgreSQL with Row Level Security (RLS) for stringent tenant isolation. The platform's primary goal is to significantly enhance operational efficiency and capitalize on market opportunities by providing a scalable, secure, and comprehensive business solution.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to significantly enhance operational efficiency and capitalize on market opportunities by providing a scalable, secure, and comprehensive business solution with a distinctive WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -64,6 +64,19 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ Auto-approvazione**: Prevenuta dal vincolo supervisore ≠ membro stesso team
   - **API Validation**: `validateSupervisorNotMember()` in `apps/backend/api/src/routes/hierarchy.ts`
   - **Endpoint protetti**: POST `/api/teams`, PATCH `/api/teams/:id`
+- **TEAM TYPE RULES (FUNCTIONAL vs TEMPORARY)**:
+  - **🔒 Functional Teams**: Max 1 per dipartimento per utente - rappresenta il team "primario" permanente
+  - **⏰ Temporary/Project Teams**: Nessun limite - l'utente può appartenere a multipli team temporanei per lo stesso dipartimento
+  - **API Validation**: `validateFunctionalTeamExclusivity()` in `apps/backend/api/src/routes/hierarchy.ts`
+  - **UI Badges**: 🔒 Lock icon = Functional (blue badge), ⏰ Clock icon = Temporary (yellow badge)
+  - **Tooltip**: Spiega all'utente il significato di ogni tipo di team
+- **REQUEST ROUTING (FUNCTIONAL FIRST → FIRST WINS)**:
+  - **Step 1**: Se l'utente ha un team FUNCTIONAL per il dipartimento della richiesta → route al supervisore primario
+  - **Step 2**: Se nessun team functional, trova TUTTI i team temporanei dell'utente → notifica TUTTI i supervisori (First Wins)
+  - **⚡ First Wins Pattern**: Il primo supervisore che risponde "vince" e gestisce la richiesta
+  - **Metadata Tracking**: `metadata.handledBy`, `metadata.handledAt`, `metadata.notifiedSupervisors` su `universal_requests`
+  - **HTTP 409 Conflict**: Se un secondo supervisore prova ad approvare, riceve errore "Richiesta già gestita"
+  - **Service**: `RequestTriggerService.findTeamsForUserByDepartment()` in `apps/backend/api/src/services/request-trigger-service.ts`
 - **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
   - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
   - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
@@ -114,7 +127,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System, implemented with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. All pages maintain consistent header, sidebar, and white background.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. Consistent header, sidebar, and white background across all pages.
 - **Monorepo Structure**: Centralized code organization.
 - **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL and Row Level Security (RLS) for multitenancy.
 - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
@@ -129,9 +142,8 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
 - **Workflow Database Operations**: Secure SELECT, INSERT, UPDATE, DELETE on `w3suite` schema with visual query builder, RLS, prepared statements, and validation.
 - **Store Working Stats API**: Aggregates working days and hours with double-layer tenant isolation.
 - **Shift Template Versioning System**: Immutable version tracking for shift templates.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products. Features dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log (`wms_stock_movements`), read model (`wms_inventory_balances`), historical snapshots (`wms_inventory_snapshots`), and document tables. Designed for scalability with PostgreSQL partitioning. Enterprise Inventory Dashboard provides KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
-- **WMS Core Definitions**: Defines "CONDIZIONE", "STATO LOGISTICO", and "STOCK".
-- **WMS Movement Type Configuration**: 15 movement types taxonomy (5 inbound, 6 outbound, 4 internal) with per-tenant configuration via System Config page, including approval workflow, linked workflow template, and required documents. API endpoints: `/api/wms/movement-type-configs` (GET/POST/PATCH) with RBAC protection.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products. Features dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log (`wms_stock_movements`), read model (`wms_inventory_balances`), historical snapshots (`wms_inventory_snapshots`), and document tables. Enterprise Inventory Dashboard provides KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
+- **WMS Movement Type Configuration**: 15 movement types taxonomy (5 inbound, 6 outbound, 4 internal) with per-tenant configuration via System Config page, including approval workflow, linked workflow template, and required documents.
 - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, Notifications.
 
 # External Dependencies

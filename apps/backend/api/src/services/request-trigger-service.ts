@@ -31,6 +31,12 @@ export class RequestTriggerService {
   /**
    * 🎯 MAIN METHOD: Triggered when a new universal request is created
    * Finds appropriate team and workflow, creates instance, and starts execution
+   * 
+   * ROUTING LOGIC (FUNCTIONAL FIRST):
+   * 1. Find teams where the requester is a member for the request's department
+   * 2. Prioritize FUNCTIONAL teams (1 user = max 1 functional team per department)
+   * 3. For TEMPORARY teams: notify all supervisors (First Wins pattern)
+   * 4. Fallback to department-based team selection if user has no team membership
    */
   static async triggerWorkflowForRequest(
     request: UniversalRequest, 
@@ -41,13 +47,78 @@ export class RequestTriggerService {
         requestId: request.id,
         department: request.department,
         category: request.category,
+        requesterId: request.requesterId,
         tenantId
       });
 
-      // STEP 1: Find active team for this department (with fallback logic)
-      const eligibleTeam = await this.findTeamForDepartmentWithFallback(request.department, tenantId);
+      // 🎯 STEP 1: FUNCTIONAL FIRST - Find teams where requester is a member
+      const userTeams = await this.findTeamsForUserByDepartment(
+        request.requesterId, 
+        request.department, 
+        tenantId
+      );
+
+      let eligibleTeam: { id: string; name: string; teamType: string; assignedDepartments: string[] } | null = null;
+      let isTemporaryRouting = false;
+      let allTemporaryTeams: typeof userTeams = [];
+
+      if (userTeams.length > 0) {
+        // 🔒 FUNCTIONAL FIRST: Prioritize functional teams
+        const functionalTeam = userTeams.find(t => t.teamType === 'functional');
+        
+        if (functionalTeam) {
+          eligibleTeam = functionalTeam;
+          logger.info('🔒 FUNCTIONAL FIRST: Using user\'s functional team', {
+            teamId: functionalTeam.id,
+            teamName: functionalTeam.name,
+            userId: request.requesterId,
+            department: request.department
+          });
+        } else {
+          // No functional team found - use temporary teams with First Wins logic
+          allTemporaryTeams = userTeams.filter(t => ['temporary', 'project'].includes(t.teamType));
+          
+          if (allTemporaryTeams.length > 0) {
+            eligibleTeam = allTemporaryTeams[0]; // Primary team for workflow assignment
+            isTemporaryRouting = allTemporaryTeams.length > 1;
+            
+            logger.info('⏰ TEMPORARY ROUTING: Multiple temporary teams found', {
+              primaryTeamId: eligibleTeam.id,
+              primaryTeamName: eligibleTeam.name,
+              totalTemporaryTeams: allTemporaryTeams.length,
+              temporaryTeamNames: allTemporaryTeams.map(t => t.name),
+              firstWinsEnabled: isTemporaryRouting,
+              userId: request.requesterId
+            });
+          } else {
+            // Fallback to any team the user belongs to
+            eligibleTeam = userTeams[0];
+          }
+        }
+      }
+
+      // 🔄 FALLBACK: If no user-based team found, use department-based selection
+      if (!eligibleTeam) {
+        logger.info('🔄 No user team membership found, falling back to department-based selection', {
+          userId: request.requesterId,
+          department: request.department
+        });
+        
+        // Only use department fallback if department is present
+        if (request.department) {
+          eligibleTeam = await this.findTeamForDepartmentWithFallback(request.department, tenantId);
+        } else {
+          // No department - use legacy "any available team" logic
+          logger.info('🔍 Request has no department, using any available team fallback', {
+            requestId: request.id,
+            tenantId
+          });
+          eligibleTeam = await this.findAnyAvailableTeam(tenantId);
+        }
+      }
       
       if (!eligibleTeam) {
+        const departmentInfo = request.department || 'nessun dipartimento specificato';
         logger.warn('⚠️ No active team found even after fallback attempts', {
           department: request.department,
           tenantId,
@@ -56,7 +127,7 @@ export class RequestTriggerService {
         
         return {
           success: false,
-          message: `No active team configured for department "${request.department}" and no fallback teams available`
+          message: `No active team configured for "${departmentInfo}" and no fallback teams available`
         };
       }
 
@@ -68,6 +139,7 @@ export class RequestTriggerService {
       );
 
       if (!workflowAssignment) {
+        const departmentLabel = request.department || 'any department';
         logger.warn('⚠️ No workflow template assigned to team for department', {
           teamId: eligibleTeam.id,
           teamName: eligibleTeam.name,
@@ -78,7 +150,7 @@ export class RequestTriggerService {
         
         return {
           success: false,
-          message: `No workflow template assigned to team "${eligibleTeam.name}" for department: ${request.department}`
+          message: `No workflow template assigned to team "${eligibleTeam.name}" for ${departmentLabel}`
         };
       }
 
@@ -94,7 +166,49 @@ export class RequestTriggerService {
       await this.linkRequestToWorkflow(request.id, workflowInstance.id, tenantId);
 
       // STEP 5: Notify team supervisor(s) about the new request
-      await this.notifyTeamSupervisors(eligibleTeam.id, request, workflowInstance.id, tenantId);
+      // 🔒 FUNCTIONAL or single team: Notify only that team's supervisors
+      // ⏰ TEMPORARY (multiple teams): Notify ALL team supervisors (First Wins pattern)
+      const allNotifiedSupervisors: string[] = [];
+      const allNotifiedTeams: { id: string; name: string; teamType: string }[] = [];
+
+      if (isTemporaryRouting && allTemporaryTeams.length > 1) {
+        logger.info('⏰ FIRST WINS ROUTING: Notifying supervisors from ALL temporary teams', {
+          requestId: request.id,
+          temporaryTeamsCount: allTemporaryTeams.length,
+          temporaryTeamNames: allTemporaryTeams.map(t => t.name)
+        });
+        
+        // Notify supervisors from ALL temporary teams (first to respond wins)
+        for (const tempTeam of allTemporaryTeams) {
+          const notifiedIds = await this.notifyTeamSupervisors(tempTeam.id, request, workflowInstance.id, tenantId);
+          allNotifiedSupervisors.push(...notifiedIds);
+          allNotifiedTeams.push({
+            id: tempTeam.id,
+            name: tempTeam.name,
+            teamType: tempTeam.teamType
+          });
+        }
+      } else {
+        // Standard routing: only primary team supervisors
+        const notifiedIds = await this.notifyTeamSupervisors(eligibleTeam.id, request, workflowInstance.id, tenantId);
+        allNotifiedSupervisors.push(...notifiedIds);
+        allNotifiedTeams.push({
+          id: eligibleTeam.id,
+          name: eligibleTeam.name,
+          teamType: eligibleTeam.teamType
+        });
+      }
+
+      // STEP 6: Update request metadata for First Wins tracking
+      await this.updateRequestMetadataForFirstWins(
+        request.id,
+        [...new Set(allNotifiedSupervisors)], // Remove duplicates
+        allNotifiedTeams,
+        tenantId
+      );
+
+      const routingType = isTemporaryRouting ? 'TEMPORARY_FIRST_WINS' : 
+                          (eligibleTeam.teamType === 'functional' ? 'FUNCTIONAL_PRIMARY' : 'STANDARD');
 
       logger.info('✅ Request Trigger Service: Workflow automation completed successfully', {
         requestId: request.id,
@@ -102,13 +216,17 @@ export class RequestTriggerService {
         teamId: eligibleTeam.id,
         templateId: workflowAssignment.templateId,
         department: request.department,
-        tenantId
+        tenantId,
+        routingType,
+        temporaryTeamsNotified: isTemporaryRouting ? allTemporaryTeams.length : 0
       });
 
       return {
         success: true,
         workflowInstanceId: workflowInstance.id,
-        message: `Workflow automatically assigned to team "${eligibleTeam.name}"`
+        message: isTemporaryRouting 
+          ? `Workflow assigned with First Wins routing to ${allTemporaryTeams.length} temporary team supervisors`
+          : `Workflow automatically assigned to team "${eligibleTeam.name}"`
       };
 
     } catch (error) {
@@ -127,6 +245,102 @@ export class RequestTriggerService {
         error: `Workflow automation failed: ${errorMessage}`
       };
     }
+  }
+
+  /**
+   * 🎯 FUNCTIONAL FIRST: Find teams where user is a member, filtered by department
+   * Returns teams ordered by teamType priority: functional first, then temporary/project
+   * Handles gracefully: missing department, teams with null/empty assignedDepartments (universal teams)
+   */
+  private static async findTeamsForUserByDepartment(
+    userId: string,
+    department: string | null | undefined,
+    tenantId: string
+  ): Promise<{ id: string; name: string; teamType: string; assignedDepartments: string[] }[]> {
+    // If no department, find user's teams without department filter
+    // These would be teams where user is a member, regardless of department
+    if (!department) {
+      logger.info('🔍 No department specified, finding all user teams', { userId, tenantId });
+      
+      const allUserTeams = await db.execute<{
+        id: string;
+        name: string;
+        team_type: string;
+        assigned_departments: string[];
+      }>(`
+        SELECT 
+          id, name, team_type, assigned_departments
+        FROM w3suite.teams
+        WHERE tenant_id = $1
+          AND is_active = true
+          AND $2 = ANY(user_members)
+        ORDER BY 
+          CASE team_type 
+            WHEN 'functional' THEN 1 
+            WHEN 'specialized' THEN 2
+            WHEN 'cross_functional' THEN 3
+            WHEN 'project' THEN 4
+            WHEN 'temporary' THEN 5
+            ELSE 6 
+          END,
+          created_at DESC
+      `, [tenantId, userId]);
+
+      return allUserTeams.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        teamType: row.team_type,
+        assignedDepartments: row.assigned_departments || []
+      }));
+    }
+
+    // Query teams where:
+    // 1. User is a member (in user_members array)
+    // 2. Team handles this department OR has no department restrictions (null/empty assigned_departments)
+    const teamsWithMembership = await db.execute<{
+      id: string;
+      name: string;
+      team_type: string;
+      assigned_departments: string[];
+    }>(`
+      SELECT 
+        id, name, team_type, assigned_departments
+      FROM w3suite.teams
+      WHERE tenant_id = $1
+        AND is_active = true
+        AND $2 = ANY(user_members)
+        AND (
+          $3 = ANY(assigned_departments)
+          OR assigned_departments IS NULL 
+          OR array_length(assigned_departments, 1) IS NULL
+        )
+      ORDER BY 
+        CASE team_type 
+          WHEN 'functional' THEN 1 
+          WHEN 'specialized' THEN 2
+          WHEN 'cross_functional' THEN 3
+          WHEN 'project' THEN 4
+          WHEN 'temporary' THEN 5
+          ELSE 6 
+        END,
+        created_at DESC
+    `, [tenantId, userId, department]);
+
+    const result = teamsWithMembership.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      teamType: row.team_type,
+      assignedDepartments: row.assigned_departments || []
+    }));
+
+    logger.info('🔍 Found teams for user by department', {
+      userId,
+      department,
+      teamsFound: result.length,
+      teamNames: result.map(t => `${t.name} (${t.teamType})`)
+    });
+
+    return result;
   }
 
   /**
@@ -369,13 +583,54 @@ export class RequestTriggerService {
 
   /**
    * 🔍 STEP 2: Find workflow template assignment for team and department
+   * Strategy: 
+   * 1. If department provided, try to find specific assignment
+   * 2. If not found (or no department), find any active assignment for the team
    */
   private static async findWorkflowAssignment(
     teamId: string, 
-    department: string, 
+    department: string | null | undefined, 
     tenantId: string
   ) {
-    const [assignment] = await db
+    // Base conditions always applied
+    const baseConditions = [
+      eq(teamWorkflowAssignments.tenantId, tenantId),
+      eq(teamWorkflowAssignments.teamId, teamId),
+      eq(teamWorkflowAssignments.autoAssign, true),
+      eq(teamWorkflowAssignments.isActive, true)
+    ];
+
+    // ATTEMPT 1: Try to find department-specific assignment
+    if (department) {
+      const [departmentAssignment] = await db
+        .select({
+          id: teamWorkflowAssignments.id,
+          teamId: teamWorkflowAssignments.teamId,
+          templateId: teamWorkflowAssignments.templateId,
+          forDepartment: teamWorkflowAssignments.forDepartment,
+          autoAssign: teamWorkflowAssignments.autoAssign,
+          priority: teamWorkflowAssignments.priority,
+          conditions: teamWorkflowAssignments.conditions,
+          overrides: teamWorkflowAssignments.overrides
+        })
+        .from(teamWorkflowAssignments)
+        .where(and(...baseConditions, eq(teamWorkflowAssignments.forDepartment, department as any)))
+        .orderBy(desc(teamWorkflowAssignments.priority));
+
+      if (departmentAssignment) {
+        logger.info('📋 Found department-specific workflow assignment', {
+          assignmentId: departmentAssignment.id,
+          teamId: departmentAssignment.teamId,
+          templateId: departmentAssignment.templateId,
+          department: departmentAssignment.forDepartment,
+          priority: departmentAssignment.priority
+        });
+        return departmentAssignment;
+      }
+    }
+
+    // ATTEMPT 2: Fall back to any active assignment for this team
+    const [anyAssignment] = await db
       .select({
         id: teamWorkflowAssignments.id,
         teamId: teamWorkflowAssignments.teamId,
@@ -387,26 +642,21 @@ export class RequestTriggerService {
         overrides: teamWorkflowAssignments.overrides
       })
       .from(teamWorkflowAssignments)
-      .where(and(
-        eq(teamWorkflowAssignments.tenantId, tenantId),
-        eq(teamWorkflowAssignments.teamId, teamId),
-        eq(teamWorkflowAssignments.forDepartment, department as any),
-        eq(teamWorkflowAssignments.autoAssign, true),
-        eq(teamWorkflowAssignments.isActive, true)
-      ))
+      .where(and(...baseConditions))
       .orderBy(desc(teamWorkflowAssignments.priority));
 
-    if (assignment) {
-      logger.info('📋 Found workflow assignment', {
-        assignmentId: assignment.id,
-        teamId: assignment.teamId,
-        templateId: assignment.templateId,
-        department: assignment.forDepartment,
-        priority: assignment.priority
+    if (anyAssignment) {
+      logger.info('📋 Found fallback workflow assignment (any department)', {
+        assignmentId: anyAssignment.id,
+        teamId: anyAssignment.teamId,
+        templateId: anyAssignment.templateId,
+        actualDepartment: anyAssignment.forDepartment,
+        requestedDepartment: department || 'null',
+        priority: anyAssignment.priority
       });
     }
 
-    return assignment;
+    return anyAssignment;
   }
 
   /**
@@ -586,13 +836,14 @@ export class RequestTriggerService {
    * 📢 STEP 5: Notify Team Supervisors about new request
    * Sends in-app notification to team supervisor(s) when a new request is assigned
    * Supports both user-based and role-based supervisor assignments
+   * @returns Array of notified supervisor IDs for First Wins tracking
    */
   private static async notifyTeamSupervisors(
     teamId: string,
     request: UniversalRequest,
     workflowInstanceId: string,
     tenantId: string
-  ): Promise<void> {
+  ): Promise<string[]> {
     try {
       // Get team with supervisor info (both user and role based)
       const [team] = await db
@@ -668,7 +919,7 @@ export class RequestTriggerService {
         }
       }
 
-      // 3. If still no supervisors, log warning and return
+      // 3. If still no supervisors, log warning and return empty array
       if (supervisorIds.size === 0) {
         logger.warn('⚠️ No supervisors (user or role-based) configured for team', { 
           teamId: team.id, 
@@ -676,7 +927,7 @@ export class RequestTriggerService {
           hasUserSupervisors: !!(team.primarySupervisorUser || team.secondarySupervisorUser),
           hasRoleSupervisors: !!(team.primarySupervisorRole || (team.secondarySupervisorRoles && team.secondarySupervisorRoles.length > 0))
         });
-        return;
+        return [];
       }
 
       // Create notifications for all supervisors
@@ -717,12 +968,82 @@ export class RequestTriggerService {
         notificationMethod: team.primarySupervisorUser || team.secondarySupervisorUser ? 'user-based' : 'role-based'
       });
 
+      return supervisorIdsArray;
+
     } catch (error) {
       // Don't fail the request if notification fails
       logger.error('❌ Failed to notify team supervisors', {
         error: error instanceof Error ? error.message : String(error),
         teamId,
         requestId: request.id,
+        tenantId
+      });
+      return [];
+    }
+  }
+
+  /**
+   * 📊 Update request metadata with First Wins tracking info
+   * Uses deep merge to preserve existing nested metadata fields
+   */
+  private static async updateRequestMetadataForFirstWins(
+    requestId: string,
+    notifiedSupervisors: string[],
+    notifiedTeams: { id: string; name: string; teamType: string }[],
+    tenantId: string
+  ): Promise<void> {
+    try {
+      // Get current metadata
+      const [request] = await db
+        .select({ metadata: universalRequests.metadata })
+        .from(universalRequests)
+        .where(and(
+          eq(universalRequests.id, requestId),
+          eq(universalRequests.tenantId, tenantId)
+        ));
+
+      const existingMetadata = (request?.metadata as Record<string, any>) || {};
+      
+      // Create First Wins routing data in a dedicated namespace to avoid conflicts
+      const firstWinsData = {
+        enabled: notifiedTeams.length > 1,
+        notifiedSupervisors: notifiedSupervisors,
+        notifiedTeams: notifiedTeams.map(t => ({
+          id: t.id,
+          name: t.name,
+          teamType: t.teamType
+        })),
+        routingTimestamp: new Date().toISOString(),
+        status: 'pending' // Will be updated to 'handled' when supervisor responds
+      };
+      
+      // Deep merge: preserve all existing metadata and add/update firstWinsRouting
+      const updatedMetadata = {
+        ...existingMetadata,
+        // Preserve existing routing if it exists, merge with new data
+        firstWinsRouting: existingMetadata.firstWinsRouting 
+          ? { ...existingMetadata.firstWinsRouting, ...firstWinsData }
+          : firstWinsData
+      };
+
+      await db.update(universalRequests)
+        .set({ 
+          metadata: updatedMetadata,
+          updatedAt: new Date()
+        })
+        .where(eq(universalRequests.id, requestId));
+
+      logger.info('📊 Updated request metadata for First Wins tracking', {
+        requestId,
+        supervisorCount: notifiedSupervisors.length,
+        teamCount: notifiedTeams.length,
+        isFirstWins: notifiedTeams.length > 1
+      });
+
+    } catch (error) {
+      logger.error('❌ Failed to update request metadata for First Wins', {
+        error: error instanceof Error ? error.message : String(error),
+        requestId,
         tenantId
       });
     }

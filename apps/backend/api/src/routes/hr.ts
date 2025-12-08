@@ -2874,12 +2874,13 @@ router.get('/requests/:id/impact', requirePermission('hr.requests.read'), async 
 // ==================== HR REQUEST APPROVAL INTEGRATION ====================
 
 // POST /api/hr/requests/:id/approve - Approve HR request and create resource availability block
+// ⚡ FIRST WINS PATTERN: When multiple supervisors are notified, the first to respond wins
 router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const userId = req.headers['x-user-id'] as string;
     const { id } = req.params;
-    const { comments } = req.body;
+    const { comments, teamId } = req.body; // teamId: optional, which team the supervisor is acting for
     
     if (!tenantId || !userId) {
       return res.status(400).json({ error: 'Tenant ID and User ID are required' });
@@ -2898,8 +2899,28 @@ router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), a
       return res.status(404).json({ error: 'Request not found' });
     }
     
+    // ⚡ FIRST WINS CHECK: If already handled, return early with info
+    const metadata = (request.metadata as any) || {};
+    const firstWinsRouting = metadata.firstWinsRouting || {};
+    
     if (request.status === 'approved') {
-      return res.status(400).json({ error: 'Request already approved' });
+      return res.status(409).json({ 
+        error: 'Richiesta già gestita',
+        message: 'Questa richiesta è stata già approvata da un altro supervisore.',
+        handledBy: firstWinsRouting.handledBy || metadata.handledBy || null,
+        handledAt: firstWinsRouting.handledAt || metadata.handledAt || request.completedAt,
+        wasFirstWins: firstWinsRouting.enabled || false
+      });
+    }
+    
+    if (request.status === 'rejected') {
+      return res.status(409).json({ 
+        error: 'Richiesta già gestita',
+        message: 'Questa richiesta è stata già rifiutata da un altro supervisore.',
+        handledBy: firstWinsRouting.handledBy || metadata.handledBy || null,
+        handledAt: firstWinsRouting.handledAt || metadata.handledAt || request.completedAt,
+        wasFirstWins: firstWinsRouting.enabled || false
+      });
     }
     
     // Update approval chain
@@ -2908,14 +2929,30 @@ router.post('/requests/:id/approve', requirePermission('hr.requests.approve'), a
       approverId: userId,
       status: 'approved',
       timestamp: new Date(),
-      comments
+      comments,
+      teamId: teamId || null
     });
+    
+    // ⚡ FIRST WINS: Record who handled this request using namespaced structure
+    const updatedFirstWinsRouting = {
+      ...firstWinsRouting,
+      status: 'handled',
+      handledBy: userId,
+      handledAt: new Date().toISOString(),
+      handlerTeamId: teamId || null
+    };
+    
+    const updatedMetadata = {
+      ...metadata,
+      firstWinsRouting: updatedFirstWinsRouting
+    };
     
     // Update universal request to approved
     await db.update(universalRequests)
       .set({
         status: 'approved',
         approvalChain,
+        metadata: updatedMetadata,
         completedAt: new Date(),
         updatedAt: new Date(),
         updatedBy: userId
