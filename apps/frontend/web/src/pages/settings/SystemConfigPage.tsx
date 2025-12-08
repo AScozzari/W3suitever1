@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -128,23 +127,37 @@ function WMSMovementsTab() {
   });
 
   useEffect(() => {
-    if (configs && configs.length > 0) {
-      setLocalConfigs(configs);
-    } else if (!configsLoading) {
-      const defaultWithIds = DEFAULT_MOVEMENT_TYPES.map((mt, idx) => ({
-        ...mt,
-        id: `temp-${idx}`,
-        tenant_id: STAGING_TENANT_ID,
-      }));
-      setLocalConfigs(defaultWithIds);
+    if (!configsLoading) {
+      // Merge database configs with defaults - show ALL 15 types
+      const dbConfigMap = new Map((configs || []).map(c => [c.movement_type, c]));
+      
+      const mergedConfigs = DEFAULT_MOVEMENT_TYPES.map((defaultType, idx) => {
+        const dbConfig = dbConfigMap.get(defaultType.movement_type);
+        if (dbConfig) {
+          // Use database config if exists
+          return dbConfig;
+        } else {
+          // Use default with temp ID (not yet saved)
+          return {
+            ...defaultType,
+            id: `temp-${idx}`,
+            tenant_id: STAGING_TENANT_ID,
+          };
+        }
+      });
+      
+      setLocalConfigs(mergedConfigs);
     }
   }, [configs, configsLoading]);
 
   const saveMutation = useMutation({
     mutationFn: async (configsToSave: MovementTypeConfig[]) => {
-      return apiRequest('POST', '/api/wms/movement-type-configs/bulk', {
-        tenant_id: STAGING_TENANT_ID,
-        configs: configsToSave,
+      return apiRequest('/api/wms/movement-type-configs/bulk', {
+        method: 'POST',
+        body: JSON.stringify({
+          tenant_id: STAGING_TENANT_ID,
+          configs: configsToSave,
+        }),
       });
     },
     onSuccess: () => {
@@ -404,13 +417,12 @@ export default function SystemConfigPage() {
   const [activeTab, setActiveTab] = useState('wms');
 
   return (
-    <Layout
-      module="settings"
-      title="Configurazione Sistema"
-      subtitle="Impostazioni avanzate per moduli e integrazioni"
-      showModuleBar={false}
-    >
-      <div className="p-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Configurazione Sistema</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Impostazioni avanzate per moduli e integrazioni</p>
+      </div>
+      <div className="max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             <TabsTrigger 
@@ -520,6 +532,6 @@ export default function SystemConfigPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </div>
   );
 }
