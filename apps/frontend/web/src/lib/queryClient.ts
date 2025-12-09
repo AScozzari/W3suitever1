@@ -357,10 +357,11 @@ export async function apiRequest(
       throw new Error(`401: Unauthorized`);
     }
     
-    // Try to extract error message from response body
+    // Try to extract error message and data from response body
     let errorMessage = `${res.status}: ${res.statusText}`;
+    let errorData: any = null;
     try {
-      const errorData = await res.json();
+      errorData = await res.json();
       if (errorData?.message) {
         errorMessage = errorData.message;
       }
@@ -370,6 +371,10 @@ export async function apiRequest(
     
     const error = new Error(errorMessage);
     (error as any).status = res.status;
+    // Preserve response data for special status codes (e.g., 422 versioning confirmation)
+    if (errorData) {
+      Object.assign(error, errorData);
+    }
     throw error;
   }
 

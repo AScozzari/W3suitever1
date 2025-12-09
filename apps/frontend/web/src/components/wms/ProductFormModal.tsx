@@ -361,34 +361,27 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     }) => {
       const { _versioningMode, _createNewProduct, ...productData } = data;
       
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
+      const customHeaders: Record<string, string> = {};
       if (_versioningMode) {
-        headers['X-Versioning-Mode'] = _versioningMode;
+        customHeaders['X-Versioning-Mode'] = _versioningMode;
       }
       if (_createNewProduct) {
-        headers['X-Create-New-Product'] = 'true';
+        customHeaders['X-Create-New-Product'] = 'true';
       }
       
-      const response = await fetch(`/api/wms/products/${product.id}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify(productData),
-        credentials: 'include'
-      });
-      
-      const result = await response.json();
-      
-      if (response.status === 422) {
-        return { requiresConfirmation: true, ...result };
+      try {
+        const result = await apiRequest(`/api/wms/products/${product.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(productData),
+          headers: customHeaders
+        });
+        return result;
+      } catch (error: any) {
+        if (error.status === 422 && error.changeAnalysis) {
+          return { requiresConfirmation: true, changeAnalysis: error.changeAnalysis };
+        }
+        throw error;
       }
-      
-      if (!response.ok) {
-        throw new Error(result.message || result.error || 'Errore durante l\'aggiornamento');
-      }
-      
-      return result;
     },
     onSuccess: (result: any) => {
       if (result.requiresConfirmation) {

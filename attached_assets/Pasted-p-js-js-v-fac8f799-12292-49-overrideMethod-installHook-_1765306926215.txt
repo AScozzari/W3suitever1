@@ -1,0 +1,41 @@
+p__js.js?v=fac8f799:12292:49)
+overrideMethod @ installHook.js:1
+setupSIP @ useSIPRegistration.ts:234
+await in setupSIP
+(anonime) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=fac8f799:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=fac8f799:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=fac8f799:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Comprendi l'errore
+ProductFormModal.tsx:374  PATCH https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/products/PROD-MOT-E50P-512-LUX 401 (Unauthorized)
