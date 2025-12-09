@@ -557,6 +557,17 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
     return productTypes.filter(pt => pt.categoryId === pendingFilters.categoryId);
   }, [productTypes, pendingFilters.categoryId]);
 
+  // Query per cross-store summary (vista aggregata modal) - DEVE essere prima di productSerials
+  const { data: crossStoreSummaryResponse, isLoading: isLoadingCrossStore } = useQuery<{ success: boolean; data: CrossStoreSummary }>({
+    queryKey: ['/api/wms/inventory-view', selectedItem?.productId, 'cross-store-summary'],
+    queryFn: async () => {
+      if (!selectedItem?.productId) return null;
+      return await apiRequest(`/api/wms/inventory-view/${selectedItem.productId}/cross-store-summary`);
+    },
+    enabled: isDetailModalOpen && viewMode === 'aggregated' && !!selectedItem?.productId,
+  });
+  const crossStoreSummary = crossStoreSummaryResponse?.data;
+
   // Query per caricare i seriali - URL con productId nel path e storeId come query param
   // Abilitata sia per vista serializzata che per sezione inline nel modal aggregato
   const { data: productSerials, isLoading: isLoadingSerials } = useQuery<ProductSerials>({
@@ -572,17 +583,6 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
       ((viewMode === 'serialized' && (selectedItem?.serialCount ?? 0) > 0) || 
        (viewMode === 'aggregated' && showSerialsInline && (crossStoreSummary?.kpis?.serialCount ?? 0) > 0)),
   });
-
-  // Query per cross-store summary (vista aggregata modal)
-  const { data: crossStoreSummaryResponse, isLoading: isLoadingCrossStore } = useQuery<{ success: boolean; data: CrossStoreSummary }>({
-    queryKey: ['/api/wms/inventory-view', selectedItem?.productId, 'cross-store-summary'],
-    queryFn: async () => {
-      if (!selectedItem?.productId) return null;
-      return await apiRequest(`/api/wms/inventory-view/${selectedItem.productId}/cross-store-summary`);
-    },
-    enabled: isDetailModalOpen && viewMode === 'aggregated' && !!selectedItem?.productId,
-  });
-  const crossStoreSummary = crossStoreSummaryResponse?.data;
 
   const handleViewDetails = (item: InventoryItem) => {
     setSelectedItem(item);
