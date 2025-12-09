@@ -5,14 +5,17 @@ import { queryClient } from '@/lib/queryClient';
 import { supplierValidationSchema, type SupplierValidation } from '@/lib/validation/italian-business-validation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Plus, Building2, Eye, Trash2, RefreshCw, AlertCircle, X, MapPin, Phone, CreditCard, Truck, Mail, FileText
+  Plus, Building2, Eye, Trash2, RefreshCw, AlertCircle, X, MapPin, Phone, CreditCard, Truck, Mail, FileText, Zap
 } from 'lucide-react';
 import { StandardCityField } from '../Leave/forms/StandardFields';
+import DriversTabContent from './DriversTabContent';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export default function FornitoriTabContent() {
+  const [activeSubTab, setActiveSubTab] = useState('fornitori');
   // Modal state
   const [supplierModal, setSupplierModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
 
@@ -260,6 +263,28 @@ export default function FornitoriTabContent() {
 
   return (
     <>
+      {/* Sub-tabs: Fornitori and Drivers */}
+      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
+        <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg">
+          <TabsTrigger 
+            value="fornitori" 
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 py-2 gap-2"
+            data-testid="subtab-fornitori"
+          >
+            <Building2 className="h-4 w-4" />
+            Fornitori
+          </TabsTrigger>
+          <TabsTrigger 
+            value="drivers" 
+            className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 py-2 gap-2"
+            data-testid="subtab-drivers"
+          >
+            <Zap className="h-4 w-4" />
+            Drivers
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="fornitori" className="mt-0">
       <div className="space-y-6" data-testid="fornitori-content">
         {/* Header */}
         <div style={{
@@ -1284,6 +1309,13 @@ export default function FornitoriTabContent() {
           </div>
         </div>
       )}
+      </div>
+        </TabsContent>
+
+        <TabsContent value="drivers" className="mt-0">
+          <DriversTabContent />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

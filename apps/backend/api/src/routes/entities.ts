@@ -993,6 +993,9 @@ router.get('/drivers', async (req, res) => {
     await setTenantContext(tenantId);
 
     // Query w3suite.drivers with tenant isolation (includes both brand and custom)
+    // Include inactive drivers for admin management view
+    const includeInactive = req.query.includeInactive === 'true';
+    
     const driversList = await db
       .select({
         id: drivers.id,
@@ -1008,10 +1011,10 @@ router.get('/drivers', async (req, res) => {
         createdAt: drivers.createdAt,
       })
       .from(drivers)
-      .where(and(
-        eq(drivers.tenantId, tenantId),
-        eq(drivers.isActive, true)
-      ))
+      .where(includeInactive 
+        ? eq(drivers.tenantId, tenantId)
+        : and(eq(drivers.tenantId, tenantId), eq(drivers.isActive, true))
+      )
       .orderBy(drivers.sortOrder, drivers.name);
 
     res.status(200).json({
@@ -1031,6 +1034,294 @@ router.get('/drivers', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve drivers',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/drivers
+ * Create a new tenant-custom driver
+ */
+router.post('/drivers', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { code, name, description, allowedProductTypes, isActive } = req.body;
+
+    if (!code || !name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        message: 'Code and name are required',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (!allowedProductTypes || allowedProductTypes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        message: 'At least one product type must be selected',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Check if code already exists for this tenant
+    const [existingDriver] = await db
+      .select()
+      .from(drivers)
+      .where(and(
+        eq(drivers.tenantId, tenantId),
+        eq(drivers.code, code.toUpperCase())
+      ))
+      .limit(1);
+
+    if (existingDriver) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error',
+        message: `Driver with code "${code}" already exists`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get max sort order for new driver
+    const [maxSortOrder] = await db
+      .select({ maxSort: sql<number>`COALESCE(MAX(${drivers.sortOrder}), 0)` })
+      .from(drivers)
+      .where(eq(drivers.tenantId, tenantId));
+
+    const [newDriver] = await db
+      .insert(drivers)
+      .values({
+        tenantId,
+        code: code.toUpperCase(),
+        name,
+        description: description || null,
+        allowedProductTypes: allowedProductTypes,
+        source: 'tenant',
+        isBrandSynced: false,
+        isActive: isActive ?? true,
+        sortOrder: (maxSortOrder?.maxSort || 0) + 1,
+      })
+      .returning();
+
+    logger.info('Tenant driver created', { driverId: newDriver.id, code: newDriver.code, tenantId });
+
+    res.status(201).json({
+      success: true,
+      data: newDriver,
+      message: 'Driver created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating driver', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create driver',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/drivers/:id
+ * Update a tenant-custom driver (cannot update brand drivers)
+ */
+router.put('/drivers/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const driverId = req.params.id;
+    const { code, name, description, allowedProductTypes, isActive } = req.body;
+
+    await setTenantContext(tenantId);
+
+    // Find driver and verify it's tenant-owned
+    const [existingDriver] = await db
+      .select()
+      .from(drivers)
+      .where(and(
+        eq(drivers.id, driverId),
+        eq(drivers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existingDriver) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Driver not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (existingDriver.source === 'brand') {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Cannot modify brand drivers',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Check if new code conflicts with existing
+    if (code && code.toUpperCase() !== existingDriver.code) {
+      const [codeConflict] = await db
+        .select()
+        .from(drivers)
+        .where(and(
+          eq(drivers.tenantId, tenantId),
+          eq(drivers.code, code.toUpperCase()),
+          sql`${drivers.id} != ${driverId}`
+        ))
+        .limit(1);
+
+      if (codeConflict) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation Error',
+          message: `Driver with code "${code}" already exists`,
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+    }
+
+    const [updatedDriver] = await db
+      .update(drivers)
+      .set({
+        code: code ? code.toUpperCase() : existingDriver.code,
+        name: name ?? existingDriver.name,
+        description: description !== undefined ? description : existingDriver.description,
+        allowedProductTypes: allowedProductTypes ?? existingDriver.allowedProductTypes,
+        isActive: isActive ?? existingDriver.isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(drivers.id, driverId))
+      .returning();
+
+    logger.info('Tenant driver updated', { driverId, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: updatedDriver,
+      message: 'Driver updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating driver', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      driverId: req.params.id,
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update driver',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/drivers/:id
+ * Delete a tenant-custom driver (cannot delete brand drivers)
+ */
+router.delete('/drivers/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const driverId = req.params.id;
+
+    await setTenantContext(tenantId);
+
+    // Find driver and verify it's tenant-owned
+    const [existingDriver] = await db
+      .select()
+      .from(drivers)
+      .where(and(
+        eq(drivers.id, driverId),
+        eq(drivers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existingDriver) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Driver not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (existingDriver.source === 'brand') {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Cannot delete brand drivers',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await db
+      .delete(drivers)
+      .where(eq(drivers.id, driverId));
+
+    logger.info('Tenant driver deleted', { driverId, code: existingDriver.code, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: { id: driverId },
+      message: 'Driver deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting driver', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      driverId: req.params.id,
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete driver',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
