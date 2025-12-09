@@ -123,12 +123,12 @@ function WMSMovementsTab() {
     queryKey: ['/api/wms/movement-type-configs', STAGING_TENANT_ID],
   });
 
-  const { data: allWorkflows } = useQuery<WorkflowTemplate[]>({
-    queryKey: ['/api/workflow-templates', STAGING_TENANT_ID],
+  // Fetch WMS-specific workflow templates (category: wms, approval, or null)
+  const { data: workflowsResponse } = useQuery<{ success: boolean; data: WorkflowTemplate[] }>({
+    queryKey: ['/api/wms/workflow-templates'],
   });
   
-  // Filter workflows to only show 'operations' category for WMS
-  const workflows = allWorkflows?.filter(wf => wf.category === 'operations');
+  const workflows = workflowsResponse?.data || [];
 
   useEffect(() => {
     if (!configsLoading) {
@@ -391,8 +391,8 @@ function WMSMovementsTab() {
                                     <SelectValue placeholder="Nessun workflow" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="none">Nessun workflow</SelectItem>
-                                    {workflows?.map((wf) => (
+                                    <SelectItem value="none">Nessun workflow (logica base)</SelectItem>
+                                    {workflows.map((wf) => (
                                       <SelectItem key={wf.id} value={wf.id}>
                                         {wf.name}
                                       </SelectItem>
