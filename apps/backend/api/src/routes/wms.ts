@@ -7403,16 +7403,21 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
     }
 
     // 2. Get store distribution with aggregated quantities
+    // Note: Schema has quantityAvailable + quantityReserved (not quantityOnHand)
+    // quantityOnHand = quantityAvailable + quantityReserved
+    // averageCost calculated from totalValue / totalQuantity
     const storeDistributionRaw = await db
       .select({
         storeId: wmsInventoryBalances.storeId,
         storeName: stores.nome,
         storeCode: stores.code,
-        quantity: sql<number>`SUM(${wmsInventoryBalances.quantityOnHand})::int`,
-        reserved: sql<number>`SUM(${wmsInventoryBalances.quantityReserved})::int`,
-        available: sql<number>`SUM(${wmsInventoryBalances.quantityAvailable})::int`,
-        value: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityOnHand}, 0) * COALESCE(${wmsInventoryBalances.averageCost}, 0))::numeric`,
-        avgCost: sql<number>`AVG(COALESCE(${wmsInventoryBalances.averageCost}, 0))::numeric`
+        quantity: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0))::int`,
+        reserved: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityReserved}, 0))::int`,
+        available: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0))::int`,
+        value: sql<number>`SUM(COALESCE(${wmsInventoryBalances.totalValue}, 0))::numeric`,
+        avgCost: sql<number>`CASE WHEN SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0)) > 0 
+          THEN SUM(COALESCE(${wmsInventoryBalances.totalValue}, 0)) / SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0))
+          ELSE 0 END::numeric`
       })
       .from(wmsInventoryBalances)
       .innerJoin(stores, eq(wmsInventoryBalances.storeId, stores.id))
@@ -7421,7 +7426,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
         eq(wmsInventoryBalances.productId, productId)
       ))
       .groupBy(wmsInventoryBalances.storeId, stores.nome, stores.code)
-      .orderBy(desc(sql`SUM(${wmsInventoryBalances.quantityOnHand})`));
+      .orderBy(desc(sql`SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0))`));
 
     // 3. Calculate KPIs
     const totalQuantity = storeDistributionRaw.reduce((sum, s) => sum + (s.quantity || 0), 0);
