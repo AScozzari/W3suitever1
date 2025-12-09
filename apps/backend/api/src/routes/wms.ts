@@ -7339,10 +7339,9 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
 
     const { productIdOrSku } = req.params;
 
-    // Check if it's a UUID or SKU
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productIdOrSku);
-
-    // 1. Get complete product information (by UUID or SKU)
+    // 1. Get complete product information (by ID or SKU)
+    // Products table uses varchar ID (e.g., PROD-APL-I16P-256-TIT), not UUID
+    // Try to find by ID first, then by SKU
     // Note: products schema uses name/type/isSerializable (not nome/productType/isSerialized)
     const [product] = await db
       .select({
@@ -7367,7 +7366,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
       })
       .from(products)
       .where(and(
-        isUUID ? eq(products.id, productIdOrSku) : eq(products.sku, productIdOrSku),
+        or(eq(products.id, productIdOrSku), eq(products.sku, productIdOrSku)),
         eq(products.tenantId, sessionTenantId)
       ))
       .limit(1);
