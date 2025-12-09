@@ -1,0 +1,60 @@
+SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+InventoryPage.tsx:442  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view/export?format=csv&identifierType=sku 401 (Unauthorized)
+handleExport @ InventoryPage.tsx:442
+onClick @ InventoryPage.tsx:1862
+callCallback2 @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5449Comprendi l'errore
+installHook.js:1 Export error: Error: Export failed
+    at handleExport (InventoryPage.tsx:446:31)
+overrideMethod @ installHook.js:1
+handleExport @ InventoryPage.tsx:458
+await in handleExport
+onClick @ InventoryPage.tsx:1862
+callCallback2 @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5449Comprendi l'errore
+InventoryPage.tsx:442  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view/export?format=csv&identifierType=sku 401 (Unauthorized)
+handleExport @ InventoryPage.tsx:442
+onClick @ InventoryPage.tsx:1862
+callCallback2 @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=bc0f8edc:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=bc0f8edc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=bc0f8edc:5449Comprendi l'errore
+installHook.js:1 Export error: Error: Export failed
+    at handleExport (InventoryPage.tsx:446:31)

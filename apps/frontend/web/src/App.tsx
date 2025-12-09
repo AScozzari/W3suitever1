@@ -114,15 +114,23 @@ function Router() {
         }}
       </Route>
       
+      {/* 🔐 LOGIN WITHOUT TENANT - Show Organization Required page */}
+      <Route path="/login">
+        {() => {
+          console.log('[APP-ROUTER] 🔐 Login without tenant - showing Organization Required');
+          return <OrganizationRequired />;
+        }}
+      </Route>
+      
       {/* 🎯 TENANT ROOT - Exact match for /:tenant (no subpath) */}
       <Route path="/:tenant">
         {(params) => {
           const tenantSlug = params.tenant;
           // Reserved paths that cannot be tenant slugs
-          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'impostazioni', 'settings'];
+          const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'impostazioni', 'settings', 'login'];
           
           if (!tenantSlug || reservedPaths.includes(tenantSlug)) {
-            return <NotFound />;
+            return <OrganizationRequired />;
           }
           
           console.log(`[APP-ROUTER] 🔄 Tenant root accessed: ${tenantSlug}, redirecting to dashboard`);
@@ -140,7 +148,7 @@ function Router() {
           const reservedPaths = ['api', 'workflows', 'tasks', 'qr-checkin', 'impostazioni', 'settings', 'login'];
           if (!tenantSlug || tenantSlug === '' || reservedPaths.includes(tenantSlug)) {
             console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
-            return <NotFound />;
+            return <OrganizationRequired />;
           }
           
           console.log(`[APP-ROUTER] ✅ Valid tenant slug: "${tenantSlug}"`);
@@ -176,8 +184,8 @@ function SmartRootRedirect() {
   // Prova a recuperare ultimo tenant visitato
   const lastTenant = localStorage.getItem('currentTenant');
   
-  // Blacklist tenant invalidi o legacy
-  const invalidTenants = ['', 'null', 'login', 'undefined', 'staging'];
+  // Blacklist tenant invalidi o legacy (NON includere 'staging' - è un tenant valido)
+  const invalidTenants = ['', 'null', 'login', 'undefined'];
   
   if (lastTenant && !invalidTenants.includes(lastTenant)) {
     console.log(`[SMART-REDIRECT] 🔄 Redirecting to last tenant: ${lastTenant}`);
