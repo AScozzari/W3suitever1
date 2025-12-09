@@ -1053,9 +1053,9 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold text-gray-700 text-center">Riservati</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-right">Costo Medio</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-right min-w-[100px]">Costo Medio</TableHead>
                 <TableHead 
-                  className="cursor-pointer select-none font-semibold text-gray-700 text-right"
+                  className="cursor-pointer select-none font-semibold text-gray-700 text-right min-w-[100px]"
                   onClick={() => handleSort('value')}
                 >
                   <div className="flex items-center justify-end gap-2">
@@ -1260,10 +1260,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                       <TableCell className="text-center text-gray-500">
                         {item.quantityReserved > 0 ? item.quantityReserved : '-'}
                       </TableCell>
-                      <TableCell className="text-right text-gray-700">
+                      <TableCell className="text-right text-gray-700 min-w-[100px]">
                         € {(item.averageCost ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-gray-900">
+                      <TableCell className="text-right font-semibold text-gray-900 min-w-[100px]">
                         € {(item.totalValue ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell className="text-gray-500 text-sm">
