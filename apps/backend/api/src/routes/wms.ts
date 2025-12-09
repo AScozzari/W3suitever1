@@ -7057,7 +7057,7 @@ router.get("/inventory-view/export", async (req: Request, res: Response) => {
         itemId: productItems.id,
         storeId: productItems.storeId,
         productId: productItems.productId,
-        status: productItems.status,
+        status: productItems.logisticStatus,
         purchaseCost: productItems.lastPurchaseCost,
         warehouseLocation: productItems.warehouseLocation,
         createdAt: productItems.createdAt,
@@ -7252,7 +7252,7 @@ router.get("/inventory-view/:productId/:storeId/serials", async (req: Request, r
     const serials = await db
       .select({
         itemId: productItems.id,
-        status: productItems.status,
+        status: productItems.logisticStatus,
         warehouseLocation: productItems.warehouseLocation,
         createdAt: productItems.createdAt,
         serialValue: productSerials.serialValue,
