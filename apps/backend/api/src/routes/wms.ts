@@ -46,6 +46,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middlewa
 import { logger } from "../core/logger";
 import { z } from "zod";
 import { wmsWorkflowService } from "../services/wms-workflow.service";
+import { analyzeProductChanges, VERSIONING_INFO_TOOLTIP } from "../lib/wms-versioning-config";
 
 // Active product_items logistic statuses (prevent product deletion)
 // These represent inventory under tenant control or committed to orders
@@ -643,6 +644,33 @@ router.patch("/products/:id", rbacMiddleware, requirePermission('wms.product.upd
       });
     }
 
+    // Analyze changes for versioning
+    const changeAnalysis = analyzeProductChanges(existingProduct, updateData);
+    
+    // Check versioning mode from request header
+    const versioningMode = req.headers['x-versioning-mode'] as string | undefined;
+    const createNewProduct = req.headers['x-create-new-product'] === 'true';
+    
+    // If identity fields changed and no explicit instruction, return analysis for frontend decision
+    if (changeAnalysis.requiresIdentityConfirm && !versioningMode && !createNewProduct) {
+      return res.status(422).json({
+        error: "Identity change requires confirmation",
+        changeAnalysis,
+        message: "Hai modificato SKU, EAN o Tipo. Scegli se creare un nuovo prodotto o storicizzare.",
+        options: ['new_product', 'versioning']
+      });
+    }
+    
+    // If versioning fields changed and no explicit instruction, return analysis for frontend decision
+    if (changeAnalysis.requiresVersioning && !versioningMode) {
+      return res.status(422).json({
+        error: "Commercial change requires confirmation",
+        changeAnalysis,
+        message: "Hai modificato campi commerciali (prezzi/canone). Scegli il tipo di modifica.",
+        options: ['correction', 'business_change']
+      });
+    }
+
     // Check SKU uniqueness if SKU is being changed
     if (updateData.sku && updateData.sku !== existingProduct.sku) {
       const existingSku = await db
@@ -662,6 +690,63 @@ router.patch("/products/:id", rbacMiddleware, requirePermission('wms.product.upd
           message: `Product with SKU '${updateData.sku}' already exists for this tenant`
         });
       }
+    }
+
+    // Handle versioning if business_change mode
+    let newVersionId: string | null = null;
+    
+    if (versioningMode === 'business_change' && changeAnalysis.requiresVersioning) {
+      // Get current active version
+      const [currentVersion] = await db
+        .select()
+        .from(productVersions)
+        .where(
+          and(
+            eq(productVersions.tenantId, sessionTenantId),
+            eq(productVersions.productId, productId),
+            isNull(productVersions.validTo)
+          )
+        )
+        .limit(1);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const nextVersion = currentVersion ? currentVersion.version + 1 : 1;
+      
+      // Close current version if exists
+      if (currentVersion) {
+        await db
+          .update(productVersions)
+          .set({ validTo: today })
+          .where(eq(productVersions.id, currentVersion.id));
+      }
+      
+      // Create new version with new commercial data
+      const [newVersion] = await db
+        .insert(productVersions)
+        .values({
+          tenantId: sessionTenantId,
+          productId: productId,
+          version: nextVersion,
+          monthlyFee: updateData.monthlyFee?.toString() || existingProduct.monthlyFee,
+          unitPrice: updateData.unitPrice?.toString() || null,
+          costPrice: updateData.costPrice?.toString() || null,
+          validFrom: today,
+          validTo: null,
+          changeReason: 'business_change',
+          changeNotes: `Modifica campi: ${changeAnalysis.changedVersioningFields.join(', ')}`,
+          createdBy: userId || null
+        })
+        .returning();
+      
+      newVersionId = newVersion.id;
+      
+      logger.info('WMS product version created', {
+        tenantId: sessionTenantId,
+        productId,
+        version: nextVersion,
+        changeReason: 'business_change',
+        changedFields: changeAnalysis.changedVersioningFields
+      });
     }
 
     // Prepare update data with audit fields (cast for Drizzle compatibility)
@@ -689,12 +774,19 @@ router.patch("/products/:id", rbacMiddleware, requirePermission('wms.product.upd
       productId,
       sku: updatedProduct.sku,
       modifiedBy: userId,
-      changedFields: Object.keys(updateData)
+      changedFields: Object.keys(updateData),
+      versioningMode: versioningMode || 'none',
+      newVersionId
     });
 
     res.json({
       success: true,
-      data: updatedProduct
+      data: updatedProduct,
+      versioning: newVersionId ? {
+        created: true,
+        versionId: newVersionId,
+        mode: versioningMode
+      } : null
     });
 
   } catch (error) {
