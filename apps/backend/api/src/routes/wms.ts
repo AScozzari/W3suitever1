@@ -7063,6 +7063,303 @@ router.get("/inventory-view/:productId/:storeId/serials", async (req: Request, r
 });
 
 /**
+ * GET /api/wms/inventory-view/:productId/cross-store-summary
+ * 
+ * Cross-store aggregated inventory summary for a specific product.
+ * Returns complete product info, KPIs, store distribution, status distributions.
+ * Used by the aggregated inventory modal.
+ * 
+ * @permission wms.stock.read
+ * @param productId - Product ID
+ */
+router.get("/inventory-view/:productId/cross-store-summary", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const { productId } = req.params;
+
+    // 1. Get complete product information
+    const [product] = await db
+      .select({
+        id: products.id,
+        name: products.nome,
+        sku: products.sku,
+        brand: products.brand,
+        model: products.model,
+        ean: products.ean,
+        productType: products.productType,
+        description: products.description,
+        condition: products.condition,
+        isSerialized: products.isSerialized,
+        serialType: products.serialType,
+        memory: products.memory,
+        color: products.color,
+        isActive: products.isActive,
+        categoryId: products.categoryId,
+        typeId: products.typeId,
+        imageUrl: products.imageUrl,
+        unitCost: products.unitCost,
+        averageCost: products.averageCost,
+        lowStockThreshold: products.lowStockThreshold
+      })
+      .from(products)
+      .where(and(
+        eq(products.id, productId),
+        eq(products.tenantId, sessionTenantId)
+      ))
+      .limit(1);
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Get category and type names
+    let categoryName = null;
+    let typeName = null;
+    
+    if (product.categoryId) {
+      const [category] = await db
+        .select({ nome: wmsCategories.nome })
+        .from(wmsCategories)
+        .where(eq(wmsCategories.id, product.categoryId))
+        .limit(1);
+      categoryName = category?.nome || null;
+    }
+    
+    if (product.typeId) {
+      const [pType] = await db
+        .select({ nome: wmsProductTypes.nome })
+        .from(wmsProductTypes)
+        .where(eq(wmsProductTypes.id, product.typeId))
+        .limit(1);
+      typeName = pType?.nome || null;
+    }
+
+    // 2. Get store distribution with aggregated quantities
+    const storeDistributionRaw = await db
+      .select({
+        storeId: wmsInventoryBalances.storeId,
+        storeName: stores.nome,
+        storeCode: stores.code,
+        quantity: sql<number>`SUM(${wmsInventoryBalances.quantityOnHand})::int`,
+        reserved: sql<number>`SUM(${wmsInventoryBalances.quantityReserved})::int`,
+        available: sql<number>`SUM(${wmsInventoryBalances.quantityAvailable})::int`,
+        value: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityOnHand}, 0) * COALESCE(${wmsInventoryBalances.averageCost}, 0))::numeric`,
+        avgCost: sql<number>`AVG(COALESCE(${wmsInventoryBalances.averageCost}, 0))::numeric`
+      })
+      .from(wmsInventoryBalances)
+      .innerJoin(stores, eq(wmsInventoryBalances.storeId, stores.id))
+      .where(and(
+        eq(wmsInventoryBalances.tenantId, sessionTenantId),
+        eq(wmsInventoryBalances.productId, productId)
+      ))
+      .groupBy(wmsInventoryBalances.storeId, stores.nome, stores.code)
+      .orderBy(desc(sql`SUM(${wmsInventoryBalances.quantityOnHand})`));
+
+    // 3. Calculate KPIs
+    const totalQuantity = storeDistributionRaw.reduce((sum, s) => sum + (s.quantity || 0), 0);
+    const totalReserved = storeDistributionRaw.reduce((sum, s) => sum + (s.reserved || 0), 0);
+    const totalAvailable = storeDistributionRaw.reduce((sum, s) => sum + (s.available || 0), 0);
+    const totalValue = storeDistributionRaw.reduce((sum, s) => sum + parseFloat(String(s.value || 0)), 0);
+    
+    // Weighted average cost calculation
+    const totalCostWeight = storeDistributionRaw.reduce((sum, s) => {
+      return sum + ((s.quantity || 0) * parseFloat(String(s.avgCost || 0)));
+    }, 0);
+    const weightedAverageCost = totalQuantity > 0 ? totalCostWeight / totalQuantity : 0;
+
+    // 4. Get logistic status distribution from product_items
+    const logisticStatusRaw = await db
+      .select({
+        status: productItems.status,
+        count: sql<number>`COUNT(*)::int`
+      })
+      .from(productItems)
+      .where(and(
+        eq(productItems.tenantId, sessionTenantId),
+        eq(productItems.productId, productId)
+      ))
+      .groupBy(productItems.status)
+      .orderBy(desc(sql`COUNT(*)`));
+
+    const totalLogisticItems = logisticStatusRaw.reduce((sum, s) => sum + (s.count || 0), 0);
+
+    const logisticStatusLabels: Record<string, string> = {
+      in_stock: 'In Giacenza',
+      reserved: 'Prenotato',
+      preparing: 'In Preparazione',
+      shipping: 'DDT/In Spedizione',
+      delivered: 'Consegnato',
+      customer_return: 'Reso Cliente',
+      doa_return: 'Reso DOA',
+      in_service: 'In Assistenza',
+      supplier_return: 'Restituito Fornitore',
+      in_transfer: 'In Trasferimento',
+      lost: 'Smarrito',
+      damaged: 'Danneggiato/Dismesso',
+      internal_use: 'AD Uso Interno'
+    };
+
+    const logisticStatusDistribution = logisticStatusRaw.map(s => ({
+      status: s.status,
+      label: logisticStatusLabels[s.status] || s.status,
+      count: s.count || 0,
+      percentage: totalLogisticItems > 0 ? Math.round(((s.count || 0) / totalLogisticItems) * 100) : 0
+    }));
+
+    // 5. Calculate stock status distribution
+    const stockStatusDistributionRaw = await db
+      .select({
+        storeId: wmsInventoryBalances.storeId,
+        quantity: wmsInventoryBalances.quantityAvailable,
+        lowStockThreshold: products.lowStockThreshold
+      })
+      .from(wmsInventoryBalances)
+      .innerJoin(products, eq(wmsInventoryBalances.productId, products.id))
+      .where(and(
+        eq(wmsInventoryBalances.tenantId, sessionTenantId),
+        eq(wmsInventoryBalances.productId, productId)
+      ));
+
+    let inStockCount = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+
+    stockStatusDistributionRaw.forEach(row => {
+      const qty = row.quantity || 0;
+      const threshold = row.lowStockThreshold || 5;
+      
+      if (qty <= 0) {
+        outOfStockCount++;
+      } else if (qty <= threshold) {
+        lowStockCount++;
+      } else {
+        inStockCount++;
+      }
+    });
+
+    const totalStockEntries = inStockCount + lowStockCount + outOfStockCount;
+    
+    const stockStatusDistribution = [
+      { 
+        status: 'in_stock', 
+        label: 'Disponibile', 
+        count: inStockCount, 
+        percentage: totalStockEntries > 0 ? Math.round((inStockCount / totalStockEntries) * 100) : 0 
+      },
+      { 
+        status: 'low_stock', 
+        label: 'Sotto Scorta', 
+        count: lowStockCount, 
+        percentage: totalStockEntries > 0 ? Math.round((lowStockCount / totalStockEntries) * 100) : 0 
+      },
+      { 
+        status: 'out_of_stock', 
+        label: 'Esaurito', 
+        count: outOfStockCount, 
+        percentage: totalStockEntries > 0 ? Math.round((outOfStockCount / totalStockEntries) * 100) : 0 
+      }
+    ].filter(s => s.count > 0);
+
+    // 6. Get last movement
+    const [lastMovement] = await db
+      .select({
+        id: wmsStockMovements.id,
+        movementType: wmsStockMovements.movementType,
+        executedAt: wmsStockMovements.executedAt,
+        storeId: wmsStockMovements.storeId,
+        storeName: stores.nome
+      })
+      .from(wmsStockMovements)
+      .leftJoin(stores, eq(wmsStockMovements.storeId, stores.id))
+      .where(and(
+        eq(wmsStockMovements.tenantId, sessionTenantId),
+        eq(wmsStockMovements.productId, productId)
+      ))
+      .orderBy(desc(wmsStockMovements.executedAt))
+      .limit(1);
+
+    // 7. Get serial count if serializable
+    let serialCount = 0;
+    if (product.isSerialized) {
+      const [serialResult] = await db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(productSerials)
+        .innerJoin(productItems, eq(productSerials.productItemId, productItems.id))
+        .where(and(
+          eq(productItems.tenantId, sessionTenantId),
+          eq(productItems.productId, productId)
+        ));
+      serialCount = serialResult?.count || 0;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        product: {
+          id: product.id,
+          name: product.name,
+          sku: product.sku,
+          brand: product.brand,
+          model: product.model,
+          ean: product.ean,
+          productType: product.productType,
+          description: product.description,
+          condition: product.condition,
+          isSerialized: product.isSerialized,
+          serialType: product.serialType,
+          memory: product.memory,
+          color: product.color,
+          categoryName,
+          typeName,
+          imageUrl: product.imageUrl,
+          unitCost: parseFloat(String(product.unitCost || 0)),
+          isActive: product.isActive
+        },
+        kpis: {
+          totalQuantity,
+          totalReserved,
+          totalAvailable,
+          totalValue: parseFloat(totalValue.toFixed(2)),
+          weightedAverageCost: parseFloat(weightedAverageCost.toFixed(2)),
+          storeCount: storeDistributionRaw.length,
+          serialCount
+        },
+        storeDistribution: storeDistributionRaw.map(s => ({
+          storeId: s.storeId,
+          storeName: s.storeName,
+          storeCode: s.storeCode,
+          quantity: s.quantity || 0,
+          reserved: s.reserved || 0,
+          available: s.available || 0,
+          value: parseFloat(String(s.value || 0)).toFixed(2),
+          averageCost: parseFloat(String(s.avgCost || 0)).toFixed(2)
+        })),
+        logisticStatusDistribution,
+        stockStatusDistribution,
+        lastMovement: lastMovement ? {
+          id: lastMovement.id,
+          type: lastMovement.movementType,
+          date: lastMovement.executedAt,
+          storeId: lastMovement.storeId,
+          storeName: lastMovement.storeName
+        } : null
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching cross-store summary:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch cross-store summary",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
  * GET /api/wms/products/brands
  * 
  * Returns distinct brand names from products with inventory.

@@ -189,6 +189,67 @@ interface ProductSerials {
   serials: SerialDetail[];
 }
 
+interface CrossStoreSummary {
+  product: {
+    id: string;
+    name: string;
+    sku: string;
+    brand: string | null;
+    model: string | null;
+    ean: string | null;
+    productType: string;
+    description: string | null;
+    condition: string | null;
+    isSerialized: boolean;
+    serialType: string | null;
+    memory: string | null;
+    color: string | null;
+    categoryName: string | null;
+    typeName: string | null;
+    imageUrl: string | null;
+    unitCost: number;
+    isActive: boolean;
+  };
+  kpis: {
+    totalQuantity: number;
+    totalReserved: number;
+    totalAvailable: number;
+    totalValue: number;
+    weightedAverageCost: number;
+    storeCount: number;
+    serialCount: number;
+  };
+  storeDistribution: Array<{
+    storeId: string;
+    storeName: string;
+    storeCode: string;
+    quantity: number;
+    reserved: number;
+    available: number;
+    value: string;
+    averageCost: string;
+  }>;
+  logisticStatusDistribution: Array<{
+    status: string;
+    label: string;
+    count: number;
+    percentage: number;
+  }>;
+  stockStatusDistribution: Array<{
+    status: string;
+    label: string;
+    count: number;
+    percentage: number;
+  }>;
+  lastMovement: {
+    id: string;
+    type: string;
+    date: string;
+    storeId: string;
+    storeName: string;
+  } | null;
+}
+
 type ViewMode = 'aggregated' | 'serialized';
 
 interface Category {
@@ -468,6 +529,17 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
     },
     enabled: isDetailModalOpen && !!selectedItem?.productId && (selectedItem?.serialCount ?? 0) > 0,
   });
+
+  // Query per cross-store summary (vista aggregata modal)
+  const { data: crossStoreSummaryResponse, isLoading: isLoadingCrossStore } = useQuery<{ success: boolean; data: CrossStoreSummary }>({
+    queryKey: ['/api/wms/inventory-view', selectedItem?.productId, 'cross-store-summary'],
+    queryFn: async () => {
+      if (!selectedItem?.productId) return null;
+      return await apiRequest(`/api/wms/inventory-view/${selectedItem.productId}/cross-store-summary`);
+    },
+    enabled: isDetailModalOpen && viewMode === 'aggregated' && !!selectedItem?.productId,
+  });
+  const crossStoreSummary = crossStoreSummaryResponse?.data;
 
   const handleViewDetails = (item: InventoryItem) => {
     setSelectedItem(item);
@@ -1359,199 +1431,298 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
 
       {/* Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-orange-500" />
-              {selectedItem?.productName}
+              {viewMode === 'aggregated' ? (crossStoreSummary?.product?.name || selectedItem?.productName) : selectedItem?.productName}
             </DialogTitle>
             <DialogDescription>
-              {viewMode === 'aggregated' ? 'Vista aggregata - Riepilogo giacenze e lotti' : 'Vista serializzata - Dettaglio seriali e storico'}
+              {viewMode === 'aggregated' ? 'Vista Cross-Store - Riepilogo aggregato di tutti i magazzini' : 'Vista serializzata - Dettaglio seriali e storico'}
             </DialogDescription>
           </DialogHeader>
           
           {selectedItem && (
             <ScrollArea className="max-h-[70vh] pr-4">
-              {/* Anagrafica Completa - Comune a entrambe le viste */}
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">SKU</label>
-                    <p className="font-mono font-semibold text-gray-900">{selectedItem.productSku}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Marca</label>
-                    <p className="font-medium text-gray-900">{selectedItem.productBrand || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Modello</label>
-                    <p className="font-medium text-gray-900">{selectedItem.productModel || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
-                    <p className="font-medium text-gray-900">{selectedItem.productCategory || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Tipo Prodotto</label>
-                    <p className="font-medium text-gray-900">{selectedItem.productType}</p>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Negozio</label>
-                    <p className="font-medium text-gray-900">{selectedItem.storeName} ({selectedItem.storeCode})</p>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Stato Stock</label>
-                    <div className="mt-1">
-                      <Badge className={STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.color || ''}>
-                        {STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.label || selectedItem.stockStatus}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Stato Logistico</label>
-                    <div className="mt-1">
-                      <Badge className={LOGISTIC_STATUS_CONFIG[selectedItem.logisticStatus]?.color || ''}>
-                        {LOGISTIC_STATUS_CONFIG[selectedItem.logisticStatus]?.label || selectedItem.logisticStatus}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Riepilogo Quantità - Diverso per vista aggregata e serializzata */}
-                {viewMode === 'aggregated' ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                      <div className="flex items-center gap-2 text-emerald-600 mb-1">
-                        <Box className="h-4 w-4" />
-                        <span className="text-xs uppercase tracking-wide">Disponibile</span>
-                      </div>
-                      <p className="text-2xl font-bold text-emerald-700">{selectedItem.quantityAvailable}</p>
-                    </div>
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center gap-2 text-blue-600 mb-1">
-                        <Tag className="h-4 w-4" />
-                        <span className="text-xs uppercase tracking-wide">Riservato</span>
-                      </div>
-                      <p className="text-2xl font-bold text-blue-700">{selectedItem.quantityReserved}</p>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-2 text-gray-600 mb-1">
-                        <DollarSign className="h-4 w-4" />
-                        <span className="text-xs uppercase tracking-wide">Costo Medio</span>
-                      </div>
-                      <p className="text-2xl font-bold text-gray-700">€ {(selectedItem.averageCost ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                      <div className="flex items-center gap-2 text-orange-600 mb-1">
-                        <Warehouse className="h-4 w-4" />
-                        <span className="text-xs uppercase tracking-wide">Valore Totale</span>
-                      </div>
-                      <p className="text-2xl font-bold text-orange-700">€ {(selectedItem.totalValue ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Vista Aggregata: Lotti */}
+                {/* ==================== VISTA AGGREGATA CROSS-STORE ==================== */}
                 {viewMode === 'aggregated' && (
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-orange-500" />
-                      Lotti Disponibili ({selectedItem.batchCount})
-                    </h3>
-                    {selectedItem.batches && selectedItem.batches.length > 0 ? (
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-gray-50">
-                              <TableHead>Numero Lotto</TableHead>
-                              <TableHead className="text-right">Quantità</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {selectedItem.batches.map((batch, idx) => (
-                              <TableRow key={idx}>
-                                <TableCell className="font-mono">{batch.batchNumber}</TableCell>
-                                <TableCell className="text-right font-semibold">{batch.quantity}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                  <>
+                    {isLoadingCrossStore ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-32 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-48 w-full" />
                       </div>
-                    ) : (
-                      <p className="text-gray-500 text-sm italic">Nessun lotto disponibile</p>
-                    )}
-
-                    {/* Distribuzione Stati Logistici */}
-                    {selectedItem.logisticStatusCounts && Object.keys(selectedItem.logisticStatusCounts).length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-medium text-gray-700 mb-2">Distribuzione Stati Logistici</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(selectedItem.logisticStatusCounts).map(([status, count]) => (
-                            <Badge key={status} variant="outline" className={LOGISTIC_STATUS_CONFIG[status]?.color || ''}>
-                              {LOGISTIC_STATUS_CONFIG[status]?.label || status}: {count}
-                            </Badge>
-                          ))}
+                    ) : crossStoreSummary ? (
+                      <>
+                        {/* 1. HEADER ANAGRAFICA COMPLETA */}
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">SKU</label>
+                              <p className="font-mono font-semibold text-gray-900">{crossStoreSummary.product.sku}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Marca</label>
+                              <p className="font-medium text-gray-900">{crossStoreSummary.product.brand || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Modello</label>
+                              <p className="font-medium text-gray-900">{crossStoreSummary.product.model || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">EAN</label>
+                              <p className="font-mono text-sm text-gray-900">{crossStoreSummary.product.ean || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
+                              <p className="font-medium text-gray-900">{crossStoreSummary.product.categoryName || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Tipologia</label>
+                              <p className="font-medium text-gray-900">{crossStoreSummary.product.typeName || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Tipo Prodotto</label>
+                              <Badge variant="outline" className="text-xs mt-1">{crossStoreSummary.product.productType}</Badge>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Condizione</label>
+                              <p className="font-medium text-gray-900 capitalize">
+                                {crossStoreSummary.product.condition === 'new' ? 'Nuovo' : 
+                                 crossStoreSummary.product.condition === 'used' ? 'Usato' : 
+                                 crossStoreSummary.product.condition === 'refurbished' ? 'Ricondizionato' : 
+                                 crossStoreSummary.product.condition === 'demo' ? 'Demo' : 
+                                 crossStoreSummary.product.condition || '-'}
+                              </p>
+                            </div>
+                            {crossStoreSummary.product.memory && (
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Memoria</label>
+                                <Badge variant="secondary" className="text-xs mt-1">{crossStoreSummary.product.memory}</Badge>
+                              </div>
+                            )}
+                            {crossStoreSummary.product.color && (
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Colore</label>
+                                <Badge variant="secondary" className="text-xs mt-1">{crossStoreSummary.product.color}</Badge>
+                              </div>
+                            )}
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Serializzabile</label>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs mt-1 ${crossStoreSummary.product.isSerialized ? 'border-emerald-500 text-emerald-700' : 'border-gray-400 text-gray-600'}`}
+                              >
+                                {crossStoreSummary.product.isSerialized ? `Sì (${crossStoreSummary.product.serialType?.toUpperCase() || 'N/A'})` : 'No'}
+                              </Badge>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Stato</label>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs mt-1 ${crossStoreSummary.product.isActive ? 'border-emerald-500 text-emerald-700' : 'border-red-500 text-red-700'}`}
+                              >
+                                {crossStoreSummary.product.isActive ? 'Attivo' : 'Disattivo'}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
 
-                    {/* Lista IMEI/Seriali - Solo se presenti */}
-                    {selectedItem.serialCount > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
-                          <Barcode className="h-4 w-4 text-orange-500" />
-                          Seriali ({selectedItem.serialCount})
-                        </h4>
-                        {isLoadingSerials ? (
-                          <div className="space-y-2">
-                            <Skeleton className="h-8 w-full" />
-                            <Skeleton className="h-8 w-full" />
+                        {/* 2. KPI CARDS CROSS-STORE */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                            <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                              <Box className="h-4 w-4" />
+                              <span className="text-xs uppercase tracking-wide">Disponibile</span>
+                            </div>
+                            <p className="text-xl font-bold text-emerald-700">{crossStoreSummary.kpis.totalAvailable}</p>
                           </div>
-                        ) : productSerials?.serials && productSerials.serials.length > 0 ? (
-                          <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-gray-50">
-                                  <TableHead>Seriale</TableHead>
-                                  <TableHead>Tipo</TableHead>
-                                  <TableHead>Stato</TableHead>
-                                  <TableHead>Condizione</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {productSerials.serials.map((serial) => (
-                                  <TableRow key={serial.id}>
-                                    <TableCell className="font-mono font-semibold">{serial.serialNumber}</TableCell>
-                                    <TableCell>
-                                      <Badge variant="outline" className="text-xs">
-                                        {serial.serialType === 'imei' ? 'IMEI' : serial.serialType === 'iccid' ? 'ICCID' : serial.serialType === 'mac_address' ? 'MAC' : serial.serialType.toUpperCase()}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge className={`text-xs ${LOGISTIC_STATUS_CONFIG[serial.logisticStatus]?.color || ''}`}>
-                                        {LOGISTIC_STATUS_CONFIG[serial.logisticStatus]?.label || serial.logisticStatus}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-gray-600 capitalize">
-                                      {serial.condition === 'new' ? 'Nuovo' : 
-                                       serial.condition === 'used' ? 'Usato' : 
-                                       serial.condition === 'refurbished' ? 'Ricondizionato' : 
-                                       serial.condition === 'demo' ? 'Demo' : serial.condition}
-                                    </TableCell>
+                          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-2 text-blue-600 mb-1">
+                              <Tag className="h-4 w-4" />
+                              <span className="text-xs uppercase tracking-wide">Riservati</span>
+                            </div>
+                            <p className="text-xl font-bold text-blue-700">{crossStoreSummary.kpis.totalReserved}</p>
+                          </div>
+                          <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <div className="flex items-center gap-2 text-purple-600 mb-1">
+                              <Layers className="h-4 w-4" />
+                              <span className="text-xs uppercase tracking-wide">Totale</span>
+                            </div>
+                            <p className="text-xl font-bold text-purple-700">{crossStoreSummary.kpis.totalQuantity}</p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-2 text-gray-600 mb-1">
+                              <DollarSign className="h-4 w-4" />
+                              <span className="text-xs uppercase tracking-wide">Costo Medio</span>
+                            </div>
+                            <p className="text-xl font-bold text-gray-700">€ {crossStoreSummary.kpis.weightedAverageCost.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div className="flex items-center gap-2 text-orange-600 mb-1">
+                              <DollarSign className="h-4 w-4" />
+                              <span className="text-xs uppercase tracking-wide">Valore Totale</span>
+                            </div>
+                            <p className="text-xl font-bold text-orange-700">€ {crossStoreSummary.kpis.totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <div className="p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                            <div className="flex items-center gap-2 text-cyan-600 mb-1">
+                              <Warehouse className="h-4 w-4" />
+                              <span className="text-xs uppercase tracking-wide">Magazzini</span>
+                            </div>
+                            <p className="text-xl font-bold text-cyan-700">{crossStoreSummary.kpis.storeCount}</p>
+                          </div>
+                        </div>
+
+                        {/* 3. DISTRIBUZIONE PER STORE */}
+                        {crossStoreSummary.storeDistribution.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                              <Warehouse className="h-4 w-4 text-orange-500" />
+                              Distribuzione per Magazzino ({crossStoreSummary.storeDistribution.length})
+                            </h3>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-gray-50">
+                                    <TableHead>Magazzino</TableHead>
+                                    <TableHead className="text-center">Disponibile</TableHead>
+                                    <TableHead className="text-center">Riservati</TableHead>
+                                    <TableHead className="text-center">Totale</TableHead>
+                                    <TableHead className="text-right">Costo Medio</TableHead>
+                                    <TableHead className="text-right">Valore</TableHead>
                                   </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                                </TableHeader>
+                                <TableBody>
+                                  {crossStoreSummary.storeDistribution.map((store) => (
+                                    <TableRow key={store.storeId}>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2">
+                                          <Warehouse className="h-4 w-4 text-gray-400" />
+                                          <span className="font-medium">{store.storeName}</span>
+                                          <span className="text-xs text-gray-400">({store.storeCode})</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="text-center">
+                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">{store.available}</Badge>
+                                      </TableCell>
+                                      <TableCell className="text-center">
+                                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">{store.reserved}</Badge>
+                                      </TableCell>
+                                      <TableCell className="text-center font-semibold">{store.quantity}</TableCell>
+                                      <TableCell className="text-right font-mono text-sm">€ {parseFloat(store.averageCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</TableCell>
+                                      <TableCell className="text-right font-mono text-sm font-semibold">€ {parseFloat(store.value).toLocaleString('it-IT', { minimumFractionDigits: 2 })}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-gray-500 text-sm italic">Nessun seriale trovato</p>
                         )}
+
+                        {/* 4. DISTRIBUZIONE STATI LOGISTICI */}
+                        {crossStoreSummary.logisticStatusDistribution.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                              <CircleDot className="h-4 w-4 text-orange-500" />
+                              Distribuzione Stati Logistici
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {crossStoreSummary.logisticStatusDistribution.map((status) => (
+                                <Badge 
+                                  key={status.status} 
+                                  variant="outline" 
+                                  className={`${LOGISTIC_STATUS_CONFIG[status.status]?.color || ''} text-sm px-3 py-1`}
+                                >
+                                  <span className={`w-2 h-2 rounded-full ${LOGISTIC_STATUS_CONFIG[status.status]?.dotColor || 'bg-gray-500'} mr-2`}></span>
+                                  {status.label}: <span className="font-bold ml-1">{status.count}</span>
+                                  <span className="text-gray-500 ml-1">({status.percentage}%)</span>
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 5. DISTRIBUZIONE STATI STOCK */}
+                        {crossStoreSummary.stockStatusDistribution.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                              <Package className="h-4 w-4 text-orange-500" />
+                              Distribuzione Stati Stock
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {crossStoreSummary.stockStatusDistribution.map((status) => (
+                                <Badge 
+                                  key={status.status} 
+                                  variant="outline" 
+                                  className={`${STOCK_STATUS_CONFIG[status.status as keyof typeof STOCK_STATUS_CONFIG]?.color || ''} text-sm px-3 py-1`}
+                                >
+                                  <span className={`w-2 h-2 rounded-full ${STOCK_STATUS_CONFIG[status.status as keyof typeof STOCK_STATUS_CONFIG]?.dotColor || 'bg-gray-500'} mr-2`}></span>
+                                  {status.label}: <span className="font-bold ml-1">{status.count} magazzini</span>
+                                  <span className="text-gray-500 ml-1">({status.percentage}%)</span>
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 6. ULTIMO MOVIMENTO */}
+                        {crossStoreSummary.lastMovement && (
+                          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Clock className="h-4 w-4" />
+                                <span className="text-sm font-medium">Ultimo Movimento:</span>
+                              </div>
+                              <Badge variant="outline" className="text-xs">{crossStoreSummary.lastMovement.type}</Badge>
+                              <span className="text-sm text-gray-600">
+                                {crossStoreSummary.lastMovement.storeName && `@ ${crossStoreSummary.lastMovement.storeName}`}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {crossStoreSummary.lastMovement.date && format(new Date(crossStoreSummary.lastMovement.date), 'dd/MM/yyyy HH:mm', { locale: it })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* AZIONI DRILL-DOWN */}
+                        <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+                          {crossStoreSummary.product.isSerialized && crossStoreSummary.kpis.serialCount > 0 && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setViewMode('serialized')}
+                              className="gap-2"
+                              data-testid="btn-view-serials"
+                            >
+                              <Barcode className="h-4 w-4" />
+                              Vedi Seriali ({crossStoreSummary.kpis.serialCount})
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleExport('csv')}
+                            className="gap-2"
+                            data-testid="btn-export-product"
+                          >
+                            <Download className="h-4 w-4" />
+                            Esporta
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>Nessun dato disponibile per questo prodotto</p>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
 
-                {/* Vista Serializzata: Anagrafica + Tabella Seriali + Timeline Unificata */}
+                {/* ==================== VISTA SERIALIZZATA ==================== */}
                 {viewMode === 'serialized' && (
                   <div className="space-y-6">
                     {isLoadingSerials ? (
