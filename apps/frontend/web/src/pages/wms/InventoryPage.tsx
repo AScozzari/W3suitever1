@@ -87,6 +87,7 @@ type LogisticStatus = 'in_stock' | 'reserved' | 'preparing' | 'shipping' | 'deli
   'customer_return' | 'doa_return' | 'in_service' | 'supplier_return' | 
   'in_transfer' | 'lost' | 'damaged' | 'internal_use';
 
+// Vista serializzata - una riga per combinazione prodotto+store
 interface InventoryItem {
   id: string;
   storeId: string;
@@ -118,6 +119,32 @@ interface InventoryItem {
   updatedAt: string;
 }
 
+// Vista aggregata - una riga per prodotto (cross-store)
+interface AggregatedInventoryItem {
+  productId: string;
+  productName: string;
+  productSku: string;
+  productType: string;
+  productCategory: string | null;
+  productTypeId: string | null;
+  productStatus: string;
+  productBrand: string | null;
+  productModel: string | null;
+  productDescription: string | null;
+  productEan: string | null;
+  serialType: string | null;
+  totalAvailable: number;
+  totalReserved: number;
+  totalValue: number;
+  weightedAverageCost: number;
+  storeCoverageCount: number;
+  stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
+  serialCount: number;
+  logisticStatusDistribution: Array<{ status: string; count: number; percentage: number }>;
+  stockStatusDistribution: Array<{ status: string; count: number; percentage: number }>;
+  lastMovementAt: string | null;
+}
+
 interface InventoryKPIs {
   totalProducts: number;
   totalValue: number;
@@ -139,13 +166,23 @@ interface WarehouseStore {
   code: string;
 }
 
-interface InventoryViewData {
-  viewMode: 'aggregated' | 'serialized';
+interface InventoryViewDataSerialized {
+  viewMode: 'serialized';
   items: InventoryItem[];
   pagination: Pagination;
   kpis: InventoryKPIs;
   warehouseStores: WarehouseStore[];
 }
+
+interface InventoryViewDataAggregated {
+  viewMode: 'aggregated';
+  items: AggregatedInventoryItem[];
+  pagination: Pagination;
+  kpis: InventoryKPIs;
+  warehouseStores: WarehouseStore[];
+}
+
+type InventoryViewData = InventoryViewDataSerialized | InventoryViewDataAggregated;
 
 interface DocumentReference {
   id: string;
@@ -1100,19 +1137,31 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                     <SortIcon column="sku" />
                   </div>
                 </TableHead>
-                <TableHead className="font-semibold text-gray-700">Magazzino</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-center">Stato</TableHead>
-                <TableHead className="font-semibold text-gray-700 text-center">Disponibilità</TableHead>
-                {/* Colonne diverse in base al viewMode */}
+                {/* COLONNE SPECIFICHE PER VISTA */}
                 {viewMode === 'aggregated' ? (
                   <>
-                    <TableHead className="font-semibold text-gray-700">Seriali</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Lotto</TableHead>
+                    {/* Vista Aggregata: Copertura Store invece di Magazzino singolo */}
+                    <TableHead 
+                      className="cursor-pointer select-none font-semibold text-gray-700 text-center"
+                      onClick={() => handleSort('storeCoverage')}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <Warehouse className="h-4 w-4" />
+                        Magazzini
+                        <SortIcon column="storeCoverage" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center">Stato Stock</TableHead>
+                    <TableHead className="font-semibold text-gray-700">Distribuzione Stati</TableHead>
                   </>
                 ) : (
                   <>
+                    {/* Vista Serializzata: Magazzino singolo + Stato Logistico */}
+                    <TableHead className="font-semibold text-gray-700">Magazzino</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center">Stato Logistico</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center">Disponibilità</TableHead>
                     <TableHead className="font-semibold text-gray-700">Seriale</TableHead>
-                    <TableHead className="font-semibold text-gray-700">EAN</TableHead>
+                    <TableHead className="font-semibold text-gray-700">Lotto</TableHead>
                   </>
                 )}
                 <TableHead 
@@ -1120,18 +1169,20 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                   onClick={() => handleSort('quantity')}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    Quantità
+                    {viewMode === 'aggregated' ? 'Tot. Disp.' : 'Quantità'}
                     <SortIcon column="quantity" />
                   </div>
                 </TableHead>
-                <TableHead className="font-semibold text-gray-700 text-center">Riservati</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-center">
+                  {viewMode === 'aggregated' ? 'Tot. Riservati' : 'Riservati'}
+                </TableHead>
                 <TableHead className="font-semibold text-gray-700 text-right min-w-[100px]">Costo Medio</TableHead>
                 <TableHead 
                   className="cursor-pointer select-none font-semibold text-gray-700 text-right min-w-[100px]"
                   onClick={() => handleSort('value')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Valore
+                    {viewMode === 'aggregated' ? 'Valore Tot.' : 'Valore'}
                     <SortIcon column="value" />
                   </div>
                 </TableHead>
@@ -1153,49 +1204,169 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-24 mx-auto" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-16 text-right" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-12 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-8 mx-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : inventoryData?.items?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-12 text-gray-500">
+                  <TableCell colSpan={viewMode === 'aggregated' ? 11 : 13} className="text-center py-12 text-gray-500">
                     <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                     <p className="font-medium">Nessun prodotto trovato</p>
                     <p className="text-sm">Prova a modificare i filtri o aggiungi prodotti al magazzino</p>
                   </TableCell>
                 </TableRow>
-              ) : (
-                inventoryData?.items?.map((item) => {
+              ) : viewMode === 'aggregated' ? (
+                /* ==================== VISTA AGGREGATA ==================== */
+                (inventoryData?.items as AggregatedInventoryItem[])?.map((item) => {
                   const statusConfig = STOCK_STATUS_CONFIG[item.stockStatus];
+                  return (
+                    <TableRow 
+                      key={item.productId} 
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => handleViewDetails({ productId: item.productId, productName: item.productName, productSku: item.productSku } as any)}
+                      data-testid={`row-inventory-${item.productId}`}
+                    >
+                      {/* Prodotto */}
+                      <TableCell className="font-medium text-gray-900">
+                        <div>
+                          <div className="flex items-center gap-1.5">{item.productName}</div>
+                          {item.productBrand && (
+                            <div className="text-xs text-gray-400">
+                              {item.productBrand} {item.productModel && `• ${item.productModel}`}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* SKU */}
+                      <TableCell className="text-gray-600 font-mono text-sm">{item.productSku}</TableCell>
+                      {/* Copertura Magazzini */}
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200">
+                          <Warehouse className="h-3 w-3 mr-1" />
+                          {item.storeCoverageCount} {item.storeCoverageCount === 1 ? 'magazzino' : 'magazzini'}
+                        </Badge>
+                      </TableCell>
+                      {/* Stato Stock Aggregato */}
+                      <TableCell className="text-center">
+                        <Badge className={`${statusConfig.color} border`}>
+                          <span className={`w-2 h-2 rounded-full ${statusConfig.dotColor} mr-1.5`}></span>
+                          {statusConfig.label}
+                        </Badge>
+                      </TableCell>
+                      {/* Distribuzione Stati Logistici */}
+                      <TableCell>
+                        {item.logisticStatusDistribution && item.logisticStatusDistribution.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {item.logisticStatusDistribution.slice(0, 3).map((dist) => {
+                              const config = LOGISTIC_STATUS_CONFIG[dist.status] || LOGISTIC_STATUS_CONFIG.in_stock;
+                              return (
+                                <TooltipProvider key={dist.status}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className={`${config.color} text-[10px] px-1.5 py-0.5`}>
+                                        {dist.count}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{config.label}: {dist.count} ({dist.percentage}%)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })}
+                            {item.logisticStatusDistribution.length > 3 && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 text-gray-500">
+                                +{item.logisticStatusDistribution.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      {/* Totale Disponibile */}
+                      <TableCell className="text-center font-semibold text-emerald-700">
+                        {item.totalAvailable}
+                      </TableCell>
+                      {/* Totale Riservati */}
+                      <TableCell className="text-center text-blue-600">
+                        {item.totalReserved > 0 ? item.totalReserved : '-'}
+                      </TableCell>
+                      {/* Costo Medio Ponderato */}
+                      <TableCell className="text-right text-gray-700 min-w-[100px]">
+                        € {(item.weightedAverageCost ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      {/* Valore Totale */}
+                      <TableCell className="text-right font-semibold text-gray-900 min-w-[100px]">
+                        € {(item.totalValue ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      {/* Ultimo Movimento */}
+                      <TableCell className="text-gray-500 text-sm">
+                        {item.lastMovementAt 
+                          ? new Date(item.lastMovementAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+                          : '-'
+                        }
+                      </TableCell>
+                      {/* Azioni */}
+                      <TableCell className="text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails({ productId: item.productId, productName: item.productName, productSku: item.productSku } as any);
+                                }}
+                                data-testid={`btn-view-${item.productId}`}
+                              >
+                                <Eye className="h-4 w-4 text-gray-500" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Visualizza dettagli cross-store</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                /* ==================== VISTA SERIALIZZATA ==================== */
+                (inventoryData?.items as InventoryItem[])?.map((item) => {
+                  const statusConfig = STOCK_STATUS_CONFIG[item.stockStatus];
+                  const logStatus = LOGISTIC_STATUS_CONFIG[item.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
                   return (
                     <TableRow 
                       key={item.id} 
                       className="hover:bg-gray-50 transition-colors"
                       data-testid={`row-inventory-${item.id}`}
                     >
+                      {/* Prodotto */}
                       <TableCell className="font-medium text-gray-900">
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              {item.productName}
+                        <div>
+                          <div className="flex items-center gap-1.5">{item.productName}</div>
+                          {item.productBrand && (
+                            <div className="text-xs text-gray-400">
+                              {item.productBrand} {item.productModel && `• ${item.productModel}`}
                             </div>
-                            {item.productBrand && (
-                              <div className="text-xs text-gray-400">{item.productBrand} {item.productModel && `• ${item.productModel}`}</div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </TableCell>
+                      {/* SKU */}
                       <TableCell className="text-gray-600 font-mono text-sm">{item.productSku}</TableCell>
+                      {/* Magazzino */}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Warehouse className="h-4 w-4 text-gray-400" />
@@ -1203,147 +1374,120 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                           <span className="text-xs text-gray-400">({item.storeCode})</span>
                         </div>
                       </TableCell>
+                      {/* Stato Logistico */}
                       <TableCell className="text-center">
-                        {(() => {
-                          const logStatus = LOGISTIC_STATUS_CONFIG[item.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
-                          return (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-block cursor-help">
-                                    <Badge className={`${logStatus.color} border text-xs`}>
-                                      <span className={`w-1.5 h-1.5 rounded-full ${logStatus.dotColor} mr-1`}></span>
-                                      {logStatus.label}
-                                    </Badge>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent className="p-2">
-                                  <div className="text-xs space-y-1">
-                                    <p className="font-semibold mb-1">Distribuzione Stati:</p>
-                                    {Object.entries(item.logisticStatusCounts || {}).map(([status, count]) => (
-                                      <div key={status} className="flex justify-between gap-3">
-                                        <span>{LOGISTIC_STATUS_CONFIG[status]?.label || status}</span>
-                                        <span className="font-mono">{count}</span>
-                                      </div>
-                                    ))}
-                                    {Object.keys(item.logisticStatusCounts || {}).length === 0 && (
-                                      <p className="text-gray-400">Nessun item serializzato</p>
-                                    )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-block cursor-help">
+                                <Badge className={`${logStatus.color} border text-xs`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${logStatus.dotColor} mr-1`}></span>
+                                  {logStatus.label}
+                                </Badge>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="p-2">
+                              <div className="text-xs space-y-1">
+                                <p className="font-semibold mb-1">Distribuzione Stati:</p>
+                                {Object.entries(item.logisticStatusCounts || {}).map(([status, count]) => (
+                                  <div key={status} className="flex justify-between gap-3">
+                                    <span>{LOGISTIC_STATUS_CONFIG[status]?.label || status}</span>
+                                    <span className="font-mono">{count}</span>
                                   </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        })()}
+                                ))}
+                                {Object.keys(item.logisticStatusCounts || {}).length === 0 && (
+                                  <p className="text-gray-400">Nessun item serializzato</p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
+                      {/* Disponibilità */}
                       <TableCell className="text-center">
                         <Badge className={`${statusConfig.color} border`}>
                           <span className={`w-2 h-2 rounded-full ${statusConfig.dotColor} mr-1.5`}></span>
                           {statusConfig.label}
                         </Badge>
                       </TableCell>
-                      {/* Colonna condizionale: Seriali+Lotto (aggregata) o IMEI+EAN (serializzata) */}
-                      {viewMode === 'aggregated' ? (
-                        <>
-                          <TableCell>
-                            {item.serialCount > 0 && item.serialType ? (
-                              <Badge variant="outline" className="text-xs font-mono">
-                                {item.serialType === 'imei' ? 'IMEI' : 
-                                 item.serialType === 'iccid' ? 'ICCID' : 
-                                 item.serialType === 'mac_address' ? 'MAC' : 
-                                 item.serialType.toUpperCase()}: {item.serialCount}
-                              </Badge>
-                            ) : (
-                              <span className="text-gray-400 text-xs">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {item.batchCount > 0 ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-block cursor-help">
-                                    <Badge variant="outline" className="text-xs">
-                                      {item.batchCount === 1 
-                                        ? item.batches[0]?.batchNumber || '-'
-                                        : `${item.batchCount} lotti`
-                                      }
-                                    </Badge>
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent className="p-2">
-                                  <div className="text-xs space-y-1">
-                                    <p className="font-semibold mb-1">Lotti:</p>
-                                    {item.batches.map((batch, idx) => (
-                                      <div key={idx} className="flex justify-between gap-3">
-                                        <span className="font-mono">{batch.batchNumber}</span>
-                                        <span>({batch.quantity} pz)</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <span className="text-gray-400 text-xs">-</span>
-                          )}
-                          </TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell>
-                            {item.serials && item.serials.length > 0 ? (
-                              <div className="flex flex-col gap-0.5">
-                                {item.serials.map((serial, idx) => (
-                                  <div key={idx} className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-gray-400 uppercase w-8">
-                                      {serial.type === 'imei' ? 'IMEI' : 
-                                       serial.type === 'iccid' ? 'ICCID' : 
-                                       serial.type === 'mac_address' ? 'MAC' : 
-                                       serial.type.toUpperCase()}
-                                    </span>
-                                    <span className="text-xs font-mono text-gray-700">{serial.value}</span>
-                                  </div>
-                                ))}
-                                {item.serialCount > item.serials.length && (
-                                  <span className="text-[10px] text-gray-400">
-                                    +{item.serialCount - item.serials.length} altri
-                                  </span>
-                                )}
+                      {/* Seriale */}
+                      <TableCell>
+                        {item.serials && item.serials.length > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            {item.serials.slice(0, 2).map((serial, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-gray-400 uppercase w-8">
+                                  {serial.type === 'imei' ? 'IMEI' : 
+                                   serial.type === 'iccid' ? 'ICCID' : 
+                                   serial.type === 'mac_address' ? 'MAC' : 
+                                   serial.type.toUpperCase()}
+                                </span>
+                                <span className="text-xs font-mono text-gray-700">{serial.value}</span>
                               </div>
-                            ) : item.serialCount > 0 ? (
-                              <Badge variant="outline" className="text-xs">
-                                {item.serialCount} seriali
-                              </Badge>
-                            ) : (
-                              <span className="text-gray-400 text-xs">-</span>
+                            ))}
+                            {item.serialCount > 2 && (
+                              <span className="text-[10px] text-gray-400">+{item.serialCount - 2} altri</span>
                             )}
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-gray-600 font-mono text-xs">
-                              {item.productEan || '-'}
-                            </span>
-                          </TableCell>
-                        </>
-                      )}
+                          </div>
+                        ) : item.serialCount > 0 ? (
+                          <Badge variant="outline" className="text-xs">{item.serialCount} seriali</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      {/* Lotto */}
+                      <TableCell>
+                        {item.batchCount > 0 ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-block cursor-help">
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.batchCount === 1 ? item.batches[0]?.batchNumber || '-' : `${item.batchCount} lotti`}
+                                  </Badge>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="p-2">
+                                <div className="text-xs space-y-1">
+                                  <p className="font-semibold mb-1">Lotti:</p>
+                                  {item.batches.map((batch, idx) => (
+                                    <div key={idx} className="flex justify-between gap-3">
+                                      <span className="font-mono">{batch.batchNumber}</span>
+                                      <span>({batch.quantity} pz)</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      {/* Quantità */}
                       <TableCell className="text-center font-semibold text-gray-900">
                         {item.quantityAvailable}
                       </TableCell>
+                      {/* Riservati */}
                       <TableCell className="text-center text-gray-500">
                         {item.quantityReserved > 0 ? item.quantityReserved : '-'}
                       </TableCell>
+                      {/* Costo Medio */}
                       <TableCell className="text-right text-gray-700 min-w-[100px]">
                         € {(item.averageCost ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
+                      {/* Valore */}
                       <TableCell className="text-right font-semibold text-gray-900 min-w-[100px]">
                         € {(item.totalValue ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
+                      {/* Ultimo Movimento */}
                       <TableCell className="text-gray-500 text-sm">
                         {item.lastMovementAt 
                           ? new Date(item.lastMovementAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
                           : '-'
                         }
                       </TableCell>
+                      {/* Azioni */}
                       <TableCell className="text-center">
                         <TooltipProvider>
                           <Tooltip>

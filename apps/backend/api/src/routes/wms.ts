@@ -6618,6 +6618,264 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
 
     // Calculate KPIs from filtered results
     const LOW_STOCK_THRESHOLD = 10;
+
+    // ==================== AGGREGATED VIEW: Group by Product ====================
+    if (viewMode === 'aggregated') {
+      // Aggregate results by productId (cross-store)
+      const productAggregates = new Map<string, {
+        productId: string;
+        productName: string;
+        productSku: string;
+        productType: string;
+        productCategory: string | null;
+        productTypeId: string | null;
+        productStatus: string | null;
+        productBrand: string | null;
+        productModel: string | null;
+        productDescription: string | null;
+        productEan: string | null;
+        productSerialType: string | null;
+        totalAvailable: number;
+        totalReserved: number;
+        totalValue: number;
+        totalCostWeighted: number; // For weighted average calculation
+        storeIds: Set<string>;
+        lastMovementAt: Date | null;
+        balanceIds: string[];
+      }>();
+
+      // First pass: aggregate quantities and values by product
+      for (const r of allResults) {
+        const existing = productAggregates.get(r.productId);
+        const qty = r.quantityAvailable || 0;
+        const value = parseFloat(r.totalValue || '0');
+        const avgCost = qty > 0 ? value / qty : 0;
+        
+        if (existing) {
+          existing.totalAvailable += qty;
+          existing.totalReserved += (r.quantityReserved || 0);
+          existing.totalValue += value;
+          existing.totalCostWeighted += value; // Sum of (qty * cost) for weighted average
+          if (r.storeId) existing.storeIds.add(r.storeId);
+          existing.balanceIds.push(r.balanceId);
+          
+          // Keep most recent movement
+          const rMoveAt = r.lastMovementAt ? new Date(r.lastMovementAt) : null;
+          if (rMoveAt && (!existing.lastMovementAt || rMoveAt > existing.lastMovementAt)) {
+            existing.lastMovementAt = rMoveAt;
+          }
+        } else {
+          productAggregates.set(r.productId, {
+            productId: r.productId,
+            productName: r.productName,
+            productSku: r.productSku,
+            productType: r.productType,
+            productCategory: r.productCategory,
+            productTypeId: r.productTypeId,
+            productStatus: r.productStatus,
+            productBrand: r.productBrand,
+            productModel: r.productModel,
+            productDescription: r.productDescription,
+            productEan: r.productEan,
+            productSerialType: r.productSerialType,
+            totalAvailable: qty,
+            totalReserved: r.quantityReserved || 0,
+            totalValue: value,
+            totalCostWeighted: value,
+            storeIds: r.storeId ? new Set([r.storeId]) : new Set(),
+            lastMovementAt: r.lastMovementAt ? new Date(r.lastMovementAt) : null,
+            balanceIds: [r.balanceId]
+          });
+        }
+      }
+
+      // Get logistic status distribution for all products (cross-store)
+      const productIds = [...productAggregates.keys()];
+      let crossStoreLogisticMap: Record<string, Record<string, number>> = {};
+      let crossStoreSerialCountMap: Record<string, number> = {};
+      
+      if (productIds.length > 0) {
+        try {
+          // Get logistic status counts grouped by product (not by store)
+          const logisticCounts = await db
+            .select({
+              productId: productItems.productId,
+              logisticStatus: productItems.logisticStatus,
+              count: sql<number>`count(*)::int`
+            })
+            .from(productItems)
+            .where(and(
+              eq(productItems.tenantId, sessionTenantId),
+              inArray(productItems.productId, productIds),
+              inArray(productItems.storeId, warehouseStoreIds)
+            ))
+            .groupBy(productItems.productId, productItems.logisticStatus);
+          
+          logisticCounts.forEach(item => {
+            if (!crossStoreLogisticMap[item.productId]) {
+              crossStoreLogisticMap[item.productId] = {};
+            }
+            crossStoreLogisticMap[item.productId][item.logisticStatus] = item.count;
+          });
+
+          // Get serial counts per product (cross-store)
+          const serialCounts = await db
+            .select({
+              productId: productItems.productId,
+              count: sql<number>`count(*)::int`
+            })
+            .from(productItems)
+            .where(and(
+              eq(productItems.tenantId, sessionTenantId),
+              inArray(productItems.productId, productIds),
+              inArray(productItems.storeId, warehouseStoreIds)
+            ))
+            .groupBy(productItems.productId);
+          
+          serialCounts.forEach(item => {
+            crossStoreSerialCountMap[item.productId] = item.count;
+          });
+        } catch (e) {
+          console.log('Cross-store logistic status query skipped:', e instanceof Error ? e.message : 'Unknown error');
+        }
+      }
+
+      // Convert aggregates to array for sorting/pagination
+      const aggregatedItems = [...productAggregates.values()].map(agg => {
+        const weightedAvgCost = agg.totalAvailable > 0 
+          ? agg.totalCostWeighted / agg.totalAvailable 
+          : 0;
+        
+        // Calculate stock status based on total quantity
+        let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
+        if (agg.totalAvailable === 0) stockStatus = 'out_of_stock';
+        else if (agg.totalAvailable <= LOW_STOCK_THRESHOLD) stockStatus = 'low_stock';
+        else stockStatus = 'in_stock';
+        
+        // Get logistic status distribution
+        const logisticCounts = crossStoreLogisticMap[agg.productId] || {};
+        const totalSerials = crossStoreSerialCountMap[agg.productId] || 0;
+        
+        // Calculate logistic status distribution with percentages
+        const logisticDistribution = Object.entries(logisticCounts).map(([status, count]) => ({
+          status,
+          count,
+          percentage: totalSerials > 0 ? Math.round((count / totalSerials) * 100) : 0
+        }));
+        
+        // Calculate stock status distribution (how many stores have each status)
+        const storeStatusCounts: Record<string, number> = { in_stock: 0, low_stock: 0, out_of_stock: 0 };
+        for (const r of allResults) {
+          if (r.productId === agg.productId) {
+            const qty = r.quantityAvailable || 0;
+            if (qty === 0) storeStatusCounts.out_of_stock++;
+            else if (qty <= LOW_STOCK_THRESHOLD) storeStatusCounts.low_stock++;
+            else storeStatusCounts.in_stock++;
+          }
+        }
+        
+        const stockDistribution = Object.entries(storeStatusCounts)
+          .filter(([_, count]) => count > 0)
+          .map(([status, count]) => ({
+            status,
+            count,
+            percentage: agg.storeIds.size > 0 ? Math.round((count / agg.storeIds.size) * 100) : 0
+          }));
+
+        return {
+          productId: agg.productId,
+          productName: agg.productName,
+          productSku: agg.productSku,
+          productType: agg.productType,
+          productCategory: agg.productCategory,
+          productTypeId: agg.productTypeId,
+          productStatus: agg.productStatus || 'active',
+          productBrand: agg.productBrand,
+          productModel: agg.productModel,
+          productDescription: agg.productDescription,
+          productEan: agg.productEan,
+          serialType: agg.productSerialType,
+          totalAvailable: agg.totalAvailable,
+          totalReserved: agg.totalReserved,
+          totalValue: agg.totalValue,
+          weightedAverageCost: weightedAvgCost,
+          storeCoverageCount: agg.storeIds.size,
+          stockStatus,
+          serialCount: totalSerials,
+          logisticStatusDistribution: logisticDistribution,
+          stockStatusDistribution: stockDistribution,
+          lastMovementAt: agg.lastMovementAt?.toISOString() || null
+        };
+      });
+
+      // Calculate KPIs for aggregated view
+      const kpis = {
+        totalProducts: aggregatedItems.length,
+        totalValue: aggregatedItems.reduce((sum, item) => sum + item.totalValue, 0),
+        lowStockCount: aggregatedItems.filter(item => item.stockStatus === 'low_stock').length,
+        outOfStockCount: aggregatedItems.filter(item => item.stockStatus === 'out_of_stock').length,
+        inStockCount: aggregatedItems.filter(item => item.stockStatus === 'in_stock').length
+      };
+
+      // Sort aggregated results
+      aggregatedItems.sort((a, b) => {
+        let aVal: any, bVal: any;
+        switch (sortBy) {
+          case 'sku':
+            aVal = a.productSku || '';
+            bVal = b.productSku || '';
+            break;
+          case 'quantity':
+            aVal = a.totalAvailable;
+            bVal = b.totalAvailable;
+            break;
+          case 'value':
+            aVal = a.totalValue;
+            bVal = b.totalValue;
+            break;
+          case 'lastMovement':
+            aVal = a.lastMovementAt ? new Date(a.lastMovementAt).getTime() : 0;
+            bVal = b.lastMovementAt ? new Date(b.lastMovementAt).getTime() : 0;
+            break;
+          case 'storeCoverage':
+            aVal = a.storeCoverageCount;
+            bVal = b.storeCoverageCount;
+            break;
+          case 'name':
+          default:
+            aVal = a.productName || '';
+            bVal = b.productName || '';
+        }
+        
+        if (typeof aVal === 'string') {
+          return sortOrder === 'asc' 
+            ? aVal.localeCompare(bVal) 
+            : bVal.localeCompare(aVal);
+        }
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+
+      // Apply pagination
+      const paginatedItems = aggregatedItems.slice(offset, offset + limitNum);
+
+      return res.json({
+        success: true,
+        data: {
+          viewMode: 'aggregated',
+          items: paginatedItems,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: aggregatedItems.length,
+            totalPages: Math.ceil(aggregatedItems.length / limitNum)
+          },
+          kpis,
+          warehouseStores
+        }
+      });
+    }
+
+    // ==================== SERIALIZED VIEW: Original per-store logic ====================
     const kpis = {
       totalProducts: allResults.length,
       totalValue: allResults.reduce((sum, r) => sum + parseFloat(r.totalValue || '0'), 0),
