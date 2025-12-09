@@ -18,6 +18,9 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { VersioningConfirmModal } from './VersioningConfirmModal';
+import { NewProductConfirmModal } from './NewProductConfirmModal';
+import { VersioningInfoTooltip } from './VersioningInfoTooltip';
 
 // Schema con validazione condizionale completa
 const productSchema = z.object({
@@ -93,11 +96,25 @@ interface ProductFormModalProps {
   product?: any | null;
 }
 
+interface ChangeAnalysis {
+  changeType: string;
+  changedVersioningFields: string[];
+  changedIdentityFields: string[];
+  changedDescriptiveFields: string[];
+  requiresVersioning: boolean;
+  requiresIdentityConfirm: boolean;
+}
+
 export function ProductFormModal({ open, onClose, product }: ProductFormModalProps) {
   const { toast } = useToast();
   const isEdit = !!product;
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
+  const [showVersioningModal, setShowVersioningModal] = useState(false);
+  const [showNewProductModal, setShowNewProductModal] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
+  const [changeAnalysis, setChangeAnalysis] = useState<ChangeAnalysis | null>(null);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -338,17 +355,59 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: ProductFormData) => {
-      return apiRequest(`/api/wms/products/${product.id}`, {
+    mutationFn: async (data: ProductFormData & { 
+      _versioningMode?: string; 
+      _createNewProduct?: boolean;
+    }) => {
+      const { _versioningMode, _createNewProduct, ...productData } = data;
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (_versioningMode) {
+        headers['X-Versioning-Mode'] = _versioningMode;
+      }
+      if (_createNewProduct) {
+        headers['X-Create-New-Product'] = 'true';
+      }
+      
+      const response = await fetch(`/api/wms/products/${product.id}`, {
         method: 'PATCH',
-        body: JSON.stringify(data),
+        headers,
+        body: JSON.stringify(productData),
+        credentials: 'include'
       });
+      
+      const result = await response.json();
+      
+      if (response.status === 422) {
+        return { requiresConfirmation: true, ...result };
+      }
+      
+      if (!response.ok) {
+        throw new Error(result.message || result.error || 'Errore durante l\'aggiornamento');
+      }
+      
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
+      if (result.requiresConfirmation) {
+        setChangeAnalysis(result.changeAnalysis);
+        
+        if (result.changeAnalysis.requiresIdentityConfirm) {
+          setShowNewProductModal(true);
+        } else if (result.changeAnalysis.requiresVersioning) {
+          setShowVersioningModal(true);
+        }
+        return;
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/wms/products'] });
       toast({
         title: 'Prodotto aggiornato',
-        description: 'Il prodotto è stato aggiornato con successo.',
+        description: result.versioning?.created 
+          ? 'Prodotto aggiornato e nuova versione creata.' 
+          : 'Il prodotto è stato aggiornato con successo.',
       });
       onClose();
     },
@@ -362,17 +421,42 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
   });
 
   const onSubmit = (data: ProductFormData) => {
-    // Format Date objects to YYYY-MM-DD strings for backend compatibility
     const formattedData = {
       ...data,
       validFrom: data.validFrom ? format(data.validFrom, 'yyyy-MM-dd') : undefined,
       validTo: data.validTo ? format(data.validTo, 'yyyy-MM-dd') : undefined,
     };
 
+    setPendingFormData(formattedData);
+
     if (isEdit) {
       updateMutation.mutate(formattedData);
     } else {
       createMutation.mutate(formattedData);
+    }
+  };
+
+  const handleVersioningConfirm = (mode: 'correction' | 'business_change') => {
+    setShowVersioningModal(false);
+    if (pendingFormData) {
+      updateMutation.mutate({ 
+        ...pendingFormData, 
+        _versioningMode: mode 
+      });
+    }
+  };
+
+  const handleNewProductConfirm = (createNew: boolean) => {
+    setShowNewProductModal(false);
+    if (pendingFormData) {
+      if (createNew) {
+        createMutation.mutate(pendingFormData);
+      } else {
+        updateMutation.mutate({ 
+          ...pendingFormData, 
+          _versioningMode: 'business_change' 
+        });
+      }
     }
   };
 
@@ -382,8 +466,9 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle data-testid="heading-product-form">
+          <DialogTitle data-testid="heading-product-form" className="flex items-center gap-2">
             {isEdit ? 'Modifica Prodotto' : 'Nuovo Prodotto'}
+            {isEdit && <VersioningInfoTooltip />}
           </DialogTitle>
           <DialogDescription>
             {isEdit ? 'Aggiorna i dettagli del prodotto esistente' : 'Inserisci i dati per creare un nuovo prodotto nel catalogo'}
@@ -1047,6 +1132,22 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
           </form>
         </Form>
       </DialogContent>
+
+      <VersioningConfirmModal
+        open={showVersioningModal}
+        onClose={() => setShowVersioningModal(false)}
+        onConfirm={handleVersioningConfirm}
+        changedFields={changeAnalysis?.changedVersioningFields || []}
+        isPending={updateMutation.isPending}
+      />
+
+      <NewProductConfirmModal
+        open={showNewProductModal}
+        onClose={() => setShowNewProductModal(false)}
+        onConfirm={handleNewProductConfirm}
+        changedFields={changeAnalysis?.changedIdentityFields || []}
+        isPending={updateMutation.isPending || createMutation.isPending}
+      />
     </Dialog>
   );
 }
