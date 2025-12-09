@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { 
-  Search, Plus, Package, MoreHorizontal, Pencil, Trash2, Box, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, RotateCcw, SlidersHorizontal, X, ChevronDown
+  Search, Plus, Package, MoreHorizontal, Pencil, Trash2, Box, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, RotateCcw, SlidersHorizontal, X, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
@@ -410,7 +410,12 @@ export default function ProductsPage({
   const columns: ColumnDef<Product>[] = [
     {
       accessorKey: 'sku',
-      header: 'SKU',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          SKU
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           {row.original.imageUrl ? (
@@ -438,7 +443,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'brand',
-      header: 'Marca',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Marca
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => (
         <div data-testid={`text-product-brand-${row.original.id}`}>
           {row.original.brand || '-'}
@@ -447,7 +457,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'model',
-      header: 'Modello',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Modello
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => (
         <div>
           <div className="font-medium" data-testid={`text-product-model-${row.original.id}`}>
@@ -463,7 +478,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'ean',
-      header: 'EAN',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          EAN
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => (
         <div className="font-mono text-sm" data-testid={`text-product-ean-${row.original.id}`}>
           {row.original.ean || <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>}
@@ -472,7 +492,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'memory',
-      header: 'Memoria',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Memoria
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         if (!row.original.memory) {
           return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
@@ -490,7 +515,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'color',
-      header: 'Colore',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Colore
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         if (!row.original.color) {
           return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
@@ -524,7 +554,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'type',
-      header: 'Tipo',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Tipo
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         const typeLabels: Record<string, string> = {
           'CANVAS': 'Canvas',
@@ -552,7 +587,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'status',
-      header: 'Stato',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Stato
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         const statusLabels: Record<string, string> = {
           'active': 'Attivo',
@@ -580,7 +620,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'condition',
-      header: 'Condizioni',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Condizioni
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         if (!row.original.condition) return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
         
@@ -635,7 +680,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'categoryName',
-      header: 'Categoria',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Categoria
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         const { categoryName, source, isBrandSynced } = row.original;
         
@@ -657,7 +707,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'typeName',
-      header: 'Tipologia',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Tipologia
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         const { typeName, source, isBrandSynced } = row.original;
         
@@ -679,7 +734,12 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'validTo',
-      header: 'Validità',
+      header: ({ column }) => (
+        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Validità
+          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+        </Button>
+      ),
       cell: ({ row }) => {
         const { validFrom, validTo } = row.original;
         
