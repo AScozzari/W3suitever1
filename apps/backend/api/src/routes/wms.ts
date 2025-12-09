@@ -7330,16 +7330,19 @@ router.get("/inventory-view/:productId/:storeId/serials", async (req: Request, r
  * @permission wms.stock.read
  * @param productId - Product ID
  */
-router.get("/inventory-view/:productId/cross-store-summary", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
   try {
     const sessionTenantId = req.user?.tenantId;
     if (!sessionTenantId) {
       return res.status(401).json({ error: "Unauthorized: tenant not identified" });
     }
 
-    const { productId } = req.params;
+    const { productIdOrSku } = req.params;
 
-    // 1. Get complete product information
+    // Check if it's a UUID or SKU
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productIdOrSku);
+
+    // 1. Get complete product information (by UUID or SKU)
     const [product] = await db
       .select({
         id: products.id,
@@ -7365,7 +7368,7 @@ router.get("/inventory-view/:productId/cross-store-summary", rbacMiddleware, req
       })
       .from(products)
       .where(and(
-        eq(products.id, productId),
+        isUUID ? eq(products.id, productIdOrSku) : eq(products.sku, productIdOrSku),
         eq(products.tenantId, sessionTenantId)
       ))
       .limit(1);
@@ -7373,6 +7376,9 @@ router.get("/inventory-view/:productId/cross-store-summary", rbacMiddleware, req
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
+    
+    // Use the resolved product ID for all subsequent queries
+    const productId = product.id;
 
     // Get category and type names
     let categoryName = null;
