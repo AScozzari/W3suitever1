@@ -1,0 +1,124 @@
+16:59:44, Token expires: 17:14:41
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:44, Token expires: 17:14:41
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:44, Token expires: 17:14:41
+index-BO3er2gH.js:2  GET https://w3suite.it/api/stores 500 (Internal Server Error)
+queryFn @ index-BO3er2gH.js:2
+await in queryFn
+a @ query-DUPSTMkG.js:1
+M @ query-DUPSTMkG.js:1
+start @ query-DUPSTMkG.js:1
+fetch @ query-DUPSTMkG.js:1
+Lt @ query-DUPSTMkG.js:1
+onSubscribe @ query-DUPSTMkG.js:1
+subscribe @ query-DUPSTMkG.js:1
+(anonime) @ query-DUPSTMkG.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:46, Token expires: 17:14:41
+useTenantSafety-DqMJWEV5.js:5 [TENANT-NAV] Navigating to: /staging/magazzino
+index-BO3er2gH.js:21 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'magazzino', tenant: 'staging', *: 'magazzino'}
+index-BO3er2gH.js:21 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+index-BO3er2gH.js:21 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:51, Token expires: 17:14:41
+index-BO3er2gH.js:2  GET https://w3suite.it/api/stores 500 (Internal Server Error)
+queryFn @ index-BO3er2gH.js:2
+await in queryFn
+a @ query-DUPSTMkG.js:1
+M @ query-DUPSTMkG.js:1
+(anonime) @ query-DUPSTMkG.js:1
+Promise.then
+(anonime) @ query-DUPSTMkG.js:1
+Promise.catch
+M @ query-DUPSTMkG.js:1
+start @ query-DUPSTMkG.js:1
+fetch @ query-DUPSTMkG.js:1
+Lt @ query-DUPSTMkG.js:1
+onSubscribe @ query-DUPSTMkG.js:1
+subscribe @ query-DUPSTMkG.js:1
+(anonime) @ query-DUPSTMkG.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:56, Token expires: 17:14:41
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:58, Token expires: 17:14:41
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:58, Token expires: 17:14:41
+Layout-DM4YuQ6V.js:86 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+Layout-DM4YuQ6V.js:86 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it/ws (transport: wss)
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Configuration:
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · allowLegacyNotifications: false
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationHa1: ""
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationPassword: NOT SHOWN
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationUsername: "2000"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · delegate: {}
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactName: ""
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactParams: {"transport":"ws"}
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · displayName: "Extension 2000"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · forceRport: false
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · gracefulShutdown: true
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackAllowUnregisteredOptionTags: false
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackIpInContact: false
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackViaTcp: false
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceId: ""
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceIdAlwaysAdded: false
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logBuiltinEnabled: true
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConfiguration: true
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConnector: undefined
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logLevel: "debug"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · noAnswerTimeout: 60
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · preloadedRouteSet: []
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionAttempts: 0
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionDelay: 4
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sendInitialProvisionalResponse: true
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactory: (e,t)=>{o===void 0&&(o=$n());const r={iceGatheringTimeout:(t==null?void 0:t.iceGatheringTimeout)!==void 0?t==null?void 0:t.iceGatheringTimeout:5e3,peerConnectionConfiguration:Object.assign(Object.assign({},kn()),t==null?void 0:t.peerConnectionConfiguration)},n=e.userAgent.getLogger("sip.SessionDescriptionHandler");return new Be(n,o,r)}
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactoryOptions: {}
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtension100rel: "Unsupported"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionReplaces: "Unsupported"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionExtraSupported: []
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipjsId: "u3m89"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportConstructor: Ft
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportOptions: {"server":"wss://demo.edgvoip.it/ws","connectionTimeout":10}
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · uri: sip:2000@demo.edgvoip.it
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · userAgentString: "SIP.js/0.21.1"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "9uj6jb6v68t2.invalid"
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it/ws
+Layout-DM4YuQ6V.js:58 Tue Dec 09 2025 16:59:58 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+Layout-DM4YuQ6V.js:86 No auth token found - login required
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:58, Token expires: 17:14:41
+index-BO3er2gH.js:2 🔍 Token expiry check: Current time: 16:59:58, Token expires: 17:14:41
+index-BO3er2gH.js:2  GET https://w3suite.it/api/stores 500 (Internal Server Error)
+queryFn @ index-BO3er2gH.js:2
+await in queryFn
+a @ query-DUPSTMkG.js:1
+M @ query-DUPSTMkG.js:1
+(anonime) @ query-DUPSTMkG.js:1
+Promise.then
+(anonime) @ query-DUPSTMkG.js:1
+Promise.catch
+M @ query-DUPSTMkG.js:1
+(anonime) @ query-DUPSTMkG.js:1
+Promise.then
+(anonime) @ query-DUPSTMkG.js:1
+Promise.catch
+M @ query-DUPSTMkG.js:1
+start @ query-DUPSTMkG.js:1
+fetch @ query-DUPSTMkG.js:1
+Lt @ query-DUPSTMkG.js:1
+onSubscribe @ query-DUPSTMkG.js:1
+subscribe @ query-DUPSTMkG.js:1
+(anonime) @ query-DUPSTMkG.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+index-BO3er
