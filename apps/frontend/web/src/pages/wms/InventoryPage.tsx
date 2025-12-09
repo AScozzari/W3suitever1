@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -366,6 +367,7 @@ const DEFAULT_FILTERS: InventoryFilters = {
 };
 
 function useInventoryView() {
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>('aggregated');
   const [filters, setFilters] = useState<InventoryFilters>(DEFAULT_FILTERS);
   const [pendingFilters, setPendingFilters] = useState<InventoryFilters>(DEFAULT_FILTERS);
@@ -439,8 +441,25 @@ function useInventoryView() {
     if (filters.dateTo) params.append('dateTo', filters.dateTo);
 
     try {
+      // Get tenant ID and auth headers for authenticated export (mirror getCurrentTenantId logic)
+      const tenantId = localStorage.getItem('currentTenantId') || localStorage.getItem('tenantId') || '';
+      
+      // Validate tenant ID before making request
+      if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
+        console.error('[EXPORT-ERROR] Invalid tenant ID, cannot proceed with export');
+        toast({ title: 'Errore Export', description: 'Contesto tenant non disponibile. Rieffettuare il login.', variant: 'destructive' });
+        return;
+      }
+      
+      const demoUserId = localStorage.getItem('demo_user_id') || 'admin-user';
+      
       const response = await fetch(`/api/wms/inventory-view/export?${params.toString()}`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': demoUserId
+        }
       });
       
       if (!response.ok) throw new Error('Export failed');

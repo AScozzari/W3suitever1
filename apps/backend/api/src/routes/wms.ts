@@ -6742,21 +6742,31 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
 
       // Convert aggregates to array for sorting/pagination
       const aggregatedItems = [...productAggregates.values()].map(agg => {
+        // Get logistic status distribution
+        const logisticCounts = crossStoreLogisticMap[agg.productId] || {};
+        const totalSerials = crossStoreSerialCountMap[agg.productId] || 0;
+        
+        // CRITICAL: Calculate totalAvailable and totalReserved from product_items logistic status
+        // to ensure consistency with the logistic status distribution shown in UI
+        // States mapping: 'in_stock' = available, 'reserved' = reserved
+        const availableFromSerials = logisticCounts['in_stock'] || 0;
+        const reservedFromSerials = logisticCounts['reserved'] || 0;
+        
+        // Use serial-based counts for consistency (fallback to balance-based if no serials)
+        const effectiveTotalAvailable = totalSerials > 0 ? availableFromSerials : agg.totalAvailable;
+        const effectiveTotalReserved = totalSerials > 0 ? reservedFromSerials : agg.totalReserved;
+        
         // Calculate total quantity (available + reserved) for accurate weighted average
-        const totalQuantity = agg.totalAvailable + agg.totalReserved;
+        const totalQuantity = effectiveTotalAvailable + effectiveTotalReserved;
         const weightedAvgCost = totalQuantity > 0 
           ? agg.totalCostWeighted / totalQuantity 
           : 0;
         
         // Calculate stock status based on total quantity
         let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
-        if (agg.totalAvailable === 0) stockStatus = 'out_of_stock';
-        else if (agg.totalAvailable <= LOW_STOCK_THRESHOLD) stockStatus = 'low_stock';
+        if (effectiveTotalAvailable === 0) stockStatus = 'out_of_stock';
+        else if (effectiveTotalAvailable <= LOW_STOCK_THRESHOLD) stockStatus = 'low_stock';
         else stockStatus = 'in_stock';
-        
-        // Get logistic status distribution
-        const logisticCounts = crossStoreLogisticMap[agg.productId] || {};
-        const totalSerials = crossStoreSerialCountMap[agg.productId] || 0;
         
         // Calculate logistic status distribution with percentages
         const logisticDistribution = Object.entries(logisticCounts).map(([status, count]) => ({
@@ -6797,8 +6807,8 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
           productDescription: agg.productDescription,
           productEan: agg.productEan,
           serialType: agg.productSerialType,
-          totalAvailable: agg.totalAvailable,
-          totalReserved: agg.totalReserved,
+          totalAvailable: effectiveTotalAvailable,
+          totalReserved: effectiveTotalReserved,
           totalValue: agg.totalValue,
           weightedAverageCost: weightedAvgCost,
           storeCoverageCount: agg.storeIds.size,
