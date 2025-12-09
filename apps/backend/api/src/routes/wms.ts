@@ -7335,4 +7335,169 @@ router.patch("/movement-type-configs/:movementType", rbacMiddleware, requirePerm
   }
 });
 
+// ============================================================
+// MOVEMENT APPROVAL/REJECTION ENDPOINTS
+// ============================================================
+
+/**
+ * POST /api/wms/stock-movements/:id/approve
+ * 
+ * Approves a stock movement that requires authorization.
+ * Updates inventory after approval.
+ * 
+ * @permission wms.movements.approve
+ */
+router.post("/stock-movements/:id/approve", rbacMiddleware, requirePermission('wms.movements.approve'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const approverId = req.user?.id;
+    const { id: movementId } = req.params;
+    const { notes } = req.body;
+    
+    if (!sessionTenantId || !approverId) {
+      return res.status(401).json({ error: "Unauthorized: tenant or user not identified" });
+    }
+
+    const result = await wmsWorkflowService.approveMovement(
+      sessionTenantId,
+      movementId,
+      approverId,
+      notes || undefined
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info('✅ WMS stock movement approved', {
+      tenantId: sessionTenantId,
+      movementId,
+      approverId
+    });
+
+    res.json({ 
+      success: true, 
+      message: result.message,
+      data: result.movement
+    });
+
+  } catch (error) {
+    console.error("Error approving stock movement:", error);
+    res.status(500).json({ 
+      error: "Failed to approve stock movement",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/stock-movements/:id/reject
+ * 
+ * Rejects a stock movement that requires authorization.
+ * Does NOT update inventory - movement remains rejected.
+ * 
+ * @permission wms.movements.approve
+ */
+router.post("/stock-movements/:id/reject", rbacMiddleware, requirePermission('wms.movements.approve'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const rejecterId = req.user?.id;
+    const { id: movementId } = req.params;
+    const { reason } = req.body;
+    
+    if (!sessionTenantId || !rejecterId) {
+      return res.status(401).json({ error: "Unauthorized: tenant or user not identified" });
+    }
+
+    if (!reason || reason.trim().length === 0) {
+      return res.status(400).json({ error: "Reason is required for rejection" });
+    }
+
+    const result = await wmsWorkflowService.rejectMovement(
+      sessionTenantId,
+      movementId,
+      rejecterId,
+      reason.trim()
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+
+    logger.info('❌ WMS stock movement rejected', {
+      tenantId: sessionTenantId,
+      movementId,
+      rejecterId,
+      reason: reason.trim()
+    });
+
+    res.json({ 
+      success: true, 
+      message: result.message,
+      data: result.movement
+    });
+
+  } catch (error) {
+    console.error("Error rejecting stock movement:", error);
+    res.status(500).json({ 
+      error: "Failed to reject stock movement",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/stock-movements/pending-approval
+ * 
+ * Gets all stock movements pending approval for the current tenant.
+ * 
+ * @permission wms.movements.read
+ */
+router.get("/stock-movements/pending-approval", rbacMiddleware, requirePermission('wms.movements.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const storeId = req.query.storeId as string | undefined;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    let query = sql`
+      SELECT 
+        m.*,
+        p.name as product_name,
+        p.sku as product_sku,
+        s.name as store_name,
+        u.first_name || ' ' || u.last_name as created_by_name
+      FROM w3suite.wms_stock_movements m
+      LEFT JOIN w3suite.products p ON m.product_id = p.id
+      LEFT JOIN w3suite.stores s ON m.store_id = s.id
+      LEFT JOIN w3suite.users u ON m.created_by = u.id
+      WHERE m.tenant_id = ${sessionTenantId}::uuid
+        AND m.movement_status = 'pending_approval'
+    `;
+
+    if (storeId) {
+      query = sql`${query} AND m.store_id = ${storeId}::uuid`;
+    }
+
+    query = sql`${query} ORDER BY m.created_at DESC`;
+
+    const result = await db.execute(query);
+
+    res.json({ 
+      success: true, 
+      data: result.rows || [],
+      count: result.rows?.length || 0
+    });
+
+  } catch (error) {
+    console.error("Error fetching pending approval movements:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch pending approval movements",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;
