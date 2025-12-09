@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. It aims to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution featuring a unique WindTre glassmorphism design. The project's ambition is to become a leading integrated platform for business operations.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a unique WindTre glassmorphism design. The project aims to become a leading integrated platform for business operations.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -147,6 +147,7 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
 - **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
 - **WMS Movement Type Configuration**: A taxonomy of 15 movement types configurable per-tenant via a dedicated System Config page, including approval workflows and linked workflow templates, differentiating between 6 automatic and 9 manual movements.
 - **System Config Page**: A modular settings dashboard located at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+- **Business Drivers Architecture**: Multi-tenant drivers in `w3suite.drivers` with RLS pattern for source types and product type associations.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
