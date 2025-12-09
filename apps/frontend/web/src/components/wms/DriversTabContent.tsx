@@ -47,11 +47,9 @@ export default function DriversTabContent() {
     isActive: true,
   });
 
-  const { data: driversResponse, isLoading, isError, error, refetch } = useQuery<{ data: Driver[] }>({
+  const { data: drivers = [], isLoading, isError, error, refetch } = useQuery<Driver[]>({
     queryKey: ['/api/drivers', { includeInactive: 'true' }],
   });
-  
-  const drivers = driversResponse?.data || [];
 
   const brandDrivers = drivers.filter(d => d.source === 'brand');
   const tenantDrivers = drivers.filter(d => d.source === 'tenant');
