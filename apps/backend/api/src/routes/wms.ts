@@ -7359,9 +7359,9 @@ router.post("/stock-movements/:id/approve", rbacMiddleware, requirePermission('w
     }
 
     const result = await wmsWorkflowService.approveMovement(
-      sessionTenantId,
       movementId,
       approverId,
+      sessionTenantId,
       notes || undefined
     );
 
@@ -7414,9 +7414,9 @@ router.post("/stock-movements/:id/reject", rbacMiddleware, requirePermission('wm
     }
 
     const result = await wmsWorkflowService.rejectMovement(
-      sessionTenantId,
       movementId,
       rejecterId,
+      sessionTenantId,
       reason.trim()
     );
 
@@ -7495,6 +7495,50 @@ router.get("/stock-movements/pending-approval", rbacMiddleware, requirePermissio
     console.error("Error fetching pending approval movements:", error);
     res.status(500).json({ 
       error: "Failed to fetch pending approval movements",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/workflow-templates
+ * 
+ * Gets all workflow templates available for WMS movements.
+ * Only returns active templates with category 'wms' or 'approval'.
+ * 
+ * @permission wms.settings.read
+ */
+router.get("/workflow-templates", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const templates = await db.execute(sql`
+      SELECT 
+        id,
+        name,
+        description,
+        category,
+        is_active
+      FROM w3suite.workflow_templates
+      WHERE tenant_id = ${sessionTenantId}::uuid
+        AND is_active = true
+        AND (category = 'wms' OR category = 'approval' OR category IS NULL)
+      ORDER BY name ASC
+    `);
+
+    res.json({ 
+      success: true, 
+      data: templates.rows || []
+    });
+
+  } catch (error) {
+    console.error("Error fetching workflow templates:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch workflow templates",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
