@@ -284,8 +284,8 @@ export default function FornitoriTabContent() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="fornitori" className="mt-0">
-      <div className="space-y-6" data-testid="fornitori-content">
+      <TabsContent value="fornitori" className="mt-0">
+        <div className="space-y-6" data-testid="fornitori-content">
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -555,7 +555,6 @@ export default function FornitoriTabContent() {
             </table>
           )}
         </div>
-      </div>
 
       {/* Modal Fornitore (from SettingsPage lines 9384-10500) */}
       {supplierModal.open && (
@@ -1310,11 +1309,11 @@ export default function FornitoriTabContent() {
         </div>
       )}
       </div>
-        </TabsContent>
+      </TabsContent>
 
-        <TabsContent value="drivers" className="mt-0">
-          <DriversTabContent />
-        </TabsContent>
+      <TabsContent value="drivers" className="mt-0">
+        <DriversTabContent />
+      </TabsContent>
       </Tabs>
     </>
   );
