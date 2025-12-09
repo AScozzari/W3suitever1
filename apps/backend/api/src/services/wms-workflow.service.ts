@@ -10,7 +10,7 @@
  * 4. Gestisce i callback di approvazione/rifiuto
  */
 
-import { db } from '../db';
+import { db } from '../core/db';
 import { eq, and } from 'drizzle-orm';
 import { 
   wmsMovementTypeConfig,
@@ -20,8 +20,8 @@ import {
   stores,
   users
 } from '../db/schema/w3suite';
-import { notificationService } from '../notification-service';
-import { logger } from '../logger';
+import { notificationService } from '../core/notification-service';
+import { logger } from '../core/logger';
 
 export interface WmsWorkflowContext {
   tenantId: string;
@@ -113,7 +113,7 @@ class WmsWorkflowService {
       await db
         .update(wmsStockMovements)
         .set({
-          status: 'pending_approval',
+          movementStatus: 'pending_approval',
           updatedAt: new Date()
         })
         .where(eq(wmsStockMovements.id, context.movementId));
@@ -392,18 +392,17 @@ class WmsWorkflowService {
         return { success: false, message: 'Movimento non trovato' };
       }
 
-      if (movement.status !== 'pending_approval') {
-        return { success: false, message: `Movimento non in attesa di approvazione (status: ${movement.status})` };
+      if (movement.movementStatus !== 'pending_approval') {
+        return { success: false, message: `Movimento non in attesa di approvazione (status: ${movement.movementStatus})` };
       }
 
       // Aggiorna status a 'approved'
       await db
         .update(wmsStockMovements)
         .set({
-          status: 'approved',
+          movementStatus: 'approved',
           approvedBy: approverId,
           approvedAt: new Date(),
-          approvalNotes: notes,
           updatedAt: new Date()
         })
         .where(eq(wmsStockMovements.id, movementId));
@@ -492,15 +491,15 @@ class WmsWorkflowService {
         return { success: false, message: 'Movimento non trovato' };
       }
 
-      if (movement.status !== 'pending_approval') {
-        return { success: false, message: `Movimento non in attesa di approvazione (status: ${movement.status})` };
+      if (movement.movementStatus !== 'pending_approval') {
+        return { success: false, message: `Movimento non in attesa di approvazione (status: ${movement.movementStatus})` };
       }
 
       // Aggiorna status a 'rejected'
       await db
         .update(wmsStockMovements)
         .set({
-          status: 'rejected',
+          movementStatus: 'rejected',
           rejectedBy: rejecterId,
           rejectedAt: new Date(),
           rejectionReason: reason,

@@ -45,6 +45,7 @@ import {
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { logger } from "../core/logger";
 import { z } from "zod";
+import { wmsWorkflowService } from "../services/wms-workflow.service";
 
 // Active product_items logistic statuses (prevent product deletion)
 // These represent inventory under tenant control or committed to orders
@@ -2968,6 +2969,66 @@ router.post("/stock-movements", rbacMiddleware, requirePermission('wms.stock.wri
       productId: movementData.productId,
       quantityDelta: movementData.quantityDelta
     });
+    
+    // 🔄 WORKFLOW INTEGRATION: Check if movement requires approval
+    try {
+      const { requiresApproval, workflowTemplateId } = await wmsWorkflowService.checkApprovalRequired(
+        sessionTenantId,
+        movementData.movementType
+      );
+
+      if (requiresApproval) {
+        // Get product name for notification
+        const productName = product.name;
+        
+        // Trigger approval workflow
+        const workflowResult = await wmsWorkflowService.triggerApprovalWorkflow({
+          tenantId: sessionTenantId,
+          storeId: movementData.storeId || '',
+          userId: req.user?.id || 'system',
+          movementId: createdMovement.id,
+          movementType: movementData.movementType,
+          movementDirection: movementData.movementDirection as 'inbound' | 'outbound' | 'internal',
+          productName,
+          quantity: Math.abs(movementData.quantityDelta)
+        });
+
+        // Update movement with workflow instance ID if created
+        if (workflowResult.workflowInstanceId) {
+          await db
+            .update(wmsStockMovements)
+            .set({ 
+              workflowInstanceId: workflowResult.workflowInstanceId,
+              updatedAt: new Date()
+            })
+            .where(eq(wmsStockMovements.id, createdMovement.id));
+        }
+
+        logger.info('🔄 WMS movement requires approval - workflow triggered', {
+          movementId: createdMovement.id,
+          workflowInstanceId: workflowResult.workflowInstanceId,
+          supervisorCount: workflowResult.supervisorIds?.length || 0
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: workflowResult.message,
+          data: {
+            ...createdMovement,
+            movementStatus: 'pending_approval',
+            workflowInstanceId: workflowResult.workflowInstanceId,
+            requiresApproval: true,
+            supervisorIds: workflowResult.supervisorIds
+          }
+        });
+      }
+    } catch (workflowError) {
+      // Log workflow error but don't fail the movement creation
+      logger.error('⚠️ WMS workflow integration error (non-blocking)', {
+        error: workflowError instanceof Error ? workflowError.message : 'Unknown error',
+        movementId: createdMovement.id
+      });
+    }
     
     res.status(201).json({
       success: true,
