@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics } from '../hooks/useWorkflowDashboard';
@@ -56,7 +57,8 @@ import {
   TrendingUp,
   Megaphone,
   AlertTriangle,
-  Tags
+  Tags,
+  Info
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -1439,6 +1441,61 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                   <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                     <Users className="h-6 w-6 text-windtre-purple" />
                     Team Management
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button 
+                          className="ml-1 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                          data-testid="button-team-info"
+                        >
+                          <Info className="h-4 w-4 text-gray-400 hover:text-windtre-purple" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-96 p-4" align="start">
+                        <div className="space-y-4 text-sm">
+                          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                            <Info className="h-4 w-4 text-windtre-purple" />
+                            Sistema Gerarchico e Gestione Richieste
+                          </h3>
+                          
+                          <div className="space-y-3">
+                            <div>
+                              <p className="font-medium text-gray-800 mb-1">📊 Gerarchia Organizzativa</p>
+                              <p className="text-gray-600 text-xs">Area Commerciale → Entità Legale → Negozio → Dipartimento → Team → Utente</p>
+                            </div>
+                            
+                            <div>
+                              <p className="font-medium text-gray-800 mb-1">👥 Tipologie Team</p>
+                              <p className="text-gray-600 text-xs">
+                                <span className="font-medium">Funzionale:</span> 1 solo per dipartimento per utente (team principale)<br/>
+                                <span className="font-medium">Temporaneo/Progetto:</span> Senza limiti, membership multipla
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <p className="font-medium text-gray-800 mb-1">🔀 Routing Richieste</p>
+                              <p className="text-gray-600 text-xs">
+                                • Prima si cerca un team funzionale → va al suo supervisore<br/>
+                                • Se non esiste → notifica TUTTI i supervisori dei team temporanei<br/>
+                                • <span className="font-medium">First Wins:</span> Il primo che risponde gestisce la richiesta
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <p className="font-medium text-gray-800 mb-1">🔒 Anti Self-Approval</p>
+                              <p className="text-gray-600 text-xs">Un supervisore NON può essere membro dello stesso team che supervisiona</p>
+                            </div>
+                            
+                            <div>
+                              <p className="font-medium text-gray-800 mb-1">🏪 Routing Basato su Turno</p>
+                              <p className="text-gray-600 text-xs">
+                                <span className="font-medium">Amministrative</span> (ferie, permessi): sempre al supervisore sede anagrafica<br/>
+                                <span className="font-medium">Operative</span> (cambio turno, straordinari): se turno attivo in altro negozio, vanno al supervisore di quel negozio
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </h2>
                   <p className="text-gray-600 mt-1">Manage enterprise teams and workflow assignments</p>
                 </div>

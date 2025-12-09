@@ -99,15 +99,15 @@ localPort = 8084
 localPort = 24678
 
 [[ports]]
-localPort = 32789
-externalPort = 9000
-
-[[ports]]
 localPort = 32827
 
 [[ports]]
 localPort = 32903
 externalPort = 3001
+
+[[ports]]
+localPort = 34165
+externalPort = 9000
 
 [[ports]]
 localPort = 34667
