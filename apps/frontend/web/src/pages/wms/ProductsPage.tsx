@@ -632,29 +632,6 @@ export default function ProductsPage({
       ),
     },
     {
-      accessorKey: 'isActive',
-      header: 'Stato',
-      cell: ({ row }) => (
-        row.original.isActive ? (
-          <Badge 
-            variant="outline" 
-            style={{ borderColor: 'hsl(142, 76%, 36%)', color: 'hsl(142, 76%, 36%)' }}
-            data-testid={`badge-status-${row.original.id}`}
-          >
-            Attivo
-          </Badge>
-        ) : (
-          <Badge 
-            variant="outline" 
-            style={{ borderColor: 'hsl(0, 84%, 60%)', color: 'hsl(0, 84%, 60%)' }}
-            data-testid={`badge-status-${row.original.id}`}
-          >
-            Inattivo
-          </Badge>
-        )
-      ),
-    },
-    {
       accessorKey: 'categoryName',
       header: 'Categoria',
       cell: ({ row }) => {
