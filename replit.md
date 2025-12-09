@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. Its core purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, distinguished by its WindTre glassmorphism design. The project aims to become the leading integrated business operations platform.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. Its purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a unique WindTre glassmorphism design. The project aims to be a leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -71,6 +71,16 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **Step 2**: Se nessun team functional, trova TUTTI i team temporanei dell'utente → notifica TUTTI i supervisori (First Wins)
   - **⚡ First Wins Pattern**: Il primo supervisore che risponde "vince" e gestisce la richiesta
   - **HTTP 409 Conflict**: Se un secondo supervisore prova ad approvare, riceve errore "Richiesta già gestita"
+- **SHIFT-BASED ROUTING (ROUTING IBRIDO TURNI)**:
+  - **📋 Categorie Operative**: `cambio_turno`, `straordinario`, `timbratura`, `turno_extra` → verificano turno attivo
+  - **📋 Categorie Amministrative**: Tutto il resto (ferie, permessi, malattia) → sempre sede anagrafica
+  - **🏪 Logica Routing**:
+    1. Se richiesta è OPERATIVA E utente ha turno attivo in sede diversa dalla sua anagrafica → route a supervisore sede turno
+    2. Se richiesta è OPERATIVA MA nessun turno attivo altrove → route a supervisore sede anagrafica
+    3. Se richiesta è AMMINISTRATIVA → sempre supervisore sede anagrafica
+  - **📊 Tracciabilità**: Metadata richiesta include `shiftBasedRouting` con storeId, storeName, shiftId
+  - **🔧 Implementazione**: `request-trigger-service.ts` → `getActiveShiftStore()` + `isOperationalCategory()`
+  - **📁 Action Tags Config**: `apps/backend/api/src/lib/action-tags.ts` → `routingCategory` per ogni tag
 - **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
   - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
   - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
@@ -88,7 +98,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **📍 Hierarchy Path**: Campo `stores.hierarchy_path` formato `tenant_slug/area_code/store_code` per query veloci
   - **🎯 Cascading Filters (User Modal)**: Area selection → filters Legal Entities → filters Stores
   - **⚠️ Area Mismatch Validation (Team Modal)**: Warning quando supervisor appartiene a area diversa dai membri
-  - **API Endpoints**: `GET /api/commercial-areas`, `GET /api/legal-entities`, `GET /api/stores`, `GET /api/departments`
+  - **API Endpoints**: `GET /api/commercial-areas`, `GET /api/legal-entities`, `GET /api/legal-entities`, `GET /api/stores`, `GET /api/departments`
   - **Default Departments**: hr, finance, sales, operations, marketing, it, customer_service
   - **✅ Pattern**: Validate area consistency in team assignments, show yellow warnings (not blockers)
 - **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
@@ -124,41 +134,32 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS for a consistent UI with fixed header, sidebar, and white backgrounds.
-- **Monorepo Structure**: Centralized code organization.
-- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) with PostgreSQL and Row Level Security (RLS) for multi-tenancy.
-- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates and granular permissions.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS for a consistent UI with fixed header, sidebar, and white backgrounds within a monorepo.
+- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
+- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system with Italian role templates.
 - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
-- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer for PDF contract analysis), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), and AI Voice Agent RAG System (`pgvector`) for WindTre offers.
+- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), and AI Voice Agent RAG System (`pgvector`).
 - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
-- **Campaign Management**: Dual-mode creation (wizard/advanced) with GDPR Consent enforcement.
+- **Campaign Management**: Dual-mode campaign creation (wizard/advanced) with integrated GDPR Consent enforcement.
 - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking.
-- **Brand Interface**: Workflow Builder (n8n-style with Zustand, 5 specialized node components, 106 MCP nodes) and Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Enterprise WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys and bidirectional sync.
-- **RBAC System**: 10 Italian role templates with 215 granular permissions and default assignments.
-- **Workflow Database Operations**: Secure SELECT, INSERT, UPDATE, DELETE on `w3suite` schema with visual query builder, RLS, prepared statements, and validation.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Enterprise Inventory Dashboard with KPI cards, traffic light stock status, pagination, multi-format export, and cross-store views.
-- **WMS Movement Type Configuration**: Taxonomy of 15 movement types (5 inbound, 6 outbound, 4 internal) configurable per-tenant via System Config page, including approval workflow, linked workflow templates, and required documents.
-- **System Config Page**: Modular settings dashboard at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+- **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes, 5 specialized node components) and a Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
+- **VoIP Telephony**: Enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys.
+- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
+- **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a dedicated System Config page, including approval workflows and linked workflow templates.
+- **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
-- **Redis**: For BullMQ and Unified Notification System.
-- **OAuth2/OIDC Enterprise**: User authentication.
+- **Redis**: Used for BullMQ and Unified Notification System.
+- **OAuth2/OIDC Enterprise**: For user authentication.
 - **SHADCN/UI**: UI components.
 - **Radix UI**: Headless component primitives.
 - **Lucide React**: Icons.
 - **TanStack React Query**: Server state management.
-- **React Hook Form**: Form handling and validation.
+- **React Hook Form**: Form management and validation.
 - **Vite**: Frontend build tool.
 - **Drizzle Kit**: Database schema management.
 - **PostCSS**: CSS pre-processing.
 - **ESBuild**: Server-side code bundling.
 - **Nginx**: Reverse proxy.
 - **OpenAI**: AI Workflow Builder, PDC Analyzer, AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
-- **Google Workspace**: Integration.
-- **AWS**: Cloud services.
-- **Meta/Instagram**: Social media integrations.
-- **Microsoft 365**: Office suite integration.
-- **Stripe**: Payment processing.
-- **GTM/Analytics**: Google Tag Manager and analytics services.

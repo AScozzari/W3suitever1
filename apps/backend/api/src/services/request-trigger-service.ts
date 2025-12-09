@@ -413,38 +413,54 @@ export class RequestTriggerService {
   }
 
   /**
-   * 🏪 Find teams at a specific store for a department
+   * 🏪 Find teams whose supervisors belong to a specific store
    * Used when routing operational requests to shift location supervisors
+   * 
+   * Since teams don't have direct store_id, we find teams where:
+   * - Primary supervisor's home store matches the target store
+   * - OR secondary supervisor's home store matches
+   * - AND team handles the specified department
    */
   private static async findTeamsAtStore(
     storeId: string,
     department: string | null,
     tenantId: string
   ): Promise<{ id: string; name: string; teamType: string; assignedDepartments: string[] }[]> {
+    // Find teams where supervisor belongs to the target store
     const query = department ? `
-      SELECT id, name, team_type, assigned_departments
-      FROM w3suite.teams
-      WHERE tenant_id = $1
-        AND store_id = $2
-        AND is_active = true
+      SELECT DISTINCT t.id, t.name, t.team_type, t.assigned_departments
+      FROM w3suite.teams t
+      LEFT JOIN w3suite.users u_primary ON t.primary_supervisor_user = u_primary.id
+      LEFT JOIN w3suite.users u_secondary ON t.secondary_supervisor_user = u_secondary.id
+      WHERE t.tenant_id = $1
+        AND t.is_active = true
         AND (
-          $3 = ANY(assigned_departments)
-          OR assigned_departments IS NULL 
-          OR array_length(assigned_departments, 1) IS NULL
+          u_primary.store_id = $2
+          OR u_secondary.store_id = $2
+        )
+        AND (
+          $3 = ANY(t.assigned_departments)
+          OR t.assigned_departments IS NULL 
+          OR array_length(t.assigned_departments, 1) IS NULL
         )
       ORDER BY 
-        CASE team_type 
+        CASE t.team_type 
           WHEN 'functional' THEN 1 
           WHEN 'specialized' THEN 2
           ELSE 3 
         END
     ` : `
-      SELECT id, name, team_type, assigned_departments
-      FROM w3suite.teams
-      WHERE tenant_id = $1
-        AND store_id = $2
-        AND is_active = true
-      ORDER BY team_type
+      SELECT DISTINCT t.id, t.name, t.team_type, t.assigned_departments
+      FROM w3suite.teams t
+      LEFT JOIN w3suite.users u_primary ON t.primary_supervisor_user = u_primary.id
+      LEFT JOIN w3suite.users u_secondary ON t.secondary_supervisor_user = u_secondary.id
+      WHERE t.tenant_id = $1
+        AND t.is_active = true
+        AND (
+          u_primary.store_id = $2
+          OR u_secondary.store_id = $2
+        )
+      ORDER BY t.team_type
     `;
 
     const params = department ? [tenantId, storeId, department] : [tenantId, storeId];
@@ -456,10 +472,11 @@ export class RequestTriggerService {
       assigned_departments: string[];
     }>(query, params);
 
-    logger.info('🏪 Found teams at store for routing', {
+    logger.info('🏪 Found teams at store for shift-based routing', {
       storeId,
       department,
-      teamsFound: result.rows.length
+      teamsFound: result.rows.length,
+      teamNames: result.rows.map(r => r.name)
     });
 
     return result.rows.map(row => ({
