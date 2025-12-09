@@ -8184,4 +8184,154 @@ router.get("/workflow-templates", rbacMiddleware, requirePermission('wms.setting
   }
 });
 
+// ==================== WMS INVENTORY SNAPSHOTS ====================
+
+import { wmsSnapshotService } from "../services/wms-snapshot.service";
+
+/**
+ * GET /api/wms/snapshots
+ * 
+ * Query historical inventory snapshots with filters.
+ * Snapshots are created automatically at 12:00 and 23:00 Europe/Rome.
+ * 
+ * Query params:
+ * - storeId: filter by store
+ * - productId: filter by product
+ * - dateFrom: start date (ISO string)
+ * - dateTo: end date (ISO string)
+ * - limit: max records (default 100)
+ * - offset: pagination offset
+ * 
+ * @permission wms.inventory.read
+ */
+router.get("/snapshots", rbacMiddleware, requirePermission('wms.inventory.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const { storeId, productId, dateFrom, dateTo, limit, offset } = req.query;
+
+    const result = await wmsSnapshotService.querySnapshots({
+      tenantId: sessionTenantId,
+      storeId: storeId as string | undefined,
+      productId: productId as string | undefined,
+      dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
+      dateTo: dateTo ? new Date(dateTo as string) : undefined,
+      limit: limit ? parseInt(limit as string) : 100,
+      offset: offset ? parseInt(offset as string) : 0
+    });
+
+    res.json({ 
+      success: true, 
+      ...result
+    });
+
+  } catch (error) {
+    console.error("Error fetching inventory snapshots:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch inventory snapshots",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/snapshots/delta
+ * 
+ * Calculate inventory delta between two dates.
+ * Returns quantity and value changes for each product/store combination.
+ * 
+ * Query params (required):
+ * - dateFrom: start date (ISO string)
+ * - dateTo: end date (ISO string)
+ * 
+ * Query params (optional):
+ * - storeId: filter by store
+ * - productId: filter by product
+ * 
+ * @permission wms.inventory.read
+ */
+router.get("/snapshots/delta", rbacMiddleware, requirePermission('wms.inventory.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const { storeId, productId, dateFrom, dateTo } = req.query;
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        message: "dateFrom and dateTo are required"
+      });
+    }
+
+    const result = await wmsSnapshotService.calculateDelta({
+      tenantId: sessionTenantId,
+      storeId: storeId as string | undefined,
+      productId: productId as string | undefined,
+      dateFrom: new Date(dateFrom as string),
+      dateTo: new Date(dateTo as string)
+    });
+
+    res.json({ 
+      success: true, 
+      data: result,
+      count: result.length,
+      dateFrom,
+      dateTo
+    });
+
+  } catch (error) {
+    console.error("Error calculating snapshot delta:", error);
+    res.status(500).json({ 
+      error: "Failed to calculate snapshot delta",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/snapshots/trigger
+ * 
+ * Manually trigger a snapshot creation for the current tenant.
+ * Useful for testing or immediate snapshot needs.
+ * 
+ * @permission wms.settings.write
+ */
+router.post("/snapshots/trigger", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    logger.info('📸 [WMS-SNAPSHOT] Manual trigger via API', { 
+      tenantId: sessionTenantId,
+      userId: req.user?.id 
+    });
+
+    const result = await wmsSnapshotService.triggerManualSnapshot(sessionTenantId);
+
+    res.json({ 
+      success: true, 
+      message: `Snapshot created: ${result.snapshotsCreated} records`,
+      ...result
+    });
+
+  } catch (error) {
+    console.error("Error triggering manual snapshot:", error);
+    res.status(500).json({ 
+      error: "Failed to trigger manual snapshot",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;

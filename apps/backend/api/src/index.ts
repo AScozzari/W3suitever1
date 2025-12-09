@@ -579,6 +579,15 @@ async function startBackend() {
     console.warn('⚠️  Token refresh service failed to start:', error);
   }
 
+  // 📸 WMS SNAPSHOT SERVICE - Automatic inventory snapshots at 12:00 and 23:00
+  try {
+    const { wmsSnapshotService } = await import('./services/wms-snapshot.service.js');
+    wmsSnapshotService.initialize();
+    console.log('📸 WMS Snapshot service started (12:00 & 23:00 Europe/Rome)');
+  } catch (error) {
+    console.warn('⚠️  WMS Snapshot service failed to start:', error);
+  }
+
   // API-only backend - frontend apps handle their own routing
   // Only serve API, OAuth2, and well-known endpoints
 
