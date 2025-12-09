@@ -14,6 +14,7 @@ import {
   type InsertWorkflowInstance
 } from '../db/schema/w3suite.js';
 import { logger } from '../core/logger.js';
+import { isOperationalTag, getRoutingCategory, isOperationalCategory } from '../lib/action-tags.js';
 
 export interface RequestTriggerResult {
   success: boolean;
@@ -51,12 +52,68 @@ export class RequestTriggerService {
         tenantId
       });
 
-      // 🎯 STEP 1: FUNCTIONAL FIRST - Find teams where requester is a member
-      const userTeams = await this.findTeamsForUserByDepartment(
-        request.requesterId, 
-        request.department, 
-        tenantId
-      );
+      // 🏪 STEP 0: SHIFT-BASED ROUTING CHECK (for operational requests)
+      // If request is operational (turni/timbrature) and user has active shift at different store,
+      // route to that store's team instead of home store
+      let shiftBasedRouting: { storeId: string; storeName: string; shiftId: string } | null = null;
+      let routedViaShift = false;
+      
+      if (isOperationalCategory(request.category)) {
+        logger.info('🏪 Operational request detected, checking for active shift routing', {
+          requestId: request.id,
+          category: request.category
+        });
+        
+        // Get user's home store
+        const userResult = await db.execute<{ store_id: string | null }>(`
+          SELECT store_id FROM w3suite.users WHERE id = $1 AND tenant_id = $2
+        `, [request.requesterId, tenantId]);
+        
+        const userHomeStoreId = userResult.rows[0]?.store_id || null;
+        
+        // Check if user has active shift at a different store
+        const requestDate = request.startDate || new Date();
+        shiftBasedRouting = await this.getActiveShiftStore(
+          request.requesterId,
+          requestDate,
+          userHomeStoreId,
+          tenantId
+        );
+        
+        if (shiftBasedRouting) {
+          logger.info('🏪 SHIFT-BASED ROUTING ACTIVATED: Request will be routed to shift location', {
+            requestId: request.id,
+            category: request.category,
+            shiftStoreId: shiftBasedRouting.storeId,
+            shiftStoreName: shiftBasedRouting.storeName,
+            homeStoreId: userHomeStoreId
+          });
+          routedViaShift = true;
+        }
+      }
+
+      // 🎯 STEP 1: Find appropriate teams
+      let userTeams: { id: string; name: string; teamType: string; assignedDepartments: string[] }[];
+      
+      if (shiftBasedRouting) {
+        // Use teams from the shift location store
+        userTeams = await this.findTeamsAtStore(
+          shiftBasedRouting.storeId,
+          request.department,
+          tenantId
+        );
+        logger.info('🏪 Using teams from shift location store', {
+          storeId: shiftBasedRouting.storeId,
+          teamsFound: userTeams.length
+        });
+      } else {
+        // Standard routing: find teams where requester is a member
+        userTeams = await this.findTeamsForUserByDepartment(
+          request.requesterId, 
+          request.department, 
+          tenantId
+        );
+      }
 
       let eligibleTeam: { id: string; name: string; teamType: string; assignedDepartments: string[] } | null = null;
       let isTemporaryRouting = false;
@@ -199,16 +256,26 @@ export class RequestTriggerService {
         });
       }
 
-      // STEP 6: Update request metadata for First Wins tracking
+      // STEP 6: Update request metadata for First Wins and Shift-Based routing tracking
       await this.updateRequestMetadataForFirstWins(
         request.id,
         [...new Set(allNotifiedSupervisors)], // Remove duplicates
         allNotifiedTeams,
-        tenantId
+        tenantId,
+        shiftBasedRouting // Pass shift routing data if present
       );
 
-      const routingType = isTemporaryRouting ? 'TEMPORARY_FIRST_WINS' : 
-                          (eligibleTeam.teamType === 'functional' ? 'FUNCTIONAL_PRIMARY' : 'STANDARD');
+      // Determine routing type for logging and response
+      let routingType: string;
+      if (routedViaShift) {
+        routingType = 'SHIFT_BASED';
+      } else if (isTemporaryRouting) {
+        routingType = 'TEMPORARY_FIRST_WINS';
+      } else if (eligibleTeam.teamType === 'functional') {
+        routingType = 'FUNCTIONAL_PRIMARY';
+      } else {
+        routingType = 'STANDARD';
+      }
 
       logger.info('✅ Request Trigger Service: Workflow automation completed successfully', {
         requestId: request.id,
@@ -218,15 +285,24 @@ export class RequestTriggerService {
         department: request.department,
         tenantId,
         routingType,
-        temporaryTeamsNotified: isTemporaryRouting ? allTemporaryTeams.length : 0
+        temporaryTeamsNotified: isTemporaryRouting ? allTemporaryTeams.length : 0,
+        shiftBasedRouting: routedViaShift ? shiftBasedRouting?.storeName : null
       });
+
+      // Build response message
+      let responseMessage: string;
+      if (routedViaShift && shiftBasedRouting) {
+        responseMessage = `Richiesta operativa instradata al supervisore di ${shiftBasedRouting.storeName} (sede turno attivo)`;
+      } else if (isTemporaryRouting) {
+        responseMessage = `Workflow assigned with First Wins routing to ${allTemporaryTeams.length} temporary team supervisors`;
+      } else {
+        responseMessage = `Workflow automatically assigned to team "${eligibleTeam.name}"`;
+      }
 
       return {
         success: true,
         workflowInstanceId: workflowInstance.id,
-        message: isTemporaryRouting 
-          ? `Workflow assigned with First Wins routing to ${allTemporaryTeams.length} temporary team supervisors`
-          : `Workflow automatically assigned to team "${eligibleTeam.name}"`
+        message: responseMessage
       };
 
     } catch (error) {
@@ -245,6 +321,153 @@ export class RequestTriggerService {
         error: `Workflow automation failed: ${errorMessage}`
       };
     }
+  }
+
+  /**
+   * 🏪 SHIFT-BASED ROUTING: Get the store where user has an active shift on the given date
+   * Returns the store_id if user has a confirmed/assigned shift at a DIFFERENT store than their home store
+   * Used for operational requests (turni, timbrature, straordinari)
+   * 
+   * @param userId - The user making the request
+   * @param requestDate - The date of the request (defaults to today)
+   * @param userHomeStoreId - The user's home store (sede anagrafica)
+   * @param tenantId - Tenant context
+   * @returns The store_id where user has active shift, or null if no shift or same as home store
+   */
+  private static async getActiveShiftStore(
+    userId: string,
+    requestDate: Date,
+    userHomeStoreId: string | null,
+    tenantId: string
+  ): Promise<{ storeId: string; storeName: string; shiftId: string } | null> {
+    try {
+      const dateStr = requestDate.toISOString().split('T')[0];
+      
+      const result = await db.execute<{
+        shift_id: string;
+        store_id: string;
+        store_name: string;
+        shift_status: string;
+        assignment_status: string;
+      }>(`
+        SELECT 
+          s.id as shift_id,
+          s.store_id,
+          st.name as store_name,
+          s.status as shift_status,
+          sa.status as assignment_status
+        FROM w3suite.shifts s
+        JOIN w3suite.shift_assignments sa ON sa.shift_id = s.id::text
+        JOIN w3suite.stores st ON st.id = s.store_id
+        WHERE s.tenant_id = $1
+          AND sa.user_id = $2
+          AND s.date = $3::date
+          AND s.status IN ('published', 'in_progress')
+          AND sa.status IN ('assigned', 'confirmed', 'in_progress')
+        ORDER BY s.start_time ASC
+        LIMIT 1
+      `, [tenantId, userId, dateStr]);
+
+      if (result.rows.length === 0) {
+        logger.debug('🏪 No active shift found for user on date', {
+          userId,
+          date: dateStr,
+          tenantId
+        });
+        return null;
+      }
+
+      const shift = result.rows[0];
+      
+      if (userHomeStoreId && shift.store_id === userHomeStoreId) {
+        logger.debug('🏪 Active shift is at home store, no routing override needed', {
+          userId,
+          storeId: shift.store_id,
+          date: dateStr
+        });
+        return null;
+      }
+
+      logger.info('🏪 SHIFT-BASED ROUTING: User has active shift at different store', {
+        userId,
+        shiftStoreId: shift.store_id,
+        shiftStoreName: shift.store_name,
+        homeStoreId: userHomeStoreId,
+        shiftId: shift.shift_id,
+        date: dateStr
+      });
+
+      return {
+        storeId: shift.store_id,
+        storeName: shift.store_name,
+        shiftId: shift.shift_id
+      };
+    } catch (error) {
+      logger.error('❌ Error checking active shift store', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId,
+        tenantId
+      });
+      return null;
+    }
+  }
+
+  /**
+   * 🏪 Find teams at a specific store for a department
+   * Used when routing operational requests to shift location supervisors
+   */
+  private static async findTeamsAtStore(
+    storeId: string,
+    department: string | null,
+    tenantId: string
+  ): Promise<{ id: string; name: string; teamType: string; assignedDepartments: string[] }[]> {
+    const query = department ? `
+      SELECT id, name, team_type, assigned_departments
+      FROM w3suite.teams
+      WHERE tenant_id = $1
+        AND store_id = $2
+        AND is_active = true
+        AND (
+          $3 = ANY(assigned_departments)
+          OR assigned_departments IS NULL 
+          OR array_length(assigned_departments, 1) IS NULL
+        )
+      ORDER BY 
+        CASE team_type 
+          WHEN 'functional' THEN 1 
+          WHEN 'specialized' THEN 2
+          ELSE 3 
+        END
+    ` : `
+      SELECT id, name, team_type, assigned_departments
+      FROM w3suite.teams
+      WHERE tenant_id = $1
+        AND store_id = $2
+        AND is_active = true
+      ORDER BY team_type
+    `;
+
+    const params = department ? [tenantId, storeId, department] : [tenantId, storeId];
+    
+    const result = await db.execute<{
+      id: string;
+      name: string;
+      team_type: string;
+      assigned_departments: string[];
+    }>(query, params);
+
+    logger.info('🏪 Found teams at store for routing', {
+      storeId,
+      department,
+      teamsFound: result.rows.length
+    });
+
+    return result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      teamType: row.team_type,
+      assignedDepartments: row.assigned_departments || []
+    }));
   }
 
   /**
@@ -983,14 +1206,15 @@ export class RequestTriggerService {
   }
 
   /**
-   * 📊 Update request metadata with First Wins tracking info
+   * 📊 Update request metadata with First Wins tracking info and shift-based routing data
    * Uses deep merge to preserve existing nested metadata fields
    */
   private static async updateRequestMetadataForFirstWins(
     requestId: string,
     notifiedSupervisors: string[],
     notifiedTeams: { id: string; name: string; teamType: string }[],
-    tenantId: string
+    tenantId: string,
+    shiftRoutingData?: { storeId: string; storeName: string; shiftId: string } | null
   ): Promise<void> {
     try {
       // Get current metadata
@@ -1017,13 +1241,24 @@ export class RequestTriggerService {
         status: 'pending' // Will be updated to 'handled' when supervisor responds
       };
       
-      // Deep merge: preserve all existing metadata and add/update firstWinsRouting
+      // Create shift-based routing data if present
+      const shiftRouting = shiftRoutingData ? {
+        enabled: true,
+        shiftStoreId: shiftRoutingData.storeId,
+        shiftStoreName: shiftRoutingData.storeName,
+        shiftId: shiftRoutingData.shiftId,
+        routedAt: new Date().toISOString()
+      } : null;
+      
+      // Deep merge: preserve all existing metadata and add/update routing info
       const updatedMetadata = {
         ...existingMetadata,
         // Preserve existing routing if it exists, merge with new data
         firstWinsRouting: existingMetadata.firstWinsRouting 
           ? { ...existingMetadata.firstWinsRouting, ...firstWinsData }
-          : firstWinsData
+          : firstWinsData,
+        // Add shift-based routing data if present
+        ...(shiftRouting && { shiftBasedRouting: shiftRouting })
       };
 
       await db.update(universalRequests)
@@ -1033,15 +1268,16 @@ export class RequestTriggerService {
         })
         .where(eq(universalRequests.id, requestId));
 
-      logger.info('📊 Updated request metadata for First Wins tracking', {
+      logger.info('📊 Updated request metadata for routing tracking', {
         requestId,
         supervisorCount: notifiedSupervisors.length,
         teamCount: notifiedTeams.length,
-        isFirstWins: notifiedTeams.length > 1
+        isFirstWins: notifiedTeams.length > 1,
+        isShiftBasedRouting: !!shiftRoutingData
       });
 
     } catch (error) {
-      logger.error('❌ Failed to update request metadata for First Wins', {
+      logger.error('❌ Failed to update request metadata for routing', {
         error: error instanceof Error ? error.message : String(error),
         requestId,
         tenantId

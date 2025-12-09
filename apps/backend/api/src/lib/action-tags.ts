@@ -123,3 +123,23 @@ export function getOperationalTags(): ActionTagDefinition[] {
     DEPARTMENT_ACTION_TAGS[dept].filter(t => t.routingCategory === 'operational')
   );
 }
+
+/**
+ * Operational request categories - these route based on active shift location
+ * All other categories route to home store supervisor
+ */
+export const OPERATIONAL_CATEGORIES = [
+  'cambio_turno',       // Shift change request
+  'straordinario',      // Overtime request
+  'timbratura',         // Timeclock adjustment
+  'turno_extra',        // Extra shift request
+] as const;
+
+/**
+ * Check if a request category requires shift-based routing
+ * @param category - The universal request category
+ * @returns true if routing should check for active shift at different store
+ */
+export function isOperationalCategory(category: string): boolean {
+  return OPERATIONAL_CATEGORIES.includes(category.toLowerCase() as any);
+}
