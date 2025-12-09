@@ -377,8 +377,17 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         });
         return result;
       } catch (error: any) {
-        if (error.status === 422 && error.changeAnalysis) {
-          return { requiresConfirmation: true, changeAnalysis: error.changeAnalysis };
+        console.log('[WMS-VERSIONING] Caught error:', { 
+          status: error.status, 
+          hasChangeAnalysis: !!error.changeAnalysis,
+          errorKeys: Object.keys(error),
+          error 
+        });
+        if (error.status === 422) {
+          const analysis = error.changeAnalysis;
+          if (analysis) {
+            return { requiresConfirmation: true, changeAnalysis: analysis };
+          }
         }
         throw error;
       }
