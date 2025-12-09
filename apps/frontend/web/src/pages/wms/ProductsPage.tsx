@@ -627,7 +627,7 @@ export default function ProductsPage({
         </Button>
       ),
       cell: ({ row }) => {
-        if (!row.original.condition) return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        if (!row.original.condition) return <div className="flex justify-center"><span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span></div>;
         
         const conditionLabels: Record<string, string> = {
           'new': 'Nuovo',
@@ -643,13 +643,15 @@ export default function ProductsPage({
         };
         const condition = row.original.condition;
         return (
-          <Badge 
-            variant="outline" 
-            style={{ borderColor: conditionColors[condition] || conditionColors['new'], color: conditionColors[condition] || conditionColors['new'] }}
-            data-testid={`badge-product-condition-${row.original.id}`}
-          >
-            {conditionLabels[condition] || condition}
-          </Badge>
+          <div className="flex justify-center">
+            <Badge 
+              variant="outline" 
+              style={{ borderColor: conditionColors[condition] || conditionColors['new'], color: conditionColors[condition] || conditionColors['new'] }}
+              data-testid={`badge-product-condition-${row.original.id}`}
+            >
+              {conditionLabels[condition] || condition}
+            </Badge>
+          </div>
         );
       },
     },
@@ -690,11 +692,11 @@ export default function ProductsPage({
         const { categoryName, source, isBrandSynced } = row.original;
         
         if (!categoryName) {
-          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+          return <div className="flex justify-center"><span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span></div>;
         }
         
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex justify-center items-center gap-2">
             <span className="text-sm font-medium">{categoryName}</span>
             {source === 'brand' && isBrandSynced && (
               <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
@@ -717,11 +719,11 @@ export default function ProductsPage({
         const { typeName, source, isBrandSynced } = row.original;
         
         if (!typeName) {
-          return <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+          return <div className="flex justify-center"><span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span></div>;
         }
         
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex justify-center items-center gap-2">
             <span className="text-sm">{typeName}</span>
             {source === 'brand' && isBrandSynced && (
               <Badge variant="outline" className="text-xs" style={{ borderColor: 'hsl(var(--brand-orange))', color: 'hsl(var(--brand-orange))' }}>
@@ -744,7 +746,7 @@ export default function ProductsPage({
         const { validFrom, validTo } = row.original;
         
         if (!validFrom && !validTo) {
-          return <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Illimitata</span>;
+          return <div className="flex justify-center"><span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Illimitata</span></div>;
         }
         
         const validFromDate = validFrom ? new Date(validFrom) : null;
@@ -758,7 +760,7 @@ export default function ProductsPage({
           
           if (daysUntilExpiry < 0) {
             return (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 items-center">
                 <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                   {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
                 </span>
@@ -771,7 +773,7 @@ export default function ProductsPage({
           
           if (daysUntilExpiry <= 30) {
             return (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 items-center">
                 <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                   {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
                 </span>
@@ -788,21 +790,25 @@ export default function ProductsPage({
           }
           
           return (
-            <span className="text-sm">
-              {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
-            </span>
+            <div className="flex justify-center">
+              <span className="text-sm">
+                {validFromDate && format(validFromDate, 'dd/MM/yyyy')} → {format(validToDate, 'dd/MM/yyyy')}
+              </span>
+            </div>
           );
         }
         
         if (validFromDate) {
           return (
-            <span className="text-sm">
-              Dal {format(validFromDate, 'dd/MM/yyyy')}
-            </span>
+            <div className="flex justify-center">
+              <span className="text-sm">
+                Dal {format(validFromDate, 'dd/MM/yyyy')}
+              </span>
+            </div>
           );
         }
         
-        return <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>-</span>;
+        return <div className="flex justify-center"><span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>-</span></div>;
       },
     },
     {
