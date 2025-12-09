@@ -1,0 +1,58 @@
+installHook.js:1 Tue Dec 09 2025 13:30:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=bc0f8edc:6959
+genericLog @ sip__js.js?v=bc0f8edc:6941
+genericLog @ sip__js.js?v=bc0f8edc:6881
+error @ sip__js.js?v=bc0f8edc:6869
+onWebSocketError @ sip__js.js?v=bc0f8edc:12427
+(anonime) @ sip__js.js?v=bc0f8edc:12293Comprendi l'errore
+installHook.js:1 Tue Dec 09 2025 13:30:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=bc0f8edc:6962
+genericLog @ sip__js.js?v=bc0f8edc:6941
+genericLog @ sip__js.js?v=bc0f8edc:6881
+warn @ sip__js.js?v=bc0f8edc:6872
+onWebSocketClose @ sip__js.js?v=bc0f8edc:12413
+(anonime) @ sip__js.js?v=bc0f8edc:12292Comprendi l'avviso
+sip__js.js?v=bc0f8edc:6965 Tue Dec 09 2025 13:30:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+sip__js.js?v=bc0f8edc:6965 Tue Dec 09 2025 13:30:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+installHook.js:1 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=bc0f8edc:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=bc0f8edc:12292:49)
+overrideMethod @ installHook.js:1
+setupSIP @ useSIPRegistration.ts:234
+await in setupSIP
+(anonime) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bc0f8edc:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=bc0f8edc:197
+flushWork @ chunk-ZHRYBLGQ.js?v=bc0f8edc:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=bc0f8edc:384Comprendi l'errore
+queryClient.ts:334  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view/PROD-APL-I16P-256-TIT/cross-store-summary 500 (Internal Server Error)
+apiRequest @ queryClient.ts:334
+queryFn @ InventoryPage.tsx:575
+fetchFn @ @tanstack_react-query.js?v=bc0f8edc:1097
+run @ @tanstack_react-query.js?v=bc0f8edc:795
+start @ @tanstack_react-query.js?v=bc0f8edc:838
+fetch @ @tanstack_react-query.js?v=bc0f8edc:1144
+executeFetch_fn @ @tanstack_react-query.js?v=bc0f8edc:1639
+setOptions @ @tanstack_react-query.js?v=bc0f8edc:1392
+(anonime) @ @tanstack_react-query.js?v=bc0f8edc:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=bc0f8edc:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=bc0f8edc:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=bc0f8edc:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=bc0f8edc:18627Comprendi l'errore
+queryClient.ts:334  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view/PROD-APL-I16P-256-TIT/cross-store-summary 500 (Internal Server Error)

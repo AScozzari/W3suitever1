@@ -7438,7 +7438,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
     // 4. Get logistic status distribution from product_items
     const logisticStatusRaw = await db
       .select({
-        status: productItems.status,
+        status: productItems.logisticStatus,
         count: sql<number>`COUNT(*)::int`
       })
       .from(productItems)
@@ -7446,7 +7446,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
         eq(productItems.tenantId, sessionTenantId),
         eq(productItems.productId, productId)
       ))
-      .groupBy(productItems.status)
+      .groupBy(productItems.logisticStatus)
       .orderBy(desc(sql`COUNT(*)`));
 
     const totalLogisticItems = logisticStatusRaw.reduce((sum, s) => sum + (s.count || 0), 0);
