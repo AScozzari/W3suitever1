@@ -7697,6 +7697,143 @@ export const wmsProductTypes = w3suiteSchema.table("wms_product_types", {
   }).onDelete('restrict'),
 ]);
 
+// ==================== BUSINESS DRIVERS (Brand-Tenant RLS Architecture) ====================
+// Drivers are business entities (Fisso, Mobile, Energia, Smartphone, etc.) that connect to ProductType hierarchy
+// via allowedProductTypes array. They follow the same brand/tenant RLS pattern as products/categories.
+
+export const drivers = w3suiteSchema.table("drivers", {
+  // Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  id: uuid("id").notNull().default(sql`gen_random_uuid()`),
+  
+  // Brand/Tenant hybrid tracking
+  source: productSourceEnum("source").default('tenant').notNull(), // brand | tenant
+  brandDriverId: varchar("brand_driver_id", { length: 100 }), // Reference to Brand master driver
+  isBrandSynced: boolean("is_brand_synced").default(false).notNull(), // Auto-update when Brand modifies
+  
+  // Driver info
+  code: varchar("code", { length: 50 }).notNull(), // Unique code per tenant (e.g., "MOBILE", "FISSO", "ENERGIA")
+  name: varchar("name", { length: 255 }).notNull(), // Display name (e.g., "Mobile", "Fisso", "Energia")
+  description: text("description"),
+  icon: varchar("icon", { length: 100 }), // Icon name or emoji
+  
+  // ProductType hierarchy connection - Array of allowed product types for this driver
+  allowedProductTypes: text("allowed_product_types").array().default([]).notNull(), // ['PHYSICAL', 'CANVAS', 'SERVICE', 'VIRTUAL']
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: smallint("sort_order").default(0).notNull(),
+  
+  // Audit fields
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.tenantId, table.id] }),
+  uniqueIndex("drivers_tenant_code_unique").on(table.tenantId, table.code),
+  index("drivers_tenant_idx").on(table.tenantId),
+  index("drivers_source_idx").on(table.source),
+  index("drivers_brand_id_idx").on(table.brandDriverId),
+  index("drivers_active_idx").on(table.tenantId, table.isActive),
+]);
+
+export const insertDriverSchema = createInsertSchema(drivers).omit({
+  tenantId: true,
+  id: true,
+  createdBy: true,
+  modifiedBy: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  code: z.string().min(1, "Codice obbligatorio").max(50),
+  name: z.string().min(1, "Nome obbligatorio").max(255),
+  description: z.string().optional(),
+  icon: z.string().max(100).optional(),
+  allowedProductTypes: z.array(z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS'])).default([]),
+  source: z.enum(['brand', 'tenant']).optional(),
+  isActive: z.boolean().optional(),
+  sortOrder: z.coerce.number().int().min(0).optional(),
+});
+export const updateDriverSchema = insertDriverSchema.partial();
+export type InsertDriver = z.infer<typeof insertDriverSchema>;
+export type UpdateDriver = z.infer<typeof updateDriverSchema>;
+export type Driver = typeof drivers.$inferSelect;
+
+// ==================== DRIVER-CATEGORY MAPPINGS (Brand-Tenant RLS Architecture) ====================
+// Maps Driver → ProductType → Category → Typology(optional) relationships
+// These mappings can be pushed from Brand or created by tenant, following same RLS pattern
+
+export const driverCategoryMappings = w3suiteSchema.table("driver_category_mappings", {
+  // Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  id: uuid("id").notNull().default(sql`gen_random_uuid()`),
+  
+  // Brand/Tenant hybrid tracking
+  source: productSourceEnum("source").default('tenant').notNull(), // brand | tenant
+  brandMappingId: varchar("brand_mapping_id", { length: 100 }), // Reference to Brand master mapping
+  isBrandSynced: boolean("is_brand_synced").default(false).notNull(), // Auto-update when Brand modifies
+  
+  // Relationship chain: Driver → ProductType → Category → Typology
+  driverId: uuid("driver_id").notNull(), // FK to drivers.id
+  productType: productTypeEnum("product_type").notNull(), // PHYSICAL | VIRTUAL | SERVICE | CANVAS
+  categoryId: varchar("category_id", { length: 100 }).notNull(), // FK to wmsCategories.id
+  typologyId: varchar("typology_id", { length: 100 }), // FK to wmsProductTypes.id (optional)
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Audit fields
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.tenantId, table.id] }),
+  // Unique constraint: one mapping per driver-productType-category-typology combo per tenant
+  uniqueIndex("driver_mappings_unique").on(table.tenantId, table.driverId, table.productType, table.categoryId, table.typologyId),
+  index("driver_mappings_tenant_idx").on(table.tenantId),
+  index("driver_mappings_driver_idx").on(table.tenantId, table.driverId),
+  index("driver_mappings_source_idx").on(table.source),
+  index("driver_mappings_product_type_idx").on(table.tenantId, table.productType),
+  index("driver_mappings_category_idx").on(table.tenantId, table.categoryId),
+  
+  // Composite FK: driver_category_mappings → drivers
+  foreignKey({
+    columns: [table.tenantId, table.driverId],
+    foreignColumns: [drivers.tenantId, drivers.id],
+  }).onDelete('cascade'),
+  
+  // Composite FK: driver_category_mappings → wms_categories
+  foreignKey({
+    columns: [table.tenantId, table.categoryId],
+    foreignColumns: [wmsCategories.tenantId, wmsCategories.id],
+  }).onDelete('cascade'),
+  
+  // Composite FK: driver_category_mappings → wms_product_types (optional)
+  // Note: typologyId is nullable, so this FK only validates when set
+]);
+
+export const insertDriverCategoryMappingSchema = createInsertSchema(driverCategoryMappings).omit({
+  tenantId: true,
+  id: true,
+  createdBy: true,
+  modifiedBy: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  driverId: z.string().uuid("Driver ID non valido"),
+  productType: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
+  categoryId: z.string().min(1, "Categoria obbligatoria").max(100),
+  typologyId: z.string().max(100).optional(),
+  source: z.enum(['brand', 'tenant']).optional(),
+  isActive: z.boolean().optional(),
+});
+export const updateDriverCategoryMappingSchema = insertDriverCategoryMappingSchema.partial();
+export type InsertDriverCategoryMapping = z.infer<typeof insertDriverCategoryMappingSchema>;
+export type UpdateDriverCategoryMapping = z.infer<typeof updateDriverCategoryMappingSchema>;
+export type DriverCategoryMapping = typeof driverCategoryMappings.$inferSelect;
+
 // 3) products - Master product definition (Brand-Tenant hybrid architecture)
 export const products = w3suiteSchema.table("products", {
   // CRITICAL: Composite PK (tenantId, id) allows identical ID across tenants (Brand push requirement)

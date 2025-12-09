@@ -9,7 +9,7 @@ import {
   aiPdcExtractedData,
   aiPdcServiceMapping
 } from "../db/schema/brand-interface";
-import { drivers, driverCategories, driverTypologies } from "../db/schema/public";
+import { drivers, wmsCategories, wmsProductTypes, driverCategoryMappings } from "../db/schema/w3suite";
 import { enforceAIEnabled, enforceAgentEnabled } from "../middleware/ai-enforcement";
 import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import OpenAI from "openai";
@@ -1268,50 +1268,87 @@ router.post("/sessions/:sessionId/finalize", enforceAIEnabled, enforceAgentEnabl
 
 /**
  * GET /api/pdc/drivers/hierarchy
- * Get complete WindTre product hierarchy: Drivers → Categories → Typologies
+ * Get complete product hierarchy: Drivers → ProductTypes → Categories → Typologies
+ * Uses new w3suite schema with RLS pattern
  */
 router.get("/drivers/hierarchy", async (req, res) => {
   try {
-    // Get all drivers
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant context required" });
+    }
+
+    // Get all drivers for tenant
     const allDrivers = await db
-      .select()
+      .select({
+        id: drivers.id,
+        code: drivers.code,
+        name: drivers.name,
+        allowedProductTypes: drivers.allowedProductTypes,
+        source: drivers.source,
+      })
       .from(drivers)
-      .where(eq(drivers.active, true))
-      .orderBy(drivers.name);
+      .where(and(
+        eq(drivers.tenantId, tenantId),
+        eq(drivers.isActive, true)
+      ))
+      .orderBy(drivers.sortOrder, drivers.name);
 
-    // Get all categories
+    // Get all categories for tenant
     const allCategories = await db
-      .select()
-      .from(driverCategories)
-      .where(eq(driverCategories.active, true))
-      .orderBy(driverCategories.sortOrder);
+      .select({
+        id: wmsCategories.id,
+        nome: wmsCategories.nome,
+        descrizione: wmsCategories.descrizione,
+        productType: wmsCategories.productType,
+        source: wmsCategories.source,
+      })
+      .from(wmsCategories)
+      .where(and(
+        eq(wmsCategories.tenantId, tenantId),
+        eq(wmsCategories.isActive, true)
+      ))
+      .orderBy(wmsCategories.ordine, wmsCategories.nome);
 
-    // Get all typologies
+    // Get all typologies for tenant
     const allTypologies = await db
-      .select()
-      .from(driverTypologies)
-      .where(eq(driverTypologies.active, true))
-      .orderBy(driverTypologies.sortOrder);
+      .select({
+        id: wmsProductTypes.id,
+        categoryId: wmsProductTypes.categoryId,
+        nome: wmsProductTypes.nome,
+        descrizione: wmsProductTypes.descrizione,
+        source: wmsProductTypes.source,
+      })
+      .from(wmsProductTypes)
+      .where(and(
+        eq(wmsProductTypes.tenantId, tenantId),
+        eq(wmsProductTypes.isActive, true)
+      ))
+      .orderBy(wmsProductTypes.ordine, wmsProductTypes.nome);
 
-    // Build hierarchy
+    // Build hierarchy: Driver → allowedProductTypes → Categories (filtered) → Typologies
     const hierarchy = allDrivers.map(driver => ({
       id: driver.id,
       code: driver.code,
       name: driver.name,
+      source: driver.source,
+      allowedProductTypes: driver.allowedProductTypes,
+      // Categories filtered by driver's allowedProductTypes
       categories: allCategories
-        .filter(cat => cat.driverId === driver.id)
+        .filter(cat => driver.allowedProductTypes?.includes(cat.productType))
         .map(category => ({
           id: category.id,
-          code: category.code,
-          name: category.name,
-          description: category.description,
+          name: category.nome,
+          description: category.descrizione,
+          productType: category.productType,
+          source: category.source,
           typologies: allTypologies
             .filter(typ => typ.categoryId === category.id)
             .map(typology => ({
               id: typology.id,
-              code: typology.code,
-              name: typology.name,
-              description: typology.description,
+              name: typology.nome,
+              description: typology.descrizione,
+              source: typology.source,
             })),
         })),
     }));

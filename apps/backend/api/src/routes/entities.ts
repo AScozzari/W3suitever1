@@ -12,8 +12,8 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules } from '../db/schema/w3suite';
-import { channels, commercialAreas, drivers } from '../db/schema/public';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers } from '../db/schema/w3suite';
+import { channels, commercialAreas } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 
@@ -971,19 +971,48 @@ router.get('/roles', async (req, res) => {
   }
 });
 
-// ==================== PUBLIC REFERENCE DATA ====================
+// ==================== BUSINESS DRIVERS ====================
 
 /**
  * GET /api/drivers
- * Get all active drivers from public schema (no tenant context needed)
+ * Get all active drivers (both brand-pushed and tenant-custom)
+ * Follows RLS pattern: tenantId required for isolation
  */
 router.get('/drivers', async (req, res) => {
   try {
-    // Query public.drivers - no tenant isolation needed
-    const driversList = await db.query.drivers.findMany({
-      where: eq(drivers.active, true),
-      orderBy: [desc(drivers.name)]
-    });
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Query w3suite.drivers with tenant isolation (includes both brand and custom)
+    const driversList = await db
+      .select({
+        id: drivers.id,
+        code: drivers.code,
+        name: drivers.name,
+        description: drivers.description,
+        icon: drivers.icon,
+        allowedProductTypes: drivers.allowedProductTypes,
+        source: drivers.source,
+        isBrandSynced: drivers.isBrandSynced,
+        isActive: drivers.isActive,
+        sortOrder: drivers.sortOrder,
+        createdAt: drivers.createdAt,
+      })
+      .from(drivers)
+      .where(and(
+        eq(drivers.tenantId, tenantId),
+        eq(drivers.isActive, true)
+      ))
+      .orderBy(drivers.sortOrder, drivers.name);
 
     res.status(200).json({
       success: true,
@@ -995,7 +1024,8 @@ router.get('/drivers', async (req, res) => {
   } catch (error: any) {
     logger.error('Error retrieving drivers', { 
       errorMessage: error?.message || 'Unknown error',
-      errorStack: error?.stack
+      errorStack: error?.stack,
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenantId
     });
     res.status(500).json({
       success: false,

@@ -77,7 +77,8 @@ import {
   crmCustomerTypeEnum,
   identityMatchStatusEnum
 } from '../db/schema/w3suite';
-import { drivers, marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
+import { marketingChannels, marketingChannelUtmMappings } from '../db/schema/public';
+import { drivers } from '../db/schema/w3suite';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { leadScoringService } from '../services/lead-scoring-ai.service';
 import { utmLinksService } from '../services/utm-links.service';
@@ -5254,7 +5255,10 @@ router.get('/pipelines', async (req, res) => {
         funnel: crmFunnels
       })
       .from(crmPipelines)
-      .leftJoin(drivers, eq(crmPipelines.driverId, drivers.id))
+      .leftJoin(drivers, and(
+        eq(crmPipelines.driverId, drivers.id),
+        eq(drivers.tenantId, tenantId)
+      ))
       .leftJoin(crmFunnels, eq(crmPipelines.funnelId, crmFunnels.id))
       .where(and(...conditions))
       .orderBy(desc(crmPipelines.createdAt))
@@ -5674,7 +5678,10 @@ router.get('/pipelines/:id', async (req, res) => {
         updatedAt: crmPipelines.updatedAt,
       })
       .from(crmPipelines)
-      .leftJoin(drivers, eq(crmPipelines.driverId, drivers.id))
+      .leftJoin(drivers, and(
+        eq(crmPipelines.driverId, drivers.id),
+        eq(drivers.tenantId, tenantId)
+      ))
       .where(and(
         eq(crmPipelines.id, id),
         eq(crmPipelines.tenantId, tenantId)

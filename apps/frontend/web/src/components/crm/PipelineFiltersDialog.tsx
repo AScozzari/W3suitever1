@@ -70,18 +70,21 @@ export function PipelineFiltersDialog({
     enabled: open,
   });
 
+  const { data: driversData = [] } = useQuery({
+    queryKey: ['/api/drivers'],
+    enabled: open,
+  });
+
   const filteredStores = stores.filter((store: any) => 
     store.nome?.toLowerCase().includes(storeSearch.toLowerCase()) ||
     store.code?.toLowerCase().includes(storeSearch.toLowerCase())
   );
 
-  const drivers = [
-    { value: 'FISSO', label: 'FISSO' },
-    { value: 'MOBILE', label: 'MOBILE' },
-    { value: 'DEVICE', label: 'DEVICE' },
-    { value: 'ACCESSORI', label: 'ACCESSORI' },
-    { value: 'FIBRA', label: 'FIBRA' },
-  ];
+  // Map API drivers to value/label format for compatibility
+  const drivers = driversData.map((d: any) => ({
+    value: d.code || d.id,
+    label: d.name || d.code,
+  }));
 
   const handleReset = () => {
     const resetFilters: PipelineFilters = {

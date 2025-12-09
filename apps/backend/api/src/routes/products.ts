@@ -1,15 +1,11 @@
 import { Router } from "express";
-import { db } from "../core/db";
-import { eq, and, ilike, or, sql } from "drizzle-orm";
+import { db, setTenantContext } from "../core/db";
+import { eq, and, ilike, or, sql, inArray } from "drizzle-orm";
 import { 
-  drivers, 
-  driverCategories, 
-  driverTypologies 
-} from "../db/schema/public";
-import { 
-  tenantCustomDrivers, 
-  tenantDriverCategories, 
-  tenantDriverTypologies 
+  drivers,
+  driverCategoryMappings,
+  wmsCategories,
+  wmsProductTypes
 } from "../db/schema/w3suite";
 import { tenantMiddleware } from "../middleware/tenant";
 
@@ -20,56 +16,39 @@ router.use(tenantMiddleware);
 
 /**
  * GET /api/products/drivers
- * Get all drivers (brand official + tenant custom)
+ * Get all drivers (brand + tenant custom) with RLS
  */
 router.get("/drivers", async (req, res) => {
   try {
     const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant context required" });
+    }
 
-    // Get brand official drivers
-    const brandDrivers = await db
+    await setTenantContext(tenantId);
+
+    // Get all drivers for tenant (both brand-pushed and custom)
+    const driversList = await db
       .select({
         id: drivers.id,
         code: drivers.code,
         name: drivers.name,
-        description: (drivers as any).description,
-        active: drivers.active,
-        sortOrder: (drivers as any).sortOrder || sql<number>`0`,
-        type: sql<string>`'brand'`,
+        description: drivers.description,
+        icon: drivers.icon,
+        allowedProductTypes: drivers.allowedProductTypes,
+        source: drivers.source,
+        isBrandSynced: drivers.isBrandSynced,
+        isActive: drivers.isActive,
+        sortOrder: drivers.sortOrder,
       })
       .from(drivers)
-      .where(eq(drivers.active, true))
-      .orderBy((drivers as any).sortOrder, drivers.name);
+      .where(and(
+        eq(drivers.tenantId, tenantId),
+        eq(drivers.isActive, true)
+      ))
+      .orderBy(drivers.sortOrder, drivers.name);
 
-    // Get tenant custom drivers if tenantId exists
-    let customDrivers: any[] = [];
-    if (tenantId) {
-      customDrivers = await db
-        .select({
-          id: tenantCustomDrivers.id,
-          code: tenantCustomDrivers.code,
-          name: tenantCustomDrivers.name,
-          description: tenantCustomDrivers.description,
-          active: tenantCustomDrivers.active,
-          sortOrder: tenantCustomDrivers.sortOrder,
-          type: sql<string>`'custom'`,
-        })
-        .from(tenantCustomDrivers)
-        .where(
-          and(
-            eq(tenantCustomDrivers.tenantId, tenantId),
-            eq(tenantCustomDrivers.active, true)
-          )
-        )
-        .orderBy(tenantCustomDrivers.sortOrder, tenantCustomDrivers.name);
-    }
-
-    // Combine and return
-    const allDrivers = [...brandDrivers, ...customDrivers].sort(
-      (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)
-    );
-
-    res.json(allDrivers);
+    res.json(driversList);
   } catch (error) {
     console.error("Error fetching drivers:", error);
     res.status(500).json({ error: "Failed to fetch drivers" });
@@ -78,66 +57,61 @@ router.get("/drivers", async (req, res) => {
 
 /**
  * GET /api/products/drivers/:driverId/categories
- * Get categories for a specific driver (brand or custom)
+ * Get WMS categories linked to a driver via mappings
+ * Uses driver's allowedProductTypes to filter categories
  */
 router.get("/drivers/:driverId/categories", async (req, res) => {
   try {
     const { driverId } = req.params;
     const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant context required" });
+    }
 
-    // Check if it's a brand driver or custom driver
-    const isBrandDriver = await db
-      .select({ id: drivers.id })
+    await setTenantContext(tenantId);
+
+    // First get the driver to know its allowedProductTypes
+    const [driver] = await db
+      .select({
+        id: drivers.id,
+        allowedProductTypes: drivers.allowedProductTypes,
+      })
       .from(drivers)
-      .where(eq(drivers.id, driverId))
+      .where(and(
+        eq(drivers.tenantId, tenantId),
+        eq(drivers.id, driverId)
+      ))
       .limit(1);
 
-    let categories: any[] = [];
-
-    if (isBrandDriver.length > 0) {
-      // Get brand categories
-      categories = await db
-        .select({
-          id: driverCategories.id,
-          driverId: driverCategories.driverId,
-          code: driverCategories.code,
-          name: driverCategories.name,
-          description: driverCategories.description,
-          active: driverCategories.active,
-          sortOrder: driverCategories.sortOrder,
-          type: sql<string>`'brand'`,
-        })
-        .from(driverCategories)
-        .where(
-          and(
-            eq(driverCategories.driverId, driverId),
-            eq(driverCategories.active, true)
-          )
-        )
-        .orderBy(driverCategories.sortOrder, driverCategories.name);
-    } else if (tenantId) {
-      // Get tenant custom categories
-      categories = await db
-        .select({
-          id: tenantDriverCategories.id,
-          customDriverId: tenantDriverCategories.customDriverId,
-          code: tenantDriverCategories.code,
-          name: tenantDriverCategories.name,
-          description: tenantDriverCategories.description,
-          active: tenantDriverCategories.active,
-          sortOrder: tenantDriverCategories.sortOrder,
-          type: sql<string>`'custom'`,
-        })
-        .from(tenantDriverCategories)
-        .where(
-          and(
-            eq(tenantDriverCategories.tenantId, tenantId),
-            eq(tenantDriverCategories.customDriverId, driverId),
-            eq(tenantDriverCategories.active, true)
-          )
-        )
-        .orderBy(tenantDriverCategories.sortOrder, tenantDriverCategories.name);
+    if (!driver) {
+      return res.status(404).json({ error: "Driver not found" });
     }
+
+    // Get categories that match the driver's allowedProductTypes
+    const productTypes = driver.allowedProductTypes || [];
+    
+    if (productTypes.length === 0) {
+      return res.json([]);
+    }
+
+    // Query categories filtered by productType
+    const categories = await db
+      .select({
+        id: wmsCategories.id,
+        nome: wmsCategories.nome,
+        descrizione: wmsCategories.descrizione,
+        icona: wmsCategories.icona,
+        productType: wmsCategories.productType,
+        source: wmsCategories.source,
+        ordine: wmsCategories.ordine,
+      })
+      .from(wmsCategories)
+      .where(and(
+        eq(wmsCategories.tenantId, tenantId),
+        eq(wmsCategories.isActive, true),
+        inArray(wmsCategories.productType, productTypes as any)
+      ))
+      .orderBy(wmsCategories.ordine, wmsCategories.nome);
 
     res.json(categories);
   } catch (error) {
@@ -148,71 +122,89 @@ router.get("/drivers/:driverId/categories", async (req, res) => {
 
 /**
  * GET /api/products/categories/:categoryId/typologies
- * Get typologies for a specific category (brand or custom)
+ * Get typologies (wmsProductTypes) for a specific category
  */
 router.get("/categories/:categoryId/typologies", async (req, res) => {
   try {
     const { categoryId } = req.params;
     const tenantId = req.user?.tenantId;
-
-    // Check if it's a brand category or custom category
-    const isBrandCategory = await db
-      .select({ id: driverCategories.id })
-      .from(driverCategories)
-      .where(eq(driverCategories.id, categoryId))
-      .limit(1);
-
-    let typologies: any[] = [];
-
-    if (isBrandCategory.length > 0) {
-      // Get brand typologies
-      typologies = await db
-        .select({
-          id: driverTypologies.id,
-          categoryId: driverTypologies.categoryId,
-          code: driverTypologies.code,
-          name: driverTypologies.name,
-          description: driverTypologies.description,
-          active: driverTypologies.active,
-          sortOrder: driverTypologies.sortOrder,
-          type: sql<string>`'brand'`,
-        })
-        .from(driverTypologies)
-        .where(
-          and(
-            eq(driverTypologies.categoryId, categoryId),
-            eq(driverTypologies.active, true)
-          )
-        )
-        .orderBy(driverTypologies.sortOrder, driverTypologies.name);
-    } else if (tenantId) {
-      // Get tenant custom typologies
-      typologies = await db
-        .select({
-          id: tenantDriverTypologies.id,
-          customCategoryId: tenantDriverTypologies.customCategoryId,
-          code: tenantDriverTypologies.code,
-          name: tenantDriverTypologies.name,
-          description: tenantDriverTypologies.description,
-          active: tenantDriverTypologies.active,
-          sortOrder: tenantDriverTypologies.sortOrder,
-          type: sql<string>`'custom'`,
-        })
-        .from(tenantDriverTypologies)
-        .where(
-          and(
-            eq(tenantDriverTypologies.tenantId, tenantId),
-            eq(tenantDriverTypologies.customCategoryId, categoryId),
-            eq(tenantDriverTypologies.active, true)
-          )
-        )
-        .orderBy(tenantDriverTypologies.sortOrder, tenantDriverTypologies.name);
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant context required" });
     }
+
+    await setTenantContext(tenantId);
+
+    // Get typologies for this category
+    const typologies = await db
+      .select({
+        id: wmsProductTypes.id,
+        categoryId: wmsProductTypes.categoryId,
+        nome: wmsProductTypes.nome,
+        descrizione: wmsProductTypes.descrizione,
+        source: wmsProductTypes.source,
+        ordine: wmsProductTypes.ordine,
+      })
+      .from(wmsProductTypes)
+      .where(and(
+        eq(wmsProductTypes.tenantId, tenantId),
+        eq(wmsProductTypes.categoryId, categoryId),
+        eq(wmsProductTypes.isActive, true)
+      ))
+      .orderBy(wmsProductTypes.ordine, wmsProductTypes.nome);
 
     res.json(typologies);
   } catch (error) {
     console.error("Error fetching typologies:", error);
     res.status(500).json({ error: "Failed to fetch typologies" });
+  }
+});
+
+/**
+ * GET /api/products/drivers/:driverId/mappings
+ * Get driver-category-typology mappings for a specific driver
+ */
+router.get("/drivers/:driverId/mappings", async (req, res) => {
+  try {
+    const { driverId } = req.params;
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant context required" });
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get mappings with joined category and typology names
+    const mappings = await db
+      .select({
+        id: driverCategoryMappings.id,
+        driverId: driverCategoryMappings.driverId,
+        productType: driverCategoryMappings.productType,
+        categoryId: driverCategoryMappings.categoryId,
+        categoryName: wmsCategories.nome,
+        typologyId: driverCategoryMappings.typologyId,
+        typologyName: wmsProductTypes.nome,
+        source: driverCategoryMappings.source,
+        isActive: driverCategoryMappings.isActive,
+      })
+      .from(driverCategoryMappings)
+      .leftJoin(wmsCategories, and(
+        eq(wmsCategories.tenantId, driverCategoryMappings.tenantId),
+        eq(wmsCategories.id, driverCategoryMappings.categoryId)
+      ))
+      .leftJoin(wmsProductTypes, and(
+        eq(wmsProductTypes.tenantId, driverCategoryMappings.tenantId),
+        eq(wmsProductTypes.id, driverCategoryMappings.typologyId)
+      ))
+      .where(and(
+        eq(driverCategoryMappings.tenantId, tenantId),
+        eq(driverCategoryMappings.driverId, driverId),
+        eq(driverCategoryMappings.isActive, true)
+      ));
+
+    res.json(mappings);
+  } catch (error) {
+    console.error("Error fetching driver mappings:", error);
+    res.status(500).json({ error: "Failed to fetch driver mappings" });
   }
 });
 
@@ -229,6 +221,12 @@ router.get("/search", async (req, res) => {
       return res.status(400).json({ error: "Search query 'q' is required" });
     }
 
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant context required" });
+    }
+
+    await setTenantContext(tenantId);
+
     const searchTerm = `%${q}%`;
     const results: any = {
       drivers: [],
@@ -236,156 +234,72 @@ router.get("/search", async (req, res) => {
       typologies: [],
     };
 
-    // Search brand drivers
+    // Search drivers
     results.drivers = await db
       .select({
         id: drivers.id,
         code: drivers.code,
         name: drivers.name,
-        description: (drivers as any).description,
-        type: sql<string>`'brand'`,
+        description: drivers.description,
+        source: drivers.source,
         level: sql<string>`'driver'`,
       })
       .from(drivers)
       .where(
         and(
-          eq(drivers.active, true),
+          eq(drivers.tenantId, tenantId),
+          eq(drivers.isActive, true),
           or(
             ilike(drivers.name, searchTerm),
             ilike(drivers.code, searchTerm),
-            ilike((drivers as any).description, searchTerm)
+            ilike(drivers.description, searchTerm)
           )
         )
       );
 
-    // Search custom drivers if tenant
-    if (tenantId) {
-      const customDriverResults = await db
-        .select({
-          id: tenantCustomDrivers.id,
-          code: tenantCustomDrivers.code,
-          name: tenantCustomDrivers.name,
-          description: tenantCustomDrivers.description,
-          type: sql<string>`'custom'`,
-          level: sql<string>`'driver'`,
-        })
-        .from(tenantCustomDrivers)
-        .where(
-          and(
-            eq(tenantCustomDrivers.tenantId, tenantId),
-            eq(tenantCustomDrivers.active, true),
-            or(
-              ilike(tenantCustomDrivers.name, searchTerm),
-              ilike(tenantCustomDrivers.code, searchTerm),
-              ilike(tenantCustomDrivers.description, searchTerm)
-            )
-          )
-        );
-
-      results.drivers = [...results.drivers, ...customDriverResults];
-    }
-
-    // Search brand categories
+    // Search categories
     results.categories = await db
       .select({
-        id: driverCategories.id,
-        driverId: driverCategories.driverId,
-        code: driverCategories.code,
-        name: driverCategories.name,
-        description: driverCategories.description,
-        type: sql<string>`'brand'`,
+        id: wmsCategories.id,
+        nome: wmsCategories.nome,
+        descrizione: wmsCategories.descrizione,
+        productType: wmsCategories.productType,
+        source: wmsCategories.source,
         level: sql<string>`'category'`,
       })
-      .from(driverCategories)
+      .from(wmsCategories)
       .where(
         and(
-          eq(driverCategories.active, true),
+          eq(wmsCategories.tenantId, tenantId),
+          eq(wmsCategories.isActive, true),
           or(
-            ilike(driverCategories.name, searchTerm),
-            ilike(driverCategories.code, searchTerm),
-            ilike(driverCategories.description, searchTerm)
+            ilike(wmsCategories.nome, searchTerm),
+            ilike(wmsCategories.descrizione, searchTerm)
           )
         )
       );
 
-    // Search custom tenant categories
-    if (tenantId) {
-      const customCategoryResults = await db
-        .select({
-          id: tenantDriverCategories.id,
-          customDriverId: tenantDriverCategories.customDriverId,
-          code: tenantDriverCategories.code,
-          name: tenantDriverCategories.name,
-          description: tenantDriverCategories.description,
-          type: sql<string>`'custom'`,
-          level: sql<string>`'category'`,
-        })
-        .from(tenantDriverCategories)
-        .where(
-          and(
-            eq(tenantDriverCategories.tenantId, tenantId),
-            eq(tenantDriverCategories.active, true),
-            or(
-              ilike(tenantDriverCategories.name, searchTerm),
-              ilike(tenantDriverCategories.code, searchTerm),
-              ilike(tenantDriverCategories.description, searchTerm)
-            )
-          )
-        );
-
-      results.categories = [...results.categories, ...customCategoryResults];
-    }
-
-    // Search brand typologies
+    // Search typologies
     results.typologies = await db
       .select({
-        id: driverTypologies.id,
-        categoryId: driverTypologies.categoryId,
-        code: driverTypologies.code,
-        name: driverTypologies.name,
-        description: driverTypologies.description,
-        type: sql<string>`'brand'`,
+        id: wmsProductTypes.id,
+        categoryId: wmsProductTypes.categoryId,
+        nome: wmsProductTypes.nome,
+        descrizione: wmsProductTypes.descrizione,
+        source: wmsProductTypes.source,
         level: sql<string>`'typology'`,
       })
-      .from(driverTypologies)
+      .from(wmsProductTypes)
       .where(
         and(
-          eq(driverTypologies.active, true),
+          eq(wmsProductTypes.tenantId, tenantId),
+          eq(wmsProductTypes.isActive, true),
           or(
-            ilike(driverTypologies.name, searchTerm),
-            ilike(driverTypologies.code, searchTerm),
-            ilike(driverTypologies.description, searchTerm)
+            ilike(wmsProductTypes.nome, searchTerm),
+            ilike(wmsProductTypes.descrizione, searchTerm)
           )
         )
       );
-
-    // Search custom tenant typologies
-    if (tenantId) {
-      const customTypologyResults = await db
-        .select({
-          id: tenantDriverTypologies.id,
-          customCategoryId: tenantDriverTypologies.customCategoryId,
-          code: tenantDriverTypologies.code,
-          name: tenantDriverTypologies.name,
-          description: tenantDriverTypologies.description,
-          type: sql<string>`'custom'`,
-          level: sql<string>`'typology'`,
-        })
-        .from(tenantDriverTypologies)
-        .where(
-          and(
-            eq(tenantDriverTypologies.tenantId, tenantId),
-            eq(tenantDriverTypologies.active, true),
-            or(
-              ilike(tenantDriverTypologies.name, searchTerm),
-              ilike(tenantDriverTypologies.code, searchTerm),
-              ilike(tenantDriverTypologies.description, searchTerm)
-            )
-          )
-        );
-
-      results.typologies = [...results.typologies, ...customTypologyResults];
-    }
 
     res.json(results);
   } catch (error) {
