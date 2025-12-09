@@ -7424,43 +7424,83 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
       typeName = pType?.nome || null;
     }
 
-    // 2. Get store distribution with aggregated quantities
-    // Note: Schema has quantityAvailable + quantityReserved (not quantityOnHand)
-    // quantityOnHand = quantityAvailable + quantityReserved
-    // averageCost calculated from totalValue / totalQuantity
-    const storeDistributionRaw = await db
+    // 2. Get store distribution with aggregated quantities from product_items
+    // CRITICAL: Use product_items logistic status as source of truth (same as data table)
+    // AVAILABLE (sellable inventory): in_stock, customer_return, doa_return
+    // RESERVED (committed/outbound): reserved, preparing, shipping, in_transfer
+    const AVAILABLE_STATUSES = ['in_stock', 'customer_return', 'doa_return'];
+    const RESERVED_STATUSES = ['reserved', 'preparing', 'shipping', 'in_transfer'];
+    
+    // Get logistic status counts per store
+    const storeLogisticCounts = await db
       .select({
-        storeId: wmsInventoryBalances.storeId,
+        storeId: productItems.storeId,
         storeName: stores.nome,
         storeCode: stores.code,
-        quantity: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0))::int`,
-        reserved: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityReserved}, 0))::int`,
-        available: sql<number>`SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0))::int`,
-        value: sql<number>`SUM(COALESCE(${wmsInventoryBalances.totalValue}, 0))::numeric`,
-        avgCost: sql<number>`CASE WHEN SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0)) > 0 
-          THEN SUM(COALESCE(${wmsInventoryBalances.totalValue}, 0)) / SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0))
-          ELSE 0 END::numeric`
+        logisticStatus: productItems.logisticStatus,
+        count: sql<number>`COUNT(*)::int`,
+        totalCost: sql<number>`SUM(COALESCE(${productItems.unitCost}, 0))::numeric`
       })
-      .from(wmsInventoryBalances)
-      .innerJoin(stores, eq(wmsInventoryBalances.storeId, stores.id))
+      .from(productItems)
+      .innerJoin(stores, eq(productItems.storeId, stores.id))
       .where(and(
-        eq(wmsInventoryBalances.tenantId, sessionTenantId),
-        eq(wmsInventoryBalances.productId, productId)
+        eq(productItems.tenantId, sessionTenantId),
+        eq(productItems.productId, productId)
       ))
-      .groupBy(wmsInventoryBalances.storeId, stores.nome, stores.code)
-      .orderBy(desc(sql`SUM(COALESCE(${wmsInventoryBalances.quantityAvailable}, 0) + COALESCE(${wmsInventoryBalances.quantityReserved}, 0))`));
+      .groupBy(productItems.storeId, stores.nome, stores.code, productItems.logisticStatus);
+    
+    // Aggregate by store
+    const storeAggregates = new Map<string, {
+      storeId: string;
+      storeName: string;
+      storeCode: string;
+      available: number;
+      reserved: number;
+      totalCost: number;
+    }>();
+    
+    storeLogisticCounts.forEach(row => {
+      if (!storeAggregates.has(row.storeId)) {
+        storeAggregates.set(row.storeId, {
+          storeId: row.storeId,
+          storeName: row.storeName || '',
+          storeCode: row.storeCode || '',
+          available: 0,
+          reserved: 0,
+          totalCost: 0
+        });
+      }
+      const agg = storeAggregates.get(row.storeId)!;
+      if (AVAILABLE_STATUSES.includes(row.logisticStatus)) {
+        agg.available += row.count;
+      } else if (RESERVED_STATUSES.includes(row.logisticStatus)) {
+        agg.reserved += row.count;
+      }
+      agg.totalCost += parseFloat(String(row.totalCost || 0));
+    });
+    
+    const storeDistributionRaw = [...storeAggregates.values()].map(agg => {
+      const quantity = agg.available + agg.reserved;
+      return {
+        storeId: agg.storeId,
+        storeName: agg.storeName,
+        storeCode: agg.storeCode,
+        quantity,
+        reserved: agg.reserved,
+        available: agg.available,
+        value: agg.totalCost,
+        avgCost: quantity > 0 ? agg.totalCost / quantity : 0
+      };
+    }).sort((a, b) => b.quantity - a.quantity);
 
-    // 3. Calculate KPIs
+    // 3. Calculate KPIs from product_items (consistent with data table)
     const totalQuantity = storeDistributionRaw.reduce((sum, s) => sum + (s.quantity || 0), 0);
     const totalReserved = storeDistributionRaw.reduce((sum, s) => sum + (s.reserved || 0), 0);
     const totalAvailable = storeDistributionRaw.reduce((sum, s) => sum + (s.available || 0), 0);
-    const totalValue = storeDistributionRaw.reduce((sum, s) => sum + parseFloat(String(s.value || 0)), 0);
+    const totalValue = storeDistributionRaw.reduce((sum, s) => sum + (s.value || 0), 0);
     
     // Weighted average cost calculation
-    const totalCostWeight = storeDistributionRaw.reduce((sum, s) => {
-      return sum + ((s.quantity || 0) * parseFloat(String(s.avgCost || 0)));
-    }, 0);
-    const weightedAverageCost = totalQuantity > 0 ? totalCostWeight / totalQuantity : 0;
+    const weightedAverageCost = totalQuantity > 0 ? totalValue / totalQuantity : 0;
 
     // 4. Get logistic status distribution from product_items
     const logisticStatusRaw = await db
