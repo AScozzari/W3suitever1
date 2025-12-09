@@ -7343,18 +7343,19 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productIdOrSku);
 
     // 1. Get complete product information (by UUID or SKU)
+    // Note: products schema uses name/type/isSerializable (not nome/productType/isSerialized)
     const [product] = await db
       .select({
         id: products.id,
-        name: products.nome,
+        name: products.name,
         sku: products.sku,
         brand: products.brand,
         model: products.model,
         ean: products.ean,
-        productType: products.productType,
+        productType: products.type,
         description: products.description,
         condition: products.condition,
-        isSerialized: products.isSerialized,
+        isSerialized: products.isSerializable,
         serialType: products.serialType,
         memory: products.memory,
         color: products.color,
@@ -7362,9 +7363,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
         categoryId: products.categoryId,
         typeId: products.typeId,
         imageUrl: products.imageUrl,
-        unitCost: products.unitCost,
-        averageCost: products.averageCost,
-        lowStockThreshold: products.lowStockThreshold
+        reorderPoint: products.reorderPoint
       })
       .from(products)
       .where(and(
@@ -7480,11 +7479,12 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
     }));
 
     // 5. Calculate stock status distribution
+    // Note: products uses reorderPoint (not lowStockThreshold)
     const stockStatusDistributionRaw = await db
       .select({
         storeId: wmsInventoryBalances.storeId,
         quantity: wmsInventoryBalances.quantityAvailable,
-        lowStockThreshold: products.lowStockThreshold
+        reorderPoint: products.reorderPoint
       })
       .from(wmsInventoryBalances)
       .innerJoin(products, eq(wmsInventoryBalances.productId, products.id))
@@ -7499,7 +7499,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
 
     stockStatusDistributionRaw.forEach(row => {
       const qty = row.quantity || 0;
-      const threshold = row.lowStockThreshold || 5;
+      const threshold = row.reorderPoint || 5;
       
       if (qty <= 0) {
         outOfStockCount++;
@@ -7585,7 +7585,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
           categoryName,
           typeName,
           imageUrl: product.imageUrl,
-          unitCost: parseFloat(String(product.unitCost || 0)),
+          reorderPoint: product.reorderPoint || 0,
           isActive: product.isActive
         },
         kpis: {
