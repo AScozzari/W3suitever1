@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { AlertCircle, PackagePlus, History } from 'lucide-react';
 
 interface NewProductConfirmModalProps {
@@ -23,6 +26,12 @@ export function NewProductConfirmModal({
   changedFields,
   isPending 
 }: NewProductConfirmModalProps) {
+  const [selectedOption, setSelectedOption] = useState<'new' | 'version'>('version');
+
+  const handleApply = () => {
+    onConfirm(selectedOption === 'new');
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -45,39 +54,72 @@ export function NewProductConfirmModal({
             ))}
           </ul>
           
-          <p className="text-sm text-muted-foreground">
-            Vuoi creare un <strong>nuovo prodotto</strong> o <strong>storicizzare</strong> quello esistente?
+          <p className="text-sm text-muted-foreground mb-4">
+            Scegli come procedere:
           </p>
+
+          <RadioGroup 
+            value={selectedOption} 
+            onValueChange={(value) => setSelectedOption(value as 'new' | 'version')}
+            className="space-y-3"
+          >
+            <div 
+              className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                selectedOption === 'new' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+              }`}
+              onClick={() => setSelectedOption('new')}
+            >
+              <RadioGroupItem value="new" id="new" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="new" className="flex items-center gap-2 cursor-pointer font-medium">
+                  <PackagePlus className="h-4 w-4 text-primary" />
+                  Crea Nuovo Prodotto
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Prodotto separato con nuovo SKU, storico indipendente
+                </p>
+              </div>
+            </div>
+
+            <div 
+              className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                selectedOption === 'version' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+              }`}
+              onClick={() => setSelectedOption('version')}
+            >
+              <RadioGroupItem value="version" id="version" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="version" className="flex items-center gap-2 cursor-pointer font-medium">
+                  <History className="h-4 w-4 text-primary" />
+                  Storicizza (Versioning)
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mantiene lo storico collegato per report
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
-          <Button 
-            onClick={() => onConfirm(true)}
-            disabled={isPending}
-            className="w-full justify-start"
-          >
-            <PackagePlus className="h-4 w-4 mr-2" />
-            <div className="text-left">
-              <div className="font-medium">Crea Nuovo Prodotto</div>
-              <div className="text-xs text-muted-foreground">
-                Prodotto separato con nuovo SKU, storico indipendente
-              </div>
-            </div>
-          </Button>
-          
+        <DialogFooter className="flex-row gap-2 sm:justify-end">
           <Button 
             variant="outline" 
-            onClick={() => onConfirm(false)}
+            onClick={onClose}
             disabled={isPending}
-            className="w-full justify-start"
+            data-testid="button-cancel-identity"
           >
-            <History className="h-4 w-4 mr-2" />
-            <div className="text-left">
-              <div className="font-medium">Storicizza (Versioning)</div>
-              <div className="text-xs text-muted-foreground">
-                Mantiene lo storico collegato per report
-              </div>
-            </div>
+            Annulla
+          </Button>
+          <Button 
+            onClick={handleApply}
+            disabled={isPending}
+            data-testid="button-apply-identity"
+            style={{
+              background: isPending ? 'hsl(var(--muted))' : 'hsl(var(--brand-orange))',
+              color: 'white',
+            }}
+          >
+            {isPending ? 'Applicazione...' : 'Applica'}
           </Button>
         </DialogFooter>
       </DialogContent>

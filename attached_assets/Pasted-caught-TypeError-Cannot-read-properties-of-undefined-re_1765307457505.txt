@@ -1,0 +1,89 @@
+caught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Comprendi l'errore
+queryClient.ts:334  PATCH https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/products/PROD-MOT-E50P-512-LUX 422 (Unprocessable Entity)
+apiRequest @ queryClient.ts:334
+mutationFn @ ProductFormModal.tsx:373
+fn @ @tanstack_react-query.js?v=fac8f799:1998
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+execute @ @tanstack_react-query.js?v=fac8f799:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=fac8f799:2378
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3566
+onSubmit @ ProductFormModal.tsx:426
+(anonime) @ chunk-SNPXSC7A.js?v=fac8f799:1506
+await in (anonime)
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=fac8f799:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=fac8f799:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=fac8f799:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=fac8f799:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=fac8f799:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=fac8f799:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=fac8f799:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=fac8f799:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=fac8f799:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=fac8f799:5449Comprendi l'errore
+queryClient.ts:334  PATCH https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/products/PROD-MOT-E50P-512-LUX 422 (Unprocessable Entity)

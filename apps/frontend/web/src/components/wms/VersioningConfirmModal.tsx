@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { AlertTriangle, FileEdit, TrendingUp } from 'lucide-react';
 
 interface VersioningConfirmModalProps {
@@ -23,6 +26,12 @@ export function VersioningConfirmModal({
   changedFields,
   isPending 
 }: VersioningConfirmModalProps) {
+  const [selectedOption, setSelectedOption] = useState<'correction' | 'business_change'>('business_change');
+
+  const handleApply = () => {
+    onConfirm(selectedOption);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -45,39 +54,72 @@ export function VersioningConfirmModal({
             ))}
           </ul>
           
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             Come vuoi gestire questa modifica?
           </p>
+
+          <RadioGroup 
+            value={selectedOption} 
+            onValueChange={(value) => setSelectedOption(value as 'correction' | 'business_change')}
+            className="space-y-3"
+          >
+            <div 
+              className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                selectedOption === 'correction' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+              }`}
+              onClick={() => setSelectedOption('correction')}
+            >
+              <RadioGroupItem value="correction" id="correction" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="correction" className="flex items-center gap-2 cursor-pointer font-medium">
+                  <FileEdit className="h-4 w-4 text-primary" />
+                  Correzione
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Corregge un errore, non crea storico
+                </p>
+              </div>
+            </div>
+
+            <div 
+              className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                selectedOption === 'business_change' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+              }`}
+              onClick={() => setSelectedOption('business_change')}
+            >
+              <RadioGroupItem value="business_change" id="business_change" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="business_change" className="flex items-center gap-2 cursor-pointer font-medium">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Variazione Commerciale
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Storicizza versione precedente per report
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
+        <DialogFooter className="flex-row gap-2 sm:justify-end">
           <Button 
             variant="outline" 
-            onClick={() => onConfirm('correction')}
+            onClick={onClose}
             disabled={isPending}
-            className="w-full justify-start"
+            data-testid="button-cancel-versioning"
           >
-            <FileEdit className="h-4 w-4 mr-2" />
-            <div className="text-left">
-              <div className="font-medium">Correzione</div>
-              <div className="text-xs text-muted-foreground">
-                Corregge un errore, non crea storico
-              </div>
-            </div>
+            Annulla
           </Button>
-          
           <Button 
-            onClick={() => onConfirm('business_change')}
+            onClick={handleApply}
             disabled={isPending}
-            className="w-full justify-start"
+            data-testid="button-apply-versioning"
+            style={{
+              background: isPending ? 'hsl(var(--muted))' : 'hsl(var(--brand-orange))',
+              color: 'white',
+            }}
           >
-            <TrendingUp className="h-4 w-4 mr-2" />
-            <div className="text-left">
-              <div className="font-medium">Variazione Commerciale</div>
-              <div className="text-xs text-muted-foreground">
-                Storicizza versione precedente per report
-              </div>
-            </div>
+            {isPending ? 'Applicazione...' : 'Applica'}
           </Button>
         </DialogFooter>
       </DialogContent>
