@@ -10,11 +10,13 @@ import {
   FolderTree, 
   Building2,
   Plus,
-  ShoppingCart
+  ShoppingCart,
+  Zap
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
 import ListiniTabContent from '@/components/wms/ListiniTabContent';
 import FornitoriTabContent from '@/components/wms/FornitoriTabContent';
+import DriversTabContent from '@/components/wms/DriversTabContent';
 import CategoriesTypologiesTabContent from '@/components/wms/CategoriesTypologiesTabContent';
 
 // Lazy load heavy components
@@ -40,7 +42,8 @@ export default function WMSProductsAndListsPage() {
     'prodotti',
     'listini',
     'categorie',
-    'fornitori'
+    'fornitori',
+    'drivers'
   ], []);
 
   const tabConfigs = useMemo(() => [
@@ -73,6 +76,12 @@ export default function WMSProductsAndListsPage() {
       label: 'Fornitori',
       icon: Building2,
       testId: 'tab-fornitori'
+    },
+    {
+      id: 'drivers',
+      label: 'Drivers',
+      icon: Zap,
+      testId: 'tab-drivers'
     }
   ], []);
 
@@ -152,6 +161,10 @@ export default function WMSProductsAndListsPage() {
 
           <TabsContent value="fornitori" className="mt-0">
             {activeTab === 'fornitori' && <FornitoriTabContent />}
+          </TabsContent>
+
+          <TabsContent value="drivers" className="mt-0">
+            {activeTab === 'drivers' && <DriversTabContent />}
           </TabsContent>
         </Tabs>
         </div>
