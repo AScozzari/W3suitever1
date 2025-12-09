@@ -621,10 +621,12 @@ export default function ProductsPage({
     {
       accessorKey: 'condition',
       header: ({ column }) => (
-        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Condizioni
-          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
-        </Button>
+        <div className="flex justify-center">
+          <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            Condizioni
+            {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+          </Button>
+        </div>
       ),
       cell: ({ row }) => {
         if (!row.original.condition) return <div className="flex justify-center"><span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span></div>;
@@ -683,10 +685,12 @@ export default function ProductsPage({
     {
       accessorKey: 'categoryName',
       header: ({ column }) => (
-        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Categoria
-          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
-        </Button>
+        <div className="flex justify-center">
+          <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            Categoria
+            {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+          </Button>
+        </div>
       ),
       cell: ({ row }) => {
         const { categoryName, source, isBrandSynced } = row.original;
@@ -710,10 +714,12 @@ export default function ProductsPage({
     {
       accessorKey: 'typeName',
       header: ({ column }) => (
-        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Tipologia
-          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
-        </Button>
+        <div className="flex justify-center">
+          <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            Tipologia
+            {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+          </Button>
+        </div>
       ),
       cell: ({ row }) => {
         const { typeName, source, isBrandSynced } = row.original;
@@ -737,10 +743,12 @@ export default function ProductsPage({
     {
       accessorKey: 'validTo',
       header: ({ column }) => (
-        <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Validità
-          {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
-        </Button>
+        <div className="flex justify-center">
+          <Button variant="ghost" className="h-8 p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+            Validità
+            {column.getIsSorted() === 'asc' ? <ArrowUp className="ml-2 h-4 w-4 text-orange-500" /> : column.getIsSorted() === 'desc' ? <ArrowDown className="ml-2 h-4 w-4 text-orange-500" /> : <ArrowUpDown className="ml-2 h-4 w-4 text-gray-400" />}
+          </Button>
+        </div>
       ),
       cell: ({ row }) => {
         const { validFrom, validTo } = row.original;
