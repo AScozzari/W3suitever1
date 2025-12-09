@@ -7533,7 +7533,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
       .select({
         id: wmsStockMovements.id,
         movementType: wmsStockMovements.movementType,
-        executedAt: wmsStockMovements.executedAt,
+        occurredAt: wmsStockMovements.occurredAt,
         storeId: wmsStockMovements.storeId,
         storeName: stores.nome
       })
@@ -7543,7 +7543,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
         eq(wmsStockMovements.tenantId, sessionTenantId),
         eq(wmsStockMovements.productId, productId)
       ))
-      .orderBy(desc(wmsStockMovements.executedAt))
+      .orderBy(desc(wmsStockMovements.occurredAt))
       .limit(1);
 
     // 7. Get serial count if serializable
@@ -7607,7 +7607,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
         lastMovement: lastMovement ? {
           id: lastMovement.id,
           type: lastMovement.movementType,
-          date: lastMovement.executedAt,
+          date: lastMovement.occurredAt,
           storeId: lastMovement.storeId,
           storeName: lastMovement.storeName
         } : null
