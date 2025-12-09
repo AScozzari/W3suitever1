@@ -610,25 +610,27 @@ export default function ProductsPage({
     },
     {
       accessorKey: 'isSerializable',
-      header: 'Serializzabile',
+      header: () => <div className="text-center">Serializzabile</div>,
       cell: ({ row }) => (
-        row.original.isSerializable ? (
-          <Badge 
-            variant="outline" 
-            style={{ borderColor: 'hsl(220, 90%, 56%)', color: 'hsl(220, 90%, 56%)' }}
-            data-testid={`badge-serializable-${row.original.id}`}
-          >
-            Sì
-          </Badge>
-        ) : (
-          <Badge 
-            variant="outline" 
-            style={{ borderColor: 'hsl(0, 0%, 60%)', color: 'hsl(0, 0%, 60%)' }}
-            data-testid={`badge-serializable-${row.original.id}`}
-          >
-            No
-          </Badge>
-        )
+        <div className="flex justify-center">
+          {row.original.isSerializable ? (
+            <Badge 
+              variant="outline" 
+              style={{ borderColor: 'hsl(220, 90%, 56%)', color: 'hsl(220, 90%, 56%)' }}
+              data-testid={`badge-serializable-${row.original.id}`}
+            >
+              Sì
+            </Badge>
+          ) : (
+            <Badge 
+              variant="outline" 
+              style={{ borderColor: 'hsl(0, 0%, 60%)', color: 'hsl(0, 0%, 60%)' }}
+              data-testid={`badge-serializable-${row.original.id}`}
+            >
+              No
+            </Badge>
+          )}
+        </div>
       ),
     },
     {
