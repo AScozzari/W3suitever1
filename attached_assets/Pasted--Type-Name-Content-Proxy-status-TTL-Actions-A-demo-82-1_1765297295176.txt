@@ -1,0 +1,191 @@
+	
+Type
+
+Name
+
+Content
+
+Proxy status
+
+TTL
+
+Actions
+
+
+
+A
+demo
+82.165.21.122
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+A
+*
+82.165.21.122
+
+Proxied
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+A
+edgvoip.it
+82.165.21.122
+
+Proxied
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+autoconfig
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+autodiscover
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+ftp
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+git
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+ssh
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+webdisk
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+webmail
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+CNAME
+whm
+cpanel.edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+
+
+CNAME
+www
+edgvoip.it
+
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+MX
+edgvoip.it
+mail.edgvoip.it
+0
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+NS
+edgvoip.it
+dns1.netsons.net
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+NS
+edgvoip.it
+dns4.netsons.net
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+NS
+edgvoip.it
+dns2.netsons.net
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+NS
+edgvoip.it
+dns3.netsons.net
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+SRV
+_autodiscover._tcp
+0 0 443 panelemaildiscovery.cpanel.net
+0
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+SRV
+_caldavs._tcp
+0 0 2080 cpanel.edgvoip.it
+0
+DNS only
+
+Auto
+EditWhen toggled open, an additional table row will be added below this row to enable editing DNS records.
+
+SRV
+_caldav._tcp
+0 0 2079 cpanel.edgvoip.it
+0
+DNS only
+
+Auto
