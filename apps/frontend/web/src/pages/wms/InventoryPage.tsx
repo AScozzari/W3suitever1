@@ -1271,9 +1271,11 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                 <TooltipProvider key={dist.status}>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Badge variant="outline" className={`${config.color} text-[10px] px-1.5 py-0.5`}>
-                                        {dist.count}
-                                      </Badge>
+                                      <span className="inline-block cursor-help">
+                                        <Badge variant="outline" className={`${config.color} text-[10px] px-1.5 py-0.5`}>
+                                          {dist.count}
+                                        </Badge>
+                                      </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>{config.label}: {dist.count} ({dist.percentage}%)</p>
