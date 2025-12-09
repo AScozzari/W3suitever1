@@ -6231,6 +6231,7 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         productCategory: products.categoryId,
         productTypeId: products.typeId,
         productStatus: products.status,
+        productReorderPoint: products.reorderPoint,
         // Extended product fields
         productBrand: products.brand,
         productModel: products.model,
@@ -6499,16 +6500,18 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         
         allResults = allResults.filter(r => productIdsWithStatus.includes(r.productId));
       } else {
-        // Stock status filter (calculated from quantity)
-        const LOW_STOCK_THRESHOLD = 10;
+        // Stock status filter (calculated from quantity using product's reorderPoint)
         allResults = allResults.filter(r => {
           const qty = r.quantityAvailable || 0;
+          const reorderPoint = (r as any).productReorderPoint || 5; // Default threshold
           
           switch (status) {
             case 'out_of_stock':
               return qty === 0;
             case 'low_stock':
-              return qty > 0 && qty <= LOW_STOCK_THRESHOLD;
+              return qty > 0 && qty <= reorderPoint;
+            case 'in_stock':
+              return qty > reorderPoint;
             default:
               return true;
           }
@@ -6617,7 +6620,8 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
     }
 
     // Calculate KPIs from filtered results
-    const LOW_STOCK_THRESHOLD = 10;
+    // Default fallback threshold if product has no reorderPoint configured
+    const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
     // ==================== AGGREGATED VIEW: Group by Product ====================
     if (viewMode === 'aggregated') {
@@ -6635,6 +6639,7 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         productDescription: string | null;
         productEan: string | null;
         productSerialType: string | null;
+        productReorderPoint: number;
         totalAvailable: number;
         totalReserved: number;
         totalValue: number;
@@ -6678,6 +6683,7 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
             productDescription: r.productDescription,
             productEan: r.productEan,
             productSerialType: r.productSerialType,
+            productReorderPoint: (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD,
             totalAvailable: qty,
             totalReserved: r.quantityReserved || 0,
             totalValue: value,
@@ -6768,10 +6774,11 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
           ? agg.totalCostWeighted / totalQuantity 
           : 0;
         
-        // Calculate stock status based on total quantity
+        // Calculate stock status based on product's reorderPoint (not fixed threshold)
+        const reorderPoint = agg.productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
         let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
         if (effectiveTotalAvailable === 0) stockStatus = 'out_of_stock';
-        else if (effectiveTotalAvailable <= LOW_STOCK_THRESHOLD) stockStatus = 'low_stock';
+        else if (effectiveTotalAvailable <= reorderPoint) stockStatus = 'low_stock';
         else stockStatus = 'in_stock';
         
         // Calculate logistic status distribution with percentages
@@ -6786,8 +6793,9 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         for (const r of allResults) {
           if (r.productId === agg.productId) {
             const qty = r.quantityAvailable || 0;
+            const rReorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
             if (qty === 0) storeStatusCounts.out_of_stock++;
-            else if (qty <= LOW_STOCK_THRESHOLD) storeStatusCounts.low_stock++;
+            else if (qty <= rReorderPoint) storeStatusCounts.low_stock++;
             else storeStatusCounts.in_stock++;
           }
         }
@@ -6899,12 +6907,14 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
       totalValue: allResults.reduce((sum, r) => sum + parseFloat(r.totalValue || '0'), 0),
       lowStockCount: allResults.filter(r => {
         const qty = r.quantityAvailable || 0;
-        return qty > 0 && qty <= LOW_STOCK_THRESHOLD;
+        const reorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
+        return qty > 0 && qty <= reorderPoint;
       }).length,
       outOfStockCount: allResults.filter(r => (r.quantityAvailable || 0) === 0).length,
       inStockCount: allResults.filter(r => {
         const qty = r.quantityAvailable || 0;
-        return qty > LOW_STOCK_THRESHOLD;
+        const reorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
+        return qty > reorderPoint;
       }).length
     };
 
@@ -6948,10 +6958,11 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
     // Transform results with stock status
     const items = paginatedResults.map(r => {
       const qty = r.quantityAvailable || 0;
+      const reorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
       let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
       
       if (qty === 0) stockStatus = 'out_of_stock';
-      else if (qty <= LOW_STOCK_THRESHOLD) stockStatus = 'low_stock';
+      else if (qty <= reorderPoint) stockStatus = 'low_stock';
       else stockStatus = 'in_stock';
 
       const key = `${r.productId}|${r.storeId || ''}`;
@@ -6979,7 +6990,7 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         quantityAvailable: qty,
         quantityReserved: r.quantityReserved || 0,
         totalValue: parseFloat(r.totalValue || '0'),
-        lowStockThreshold: LOW_STOCK_THRESHOLD,
+        lowStockThreshold: reorderPoint,
         stockStatus,
         logisticStatus: logisticData.dominant,
         logisticStatusCounts: logisticData.counts,
