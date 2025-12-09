@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. Its purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a unique WindTre glassmorphism design. The project aims to be a leading integrated business operations platform.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. It aims to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution featuring a unique WindTre glassmorphism design. The project's ambition is to become a leading integrated platform for business operations.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -134,27 +134,27 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System using `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS for a consistent UI with fixed header, sidebar, and white backgrounds within a monorepo.
-- **Database Architecture**: 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
-- **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system with Italian role templates.
-- **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
-- **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (OpenAI `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer), AI Voice Agent System (OpenAI Realtime API `gpt-4o-realtime`), and AI Voice Agent RAG System (`pgvector`).
-- **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
-- **Campaign Management**: Dual-mode campaign creation (wizard/advanced) with integrated GDPR Consent enforcement.
-- **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking.
-- **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes, 5 specialized node components) and a Master Catalog System (hybrid architecture for template governance using JSON files with Git versioning).
-- **VoIP Telephony**: Enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys.
+- **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. The UI maintains a consistent layout with a fixed header, sidebar, and white backgrounds within a monorepo structure.
+- **Database Architecture**: Employs a 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
+- **Security**: Features OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC) system with Italian role templates.
+- **Core Systems**: Includes Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
+- **AI Integration**: Comprises AI Enforcement Middleware, an AI Workflow Builder (`gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), an AI Voice Agent System (`gpt-4o-realtime`), and an AI Voice Agent RAG System (`pgvector`).
+- **CRM Module**: Offers a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+- **Campaign Management**: Supports dual-mode campaign creation (wizard and advanced) with GDPR Consent enforcement.
+- **Deployment & Governance**: Managed by a Deploy Center Auto-Commit System and Bidirectional Branch Linking.
+- **Brand Interface**: Features a Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and a Master Catalog System (hybrid architecture using JSON files with Git versioning).
+- **VoIP Telephony**: Provides enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys.
 - **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
-- **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a dedicated System Config page, including approval workflows and linked workflow templates.
-- **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+- **WMS Movement Type Configuration**: A taxonomy of 15 movement types configurable per-tenant via a dedicated System Config page, including approval workflows and linked workflow templates, differentiating between 6 automatic and 9 manual movements.
+- **System Config Page**: A modular settings dashboard located at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
-- **Redis**: Used for BullMQ and Unified Notification System.
+- **Redis**: For BullMQ and Unified Notification System.
 - **OAuth2/OIDC Enterprise**: For user authentication.
-- **SHADCN/UI**: UI components.
+- **SHADCN/UI**: UI component library.
 - **Radix UI**: Headless component primitives.
-- **Lucide React**: Icons.
+- **Lucide React**: Icon library.
 - **TanStack React Query**: Server state management.
 - **React Hook Form**: Form management and validation.
 - **Vite**: Frontend build tool.
@@ -162,4 +162,4 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
 - **PostCSS**: CSS pre-processing.
 - **ESBuild**: Server-side code bundling.
 - **Nginx**: Reverse proxy.
-- **OpenAI**: AI Workflow Builder, PDC Analyzer, AI Voice Agent System (`gpt-4o`, `gpt-4o-realtime`).
+- **OpenAI**: AI services (`gpt-4o`, `gpt-4o-realtime`).
