@@ -6742,8 +6742,10 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
 
       // Convert aggregates to array for sorting/pagination
       const aggregatedItems = [...productAggregates.values()].map(agg => {
-        const weightedAvgCost = agg.totalAvailable > 0 
-          ? agg.totalCostWeighted / agg.totalAvailable 
+        // Calculate total quantity (available + reserved) for accurate weighted average
+        const totalQuantity = agg.totalAvailable + agg.totalReserved;
+        const weightedAvgCost = totalQuantity > 0 
+          ? agg.totalCostWeighted / totalQuantity 
           : 0;
         
         // Calculate stock status based on total quantity

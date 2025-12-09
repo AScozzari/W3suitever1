@@ -528,6 +528,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [showSerialsInline, setShowSerialsInline] = useState(false);
 
   // Query per categories
   const { data: categories = [] } = useQuery<Category[]>({
@@ -557,14 +558,19 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
   }, [productTypes, pendingFilters.categoryId]);
 
   // Query per caricare i seriali - URL con productId nel path e storeId come query param
+  // Abilitata sia per vista serializzata che per sezione inline nel modal aggregato
   const { data: productSerials, isLoading: isLoadingSerials } = useQuery<ProductSerials>({
-    queryKey: ['/api/wms/product-serials', selectedItem?.productId, selectedItem?.storeId],
+    queryKey: ['/api/wms/product-serials', selectedItem?.productId, viewMode === 'aggregated' ? 'cross-store' : selectedItem?.storeId, showSerialsInline],
     queryFn: async () => {
       if (!selectedItem?.productId) return null;
-      const url = `/api/wms/product-serials/${selectedItem.productId}${selectedItem.storeId ? `?storeId=${selectedItem.storeId}` : ''}`;
+      // Per la vista aggregata (inline), non filtrare per storeId per avere tutti i seriali cross-store
+      const storeFilter = viewMode === 'aggregated' ? '' : (selectedItem.storeId ? `?storeId=${selectedItem.storeId}` : '');
+      const url = `/api/wms/product-serials/${selectedItem.productId}${storeFilter}`;
       return await apiRequest(url);
     },
-    enabled: isDetailModalOpen && !!selectedItem?.productId && (selectedItem?.serialCount ?? 0) > 0,
+    enabled: isDetailModalOpen && !!selectedItem?.productId && 
+      ((viewMode === 'serialized' && (selectedItem?.serialCount ?? 0) > 0) || 
+       (viewMode === 'aggregated' && showSerialsInline && (crossStoreSummary?.kpis?.serialCount ?? 0) > 0)),
   });
 
   // Query per cross-store summary (vista aggregata modal)
@@ -1176,12 +1182,12 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                 <TableHead className="font-semibold text-gray-700 text-center">
                   {viewMode === 'aggregated' ? 'Tot. Riservati' : 'Riservati'}
                 </TableHead>
-                <TableHead className="font-semibold text-gray-700 text-right min-w-[100px]">Costo Medio</TableHead>
+                <TableHead className="font-semibold text-gray-700 text-center min-w-[100px]">Costo Medio</TableHead>
                 <TableHead 
-                  className="cursor-pointer select-none font-semibold text-gray-700 text-right min-w-[100px]"
+                  className="cursor-pointer select-none font-semibold text-gray-700 text-center min-w-[100px]"
                   onClick={() => handleSort('value')}
                 >
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     {viewMode === 'aggregated' ? 'Valore Tot.' : 'Valore'}
                     <SortIcon column="value" />
                   </div>
@@ -1303,11 +1309,11 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         {item.totalReserved > 0 ? item.totalReserved : '-'}
                       </TableCell>
                       {/* Costo Medio Ponderato */}
-                      <TableCell className="text-right text-gray-700 min-w-[100px]">
+                      <TableCell className="text-center text-gray-700 min-w-[100px]">
                         € {(item.weightedAverageCost ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
                       {/* Valore Totale */}
-                      <TableCell className="text-right font-semibold text-gray-900 min-w-[100px]">
+                      <TableCell className="text-center font-semibold text-gray-900 min-w-[100px]">
                         € {(item.totalValue ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
                       {/* Ultimo Movimento */}
@@ -1475,11 +1481,11 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         {item.quantityReserved > 0 ? item.quantityReserved : '-'}
                       </TableCell>
                       {/* Costo Medio */}
-                      <TableCell className="text-right text-gray-700 min-w-[100px]">
+                      <TableCell className="text-center text-gray-700 min-w-[100px]">
                         € {(item.averageCost ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
                       {/* Valore */}
-                      <TableCell className="text-right font-semibold text-gray-900 min-w-[100px]">
+                      <TableCell className="text-center font-semibold text-gray-900 min-w-[100px]">
                         € {(item.totalValue ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                       </TableCell>
                       {/* Ultimo Movimento */}
@@ -1576,7 +1582,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
       </div>
 
       {/* Detail Modal */}
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+      <Dialog open={isDetailModalOpen} onOpenChange={(open) => { 
+        setIsDetailModalOpen(open); 
+        if (!open) setShowSerialsInline(false); 
+      }}>
         <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1837,14 +1846,14 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
                           {crossStoreSummary.product.isSerialized && crossStoreSummary.kpis.serialCount > 0 && (
                             <Button 
-                              variant="outline" 
+                              variant={showSerialsInline ? "default" : "outline"}
                               size="sm"
-                              onClick={() => setViewMode('serialized')}
-                              className="gap-2"
+                              onClick={() => setShowSerialsInline(!showSerialsInline)}
+                              className={`gap-2 ${showSerialsInline ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
                               data-testid="btn-view-serials"
                             >
                               <Barcode className="h-4 w-4" />
-                              Vedi Seriali ({crossStoreSummary.kpis.serialCount})
+                              {showSerialsInline ? 'Nascondi Seriali' : `Vedi Seriali (${crossStoreSummary.kpis.serialCount})`}
                             </Button>
                           )}
                           <Button 
@@ -1858,6 +1867,77 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                             Esporta
                           </Button>
                         </div>
+
+                        {/* 7. SEZIONE SERIALI INLINE (espandibile) */}
+                        {showSerialsInline && (
+                          <div className="mt-4 p-4 bg-white rounded-lg border border-orange-200 shadow-sm">
+                            <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                              <Barcode className="h-4 w-4 text-orange-500" />
+                              Dettaglio Seriali Cross-Store ({crossStoreSummary.kpis.serialCount})
+                            </h3>
+                            {isLoadingSerials ? (
+                              <div className="space-y-2">
+                                <Skeleton className="h-8 w-full" />
+                                <Skeleton className="h-8 w-full" />
+                                <Skeleton className="h-8 w-full" />
+                              </div>
+                            ) : productSerials?.serials && productSerials.serials.length > 0 ? (
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow className="bg-gray-50">
+                                      <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
+                                      <TableHead className="font-semibold text-gray-700">Seriale</TableHead>
+                                      <TableHead className="font-semibold text-gray-700">Magazzino</TableHead>
+                                      <TableHead className="font-semibold text-gray-700 text-center">Stato Logistico</TableHead>
+                                      <TableHead className="font-semibold text-gray-700 text-center">Condizione</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {productSerials.serials.slice(0, 50).map((serial) => {
+                                      const logConfig = LOGISTIC_STATUS_CONFIG[serial.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
+                                      return (
+                                        <TableRow key={serial.id} className="hover:bg-gray-50">
+                                          <TableCell>
+                                            <Badge variant="outline" className="text-xs">
+                                              {serial.serialType === 'imei' ? 'IMEI' : 
+                                               serial.serialType === 'iccid' ? 'ICCID' : 
+                                               serial.serialType === 'mac_address' ? 'MAC' : 
+                                               serial.serialType?.toUpperCase() || '-'}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell className="font-mono text-sm">{serial.serialNumber}</TableCell>
+                                          <TableCell className="text-sm text-gray-700">{serial.storeName || '-'}</TableCell>
+                                          <TableCell className="text-center">
+                                            <Badge className={`text-xs ${logConfig.color}`}>
+                                              {logConfig.label}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell className="text-center text-sm capitalize">
+                                            {serial.condition === 'new' ? 'Nuovo' : 
+                                             serial.condition === 'used' ? 'Usato' : 
+                                             serial.condition === 'refurbished' ? 'Ricondizionato' : 
+                                             serial.condition === 'demo' ? 'Demo' : serial.condition || '-'}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                                {productSerials.serials.length > 50 && (
+                                  <div className="p-3 text-center text-sm text-gray-500 bg-gray-50 border-t">
+                                    Mostrati i primi 50 seriali su {productSerials.serials.length} totali
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center py-4 text-gray-500">
+                                <Barcode className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                                <p className="text-sm">Nessun seriale trovato per questo prodotto</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="text-center py-8 text-gray-500">
