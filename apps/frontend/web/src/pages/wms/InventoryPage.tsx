@@ -425,12 +425,17 @@ function useInventoryView() {
     }));
   };
 
-  const handleExport = async (format: 'csv' | 'excel' | 'json') => {
+  const handleExport = async (format: 'csv' | 'excel' | 'json', productId?: string) => {
     const params = new URLSearchParams();
     params.append('format', format);
+    // If productId is provided, export only serials for that product
+    if (productId) {
+      params.append('productId', productId);
+      params.append('viewMode', 'serialized'); // Force serialized export for product
+    }
     if (filters.storeId) params.append('storeId', filters.storeId);
     if (filters.status !== 'all') params.append('status', filters.status);
-    if (filters.search) params.append('search', filters.search);
+    if (filters.search && !productId) params.append('search', filters.search);
     if (filters.identifierType) params.append('identifierType', filters.identifierType);
     if (filters.identifierValue) params.append('identifierValue', filters.identifierValue);
     if (filters.supplierId) params.append('supplierId', filters.supplierId);
@@ -468,13 +473,17 @@ function useInventoryView() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `inventario-export.${format === 'excel' ? 'csv' : format}`;
+      // Use product SKU in filename if exporting specific product
+      a.download = productId 
+        ? `seriali-prodotto-export.${format === 'excel' ? 'csv' : format}`
+        : `inventario-export.${format === 'excel' ? 'csv' : format}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (error) {
       console.error('Export error:', error);
+      toast({ title: 'Errore Export', description: 'Impossibile scaricare il file.', variant: 'destructive' });
     }
   };
 
@@ -1878,12 +1887,12 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleExport('csv')}
+                            onClick={() => handleExport('csv', selectedItem?.productId)}
                             className="gap-2"
                             data-testid="btn-export-product"
                           >
                             <Download className="h-4 w-4" />
-                            Esporta
+                            Esporta Seriali
                           </Button>
                         </div>
 

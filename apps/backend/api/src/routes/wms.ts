@@ -6748,9 +6748,15 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         
         // CRITICAL: Calculate totalAvailable and totalReserved from product_items logistic status
         // to ensure consistency with the logistic status distribution shown in UI
-        // States mapping: 'in_stock' = available, 'reserved' = reserved
-        const availableFromSerials = logisticCounts['in_stock'] || 0;
-        const reservedFromSerials = logisticCounts['reserved'] || 0;
+        // 
+        // AVAILABLE (sellable inventory): in_stock, customer_return, doa_return
+        // RESERVED (committed/outbound): reserved, preparing, shipping, in_transfer
+        // EXCLUDED from both totals: delivered, lost, damaged, in_service, supplier_return, internal_use
+        const AVAILABLE_STATUSES = ['in_stock', 'customer_return', 'doa_return'];
+        const RESERVED_STATUSES = ['reserved', 'preparing', 'shipping', 'in_transfer'];
+        
+        const availableFromSerials = AVAILABLE_STATUSES.reduce((sum, status) => sum + (logisticCounts[status] || 0), 0);
+        const reservedFromSerials = RESERVED_STATUSES.reduce((sum, status) => sum + (logisticCounts[status] || 0), 0);
         
         // Use serial-based counts for consistency (fallback to balance-based if no serials)
         const effectiveTotalAvailable = totalSerials > 0 ? availableFromSerials : agg.totalAvailable;
@@ -7032,7 +7038,8 @@ router.get("/inventory-view/export", async (req: Request, res: Response) => {
       storeId,
       categoryId,
       status = 'all',
-      search = ''
+      search = '',
+      productId // Filter by specific product (for exporting serials from modal)
     } = req.query;
 
     // Get stores with warehouse
@@ -7061,6 +7068,11 @@ router.get("/inventory-view/export", async (req: Request, res: Response) => {
       itemConditions.push(eq(productItems.storeId, storeId as string));
     } else {
       itemConditions.push(inArray(productItems.storeId, warehouseStoreIds));
+    }
+    
+    // Filter by specific product if provided (for exporting serials from modal)
+    if (productId) {
+      itemConditions.push(eq(productItems.productId, productId as string));
     }
 
     // Get disaggregated data: one row per product_item with its serial
