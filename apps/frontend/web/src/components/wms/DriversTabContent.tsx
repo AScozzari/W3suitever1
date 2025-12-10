@@ -8,9 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Plus, Zap, Eye, Pencil, Trash2, RefreshCw, AlertCircle, Lock, Building2, Package
+  Plus, Zap, Eye, Pencil, Trash2, RefreshCw, AlertCircle, Lock, Building2, Package,
+  ChevronDown, ChevronRight, FolderTree, Tag
 } from 'lucide-react';
 
 interface Driver {
@@ -23,6 +25,40 @@ interface Driver {
   source: 'brand' | 'tenant';
   brandDriverId?: string;
   isBrandSynced?: boolean;
+}
+
+interface Typology {
+  id: string;
+  name: string;
+  description?: string;
+  order: number;
+  source: 'brand' | 'tenant';
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  productType: string;
+  order: number;
+  source: 'brand' | 'tenant';
+  typologies: Typology[];
+}
+
+interface DriverHierarchy {
+  driver: {
+    id: string;
+    name: string;
+    code: string;
+    source: string;
+    allowedProductTypes: string[];
+  };
+  categories: Category[];
+  meta: {
+    totalCategories: number;
+    totalTypologies: number;
+  };
 }
 
 const PRODUCT_TYPES = [
@@ -46,10 +82,20 @@ export default function DriversTabContent() {
     allowedProductTypes: [] as string[],
     isActive: true,
   });
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const { data: drivers = [], isLoading, isError, error, refetch } = useQuery<Driver[]>({
     queryKey: ['/api/drivers', { includeInactive: 'true' }],
   });
+
+  // Query per la gerarchia del driver selezionato (solo in modalità view)
+  const driverIdForHierarchy = driverModal.data?.id;
+  const { data: hierarchyData, isLoading: isLoadingHierarchy } = useQuery<{ success: boolean; data: DriverHierarchy }>({
+    queryKey: [`/api/wms/drivers/${driverIdForHierarchy}/hierarchy`],
+    enabled: driverModal.open && driverModal.mode === 'view' && !!driverIdForHierarchy,
+  });
+
+  const hierarchy = hierarchyData?.data;
 
   const brandDrivers = drivers.filter(d => d.source === 'brand');
   const tenantDrivers = drivers.filter(d => d.source === 'tenant');
@@ -133,6 +179,7 @@ export default function DriversTabContent() {
   const handleCloseModal = () => {
     setDriverModal({ open: false, mode: 'create', data: null });
     setFormData({ code: '', name: '', description: '', allowedProductTypes: [], isActive: true });
+    setExpandedCategories(new Set());
   };
 
   const handleSubmit = () => {
@@ -436,6 +483,100 @@ export default function DriversTabContent() {
                 data-testid="switch-driver-active"
               />
             </div>
+
+            {/* Sezione Gerarchia Ereditata (solo in view mode) */}
+            {driverModal.mode === 'view' && (
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <FolderTree className="h-5 w-5 text-blue-600" />
+                  <Label className="text-base font-semibold">Categorie & Tipologie Ereditate</Label>
+                  {hierarchy?.meta && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {hierarchy.meta.totalCategories} cat. / {hierarchy.meta.totalTypologies} tip.
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  Gerarchia derivata automaticamente dai tipi prodotto selezionati
+                </p>
+                
+                {isLoadingHierarchy ? (
+                  <div className="flex items-center justify-center py-6">
+                    <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-500">Caricamento gerarchia...</span>
+                  </div>
+                ) : hierarchy?.categories && hierarchy.categories.length > 0 ? (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                    {hierarchy.categories.map(category => (
+                      <Collapsible
+                        key={category.id}
+                        open={expandedCategories.has(category.id)}
+                        onOpenChange={(open) => {
+                          const newSet = new Set(expandedCategories);
+                          if (open) {
+                            newSet.add(category.id);
+                          } else {
+                            newSet.delete(category.id);
+                          }
+                          setExpandedCategories(newSet);
+                        }}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <div 
+                            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                            data-testid={`category-${category.id}`}
+                          >
+                            {expandedCategories.has(category.id) ? (
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-500" />
+                            )}
+                            <span className="font-medium text-sm">{category.name}</span>
+                            <Badge variant="outline" className="text-xs ml-auto">
+                              {PRODUCT_TYPES.find(pt => pt.value === category.productType)?.label || category.productType}
+                            </Badge>
+                            {category.source === 'brand' && (
+                              <Lock className="h-3 w-3 text-gray-400" />
+                            )}
+                            <span className="text-xs text-gray-400">
+                              {category.typologies.length} tip.
+                            </span>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="ml-6 mt-1 space-y-1">
+                            {category.typologies.map(typology => (
+                              <div 
+                                key={typology.id}
+                                className="flex items-center gap-2 p-2 rounded bg-white border border-gray-100"
+                                data-testid={`typology-${typology.id}`}
+                              >
+                                <Tag className="h-3 w-3 text-orange-500" />
+                                <span className="text-sm">{typology.name}</span>
+                                {typology.source === 'brand' && (
+                                  <Lock className="h-3 w-3 text-gray-400 ml-auto" />
+                                )}
+                              </div>
+                            ))}
+                            {category.typologies.length === 0 && (
+                              <p className="text-xs text-gray-400 italic p-2">
+                                Nessuna tipologia definita
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-400">
+                    <FolderTree className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Nessuna categoria ereditata</p>
+                    <p className="text-xs">I tipi prodotto selezionati non hanno categorie associate</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
