@@ -119,18 +119,17 @@ export const driverTypologies = publicDriverTypologies;
 export type { InsertDriverCategory, DriverCategory } from './public';
 export type { InsertDriverTypology, DriverTypology } from './public';
 
-// ==================== PRODUCT HIERARCHY - TENANT CUSTOM (W3SUITE) ====================
+// ==================== PRODUCT HIERARCHY - TENANT EXTENSIONS (W3SUITE) ====================
+// NOTE: Drivers use single-table pattern with 'source' column (brand/tenant)
+// tenantDriverCategories and tenantDriverTypologies are for tenant-specific extensions
 import { 
-  tenantCustomDrivers as w3suiteTenantCustomDrivers,
   tenantDriverCategories as w3suiteTenantDriverCategories,
   tenantDriverTypologies as w3suiteTenantDriverTypologies
 } from './w3suite';
 
-export const tenantCustomDrivers = w3suiteTenantCustomDrivers;
 export const tenantDriverCategories = w3suiteTenantDriverCategories;
 export const tenantDriverTypologies = w3suiteTenantDriverTypologies;
 
-export type { InsertTenantCustomDriver, TenantCustomDriver } from './w3suite';
 export type { InsertTenantDriverCategory, TenantDriverCategory } from './w3suite';
 export type { InsertTenantDriverTypology, TenantDriverTypology } from './w3suite';
 

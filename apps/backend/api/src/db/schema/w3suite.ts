@@ -1490,41 +1490,15 @@ export const insertSupplierOverrideSchema = createInsertSchema(supplierOverrides
 export type InsertSupplierOverride = z.infer<typeof insertSupplierOverrideSchema>;
 export type SupplierOverride = typeof supplierOverrides.$inferSelect;
 
-// ==================== PRODUCT HIERARCHY - TENANT CUSTOM ====================
+// ==================== PRODUCT HIERARCHY - TENANT EXTENSIONS ====================
 
-// ==================== TENANT CUSTOM DRIVERS ====================
-export const tenantCustomDrivers = w3suiteSchema.table("tenant_custom_drivers", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  code: varchar("code", { length: 50 }).notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  active: boolean("active").default(true),
-  sortOrder: smallint("sort_order").default(0),
-  createdBy: varchar("created_by").notNull().references(() => users.id),
-  updatedBy: varchar("updated_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_tenant_custom_drivers_tenant").on(table.tenantId),
-  uniqueIndex("tenant_custom_drivers_unique").on(table.tenantId, table.code),
-]);
-
-export const insertTenantCustomDriverSchema = createInsertSchema(tenantCustomDrivers).omit({ 
-  id: true, 
-  createdAt: true,
-  updatedAt: true 
-});
-export type InsertTenantCustomDriver = z.infer<typeof insertTenantCustomDriverSchema>;
-export type TenantCustomDriver = typeof tenantCustomDrivers.$inferSelect;
-
-// ==================== TENANT DRIVER CATEGORIES (for both brand and custom drivers) ====================
+// ==================== TENANT DRIVER CATEGORIES (extend brand drivers with tenant-specific categories) ====================
+// NOTE: Drivers use single-table pattern with 'source' column (brand/tenant)
+// Tenant can only ADD categories to brand drivers, never modify brand drivers themselves
 export const tenantDriverCategories = w3suiteSchema.table("tenant_driver_categories", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  // Can reference either brand driver (public.drivers) OR tenant custom driver
-  brandDriverId: uuid("brand_driver_id"), // References public.drivers
-  customDriverId: uuid("custom_driver_id").references(() => tenantCustomDrivers.id, { onDelete: 'cascade' }),
+  brandDriverId: uuid("brand_driver_id").notNull(), // References w3suite.drivers (brand driver)
   code: varchar("code", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
@@ -1537,9 +1511,7 @@ export const tenantDriverCategories = w3suiteSchema.table("tenant_driver_categor
 }, (table) => [
   index("idx_tenant_driver_categories_tenant").on(table.tenantId),
   index("idx_tenant_driver_categories_brand_driver").on(table.brandDriverId),
-  index("idx_tenant_driver_categories_custom_driver").on(table.customDriverId),
-  uniqueIndex("tenant_driver_categories_brand_unique").on(table.tenantId, table.brandDriverId, table.code),
-  uniqueIndex("tenant_driver_categories_custom_unique").on(table.tenantId, table.customDriverId, table.code),
+  uniqueIndex("tenant_driver_categories_unique").on(table.tenantId, table.brandDriverId, table.code),
 ]);
 
 export const insertTenantDriverCategorySchema = createInsertSchema(tenantDriverCategories).omit({ 
@@ -1550,13 +1522,12 @@ export const insertTenantDriverCategorySchema = createInsertSchema(tenantDriverC
 export type InsertTenantDriverCategory = z.infer<typeof insertTenantDriverCategorySchema>;
 export type TenantDriverCategory = typeof tenantDriverCategories.$inferSelect;
 
-// ==================== TENANT DRIVER TYPOLOGIES (for both brand and custom categories) ====================
+// ==================== TENANT DRIVER TYPOLOGIES (extend tenant categories with tenant-specific typologies) ====================
+// NOTE: Typologies can be added to tenant driver categories
 export const tenantDriverTypologies = w3suiteSchema.table("tenant_driver_typologies", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  // Can reference either brand category (public.driver_categories) OR tenant custom category
-  brandCategoryId: uuid("brand_category_id"), // References public.driver_categories
-  customCategoryId: uuid("custom_category_id").references(() => tenantDriverCategories.id, { onDelete: 'cascade' }),
+  tenantCategoryId: uuid("tenant_category_id").notNull().references(() => tenantDriverCategories.id, { onDelete: 'cascade' }),
   code: varchar("code", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
@@ -1568,10 +1539,8 @@ export const tenantDriverTypologies = w3suiteSchema.table("tenant_driver_typolog
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_tenant_driver_typologies_tenant").on(table.tenantId),
-  index("idx_tenant_driver_typologies_brand_category").on(table.brandCategoryId),
-  index("idx_tenant_driver_typologies_custom_category").on(table.customCategoryId),
-  uniqueIndex("tenant_driver_typologies_brand_unique").on(table.tenantId, table.brandCategoryId, table.code),
-  uniqueIndex("tenant_driver_typologies_custom_unique").on(table.tenantId, table.customCategoryId, table.code),
+  index("idx_tenant_driver_typologies_tenant_category").on(table.tenantCategoryId),
+  uniqueIndex("tenant_driver_typologies_unique").on(table.tenantId, table.tenantCategoryId, table.code),
 ]);
 
 export const insertTenantDriverTypologySchema = createInsertSchema(tenantDriverTypologies).omit({ 
