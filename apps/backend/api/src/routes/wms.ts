@@ -40,7 +40,8 @@ import {
   insertProductVersionSchema,
   wmsInventoryBalances,
   wmsInventorySnapshots,
-  suppliers
+  suppliers,
+  drivers
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { logger } from "../core/logger";
@@ -8421,6 +8422,326 @@ router.post("/snapshots/trigger", rbacMiddleware, requirePermission('wms.setting
     console.error("Error triggering manual snapshot:", error);
     res.status(500).json({ 
       error: "Failed to trigger manual snapshot",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/drivers/:driverId/hierarchy
+ * 
+ * Returns the category→typology hierarchy derived from driver's allowed_product_types.
+ * Uses logical JOIN (no mapping table) based on:
+ * - Driver.allowed_product_types → Categories.product_type → Typologies.category_id
+ * 
+ * Follows brand-tenant union pattern:
+ * - Brand categories/typologies from brand tenant (00000000-0000-0000-0000-000000000000)
+ * - Tenant-specific categories/typologies from current tenant
+ * 
+ * @param driverId - UUID of the driver
+ * @returns { categories: [{ id, name, productType, typologies: [...] }] }
+ */
+router.get("/drivers/:driverId/hierarchy", rbacMiddleware, requirePermission('wms.products.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const { driverId } = req.params;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    if (!driverId) {
+      return res.status(400).json({ error: "Driver ID is required" });
+    }
+
+    const BRAND_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+
+    // 1. Get driver with allowed_product_types (from brand tenant OR current tenant)
+    const driverResult = await db
+      .select({
+        id: drivers.id,
+        name: drivers.name,
+        code: drivers.code,
+        allowedProductTypes: drivers.allowedProductTypes,
+        source: drivers.source
+      })
+      .from(drivers)
+      .where(
+        and(
+          eq(drivers.id, driverId),
+          or(
+            eq(drivers.tenantId, BRAND_TENANT_ID),
+            eq(drivers.tenantId, sessionTenantId)
+          )
+        )
+      )
+      .limit(1);
+
+    if (driverResult.length === 0) {
+      return res.status(404).json({ error: "Driver not found" });
+    }
+
+    const driver = driverResult[0];
+    const productTypes = driver.allowedProductTypes || [];
+
+    if (productTypes.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          driver: {
+            id: driver.id,
+            name: driver.name,
+            code: driver.code,
+            source: driver.source
+          },
+          categories: []
+        }
+      });
+    }
+
+    // 2. Get categories matching driver's product types (brand + tenant union)
+    const categoriesResult = await db
+      .select({
+        id: wmsCategories.id,
+        nome: wmsCategories.nome,
+        descrizione: wmsCategories.descrizione,
+        icona: wmsCategories.icona,
+        productType: wmsCategories.productType,
+        ordine: wmsCategories.ordine,
+        source: wmsCategories.source,
+        tenantId: wmsCategories.tenantId
+      })
+      .from(wmsCategories)
+      .where(
+        and(
+          inArray(wmsCategories.productType, productTypes as any),
+          eq(wmsCategories.isActive, true),
+          or(
+            eq(wmsCategories.tenantId, BRAND_TENANT_ID),
+            eq(wmsCategories.tenantId, sessionTenantId)
+          )
+        )
+      )
+      .orderBy(wmsCategories.ordine);
+
+    // 3. Get typologies for all categories (brand + tenant union)
+    const categoryIds = categoriesResult.map(c => c.id);
+    
+    let typologiesResult: any[] = [];
+    if (categoryIds.length > 0) {
+      typologiesResult = await db
+        .select({
+          id: wmsProductTypes.id,
+          nome: wmsProductTypes.nome,
+          descrizione: wmsProductTypes.descrizione,
+          categoryId: wmsProductTypes.categoryId,
+          ordine: wmsProductTypes.ordine,
+          source: wmsProductTypes.source,
+          tenantId: wmsProductTypes.tenantId
+        })
+        .from(wmsProductTypes)
+        .where(
+          and(
+            inArray(wmsProductTypes.categoryId, categoryIds),
+            eq(wmsProductTypes.isActive, true),
+            or(
+              eq(wmsProductTypes.tenantId, BRAND_TENANT_ID),
+              eq(wmsProductTypes.tenantId, sessionTenantId)
+            )
+          )
+        )
+        .orderBy(wmsProductTypes.ordine);
+    }
+
+    // 4. Build hierarchy with precedence (tenant overrides brand by name)
+    const typologiesByCategory = new Map<string, any[]>();
+    for (const typ of typologiesResult) {
+      const list = typologiesByCategory.get(typ.categoryId) || [];
+      list.push({
+        id: typ.id,
+        name: typ.nome,
+        description: typ.descrizione,
+        order: typ.ordine,
+        source: typ.source
+      });
+      typologiesByCategory.set(typ.categoryId, list);
+    }
+
+    // Apply precedence: tenant categories shadow brand categories with same name
+    const categoryMap = new Map<string, any>();
+    for (const cat of categoriesResult) {
+      const key = `${cat.productType}-${cat.nome}`;
+      const existing = categoryMap.get(key);
+      // Tenant overrides brand
+      if (!existing || cat.source === 'tenant') {
+        categoryMap.set(key, {
+          id: cat.id,
+          name: cat.nome,
+          description: cat.descrizione,
+          icon: cat.icona,
+          productType: cat.productType,
+          order: cat.ordine,
+          source: cat.source,
+          typologies: typologiesByCategory.get(cat.id) || []
+        });
+      }
+    }
+
+    const categories = Array.from(categoryMap.values())
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    res.json({
+      success: true,
+      data: {
+        driver: {
+          id: driver.id,
+          name: driver.name,
+          code: driver.code,
+          source: driver.source,
+          allowedProductTypes: productTypes
+        },
+        categories,
+        meta: {
+          totalCategories: categories.length,
+          totalTypologies: categories.reduce((sum, c) => sum + c.typologies.length, 0)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching driver hierarchy:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch driver hierarchy",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/categories-hierarchy
+ * 
+ * Returns all categories with their typologies, grouped by product_type.
+ * Follows brand-tenant union pattern.
+ * 
+ * @query productTypes - Optional comma-separated filter (e.g., "PHYSICAL,SERVICE")
+ * @returns { hierarchy: { PHYSICAL: [...], SERVICE: [...], ... } }
+ */
+router.get("/categories-hierarchy", rbacMiddleware, requirePermission('wms.products.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const productTypesParam = req.query.productTypes as string | undefined;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const BRAND_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+    
+    // Parse optional filter
+    const productTypeFilter = productTypesParam 
+      ? productTypesParam.split(',').map(t => t.trim().toUpperCase())
+      : null;
+
+    // Get categories (brand + tenant)
+    let categoriesQuery = db
+      .select({
+        id: wmsCategories.id,
+        nome: wmsCategories.nome,
+        descrizione: wmsCategories.descrizione,
+        icona: wmsCategories.icona,
+        productType: wmsCategories.productType,
+        ordine: wmsCategories.ordine,
+        source: wmsCategories.source
+      })
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.isActive, true),
+          or(
+            eq(wmsCategories.tenantId, BRAND_TENANT_ID),
+            eq(wmsCategories.tenantId, sessionTenantId)
+          ),
+          productTypeFilter ? inArray(wmsCategories.productType, productTypeFilter as any) : undefined
+        )
+      )
+      .orderBy(wmsCategories.productType, wmsCategories.ordine);
+
+    const categoriesResult = await categoriesQuery;
+    const categoryIds = categoriesResult.map(c => c.id);
+
+    // Get typologies
+    let typologiesResult: any[] = [];
+    if (categoryIds.length > 0) {
+      typologiesResult = await db
+        .select({
+          id: wmsProductTypes.id,
+          nome: wmsProductTypes.nome,
+          descrizione: wmsProductTypes.descrizione,
+          categoryId: wmsProductTypes.categoryId,
+          ordine: wmsProductTypes.ordine,
+          source: wmsProductTypes.source
+        })
+        .from(wmsProductTypes)
+        .where(
+          and(
+            inArray(wmsProductTypes.categoryId, categoryIds),
+            eq(wmsProductTypes.isActive, true),
+            or(
+              eq(wmsProductTypes.tenantId, BRAND_TENANT_ID),
+              eq(wmsProductTypes.tenantId, sessionTenantId)
+            )
+          )
+        )
+        .orderBy(wmsProductTypes.ordine);
+    }
+
+    // Build hierarchy grouped by product_type
+    const typologiesByCategory = new Map<string, any[]>();
+    for (const typ of typologiesResult) {
+      const list = typologiesByCategory.get(typ.categoryId) || [];
+      list.push({
+        id: typ.id,
+        name: typ.nome,
+        description: typ.descrizione,
+        order: typ.ordine,
+        source: typ.source
+      });
+      typologiesByCategory.set(typ.categoryId, list);
+    }
+
+    const hierarchy: Record<string, any[]> = {};
+    for (const cat of categoriesResult) {
+      const productType = cat.productType || 'UNKNOWN';
+      if (!hierarchy[productType]) {
+        hierarchy[productType] = [];
+      }
+      hierarchy[productType].push({
+        id: cat.id,
+        name: cat.nome,
+        description: cat.descrizione,
+        icon: cat.icona,
+        order: cat.ordine,
+        source: cat.source,
+        typologies: typologiesByCategory.get(cat.id) || []
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hierarchy,
+        meta: {
+          productTypes: Object.keys(hierarchy),
+          totalCategories: categoriesResult.length,
+          totalTypologies: typologiesResult.length
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching categories hierarchy:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch categories hierarchy",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
