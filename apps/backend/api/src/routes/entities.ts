@@ -13,7 +13,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middlewa
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers } from '../db/schema/w3suite';
-import { channels, commercialAreas } from '../db/schema/public';
+import { channels, commercialAreas, vatRates, vatRegimes } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 
@@ -1551,6 +1551,229 @@ router.put('/stores/:id/tracking-config', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to update store tracking config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== VAT RATES ====================
+
+/**
+ * GET /api/vat-rates
+ * Get all Italian VAT rates (from public schema - shared reference data)
+ * Returns the 5 standard Italian VAT rates: 22%, 10%, 5%, 4%, 0%
+ */
+router.get('/vat-rates', async (req, res) => {
+  try {
+    // VAT rates are in public schema - no tenant filtering needed
+    const rates = await db.query.vatRates.findMany({
+      where: eq(vatRates.isActive, true),
+      orderBy: [desc(vatRates.sortOrder)]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: rates,
+      message: 'VAT rates retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving VAT rates', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve VAT rates',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/vat-rates/:code
+ * Get a specific VAT rate by code
+ */
+router.get('/vat-rates/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    const [rate] = await db
+      .select()
+      .from(vatRates)
+      .where(eq(vatRates.code, code.toUpperCase()))
+      .limit(1);
+
+    if (!rate) {
+      return res.status(404).json({
+        success: false,
+        error: 'VAT rate not found',
+        message: `No VAT rate found with code '${code}'`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: rate,
+      message: 'VAT rate retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving VAT rate', { 
+      code: req.params.code,
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve VAT rate',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== VAT REGIMES ====================
+
+/**
+ * GET /api/vat-regimes
+ * Get all Italian VAT regimes (from public schema - shared reference data)
+ * Returns all special VAT regimes: Art.10, Art.17, Art.36, Split Payment, etc.
+ */
+router.get('/vat-regimes', async (req, res) => {
+  try {
+    // Optional filters
+    const { rateStrategy, vatPayer } = req.query;
+    
+    // Build query conditions
+    let conditions = [eq(vatRegimes.isActive, true)];
+    
+    if (rateStrategy && typeof rateStrategy === 'string') {
+      conditions.push(eq(vatRegimes.rateStrategy, rateStrategy));
+    }
+    
+    if (vatPayer && typeof vatPayer === 'string') {
+      conditions.push(eq(vatRegimes.vatPayer, vatPayer));
+    }
+
+    // LEFT JOIN to include fixed rate details when present
+    const regimes = await db
+      .select({
+        id: vatRegimes.id,
+        code: vatRegimes.code,
+        name: vatRegimes.name,
+        description: vatRegimes.description,
+        legalReference: vatRegimes.legalReference,
+        rateStrategy: vatRegimes.rateStrategy,
+        fixedRateId: vatRegimes.fixedRateId,
+        vatPayer: vatRegimes.vatPayer,
+        naturaFeCode: vatRegimes.naturaFeCode,
+        invoiceNote: vatRegimes.invoiceNote,
+        requiresSeparateAccounting: vatRegimes.requiresSeparateAccounting,
+        supportsDeduction: vatRegimes.supportsDeduction,
+        requiresStampDuty: vatRegimes.requiresStampDuty,
+        applicableTo: vatRegimes.applicableTo,
+        isActive: vatRegimes.isActive,
+        sortOrder: vatRegimes.sortOrder,
+        createdAt: vatRegimes.createdAt,
+        // Joined fixed rate info
+        fixedRateCode: vatRates.code,
+        fixedRateName: vatRates.name,
+        fixedRatePercent: vatRates.ratePercent,
+      })
+      .from(vatRegimes)
+      .leftJoin(vatRates, eq(vatRegimes.fixedRateId, vatRates.id))
+      .where(and(...conditions))
+      .orderBy(vatRegimes.sortOrder);
+
+    res.status(200).json({
+      success: true,
+      data: regimes,
+      message: 'VAT regimes retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving VAT regimes', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve VAT regimes',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/vat-regimes/:code
+ * Get a specific VAT regime by code with joined rate info
+ */
+router.get('/vat-regimes/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    const [regime] = await db
+      .select({
+        id: vatRegimes.id,
+        code: vatRegimes.code,
+        name: vatRegimes.name,
+        description: vatRegimes.description,
+        legalReference: vatRegimes.legalReference,
+        rateStrategy: vatRegimes.rateStrategy,
+        fixedRateId: vatRegimes.fixedRateId,
+        vatPayer: vatRegimes.vatPayer,
+        naturaFeCode: vatRegimes.naturaFeCode,
+        invoiceNote: vatRegimes.invoiceNote,
+        requiresSeparateAccounting: vatRegimes.requiresSeparateAccounting,
+        supportsDeduction: vatRegimes.supportsDeduction,
+        requiresStampDuty: vatRegimes.requiresStampDuty,
+        applicableTo: vatRegimes.applicableTo,
+        isActive: vatRegimes.isActive,
+        sortOrder: vatRegimes.sortOrder,
+        // Join fixed rate details if present
+        fixedRateCode: vatRates.code,
+        fixedRateName: vatRates.name,
+        fixedRatePercent: vatRates.ratePercent,
+      })
+      .from(vatRegimes)
+      .leftJoin(vatRates, eq(vatRegimes.fixedRateId, vatRates.id))
+      .where(eq(vatRegimes.code, code.toUpperCase()))
+      .orderBy(vatRegimes.sortOrder)
+      .limit(1);
+
+    if (!regime) {
+      return res.status(404).json({
+        success: false,
+        error: 'VAT regime not found',
+        message: `No VAT regime found with code '${code}'`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: regime,
+      message: 'VAT regime retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving VAT regime', { 
+      code: req.params.code,
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve VAT regime',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
