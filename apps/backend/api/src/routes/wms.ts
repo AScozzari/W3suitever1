@@ -2943,6 +2943,56 @@ router.post("/stock-movements", rbacMiddleware, requirePermission('wms.stock.wri
         destinationStoreId: movementData.destinationStoreId,
         movementIds: createdMovements.map(m => m.id)
       });
+
+      // 📊 CQRS Event Log: Record transfer events (non-blocking)
+      // Get updated balances for event log
+      const [sourceBalance] = await db
+        .select({ qty: wmsInventoryBalances.quantityAvailable, reserved: wmsInventoryBalances.quantityReserved })
+        .from(wmsInventoryBalances)
+        .where(and(
+          eq(wmsInventoryBalances.tenantId, sessionTenantId),
+          eq(wmsInventoryBalances.storeId, movementData.sourceStoreId),
+          eq(wmsInventoryBalances.productId, movementData.productId)
+        ))
+        .limit(1);
+      
+      const [destBalance] = await db
+        .select({ qty: wmsInventoryBalances.quantityAvailable, reserved: wmsInventoryBalances.quantityReserved })
+        .from(wmsInventoryBalances)
+        .where(and(
+          eq(wmsInventoryBalances.tenantId, sessionTenantId),
+          eq(wmsInventoryBalances.storeId, movementData.destinationStoreId),
+          eq(wmsInventoryBalances.productId, movementData.productId)
+        ))
+        .limit(1);
+
+      // Record outbound event
+      recordInventoryEvent({
+        tenantId: sessionTenantId,
+        storeId: movementData.sourceStoreId,
+        productId: movementData.productId,
+        eventType: 'transfer_out',
+        quantityDelta: -Math.abs(movementData.quantityDelta),
+        balanceAfter: sourceBalance?.qty ?? 0,
+        reservedAfter: sourceBalance?.reserved ?? 0,
+        movementId: createdMovements[0].id,
+        userId: req.user?.id,
+        reason: movementData.notes,
+      });
+
+      // Record inbound event
+      recordInventoryEvent({
+        tenantId: sessionTenantId,
+        storeId: movementData.destinationStoreId,
+        productId: movementData.productId,
+        eventType: 'transfer_in',
+        quantityDelta: Math.abs(movementData.quantityDelta),
+        balanceAfter: destBalance?.qty ?? 0,
+        reservedAfter: destBalance?.reserved ?? 0,
+        movementId: createdMovements[1].id,
+        userId: req.user?.id,
+        reason: movementData.notes,
+      });
       
       return res.status(201).json({
         success: true,
@@ -3062,6 +3112,43 @@ router.post("/stock-movements", rbacMiddleware, requirePermission('wms.stock.wri
       productId: movementData.productId,
       quantityDelta: movementData.quantityDelta
     });
+
+    // 📊 CQRS Event Log: Record movement event (non-blocking)
+    if (movementData.storeId) {
+      const [currentBalance] = await db
+        .select({ qty: wmsInventoryBalances.quantityAvailable, reserved: wmsInventoryBalances.quantityReserved })
+        .from(wmsInventoryBalances)
+        .where(and(
+          eq(wmsInventoryBalances.tenantId, sessionTenantId),
+          eq(wmsInventoryBalances.storeId, movementData.storeId),
+          eq(wmsInventoryBalances.productId, movementData.productId)
+        ))
+        .limit(1);
+
+      // Map movement type to event type
+      let eventType: 'quantity_in' | 'quantity_out' | 'adjustment' | 'return_received' | 'return_sent' | 'damage_recorded' = 'quantity_in';
+      if (movementData.movementDirection === 'outbound') {
+        eventType = movementData.movementType === 'damaged' ? 'damage_recorded' : 'quantity_out';
+      } else if (movementData.movementType === 'return_in') {
+        eventType = 'return_received';
+      } else if (movementData.movementType === 'adjustment') {
+        eventType = 'adjustment';
+      }
+
+      recordInventoryEvent({
+        tenantId: sessionTenantId,
+        storeId: movementData.storeId,
+        productId: movementData.productId,
+        eventType,
+        quantityDelta: movementData.movementDirection === 'outbound' ? -Math.abs(movementData.quantityDelta) : Math.abs(movementData.quantityDelta),
+        balanceAfter: currentBalance?.qty ?? 0,
+        reservedAfter: currentBalance?.reserved ?? 0,
+        movementId: createdMovement.id,
+        documentRef: movementData.referenceId,
+        userId: req.user?.id,
+        reason: movementData.notes,
+      });
+    }
     
     // 🔄 WORKFLOW INTEGRATION: Check if movement requires approval
     try {
@@ -6150,6 +6237,59 @@ export async function updateInventoryBalance(
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     throw error;
+  }
+}
+
+/**
+ * 📊 Records an inventory event in the CQRS event log.
+ * Call this after every stock movement to maintain audit trail.
+ * 
+ * @param params Movement parameters including balance after update
+ */
+export async function recordInventoryEvent(params: {
+  tenantId: string;
+  storeId: string;
+  productId: string;
+  eventType: 'quantity_in' | 'quantity_out' | 'state_change' | 'reservation' | 'release' | 'transfer_out' | 'transfer_in' | 'adjustment' | 'return_received' | 'return_sent' | 'damage_recorded';
+  quantityDelta: number;
+  balanceAfter: number;
+  reservedAfter?: number;
+  previousState?: string;
+  newState?: string;
+  serialNumber?: string;
+  movementId?: string;
+  documentRef?: string;
+  userId?: string;
+  reason?: string;
+  metadata?: Record<string, any>;
+}): Promise<void> {
+  try {
+    await inventoryEventLogService.recordEvent({
+      tenantId: params.tenantId,
+      storeId: params.storeId,
+      productId: params.productId,
+      eventType: params.eventType,
+      quantityChange: params.quantityDelta,
+      balanceAfter: params.balanceAfter,
+      reservedAfter: params.reservedAfter ?? 0,
+      previousState: params.previousState as any,
+      newState: params.newState as any,
+      serialNumber: params.serialNumber,
+      movementId: params.movementId,
+      documentRef: params.documentRef,
+      userId: params.userId,
+      causedBy: params.userId ? 'user' : 'system',
+      reason: params.reason,
+      metadata: params.metadata,
+    });
+  } catch (error) {
+    // Log but don't fail the main operation
+    logger.error('Failed to record inventory event (non-blocking)', {
+      tenantId: params.tenantId,
+      productId: params.productId,
+      eventType: params.eventType,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
 
