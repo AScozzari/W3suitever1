@@ -8747,4 +8747,166 @@ router.get("/categories-hierarchy", rbacMiddleware, requirePermission('wms.produ
   }
 });
 
+// ==================== INVENTORY EVENT LOG (CQRS) ====================
+
+import { inventoryEventLogService } from '../services/inventory-event-log.service';
+
+/**
+ * GET /api/wms/inventory-events
+ * 
+ * Query storica degli eventi di inventario.
+ * Ogni cambio di stato logistico o movimento genera un evento immutabile.
+ * 
+ * @query storeId - Filter by store
+ * @query productId - Filter by product
+ * @query eventType - Filter by event type
+ * @query serialNumber - Filter by serial (IMEI, ICCID, etc.)
+ * @query dateFrom - ISO date from
+ * @query dateTo - ISO date to
+ * @query limit - Max results (default 100)
+ * @query offset - Pagination offset
+ */
+router.get('/inventory-events', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing x-tenant-id header'
+      });
+    }
+
+    const {
+      storeId,
+      productId,
+      eventType,
+      serialNumber,
+      dateFrom,
+      dateTo,
+      limit = '100',
+      offset = '0'
+    } = req.query;
+
+    const events = await inventoryEventLogService.queryEvents({
+      tenantId,
+      storeId: storeId as string | undefined,
+      productId: productId as string | undefined,
+      eventType: eventType as any,
+      serialNumber: serialNumber as string | undefined,
+      dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
+      dateTo: dateTo ? new Date(dateTo as string) : undefined,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string)
+    });
+
+    res.json({
+      success: true,
+      data: events,
+      meta: {
+        count: events.length,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string)
+      }
+    });
+
+  } catch (error) {
+    console.error("Error querying inventory events:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to query inventory events",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/inventory-events/product/:productId
+ * 
+ * Storico completo di un prodotto con summary.
+ * 
+ * @param productId - Product ID
+ * @query storeId - Optional store filter
+ */
+router.get('/inventory-events/product/:productId', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing x-tenant-id header'
+      });
+    }
+
+    const { productId } = req.params;
+    const { storeId } = req.query;
+
+    const history = await inventoryEventLogService.getProductHistory(
+      tenantId,
+      productId,
+      storeId as string | undefined
+    );
+
+    res.json({
+      success: true,
+      data: history
+    });
+
+  } catch (error) {
+    console.error("Error fetching product history:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch product history",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/inventory-events/stats
+ * 
+ * Statistiche eventi per tipo in un periodo.
+ * 
+ * @query dateFrom - ISO date from (required)
+ * @query dateTo - ISO date to (required)
+ */
+router.get('/inventory-events/stats', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing x-tenant-id header'
+      });
+    }
+
+    const { dateFrom, dateTo } = req.query;
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({
+        success: false,
+        error: 'dateFrom and dateTo are required'
+      });
+    }
+
+    const stats = await inventoryEventLogService.countEventsByType(
+      tenantId,
+      new Date(dateFrom as string),
+      new Date(dateTo as string)
+    );
+
+    res.json({
+      success: true,
+      data: stats
+    });
+
+  } catch (error) {
+    console.error("Error fetching event stats:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch event stats",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 export default router;
