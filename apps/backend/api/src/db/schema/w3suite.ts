@@ -8553,6 +8553,93 @@ export const wmsInventorySnapshots = w3suiteSchema.table("wms_inventory_snapshot
 
 export type WmsInventorySnapshot = typeof wmsInventorySnapshots.$inferSelect;
 
+// 10.5) wms_inventory_events - Immutable event log for CQRS pattern (append-only)
+// Every logistic state change creates an immutable row with timestamp and RLS
+export const wmsInventoryEventTypeEnum = pgEnum('wms_inventory_event_type', [
+  'state_change',       // Cambio stato logistico (es: in_stock → reserved)
+  'quantity_in',        // Ingresso merce (carico)
+  'quantity_out',       // Uscita merce (scarico)
+  'reservation',        // Prenotazione quantità
+  'release',            // Rilascio prenotazione
+  'transfer_out',       // Trasferimento in uscita
+  'transfer_in',        // Trasferimento in entrata
+  'adjustment',         // Rettifica inventario
+  'return_received',    // Reso ricevuto
+  'return_sent',        // Reso spedito
+  'damage_recorded',    // Registrazione danno
+  'snapshot'            // Snapshot periodico (12:00/23:00)
+]);
+
+export const wmsInventoryEvents = w3suiteSchema.table("wms_inventory_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  productId: varchar("product_id", { length: 100 }).notNull(),
+  
+  // Event sequencing (per product/store for ordering)
+  eventSequence: integer("event_sequence").notNull(),
+  
+  // Event type and state transition
+  eventType: wmsInventoryEventTypeEnum("event_type").notNull(),
+  previousState: productLogisticStatusEnum("previous_state"),
+  newState: productLogisticStatusEnum("new_state"),
+  
+  // Quantity changes (delta and balance)
+  quantityChange: integer("quantity_change").default(0).notNull(),
+  balanceAfter: integer("balance_after").notNull(),
+  reservedChange: integer("reserved_change").default(0).notNull(),
+  reservedAfter: integer("reserved_after").default(0).notNull(),
+  
+  // For serialized products (IMEI, ICCID, etc.)
+  serialNumber: varchar("serial_number", { length: 100 }),
+  
+  // Reference to source movement/document
+  movementId: uuid("movement_id"),
+  documentRef: varchar("document_ref", { length: 100 }),
+  
+  // Audit trail
+  userId: varchar("user_id").references(() => users.id),
+  causedBy: varchar("caused_by", { length: 50 }).default('system').notNull(),
+  
+  // Additional context
+  reason: text("reason"),
+  metadata: jsonb("metadata").default({}),
+  
+  // Immutable timestamp
+  eventAt: timestamp("event_at").defaultNow().notNull(),
+}, (table) => [
+  // Unique sequence per product/store (ensures ordering)
+  uniqueIndex("wms_events_tenant_store_product_seq_unique").on(
+    table.tenantId,
+    table.storeId,
+    table.productId,
+    table.eventSequence
+  ),
+  
+  // RLS-optimized indexes (tenant_id first)
+  index("wms_events_tenant_idx").on(table.tenantId),
+  index("wms_events_tenant_store_idx").on(table.tenantId, table.storeId),
+  index("wms_events_tenant_product_idx").on(table.tenantId, table.productId),
+  index("wms_events_tenant_event_at_idx").on(table.tenantId, table.eventAt.desc()),
+  index("wms_events_event_type_idx").on(table.eventType),
+  index("wms_events_serial_idx").on(table.serialNumber),
+  index("wms_events_movement_idx").on(table.movementId),
+  
+  // Composite FK: wms_inventory_events → products
+  foreignKey({
+    columns: [table.tenantId, table.productId],
+    foreignColumns: [products.tenantId, products.id],
+  }).onDelete('cascade'),
+]);
+
+export const insertWmsInventoryEventSchema = createInsertSchema(wmsInventoryEvents).omit({
+  id: true,
+  eventAt: true,
+});
+
+export type InsertWmsInventoryEvent = z.infer<typeof insertWmsInventoryEventSchema>;
+export type WmsInventoryEvent = typeof wmsInventoryEvents.$inferSelect;
+
 // 11) purchase_orders - Inbound goods documents (DDT, invoices from suppliers)
 export const purchaseOrders = w3suiteSchema.table("purchase_orders", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
