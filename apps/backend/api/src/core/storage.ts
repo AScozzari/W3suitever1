@@ -768,7 +768,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(suppliers.origin, 'brand'), // Only brand suppliers
-          isNull(suppliers.tenantId) // Brand suppliers have NULL tenantId
+          eq(suppliers.tenantId, '00000000-0000-0000-0000-000000000000') // Brand tenant ID
         )
       );
     
