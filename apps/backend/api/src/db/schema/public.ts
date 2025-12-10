@@ -321,3 +321,80 @@ export const insertUtmMediumSchema = createInsertSchema(utmMediums).omit({
 });
 export type InsertUtmMedium = z.infer<typeof insertUtmMediumSchema>;
 export type UtmMedium = typeof utmMediums.$inferSelect;
+
+// ==================== VAT RATES (Aliquote IVA Italiane) ====================
+export const vatRates = pgTable("vat_rates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 20 }).unique().notNull(), // STD, RID10, RID5, RID4, ESE
+  name: varchar("name", { length: 100 }).notNull(), // Ordinaria, Ridotta 10%, etc.
+  description: text("description"),
+  ratePercent: varchar("rate_percent", { length: 10 }).notNull(), // "22.00", "10.00", "5.00", "4.00", "0.00"
+  multiplier: varchar("multiplier", { length: 10 }).notNull(), // "1.22", "1.10", "1.05", "1.04", "1.00" - per calcolo lordo
+  divisor: varchar("divisor", { length: 10 }).notNull(), // "0.8197", "0.9091", etc. - per scorporo IVA
+  applicableProducts: text("applicable_products"), // Descrizione prodotti/servizi applicabili
+  legalReference: varchar("legal_reference", { length: 100 }), // DPR 633/72, Allegato A, etc.
+  naturaFeCode: varchar("natura_fe_code", { length: 10 }), // Codice Natura per fattura elettronica (N1, N2, N3, N4, etc.)
+  effectiveFrom: timestamp("effective_from"),
+  effectiveTo: timestamp("effective_to"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_vat_rates_code").on(table.code),
+  index("idx_vat_rates_active").on(table.isActive),
+]);
+
+export const insertVatRateSchema = createInsertSchema(vatRates).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertVatRate = z.infer<typeof insertVatRateSchema>;
+export type VatRate = typeof vatRates.$inferSelect;
+
+// ==================== VAT REGIMES (Regimi Fiscali Speciali Italiani) ====================
+export const vatRegimes = pgTable("vat_regimes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(), // STANDARD, ART10, ART17_RC, ART36_MARG, etc.
+  name: varchar("name", { length: 150 }).notNull(), // Regime Ordinario, Esente Art.10, Reverse Charge, etc.
+  description: text("description"),
+  legalReference: varchar("legal_reference", { length: 200 }), // Art.10 DPR 633/72, Art.17 comma 6, etc.
+  
+  // Strategia di applicazione aliquota
+  rateStrategy: varchar("rate_strategy", { length: 20 }).notNull(), // 'product_rate', 'fixed_rate', 'margin', 'excluded'
+  fixedRateId: uuid("fixed_rate_id").references(() => vatRates.id), // Se rateStrategy='fixed_rate', usa questa aliquota
+  
+  // Chi paga l'IVA
+  vatPayer: varchar("vat_payer", { length: 20 }).notNull(), // 'supplier', 'customer', 'pa', 'none'
+  
+  // Codici per fatturazione elettronica (SDI)
+  naturaFeCode: varchar("natura_fe_code", { length: 10 }), // N1, N2.1, N2.2, N3.x, N4, N5, N6.x, N7
+  
+  // Nota da inserire in fattura (obbligatoria per regimi speciali)
+  invoiceNote: text("invoice_note"), // "Operazione esente IVA ai sensi dell'art. 10 DPR 633/72"
+  
+  // Requisiti contabili
+  requiresSeparateAccounting: boolean("requires_separate_accounting").default(false), // Contabilità separata Art.36
+  supportsDeduction: boolean("supports_deduction").default(true), // Può detrarre IVA acquisti
+  requiresStampDuty: boolean("requires_stamp_duty").default(false), // Marca da bollo €2 se > €77.47
+  
+  // Applicabilità
+  applicableTo: text("applicable_to"), // PA, Costruzioni, Rottami, etc.
+  
+  effectiveFrom: timestamp("effective_from"),
+  effectiveTo: timestamp("effective_to"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_vat_regimes_code").on(table.code),
+  index("idx_vat_regimes_rate_strategy").on(table.rateStrategy),
+  index("idx_vat_regimes_vat_payer").on(table.vatPayer),
+  index("idx_vat_regimes_active").on(table.isActive),
+]);
+
+export const insertVatRegimeSchema = createInsertSchema(vatRegimes).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertVatRegime = z.infer<typeof insertVatRegimeSchema>;
+export type VatRegime = typeof vatRegimes.$inferSelect;
