@@ -975,8 +975,9 @@ router.get('/roles', async (req, res) => {
 
 /**
  * GET /api/drivers
- * Get all active drivers (both brand-pushed and tenant-custom)
- * Follows RLS pattern: tenantId required for isolation
+ * Get all active drivers (brand + tenant-custom with tenant override precedence)
+ * Brand drivers are stored in brand tenant (00000000-0000-0000-0000-000000000000)
+ * Tenant can create custom drivers or override brand drivers by code
  */
 router.get('/drivers', async (req, res) => {
   try {
@@ -990,13 +991,32 @@ router.get('/drivers', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    await setTenantContext(tenantId);
-
-    // Query w3suite.drivers with tenant isolation (includes both brand and custom)
-    // Include inactive drivers for admin management view
+    const BRAND_TENANT_ID = '00000000-0000-0000-0000-000000000000';
     const includeInactive = req.query.includeInactive === 'true';
-    
-    const driversList = await db
+
+    // Get brand drivers (shared across all tenants)
+    const brandDrivers = await db
+      .select({
+        id: drivers.id,
+        code: drivers.code,
+        name: drivers.name,
+        description: drivers.description,
+        icon: drivers.icon,
+        allowedProductTypes: drivers.allowedProductTypes,
+        source: drivers.source,
+        isBrandSynced: drivers.isBrandSynced,
+        isActive: drivers.isActive,
+        sortOrder: drivers.sortOrder,
+        createdAt: drivers.createdAt,
+      })
+      .from(drivers)
+      .where(includeInactive 
+        ? eq(drivers.tenantId, BRAND_TENANT_ID)
+        : and(eq(drivers.tenantId, BRAND_TENANT_ID), eq(drivers.isActive, true))
+      );
+
+    // Get tenant-specific drivers (custom or overrides)
+    const tenantDrivers = await db
       .select({
         id: drivers.id,
         code: drivers.code,
@@ -1014,8 +1034,13 @@ router.get('/drivers', async (req, res) => {
       .where(includeInactive 
         ? eq(drivers.tenantId, tenantId)
         : and(eq(drivers.tenantId, tenantId), eq(drivers.isActive, true))
-      )
-      .orderBy(drivers.sortOrder, drivers.name);
+      );
+
+    // Merge with tenant override precedence (tenant drivers shadow brand drivers by code)
+    const tenantCodes = new Set(tenantDrivers.map(d => d.code));
+    const filteredBrandDrivers = brandDrivers.filter(d => !tenantCodes.has(d.code));
+    const driversList = [...tenantDrivers, ...filteredBrandDrivers]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
 
     res.status(200).json({
       success: true,
