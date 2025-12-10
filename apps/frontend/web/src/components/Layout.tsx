@@ -579,7 +579,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'workflow-management', label: 'Workflow & Teams', icon: Users, path: '/workflow-management' },
     { 
       id: 'prodotti-listini', 
-      label: 'Prodotti e Listini', 
+      label: 'Gestione Catalogo', 
       icon: Package, 
       path: '/prodotti-listini',
       hasSubmenu: true,

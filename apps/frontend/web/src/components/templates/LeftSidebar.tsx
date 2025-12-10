@@ -65,7 +65,7 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
   { 
     id: 'prodotti-listini', 
-    label: 'Prodotti e Listini', 
+    label: 'Gestione Catalogo', 
     icon: Package, 
     path: '/prodotti-listini',
     hasSubmenu: true,

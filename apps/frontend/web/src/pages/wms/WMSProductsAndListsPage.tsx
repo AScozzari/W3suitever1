@@ -102,9 +102,9 @@ export default function WMSProductsAndListsPage() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                   <ShoppingCart className="h-6 w-6 text-windtre-orange" />
-                  Prodotti e Listini
+                  Gestione Catalogo
                 </h1>
-                <p className="text-gray-600 mt-1">Gestione completa prodotti, categorie e listini</p>
+                <p className="text-gray-600 mt-1">Gestione completa prodotti, categorie, listini e driver</p>
               </div>
               
             </div>
