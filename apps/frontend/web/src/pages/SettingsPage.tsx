@@ -108,7 +108,8 @@ import {
   Info,
   AlertTriangle as Warning,
   XCircle,
-  Truck
+  Truck,
+  Landmark
 } from 'lucide-react';
 
 // Hardcoded roles data - 10 specific roles instead of backend fetching
@@ -583,6 +584,13 @@ export default function SettingsPage() {
   // Selected entity tab
   const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
   
+  // Financial Entity Modal State
+  const [financialEntityModal, setFinancialEntityModal] = useState<{
+    isOpen: boolean;
+    mode: 'create' | 'edit' | 'view';
+    data: any | null;
+  }>({ isOpen: false, mode: 'create', data: null });
+  
   // Workflow Management State
   const [workflowSubTab, setWorkflowSubTab] = useState('hierarchy');
   const [selectedWorkflowService, setSelectedWorkflowService] = useState('hr');
@@ -665,6 +673,47 @@ export default function SettingsPage() {
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000
   });
+
+  // Financial Entities Query - Load when Entity Management tab is active and enti-finanziatori is selected
+  const { 
+    data: financialEntitiesResponse, 
+    isLoading: financialEntitiesLoading, 
+    error: financialEntitiesError,
+    refetch: refetchFinancialEntities 
+  } = useQuery({
+    queryKey: ['/api/wms/financial-entities'],
+    enabled: activeTab === 'Entity Management' && selectedEntity === 'enti-finanziatori',
+    refetchOnMount: false,
+    staleTime: 2 * 60 * 1000
+  });
+  
+  // Extract list from response
+  const financialEntitiesList = Array.isArray(financialEntitiesResponse) 
+    ? financialEntitiesResponse 
+    : (financialEntitiesResponse as any)?.data || [];
+
+  // Handle delete financial entity
+  const handleDeleteFinancialEntity = async (entityId: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questo ente finanziatore?')) return;
+    
+    try {
+      const response = await fetch(`/api/wms/financial-entities/${entityId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || 'Errore durante l\'eliminazione');
+        return;
+      }
+      
+      refetchFinancialEntities();
+    } catch (error) {
+      console.error('Error deleting financial entity:', error);
+      alert('Errore durante l\'eliminazione dell\'ente finanziatore');
+    }
+  };
 
   // Caricamento dati enterprise con service layer - Only when Entity Management tab is active
   useEffect(() => {
@@ -2032,7 +2081,8 @@ export default function SettingsPage() {
             { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
             { id: 'punti-vendita', icon: Store, label: 'Sedi Operative', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
-            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' }
+            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
+            { id: 'enti-finanziatori', icon: Landmark, label: 'Enti Finanziatori', color: '#059669' }
           ].map((item, index) => {
             const Icon = item.icon;
             return (
@@ -3553,6 +3603,213 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Enti Finanziatori Section */}
+      {selectedEntity === 'enti-finanziatori' && (
+        <div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '24px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #059669, #10b981)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Landmark size={20} style={{ color: 'white' }} />
+              </div>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0
+              }}>
+                Enti Finanziatori
+              </h3>
+            </div>
+            <button 
+              onClick={() => setFinancialEntityModal({ isOpen: true, mode: 'create', data: null })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                background: 'linear-gradient(135deg, #059669, #10b981)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              data-testid="button-add-financial-entity"
+            >
+              <Plus size={16} />
+              Nuovo Ente
+            </button>
+          </div>
+
+          {/* Financial Entities DataTable */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px)',
+            borderRadius: '16px',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            overflow: 'hidden'
+          }}>
+            {financialEntitiesLoading ? (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', color: '#059669' }} />
+                <p style={{ marginTop: '12px', color: '#6b7280' }}>Caricamento enti finanziatori...</p>
+              </div>
+            ) : financialEntitiesError ? (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <AlertCircle size={24} style={{ color: '#ef4444' }} />
+                <p style={{ marginTop: '12px', color: '#ef4444' }}>Errore nel caricamento</p>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(5, 150, 105, 0.1)' }}>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Codice</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Ragione Sociale</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>P.IVA</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Sede</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Origine</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Stato</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '12px', fontWeight: '600', color: '#059669', textTransform: 'uppercase' }}>Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {financialEntitiesList?.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                        <Landmark size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                        <p>Nessun ente finanziatore trovato</p>
+                        <p style={{ fontSize: '12px' }}>Clicca "Nuovo Ente" per aggiungere il primo</p>
+                      </td>
+                    </tr>
+                  ) : financialEntitiesList?.map((entity: any) => {
+                    const address = entity.registeredAddress as any;
+                    return (
+                      <tr 
+                        key={entity.id}
+                        style={{ 
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(5, 150, 105, 0.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <td style={{ padding: '14px 16px', fontSize: '14px', fontWeight: '600', color: '#111827' }}>
+                          {entity.code}
+                        </td>
+                        <td style={{ padding: '14px 16px', fontSize: '14px', color: '#374151' }}>
+                          {entity.name}
+                        </td>
+                        <td style={{ padding: '14px 16px', fontSize: '14px', color: '#6b7280', fontFamily: 'monospace' }}>
+                          {entity.vatNumber || '-'}
+                        </td>
+                        <td style={{ padding: '14px 16px', fontSize: '14px', color: '#6b7280' }}>
+                          {address?.citta ? `${address.citta} (${address.provincia})` : '-'}
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            background: entity.origin === 'brand' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                            color: entity.origin === 'brand' ? '#8b5cf6' : '#3b82f6'
+                          }}>
+                            {entity.origin === 'brand' ? 'Brand' : 'Custom'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            background: entity.status === 'active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            color: entity.status === 'active' ? '#10b981' : '#ef4444'
+                          }}>
+                            {entity.status === 'active' ? 'Attivo' : entity.status === 'suspended' ? 'Sospeso' : 'Bloccato'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setFinancialEntityModal({ isOpen: true, mode: 'view', data: entity })}
+                              style={{
+                                padding: '6px',
+                                background: 'rgba(59, 130, 246, 0.1)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                              }}
+                              title="Visualizza"
+                              data-testid={`button-view-financial-entity-${entity.id}`}
+                            >
+                              <Eye size={14} style={{ color: '#3b82f6' }} />
+                            </button>
+                            {entity.origin === 'tenant' && (
+                              <>
+                                <button
+                                  onClick={() => setFinancialEntityModal({ isOpen: true, mode: 'edit', data: entity })}
+                                  style={{
+                                    padding: '6px',
+                                    background: 'rgba(245, 158, 11, 0.1)',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Modifica"
+                                  data-testid={`button-edit-financial-entity-${entity.id}`}
+                                >
+                                  <Edit3 size={14} style={{ color: '#f59e0b' }} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteFinancialEntity(entity.id)}
+                                  style={{
+                                    padding: '6px',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Elimina"
+                                  data-testid={`button-delete-financial-entity-${entity.id}`}
+                                >
+                                  <Trash2 size={14} style={{ color: '#ef4444' }} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
       
