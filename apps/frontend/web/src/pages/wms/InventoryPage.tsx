@@ -2215,19 +2215,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                   </h3>
                                 </div>
                                 <div className="p-4 bg-white">
-                                  {/* Stato Stock Badge prominente */}
-                                  {selectedItem?.stockStatus && (
-                                    <div className="mb-4 pb-4 border-b border-gray-100">
-                                      <Badge 
-                                        className={`text-sm px-4 py-2 ${STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.color || 'bg-gray-100 text-gray-700'}`}
-                                      >
-                                        <span className={`w-2.5 h-2.5 rounded-full ${STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.dotColor || 'bg-gray-500'} mr-2`}></span>
-                                        {STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.label || 'In Stock'}
-                                      </Badge>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex flex-wrap items-center gap-6">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Stato Logistico</label>
                                       <Badge className={`text-xs w-fit mt-1 ${logConfig.color}`}>
@@ -2246,6 +2234,14 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Magazzino</label>
                                       <p className="font-medium text-gray-900">{firstSerial?.storeName || selectedItem?.storeName || '-'}</p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Stato Stock</label>
+                                      <Badge 
+                                        className={`text-xs w-fit mt-1 ${STOCK_STATUS_CONFIG[selectedItem?.stockStatus || 'in_stock']?.color || 'bg-gray-100 text-gray-700'}`}
+                                      >
+                                        {STOCK_STATUS_CONFIG[selectedItem?.stockStatus || 'in_stock']?.label || 'In Stock'}
+                                      </Badge>
                                     </div>
                                   </div>
                                   
