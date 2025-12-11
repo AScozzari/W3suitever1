@@ -1986,7 +1986,58 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                       </div>
                     ) : productSerials?.serials && productSerials.serials.length > 0 ? (
                       <>
-                        {/* SEZIONE SUPERIORE: Seriali in formato compatto */}
+                        {/* 1. HEADER ANAGRAFICA PRODOTTO */}
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">SKU</label>
+                              <p className="font-mono font-semibold text-gray-900">{selectedItem?.productSku || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Prodotto</label>
+                              <p className="font-medium text-gray-900">{selectedItem?.productName || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Marca</label>
+                              <p className="font-medium text-gray-900">{selectedItem?.productBrand || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Modello</label>
+                              <p className="font-medium text-gray-900">{selectedItem?.productModel || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Magazzino</label>
+                              <p className="font-medium text-gray-900">{selectedItem?.storeName || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
+                              <p className="font-medium text-gray-900">{selectedItem?.productCategory || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">EAN</label>
+                              <p className="font-mono text-sm text-gray-900">{selectedItem?.productEan || '-'}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Tipo Seriale</label>
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {selectedItem?.serialType === 'imei' ? 'IMEI' : 
+                                 selectedItem?.serialType === 'iccid' ? 'ICCID' : 
+                                 selectedItem?.serialType === 'mac_address' ? 'MAC' : 
+                                 selectedItem?.serialType?.toUpperCase() || '-'}
+                              </Badge>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Quantità</label>
+                              <p className="font-bold text-lg text-gray-900">{selectedItem?.serialCount || 0}</p>
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 uppercase tracking-wide">Disponibile</label>
+                              <p className="font-bold text-lg text-emerald-600">{selectedItem?.quantityAvailable || 0}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2. SEZIONE SERIALI: Identificativi in formato compatto */}
                         <div className="space-y-3">
                           <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                             <Barcode className="h-4 w-4 text-orange-500" />
