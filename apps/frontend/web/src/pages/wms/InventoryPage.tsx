@@ -2330,166 +2330,187 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                               </div>
 
                               {/* TAB 4: TIMELINE EVENTI - Verde */}
+                              <div className="rounded-lg border-2 border-green-200 overflow-hidden">
+                                <div className="bg-green-50 px-4 py-2 border-b border-green-200">
+                                  <h3 className="font-semibold text-green-700 flex items-center gap-2">
+                                    <History className="h-4 w-4" />
+                                    Timeline Eventi
+                                  </h3>
+                                </div>
+                                <div className="bg-white overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow className="bg-gray-50">
+                                        <TableHead>Data</TableHead>
+                                        <TableHead>Ora</TableHead>
+                                        <TableHead>Tipo Evento</TableHead>
+                                        <TableHead>Magazzino</TableHead>
+                                        <TableHead>Documento</TableHead>
+                                        <TableHead>Note</TableHead>
+                                        <TableHead className="text-center">Link</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {/* Aggregazione eventi raggruppati per entità fisica */}
+                                      {(() => {
+                                        // Raggruppa eventi "Carico in Magazzino" per minuto (tolleranza per millisecondi)
+                                        const loadEventsByMinute = new Map<string, { date: Date; count: number; storeName: string }>();
+                                        filteredSerials.forEach((serial) => {
+                                          const date = new Date(serial.createdAt);
+                                          const minuteKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
+                                          if (!loadEventsByMinute.has(minuteKey)) {
+                                            loadEventsByMinute.set(minuteKey, { date, count: 1, storeName: serial.storeName || '-' });
+                                          } else {
+                                            loadEventsByMinute.get(minuteKey)!.count++;
+                                          }
+                                        });
+                                        
+                                        // Raggruppa eventi status history per statusChangeGroupId o fallback su timestamp+status
+                                        const statusEventsByGroup = new Map<string, {
+                                          date: Date;
+                                          eventType: string;
+                                          storeName: string;
+                                          document: { type: string; number: string; date: string; id?: string } | null;
+                                          notes: string | null;
+                                          serialCount: number;
+                                        }>();
+                                        
+                                        filteredSerials.forEach((serial) => {
+                                          if (serial.statusHistory && serial.statusHistory.length > 0) {
+                                            serial.statusHistory.forEach((log) => {
+                                              // Use groupId if available, otherwise fallback to minute+status combo
+                                              const date = new Date(log.changedAt);
+                                              const minuteKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
+                                              const groupKey = log.statusChangeGroupId || `legacy-${minuteKey}-${log.previousStatus || 'null'}-${log.newStatus}`;
+                                              
+                                              if (!statusEventsByGroup.has(groupKey)) {
+                                                const fromLabel = log.previousStatus ? (LOGISTIC_STATUS_CONFIG[log.previousStatus]?.label || log.previousStatus) : '';
+                                                const toLabel = LOGISTIC_STATUS_CONFIG[log.newStatus]?.label || log.newStatus;
+                                                const eventType = fromLabel ? `${fromLabel} → ${toLabel}` : `Cambio a ${toLabel}`;
+                                                
+                                                const doc = log.documents && log.documents.length > 0 ? {
+                                                  type: log.documents[0].documentType,
+                                                  number: log.documents[0].documentNumber,
+                                                  date: log.documents[0].documentDate,
+                                                  id: log.documents[0].documentId
+                                                } : null;
+                                                
+                                                statusEventsByGroup.set(groupKey, {
+                                                  date,
+                                                  eventType,
+                                                  storeName: serial.storeName || '-',
+                                                  document: doc,
+                                                  notes: log.notes || null,
+                                                  serialCount: 1
+                                                });
+                                              } else {
+                                                statusEventsByGroup.get(groupKey)!.serialCount++;
+                                              }
+                                            });
+                                          }
+                                        });
+                                        
+                                        // Crea array finale eventi aggregati
+                                        const allEvents: Array<{
+                                          id: string;
+                                          date: Date;
+                                          eventType: string;
+                                          storeName: string;
+                                          document: { type: string; number: string; date: string; id?: string } | null;
+                                          notes: string | null;
+                                        }> = [];
+                                        
+                                        // Aggiungi eventi carico (uno per minuto = entità fisica singola)
+                                        loadEventsByMinute.forEach((event, key) => {
+                                          allEvents.push({
+                                            id: `load-${key}`,
+                                            date: event.date,
+                                            eventType: 'Carico in Magazzino',
+                                            storeName: event.storeName,
+                                            document: null,
+                                            notes: null
+                                          });
+                                        });
+                                        
+                                        // Aggiungi eventi status change (uno per gruppo)
+                                        statusEventsByGroup.forEach((event, key) => {
+                                          allEvents.push({
+                                            id: `status-${key}`,
+                                            date: event.date,
+                                            eventType: event.eventType,
+                                            storeName: event.storeName,
+                                            document: event.document,
+                                            notes: event.notes
+                                          });
+                                        });
+                                        
+                                        allEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
+                                        
+                                        if (allEvents.length === 0) {
+                                          return (
+                                            <TableRow>
+                                              <TableCell colSpan={7} className="text-center text-gray-400 py-8">
+                                                Nessun evento registrato
+                                              </TableCell>
+                                            </TableRow>
+                                          );
+                                        }
+                                        
+                                        return allEvents.map((event) => (
+                                          <TableRow key={event.id}>
+                                            <TableCell className="whitespace-nowrap">
+                                              {format(event.date, 'dd/MM/yyyy', { locale: it })}
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap font-mono text-sm">
+                                              {format(event.date, 'HH:mm:ss', { locale: it })}
+                                            </TableCell>
+                                            <TableCell>
+                                              <span className={event.eventType === 'Carico in Magazzino' ? 'text-emerald-700 font-medium' : ''}>
+                                                {event.eventType}
+                                              </span>
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap">
+                                              <span className="text-gray-700">{event.storeName}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                              {event.document ? (
+                                                <div className="flex items-center gap-1 text-xs">
+                                                  <FileText className="h-3.5 w-3.5 text-blue-500" />
+                                                  <span className="font-semibold uppercase">{event.document.type}</span>
+                                                  <span className="text-gray-400">|</span>
+                                                  <span className="font-mono">{event.document.number}</span>
+                                                </div>
+                                              ) : (
+                                                <span className="text-gray-400 italic">Da implementare</span>
+                                              )}
+                                            </TableCell>
+                                            <TableCell className="text-gray-600 text-sm max-w-[150px] truncate">
+                                              {event.notes || '-'}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              {event.document?.id ? (
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-8 w-8 p-0 hover:bg-blue-50"
+                                                  title="Vai al documento"
+                                                >
+                                                  <ExternalLink className="h-4 w-4 text-blue-600" />
+                                                </Button>
+                                              ) : (
+                                                <span className="text-gray-300">-</span>
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        ));
+                                      })()}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
                             </>
                           );
                         })()}
-
-                        {/* TAB 4: TIMELINE EVENTI - Verde */}
-                        <div className="rounded-lg border-2 border-green-200 overflow-hidden">
-                          <div className="bg-green-50 px-4 py-2 border-b border-green-200">
-                            <h3 className="font-semibold text-green-700 flex items-center gap-2">
-                              <History className="h-4 w-4" />
-                              Timeline Eventi
-                            </h3>
-                          </div>
-                          <div className="bg-white">
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-gray-50">
-                                  <TableHead>Data</TableHead>
-                                  <TableHead>Ora</TableHead>
-                                  <TableHead>Tipo Evento</TableHead>
-                                  <TableHead>Documento</TableHead>
-                                  <TableHead>Note</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {/* Aggregazione eventi raggruppati per entità fisica */}
-                                {(() => {
-                                  // Raggruppa eventi "Carico in Magazzino" per minuto (tolleranza per millisecondi)
-                                  const loadEventsByMinute = new Map<string, { date: Date; count: number }>();
-                                  productSerials.serials.forEach((serial) => {
-                                    const date = new Date(serial.createdAt);
-                                    const minuteKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
-                                    if (!loadEventsByMinute.has(minuteKey)) {
-                                      loadEventsByMinute.set(minuteKey, { date, count: 1 });
-                                    } else {
-                                      loadEventsByMinute.get(minuteKey)!.count++;
-                                    }
-                                  });
-                                  
-                                  // Raggruppa eventi status history per statusChangeGroupId o fallback su timestamp+status
-                                  const statusEventsByGroup = new Map<string, {
-                                    date: Date;
-                                    eventType: string;
-                                    document: { type: string; number: string; date: string } | null;
-                                    notes: string | null;
-                                    serialCount: number;
-                                  }>();
-                                  
-                                  productSerials.serials.forEach((serial) => {
-                                    if (serial.statusHistory && serial.statusHistory.length > 0) {
-                                      serial.statusHistory.forEach((log) => {
-                                        // Use groupId if available, otherwise fallback to minute+status combo
-                                        const date = new Date(log.changedAt);
-                                        const minuteKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
-                                        const groupKey = log.statusChangeGroupId || `legacy-${minuteKey}-${log.previousStatus || 'null'}-${log.newStatus}`;
-                                        
-                                        if (!statusEventsByGroup.has(groupKey)) {
-                                          const fromLabel = log.previousStatus ? (LOGISTIC_STATUS_CONFIG[log.previousStatus]?.label || log.previousStatus) : '';
-                                          const toLabel = LOGISTIC_STATUS_CONFIG[log.newStatus]?.label || log.newStatus;
-                                          const eventType = fromLabel ? `${fromLabel} → ${toLabel}` : `Cambio a ${toLabel}`;
-                                          
-                                          const doc = log.documents && log.documents.length > 0 ? {
-                                            type: log.documents[0].documentType,
-                                            number: log.documents[0].documentNumber,
-                                            date: log.documents[0].documentDate
-                                          } : null;
-                                          
-                                          statusEventsByGroup.set(groupKey, {
-                                            date,
-                                            eventType,
-                                            document: doc,
-                                            notes: log.notes || null,
-                                            serialCount: 1
-                                          });
-                                        } else {
-                                          statusEventsByGroup.get(groupKey)!.serialCount++;
-                                        }
-                                      });
-                                    }
-                                  });
-                                  
-                                  // Crea array finale eventi aggregati
-                                  const allEvents: Array<{
-                                    id: string;
-                                    date: Date;
-                                    eventType: string;
-                                    document: { type: string; number: string; date: string } | null;
-                                    notes: string | null;
-                                  }> = [];
-                                  
-                                  // Aggiungi eventi carico (uno per minuto = entità fisica singola)
-                                  loadEventsByMinute.forEach((event, key) => {
-                                    allEvents.push({
-                                      id: `load-${key}`,
-                                      date: event.date,
-                                      eventType: 'Carico in Magazzino',
-                                      document: null,
-                                      notes: null
-                                    });
-                                  });
-                                  
-                                  // Aggiungi eventi status change (uno per gruppo)
-                                  statusEventsByGroup.forEach((event, key) => {
-                                    allEvents.push({
-                                      id: `status-${key}`,
-                                      date: event.date,
-                                      eventType: event.eventType,
-                                      document: event.document,
-                                      notes: event.notes
-                                    });
-                                  });
-                                  
-                                  allEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
-                                  
-                                  if (allEvents.length === 0) {
-                                    return (
-                                      <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-gray-400 py-8">
-                                          Nessun evento registrato
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  }
-                                  
-                                  return allEvents.map((event) => (
-                                    <TableRow key={event.id}>
-                                      <TableCell className="whitespace-nowrap">
-                                        {format(event.date, 'dd/MM/yyyy', { locale: it })}
-                                      </TableCell>
-                                      <TableCell className="whitespace-nowrap font-mono text-sm">
-                                        {format(event.date, 'HH:mm:ss', { locale: it })}
-                                      </TableCell>
-                                      <TableCell>
-                                        <span className={event.eventType === 'Carico in Magazzino' ? 'text-emerald-700 font-medium' : ''}>
-                                          {event.eventType}
-                                        </span>
-                                      </TableCell>
-                                      <TableCell>
-                                        {event.document ? (
-                                          <div className="flex items-center gap-1 text-xs">
-                                            <FileText className="h-3.5 w-3.5 text-blue-500" />
-                                            <span className="font-semibold uppercase">{event.document.type}</span>
-                                            <span className="text-gray-400">|</span>
-                                            <span className="font-mono">{event.document.number}</span>
-                                            <span className="text-gray-400">|</span>
-                                            <span>{format(new Date(event.document.date), 'dd/MM/yyyy', { locale: it })}</span>
-                                          </div>
-                                        ) : (
-                                          <span className="text-gray-400">-</span>
-                                        )}
-                                      </TableCell>
-                                      <TableCell className="text-gray-600 text-sm max-w-[200px] truncate">
-                                        {event.notes || '-'}
-                                      </TableCell>
-                                    </TableRow>
-                                  ));
-                                })()}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
                       </>
                     ) : (
                       <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">

@@ -139,20 +139,21 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
 
 # System Architecture
 - **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS, maintaining a consistent layout with fixed header, sidebar, and white backgrounds within a monorepo. The `VITE_FONT_SCALE` environment variable controls UI zoom during build time.
-- **Database Architecture**: Employs a 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
-- **Security**: Features OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC) system with Italian role templates.
-- **Core Systems**: Includes Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
-- **AI Integration**: Comprises AI Enforcement Middleware, an AI Workflow Builder (using `gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), an AI Voice Agent System (`gpt-4o-realtime`), and an AI Voice Agent RAG System (`pgvector`).
-- **CRM Module**: Offers a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-- **Campaign Management**: Supports dual-mode campaign creation (wizard and advanced) with GDPR Consent enforcement.
-- **Deployment & Governance**: Managed by a Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments require specific build commands and environment variable handling.
-- **Brand Interface**: Features a Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and a Master Catalog System (hybrid architecture using JSON files with Git versioning).
-- **VoIP Telephony**: Provides enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration follows a strict `wss://{sipServer}/ws` format on port 443.
-- **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
-- **WMS Movement Type Configuration**: A taxonomy of 15 movement types configurable per-tenant via a dedicated System Config page, including approval workflows and linked workflow templates, differentiating between 6 automatic and 9 manual movements.
-- **System Config Page**: A modular settings dashboard located at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
-- **Business Drivers Architecture**: Multi-tenant drivers in `w3suite.drivers` with RLS pattern for source types and product type associations.
-- **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) with specific rules for team membership, type, request routing, and cross-store data access.
+- **Technical Implementations**:
+    - **Database**: 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC with Italian role templates.
+    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, Multi-Provider OAuth (MCP).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (`gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer), AI Voice Agent System (`gpt-4o-realtime`), AI Voice Agent RAG System (`pgvector`).
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
+    - **Campaign Management**: Dual-mode campaign creation (wizard and advanced) with GDPR Consent enforcement.
+    - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments use specific build commands and environment variable handling.
+    - **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and Master Catalog System (hybrid architecture using JSON files with Git versioning).
+    - **VoIP Telephony**: Enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
+    - **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
+    - **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a System Config page, with approval workflows and linked workflow templates (6 automatic, 9 manual).
+    - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Business Drivers Architecture**: Multi-tenant drivers in `w3suite.drivers` with RLS for source types and product type associations.
+    - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) with rules for team membership, type, request routing, and cross-store data access.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
