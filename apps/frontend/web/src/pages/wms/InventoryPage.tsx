@@ -1390,7 +1390,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                       key={item.id} 
                       className="hover:bg-gray-50 transition-colors cursor-pointer"
                       data-testid={`row-inventory-${item.id}`}
-                      onClick={() => handleViewDetails(item, item.id)}
+                      onClick={() => handleViewDetails(item)}
                     >
                       {/* Prodotto */}
                       <TableCell className="font-medium text-gray-900">
