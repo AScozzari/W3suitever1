@@ -1919,11 +1919,14 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                       <TableHead className="font-semibold text-gray-700">Magazzino</TableHead>
                                       <TableHead className="font-semibold text-gray-700 text-center">Stato Logistico</TableHead>
                                       <TableHead className="font-semibold text-gray-700 text-center">Condizione</TableHead>
+                                      <TableHead className="font-semibold text-gray-700 text-center w-12">Info</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
                                     {productSerials.serials.slice(0, 50).map((serial) => {
                                       const logConfig = LOGISTIC_STATUS_CONFIG[serial.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
+                                      const hasSupplierInfo = serial.supplierName || serial.supplierSku || serial.purchaseCost;
+                                      const hasBatchInfo = serial.batchNumber;
                                       return (
                                         <TableRow key={serial.id} className="hover:bg-gray-50">
                                           <TableCell>
@@ -1946,6 +1949,69 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                              serial.condition === 'used' ? 'Usato' : 
                                              serial.condition === 'refurbished' ? 'Ricondizionato' : 
                                              serial.condition === 'demo' ? 'Demo' : serial.condition || '-'}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {(hasSupplierInfo || hasBatchInfo) ? (
+                                              <Popover>
+                                                <PopoverTrigger asChild>
+                                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                                    <Eye className="h-4 w-4 text-blue-500" />
+                                                  </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-72 p-3" align="end">
+                                                  <div className="space-y-3">
+                                                    {hasSupplierInfo && (
+                                                      <div>
+                                                        <h4 className="text-xs font-semibold text-blue-600 uppercase mb-2 flex items-center gap-1">
+                                                          <Truck className="h-3 w-3" />
+                                                          Fornitore
+                                                        </h4>
+                                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                                          <div>
+                                                            <span className="text-xs text-gray-500">Nome</span>
+                                                            <p className="font-medium">{serial.supplierName || '-'}</p>
+                                                          </div>
+                                                          <div>
+                                                            <span className="text-xs text-gray-500">SKU</span>
+                                                            <p className="font-mono text-xs">{serial.supplierSku || '-'}</p>
+                                                          </div>
+                                                          <div>
+                                                            <span className="text-xs text-gray-500">Costo</span>
+                                                            <p className="font-semibold">
+                                                              {serial.purchaseCost ? `€ ${parseFloat(serial.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
+                                                            </p>
+                                                          </div>
+                                                          <div>
+                                                            <span className="text-xs text-gray-500">Data</span>
+                                                            <p>{serial.purchaseDate ? format(new Date(serial.purchaseDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                    {hasBatchInfo && (
+                                                      <div className={hasSupplierInfo ? 'pt-2 border-t border-gray-200' : ''}>
+                                                        <h4 className="text-xs font-semibold text-purple-600 uppercase mb-2 flex items-center gap-1">
+                                                          <Layers className="h-3 w-3" />
+                                                          Lotto
+                                                        </h4>
+                                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                                          <div>
+                                                            <span className="text-xs text-gray-500">Numero</span>
+                                                            <p className="font-mono font-medium">{serial.batchNumber || '-'}</p>
+                                                          </div>
+                                                          <div>
+                                                            <span className="text-xs text-gray-500">Scadenza</span>
+                                                            <p>{serial.batchExpiryDate ? format(new Date(serial.batchExpiryDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </PopoverContent>
+                                              </Popover>
+                                            ) : (
+                                              <span className="text-gray-300">-</span>
+                                            )}
                                           </TableCell>
                                         </TableRow>
                                       );
@@ -1986,58 +2052,156 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                       </div>
                     ) : productSerials?.serials && productSerials.serials.length > 0 ? (
                       <>
-                        {/* 1. HEADER ANAGRAFICA PRODOTTO */}
-                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">SKU</label>
-                              <p className="font-mono font-semibold text-gray-900">{selectedItem?.productSku || '-'}</p>
+                        {/* 1. SEZIONE ANAGRAFICA PRODOTTO */}
+                        <div className="space-y-3">
+                          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                            <Package className="h-4 w-4 text-orange-500" />
+                            Anagrafica Prodotto
+                          </h3>
+                          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">SKU</label>
+                                <p className="font-mono font-semibold text-gray-900">{selectedItem?.productSku || '-'}</p>
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">EAN</label>
+                                <p className="font-mono text-sm text-gray-900">{selectedItem?.productEan || '-'}</p>
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Tipo Seriale</label>
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {selectedItem?.serialType === 'imei' ? 'IMEI' : 
+                                   selectedItem?.serialType === 'iccid' ? 'ICCID' : 
+                                   selectedItem?.serialType === 'mac_address' ? 'MAC' : 
+                                   selectedItem?.serialType?.toUpperCase() || '-'}
+                                </Badge>
+                              </div>
+                              <div className="col-span-1">
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Prodotto</label>
+                                <p className="font-medium text-gray-900">{selectedItem?.productName || '-'}</p>
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Prodotto</label>
-                              <p className="font-medium text-gray-900">{selectedItem?.productName || '-'}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Marca</label>
-                              <p className="font-medium text-gray-900">{selectedItem?.productBrand || '-'}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Modello</label>
-                              <p className="font-medium text-gray-900">{selectedItem?.productModel || '-'}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Magazzino</label>
-                              <p className="font-medium text-gray-900">{selectedItem?.storeName || '-'}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
-                              <p className="font-medium text-gray-900">{selectedItem?.productCategory || '-'}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">EAN</label>
-                              <p className="font-mono text-sm text-gray-900">{selectedItem?.productEan || '-'}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Tipo Seriale</label>
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {selectedItem?.serialType === 'imei' ? 'IMEI' : 
-                                 selectedItem?.serialType === 'iccid' ? 'ICCID' : 
-                                 selectedItem?.serialType === 'mac_address' ? 'MAC' : 
-                                 selectedItem?.serialType?.toUpperCase() || '-'}
-                              </Badge>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Quantità</label>
-                              <p className="font-bold text-lg text-gray-900">{selectedItem?.serialCount || 0}</p>
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 uppercase tracking-wide">Disponibile</label>
-                              <p className="font-bold text-lg text-emerald-600">{selectedItem?.quantityAvailable || 0}</p>
+                            <div className="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200">
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Marca</label>
+                                <p className="font-medium text-gray-900">{selectedItem?.productBrand || '-'}</p>
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Modello</label>
+                                <p className="font-medium text-gray-900">{selectedItem?.productModel || '-'}</p>
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
+                                <p className="font-medium text-gray-900">{selectedItem?.productCategory || '-'}</p>
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 uppercase tracking-wide">Tipologia</label>
+                                <p className="font-medium text-gray-900">{selectedItem?.productType || '-'}</p>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* 2. SEZIONE SERIALI: Identificativi in formato compatto */}
+                        {/* 2. SEZIONE STOCK */}
+                        <div className="space-y-3">
+                          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                            <Warehouse className="h-4 w-4 text-orange-500" />
+                            Stato Stock
+                          </h3>
+                          <div className="p-4 bg-white rounded-lg border border-gray-200">
+                            <div className="flex items-center gap-6">
+                              <div className="flex items-center gap-3">
+                                <Badge 
+                                  className={`text-sm px-3 py-1 ${STOCK_STATUS_CONFIG[selectedItem?.stockStatus || 'in_stock']?.color || ''}`}
+                                >
+                                  <span className={`w-2 h-2 rounded-full ${STOCK_STATUS_CONFIG[selectedItem?.stockStatus || 'in_stock']?.dotColor || 'bg-gray-500'} mr-2`}></span>
+                                  {STOCK_STATUS_CONFIG[selectedItem?.stockStatus || 'in_stock']?.label || 'In Stock'}
+                                </Badge>
+                              </div>
+                              <div className="h-8 w-px bg-gray-200"></div>
+                              <div>
+                                <span className="text-xs text-gray-500 uppercase">Magazzino</span>
+                                <p className="font-medium text-gray-900">{selectedItem?.storeName || '-'}</p>
+                              </div>
+                              <div className="h-8 w-px bg-gray-200"></div>
+                              <div className="text-center">
+                                <span className="text-xs text-gray-500 uppercase">Totale</span>
+                                <p className="font-bold text-lg text-gray-900">{selectedItem?.serialCount || 0}</p>
+                              </div>
+                              <div className="text-center">
+                                <span className="text-xs text-gray-500 uppercase">Disponibile</span>
+                                <p className="font-bold text-lg text-emerald-600">{selectedItem?.quantityAvailable || 0}</p>
+                              </div>
+                              <div className="text-center">
+                                <span className="text-xs text-gray-500 uppercase">Riservati</span>
+                                <p className="font-bold text-lg text-blue-600">{selectedItem?.quantityReserved || 0}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 3. SEZIONE FORNITORE & LOTTO */}
+                        {(() => {
+                          const firstSerial = productSerials.serials[0];
+                          const hasSupplierInfo = firstSerial?.supplierName || firstSerial?.supplierSku;
+                          const hasBatchInfo = firstSerial?.batchNumber;
+                          
+                          if (!hasSupplierInfo && !hasBatchInfo) return null;
+                          
+                          return (
+                            <div className="space-y-3">
+                              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                                <Truck className="h-4 w-4 text-orange-500" />
+                                Info Fornitore & Lotto
+                              </h3>
+                              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  {hasSupplierInfo && (
+                                    <>
+                                      <div>
+                                        <label className="text-xs text-blue-600 uppercase tracking-wide">Fornitore</label>
+                                        <p className="font-medium text-gray-900">{firstSerial.supplierName || '-'}</p>
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-blue-600 uppercase tracking-wide">SKU Fornitore</label>
+                                        <p className="font-mono text-sm text-gray-900">{firstSerial.supplierSku || '-'}</p>
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-blue-600 uppercase tracking-wide">Costo Acquisto</label>
+                                        <p className="font-semibold text-gray-900">
+                                          {firstSerial.purchaseCost ? `€ ${parseFloat(firstSerial.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-blue-600 uppercase tracking-wide">Data Acquisto</label>
+                                        <p className="text-sm text-gray-900">
+                                          {firstSerial.purchaseDate ? format(new Date(firstSerial.purchaseDate), 'dd/MM/yyyy', { locale: it }) : '-'}
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
+                                  {hasBatchInfo && (
+                                    <>
+                                      <div>
+                                        <label className="text-xs text-blue-600 uppercase tracking-wide">Numero Lotto</label>
+                                        <p className="font-mono font-medium text-gray-900">{firstSerial.batchNumber || '-'}</p>
+                                      </div>
+                                      <div>
+                                        <label className="text-xs text-blue-600 uppercase tracking-wide">Scadenza Lotto</label>
+                                        <p className="text-sm text-gray-900">
+                                          {firstSerial.batchExpiryDate ? format(new Date(firstSerial.batchExpiryDate), 'dd/MM/yyyy', { locale: it }) : '-'}
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 4. SEZIONE SERIALI: Identificativi in formato compatto */}
                         <div className="space-y-3">
                           <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                             <Barcode className="h-4 w-4 text-orange-500" />
