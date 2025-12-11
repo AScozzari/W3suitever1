@@ -41,7 +41,9 @@ import {
   wmsInventoryBalances,
   wmsInventorySnapshots,
   suppliers,
-  drivers
+  drivers,
+  financialEntities,
+  insertFinancialEntitySchema
 } from "../db/schema/w3suite";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { logger } from "../core/logger";
@@ -9353,6 +9355,307 @@ router.get('/inventory-events/stats', async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: "Failed to fetch event stats",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== FINANCIAL ENTITIES (Enti Finanziatori) ====================
+
+/**
+ * GET /api/wms/financial-entities
+ * Get all financial entities for a tenant (brand + tenant-specific)
+ */
+router.get("/financial-entities", rbacMiddleware, async (req, res) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Get all financial entities: brand-pushed (origin='brand') + tenant-specific
+    const entities = await db
+      .select()
+      .from(financialEntities)
+      .where(
+        or(
+          eq(financialEntities.origin, 'brand'),
+          eq(financialEntities.tenantId, sessionTenantId)
+        )
+      )
+      .orderBy(asc(financialEntities.name));
+
+    res.json({
+      success: true,
+      data: entities
+    });
+
+  } catch (error) {
+    console.error("Error fetching financial entities:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch financial entities",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/financial-entities/:id
+ * Get a single financial entity by ID
+ */
+router.get("/financial-entities/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const [entity] = await db
+      .select()
+      .from(financialEntities)
+      .where(eq(financialEntities.id, id));
+
+    if (!entity) {
+      return res.status(404).json({ error: "Financial entity not found" });
+    }
+
+    // Check access: brand entities are visible to all, tenant entities only to their tenant
+    if (entity.origin === 'tenant' && entity.tenantId !== sessionTenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    res.json({
+      success: true,
+      data: entity
+    });
+
+  } catch (error) {
+    console.error("Error fetching financial entity:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch financial entity",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/financial-entities
+ * Create a new tenant-specific financial entity
+ */
+router.post("/financial-entities", rbacMiddleware, async (req, res) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const body = req.body;
+
+    // Validate required fields
+    if (!body.code || !body.name) {
+      return res.status(400).json({ error: "Code and name are required" });
+    }
+
+    // Check if code already exists
+    const [existing] = await db
+      .select()
+      .from(financialEntities)
+      .where(eq(financialEntities.code, body.code.toUpperCase()));
+
+    if (existing) {
+      return res.status(409).json({ error: "Financial entity code already exists" });
+    }
+
+    // Create new entity (always tenant origin for user-created)
+    const [newEntity] = await db
+      .insert(financialEntities)
+      .values({
+        origin: 'tenant',
+        tenantId: sessionTenantId,
+        code: body.code.toUpperCase(),
+        name: body.name,
+        legalFormId: body.legalFormId || null,
+        vatNumber: body.vatNumber || null,
+        taxCode: body.taxCode || null,
+        sdiCode: body.sdiCode || null,
+        pecEmail: body.pecEmail || null,
+        bankRegisterNumber: body.bankRegisterNumber || null,
+        ivassCode: body.ivassCode || null,
+        parentCompany: body.parentCompany || null,
+        bankGroupCode: body.bankGroupCode || null,
+        capitalStock: body.capitalStock || null,
+        registeredAddress: body.registeredAddress || null,
+        cityId: body.cityId || null,
+        countryId: body.countryId || null,
+        email: body.email || null,
+        phone: body.phone || null,
+        website: body.website || null,
+        iban: body.iban || null,
+        bic: body.bic || null,
+        vatRegimeId: body.vatRegimeId || null,
+        paymentMethodId: body.paymentMethodId || null,
+        paymentConditionId: body.paymentConditionId || null,
+        status: body.status || 'active',
+        notes: body.notes || null,
+        createdBy: userId,
+        updatedBy: userId,
+      })
+      .returning();
+
+    res.status(201).json({
+      success: true,
+      data: newEntity
+    });
+
+  } catch (error) {
+    console.error("Error creating financial entity:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to create financial entity",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PUT /api/wms/financial-entities/:id
+ * Update a financial entity (only tenant-specific ones can be fully edited)
+ */
+router.put("/financial-entities/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Get existing entity
+    const [existing] = await db
+      .select()
+      .from(financialEntities)
+      .where(eq(financialEntities.id, id));
+
+    if (!existing) {
+      return res.status(404).json({ error: "Financial entity not found" });
+    }
+
+    // Brand entities cannot be modified by tenants
+    if (existing.origin === 'brand') {
+      return res.status(403).json({ error: "Brand-pushed entities cannot be modified" });
+    }
+
+    // Tenant entities can only be modified by their own tenant
+    if (existing.tenantId !== sessionTenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const body = req.body;
+
+    // Update entity
+    const [updated] = await db
+      .update(financialEntities)
+      .set({
+        name: body.name ?? existing.name,
+        legalFormId: body.legalFormId ?? existing.legalFormId,
+        vatNumber: body.vatNumber ?? existing.vatNumber,
+        taxCode: body.taxCode ?? existing.taxCode,
+        sdiCode: body.sdiCode ?? existing.sdiCode,
+        pecEmail: body.pecEmail ?? existing.pecEmail,
+        bankRegisterNumber: body.bankRegisterNumber ?? existing.bankRegisterNumber,
+        ivassCode: body.ivassCode ?? existing.ivassCode,
+        parentCompany: body.parentCompany ?? existing.parentCompany,
+        bankGroupCode: body.bankGroupCode ?? existing.bankGroupCode,
+        capitalStock: body.capitalStock ?? existing.capitalStock,
+        registeredAddress: body.registeredAddress ?? existing.registeredAddress,
+        cityId: body.cityId ?? existing.cityId,
+        countryId: body.countryId ?? existing.countryId,
+        email: body.email ?? existing.email,
+        phone: body.phone ?? existing.phone,
+        website: body.website ?? existing.website,
+        iban: body.iban ?? existing.iban,
+        bic: body.bic ?? existing.bic,
+        vatRegimeId: body.vatRegimeId ?? existing.vatRegimeId,
+        paymentMethodId: body.paymentMethodId ?? existing.paymentMethodId,
+        paymentConditionId: body.paymentConditionId ?? existing.paymentConditionId,
+        status: body.status ?? existing.status,
+        notes: body.notes ?? existing.notes,
+        updatedBy: userId,
+        updatedAt: new Date(),
+      })
+      .where(eq(financialEntities.id, id))
+      .returning();
+
+    res.json({
+      success: true,
+      data: updated
+    });
+
+  } catch (error) {
+    console.error("Error updating financial entity:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to update financial entity",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * DELETE /api/wms/financial-entities/:id
+ * Delete a tenant-specific financial entity (brand entities cannot be deleted)
+ */
+router.delete("/financial-entities/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Get existing entity
+    const [existing] = await db
+      .select()
+      .from(financialEntities)
+      .where(eq(financialEntities.id, id));
+
+    if (!existing) {
+      return res.status(404).json({ error: "Financial entity not found" });
+    }
+
+    // Brand entities cannot be deleted by tenants
+    if (existing.origin === 'brand') {
+      return res.status(403).json({ error: "Brand-pushed entities cannot be deleted" });
+    }
+
+    // Tenant entities can only be deleted by their own tenant
+    if (existing.tenantId !== sessionTenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    await db
+      .delete(financialEntities)
+      .where(eq(financialEntities.id, id));
+
+    res.json({
+      success: true,
+      message: "Financial entity deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Error deleting financial entity:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to delete financial entity",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
