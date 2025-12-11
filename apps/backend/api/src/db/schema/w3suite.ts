@@ -78,6 +78,10 @@ export const supplierOriginEnum = pgEnum('supplier_origin', ['brand', 'tenant'])
 export const supplierTypeEnum = pgEnum('supplier_type', ['distributore', 'produttore', 'servizi', 'logistica']);
 export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'suspended', 'blocked']);
 
+// Financial Entity Enums (Enti Finanziatori - Compass, Findomestic, etc.)
+export const financialEntityOriginEnum = pgEnum('financial_entity_origin', ['brand', 'tenant']);
+export const financialEntityStatusEnum = pgEnum('financial_entity_status', ['active', 'suspended', 'blocked']);
+
 // Workflow Source Enum - Track if workflow originated from Brand or Tenant
 export const workflowSourceEnum = pgEnum('workflow_source', ['brand', 'tenant']);
 
@@ -1490,6 +1494,78 @@ export const insertSupplierOverrideSchema = createInsertSchema(supplierOverrides
 });
 export type InsertSupplierOverride = z.infer<typeof insertSupplierOverrideSchema>;
 export type SupplierOverride = typeof supplierOverrides.$inferSelect;
+
+// ==================== FINANCIAL ENTITIES (Enti Finanziatori - Compass, Findomestic, etc.) ====================
+export const financialEntities = w3suiteSchema.table("financial_entities", {
+  // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  origin: financialEntityOriginEnum("origin").notNull(), // 'brand' | 'tenant'
+  tenantId: uuid("tenant_id").references(() => tenants.id), // NULL per enti brand-managed
+  code: varchar("code", { length: 50 }).notNull(), // Codice univoco (es. COMPASS, FINDOMESTIC)
+  name: varchar("name", { length: 255 }).notNull(), // Ragione sociale
+  
+  // ==================== FORMA GIURIDICA (da public.legal_forms via API) ====================
+  legalFormId: uuid("legal_form_id"), // FK logica a public.legal_forms (S.p.A., S.r.l., etc.)
+  
+  // ==================== DATI FISCALI ITALIA ====================
+  vatNumber: varchar("vat_number", { length: 20 }), // P.IVA
+  taxCode: varchar("tax_code", { length: 20 }), // Codice Fiscale
+  sdiCode: varchar("sdi_code", { length: 7 }), // Codice SDI fatturazione elettronica
+  pecEmail: varchar("pec_email", { length: 255 }), // PEC
+  
+  // ==================== DATI BANCARI/FINANZIARI SPECIFICI ====================
+  bankRegisterNumber: varchar("bank_register_number", { length: 20 }), // N° Albo Banche (es. 8045, 5396)
+  ivassCode: varchar("ivass_code", { length: 20 }), // Codice IVASS intermediari assicurativi
+  parentCompany: varchar("parent_company", { length: 255 }), // Società controllante (Mediobanca, BNP Paribas)
+  bankGroupCode: varchar("bank_group_code", { length: 20 }), // Codice gruppo bancario
+  capitalStock: varchar("capital_stock", { length: 50 }), // Capitale sociale (es. "587.500.000 EUR")
+  
+  // ==================== INDIRIZZO SEDE LEGALE ====================
+  registeredAddress: jsonb("registered_address"), // { via, civico, cap, citta, provincia }
+  cityId: uuid("city_id"), // FK logica a public.italian_cities
+  countryId: uuid("country_id"), // FK logica a public.countries
+  
+  // ==================== CONTATTI ====================
+  email: varchar("email", { length: 255 }), // Email principale
+  phone: varchar("phone", { length: 50 }), // Telefono principale
+  website: varchar("website", { length: 255 }), // Sito web
+  
+  // ==================== COORDINATE BANCARIE ====================
+  iban: varchar("iban", { length: 34 }), // Codice IBAN
+  bic: varchar("bic", { length: 11 }), // Codice BIC/SWIFT
+  
+  // ==================== REGIME FISCALE (da public.vat_regimes via API) ====================
+  vatRegimeId: uuid("vat_regime_id"), // FK logica a public.vat_regimes
+  
+  // ==================== PAGAMENTI (da public.payment_methods via API) ====================
+  paymentMethodId: uuid("payment_method_id"), // FK logica a public.payment_methods
+  paymentConditionId: uuid("payment_condition_id"), // FK logica a public.payment_methods_conditions
+  
+  // ==================== CONTROLLO & STATO ====================
+  status: financialEntityStatusEnum("status").notNull().default("active"),
+  lockedFields: text("locked_fields").array().default([]), // Campi bloccati dal brand
+  
+  // ==================== METADATI ====================
+  createdBy: varchar("created_by").references(() => users.id), // NULL per seed brand
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  notes: text("notes"),
+}, (table) => [
+  index("financial_entities_tenant_code_idx").on(table.tenantId, table.code),
+  index("financial_entities_origin_status_idx").on(table.origin, table.status),
+  index("financial_entities_vat_number_idx").on(table.vatNumber),
+  index("financial_entities_name_idx").on(table.name),
+  uniqueIndex("financial_entities_code_unique").on(table.code),
+]);
+
+export const insertFinancialEntitySchema = createInsertSchema(financialEntities).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertFinancialEntity = z.infer<typeof insertFinancialEntitySchema>;
+export type FinancialEntity = typeof financialEntities.$inferSelect;
 
 // ==================== PRODUCT HIERARCHY - TENANT EXTENSIONS ====================
 
