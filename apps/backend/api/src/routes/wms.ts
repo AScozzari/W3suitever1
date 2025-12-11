@@ -1529,11 +1529,13 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       itemConditions.push(eq(productItems.storeId, storeId));
     }
 
-    // Get all product items with their serials
+    // Get all product items with their serials, store info, supplier info, and batch info
     const items = await db
       .select({
         itemId: productItems.id,
         storeId: productItems.storeId,
+        storeName: stores.nome,
+        storeCode: stores.code,
         logisticStatus: productItems.logisticStatus,
         condition: productItems.condition,
         createdAt: productItems.createdAt,
@@ -1542,9 +1544,22 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
         serialNumber: productSerials.serialValue,
         serialType: productSerials.serialType,
         serialCreatedAt: productSerials.createdAt,
+        // Supplier info
+        supplierId: productItems.lastSupplierId,
+        supplierName: suppliers.companyName,
+        supplierSku: productItems.supplierSku,
+        purchaseCost: productItems.lastPurchaseCost,
+        purchaseDate: productItems.lastPurchaseDate,
+        // Batch info
+        batchId: productItems.batchId,
+        batchNumber: productBatches.batchNumber,
+        batchExpiryDate: productBatches.expiryDate,
       })
       .from(productItems)
       .leftJoin(productSerials, eq(productSerials.productItemId, productItems.id))
+      .leftJoin(stores, eq(stores.id, productItems.storeId))
+      .leftJoin(suppliers, eq(suppliers.id, productItems.lastSupplierId))
+      .leftJoin(productBatches, eq(productBatches.id, productItems.batchId))
       .where(and(...itemConditions))
       .orderBy(desc(productItems.createdAt));
 
@@ -1589,6 +1604,21 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
         color: product.color,
         memory: product.memory,
         ean: product.ean,
+        // Store info
+        storeId: row.storeId,
+        storeName: row.storeName,
+        storeCode: row.storeCode,
+        // Supplier info
+        supplierId: row.supplierId,
+        supplierName: row.supplierName,
+        supplierSku: row.supplierSku,
+        purchaseCost: row.purchaseCost,
+        purchaseDate: row.purchaseDate,
+        // Batch info
+        batchId: row.batchId,
+        batchNumber: row.batchNumber,
+        batchExpiryDate: row.batchExpiryDate,
+        // Timestamps
         createdAt: row.serialCreatedAt || row.createdAt,
         updatedAt: row.updatedAt,
         statusHistory: itemHistory.map(h => ({
