@@ -1666,9 +1666,9 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                               <label className="text-xs text-gray-500 uppercase tracking-wide">Tipologia</label>
                               <p className="font-medium text-gray-900">{crossStoreSummary.product.typeName || '-'}</p>
                             </div>
-                            <div>
+                            <div className="flex flex-col">
                               <label className="text-xs text-gray-500 uppercase tracking-wide">Tipo Prodotto</label>
-                              <Badge variant="outline" className="text-xs mt-1">{crossStoreSummary.product.productType}</Badge>
+                              <Badge variant="outline" className="text-xs mt-1 w-fit">{crossStoreSummary.product.productType}</Badge>
                             </div>
                             <div>
                               <label className="text-xs text-gray-500 uppercase tracking-wide">Condizione</label>
@@ -1681,31 +1681,31 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                               </p>
                             </div>
                             {crossStoreSummary.product.memory && (
-                              <div>
+                              <div className="flex flex-col">
                                 <label className="text-xs text-gray-500 uppercase tracking-wide">Memoria</label>
-                                <Badge variant="secondary" className="text-xs mt-1">{crossStoreSummary.product.memory}</Badge>
+                                <p className="font-medium text-gray-900 mt-1">{crossStoreSummary.product.memory}</p>
                               </div>
                             )}
                             {crossStoreSummary.product.color && (
-                              <div>
+                              <div className="flex flex-col">
                                 <label className="text-xs text-gray-500 uppercase tracking-wide">Colore</label>
-                                <Badge variant="secondary" className="text-xs mt-1">{crossStoreSummary.product.color}</Badge>
+                                <p className="font-medium text-gray-900 mt-1">{crossStoreSummary.product.color}</p>
                               </div>
                             )}
-                            <div>
+                            <div className="flex flex-col">
                               <label className="text-xs text-gray-500 uppercase tracking-wide">Serializzabile</label>
                               <Badge 
                                 variant="outline" 
-                                className={`text-xs mt-1 ${crossStoreSummary.product.isSerialized ? 'border-emerald-500 text-emerald-700' : 'border-gray-400 text-gray-600'}`}
+                                className={`text-xs mt-1 w-fit ${crossStoreSummary.product.isSerialized ? 'border-emerald-500 text-emerald-700' : 'border-gray-400 text-gray-600'}`}
                               >
                                 {crossStoreSummary.product.isSerialized ? `Sì (${crossStoreSummary.product.serialType?.toUpperCase() || 'N/A'})` : 'No'}
                               </Badge>
                             </div>
-                            <div>
+                            <div className="flex flex-col">
                               <label className="text-xs text-gray-500 uppercase tracking-wide">Stato</label>
                               <Badge 
                                 variant="outline" 
-                                className={`text-xs mt-1 ${crossStoreSummary.product.isActive ? 'border-emerald-500 text-emerald-700' : 'border-red-500 text-red-700'}`}
+                                className={`text-xs mt-1 w-fit ${crossStoreSummary.product.isActive ? 'border-emerald-500 text-emerald-700' : 'border-red-500 text-red-700'}`}
                               >
                                 {crossStoreSummary.product.isActive ? 'Attivo' : 'Disattivo'}
                               </Badge>
