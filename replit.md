@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules (CRM, POS, WMS, Analytics, HR, CMS, Bidding). Its primary purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a unique WindTre glassmorphism design. The project aims to become a leading integrated platform for business operations with market potential in various business sectors.
+W3 Suite is a multi-tenant enterprise platform centralizing and optimizing business operations across modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It aims to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution featuring a unique WindTre glassmorphism design, positioning itself as a leading integrated platform in various business sectors.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -99,12 +99,8 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `departments`, `teams`, `users`
   - **🏬 Departments Table**: `w3suite.departments` con FK opzionale `store_id` per dipartimenti store-specific
   - **🔗 Team-Departments**: Tabella junction `team_departments` per relazione many-to-many
-  - **📍 Hierarchy Path**: Campo `stores.hierarchy_path` formato `tenant_slug/area_code/store_code` per query veloci
   - **🎯 Cascading Filters (User Modal)**: Area selection → filters Legal Entities → filters Stores
   - **⚠️ Area Mismatch Validation (Team Modal)**: Warning quando supervisor appartiene a area diversa dai membri
-  - **API Endpoints**: `GET /api/commercial-areas`, `GET /api/legal-entities`, `GET /api/legal-entities`, `GET /api/stores`, `GET /api/departments`
-  - **Default Departments**: hr, finance, sales, operations, marketing, it, customer_service
-  - **✅ Pattern**: Validate area consistency in team assignments, show yellow warnings (not blockers)
 - **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
   - **📞 WebSocket URL Format**: SEMPRE `wss://{sipServer}/ws` sulla porta 443
   - **❌ MAI usare porta 8443** - non esiste, usare sempre 443
@@ -138,7 +134,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: Utilizes a WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS, maintaining a consistent layout with fixed header, sidebar, and white backgrounds within a monorepo. The `VITE_FONT_SCALE` environment variable controls UI zoom during build time.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. Maintains a consistent layout with fixed header, sidebar, and white backgrounds within a monorepo. `VITE_FONT_SCALE` controls UI zoom at build time.
 - **Technical Implementations**:
     - **Database**: 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC with Italian role templates.
@@ -150,7 +146,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
     - **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and Master Catalog System (hybrid architecture using JSON files with Git versioning).
     - **VoIP Telephony**: Enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
     - **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
-    - **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a System Config page, with approval workflows and linked workflow templates (6 automatic, 9 manual).
+    - **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a System Config page, with approval workflows and linked workflow templates.
     - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
     - **Business Drivers Architecture**: Multi-tenant drivers in `w3suite.drivers` with RLS for source types and product type associations.
     - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) with rules for team membership, type, request routing, and cross-store data access.

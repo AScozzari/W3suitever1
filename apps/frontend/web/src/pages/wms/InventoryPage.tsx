@@ -554,6 +554,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
   } = useInventoryView();
 
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [selectedSerialItemId, setSelectedSerialItemId] = useState<string | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [showSerialsInline, setShowSerialsInline] = useState(false);
@@ -1612,7 +1613,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
       {/* Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={(open) => { 
         setIsDetailModalOpen(open); 
-        if (!open) setShowSerialsInline(false); 
+        if (!open) {
+          setShowSerialsInline(false);
+          setSelectedSerialItemId(null);
+        }
       }}>
         <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
@@ -1956,7 +1960,15 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                         const hasSupplierInfo = item.supplierName || item.supplierSku || item.purchaseCost;
                                         const hasBatchInfo = item.batchNumber;
                                         return (
-                                          <TableRow key={item.itemId} className="hover:bg-gray-50">
+                                          <TableRow 
+                                            key={item.itemId} 
+                                            className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                            onClick={() => {
+                                              setSelectedSerialItemId(item.itemId);
+                                              setViewMode('serialized');
+                                            }}
+                                            title="Clicca per vedere i dettagli di questo item"
+                                          >
                                             <TableCell>
                                               <div className="space-y-1">
                                                 {item.serials.map((s: any, idx: number) => (
@@ -1991,6 +2003,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                                     <button 
                                                       className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
                                                       data-testid={`button-supplier-info-${item.itemId}`}
+                                                      onClick={(e) => e.stopPropagation()}
                                                     >
                                                       <Eye className="h-5 w-5" />
                                                     </button>
@@ -2130,9 +2143,9 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                     ) : productSerials?.serials && productSerials.serials.length > 0 ? (
                       <>
                         {(() => {
-                          // Filter serials by itemId if we clicked on a specific item row
-                          const filteredSerials = selectedItem?.itemId 
-                            ? productSerials.serials.filter(s => s.itemId === selectedItem.itemId)
+                          // Filter serials by itemId if we clicked on a specific item row from cross-store table
+                          const filteredSerials = selectedSerialItemId 
+                            ? productSerials.serials.filter(s => s.itemId === selectedSerialItemId)
                             : productSerials.serials;
                           
                           const firstSerial = filteredSerials[0] || productSerials.serials[0];
