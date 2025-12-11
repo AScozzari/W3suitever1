@@ -7932,7 +7932,7 @@ router.get("/inventory-view/:productIdOrSku/cross-store-summary", rbacMiddleware
         storeCode: stores.code,
         logisticStatus: productItems.logisticStatus,
         count: sql<number>`COUNT(*)::int`,
-        totalCost: sql<number>`SUM(COALESCE(${productItems.unitCost}, 0))::numeric`
+        totalCost: sql<number>`COUNT(*)::numeric * 0`
       })
       .from(productItems)
       .innerJoin(stores, eq(productItems.storeId, stores.id))
