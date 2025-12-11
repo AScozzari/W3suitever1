@@ -1546,7 +1546,7 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
         serialCreatedAt: productSerials.createdAt,
         // Supplier info
         supplierId: productItems.lastSupplierId,
-        supplierName: suppliers.companyName,
+        supplierName: suppliers.name,
         supplierSku: productItems.supplierSku,
         purchaseCost: productItems.lastPurchaseCost,
         purchaseDate: productItems.lastPurchaseDate,
