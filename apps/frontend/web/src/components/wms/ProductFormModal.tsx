@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Upload, X, Calendar, Wand2 } from 'lucide-react';
+import { Upload, X, Calendar, Wand2, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -810,7 +811,24 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 name="pickingStrategy"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Strategia Prelievo</FormLabel>
+                    <FormLabel className="flex items-center gap-1">
+                      Strategia Prelievo
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-sm">
+                            <p className="font-medium mb-1">Strategia di prelievo predefinita</p>
+                            <p className="text-muted-foreground">
+                              <strong>FIFO:</strong> I prodotti più vecchi escono prima (consigliato per deperibili).<br/>
+                              <strong>LIFO:</strong> Gli ultimi arrivati escono prima.<br/><br/>
+                              <em>Nota:</em> Questa impostazione può essere sovrascritta a livello di singolo lotto durante la fase di carico merce.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value || 'fifo'}
@@ -826,9 +844,6 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                         <SelectItem value="lifo">LIFO (Last In, First Out)</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      FIFO: i prodotti più vecchi escono prima. LIFO: gli ultimi arrivati escono prima.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
