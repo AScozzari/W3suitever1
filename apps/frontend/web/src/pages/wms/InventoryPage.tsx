@@ -1988,58 +1988,102 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                               {(hasSupplierInfo || hasBatchInfo) ? (
                                                 <Popover>
                                                   <PopoverTrigger asChild>
-                                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                                      <Eye className="h-4 w-4 text-blue-500" />
+                                                    <Button 
+                                                      variant="outline" 
+                                                      size="lg" 
+                                                      className="h-12 w-12 p-0 rounded-full bg-blue-50 border-2 border-blue-300 hover:bg-blue-100 hover:border-blue-400 shadow-sm"
+                                                      data-testid={`button-supplier-info-${item.itemId}`}
+                                                    >
+                                                      <Truck className="h-6 w-6 text-blue-600" />
                                                     </Button>
                                                   </PopoverTrigger>
-                                                  <PopoverContent className="w-72 p-3" align="end">
-                                                    <div className="space-y-3">
+                                                  <PopoverContent className="w-[400px] p-0" align="end" sideOffset={8}>
+                                                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 rounded-t-lg">
+                                                      <h3 className="text-white font-semibold flex items-center gap-2">
+                                                        <Truck className="h-5 w-5" />
+                                                        Dettagli Approvvigionamento
+                                                      </h3>
+                                                    </div>
+                                                    <div className="p-4 space-y-4">
+                                                      {/* Sezione Fornitore */}
                                                       {hasSupplierInfo && (
-                                                        <div>
-                                                          <h4 className="text-xs font-semibold text-blue-600 uppercase mb-2 flex items-center gap-1">
-                                                            <Truck className="h-3 w-3" />
-                                                            Fornitore
-                                                          </h4>
-                                                          <div className="grid grid-cols-2 gap-2 text-sm">
-                                                            <div>
-                                                              <span className="text-xs text-gray-500">Nome</span>
-                                                              <p className="font-medium">{item.supplierName || '-'}</p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-xs text-gray-500">SKU</span>
-                                                              <p className="font-mono text-xs">{item.supplierSku || '-'}</p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-xs text-gray-500">Costo</span>
-                                                              <p className="font-semibold">
-                                                                {item.purchaseCost ? `€ ${parseFloat(item.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
-                                                              </p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-xs text-gray-500">Data</span>
-                                                              <p>{item.purchaseDate ? format(new Date(item.purchaseDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
+                                                        <div className="rounded-lg border border-blue-200 overflow-hidden">
+                                                          <div className="bg-blue-50 px-3 py-2 border-b border-blue-200">
+                                                            <h4 className="text-sm font-semibold text-blue-700 flex items-center gap-2">
+                                                              <Truck className="h-4 w-4" />
+                                                              Fornitore
+                                                            </h4>
+                                                          </div>
+                                                          <div className="p-3 bg-white">
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                              <div className="col-span-2">
+                                                                <label className="text-xs text-gray-500 uppercase">Nome Fornitore</label>
+                                                                <p className="font-semibold text-gray-900">{item.supplierName || '-'}</p>
+                                                              </div>
+                                                              <div>
+                                                                <label className="text-xs text-gray-500 uppercase">SKU Fornitore</label>
+                                                                <p className="font-mono text-sm text-gray-900">{item.supplierSku || '-'}</p>
+                                                              </div>
+                                                              <div>
+                                                                <label className="text-xs text-gray-500 uppercase">Costo Unitario</label>
+                                                                <p className="font-bold text-lg text-emerald-600">
+                                                                  {item.purchaseCost ? `€ ${parseFloat(item.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
+                                                                </p>
+                                                              </div>
+                                                              <div>
+                                                                <label className="text-xs text-gray-500 uppercase">Data Acquisto</label>
+                                                                <p className="text-gray-900">{item.purchaseDate ? format(new Date(item.purchaseDate), 'dd/MM/yyyy', { locale: it }) : '-'}</p>
+                                                              </div>
                                                             </div>
                                                           </div>
                                                         </div>
                                                       )}
+
+                                                      {/* Sezione Lotto */}
                                                       {hasBatchInfo && (
-                                                        <div className={hasSupplierInfo ? 'pt-2 border-t border-gray-200' : ''}>
-                                                          <h4 className="text-xs font-semibold text-purple-600 uppercase mb-2 flex items-center gap-1">
-                                                            <Layers className="h-3 w-3" />
-                                                            Lotto
-                                                          </h4>
-                                                          <div className="grid grid-cols-2 gap-2 text-sm">
-                                                            <div>
-                                                              <span className="text-xs text-gray-500">Numero</span>
-                                                              <p className="font-mono font-medium">{item.batchNumber || '-'}</p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-xs text-gray-500">Scadenza</span>
-                                                              <p>{item.batchExpiryDate ? format(new Date(item.batchExpiryDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
+                                                        <div className="rounded-lg border border-purple-200 overflow-hidden">
+                                                          <div className="bg-purple-50 px-3 py-2 border-b border-purple-200">
+                                                            <h4 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                                              <Layers className="h-4 w-4" />
+                                                              Lotto
+                                                            </h4>
+                                                          </div>
+                                                          <div className="p-3 bg-white">
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                              <div>
+                                                                <label className="text-xs text-gray-500 uppercase">Numero Lotto</label>
+                                                                <p className="font-mono font-semibold text-gray-900">{item.batchNumber || '-'}</p>
+                                                              </div>
+                                                              <div>
+                                                                <label className="text-xs text-gray-500 uppercase">Scadenza</label>
+                                                                <p className="text-gray-900">{item.batchExpiryDate ? format(new Date(item.batchExpiryDate), 'dd/MM/yyyy', { locale: it }) : '-'}</p>
+                                                              </div>
                                                             </div>
                                                           </div>
                                                         </div>
                                                       )}
+
+                                                      {/* Sezione DDT Carico (placeholder) */}
+                                                      <div className="rounded-lg border border-green-200 overflow-hidden">
+                                                        <div className="bg-green-50 px-3 py-2 border-b border-green-200">
+                                                          <h4 className="text-sm font-semibold text-green-700 flex items-center gap-2">
+                                                            <FileText className="h-4 w-4" />
+                                                            DDT Carico
+                                                          </h4>
+                                                        </div>
+                                                        <div className="p-3 bg-white">
+                                                          <div className="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                              <label className="text-xs text-gray-500 uppercase">Numero DDT</label>
+                                                              <p className="text-gray-400 italic">Da implementare</p>
+                                                            </div>
+                                                            <div>
+                                                              <label className="text-xs text-gray-500 uppercase">Data DDT</label>
+                                                              <p className="text-gray-400 italic">-</p>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      </div>
                                                     </div>
                                                   </PopoverContent>
                                                 </Popover>
