@@ -1,0 +1,62 @@
+_js.js?v=fac8f799:12292:49)
+overrideMethod @ installHook.js:1
+setupSIP @ useSIPRegistration.ts:234
+await in setupSIP
+(anonime) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+queryClient.ts:334  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view/PROD-APL-I16P-256-TIT/cross-store-summary 500 (Internal Server Error)
+apiRequest @ queryClient.ts:334
+queryFn @ InventoryPage.tsx:593
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+queryClient.ts:334  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/inventory-view/PROD-APL-I16P-256-TIT/cross-store-summary 500 (Internal Server Error)

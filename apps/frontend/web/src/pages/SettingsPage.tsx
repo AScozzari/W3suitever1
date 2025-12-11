@@ -24,6 +24,7 @@ import { StoreCalendarModal } from '../components/settings/StoreCalendarModal';
 import ChannelSettingsPage from './settings/ChannelSettingsPage';
 import SystemConfigPage from './settings/SystemConfigPage';
 import FinancialEntityModal from '../components/wms/FinancialEntityModal';
+import { LegalEntityFormModal, StoreFormModal, UserFormModal } from '../components/settings';
 import { z } from 'zod';
 import { 
   legalEntityValidationSchema,
