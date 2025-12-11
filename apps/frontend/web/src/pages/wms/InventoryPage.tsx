@@ -91,6 +91,7 @@ type LogisticStatus = 'in_stock' | 'reserved' | 'preparing' | 'shipping' | 'deli
 // Vista serializzata - una riga per combinazione prodotto+store
 interface InventoryItem {
   id: string;
+  itemId?: string; // Physical item ID for serialized view
   storeId: string;
   storeName: string;
   storeCode: string;
@@ -1390,7 +1391,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                       key={item.id} 
                       className="hover:bg-gray-50 transition-colors cursor-pointer"
                       data-testid={`row-inventory-${item.id}`}
-                      onClick={() => handleViewDetails(item)}
+                      onClick={() => handleViewDetails(item, item.itemId)}
                     >
                       {/* Prodotto */}
                       <TableCell className="font-medium text-gray-900">

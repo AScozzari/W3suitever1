@@ -7414,42 +7414,139 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
       });
     }
 
-    // ==================== SERIALIZED VIEW: Original per-store logic ====================
+    // ==================== SERIALIZED VIEW: Per-item logic (one row per physical item) ====================
+    // Query product_items directly to get one row per physical item
+    const itemConditions: SQL[] = [
+      eq(productItems.tenantId, sessionTenantId),
+      inArray(productItems.storeId, warehouseStoreIds)
+    ];
+    
+    if (storeId) {
+      itemConditions.push(eq(productItems.storeId, storeId as string));
+    }
+
+    // Get all physical items with their product and store info
+    let physicalItems = await db
+      .select({
+        itemId: productItems.id,
+        productId: productItems.productId,
+        storeId: productItems.storeId,
+        logisticStatus: productItems.logisticStatus,
+        condition: productItems.condition,
+        lastPurchaseCost: productItems.lastPurchaseCost,
+        createdAt: productItems.createdAt,
+        updatedAt: productItems.updatedAt,
+        // Product info
+        productName: products.name,
+        productSku: products.sku,
+        productType: products.type,
+        productCategory: products.categoryId,
+        productBrand: products.brand,
+        productModel: products.model,
+        productDescription: products.description,
+        productEan: products.ean,
+        productSerialType: products.serialType,
+        productReorderPoint: products.reorderPoint,
+        // Store info
+        storeName: stores.nome,
+        storeCode: stores.code
+      })
+      .from(productItems)
+      .innerJoin(products, and(
+        eq(productItems.productId, products.id),
+        eq(products.tenantId, sessionTenantId)
+      ))
+      .innerJoin(stores, and(
+        eq(productItems.storeId, stores.id),
+        eq(stores.tenantId, sessionTenantId),
+        eq(stores.hasWarehouse, true)
+      ))
+      .where(and(...itemConditions))
+      .orderBy(products.name, stores.nome);
+
+    // Get serials for each item
+    const itemIds = physicalItems.map(i => i.itemId);
+    let itemSerialsMap: Record<string, Array<{ type: string; value: string }>> = {};
+    
+    if (itemIds.length > 0) {
+      const allSerials = await db
+        .select({
+          itemId: productSerials.productItemId,
+          serialType: productSerials.serialType,
+          serialValue: productSerials.serialValue
+        })
+        .from(productSerials)
+        .where(and(
+          eq(productSerials.tenantId, sessionTenantId),
+          inArray(productSerials.productItemId, itemIds)
+        ));
+      
+      allSerials.forEach(s => {
+        if (!itemSerialsMap[s.itemId]) {
+          itemSerialsMap[s.itemId] = [];
+        }
+        itemSerialsMap[s.itemId].push({
+          type: s.serialType,
+          value: s.serialValue
+        });
+      });
+    }
+
+    // Apply search filter
+    if (search && (search as string).length >= 2) {
+      const searchLower = (search as string).toLowerCase();
+      physicalItems = physicalItems.filter(r => 
+        (r.productName?.toLowerCase().includes(searchLower)) ||
+        (r.productSku?.toLowerCase().includes(searchLower)) ||
+        (r.productBrand?.toLowerCase().includes(searchLower)) ||
+        (r.productModel?.toLowerCase().includes(searchLower)) ||
+        (r.storeName?.toLowerCase().includes(searchLower)) ||
+        (r.productEan?.toLowerCase().includes(searchLower)) ||
+        // Search in serials
+        (itemSerialsMap[r.itemId]?.some(s => s.value.toLowerCase().includes(searchLower)))
+      );
+    }
+
+    // Apply status filter (logistic status)
+    if (status !== 'all') {
+      physicalItems = physicalItems.filter(r => r.logisticStatus === status);
+    }
+
+    // Apply category filter
+    if (categoryId) {
+      physicalItems = physicalItems.filter(r => r.productCategory === categoryId);
+    }
+
+    // Apply brand filter
+    if (brand) {
+      const brandLower = (brand as string).toLowerCase();
+      physicalItems = physicalItems.filter(r => r.productBrand?.toLowerCase() === brandLower);
+    }
+
+    // Calculate KPIs
     const kpis = {
-      totalProducts: allResults.length,
-      totalValue: allResults.reduce((sum, r) => sum + parseFloat(r.totalValue || '0'), 0),
-      lowStockCount: allResults.filter(r => {
-        const qty = r.quantityAvailable || 0;
-        const reorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
-        return qty > 0 && qty <= reorderPoint;
-      }).length,
-      outOfStockCount: allResults.filter(r => (r.quantityAvailable || 0) === 0).length,
-      inStockCount: allResults.filter(r => {
-        const qty = r.quantityAvailable || 0;
-        const reorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
-        return qty > reorderPoint;
-      }).length
+      totalProducts: physicalItems.length,
+      totalValue: physicalItems.reduce((sum, r) => sum + parseFloat(r.lastPurchaseCost || '0'), 0),
+      lowStockCount: 0, // N/A for per-item view
+      outOfStockCount: physicalItems.filter(r => ['sold', 'disposed', 'lost'].includes(r.logisticStatus)).length,
+      inStockCount: physicalItems.filter(r => r.logisticStatus === 'in_stock').length
     };
 
     // Sort results
-    allResults.sort((a, b) => {
+    physicalItems.sort((a, b) => {
       let aVal: any, bVal: any;
       switch (sortBy) {
         case 'sku':
           aVal = a.productSku || '';
           bVal = b.productSku || '';
           break;
-        case 'quantity':
-          aVal = a.quantityAvailable || 0;
-          bVal = b.quantityAvailable || 0;
-          break;
         case 'value':
-          aVal = parseFloat(a.totalValue || '0');
-          bVal = parseFloat(b.totalValue || '0');
+          aVal = parseFloat(a.lastPurchaseCost || '0');
+          bVal = parseFloat(b.lastPurchaseCost || '0');
           break;
         case 'lastMovement':
-          aVal = a.lastMovementAt ? new Date(a.lastMovementAt).getTime() : 0;
-          bVal = b.lastMovementAt ? new Date(b.lastMovementAt).getTime() : 0;
+          aVal = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          bVal = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           break;
         case 'name':
         default:
@@ -7466,24 +7563,16 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
     });
 
     // Apply pagination
-    const paginatedResults = allResults.slice(offset, offset + limitNum);
+    const paginatedItems = physicalItems.slice(offset, offset + limitNum);
 
-    // Transform results with stock status
-    const items = paginatedResults.map(r => {
-      const qty = r.quantityAvailable || 0;
-      const reorderPoint = (r as any).productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
-      let stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
-      
-      if (qty === 0) stockStatus = 'out_of_stock';
-      else if (qty <= reorderPoint) stockStatus = 'low_stock';
-      else stockStatus = 'in_stock';
-
-      const key = `${r.productId}|${r.storeId || ''}`;
-      const logisticData = logisticStatusMap[key] || { counts: {}, dominant: 'in_stock' };
-      const batchData = batchInfoMap[key] || { batchCount: 0, batches: [] };
+    // Transform results
+    const items = paginatedItems.map(r => {
+      const itemSerials = itemSerialsMap[r.itemId] || [];
+      const reorderPoint = r.productReorderPoint || DEFAULT_LOW_STOCK_THRESHOLD;
       
       return {
-        id: r.balanceId,
+        id: r.itemId, // Use itemId as the row ID
+        itemId: r.itemId, // Explicit itemId for frontend filtering
         storeId: r.storeId,
         storeName: r.storeName,
         storeCode: r.storeCode,
@@ -7492,24 +7581,26 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         productSku: r.productSku,
         productType: r.productType,
         productCategory: r.productCategory,
-        productStatus: r.productStatus || 'active',
+        productStatus: 'active',
         productBrand: r.productBrand || null,
         productModel: r.productModel || null,
         productDescription: r.productDescription || null,
         productEan: r.productEan || null,
         serialType: r.productSerialType || null,
-        serialCount: serialCountMap[key] || 0,
-        serials: serialValuesMap[key] || [],
-        quantityAvailable: qty,
-        quantityReserved: r.quantityReserved || 0,
-        totalValue: parseFloat(r.totalValue || '0'),
+        serialCount: itemSerials.length,
+        serials: itemSerials,
+        quantityAvailable: 1, // Each row is one physical item
+        quantityReserved: 0,
+        averageCost: parseFloat(r.lastPurchaseCost || '0'),
+        totalValue: parseFloat(r.lastPurchaseCost || '0'),
         lowStockThreshold: reorderPoint,
-        stockStatus,
-        logisticStatus: logisticData.dominant,
-        logisticStatusCounts: logisticData.counts,
-        batchCount: batchData.batchCount,
-        batches: batchData.batches,
-        lastMovementAt: r.lastMovementAt,
+        stockStatus: 'in_stock' as const,
+        logisticStatus: r.logisticStatus,
+        logisticStatusCounts: { [r.logisticStatus]: 1 },
+        condition: r.condition,
+        batchCount: 0,
+        batches: [],
+        lastMovementAt: r.updatedAt,
         updatedAt: r.updatedAt
       };
     });
@@ -7517,13 +7608,13 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
     res.json({
       success: true,
       data: {
-        viewMode: viewMode as string,
+        viewMode: 'serialized',
         items,
         pagination: {
           page: pageNum,
           limit: limitNum,
-          total: allResults.length,
-          totalPages: Math.ceil(allResults.length / limitNum)
+          total: physicalItems.length,
+          totalPages: Math.ceil(physicalItems.length / limitNum)
         },
         kpis,
         warehouseStores
