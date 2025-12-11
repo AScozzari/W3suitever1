@@ -1988,14 +1988,12 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                               {(hasSupplierInfo || hasBatchInfo) ? (
                                                 <Popover>
                                                   <PopoverTrigger asChild>
-                                                    <Button 
-                                                      variant="outline" 
-                                                      size="lg" 
-                                                      className="h-12 w-12 p-0 rounded-full bg-blue-50 border-2 border-blue-300 hover:bg-blue-100 hover:border-blue-400 shadow-sm"
+                                                    <button 
+                                                      className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer"
                                                       data-testid={`button-supplier-info-${item.itemId}`}
                                                     >
-                                                      <Truck className="h-6 w-6 text-blue-600" />
-                                                    </Button>
+                                                      <Eye className="h-5 w-5" />
+                                                    </button>
                                                   </PopoverTrigger>
                                                   <PopoverContent className="w-[400px] p-0" align="end" sideOffset={8}>
                                                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 rounded-t-lg">
