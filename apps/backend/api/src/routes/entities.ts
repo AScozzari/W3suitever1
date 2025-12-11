@@ -13,7 +13,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middlewa
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers } from '../db/schema/w3suite';
-import { channels, commercialAreas, vatRates, vatRegimes, legalForms } from '../db/schema/public';
+import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 
@@ -1922,6 +1922,111 @@ router.get('/legal-forms/:code', async (req: Request, res: Response) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve legal form',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PAYMENT METHODS (Reference Data) ====================
+
+/**
+ * GET /api/reference/payment-methods
+ * Get all payment methods from public.payment_methods
+ */
+router.get('/reference/payment-methods', async (req, res) => {
+  try {
+    const methods = await db
+      .select()
+      .from(paymentMethods)
+      .where(eq(paymentMethods.active, true))
+      .orderBy(paymentMethods.sortOrder);
+    
+    res.status(200).json({
+      success: true,
+      data: methods,
+      message: 'Payment methods retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving payment methods', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve payment methods',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== PAYMENT CONDITIONS (Reference Data) ====================
+
+/**
+ * GET /api/reference/payment-conditions
+ * Get all payment conditions from public.payment_methods_conditions
+ */
+router.get('/reference/payment-conditions', async (req, res) => {
+  try {
+    const conditions = await db
+      .select()
+      .from(paymentMethodsConditions)
+      .where(eq(paymentMethodsConditions.active, true))
+      .orderBy(paymentMethodsConditions.sortOrder);
+    
+    res.status(200).json({
+      success: true,
+      data: conditions,
+      message: 'Payment conditions retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving payment conditions', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve payment conditions',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== VAT REGIMES (Reference Data) ====================
+
+/**
+ * GET /api/reference/vat-regimes
+ * Get all VAT regimes from public.vat_regimes
+ */
+router.get('/reference/vat-regimes', async (req, res) => {
+  try {
+    const regimes = await db
+      .select()
+      .from(vatRegimes)
+      .where(eq(vatRegimes.isActive, true))
+      .orderBy(vatRegimes.sortOrder);
+    
+    res.status(200).json({
+      success: true,
+      data: regimes,
+      message: 'VAT regimes retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving VAT regimes', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve VAT regimes',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

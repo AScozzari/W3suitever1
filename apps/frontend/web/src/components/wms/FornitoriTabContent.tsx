@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Plus, Building2, Eye, Trash2, RefreshCw, AlertCircle, X, MapPin, Phone, CreditCard, Truck, Mail, FileText,
-  Search, CalendarIcon, Filter
+  Search, CalendarIcon, Filter, Wand2, CheckCircle2, XCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -100,6 +100,97 @@ export default function FornitoriTabContent() {
   const { data: legalForms = [] } = useQuery({ queryKey: ['/api/reference/legal-forms'] });
   const { data: countries = [] } = useQuery({ queryKey: ['/api/reference/countries'] });
   const { data: italianCities = [] } = useQuery({ queryKey: ['/api/reference/italian-cities'] });
+  
+  // VAT Regimes for Regime Fiscale dropdown
+  const { data: vatRegimesData, isLoading: vatRegimesLoading } = useQuery({ 
+    queryKey: ['/api/reference/vat-regimes']
+  });
+  const vatRegimesList = Array.isArray(vatRegimesData) 
+    ? vatRegimesData 
+    : Array.isArray((vatRegimesData as any)?.data) 
+      ? (vatRegimesData as any).data 
+      : [];
+
+  // Validation helper functions
+  const validateIBAN = (iban: string): { valid: boolean; message: string } => {
+    if (!iban) return { valid: true, message: '' };
+    const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+    if (cleanIban.length < 15 || cleanIban.length > 34) {
+      return { valid: false, message: 'IBAN deve avere tra 15 e 34 caratteri' };
+    }
+    if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/.test(cleanIban)) {
+      return { valid: false, message: 'Formato IBAN non valido' };
+    }
+    // MOD-97 checksum validation
+    const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4);
+    const numericIban = rearranged.replace(/[A-Z]/g, (char) => (char.charCodeAt(0) - 55).toString());
+    let remainder = numericIban;
+    while (remainder.length > 2) {
+      const block = remainder.slice(0, 9);
+      remainder = (parseInt(block, 10) % 97).toString() + remainder.slice(9);
+    }
+    if (parseInt(remainder, 10) % 97 !== 1) {
+      return { valid: false, message: 'IBAN non valido (checksum errato)' };
+    }
+    return { valid: true, message: 'IBAN valido' };
+  };
+
+  const validateSDI = (sdi: string): { valid: boolean; message: string } => {
+    if (!sdi) return { valid: true, message: '' };
+    const cleanSdi = sdi.toUpperCase();
+    if (cleanSdi.length !== 7) {
+      return { valid: false, message: 'Codice SDI deve avere esattamente 7 caratteri' };
+    }
+    if (!/^[A-Z0-9]{7}$/.test(cleanSdi)) {
+      return { valid: false, message: 'Codice SDI deve contenere solo lettere e numeri' };
+    }
+    return { valid: true, message: 'Codice SDI valido' };
+  };
+
+  const validateEmail = (email: string): { valid: boolean; message: string } => {
+    if (!email) return { valid: true, message: '' };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: 'Formato email non valido' };
+    }
+    return { valid: true, message: 'Email valida' };
+  };
+
+  const validatePEC = (pec: string): { valid: boolean; message: string } => {
+    if (!pec) return { valid: true, message: '' };
+    const pecDomains = ['.pec.it', '.legalmail.it', '.postacert.it', '.ingpec.eu', '.arubapec.it', '.pec.aruba.it'];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(pec)) {
+      return { valid: false, message: 'Formato PEC non valido' };
+    }
+    const hasPecDomain = pecDomains.some(domain => pec.toLowerCase().endsWith(domain));
+    if (!hasPecDomain) {
+      return { valid: false, message: 'Dominio PEC non riconosciuto (es. .pec.it, .legalmail.it)' };
+    }
+    return { valid: true, message: 'PEC valida' };
+  };
+
+  const validatePhone = (phone: string): { valid: boolean; message: string } => {
+    if (!phone) return { valid: true, message: '' };
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    if (!/^(\+39)?[0-9]{8,12}$/.test(cleanPhone)) {
+      return { valid: false, message: 'Formato telefono non valido (es. +39 02 1234567)' };
+    }
+    return { valid: true, message: 'Telefono valido' };
+  };
+
+  const validateWebsite = (url: string): { valid: boolean; message: string } => {
+    if (!url) return { valid: true, message: '' };
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return { valid: false, message: 'URL deve iniziare con http:// o https://' };
+      }
+      return { valid: true, message: 'URL valido' };
+    } catch {
+      return { valid: false, message: 'Formato URL non valido' };
+    }
+  };
 
   // Delete handler
   const handleDeleteSupplier = async (supplierId: string) => {
@@ -834,13 +925,45 @@ export default function FornitoriTabContent() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Codice Fornitore *
                     </label>
-                    <input 
-                      type="text" 
-                      placeholder="es. FOR001"
-                      value={newSupplier.code}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, code: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="es. FOR001"
+                        value={newSupplier.code}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, code: e.target.value.toUpperCase() })}
+                        style={{ flex: 1, padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                        data-testid="input-supplier-code"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const timestamp = Date.now().toString().slice(-6);
+                          const newCode = `FOR${timestamp}`;
+                          setNewSupplier({ ...newSupplier, code: newCode });
+                        }}
+                        style={{
+                          padding: '12px 16px',
+                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Genera automaticamente un codice fornitore univoco"
+                        data-testid="button-auto-generate-code"
+                      >
+                        <Wand2 size={14} />
+                        Auto
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
@@ -1019,6 +1142,18 @@ export default function FornitoriTabContent() {
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Città *
+                      </label>
+                      <StandardCityField
+                        value={newSupplier.city}
+                        onChange={(cityName) => setNewSupplier({ ...newSupplier, city: cityName })}
+                        onCapChange={(cap) => setNewSupplier(prev => ({ ...prev, postalCode: cap }))}
+                        onProvinciaChange={(provincia) => setNewSupplier(prev => ({ ...prev, province: provincia }))}
+                        required={true}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                         CAP *
                       </label>
                       <input 
@@ -1036,18 +1171,6 @@ export default function FornitoriTabContent() {
                           background: italianCities.length > 0 ? '#f9fafb' : 'white',
                           cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
                         }} 
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                        Città *
-                      </label>
-                      <StandardCityField
-                        value={newSupplier.city}
-                        onChange={(cityName) => setNewSupplier({ ...newSupplier, city: cityName })}
-                        onCapChange={(cap) => setNewSupplier(prev => ({ ...prev, postalCode: cap }))}
-                        onProvinciaChange={(provincia) => setNewSupplier(prev => ({ ...prev, province: provincia }))}
-                        required={true}
                       />
                     </div>
                     <div>
@@ -1122,49 +1245,161 @@ export default function FornitoriTabContent() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Email *
                     </label>
-                    <input 
-                      type="email" 
-                      placeholder="fornitore@example.com"
-                      value={newSupplier.email}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="email" 
+                        placeholder="fornitore@example.com"
+                        value={newSupplier.email}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value.toLowerCase() })}
+                        onBlur={(e) => {
+                          const validation = validateEmail(e.target.value);
+                          if (e.target.value && !validation.valid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else if (e.target.value && validation.valid) {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.boxShadow = 'none';
+                          }
+                        }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                        data-testid="input-email"
+                      />
+                      {newSupplier.email && (
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                          {validateEmail(newSupplier.email).valid ? 
+                            <CheckCircle2 size={18} className="text-green-500" /> : 
+                            <XCircle size={18} className="text-red-500" />}
+                        </span>
+                      )}
+                    </div>
+                    {newSupplier.email && !validateEmail(newSupplier.email).valid && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        {validateEmail(newSupplier.email).message}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       PEC
                     </label>
-                    <input 
-                      type="email" 
-                      placeholder="fornitore@pec.it"
-                      value={newSupplier.pecEmail}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, pecEmail: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="email" 
+                        placeholder="fornitore@pec.it"
+                        value={newSupplier.pecEmail}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, pecEmail: e.target.value.toLowerCase() })}
+                        onBlur={(e) => {
+                          const validation = validatePEC(e.target.value);
+                          if (e.target.value && !validation.valid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else if (e.target.value && validation.valid) {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.boxShadow = 'none';
+                          }
+                        }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                        data-testid="input-pec"
+                      />
+                      {newSupplier.pecEmail && (
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                          {validatePEC(newSupplier.pecEmail).valid ? 
+                            <CheckCircle2 size={18} className="text-green-500" /> : 
+                            <XCircle size={18} className="text-red-500" />}
+                        </span>
+                      )}
+                    </div>
+                    {newSupplier.pecEmail && !validatePEC(newSupplier.pecEmail).valid && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        {validatePEC(newSupplier.pecEmail).message}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Telefono
                     </label>
-                    <input 
-                      type="tel" 
-                      placeholder="+39 02 1234567"
-                      value={newSupplier.phone}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, phone: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="tel" 
+                        placeholder="+39 02 1234567"
+                        value={newSupplier.phone}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, phone: e.target.value })}
+                        onBlur={(e) => {
+                          const validation = validatePhone(e.target.value);
+                          if (e.target.value && !validation.valid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else if (e.target.value && validation.valid) {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.boxShadow = 'none';
+                          }
+                        }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                        data-testid="input-phone"
+                      />
+                      {newSupplier.phone && (
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                          {validatePhone(newSupplier.phone).valid ? 
+                            <CheckCircle2 size={18} className="text-green-500" /> : 
+                            <XCircle size={18} className="text-red-500" />}
+                        </span>
+                      )}
+                    </div>
+                    {newSupplier.phone && !validatePhone(newSupplier.phone).valid && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        {validatePhone(newSupplier.phone).message}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Sito Web
                     </label>
-                    <input 
-                      type="url" 
-                      placeholder="https://www.fornitore.it"
-                      value={newSupplier.website}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, website: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                    />
+                    <div className="relative">
+                      <input 
+                        type="url" 
+                        placeholder="https://www.fornitore.it"
+                        value={newSupplier.website}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, website: e.target.value })}
+                        onBlur={(e) => {
+                          const validation = validateWebsite(e.target.value);
+                          if (e.target.value && !validation.valid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else if (e.target.value && validation.valid) {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.boxShadow = 'none';
+                          }
+                        }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                        data-testid="input-website"
+                      />
+                      {newSupplier.website && (
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                          {validateWebsite(newSupplier.website).valid ? 
+                            <CheckCircle2 size={18} className="text-green-500" /> : 
+                            <XCircle size={18} className="text-red-500" />}
+                        </span>
+                      )}
+                    </div>
+                    {newSupplier.website && !validateWebsite(newSupplier.website).valid && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        {validateWebsite(newSupplier.website).message}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1262,7 +1497,7 @@ export default function FornitoriTabContent() {
                     )}
                   </div>
 
-                  {/* IBAN with Validation */}
+                  {/* IBAN with MOD-97 Validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       IBAN
@@ -1270,47 +1505,87 @@ export default function FornitoriTabContent() {
                         <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
                       )}
                     </label>
-                    <input 
-                      type="text" 
-                      placeholder="IT60 X054 2811 1010 0000 0123 456"
-                      value={newSupplier.iban}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase().replace(/\s/g, '');
-                        setNewSupplier({ ...newSupplier, iban: value });
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value) {
-                          const ibanValidation = supplierValidationSchema.shape.iban?.safeParse(e.target.value);
-                          if (!ibanValidation?.success) {
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        placeholder="IT60 X054 2811 1010 0000 0123 456"
+                        value={newSupplier.iban}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase().replace(/\s/g, '');
+                          setNewSupplier({ ...newSupplier, iban: value });
+                        }}
+                        onBlur={(e) => {
+                          const validation = validateIBAN(e.target.value);
+                          if (e.target.value && !validation.valid) {
                             e.target.style.borderColor = '#ef4444';
                             e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
-                          } else {
+                          } else if (e.target.value && validation.valid) {
                             e.target.style.borderColor = '#10b981';
                             e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.boxShadow = 'none';
                           }
-                        } else {
-                          e.target.style.borderColor = '#d1d5db';
-                          e.target.style.boxShadow = 'none';
-                        }
-                      }}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                      data-testid="input-iban"
-                    />
+                        }}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                        data-testid="input-iban"
+                      />
+                      {newSupplier.iban && (
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                          {validateIBAN(newSupplier.iban).valid ? 
+                            <CheckCircle2 size={18} className="text-green-500" /> : 
+                            <XCircle size={18} className="text-red-500" />}
+                        </span>
+                      )}
+                    </div>
+                    {newSupplier.iban && !validateIBAN(newSupplier.iban).valid && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        {validateIBAN(newSupplier.iban).message}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Codice SDI */}
+                  {/* Codice SDI with validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Codice SDI
                     </label>
-                    <input 
-                      type="text" 
-                      placeholder="es. ABCDEFG"
-                      value={newSupplier.sdiCode}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, sdiCode: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                      data-testid="input-codice-sdi"
-                    />
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        placeholder="es. ABCDEFG (7 caratteri)"
+                        value={newSupplier.sdiCode}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, sdiCode: e.target.value.toUpperCase() })}
+                        onBlur={(e) => {
+                          const validation = validateSDI(e.target.value);
+                          if (e.target.value && !validation.valid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else if (e.target.value && validation.valid) {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#d1d5db';
+                            e.target.style.boxShadow = 'none';
+                          }
+                        }}
+                        maxLength={7}
+                        style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', textTransform: 'uppercase' }} 
+                        data-testid="input-codice-sdi"
+                      />
+                      {newSupplier.sdiCode && (
+                        <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+                          {validateSDI(newSupplier.sdiCode).valid ? 
+                            <CheckCircle2 size={18} className="text-green-500" /> : 
+                            <XCircle size={18} className="text-red-500" />}
+                        </span>
+                      )}
+                    </div>
+                    {newSupplier.sdiCode && !validateSDI(newSupplier.sdiCode).valid && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        {validateSDI(newSupplier.sdiCode).message}
+                      </div>
+                    )}
                   </div>
 
                   {/* BIC/SWIFT with Validation */}
@@ -1347,26 +1622,67 @@ export default function FornitoriTabContent() {
                   </div>
                 </div>
 
-                {/* Flags fiscali */}
+                {/* Regime Fiscale Section */}
                 <div style={{ marginTop: '20px' }}>
                   <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>Regime Fiscale</h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={newSupplier.splitPayment}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, splitPayment: e.target.checked })}
-                      />
-                      Split Payment
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={newSupplier.withholdingTax}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, withholdingTax: e.target.checked })}
-                      />
-                      Ritenuta d'Acconto
-                    </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                    {/* VAT Regime Dropdown */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Regime IVA
+                      </label>
+                      <select 
+                        value={(newSupplier as any).vatRegimeId || ''}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, vatRegimeId: e.target.value } as any)}
+                        style={{ 
+                          width: '100%', 
+                          padding: '12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px', 
+                          fontSize: '14px', 
+                          background: vatRegimesLoading ? '#f9fafb' : 'white',
+                          cursor: vatRegimesLoading ? 'wait' : 'pointer'
+                        }}
+                        disabled={vatRegimesLoading}
+                        data-testid="select-vat-regime"
+                      >
+                        <option value="">{vatRegimesLoading ? 'Caricamento...' : 'Seleziona regime...'}</option>
+                        {vatRegimesList?.map((regime: any) => (
+                          <option key={regime.id} value={regime.id} title={regime.description}>
+                            {regime.name} {regime.vatPayer === 'customer' ? '(Cliente)' : regime.vatPayer === 'pa' ? '(PA)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {vatRegimesLoading && (
+                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                          Caricamento regimi fiscali...
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Additional flags */}
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={newSupplier.splitPayment}
+                          onChange={(e) => setNewSupplier({ ...newSupplier, splitPayment: e.target.checked })}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                          data-testid="checkbox-split-payment"
+                        />
+                        Split Payment (Scissione Pagamenti)
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={newSupplier.withholdingTax}
+                          onChange={(e) => setNewSupplier({ ...newSupplier, withholdingTax: e.target.checked })}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                          data-testid="checkbox-withholding-tax"
+                        />
+                        Ritenuta d'Acconto
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
