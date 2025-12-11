@@ -613,8 +613,9 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
        (viewMode === 'aggregated' && showSerialsInline && (crossStoreSummary?.kpis?.serialCount ?? 0) > 0)),
   });
 
-  const handleViewDetails = (item: InventoryItem) => {
+  const handleViewDetails = (item: InventoryItem, itemId?: string) => {
     setSelectedItem(item);
+    setSelectedSerialItemId(itemId || null);
     setIsDetailModalOpen(true);
   };
 
@@ -1387,8 +1388,9 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                   return (
                     <TableRow 
                       key={item.id} 
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
                       data-testid={`row-inventory-${item.id}`}
+                      onClick={() => handleViewDetails(item, item.id)}
                     >
                       {/* Prodotto */}
                       <TableCell className="font-medium text-gray-900">
