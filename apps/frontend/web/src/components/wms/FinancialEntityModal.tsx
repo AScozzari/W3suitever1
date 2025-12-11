@@ -5,8 +5,8 @@ import {
   Mail, Globe, Save, AlertCircle, CheckCircle
 } from 'lucide-react';
 import { 
-  italianVatSchema, italianFiscalCodeSchema, italianPecEmailSchema,
-  italianPhoneSchema, italianIbanSchema
+  italianVatNumberSchema, italianTaxCodeSchema, pecEmailSchema,
+  italianPhoneSchema, ibanSchema
 } from '@/lib/validation/italian-business-validation';
 
 interface FinancialEntityModalProps {
@@ -152,15 +152,15 @@ export default function FinancialEntityModal({
 
   const validateField = (field: string, value: string): string | null => {
     if (field === 'vatNumber' && value) {
-      const result = italianVatSchema.safeParse(value);
+      const result = italianVatNumberSchema.safeParse(value);
       return result.success ? null : result.error.errors[0]?.message || 'Partita IVA non valida';
     }
     if (field === 'fiscalCode' && value) {
-      const result = italianFiscalCodeSchema.safeParse(value);
+      const result = italianTaxCodeSchema.safeParse(value);
       return result.success ? null : result.error.errors[0]?.message || 'Codice fiscale non valido';
     }
     if (field === 'pec' && value) {
-      const result = italianPecEmailSchema.safeParse(value);
+      const result = pecEmailSchema.safeParse(value);
       return result.success ? null : result.error.errors[0]?.message || 'PEC non valida';
     }
     if (field === 'phone' && value) {
@@ -168,7 +168,7 @@ export default function FinancialEntityModal({
       return result.success ? null : result.error.errors[0]?.message || 'Telefono non valido';
     }
     if (field === 'iban' && value) {
-      const result = italianIbanSchema.safeParse(value);
+      const result = ibanSchema.safeParse(value);
       return result.success ? null : result.error.errors[0]?.message || 'IBAN non valido';
     }
     return null;
