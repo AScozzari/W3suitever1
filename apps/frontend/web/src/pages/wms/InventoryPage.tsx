@@ -2130,13 +2130,18 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                     ) : productSerials?.serials && productSerials.serials.length > 0 ? (
                       <>
                         {(() => {
-                          const firstSerial = productSerials.serials[0];
+                          // Filter serials by itemId if we clicked on a specific item row
+                          const filteredSerials = selectedItem?.itemId 
+                            ? productSerials.serials.filter(s => s.itemId === selectedItem.itemId)
+                            : productSerials.serials;
+                          
+                          const firstSerial = filteredSerials[0] || productSerials.serials[0];
                           const hasSupplierInfo = firstSerial?.supplierName || firstSerial?.supplierSku || firstSerial?.purchaseCost;
                           const hasBatchInfo = firstSerial?.batchNumber;
                           const logConfig = LOGISTIC_STATUS_CONFIG[firstSerial?.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
                           
-                          // Group serials by type
-                          const groupedByType = productSerials.serials.reduce((acc, serial) => {
+                          // Group serials by type (only filtered ones)
+                          const groupedByType = filteredSerials.reduce((acc, serial) => {
                             const type = serial.serialType;
                             if (!acc[type]) acc[type] = [];
                             acc[type].push(serial);
@@ -2248,7 +2253,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                   {/* Lista Seriali */}
                                   <div className="mt-4 pt-4 border-t border-gray-100">
                                     <label className="text-xs text-gray-500 uppercase tracking-wide mb-2 block">
-                                      Identificativi ({productSerials.serials.length})
+                                      Identificativi ({filteredSerials.length})
                                     </label>
                                     <div className="space-y-2">
                                       {Object.entries(groupedByType).map(([type, serials]) => (
