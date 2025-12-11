@@ -166,13 +166,19 @@ export type DriverTypology = typeof driverTypologies.$inferSelect;
 // ==================== REFERENCE TABLES ====================
 
 // Forme giuridiche italiane
+// Legal form category enum: IMPRESA, ENTE_PUBBLICO, NON_PROFIT, PROFESSIONALE, PERSONA_FISICA
 export const legalForms = pgTable("legal_forms", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 20 }).unique().notNull(),
   name: varchar("name", { length: 100 }).notNull(),
+  abbreviation: varchar("abbreviation", { length: 30 }), // Sigla per documenti (es. "S.r.l.")
+  nameEnglish: varchar("name_english", { length: 100 }), // Nome inglese per documenti internazionali
   description: text("description"),
+  category: varchar("category", { length: 20 }).default("IMPRESA"), // IMPRESA, ENTE_PUBBLICO, NON_PROFIT, PROFESSIONALE, PERSONA_FISICA
   minCapital: varchar("min_capital", { length: 50 }),
   liability: varchar("liability", { length: 50 }), // "limited", "unlimited", "mixed"
+  requiresVat: boolean("requires_vat").default(true), // Obbligatoria P.IVA
+  requiresFiscalCode: boolean("requires_fiscal_code").default(true), // Obbligatorio Codice Fiscale
   active: boolean("active").default(true),
   sortOrder: smallint("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
