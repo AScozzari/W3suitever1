@@ -319,8 +319,8 @@ export default function CategoriesTypologiesDataTable() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Eye className="h-4 w-4 text-gray-400" />
+              <Button variant="ghost" size="sm" className="h-12 w-12 p-0">
+                <Eye className="h-8 w-8 text-gray-400" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -339,11 +339,11 @@ export default function CategoriesTypologiesDataTable() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0"
+                className="h-12 w-12 p-0"
                 onClick={() => handleEdit(type, item)}
                 data-testid={`button-edit-${type}-${item.id}`}
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-8 w-8" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -358,11 +358,11 @@ export default function CategoriesTypologiesDataTable() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0"
+                className="h-12 w-12 p-0"
                 onClick={() => handleArchive(type, item)}
                 data-testid={`button-archive-${type}-${item.id}`}
               >
-                <Archive className="h-4 w-4 text-amber-500" />
+                <Archive className="h-8 w-8 text-amber-500" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -377,11 +377,11 @@ export default function CategoriesTypologiesDataTable() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                className="h-12 w-12 p-0 text-red-500 hover:text-red-600"
                 onClick={() => handleDelete(type, item)}
                 data-testid={`button-delete-${type}-${item.id}`}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-8 w-8" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
