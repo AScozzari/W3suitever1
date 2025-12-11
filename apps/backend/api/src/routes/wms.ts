@@ -1597,6 +1597,7 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       
       serialsMap.set(row.serialId, {
         id: row.serialId,
+        itemId: row.itemId, // Product item ID for grouping multiple serials of same physical unit
         serialNumber: row.serialNumber,
         serialType: row.serialType,
         logisticStatus: row.logisticStatus,

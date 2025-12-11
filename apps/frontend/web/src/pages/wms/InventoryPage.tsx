@@ -1914,8 +1914,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                 <Table>
                                   <TableHeader>
                                     <TableRow className="bg-gray-50">
-                                      <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
-                                      <TableHead className="font-semibold text-gray-700">Seriale</TableHead>
+                                      <TableHead className="font-semibold text-gray-700">Seriali</TableHead>
                                       <TableHead className="font-semibold text-gray-700">Magazzino</TableHead>
                                       <TableHead className="font-semibold text-gray-700 text-center">Stato Logistico</TableHead>
                                       <TableHead className="font-semibold text-gray-700 text-center">Condizione</TableHead>
@@ -1923,99 +1922,135 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {productSerials.serials.slice(0, 50).map((serial) => {
-                                      const logConfig = LOGISTIC_STATUS_CONFIG[serial.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
-                                      const hasSupplierInfo = serial.supplierName || serial.supplierSku || serial.purchaseCost;
-                                      const hasBatchInfo = serial.batchNumber;
-                                      return (
-                                        <TableRow key={serial.id} className="hover:bg-gray-50">
-                                          <TableCell>
-                                            <Badge variant="outline" className="text-xs">
-                                              {serial.serialType === 'imei' ? 'IMEI' : 
-                                               serial.serialType === 'iccid' ? 'ICCID' : 
-                                               serial.serialType === 'mac_address' ? 'MAC' : 
-                                               serial.serialType?.toUpperCase() || '-'}
-                                            </Badge>
-                                          </TableCell>
-                                          <TableCell className="font-mono text-sm">{serial.serialNumber}</TableCell>
-                                          <TableCell className="text-sm text-gray-700">{serial.storeName || '-'}</TableCell>
-                                          <TableCell className="text-center">
-                                            <Badge className={`text-xs ${logConfig.color}`}>
-                                              {logConfig.label}
-                                            </Badge>
-                                          </TableCell>
-                                          <TableCell className="text-center text-sm capitalize">
-                                            {serial.condition === 'new' ? 'Nuovo' : 
-                                             serial.condition === 'used' ? 'Usato' : 
-                                             serial.condition === 'refurbished' ? 'Ricondizionato' : 
-                                             serial.condition === 'demo' ? 'Demo' : serial.condition || '-'}
-                                          </TableCell>
-                                          <TableCell className="text-center">
-                                            {(hasSupplierInfo || hasBatchInfo) ? (
-                                              <Popover>
-                                                <PopoverTrigger asChild>
-                                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                                    <Eye className="h-4 w-4 text-blue-500" />
-                                                  </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-72 p-3" align="end">
-                                                  <div className="space-y-3">
-                                                    {hasSupplierInfo && (
-                                                      <div>
-                                                        <h4 className="text-xs font-semibold text-blue-600 uppercase mb-2 flex items-center gap-1">
-                                                          <Truck className="h-3 w-3" />
-                                                          Fornitore
-                                                        </h4>
-                                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                                          <div>
-                                                            <span className="text-xs text-gray-500">Nome</span>
-                                                            <p className="font-medium">{serial.supplierName || '-'}</p>
-                                                          </div>
-                                                          <div>
-                                                            <span className="text-xs text-gray-500">SKU</span>
-                                                            <p className="font-mono text-xs">{serial.supplierSku || '-'}</p>
-                                                          </div>
-                                                          <div>
-                                                            <span className="text-xs text-gray-500">Costo</span>
-                                                            <p className="font-semibold">
-                                                              {serial.purchaseCost ? `€ ${parseFloat(serial.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
-                                                            </p>
-                                                          </div>
-                                                          <div>
-                                                            <span className="text-xs text-gray-500">Data</span>
-                                                            <p>{serial.purchaseDate ? format(new Date(serial.purchaseDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
-                                                          </div>
-                                                        </div>
-                                                      </div>
-                                                    )}
-                                                    {hasBatchInfo && (
-                                                      <div className={hasSupplierInfo ? 'pt-2 border-t border-gray-200' : ''}>
-                                                        <h4 className="text-xs font-semibold text-purple-600 uppercase mb-2 flex items-center gap-1">
-                                                          <Layers className="h-3 w-3" />
-                                                          Lotto
-                                                        </h4>
-                                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                                          <div>
-                                                            <span className="text-xs text-gray-500">Numero</span>
-                                                            <p className="font-mono font-medium">{serial.batchNumber || '-'}</p>
-                                                          </div>
-                                                          <div>
-                                                            <span className="text-xs text-gray-500">Scadenza</span>
-                                                            <p>{serial.batchExpiryDate ? format(new Date(serial.batchExpiryDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
-                                                          </div>
-                                                        </div>
-                                                      </div>
-                                                    )}
+                                    {(() => {
+                                      // Group serials by itemId (physical product unit)
+                                      const groupedByItem = productSerials.serials.reduce((acc, serial) => {
+                                        const key = serial.itemId || serial.id;
+                                        if (!acc[key]) {
+                                          acc[key] = {
+                                            itemId: key,
+                                            serials: [],
+                                            storeName: serial.storeName,
+                                            logisticStatus: serial.logisticStatus,
+                                            condition: serial.condition,
+                                            supplierName: serial.supplierName,
+                                            supplierSku: serial.supplierSku,
+                                            purchaseCost: serial.purchaseCost,
+                                            purchaseDate: serial.purchaseDate,
+                                            batchNumber: serial.batchNumber,
+                                            batchExpiryDate: serial.batchExpiryDate,
+                                          };
+                                        }
+                                        acc[key].serials.push({
+                                          id: serial.id,
+                                          type: serial.serialType,
+                                          number: serial.serialNumber,
+                                        });
+                                        return acc;
+                                      }, {} as Record<string, any>);
+                                      
+                                      const items = Object.values(groupedByItem).slice(0, 50);
+                                      
+                                      return items.map((item: any) => {
+                                        const logConfig = LOGISTIC_STATUS_CONFIG[item.logisticStatus] || LOGISTIC_STATUS_CONFIG.in_stock;
+                                        const hasSupplierInfo = item.supplierName || item.supplierSku || item.purchaseCost;
+                                        const hasBatchInfo = item.batchNumber;
+                                        return (
+                                          <TableRow key={item.itemId} className="hover:bg-gray-50">
+                                            <TableCell>
+                                              <div className="space-y-1">
+                                                {item.serials.map((s: any, idx: number) => (
+                                                  <div key={s.id} className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs shrink-0">
+                                                      {s.type === 'imei' ? 'IMEI' : 
+                                                       s.type === 'iccid' ? 'ICCID' : 
+                                                       s.type === 'mac_address' ? 'MAC' : 
+                                                       s.type?.toUpperCase() || '-'}
+                                                    </Badge>
+                                                    <span className="font-mono text-sm">{s.number}</span>
                                                   </div>
-                                                </PopoverContent>
-                                              </Popover>
-                                            ) : (
-                                              <span className="text-gray-300">-</span>
-                                            )}
-                                          </TableCell>
-                                        </TableRow>
-                                      );
-                                    })}
+                                                ))}
+                                              </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-gray-700">{item.storeName || '-'}</TableCell>
+                                            <TableCell className="text-center">
+                                              <Badge className={`text-xs ${logConfig.color}`}>
+                                                {logConfig.label}
+                                              </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center text-sm capitalize">
+                                              {item.condition === 'new' ? 'Nuovo' : 
+                                               item.condition === 'used' ? 'Usato' : 
+                                               item.condition === 'refurbished' ? 'Ricondizionato' : 
+                                               item.condition === 'demo' ? 'Demo' : item.condition || '-'}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              {(hasSupplierInfo || hasBatchInfo) ? (
+                                                <Popover>
+                                                  <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                                      <Eye className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                  </PopoverTrigger>
+                                                  <PopoverContent className="w-72 p-3" align="end">
+                                                    <div className="space-y-3">
+                                                      {hasSupplierInfo && (
+                                                        <div>
+                                                          <h4 className="text-xs font-semibold text-blue-600 uppercase mb-2 flex items-center gap-1">
+                                                            <Truck className="h-3 w-3" />
+                                                            Fornitore
+                                                          </h4>
+                                                          <div className="grid grid-cols-2 gap-2 text-sm">
+                                                            <div>
+                                                              <span className="text-xs text-gray-500">Nome</span>
+                                                              <p className="font-medium">{item.supplierName || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <span className="text-xs text-gray-500">SKU</span>
+                                                              <p className="font-mono text-xs">{item.supplierSku || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <span className="text-xs text-gray-500">Costo</span>
+                                                              <p className="font-semibold">
+                                                                {item.purchaseCost ? `€ ${parseFloat(item.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
+                                                              </p>
+                                                            </div>
+                                                            <div>
+                                                              <span className="text-xs text-gray-500">Data</span>
+                                                              <p>{item.purchaseDate ? format(new Date(item.purchaseDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      )}
+                                                      {hasBatchInfo && (
+                                                        <div className={hasSupplierInfo ? 'pt-2 border-t border-gray-200' : ''}>
+                                                          <h4 className="text-xs font-semibold text-purple-600 uppercase mb-2 flex items-center gap-1">
+                                                            <Layers className="h-3 w-3" />
+                                                            Lotto
+                                                          </h4>
+                                                          <div className="grid grid-cols-2 gap-2 text-sm">
+                                                            <div>
+                                                              <span className="text-xs text-gray-500">Numero</span>
+                                                              <p className="font-mono font-medium">{item.batchNumber || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                              <span className="text-xs text-gray-500">Scadenza</span>
+                                                              <p>{item.batchExpiryDate ? format(new Date(item.batchExpiryDate), 'dd/MM/yy', { locale: it }) : '-'}</p>
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </PopoverContent>
+                                                </Popover>
+                                              ) : (
+                                                <span className="text-gray-300">-</span>
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      });
+                                    })()}
                                   </TableBody>
                                 </Table>
                                 {productSerials.serials.length > 50 && (
