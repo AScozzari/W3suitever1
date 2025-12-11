@@ -8815,6 +8815,68 @@ router.post("/snapshots/trigger", rbacMiddleware, requirePermission('wms.setting
 });
 
 /**
+ * GET /api/wms/drivers
+ * 
+ * Returns all drivers for the current tenant (including brand drivers).
+ * Follows brand-tenant union pattern:
+ * - Brand drivers from brand tenant (00000000-0000-0000-0000-000000000000)
+ * - Tenant-specific drivers from current tenant
+ * 
+ * @returns { data: [{ id, name, code, source, allowedProductTypes, ... }] }
+ */
+router.get("/drivers", rbacMiddleware, requirePermission('wms.products.read'), async (req: Request, res: Response) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Unauthorized: tenant not identified" });
+    }
+
+    const BRAND_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+
+    // Get all drivers (brand + tenant union) ordered by sortOrder
+    const driversResult = await db
+      .select({
+        id: drivers.id,
+        name: drivers.name,
+        code: drivers.code,
+        description: drivers.description,
+        icon: drivers.icon,
+        color: drivers.color,
+        allowedProductTypes: drivers.allowedProductTypes,
+        source: drivers.source,
+        sortOrder: drivers.sortOrder,
+        isActive: drivers.isActive,
+        tenantId: drivers.tenantId
+      })
+      .from(drivers)
+      .where(
+        and(
+          eq(drivers.isActive, true),
+          or(
+            eq(drivers.tenantId, BRAND_TENANT_ID),
+            eq(drivers.tenantId, sessionTenantId)
+          )
+        )
+      )
+      .orderBy(drivers.sortOrder);
+
+    res.json({ 
+      success: true, 
+      data: driversResult,
+      count: driversResult.length
+    });
+
+  } catch (error) {
+    console.error("Error fetching drivers:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch drivers",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
  * GET /api/wms/drivers/:driverId/hierarchy
  * 
  * Returns the category→typology hierarchy derived from driver's allowed_product_types.
