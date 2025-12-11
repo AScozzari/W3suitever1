@@ -3,6 +3,10 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
+- **🎯 DEFAULT TENANT: STAGING** (slug: `staging`, id: `00000000-0000-0000-0000-000000000001`)
+  - **❌ NEVER use demo, w3-demo, or other tenant slugs** - ALWAYS use `staging`
+  - **Route pattern**: `/staging/wms/inventory`, `/staging/crm/dashboard`, etc.
+  - **Suppliers are brand-pushed** from tenant_id `00000000-0000-0000-0000-000000000000`
 - **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
 - **❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
 - **UI/UX CONSISTENCY RULE**: Tutte le pagine devono mantenere la struttura dell'app con header e sidebar
