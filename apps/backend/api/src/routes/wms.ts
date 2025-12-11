@@ -974,6 +974,101 @@ router.post("/products/upload-image", rbacMiddleware, requirePermission('wms.pro
   }
 });
 
+/**
+ * POST /api/wms/products/generate-sku
+ * Generate automatic SKU based on category and sequence
+ * Body: { categoryId?: string, type?: string }
+ * Returns: { sku: string }
+ */
+router.post("/products/generate-sku", rbacMiddleware, requirePermission('wms.product.create'), async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const { categoryId, type } = req.body;
+
+    // Get prefix from category or type
+    let prefix = 'PROD';
+    
+    if (categoryId) {
+      // Try to get category code/name for prefix
+      const category = await db.query.wmsCategories.findFirst({
+        where: and(
+          eq(wmsCategories.tenantId, tenantId),
+          eq(wmsCategories.id, categoryId)
+        ),
+        columns: { codice: true, nome: true }
+      });
+      
+      if (category) {
+        // Use first 3-4 chars of code or name
+        prefix = (category.codice || category.nome || 'PROD')
+          .substring(0, 4)
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, '');
+      }
+    } else if (type) {
+      // Use product type as prefix
+      const typeMap: Record<string, string> = {
+        'PHYSICAL': 'PHY',
+        'VIRTUAL': 'VIR',
+        'SERVICE': 'SVC',
+        'CANVAS': 'CNV'
+      };
+      prefix = typeMap[type] || 'PROD';
+    }
+
+    // Get next sequence number for this tenant
+    const existingProducts = await db.query.products.findMany({
+      where: and(
+        eq(products.tenantId, tenantId),
+        sql`${products.sku} LIKE ${prefix + '-%'}`
+      ),
+      columns: { sku: true },
+      orderBy: [desc(products.createdAt)],
+      limit: 100
+    });
+
+    // Find highest sequence number
+    let maxSequence = 0;
+    for (const p of existingProducts) {
+      const match = p.sku.match(new RegExp(`^${prefix}-(\\d+)$`));
+      if (match) {
+        const seq = parseInt(match[1], 10);
+        if (seq > maxSequence) maxSequence = seq;
+      }
+    }
+
+    // Generate new SKU
+    const nextSequence = maxSequence + 1;
+    const sku = `${prefix}-${String(nextSequence).padStart(5, '0')}`;
+
+    logger.info('SKU generated automatically', {
+      tenantId,
+      categoryId,
+      type,
+      prefix,
+      generatedSku: sku
+    });
+
+    res.json({
+      success: true,
+      sku
+    });
+
+  } catch (error) {
+    console.error("Error generating SKU:", error);
+    
+    res.status(500).json({ 
+      error: "Failed to generate SKU",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== PRODUCT ITEMS ENDPOINTS ====================
 
 /**

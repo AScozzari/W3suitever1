@@ -464,6 +464,7 @@ export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
 ]);
 export const serialTypeEnum = pgEnum('serial_type', ['imei', 'iccid', 'mac_address', 'other']);
 export const productBatchStatusEnum = pgEnum('product_batch_status', ['available', 'reserved', 'damaged', 'expired']);
+export const pickingStrategyEnum = pgEnum('picking_strategy', ['fifo', 'lifo']);
 export const stockMovementTypeEnum = pgEnum('stock_movement_type', [
   // INBOUND (5)
   'purchase',           // Acquisto/Ricezione da fornitore
@@ -7856,6 +7857,7 @@ export const products = w3suiteSchema.table("products", {
   reorderPoint: integer("reorder_point").default(0).notNull(), // Min stock level before reorder
   warehouseLocation: varchar("warehouse_location", { length: 100 }), // Default storage location
   unitOfMeasure: varchar("unit_of_measure", { length: 20 }).default('pz').notNull(), // pz, kg, m, etc.
+  pickingStrategy: pickingStrategyEnum("picking_strategy").default('fifo'), // fifo | lifo - default inventory picking strategy
   
   // Status & lifecycle
   isActive: boolean("is_active").default(true).notNull(), // Soft delete
@@ -7924,6 +7926,7 @@ const baseProductSchema = createInsertSchema(products).omit({
   typeId: z.string().max(100).optional(),
   validFrom: z.coerce.date().optional(),
   validTo: z.coerce.date().optional(),
+  pickingStrategy: z.enum(['fifo', 'lifo']).optional(),
 });
 
 // Insert schema with conditional validation
@@ -7999,6 +8002,7 @@ export const productItems = w3suiteSchema.table("product_items", {
   
   // Supplier & purchase tracking
   lastSupplierId: uuid("last_supplier_id").references(() => suppliers.id, { onDelete: 'set null' }),
+  supplierSku: varchar("supplier_sku", { length: 100 }), // Supplier's SKU/article code for this item
   lastPurchaseCost: numeric("last_purchase_cost", { precision: 10, scale: 2 }), // Ultimo costo acquisto €
   lastPurchaseDate: date("last_purchase_date"),
   
@@ -8045,6 +8049,7 @@ export const insertProductItemSchema = createInsertSchema(productItems).omit({
     'customer_return', 'doa_return', 'in_service', 'supplier_return',
     'in_transfer', 'lost', 'damaged', 'internal_use'
   ]).optional(),
+  supplierSku: z.string().max(100, "SKU fornitore troppo lungo").optional(),
 });
 export type InsertProductItem = z.infer<typeof insertProductItemSchema>;
 
@@ -8282,6 +8287,7 @@ export const productBatches = w3suiteSchema.table("product_batches", {
   warehouseLocation: varchar("warehouse_location", { length: 100 }),
   supplier: varchar("supplier", { length: 255 }), // Supplier name (legacy, use supplierId)
   supplierId: uuid("supplier_id").references(() => suppliers.id, { onDelete: 'set null' }), // FK to suppliers
+  supplierSku: varchar("supplier_sku", { length: 100 }), // Supplier's SKU/article code for this product
   purchaseCost: numeric("purchase_cost", { precision: 10, scale: 2 }), // Unit cost at purchase
   purchaseOrderId: uuid("purchase_order_id"), // FK to purchase_orders (added after table creation)
   notes: text("notes"), // Additional batch notes
@@ -8290,6 +8296,7 @@ export const productBatches = w3suiteSchema.table("product_batches", {
   receivedDate: date("received_date"),
   expiryDate: date("expiry_date"),
   status: productBatchStatusEnum("status").default('available').notNull(), // available | reserved | damaged | expired
+  pickingStrategy: pickingStrategyEnum("picking_strategy"), // Override product's picking strategy for this batch (null = use product default)
   
   // Audit
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -8324,6 +8331,8 @@ export const insertProductBatchSchema = createInsertSchema(productBatches).omit(
   reserved: z.number().int().min(0, "Quantità riservata deve essere positiva").optional(),
   status: z.enum(['available', 'reserved', 'damaged', 'expired']).optional(),
   supplier: z.string().max(255, "Nome fornitore troppo lungo").optional(),
+  supplierSku: z.string().max(100, "SKU fornitore troppo lungo").optional(),
+  pickingStrategy: z.enum(['fifo', 'lifo']).optional(),
   notes: z.string().optional(),
 });
 export type InsertProductBatch = z.infer<typeof insertProductBatchSchema>;

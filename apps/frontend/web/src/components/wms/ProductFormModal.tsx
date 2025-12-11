@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Upload, X, Calendar } from 'lucide-react';
+import { Upload, X, Calendar, Wand2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -44,6 +44,7 @@ const productSchema = z.object({
   typeId: z.string().max(100).optional(),
   validFrom: z.coerce.date().optional(), // Date object from DatePicker (formatted to YYYY-MM-DD on submit)
   validTo: z.coerce.date().optional(),   // Date object from DatePicker (formatted to YYYY-MM-DD on submit)
+  pickingStrategy: z.enum(['fifo', 'lifo']).optional(),
 }).refine((data) => {
   // Validation Rule: serialType is required if isSerializable is true
   if (data.isSerializable && !data.serialType) {
@@ -139,8 +140,50 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       typeId: undefined,
       validFrom: undefined,
       validTo: undefined,
+      pickingStrategy: 'fifo',
     },
   });
+
+  const [generatingSku, setGeneratingSku] = useState(false);
+  
+  const generateSku = async () => {
+    try {
+      setGeneratingSku(true);
+      const tenantId = localStorage.getItem('currentTenantId');
+      const token = localStorage.getItem('access_token');
+      
+      const response = await fetch('/api/wms/products/generate-sku', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Tenant-ID': tenantId || '',
+        },
+        body: JSON.stringify({
+          categoryId: form.getValues('categoryId'),
+          type: form.getValues('type'),
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Errore generazione SKU');
+      
+      const data = await response.json();
+      form.setValue('sku', data.sku);
+      
+      toast({
+        title: 'SKU Generato',
+        description: `SKU: ${data.sku}`,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: 'Impossibile generare SKU automaticamente',
+      });
+    } finally {
+      setGeneratingSku(false);
+    }
+  };
 
   const watchType = form.watch('type');
   const watchIsSerializable = form.watch('isSerializable');
@@ -297,6 +340,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         typeId: product.typeId || undefined,
         validFrom: product.validFrom ? new Date(product.validFrom) : undefined,
         validTo: product.validTo ? new Date(product.validTo) : undefined,
+        pickingStrategy: product.pickingStrategy || 'fifo',
       });
       // Set image preview for edit mode
       if (product.imageUrl) {
@@ -324,6 +368,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         typeId: undefined,
         validFrom: undefined,
         validTo: undefined,
+        pickingStrategy: 'fifo',
       });
       // Clear image preview for new product
       setImagePreview(null);
@@ -637,20 +682,36 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 )}
               />
 
-              {/* SKU */}
+              {/* SKU con Autogenera */}
               <FormField
                 control={form.control}
                 name="sku"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>SKU <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="es. PROD-001" 
-                        data-testid="input-sku"
-                        {...field} 
-                      />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="es. PROD-001" 
+                          data-testid="input-sku"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon"
+                        onClick={generateSku}
+                        disabled={generatingSku || isEdit}
+                        title="Genera SKU automatico"
+                        data-testid="button-generate-sku"
+                      >
+                        <Wand2 className={cn("h-4 w-4", generatingSku && "animate-spin")} />
+                      </Button>
+                    </div>
+                    <FormDescription>
+                      Clicca sulla bacchetta per generare automaticamente
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -738,6 +799,36 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                         {...field} 
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Strategia Prelievo (FIFO/LIFO) */}
+              <FormField
+                control={form.control}
+                name="pickingStrategy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Strategia Prelievo</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || 'fifo'}
+                      data-testid="select-picking-strategy"
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona strategia" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="fifo">FIFO (First In, First Out)</SelectItem>
+                        <SelectItem value="lifo">LIFO (Last In, First Out)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      FIFO: i prodotti più vecchi escono prima. LIFO: gli ultimi arrivati escono prima.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
