@@ -1660,18 +1660,8 @@ export default function FornitoriTabContent() {
                       )}
                     </div>
                     
-                    {/* Additional flags */}
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={newSupplier.splitPayment}
-                          onChange={(e) => setNewSupplier({ ...newSupplier, splitPayment: e.target.checked })}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                          data-testid="checkbox-split-payment"
-                        />
-                        Split Payment (Scissione Pagamenti)
-                      </label>
+                    {/* Ritenuta d'Acconto flag (separate from VAT regime) */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '24px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
                         <input 
                           type="checkbox" 
@@ -1680,7 +1670,7 @@ export default function FornitoriTabContent() {
                           style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                           data-testid="checkbox-withholding-tax"
                         />
-                        Ritenuta d'Acconto
+                        Ritenuta d'Acconto (trattenuta sui compensi)
                       </label>
                     </div>
                   </div>
