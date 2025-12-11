@@ -361,6 +361,7 @@ export default function FornitoriTabContent() {
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Origine</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
                   <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
                 </tr>
@@ -400,6 +401,42 @@ export default function FornitoriTabContent() {
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     {supplier.city || '-'} ({supplier.province || '-'})
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    {supplier.origin === 'brand' ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        background: '#dbeafe',
+                        color: '#1d4ed8',
+                        border: '1px solid #93c5fd',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}
+                      title="Gestito centralmente dal Brand HQ - Solo visualizzazione"
+                      >
+                        <Building2 size={12} />
+                        Brand
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        background: '#f3f4f6',
+                        color: '#374151',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '500'
+                      }}>
+                        Tenant
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
@@ -511,7 +548,7 @@ export default function FornitoriTabContent() {
               ))}
                 {safeSuppliersList.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ 
+                    <td colSpan={7} style={{ 
                       padding: '48px 16px', 
                       textAlign: 'center', 
                       color: '#6b7280',
