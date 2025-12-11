@@ -23,6 +23,7 @@ import { StoreConfigurationDialog } from '../components/settings/StoreConfigurat
 import { StoreCalendarModal } from '../components/settings/StoreCalendarModal';
 import ChannelSettingsPage from './settings/ChannelSettingsPage';
 import SystemConfigPage from './settings/SystemConfigPage';
+import FinancialEntityModal from '../components/wms/FinancialEntityModal';
 import { z } from 'zod';
 import { 
   legalEntityValidationSchema,
@@ -9535,6 +9536,15 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Financial Entity Modal */}
+      <FinancialEntityModal
+        isOpen={financialEntityModal.isOpen}
+        mode={financialEntityModal.mode}
+        data={financialEntityModal.data}
+        onClose={() => setFinancialEntityModal({ isOpen: false, mode: 'create', data: null })}
+        onSuccess={() => refetchFinancialEntities()}
+      />
     </>
   );
 }
