@@ -6,8 +6,15 @@ import { supplierValidationSchema, type SupplierValidation } from '@/lib/validat
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  Plus, Building2, Eye, Trash2, RefreshCw, AlertCircle, X, MapPin, Phone, CreditCard, Truck, Mail, FileText
+  Plus, Building2, Eye, Trash2, RefreshCw, AlertCircle, X, MapPin, Phone, CreditCard, Truck, Mail, FileText,
+  Search, CalendarIcon, Filter
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { StandardCityField } from '../Leave/forms/StandardFields';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -15,6 +22,12 @@ const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 export default function FornitoriTabContent() {
   // Modal state
   const [supplierModal, setSupplierModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   // Form state with all SupplierValidation fields
   const [newSupplier, setNewSupplier] = useState<SupplierValidation>({
@@ -64,13 +77,25 @@ export default function FornitoriTabContent() {
   const safeSuppliersList = Array.isArray(suppliersList) ? suppliersList : [];
 
   // Load payment methods and conditions - using default queryFn
-  const { data: paymentMethodsList, isLoading: paymentMethodsLoading } = useQuery({ 
+  const { data: paymentMethodsData, isLoading: paymentMethodsLoading } = useQuery({ 
     queryKey: ['/api/reference/payment-methods']
   });
 
-  const { data: paymentConditionsList, isLoading: paymentConditionsLoading } = useQuery({ 
+  const { data: paymentConditionsData, isLoading: paymentConditionsLoading } = useQuery({ 
     queryKey: ['/api/reference/payment-conditions']
   });
+
+  // Safe array extraction (API might return { data: [...] } or [...])
+  const paymentMethodsList = Array.isArray(paymentMethodsData) 
+    ? paymentMethodsData 
+    : Array.isArray((paymentMethodsData as any)?.data) 
+      ? (paymentMethodsData as any).data 
+      : [];
+  const paymentConditionsList = Array.isArray(paymentConditionsData) 
+    ? paymentConditionsData 
+    : Array.isArray((paymentConditionsData as any)?.data) 
+      ? (paymentConditionsData as any).data 
+      : [];
 
   const { data: legalForms = [] } = useQuery({ queryKey: ['/api/reference/legal-forms'] });
   const { data: countries = [] } = useQuery({ queryKey: ['/api/reference/countries'] });
@@ -258,6 +283,51 @@ export default function FornitoriTabContent() {
     }
   }, [supplierModal]);
 
+  // Filter suppliers
+  const filteredSuppliers = safeSuppliersList.filter((supplier: any) => {
+    // Search filter (name, code, vat, tax code)
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matches = 
+        supplier.name?.toLowerCase().includes(search) ||
+        supplier.code?.toLowerCase().includes(search) ||
+        supplier.vat_number?.toLowerCase().includes(search) ||
+        supplier.tax_code?.toLowerCase().includes(search) ||
+        supplier.legal_name?.toLowerCase().includes(search) ||
+        supplier.city?.toLowerCase().includes(search);
+      if (!matches) return false;
+    }
+
+    // Source filter (brand/tenant)
+    if (sourceFilter !== 'all') {
+      if (supplier.origin !== sourceFilter) return false;
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      const createdAt = supplier.created_at ? new Date(supplier.created_at) : null;
+      if (createdAt) {
+        if (dateFrom && createdAt < dateFrom) return false;
+        if (dateTo) {
+          const endOfDay = new Date(dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (createdAt > endOfDay) return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSourceFilter('all');
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
+
+  const hasActiveFilters = searchTerm || sourceFilter !== 'all' || dateFrom || dateTo;
+
   return (
     <div className="space-y-6" data-testid="fornitori-content">
         {/* Header */}
@@ -273,7 +343,7 @@ export default function FornitoriTabContent() {
             color: '#111827',
             margin: 0
           }}>
-            Fornitori ({suppliersLoading ? '...' : safeSuppliersList.length} elementi)
+            Fornitori ({suppliersLoading ? '...' : filteredSuppliers.length} di {safeSuppliersList.length} elementi)
           </h3>
           <button style={{
             background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -297,7 +367,98 @@ export default function FornitoriTabContent() {
           </button>
         </div>
 
-        {/* DataTable (from SettingsPage lines 2628-2858) */}
+        {/* Filters Section */}
+        <Card className="p-4" style={{
+          background: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(229, 231, 235, 0.8)'
+        }}>
+          <div className="flex flex-wrap gap-3 items-end">
+            {/* Search Field */}
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Ricerca</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Nome, codice, P.IVA, C.F., città..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-supplier"
+                />
+              </div>
+            </div>
+
+            {/* Source Filter */}
+            <div className="min-w-[150px]">
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Origine</label>
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger data-testid="select-source-filter">
+                  <SelectValue placeholder="Tutti" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti</SelectItem>
+                  <SelectItem value="brand">Brand</SelectItem>
+                  <SelectItem value="tenant">Tenant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date From */}
+            <div className="min-w-[150px]">
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Data da</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-date-from">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: it }) : 'Seleziona...'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    locale={it}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Date To */}
+            <div className="min-w-[150px]">
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Data a</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-date-to">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: it }) : 'Seleziona...'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    locale={it}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-gray-500" data-testid="button-clear-filters">
+                <X className="h-4 w-4 mr-1" />
+                Pulisci
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        {/* DataTable */}
         <div style={{
           background: 'white',
           borderRadius: '16px',
@@ -367,7 +528,7 @@ export default function FornitoriTabContent() {
                 </tr>
               </thead>
               <tbody>
-                {safeSuppliersList.map((supplier: any, index: number) => (
+                {filteredSuppliers.map((supplier: any, index: number) => (
                 <tr
                   key={supplier.id}
                   data-testid={`row-supplier-${supplier.id}`}
@@ -546,7 +707,7 @@ export default function FornitoriTabContent() {
                   </td>
                 </tr>
               ))}
-                {safeSuppliersList.length === 0 && (
+                {filteredSuppliers.length === 0 && (
                   <tr>
                     <td colSpan={7} style={{ 
                       padding: '48px 16px', 
