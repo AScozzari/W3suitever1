@@ -5280,6 +5280,82 @@ router.delete("/categories/:id", rbacMiddleware, requirePermission('wms.category
   }
 });
 
+/**
+ * POST /api/wms/categories/:id/archive
+ * Archive a category (soft-delete without dependency checks)
+ */
+router.post("/categories/:id/archive", rbacMiddleware, requirePermission('wms.category.update'), async (req, res) => {
+  try {
+    const { id: categoryId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const [existingCategory] = await db
+      .select()
+      .from(wmsCategories)
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, categoryId)
+        )
+      )
+      .limit(1);
+
+    if (!existingCategory) {
+      return res.status(404).json({ 
+        error: "Category not found",
+        message: `Category with ID '${categoryId}' not found for this tenant`
+      });
+    }
+
+    if (existingCategory.source === 'brand' && existingCategory.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot archive Brand-synced category",
+        message: "This category is managed by Brand HQ and cannot be archived by tenants."
+      });
+    }
+
+    const [archivedCategory] = await db
+      .update(wmsCategories)
+      .set({ 
+        isActive: false,
+        archivedAt: new Date(),
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(wmsCategories.tenantId, sessionTenantId),
+          eq(wmsCategories.id, categoryId)
+        )
+      )
+      .returning();
+
+    logger.info('WMS category archived', {
+      tenantId: sessionTenantId,
+      categoryId,
+      nome: archivedCategory.nome,
+      archivedBy: userId
+    });
+
+    res.json({
+      success: true,
+      message: "Category successfully archived",
+      data: archivedCategory
+    });
+  } catch (error) {
+    console.error("Error archiving category:", error);
+    res.status(500).json({ 
+      error: "Failed to archive category",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== WMS SUPPLIERS ENDPOINTS ====================
 
 /**
@@ -5693,6 +5769,82 @@ router.delete("/product-types/:id", rbacMiddleware, requirePermission('wms.produ
     console.error("Error deleting product type:", error);
     res.status(500).json({ 
       error: "Failed to delete product type",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/product-types/:id/archive
+ * Archive a product type (soft-delete without dependency checks)
+ */
+router.post("/product-types/:id/archive", rbacMiddleware, requirePermission('wms.product_type.update'), async (req, res) => {
+  try {
+    const { id: typeId } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const [existingType] = await db
+      .select()
+      .from(wmsProductTypes)
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.id, typeId)
+        )
+      )
+      .limit(1);
+
+    if (!existingType) {
+      return res.status(404).json({ 
+        error: "Product type not found",
+        message: `Product type with ID '${typeId}' not found for this tenant`
+      });
+    }
+
+    if (existingType.source === 'brand' && existingType.isBrandSynced) {
+      return res.status(403).json({ 
+        error: "Cannot archive Brand-synced product type",
+        message: "This product type is managed by Brand HQ and cannot be archived by tenants."
+      });
+    }
+
+    const [archivedType] = await db
+      .update(wmsProductTypes)
+      .set({ 
+        isActive: false,
+        archivedAt: new Date(),
+        modifiedBy: userId || null,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, sessionTenantId),
+          eq(wmsProductTypes.id, typeId)
+        )
+      )
+      .returning();
+
+    logger.info('WMS product type archived', {
+      tenantId: sessionTenantId,
+      typeId,
+      nome: archivedType.nome,
+      archivedBy: userId
+    });
+
+    res.json({
+      success: true,
+      message: "Product type successfully archived",
+      data: archivedType
+    });
+  } catch (error) {
+    console.error("Error archiving product type:", error);
+    res.status(500).json({ 
+      error: "Failed to archive product type",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import ProductTypesList from './ProductTypesList';
 import CategoriesList from './CategoriesList';
 import ProductTypologiesList from './ProductTypologiesList';
+import CategoriesTypologiesDataTable from './CategoriesTypologiesDataTable';
 
 export type ProductType = 'PHYSICAL' | 'VIRTUAL' | 'SERVICE' | 'CANVAS';
 
@@ -115,6 +116,9 @@ export default function CategoriesTypologiesTabContent() {
           />
         </Card>
       </div>
+
+      {/* DataTable for advanced management */}
+      <CategoriesTypologiesDataTable />
     </div>
   );
 }
