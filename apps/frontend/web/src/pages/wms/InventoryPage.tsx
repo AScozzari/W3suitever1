@@ -2180,6 +2180,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                       <p className="font-medium text-gray-900">{selectedItem?.productName || '-'}</p>
                                     </div>
                                     <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
+                                      <p className="font-medium text-gray-900">{selectedItem?.productCategory || '-'}</p>
+                                    </div>
+                                    <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Tipologia</label>
                                       <Badge variant="outline" className="text-xs w-fit mt-1">
                                         {selectedItem?.productType === 'PHYSICAL' ? 'Fisico' : 
@@ -2188,21 +2192,17 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                          selectedItem?.productType || '-'}
                                       </Badge>
                                     </div>
-                                    {(firstSerial?.memory || firstSerial?.color) && (
-                                      <>
-                                        {firstSerial.memory && (
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Memoria</label>
-                                            <p className="font-medium text-gray-900">{firstSerial.memory}</p>
-                                          </div>
-                                        )}
-                                        {firstSerial.color && (
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Colore</label>
-                                            <p className="font-medium text-gray-900">{firstSerial.color}</p>
-                                          </div>
-                                        )}
-                                      </>
+                                    {firstSerial?.memory && (
+                                      <div className="flex flex-col">
+                                        <label className="text-xs text-gray-500 uppercase tracking-wide">Memoria</label>
+                                        <p className="font-medium text-gray-900">{firstSerial.memory}</p>
+                                      </div>
+                                    )}
+                                    {firstSerial?.color && (
+                                      <div className="flex flex-col">
+                                        <label className="text-xs text-gray-500 uppercase tracking-wide">Colore</label>
+                                        <p className="font-medium text-gray-900">{firstSerial.color}</p>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -2217,6 +2217,18 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                   </h3>
                                 </div>
                                 <div className="p-4 bg-white">
+                                  {/* Stato Stock Badge prominente */}
+                                  {selectedItem?.stockStatus && (
+                                    <div className="mb-4 pb-4 border-b border-gray-100">
+                                      <Badge 
+                                        className={`text-sm px-4 py-2 ${STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.color || 'bg-gray-100 text-gray-700'}`}
+                                      >
+                                        <span className={`w-2.5 h-2.5 rounded-full ${STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.dotColor || 'bg-gray-500'} mr-2`}></span>
+                                        {STOCK_STATUS_CONFIG[selectedItem.stockStatus]?.label || 'In Stock'}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  
                                   <div className="flex flex-wrap items-center gap-6">
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Stato Logistico</label>
@@ -2264,59 +2276,59 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                 </div>
                               </div>
 
-                              {/* TAB 3: FORNITORE & LOTTO - Viola (solo se ci sono dati) */}
-                              {(hasSupplierInfo || hasBatchInfo) && (
-                                <div className="rounded-lg border-2 border-purple-200 overflow-hidden">
-                                  <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
-                                    <h3 className="font-semibold text-purple-700 flex items-center gap-2">
-                                      <Truck className="h-4 w-4" />
-                                      Info Fornitore & Lotto
-                                    </h3>
-                                  </div>
-                                  <div className="p-4 bg-white">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                      {hasSupplierInfo && (
-                                        <>
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Fornitore</label>
-                                            <p className="font-medium text-gray-900">{firstSerial.supplierName || '-'}</p>
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">SKU Fornitore</label>
-                                            <p className="font-mono text-sm text-gray-900">{firstSerial.supplierSku || '-'}</p>
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Costo Acquisto</label>
-                                            <p className="font-semibold text-gray-900">
-                                              {firstSerial.purchaseCost ? `€ ${parseFloat(firstSerial.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : '-'}
-                                            </p>
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Data Acquisto</label>
-                                            <p className="text-sm text-gray-900">
-                                              {firstSerial.purchaseDate ? format(new Date(firstSerial.purchaseDate), 'dd/MM/yyyy', { locale: it }) : '-'}
-                                            </p>
-                                          </div>
-                                        </>
-                                      )}
-                                      {hasBatchInfo && (
-                                        <>
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Numero Lotto</label>
-                                            <p className="font-mono font-medium text-gray-900">{firstSerial.batchNumber || '-'}</p>
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <label className="text-xs text-gray-500 uppercase tracking-wide">Scadenza Lotto</label>
-                                            <p className="text-sm text-gray-900">
-                                              {firstSerial.batchExpiryDate ? format(new Date(firstSerial.batchExpiryDate), 'dd/MM/yyyy', { locale: it }) : '-'}
-                                            </p>
-                                          </div>
-                                        </>
-                                      )}
+                              {/* TAB 3: FORNITORE & LOTTO - Viola (sempre visibile per mostrare placeholder) */}
+                              <div className="rounded-lg border-2 border-purple-200 overflow-hidden">
+                                <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
+                                  <h3 className="font-semibold text-purple-700 flex items-center gap-2">
+                                    <Truck className="h-4 w-4" />
+                                    Info Fornitore & Lotto
+                                  </h3>
+                                </div>
+                                <div className="p-4 bg-white">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {/* Fornitore */}
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Fornitore</label>
+                                      <p className="font-medium text-gray-900">{firstSerial?.supplierName || <span className="text-gray-400 italic">-</span>}</p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">SKU Fornitore</label>
+                                      <p className="font-mono text-sm text-gray-900">{firstSerial?.supplierSku || <span className="text-gray-400 italic">-</span>}</p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Costo Acquisto</label>
+                                      <p className="font-semibold text-gray-900">
+                                        {firstSerial?.purchaseCost ? `€ ${parseFloat(firstSerial.purchaseCost).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : <span className="text-gray-400 italic">-</span>}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Aliquota IVA</label>
+                                      <p className="text-sm text-gray-400 italic">Da implementare</p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Data Acquisto</label>
+                                      <p className="text-sm text-gray-900">
+                                        {firstSerial?.purchaseDate ? format(new Date(firstSerial.purchaseDate), 'dd/MM/yyyy', { locale: it }) : <span className="text-gray-400 italic">-</span>}
+                                      </p>
+                                    </div>
+                                    {/* Lotto */}
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Numero Lotto</label>
+                                      <p className="font-mono font-medium text-gray-900">{firstSerial?.batchNumber || <span className="text-gray-400 italic">-</span>}</p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Scadenza Lotto</label>
+                                      <p className="text-sm text-gray-900">
+                                        {firstSerial?.batchExpiryDate ? format(new Date(firstSerial.batchExpiryDate), 'dd/MM/yyyy', { locale: it }) : <span className="text-gray-400 italic">-</span>}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">DDT Carico</label>
+                                      <p className="text-sm text-gray-400 italic">Da implementare</p>
                                     </div>
                                   </div>
                                 </div>
-                              )}
+                              </div>
 
                               {/* TAB 4: TIMELINE EVENTI - Verde */}
                             </>
