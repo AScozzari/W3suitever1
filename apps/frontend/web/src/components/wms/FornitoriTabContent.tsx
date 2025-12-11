@@ -942,25 +942,25 @@ export default function FornitoriTabContent() {
                           setNewSupplier({ ...newSupplier, code: newCode });
                         }}
                         style={{
-                          padding: '12px 16px',
+                          padding: '8px 10px',
                           background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                           color: 'white',
                           border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: '600',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: '500',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '4px',
                           whiteSpace: 'nowrap',
-                          boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+                          boxShadow: '0 1px 4px rgba(99, 102, 241, 0.25)',
                           transition: 'all 0.2s ease'
                         }}
                         title="Genera automaticamente un codice fornitore univoco"
                         data-testid="button-auto-generate-code"
                       >
-                        <Wand2 size={14} />
+                        <Wand2 size={12} />
                         Auto
                       </button>
                     </div>
