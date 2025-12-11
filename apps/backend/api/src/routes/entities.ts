@@ -13,7 +13,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middlewa
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers } from '../db/schema/w3suite';
-import { channels, commercialAreas, vatRates, vatRegimes } from '../db/schema/public';
+import { channels, commercialAreas, vatRates, vatRegimes, legalForms } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 
@@ -1774,6 +1774,154 @@ router.get('/vat-regimes/:code', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve VAT regime',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== LEGAL FORMS ====================
+
+/**
+ * GET /api/legal-forms
+ * Lista tutte le forme giuridiche italiane
+ * Query params:
+ *   - category: filtra per categoria (IMPRESA, ENTE_PUBBLICO, NON_PROFIT, PROFESSIONALE, PERSONA_FISICA)
+ *   - active: filtra per stato attivo (true/false)
+ */
+router.get('/legal-forms', async (req: Request, res: Response) => {
+  try {
+    const { category, active } = req.query;
+    
+    const conditions: any[] = [];
+    
+    if (category && typeof category === 'string') {
+      conditions.push(eq(legalForms.category, category.toUpperCase()));
+    }
+    
+    if (active !== undefined) {
+      conditions.push(eq(legalForms.active, active === 'true'));
+    }
+    
+    const forms = await db
+      .select()
+      .from(legalForms)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(legalForms.sortOrder);
+    
+    res.status(200).json({
+      success: true,
+      data: forms,
+      count: forms.length,
+      message: 'Legal forms retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving legal forms', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve legal forms',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/legal-forms/categories/list
+ * Lista tutte le categorie disponibili con conteggio
+ * NOTA: Questa route DEVE venire PRIMA di /legal-forms/:code
+ */
+router.get('/legal-forms/categories/list', async (req: Request, res: Response) => {
+  try {
+    const categories = await db
+      .select({
+        category: legalForms.category,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(legalForms)
+      .where(eq(legalForms.active, true))
+      .groupBy(legalForms.category)
+      .orderBy(legalForms.category);
+    
+    // Mapping per nomi italiani
+    const categoryNames: Record<string, string> = {
+      'IMPRESA': 'Imprese',
+      'ENTE_PUBBLICO': 'Pubblica Amministrazione',
+      'NON_PROFIT': 'Enti Non Profit',
+      'PROFESSIONALE': 'Professionisti',
+      'PERSONA_FISICA': 'Persone Fisiche'
+    };
+    
+    const enrichedCategories = categories.map(c => ({
+      ...c,
+      name: categoryNames[c.category || 'IMPRESA'] || c.category
+    }));
+    
+    res.status(200).json({
+      success: true,
+      data: enrichedCategories,
+      message: 'Legal form categories retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving legal form categories', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve legal form categories',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/legal-forms/:code
+ * Recupera singola forma giuridica per codice
+ */
+router.get('/legal-forms/:code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+    
+    const [form] = await db
+      .select()
+      .from(legalForms)
+      .where(eq(legalForms.code, code.toUpperCase()))
+      .limit(1);
+    
+    if (!form) {
+      return res.status(404).json({
+        success: false,
+        error: 'Legal form not found',
+        message: `No legal form found with code '${code}'`,
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: form,
+      message: 'Legal form retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving legal form', { 
+      code: req.params.code,
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve legal form',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
