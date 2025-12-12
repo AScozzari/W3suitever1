@@ -1184,10 +1184,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                   </div>
                 </TableHead>
                 <TableHead 
-                  className="cursor-pointer select-none font-semibold text-gray-700"
+                  className="cursor-pointer select-none font-semibold text-gray-700 text-center"
                   onClick={() => handleSort('sku')}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     SKU
                     <SortIcon column="sku" />
                   </div>
@@ -1208,7 +1208,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-center">Stato Stock</TableHead>
                     <TableHead className="font-semibold text-gray-700">Distribuzione Stati</TableHead>
-                    <TableHead className="font-semibold text-gray-700">EAN</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center">EAN</TableHead>
                   </>
                 ) : (
                   <>
@@ -1304,7 +1304,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         </div>
                       </TableCell>
                       {/* SKU */}
-                      <TableCell className="text-gray-600 font-mono text-sm">{item.productSku}</TableCell>
+                      <TableCell className="text-gray-600 font-mono text-sm text-center">{item.productSku}</TableCell>
                       {/* Copertura Magazzini */}
                       <TableCell className="text-center">
                         <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200">
@@ -1353,7 +1353,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         )}
                       </TableCell>
                       {/* EAN Prodotto */}
-                      <TableCell>
+                      <TableCell className="text-center">
                         {item.productEan ? (
                           <span className="text-xs font-mono text-gray-700">{item.productEan}</span>
                         ) : (
