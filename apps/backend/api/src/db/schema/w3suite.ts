@@ -29,7 +29,8 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import public schema tables for FK references
-import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods, paymentMethodsConditions, utmSources, utmMediums } from './public';
+// NOTE: 'drivers' is now defined locally in w3suite schema (not imported from public)
+import { brands, channels, commercialAreas, countries, italianCities, paymentMethods, paymentMethodsConditions, utmSources, utmMediums } from './public';
 
 // Import brand_interface schema tables for FK references
 import { brandWorkflows } from './brand-interface';

@@ -1,0 +1,146 @@
+Fri Dec 12 2025 07:18:57 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/drivers 500 (Internal Server Error)
+queryFn @ queryClient.ts:194
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+useSIPRegistration.ts:205 WebSocket connection to 'wss://demo.edgvoip.it/ws' failed: 
+_connect @ sip__js.js?v=fac8f799:12290
+connect @ sip__js.js?v=fac8f799:12215
+start @ sip__js.js?v=fac8f799:12967
+setupSIP @ useSIPRegistration.ts:205
+(anonime) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+installHook.js:1 Fri Dec 12 2025 07:18:57 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket error occurred.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+onWebSocketError @ sip__js.js?v=fac8f799:12427
+(anonime) @ sip__js.js?v=fac8f799:12293Comprendi l'errore
+installHook.js:1 Fri Dec 12 2025 07:18:57 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onWebSocketClose @ sip__js.js?v=fac8f799:12413
+(anonime) @ sip__js.js?v=fac8f799:12292Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Fri Dec 12 2025 07:18:57 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+sip__js.js?v=fac8f799:6965 Fri Dec 12 2025 07:18:57 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Disconnected
+installHook.js:1 ❌ SIP setup failed: Error: WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+    at _Transport.onWebSocketClose (sip__js.js?v=fac8f799:12411:45)
+    at WebSocket.<anonymous> (sip__js.js?v=fac8f799:12292:49)
+overrideMethod @ installHook.js:1
+setupSIP @ useSIPRegistration.ts:234
+await in setupSIP
+(anonime) @ useSIPRegistration.ts:241
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+queryClient.ts:194  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/drivers 500 (Internal Server Error)
+queryFn @ queryClient.ts:194
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+(anonime) @ @tanstack_react-query.js?v=fac8f799:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=fac8f799:816
+Promise.catch
+run @ @tanstack_react-query.js?v=fac8f799:799
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
