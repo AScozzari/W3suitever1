@@ -8966,7 +8966,6 @@ router.get("/drivers", rbacMiddleware, requirePermission('wms.products.read'), a
         code: drivers.code,
         description: drivers.description,
         icon: drivers.icon,
-        color: drivers.color,
         allowedProductTypes: drivers.allowedProductTypes,
         source: drivers.source,
         sortOrder: drivers.sortOrder,
