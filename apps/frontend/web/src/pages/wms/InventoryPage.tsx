@@ -225,6 +225,16 @@ interface ProductSerials {
   productId: string;
   productName: string;
   productSku: string;
+  productBrand?: string;
+  productModel?: string;
+  productEan?: string;
+  // Category info
+  productCategoryId?: string;
+  productCategoryName?: string;
+  // VAT Regime info
+  productVatRegimeId?: string;
+  productVatRegimeCode?: string;
+  productVatRegimeName?: string;
   serials: SerialDetail[];
 }
 
@@ -2200,7 +2210,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                     </div>
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Categoria</label>
-                                      <p className="font-medium text-gray-900">{selectedItem?.productCategory || '-'}</p>
+                                      <p className="font-medium text-gray-900">{productSerials?.productCategoryName || selectedItem?.productCategory || '-'}</p>
                                     </div>
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Tipologia</label>
@@ -2317,8 +2327,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                       </p>
                                     </div>
                                     <div className="flex flex-col">
-                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Aliquota IVA</label>
-                                      <p className="text-sm text-gray-400 italic">-</p>
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Regime IVA</label>
+                                      <p className="text-sm text-gray-900">
+                                        {productSerials?.productVatRegimeName || productSerials?.productVatRegimeCode || <span className="text-gray-400 italic">-</span>}
+                                      </p>
                                     </div>
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Data Acquisto</label>

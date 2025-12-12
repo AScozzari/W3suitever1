@@ -45,6 +45,7 @@ import {
   financialEntities,
   insertFinancialEntitySchema
 } from "../db/schema/w3suite";
+import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { logger } from "../core/logger";
 import { z } from "zod";
@@ -1495,7 +1496,7 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       return res.status(400).json({ error: "Product ID is required" });
     }
 
-    // Get product info with brand, model, color, memory
+    // Get product info with brand, model, color, memory, category and VAT regime
     const [product] = await db
       .select({
         id: products.id,
@@ -1506,8 +1507,18 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
         ean: products.ean,
         color: products.color,
         memory: products.memory,
+        categoryId: products.categoryId,
+        categoryName: wmsCategories.nome,
+        vatRegimeId: products.vatRegimeId,
+        vatRegimeCode: vatRegimes.code,
+        vatRegimeName: vatRegimes.name,
       })
       .from(products)
+      .leftJoin(wmsCategories, and(
+        eq(wmsCategories.id, products.categoryId),
+        eq(wmsCategories.tenantId, sessionTenantId)
+      ))
+      .leftJoin(vatRegimes, eq(vatRegimes.id, products.vatRegimeId))
       .where(and(
         eq(products.id, productId),
         eq(products.tenantId, sessionTenantId)
@@ -1650,6 +1661,13 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       productBrand: product.brand,
       productModel: product.model,
       productEan: product.ean,
+      // Category info
+      productCategoryId: product.categoryId,
+      productCategoryName: product.categoryName,
+      // VAT Regime info
+      productVatRegimeId: product.vatRegimeId,
+      productVatRegimeCode: product.vatRegimeCode,
+      productVatRegimeName: product.vatRegimeName,
       serials: serialsList,
     });
 
