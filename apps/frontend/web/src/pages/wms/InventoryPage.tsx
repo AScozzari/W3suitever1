@@ -235,6 +235,13 @@ interface ProductSerials {
   productVatRegimeId?: string;
   productVatRegimeCode?: string;
   productVatRegimeName?: string;
+  productVatPayer?: string; // 'supplier' | 'customer' | 'pa' | 'none'
+  productRateStrategy?: string; // 'product_rate' | 'fixed_rate' | 'margin' | 'excluded'
+  // VAT Rate info (from regime's fixed rate)
+  productVatRateId?: string;
+  productVatRateCode?: string;
+  productVatRateName?: string;
+  productVatRatePercent?: string; // e.g. "22.00"
   serials: SerialDetail[];
 }
 
@@ -2330,6 +2337,21 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Regime IVA</label>
                                       <p className="text-sm text-gray-900">
                                         {productSerials?.productVatRegimeName || productSerials?.productVatRegimeCode || <span className="text-gray-400 italic">-</span>}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Aliquota IVA</label>
+                                      <p className="text-sm text-gray-900">
+                                        {productSerials?.productVatRatePercent ? (
+                                          <>
+                                            {parseFloat(productSerials.productVatRatePercent).toFixed(0)}%
+                                            {productSerials?.productVatPayer === 'customer' && (
+                                              <span className="text-xs text-orange-600 ml-1">(non addebitata - RC)</span>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <span className="text-gray-400 italic">-</span>
+                                        )}
                                       </p>
                                     </div>
                                     <div className="flex flex-col">

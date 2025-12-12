@@ -1496,7 +1496,7 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       return res.status(400).json({ error: "Product ID is required" });
     }
 
-    // Get product info with brand, model, color, memory, category and VAT regime
+    // Get product info with brand, model, color, memory, category, VAT regime and rate
     // Use raw SQL to avoid Drizzle issues with nullable left join fields
     const productQuery = await db.execute(sql`
       SELECT 
@@ -1505,10 +1505,17 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
         c.nome as "categoryName",
         p.vat_regime_id as "vatRegimeId",
         vr.code as "vatRegimeCode",
-        vr.name as "vatRegimeName"
+        vr.name as "vatRegimeName",
+        vr.vat_payer as "vatPayer",
+        vr.rate_strategy as "rateStrategy",
+        vrt.id as "vatRateId",
+        vrt.code as "vatRateCode",
+        vrt.name as "vatRateName",
+        vrt.rate_percent as "vatRatePercent"
       FROM w3suite.products p
       LEFT JOIN w3suite.wms_categories c ON c.id = p.category_id AND c.tenant_id = ${sessionTenantId}
       LEFT JOIN public.vat_regimes vr ON vr.id = p.vat_regime_id
+      LEFT JOIN public.vat_rates vrt ON vrt.id = vr.fixed_rate_id
       WHERE p.id = ${productId} AND p.tenant_id = ${sessionTenantId}
       LIMIT 1
     `);
@@ -1527,6 +1534,12 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       vatRegimeId: string | null;
       vatRegimeCode: string | null;
       vatRegimeName: string | null;
+      vatPayer: string | null;
+      rateStrategy: string | null;
+      vatRateId: string | null;
+      vatRateCode: string | null;
+      vatRateName: string | null;
+      vatRatePercent: string | null;
     } | undefined;
 
     if (!product) {
@@ -1672,6 +1685,13 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
       productVatRegimeId: product.vatRegimeId,
       productVatRegimeCode: product.vatRegimeCode,
       productVatRegimeName: product.vatRegimeName,
+      productVatPayer: product.vatPayer,
+      productRateStrategy: product.rateStrategy,
+      // VAT Rate info (from regime's fixed rate)
+      productVatRateId: product.vatRateId,
+      productVatRateCode: product.vatRateCode,
+      productVatRateName: product.vatRateName,
+      productVatRatePercent: product.vatRatePercent,
       serials: serialsList,
     });
 
