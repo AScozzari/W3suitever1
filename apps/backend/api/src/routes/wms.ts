@@ -7476,6 +7476,7 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         logisticStatus: productItems.logisticStatus,
         condition: productItems.condition,
         lastPurchaseCost: productItems.lastPurchaseCost,
+        supplierSku: productItems.supplierSku,
         createdAt: productItems.createdAt,
         updatedAt: productItems.updatedAt,
         // Product info
@@ -7628,6 +7629,7 @@ router.get("/inventory-view", rbacMiddleware, requirePermission('wms.stock.read'
         productModel: r.productModel || null,
         productDescription: r.productDescription || null,
         productEan: r.productEan || null,
+        supplierSku: r.supplierSku || null,
         serialType: r.productSerialType || null,
         serialCount: itemSerials.length,
         serials: itemSerials,

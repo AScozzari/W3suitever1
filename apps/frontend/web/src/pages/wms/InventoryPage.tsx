@@ -104,6 +104,7 @@ interface InventoryItem {
   productModel: string | null;
   productDescription: string | null;
   productEan: string | null;
+  supplierSku: string | null;
   serialType: 'imei' | 'iccid' | 'mac_address' | 'other' | null;
   serialCount: number;
   serials: Array<{ type: string; value: string }>;
@@ -1215,6 +1216,8 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                     <TableHead className="font-semibold text-gray-700 text-center">Stato Logistico</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-center">Disponibilità</TableHead>
                     <TableHead className="font-semibold text-gray-700">Seriale</TableHead>
+                    <TableHead className="font-semibold text-gray-700">SKU Fornitore</TableHead>
+                    <TableHead className="font-semibold text-gray-700">EAN</TableHead>
                     <TableHead className="font-semibold text-gray-700">Lotto</TableHead>
                   </>
                 )}
@@ -1271,7 +1274,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                 ))
               ) : inventoryData?.items?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={viewMode === 'aggregated' ? 11 : 13} className="text-center py-12 text-gray-500">
+                  <TableCell colSpan={viewMode === 'aggregated' ? 11 : 15} className="text-center py-12 text-gray-500">
                     <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                     <p className="font-medium">Nessun prodotto trovato</p>
                     <p className="text-sm">Prova a modificare i filtri o aggiungi prodotti al magazzino</p>
@@ -1488,6 +1491,22 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                           </div>
                         ) : item.serialCount > 0 ? (
                           <Badge variant="outline" className="text-xs">{item.serialCount} seriali</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      {/* SKU Fornitore */}
+                      <TableCell>
+                        {item.supplierSku ? (
+                          <span className="text-xs font-mono text-gray-700">{item.supplierSku}</span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      {/* EAN Prodotto */}
+                      <TableCell>
+                        {item.productEan ? (
+                          <span className="text-xs font-mono text-gray-700">{item.productEan}</span>
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
                         )}
