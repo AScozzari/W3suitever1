@@ -2089,7 +2089,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                                           <div className="grid grid-cols-2 gap-3">
                                                             <div>
                                                               <label className="text-xs text-gray-500 uppercase">Numero DDT</label>
-                                                              <p className="text-gray-400 italic">Da implementare</p>
+                                                              <p className="text-gray-400 italic">-</p>
                                                             </div>
                                                             <div>
                                                               <label className="text-xs text-gray-500 uppercase">Data DDT</label>
@@ -2318,7 +2318,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                     </div>
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Aliquota IVA</label>
-                                      <p className="text-sm text-gray-400 italic">Da implementare</p>
+                                      <p className="text-sm text-gray-400 italic">-</p>
                                     </div>
                                     <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">Data Acquisto</label>
@@ -2332,14 +2332,8 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                       <p className="font-mono font-medium text-gray-900">{firstSerial?.batchNumber || <span className="text-gray-400 italic">-</span>}</p>
                                     </div>
                                     <div className="flex flex-col">
-                                      <label className="text-xs text-gray-500 uppercase tracking-wide">Scadenza Lotto</label>
-                                      <p className="text-sm text-gray-900">
-                                        {firstSerial?.batchExpiryDate ? format(new Date(firstSerial.batchExpiryDate), 'dd/MM/yyyy', { locale: it }) : <span className="text-gray-400 italic">-</span>}
-                                      </p>
-                                    </div>
-                                    <div className="flex flex-col">
                                       <label className="text-xs text-gray-500 uppercase tracking-wide">DDT Carico</label>
-                                      <p className="text-sm text-gray-400 italic">Da implementare</p>
+                                      <p className="text-sm text-gray-400 italic">-</p>
                                     </div>
                                   </div>
                                 </div>
@@ -2367,17 +2361,24 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {/* Aggregazione eventi raggruppati per entità fisica */}
+                                      {/* Aggregazione eventi raggruppati per entità fisica (itemId) */}
                                       {(() => {
-                                        // Raggruppa eventi "Carico in Magazzino" per minuto (tolleranza per millisecondi)
-                                        const loadEventsByMinute = new Map<string, { date: Date; count: number; storeName: string }>();
+                                        // Raggruppa eventi "Carico in Magazzino" per itemId (1 evento per unità fisica, anche se dual-IMEI)
+                                        const loadEventsByItemId = new Map<string, { date: Date; count: number; storeName: string }>();
                                         filteredSerials.forEach((serial) => {
+                                          const itemId = serial.itemId;
+                                          if (!itemId) return; // Skip se non ha itemId
+                                          
                                           const date = new Date(serial.createdAt);
-                                          const minuteKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
-                                          if (!loadEventsByMinute.has(minuteKey)) {
-                                            loadEventsByMinute.set(minuteKey, { date, count: 1, storeName: serial.storeName || '-' });
+                                          if (!loadEventsByItemId.has(itemId)) {
+                                            loadEventsByItemId.set(itemId, { date, count: 1, storeName: serial.storeName || '-' });
                                           } else {
-                                            loadEventsByMinute.get(minuteKey)!.count++;
+                                            // Per dual-IMEI, usa la data più vecchia come data di carico
+                                            const existing = loadEventsByItemId.get(itemId)!;
+                                            if (date < existing.date) {
+                                              existing.date = date;
+                                            }
+                                            existing.count++;
                                           }
                                         });
                                         
@@ -2436,10 +2437,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                           notes: string | null;
                                         }> = [];
                                         
-                                        // Aggiungi eventi carico (uno per minuto = entità fisica singola)
-                                        loadEventsByMinute.forEach((event, key) => {
+                                        // Aggiungi eventi carico (uno per itemId = entità fisica singola, anche dual-IMEI)
+                                        loadEventsByItemId.forEach((event, itemId) => {
                                           allEvents.push({
-                                            id: `load-${key}`,
+                                            id: `load-${itemId}`,
                                             date: event.date,
                                             eventType: 'Carico in Magazzino',
                                             storeName: event.storeName,
@@ -2497,7 +2498,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                                                   <span className="font-mono">{event.document.number}</span>
                                                 </div>
                                               ) : (
-                                                <span className="text-gray-400 italic">Da implementare</span>
+                                                <span className="text-gray-400 italic">-</span>
                                               )}
                                             </TableCell>
                                             <TableCell className="text-gray-600 text-sm max-w-[150px] truncate">

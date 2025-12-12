@@ -7704,7 +7704,8 @@ router.get("/inventory-view/export", async (req: Request, res: Response) => {
         productName: products.nome,
         productSku: products.sku,
         productType: products.productType,
-        productCategory: products.category,
+        productCategoryId: products.categoryId,
+        productCategory: wmsCategories.nome,
         productBrand: products.brand,
         productModel: products.model,
         // Store info
@@ -7723,6 +7724,10 @@ router.get("/inventory-view/export", async (req: Request, res: Response) => {
         eq(productItems.storeId, stores.id),
         eq(stores.tenantId, sessionTenantId),
         eq(stores.hasWarehouse, true)
+      ))
+      .leftJoin(wmsCategories, and(
+        eq(wmsCategories.id, products.categoryId),
+        eq(wmsCategories.tenantId, sessionTenantId)
       ))
       .leftJoin(productSerials, and(
         eq(productSerials.productItemId, productItems.id),
@@ -7756,7 +7761,7 @@ router.get("/inventory-view/export", async (req: Request, res: Response) => {
     }
 
     if (categoryId) {
-      serializedResults = serializedResults.filter(r => r.productCategory === categoryId);
+      serializedResults = serializedResults.filter(r => r.productCategoryId === categoryId);
     }
 
     // Map status to Italian
