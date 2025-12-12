@@ -1213,13 +1213,13 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                 ) : (
                   <>
                     {/* Vista Serializzata: Magazzino singolo + Stato Logistico */}
-                    <TableHead className="font-semibold text-gray-700">Magazzino</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Stato Logistico</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Disponibilità</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Seriale</TableHead>
-                    <TableHead className="font-semibold text-gray-700">SKU Fornitore</TableHead>
-                    <TableHead className="font-semibold text-gray-700">EAN</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Lotto</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[120px]">Magazzino</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[100px]">Stato Logistico</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[90px]">Disponibilità</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[140px]">Seriale</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[100px]">SKU Fornitore</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[120px]">EAN</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-center min-w-[80px]">Lotto</TableHead>
                   </>
                 )}
                 <TableHead 
@@ -1434,10 +1434,10 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         </div>
                       </TableCell>
                       {/* SKU */}
-                      <TableCell className="text-gray-600 font-mono text-sm">{item.productSku}</TableCell>
+                      <TableCell className="text-gray-600 font-mono text-sm text-center">{item.productSku}</TableCell>
                       {/* Magazzino */}
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Warehouse className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-900">{item.storeName}</span>
                           <span className="text-xs text-gray-400">({item.storeCode})</span>
@@ -1480,9 +1480,9 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         </Badge>
                       </TableCell>
                       {/* Seriale */}
-                      <TableCell>
+                      <TableCell className="text-center">
                         {item.serials && item.serials.length > 0 ? (
-                          <div className="flex flex-col gap-0.5">
+                          <div className="flex flex-col gap-0.5 items-center">
                             {item.serials.slice(0, 2).map((serial, idx) => (
                               <div key={idx} className="flex items-center gap-1.5">
                                 <span className="text-[10px] text-gray-400 uppercase w-8">
@@ -1505,7 +1505,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         )}
                       </TableCell>
                       {/* SKU Fornitore */}
-                      <TableCell>
+                      <TableCell className="text-center">
                         {item.supplierSku ? (
                           <span className="text-xs font-mono text-gray-700">{item.supplierSku}</span>
                         ) : (
@@ -1513,7 +1513,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         )}
                       </TableCell>
                       {/* EAN Prodotto */}
-                      <TableCell>
+                      <TableCell className="text-center">
                         {item.productEan ? (
                           <span className="text-xs font-mono text-gray-700">{item.productEan}</span>
                         ) : (
@@ -1521,7 +1521,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                         )}
                       </TableCell>
                       {/* Lotto */}
-                      <TableCell>
+                      <TableCell className="text-center">
                         {item.batchCount > 0 ? (
                           <TooltipProvider>
                             <Tooltip>
