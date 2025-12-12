@@ -113,7 +113,8 @@ import {
   storeCalendarSettings,
   italianHolidays
 } from "../db/schema/w3suite";
-import { utmSources, utmMediums, drivers } from "../db/schema/public";
+import { utmSources, utmMediums } from "../db/schema/public";
+import { drivers } from "../db/schema";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam, parseUUIDParam } from "./error-utils";

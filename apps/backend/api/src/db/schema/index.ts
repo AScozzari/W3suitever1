@@ -92,32 +92,27 @@ export type { InsertLegalEntity, LegalEntity } from './w3suite';
 import { 
   brands as publicBrands, 
   channels as publicChannels, 
-  commercialAreas as publicCommercialAreas, 
-  drivers as publicDrivers
+  commercialAreas as publicCommercialAreas
 } from './public';
 
 export const brands = publicBrands;
 export const channels = publicChannels;
 export const commercialAreas = publicCommercialAreas;
-export const drivers = publicDrivers;
 
 // Export types for backward compatibility
 export type { InsertBrand, Brand } from './public';
 export type { InsertChannel, Channel } from './public';
 export type { InsertCommercialArea, CommercialArea } from './public';
-export type { InsertDriver, Driver } from './public';
 
-// ==================== PRODUCT HIERARCHY - BRAND OFFICIAL (PUBLIC) ====================
+// ==================== DRIVERS - FROM W3SUITE SCHEMA ====================
 import { 
-  driverCategories as publicDriverCategories, 
-  driverTypologies as publicDriverTypologies 
-} from './public';
+  drivers as w3suiteDrivers,
+  insertDriverSchema as w3suiteInsertDriverSchema
+} from './w3suite';
 
-export const driverCategories = publicDriverCategories;
-export const driverTypologies = publicDriverTypologies;
-
-export type { InsertDriverCategory, DriverCategory } from './public';
-export type { InsertDriverTypology, DriverTypology } from './public';
+export const drivers = w3suiteDrivers;
+export const insertDriverSchema = w3suiteInsertDriverSchema;
+export type { InsertDriver, Driver } from './w3suite';
 
 // ==================== PRODUCT HIERARCHY - TENANT EXTENSIONS (W3SUITE) ====================
 // NOTE: Drivers use single-table pattern with 'source' column (brand/tenant)
