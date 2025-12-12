@@ -1497,33 +1497,37 @@ router.get("/product-serials/:productId", rbacMiddleware, requirePermission('wms
     }
 
     // Get product info with brand, model, color, memory, category and VAT regime
-    const [product] = await db
-      .select({
-        id: products.id,
-        name: products.name,
-        sku: products.sku,
-        brand: products.brand,
-        model: products.model,
-        ean: products.ean,
-        color: products.color,
-        memory: products.memory,
-        categoryId: products.categoryId,
-        categoryName: wmsCategories.nome,
-        vatRegimeId: products.vatRegimeId,
-        vatRegimeCode: vatRegimes.code,
-        vatRegimeName: vatRegimes.name,
-      })
-      .from(products)
-      .leftJoin(wmsCategories, and(
-        eq(wmsCategories.id, products.categoryId),
-        eq(wmsCategories.tenantId, sessionTenantId)
-      ))
-      .leftJoin(vatRegimes, eq(vatRegimes.id, products.vatRegimeId))
-      .where(and(
-        eq(products.id, productId),
-        eq(products.tenantId, sessionTenantId)
-      ))
-      .limit(1);
+    // Use raw SQL to avoid Drizzle issues with nullable left join fields
+    const productQuery = await db.execute(sql`
+      SELECT 
+        p.id, p.name, p.sku, p.brand, p.model, p.ean, p.color, p.memory,
+        p.category_id as "categoryId",
+        c.nome as "categoryName",
+        p.vat_regime_id as "vatRegimeId",
+        vr.code as "vatRegimeCode",
+        vr.name as "vatRegimeName"
+      FROM w3suite.products p
+      LEFT JOIN w3suite.wms_categories c ON c.id = p.category_id AND c.tenant_id = ${sessionTenantId}
+      LEFT JOIN public.vat_regimes vr ON vr.id = p.vat_regime_id
+      WHERE p.id = ${productId} AND p.tenant_id = ${sessionTenantId}
+      LIMIT 1
+    `);
+    
+    const product = productQuery.rows[0] as {
+      id: string;
+      name: string;
+      sku: string;
+      brand: string | null;
+      model: string | null;
+      ean: string | null;
+      color: string | null;
+      memory: string | null;
+      categoryId: string | null;
+      categoryName: string | null;
+      vatRegimeId: string | null;
+      vatRegimeCode: string | null;
+      vatRegimeName: string | null;
+    } | undefined;
 
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
