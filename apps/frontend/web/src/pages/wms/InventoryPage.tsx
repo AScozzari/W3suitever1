@@ -1208,6 +1208,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 text-center">Stato Stock</TableHead>
                     <TableHead className="font-semibold text-gray-700">Distribuzione Stati</TableHead>
+                    <TableHead className="font-semibold text-gray-700">EAN</TableHead>
                   </>
                 ) : (
                   <>
@@ -1274,7 +1275,7 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                 ))
               ) : inventoryData?.items?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={viewMode === 'aggregated' ? 11 : 15} className="text-center py-12 text-gray-500">
+                  <TableCell colSpan={viewMode === 'aggregated' ? 12 : 15} className="text-center py-12 text-gray-500">
                     <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                     <p className="font-medium">Nessun prodotto trovato</p>
                     <p className="text-sm">Prova a modificare i filtri o aggiungi prodotti al magazzino</p>
@@ -1347,6 +1348,14 @@ export function InventoryContent({ showHeader = true }: InventoryContentProps) {
                               </Badge>
                             )}
                           </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      {/* EAN Prodotto */}
+                      <TableCell>
+                        {item.productEan ? (
+                          <span className="text-xs font-mono text-gray-700">{item.productEan}</span>
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
                         )}
