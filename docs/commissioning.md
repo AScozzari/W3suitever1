@@ -7,6 +7,15 @@ Il **Commissioning** è un sistema di incentivazione economica legato alle vendi
 
 ## Architettura Gare
 
+### Distinzione Fondamentale
+
+| Tipo Gara | Creatore | Target | Driver Utilizzabili |
+|-----------|----------|--------|---------------------|
+| **Gare Brand** | WindTre (Brand) | Negozio / Ragione Sociale / Gruppo | Solo **Driver Brand** |
+| **Gare Risorse** | Imprenditore (Dealer) | Singola Risorsa | **Driver Brand + Driver Custom** |
+
+> **Nota UI/UX**: Le due tipologie sono distinte a livello interfaccia ma utilizzano gli **stessi configuratori**.
+
 ### 1. Gare Brand (WindTre → Dealer)
 Gare create dal brand verso i dealer con target:
 - **Negozio singolo** (store)
@@ -16,6 +25,7 @@ Gare create dal brand verso i dealer con target:
 ### 2. Gare Imprenditore (Dealer → Risorse)
 Gare create dall'imprenditore verso le proprie risorse/venditori:
 - **Target**: Singola risorsa
+- Possono usare driver brand E driver custom
 
 ---
 
@@ -24,11 +34,26 @@ Gare create dall'imprenditore verso le proprie risorse/venditori:
 | Campo | Descrizione |
 |-------|-------------|
 | Nome | Identificativo gara |
+| Tipo | Brand / Risorse |
 | Data Inizio | Inizio validità |
 | Data Fine | Fine validità |
 | Target | Negozio / Ragione Sociale / Gruppo / Risorsa |
+| Driver | Brand e/o Custom (solo per gare risorse) |
 | Configuratori | Regole del "gioco" (mixabili) |
 | Stato | Bozza / Attiva / Conclusa / Annullata |
+
+---
+
+## Variabili Configuratori (da Prodotto/Listino)
+
+Le variabili utilizzabili nei configuratori sono legate al prodotto/listino:
+
+| # | Variabile | Descrizione |
+|---|-----------|-------------|
+| 1 | **Valenza** | Valore/peso del prodotto nel contesto gara |
+| 2 | **Gettone Contrattuale** | Importo fisso definito da contratto |
+| 3 | **Gettone Gara** | Importo fisso specifico per questa gara |
+| 4 | **Canone Offerta Canvass** | Canone dell'offerta canvass |
 
 ---
 
@@ -90,7 +115,7 @@ I paletti sono condizioni che devono essere soddisfatte per maturare l'incentivo
 | `products` | Prodotti che generano commissioni |
 | `price_lists` | Listini collegati alle gare |
 | `channels` | Canali per clusterizzazione |
-| `drivers` | Driver per cluster specifici |
+| `drivers` | Driver brand e custom |
 
 ---
 
@@ -107,14 +132,15 @@ I paletti sono condizioni che devono essere soddisfatte per maturare l'incentivo
 ## Note Sessione Brainstorming
 
 ### Da Approfondire
-1. Dettaglio calcolo per ogni tipo di configuratore
+1. ~~Variabili configuratori~~ ✅ Definite: Valenza, Gettone Contrattuale, Gettone Gara, Canone Canvass
 2. Come si combinano più configuratori nella stessa gara
 3. Trigger maturazione: vendita vs attivazione
 4. Gestione storni (recesso cliente)
 5. Split commissioni venditore/dealer
-6. UI/UX per creazione gare
+6. UI/UX per creazione gare (distinta Brand vs Risorse)
 7. Dashboard performance/ranking
+8. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
 
 ---
 
-*Ultimo aggiornamento: Sessione brainstorming iniziale*
+*Ultimo aggiornamento: Aggiunta distinzione gare Brand/Risorse e variabili configuratori*
