@@ -92,6 +92,114 @@ Le variabili utilizzabili nei configuratori sono legate al prodotto/listino:
 
 ---
 
+## Pacchetto Valenze
+
+### Definizione
+
+Il **Pacchetto Valenze** è l'entità che assegna i valori delle variabili ai prodotti/listini. Viene richiamato dai configuratori per calcolare le commissioni.
+
+### Struttura Pacchetto Valenze
+
+```
+Pacchetto Valenze "Q4 2025"
+├── ORIGINE
+│   ├── Brand (pushato da WindTre)
+│   └── Custom (creato dal tenant)
+│
+├── SCOPE (dove si applica)
+│   ├── Overall Canale + Overall Cluster
+│   └── OPPURE Canale/Cluster specifici (multiselect)
+│
+├── VALIDITÀ
+│   ├── Data Inizio
+│   └── Data Fine
+│
+├── LISTINI INCLUSI
+│   ├── Listino Retail Q4 (Driver: SIM)
+│   └── Listino Business Q4 (Driver: Fisso)
+│
+└── PRODOTTI VALORIZZATI
+    ├── SIM Gold → Valenza: 5, Gettone C.: €10, Gettone G.: €8, Canone: €29
+    ├── SIM Silver → Valenza: 3, Gettone C.: €6, Gettone G.: €5, Canone: €19
+    └── Fibra Home → Valenza: 8, Gettone C.: €25, Gettone G.: €20, Canone: €35
+```
+
+### Relazione con Configuratori
+
+```
+GARA
+├── Configuratore (es. Soglie)
+│   └── Richiama → Pacchetto Valenze
+│       └── Legge → Valori variabili per prodotto/listino
+└── Calcola commissioning usando i valori del pacchetto
+```
+
+### UI Wizard Creazione Pacchetto Valenze
+
+**STEP 1: Setup Base**
+```
+├── Nome pacchetto
+├── Origine: Brand / Custom
+├── Scope: Canale (multiselect) + Cluster (multiselect)
+└── Data validità: Inizio → Fine
+```
+
+**STEP 2: Selezione Listini**
+```
+├── Filtri: Driver | Tipo Prodotto
+├── Lista listini disponibili (checkbox multiselect)
+└── Preview: "Hai selezionato 3 listini, 127 prodotti"
+```
+
+**STEP 3: Valorizzazione Prodotti**
+```
+├── Vista: Griglia raggruppata per Listino → Driver → Tipo
+│
+├── AZIONI BULK (per semplificare):
+│   ├── "Applica a tutti": Valenza=X a tutti i prodotti
+│   ├── "Applica per tipo": Tutti i "SIM" = Valenza 5
+│   ├── "Applica per driver": Tutti del driver X = Gettone €10
+│   └── "Modifica singolo": Click su riga → edit valori
+│
+└── Tabella:
+    | Prodotto | Listino | Driver | Tipo | Valenza | Gettone C. | Gettone G. | Canone |
+    |----------|---------|--------|------|---------|------------|------------|--------|
+    | SIM Gold | Retail  | SIM    | Voce | [input] | [input]    | [input]    | [input]|
+```
+
+**STEP 4: Riepilogo e Conferma**
+```
+└── Preview pacchetto completo → Salva
+```
+
+### Gestione Aggiornamento Listino
+
+Quando un listino viene aggiornato (nuovi prodotti o modifiche):
+
+| Evento | Comportamento |
+|--------|---------------|
+| **Nuovo prodotto** | Ereditato nel pacchetto SENZA valori (da valorizzare) |
+| **Modifica prodotto** | Notifica che il prodotto è cambiato |
+| **Valori variabili** | NON ereditati, sempre da inserire manualmente |
+
+**Sistema di Notifica:**
+```
+⚠️ Alert: "3 prodotti non valorizzati nel pacchetto Q4"
+   └── Click → Apre Step 3 con solo i prodotti da valorizzare
+```
+
+### Dashboard Gestione Pacchetti Valenze
+
+```
+Dashboard Pacchetti Valenze
+├── Lista pacchetti (attivi, scaduti, bozze)
+├── Filtri: Origine | Canale | Cluster | Stato
+├── Alert prodotti non valorizzati
+└── Azioni: Crea | Modifica | Duplica | Archivia
+```
+
+---
+
 ## Configuratori
 
 I configuratori definiscono le regole del "gioco" della gara. Sono **mixabili** tra loro.
@@ -408,8 +516,9 @@ Il **Valore Commissioning** alimenta il CRM:
 8. ~~TTM~~ ✅ Time To Market predittivo con calendario store
 9. ~~Anatomia gara~~ ✅ Struttura completa documentata
 10. ~~Clusterizzazione~~ ✅ Gerarchia Canale → Cluster → Store/Risorse, modalità Overall/Per Driver
-11. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
+11. ~~Pacchetto Valenze~~ ✅ Entità che assegna valori variabili, UI wizard, gestione aggiornamenti listino
+12. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
 
 ---
 
-*Ultimo aggiornamento: Clusterizzazione gerarchica Canale → Cluster con modalità Overall/Per Driver*
+*Ultimo aggiornamento: Pacchetto Valenze con UI wizard, gestione aggiornamenti listino e notifiche*
