@@ -7,14 +7,18 @@ Il **Commissioning** è un sistema di incentivazione economica legato alle vendi
 
 ## Architettura Gare
 
-### Distinzione Fondamentale
+### Distinzione Fondamentale: CONCETTI SLEGATI
 
 | Tipo Gara | Creatore | Target | Driver Utilizzabili |
 |-----------|----------|--------|---------------------|
 | **Gare Brand** | WindTre (Brand) | Negozio / Ragione Sociale / Gruppo | Solo **Driver Brand** |
 | **Gare Risorse** | Imprenditore (Dealer) | Singola Risorsa | **Driver Brand + Driver Custom** |
 
-> **Nota UI/UX**: Le due tipologie sono distinte a livello interfaccia ma utilizzano gli **stessi configuratori**.
+> **⚠️ IMPORTANTE**: Le Gare Brand e le Gare Risorse sono **concetti completamente slegati**.
+> - **NON esiste uno split** fisso tra dealer e risorse
+> - Le Gare Brand = commissioning per il dealer (negozio/ragione sociale)
+> - Le Gare Risorse = commissioning per la risorsa (venditore)
+> - Un configuratore di una Gara Risorse può lavorare sul fatturato di una Gara Brand, ma rimangono entità indipendenti
 
 ### 1. Gare Brand (WindTre → Dealer)
 Gare create dal brand verso i dealer con target:
@@ -26,6 +30,7 @@ Gare create dal brand verso i dealer con target:
 Gare create dall'imprenditore verso le proprie risorse/venditori:
 - **Target**: Singola risorsa
 - Possono usare driver brand E driver custom
+- Possono basarsi su % del fatturato delle Gare Brand (ma restano slegate)
 
 ---
 
@@ -79,16 +84,272 @@ GARA
 
 ---
 
+## Template Configuratore
+
+### Definizione
+
+Il **Template Configuratore** è uno schema vuoto/flessibile che definisce le "regole del gioco" di una gara.
+
+### Struttura Template
+
+```
+TEMPLATE CONFIGURATORE
+├── 1. VARIABILE DI LAVORO (cosa conteggiare)
+│   ├── Valenze (numero valenze accumulate)
+│   ├── Volumi (pezzi venduti)
+│   ├── Moltiplicatore Canone (es. Soglia 1 = 1x canone, Soglia 2 = 2x)
+│   └── Gettone Gara (€ per vendita)
+│
+├── 2. REGOLE (come calcolare)
+│   ├── Soglie progressive/regressive
+│   ├── Percentuali
+│   ├── Gettoni fissi
+│   └── Moltiplicatori
+│
+└── 3. PACCHETTO VALENZE (valori di riferimento)
+    └── 1 Configuratore = 1 Pacchetto Valenze
+```
+
+### Esempi Configuratori su Variabili Diverse
+
+| Variabile | Esempio Configuratore |
+|-----------|----------------------|
+| **Valenze** | Soglia 1: 0-50 valenze = €100, Soglia 2: 51-100 = €300 |
+| **Volumi** | Vendi 20 pezzi = premio €50, Vendi 50 pezzi = premio €150 |
+| **Moltiplicatore Canone** | Soglia 1: 1x canone (€9), Soglia 2: 2x canone (€18), Soglia 3: 3x canone (€27) |
+| **Gettone Gara** | €5 fissi per ogni SIM venduta |
+| **% Fatturato** | 3% del fatturato generato dalla Gara Brand X |
+
+---
+
+## Ereditarietà Automatica
+
+### Meccanismo
+
+Quando un **Template Gara** viene configurato su un **Cluster**, tutti i membri di quel cluster **ereditano automaticamente** la gara.
+
+```
+Template Gara "Sprint Q4"
+├── Target: Cluster A (Franchising)
+└── Quando configurato → EREDITA automaticamente a:
+
+    STORE (negozi del Cluster A):
+    ├── Store Milano
+    ├── Store Torino
+    └── Store Genova
+
+    RISORSE (venditori del Cluster A):
+    ├── Mario Rossi
+    ├── Giulia Bianchi
+    └── Luca Verdi
+```
+
+### Flusso Ereditarietà
+
+```
+1. Brand crea Template Gara con N Configuratori
+2. Template assegnato a Canale → Cluster
+3. Tutti gli Store del Cluster ereditano la gara
+4. Tutte le Risorse del Cluster ereditano la gara
+5. Ereditarietà è AUTOMATICA per appartenenza
+```
+
+---
+
+## ⚠️ SISTEMA VALORI DINAMICI RETROATTIVI
+
+### Concetto Fondamentale
+
+**Il valore di una vendita NON è fisso**: cambia retroattivamente fino alla fine della gara!
+
+```
+SISTEMA REGRESSIVO: Quando si sale di soglia, TUTTE le vendite precedenti
+                    nella stessa gara vengono rivalorizzate.
+```
+
+### Timeline Esempio
+
+```
+VENDITA #123 - SIM Premium
+
+Giorno 1 (vendita effettuata):
+├── Soglia attuale: 1 (0-10 vendite)
+├── Valore commissioning: €10
+└── DB: vendita_123.valore_corrente = €10
+
+Giorno 20 (dopo altre vendite):
+├── Soglia attuale: 3 (30-50 vendite) ← cresciuti in soglia!
+├── Sistema REGRESSIVO: rivalorizza tutte le vendite
+├── Valore commissioning: €100 ← RICALCOLATO
+└── DB: vendita_123.valore_corrente = €100
+
+Fine Gara:
+└── Valore definitivo consolidato (non più modificabile)
+```
+
+### Implicazioni
+
+| Aspetto | Comportamento |
+|---------|---------------|
+| **Valore vendita** | Dinamico, cambia fino a fine gara |
+| **Report real-time** | Devono ricalcolare in base alla soglia attuale |
+| **Storico** | Serve tracciare SIA valore corrente SIA storico variazioni |
+| **Storno** | Usa il **valore ATTUALE** (non quello originale) |
+
+---
+
+## Trigger Ricalcolo (3 Livelli)
+
+Il sistema richiede **tre livelli** di ricalcolo per bilanciare performance e accuratezza:
+
+### 1. REAL-TIME (Ogni Vendita/KO)
+
+```
+Trigger: Nuova vendita o vendita in KO
+Azione:  Ricalcola TUTTE le vendite della gara impattata
+Sfida:   Performance su migliaia di vendite
+```
+
+### 2. JOB CRON (Periodico)
+
+```
+Trigger: Schedulazione (es. ogni ora, ogni notte)
+Azione:  Ricalcola avanzamenti totali, consolida snapshot
+Scopo:   Garantire consistenza, recuperare eventuali discrepanze
+```
+
+### 3. ON-DEMAND (Apertura Report)
+
+```
+Trigger: Utente apre dashboard/report
+Azione:  Ricalcolo fresh per visualizzazione
+Scopo:   Dati sempre aggiornati alla consultazione
+```
+
+---
+
+## Architettura DB per Performance
+
+### Sfida Principale
+
+Con sistema **regressivo**, ogni nuova vendita può modificare il valore di **TUTTE** le vendite precedenti nella stessa gara. Serve un'architettura efficiente.
+
+### Approccio Consigliato: Ibrido
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ARCHITETTURA IBRIDA                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. TABELLA VENDITE (source of truth)                          │
+│     ├── id, prodotto, timestamp, stato                         │
+│     ├── valore_corrente (ultimo valore calcolato)              │
+│     └── soglia_corrente (soglia al momento del calcolo)        │
+│                                                                 │
+│  2. EVENT LOG (audit trail)                                    │
+│     ├── vendita_id, timestamp_evento                           │
+│     ├── valore_precedente → valore_nuovo                       │
+│     ├── soglia_precedente → soglia_nuova                       │
+│     └── trigger (vendita/ko/cron/manual)                       │
+│                                                                 │
+│  3. SNAPSHOT PERIODICI (performance lettura)                   │
+│     ├── gara_id, timestamp_snapshot                            │
+│     ├── totale_economia                                        │
+│     ├── conteggio_per_soglia                                   │
+│     └── stato_avanzamento                                      │
+│                                                                 │
+│  4. CACHE REAL-TIME (Redis/Memory)                             │
+│     ├── gara:{id}:economia_corrente                            │
+│     ├── gara:{id}:soglia_corrente                              │
+│     └── gara:{id}:last_recalc                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Flusso Ricalcolo
+
+```
+NUOVA VENDITA
+    │
+    ▼
+┌───────────────────┐
+│ 1. Inserisci      │
+│    vendita in DB  │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ 2. Identifica     │
+│    gare impattate │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ 3. Per ogni gara: │
+│    - Conta totale │
+│    - Trova soglia │
+│    - Ricalcola    │
+│      tutte le     │
+│      vendite      │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ 4. Aggiorna:      │
+│    - valore_corr. │
+│    - event_log    │
+│    - cache        │
+└───────────────────┘
+```
+
+### Ottimizzazioni Performance
+
+| Tecnica | Descrizione |
+|---------|-------------|
+| **Batch Updates** | Aggiorna vendite in blocchi (es. 1000 per batch) |
+| **Indici Ottimizzati** | Indici su gara_id + stato + timestamp |
+| **Materializzazione** | Snapshot pre-calcolati per dashboard |
+| **Invalidazione Cache** | Invalida cache solo per gare modificate |
+| **Calcolo Incrementale** | Se soglia non cambia, skip rivalorizzazione |
+
+---
+
+## Storno su Valore Attuale
+
+### Regola
+
+Quando una vendita va in **KO**, lo storno avviene sul **valore ATTUALE** del commissioning, non sul valore originale.
+
+### Esempio
+
+```
+T0 (15/12/2025):
+├── Vendita SIM Premium
+├── Soglia: 1
+└── Valore commissioning: €10
+
+T+30 (14/01/2026):
+├── Soglia salita a 3 (sistema regressivo)
+└── Valore commissioning ricalcolato: €100
+
+T+90 (15/03/2026):
+├── Vendita va in KO
+├── Storno: -€100 (valore attuale, non €10 originale)
+└── Event log: storno €100 per KO
+```
+
+---
+
 ## Variabili Configuratori (da Prodotto/Listino)
 
 Le variabili utilizzabili nei configuratori sono legate al prodotto/listino:
 
-| # | Variabile | Descrizione |
-|---|-----------|-------------|
-| 1 | **Valenza** | Valore/peso del prodotto nel contesto gara |
-| 2 | **Gettone Contrattuale** | Importo fisso definito da contratto |
-| 3 | **Gettone Gara** | Importo fisso specifico per questa gara |
-| 4 | **Canone Offerta Canvass** | Canone dell'offerta canvass |
+| # | Variabile | Descrizione | Esempio Uso |
+|---|-----------|-------------|-------------|
+| 1 | **Valenza** | Peso del prodotto nel contesto gara | Soglia valenze |
+| 2 | **Gettone Contrattuale** | Importo fisso da contratto | Pay-per-sale |
+| 3 | **Gettone Gara** | Importo specifico per questa gara | Bonus gara |
+| 4 | **Canone Offerta Canvass** | Canone dell'offerta | Moltiplicatore soglie |
 
 ---
 
@@ -219,15 +480,38 @@ Dashboard Pacchetti Valenze
 
 ## Configuratori
 
-I configuratori definiscono le regole del "gioco" della gara. Sono **mixabili** tra loro.
+I configuratori definiscono le regole del "gioco" della gara. Sono **mixabili** tra loro e **flessibili** sulla variabile di lavoro.
 
 ### Configuratori Identificati
 
-| Tipo | Descrizione | Esempio |
-|------|-------------|---------|
-| **Soglie** | Progressive o regressive | Vendi 10 = €100, Vendi 20 = €250 |
-| **Gettone** | Pay-per-item fisso | €5 per ogni SIM venduta |
-| **% Fatturato** | Percentuale sul ricavato | 3% del fatturato prodotti X |
+| Tipo | Variabile | Descrizione | Esempio |
+|------|-----------|-------------|---------|
+| **Soglie** | Valenze/Volumi/Canone | Progressive o regressive | Vendi 10 = €100, Vendi 20 = €250 |
+| **Gettone** | Gettone Gara | Pay-per-item fisso | €5 per ogni SIM venduta |
+| **% Fatturato** | Canone/Fattura | Percentuale sul ricavato | 3% del fatturato prodotti X |
+| **Moltiplicatore Canone** | Canone Canvass | Soglie con moltiplicatore | Soglia 1=1x, Soglia 2=2x, Soglia 3=3x |
+
+### Flessibilità Configuratori
+
+Ogni configuratore può lavorare su **qualsiasi variabile** definita nel template:
+
+```
+Configuratore Soglie (Template)
+├── Variabile: [seleziona]
+│   ├── Valenze
+│   ├── Volumi
+│   ├── Gettone Gara
+│   └── Canone Canvass
+│
+├── Tipo Soglia: [seleziona]
+│   ├── Progressivo (il valore cresce con le soglie)
+│   └── Regressivo (retroattivo su vendite precedenti)
+│
+└── Definizione Soglie:
+    ├── Soglia 1: 0-10 → €X o Xn canoni
+    ├── Soglia 2: 11-20 → €Y o Yn canoni
+    └── Soglia 3: 21+ → €Z o Zn canoni
+```
 
 ### Altri Configuratori (da valutare)
 - [ ] Configuratore a obiettivo (raggiungi X = premio Y)
@@ -261,7 +545,7 @@ GaraDashboard
 │   └── Stato (attiva/conclusa)
 │
 ├── KPI Summary
-│   ├── Totale € maturato
+│   ├── Totale € maturato (DINAMICO - valore corrente)
 │   ├── % completamento
 │   └── TTM (proiezione)
 │
@@ -398,26 +682,25 @@ Ogni cluster può essere:
 | **Overall** | Vale per TUTTI i driver |
 | **Per Driver** | Attivo solo per driver specifici |
 
-### Scopo Cluster: Gare Template
+### Scopo Cluster: Gare Template con Ereditarietà Automatica
 
-I cluster servono per creare **gare template riutilizzabili**:
+I cluster servono per creare **gare template riutilizzabili** con ereditarietà automatica:
 
 ```
 Gara Template "Sprint Q4"
 ├── Target: Canale Franchising → Cluster A
 ├── Modalità: Per Driver "SIM Voce"
-└── Quando istanziata → applica a:
+└── Quando configurata → EREDITA AUTOMATICAMENTE a:
+    
+    STORE:
     ├── Store Milano Centro
     ├── Store Torino
     └── Store Genova
-    (solo per driver SIM Voce)
-```
-
-```
-Gara Template "Bonus Accessori"
-├── Target: Canale GDO/GDS → Cluster 1
-├── Modalità: Overall (tutti i driver)
-└── Quando istanziata → applica a tutti i driver
+    
+    RISORSE (venditori del cluster):
+    ├── Mario Rossi (lavora a Milano)
+    ├── Giulia Bianchi (lavora a Torino)
+    └── Luca Verdi (lavora a Genova)
 ```
 
 ### Cluster Risorse
@@ -437,18 +720,28 @@ Ogni **vendita** di un prodotto in un **listino specifico** è il trigger del si
 - La vendita attiva automaticamente tutte le gare collegate a quel prodotto/listino
 - Non è l'attivazione successiva, ma la **vendita stessa** che genera il commissioning
 - Una vendita può "muovere" più gare contemporaneamente
+- **Ogni vendita può triggerare il ricalcolo di TUTTE le vendite precedenti** (sistema regressivo)
 
 ### Storno: Vendita in KO
 
-Lo storno è legato allo **stato della vendita**:
+Lo storno è legato allo **stato della vendita** e usa il **valore ATTUALE**:
 - Se una vendita passa in stato **KO** (anche mesi dopo T0), genera uno storno
-- Lo storno è pari al **valore euro del commissioning** già maturato su quella vendita
+- Lo storno è pari al **valore euro ATTUALE** del commissioning (non quello originale!)
 - Il sistema deve tracciare ogni commissioning generato per poterlo stornare
 
 **Timeline esempio:**
 ```
-T0 (15/12/2025): Vendita SIM Premium → Commissioning €15 maturato
-T+90 (15/03/2026): Vendita va in KO → Storno €15 generato
+T0 (15/12/2025): Vendita SIM Premium
+├── Soglia: 1
+└── Commissioning: €10 maturato
+
+T+30 (14/01/2026): Altre vendite, soglia sale
+├── Soglia: 3 (sistema regressivo)
+└── Commissioning rivalorizzato: €100
+
+T+90 (15/03/2026): Vendita va in KO
+├── Storno: €100 (valore ATTUALE, non €10 originale)
+└── Event log: storno €100 per KO vendita #123
 ```
 
 ---
@@ -460,7 +753,7 @@ Ogni vendita genera **due valori distinti**:
 | Tipo Valore | Descrizione | Destinazione |
 |-------------|-------------|--------------|
 | **Valore Fattura** | € pagato dal cliente (scontrino) | Contabilità, fatturazione |
-| **Valore Commissioning** | € generato dal sistema gare | Incentivi, CRM |
+| **Valore Commissioning** | € generato dal sistema gare (DINAMICO!) | Incentivi, CRM |
 
 ### Struttura Dati Vendita
 
@@ -474,11 +767,17 @@ Vendita #12345
 │   ├── Timestamp: 2025-12-15 14:30:22
 │   └── Stato: OK | KO
 │
-├── Valore Fattura: €29.90
+├── Valore Fattura: €29.90 (fisso)
 │
-├── Valore Commissioning: €15.00
-│   ├── Gara Brand "Sprint Natalizio": €8.00
-│   └── Gara Risorse "Top Seller": €7.00
+├── Valore Commissioning CORRENTE: €100.00 (dinamico!)
+│   ├── Soglia corrente: 3
+│   ├── Gara Brand "Sprint Natalizio": €60.00
+│   └── Gara Risorse "Top Seller": €40.00
+│
+├── Storico Variazioni (Event Log)
+│   ├── 2025-12-15: Valore €10 (Soglia 1, trigger: vendita)
+│   ├── 2025-12-25: Valore €50 (Soglia 2, trigger: vendita)
+│   └── 2026-01-05: Valore €100 (Soglia 3, trigger: vendita)
 │
 └── Link CRM
     ├── Deal: #1234
@@ -522,20 +821,31 @@ Il **Valore Commissioning** alimenta il CRM:
 
 ## Note Sessione Brainstorming
 
-### Da Approfondire
+### Completati ✅
 1. ~~Variabili configuratori~~ ✅ Definite: Valenza, Gettone Contrattuale, Gettone Gara, Canone Canvass
 2. ~~Mix configuratori~~ ✅ 1 Configuratore = 1 Pacchetto Valenze, Economia Gara = Σ economie configuratori
 3. ~~Trigger maturazione~~ ✅ Vendita prodotto/listino è il trigger
-4. ~~Gestione storni~~ ✅ Vendita in KO genera storno del valore commissioning
+4. ~~Gestione storni~~ ✅ Vendita in KO genera storno del valore commissioning ATTUALE
 5. ~~Doppio valore vendita~~ ✅ Fattura + Commissioning, integrazione CRM
-6. Split commissioni venditore/dealer
+6. ~~Split commissioni~~ ✅ NON ESISTE - Gare Brand e Risorse sono SLEGATE
 7. ~~UI/UX configuratori~~ ✅ Componenti modulari dinamici per ogni configuratore
 8. ~~TTM~~ ✅ Time To Market predittivo con calendario store
 9. ~~Anatomia gara~~ ✅ Struttura completa documentata
 10. ~~Clusterizzazione~~ ✅ Gerarchia Canale → Cluster → Store/Risorse, modalità Overall/Per Driver
 11. ~~Pacchetto Valenze~~ ✅ Entità che assegna valori variabili, UI wizard, gestione aggiornamenti listino
-12. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
+12. ~~Template Configuratore~~ ✅ Schema vuoto: variabile + regole + pacchetto valenze
+13. ~~Ereditarietà automatica~~ ✅ Cluster → Store/Risorse automatica
+14. ~~Valori dinamici retroattivi~~ ✅ Sistema regressivo, valore cambia fino a fine gara
+15. ~~Storico variazioni~~ ✅ Event log per audit + valore corrente per operazioni
+16. ~~Trigger ricalcolo~~ ✅ Real-time + Cron + On-demand
+17. ~~Architettura DB performance~~ ✅ Approccio ibrido: tabelle + event log + snapshot + cache
+
+### Da Approfondire
+- [ ] Dettaglio algoritmo ricalcolo ottimizzato
+- [ ] Schema DB definitivo con indici
+- [ ] API endpoints per ricalcolo
+- [ ] Gestione concorrenza (lock durante ricalcolo)
 
 ---
 
-*Ultimo aggiornamento: Regola 1:1 Configuratore-Pacchetto, Economia Gara = Σ configuratori*
+*Ultimo aggiornamento: Template Configuratore, Ereditarietà Automatica, Valori Dinamici Retroattivi, Trigger Ricalcolo 3 Livelli, Architettura DB Performance*
