@@ -105,6 +105,73 @@ I paletti sono condizioni che devono essere soddisfatte per maturare l'incentivo
 
 ---
 
+## Trigger e Storno
+
+### Trigger: La Vendita
+
+Ogni **vendita** di un prodotto in un **listino specifico** è il trigger del sistema commissioning:
+- La vendita attiva automaticamente tutte le gare collegate a quel prodotto/listino
+- Non è l'attivazione successiva, ma la **vendita stessa** che genera il commissioning
+- Una vendita può "muovere" più gare contemporaneamente
+
+### Storno: Vendita in KO
+
+Lo storno è legato allo **stato della vendita**:
+- Se una vendita passa in stato **KO** (anche mesi dopo T0), genera uno storno
+- Lo storno è pari al **valore euro del commissioning** già maturato su quella vendita
+- Il sistema deve tracciare ogni commissioning generato per poterlo stornare
+
+**Timeline esempio:**
+```
+T0 (15/12/2025): Vendita SIM Premium → Commissioning €15 maturato
+T+90 (15/03/2026): Vendita va in KO → Storno €15 generato
+```
+
+---
+
+## Doppio Valore della Vendita
+
+Ogni vendita genera **due valori distinti**:
+
+| Tipo Valore | Descrizione | Destinazione |
+|-------------|-------------|--------------|
+| **Valore Fattura** | € pagato dal cliente (scontrino) | Contabilità, fatturazione |
+| **Valore Commissioning** | € generato dal sistema gare | Incentivi, CRM |
+
+### Struttura Dati Vendita
+
+Ogni vendita deve memorizzare:
+
+```
+Vendita #12345
+├── Dati Base
+│   ├── Prodotto: SIM Premium
+│   ├── Listino: Listino Retail Q4
+│   ├── Timestamp: 2025-12-15 14:30:22
+│   └── Stato: OK | KO
+│
+├── Valore Fattura: €29.90
+│
+├── Valore Commissioning: €15.00
+│   ├── Gara Brand "Sprint Natalizio": €8.00
+│   └── Gara Risorse "Top Seller": €7.00
+│
+└── Link CRM
+    ├── Deal: #1234
+    └── Customer: #567
+```
+
+### Integrazione CRM
+
+Il **Valore Commissioning** alimenta il CRM:
+- Si aggrega sul **Customer** per calcolare il valore totale generato dal cliente
+- Si aggrega sul **Deal** per valutare la profittabilità della trattativa
+- Un cliente con alto commissioning = cliente di alto valore anche per il dealer
+
+> **Insight**: Il valore di un cliente non è solo quanto paga (fattura), ma anche quanto genera in commissioni per il dealer!
+
+---
+
 ## Relazioni con Entità Esistenti
 
 | Entità | Relazione |
@@ -134,13 +201,14 @@ I paletti sono condizioni che devono essere soddisfatte per maturare l'incentivo
 ### Da Approfondire
 1. ~~Variabili configuratori~~ ✅ Definite: Valenza, Gettone Contrattuale, Gettone Gara, Canone Canvass
 2. Come si combinano più configuratori nella stessa gara
-3. Trigger maturazione: vendita vs attivazione
-4. Gestione storni (recesso cliente)
-5. Split commissioni venditore/dealer
-6. UI/UX per creazione gare (distinta Brand vs Risorse)
-7. Dashboard performance/ranking
-8. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
+3. ~~Trigger maturazione~~ ✅ Vendita prodotto/listino è il trigger
+4. ~~Gestione storni~~ ✅ Vendita in KO genera storno del valore commissioning
+5. ~~Doppio valore vendita~~ ✅ Fattura + Commissioning, integrazione CRM
+6. Split commissioni venditore/dealer
+7. UI/UX per creazione gare (distinta Brand vs Risorse)
+8. Dashboard performance/ranking
+9. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
 
 ---
 
-*Ultimo aggiornamento: Aggiunta distinzione gare Brand/Risorse e variabili configuratori*
+*Ultimo aggiornamento: Trigger vendita, Storno KO, Doppio valore vendita con integrazione CRM*
