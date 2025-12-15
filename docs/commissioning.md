@@ -29,18 +29,53 @@ Gare create dall'imprenditore verso le proprie risorse/venditori:
 
 ---
 
-## Struttura Gara
+## Anatomia Completa di una Gara
 
-| Campo | Descrizione |
-|-------|-------------|
-| Nome | Identificativo gara |
-| Tipo | Brand / Risorse |
-| Data Inizio | Inizio validità |
-| Data Fine | Fine validità |
-| Target | Negozio / Ragione Sociale / Gruppo / Risorsa |
-| Driver | Brand e/o Custom (solo per gare risorse) |
-| Configuratori | Regole del "gioco" (mixabili) |
-| Stato | Bozza / Attiva / Conclusa / Annullata |
+```
+GARA
+├── VALIDITÀ
+│   ├── Data Inizio
+│   └── Data Fine
+│
+├── TIPO
+│   ├── Brand (WindTre → Dealer)
+│   └── Risorse (Dealer → Venditore)
+│
+├── TARGET
+│   ├── Store (singolo negozio)
+│   ├── Legal Entity (ragione sociale)
+│   ├── Gruppo (più legal entities)
+│   └── Risorsa (singolo venditore)
+│
+├── DRIVER
+│   ├── Brand (obbligatori per gare brand)
+│   └── Custom (solo gare risorse)
+│
+├── PRODOTTI/LISTINI
+│   └── Quali prodotti/listini triggerano la gara
+│
+├── VARIABILI (da prodotto/listino)
+│   ├── Valenza
+│   ├── Gettone Contrattuale
+│   ├── Gettone Gara
+│   └── Canone Canvass
+│
+├── CONFIGURATORI (UI dinamica ciascuno)
+│   ├── Soglie
+│   ├── Gettone
+│   └── % Fatturato
+│
+├── PALETTI (condizioni)
+│   ├── Produttività Negozio
+│   ├── Produttività Multi-Negozio
+│   └── Produttività Risorsa
+│
+└── STATO
+    ├── Bozza
+    ├── Attiva
+    ├── Conclusa
+    └── Annullata
+```
 
 ---
 
@@ -74,6 +109,101 @@ I configuratori definiscono le regole del "gioco" della gara. Sono **mixabili** 
 - [ ] Configuratore mix prodotti (vendi A + B = bonus)
 - [ ] Configuratore tempo (primi X a raggiungere = premio extra)
 - [ ] Configuratore ranking (top 3 = premi diversi)
+
+---
+
+## UI/UX Dinamica Configuratori
+
+### Principio: Componenti Modulari
+
+Ogni configuratore ha la propria **UI/UX dedicata**. La dashboard della gara si **compone dinamicamente** in base ai configuratori attivi.
+
+### Widget per Configuratore
+
+| Configuratore | Widget UI | Visualizzazione |
+|---------------|-----------|-----------------|
+| **Soglie** | Grafico a barre progressive | Soglie evidenziate, progress bar verso prossima soglia |
+| **Gettone** | Counter animato | Totale pezzi venduti e € accumulati |
+| **% Fatturato** | Gauge/Meter | Percentuale raggiunta e € generati |
+
+### Architettura Frontend Dashboard
+
+```
+GaraDashboard
+├── Header
+│   ├── Nome gara
+│   ├── Periodo validità
+│   └── Stato (attiva/conclusa)
+│
+├── KPI Summary
+│   ├── Totale € maturato
+│   ├── % completamento
+│   └── TTM (proiezione)
+│
+└── ConfiguratoriGrid (DINAMICO)
+    ├── <SoglieWidget />      ← se configuratore attivo
+    ├── <GettoneWidget />     ← se configuratore attivo
+    └── <PercentualeWidget /> ← se configuratore attivo
+```
+
+> **Nota**: Il layout si adatta automaticamente al numero di configuratori attivi nella gara.
+
+---
+
+## TTM - Time To Market
+
+### Definizione
+
+Il **TTM** è una metrica **predittiva intelligente** che stima quando verrà raggiunto il target, considerando:
+
+1. **Giorni rimanenti** della gara
+2. **Calendario store** (orari di apertura)
+3. **Ore effettive lavorabili**
+4. **Produttività lineare attuale** (vendite/giorno)
+
+### Calcolo TTM
+
+```
+INPUT
+├── Giorni rimanenti gara
+├── Calendario store (orari apertura, festivi, ferie)
+├── Ore effettive lavorabili
+└── Produttività attuale (vendite ÷ giorni lavorati)
+
+CALCOLO
+├── Produttività Lineare = vendite totali ÷ giorni lavorati
+├── Gap Target = target - valore attuale
+├── Giorni Stimati = gap ÷ produttività lineare
+└── TTM = data odierna + giorni stimati (solo lavorativi)
+
+OUTPUT
+├── Data stimata raggiungimento
+├── Giorni lavorativi mancanti
+└── Alert se target non raggiungibile
+```
+
+### TTM per Configuratore
+
+| Configuratore | TTM Esempio |
+|---------------|-------------|
+| **Soglie** | "Prossima soglia (20 pz) tra 3 giorni lavorativi" |
+| **Gettone** | "A questo ritmo: €450 totali a fine gara" |
+| **% Fatturato** | "Proiezione: 3.2% sul fatturato finale" |
+
+### Fattori Considerati
+
+- Giorni di chiusura (festivi, domeniche)
+- Orari ridotti
+- Ferie programmate
+- Trend accelerazione/decelerazione vendite
+
+### Alert TTM
+
+| Stato | Messaggio |
+|-------|-----------|
+| 🟢 **On Track** | "Raggiungi target con 5 giorni di anticipo" |
+| 🟡 **A Rischio** | "Devi aumentare produttività del 15% per raggiungere target" |
+| 🔴 **Fuori Target** | "Al ritmo attuale non raggiungi la soglia minima" |
 
 ---
 
@@ -205,10 +335,11 @@ Il **Valore Commissioning** alimenta il CRM:
 4. ~~Gestione storni~~ ✅ Vendita in KO genera storno del valore commissioning
 5. ~~Doppio valore vendita~~ ✅ Fattura + Commissioning, integrazione CRM
 6. Split commissioni venditore/dealer
-7. UI/UX per creazione gare (distinta Brand vs Risorse)
-8. Dashboard performance/ranking
-9. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
+7. ~~UI/UX configuratori~~ ✅ Componenti modulari dinamici per ogni configuratore
+8. ~~TTM~~ ✅ Time To Market predittivo con calendario store
+9. ~~Anatomia gara~~ ✅ Struttura completa documentata
+10. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
 
 ---
 
-*Ultimo aggiornamento: Trigger vendita, Storno KO, Doppio valore vendita con integrazione CRM*
+*Ultimo aggiornamento: Anatomia gara, UI/UX dinamica configuratori, TTM predittivo*
