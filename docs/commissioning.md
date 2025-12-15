@@ -221,17 +221,86 @@ I paletti sono condizioni che devono essere soddisfatte per maturare l'incentivo
 
 ## Clusterizzazione
 
-### Cluster Negozi
-- I negozi vengono **clusterizzati per canale**
-- Cluster possono essere:
-  - **Globali**: validi per tutti i driver
-  - **Per Driver**: specifici per singolo driver
-- Solo sedi tipo **"store"** partecipano all'incentivazione
-- Canali già definiti nel modal store
+### Gerarchia: Canale → Cluster → Store/Risorse
+
+```
+CANALE (attributo dello Store, definito in creazione sede)
+├── Franchising
+├── Multi-brand
+├── GDO/GDS
+└── [altri canali brand]
+
+CANALE
+└── CLUSTER (figli del canale, naming: A, B, C... o 1, 2, 3...)
+    └── STORE / RISORSE (membri del cluster)
+```
+
+### Chi Ha Cluster
+
+| Entità | Ha Cluster? | Note |
+|--------|-------------|------|
+| **Store (Negozi)** | ✅ Sì | Clusterizzati per canale |
+| **Risorse (Venditori)** | ✅ Sì | Clusterizzati per canale |
+| **Ragione Sociale** | ❌ No | Target diretto, senza cluster |
+
+### Esempio Struttura Completa
+
+```
+Canale: Franchising
+├── Cluster A
+│   ├── Store Milano Centro
+│   ├── Store Torino
+│   └── Store Genova
+├── Cluster B
+│   ├── Store Roma
+│   └── Store Napoli
+└── Cluster C
+    └── Store Firenze
+
+Canale: GDO/GDS
+├── Cluster 1
+│   └── Store MediaWorld Milano
+└── Cluster 2
+    └── Store Unieuro Roma
+```
+
+### Modalità Cluster
+
+Ogni cluster può essere:
+
+| Modalità | Descrizione |
+|----------|-------------|
+| **Overall** | Vale per TUTTI i driver |
+| **Per Driver** | Attivo solo per driver specifici |
+
+### Scopo Cluster: Gare Template
+
+I cluster servono per creare **gare template riutilizzabili**:
+
+```
+Gara Template "Sprint Q4"
+├── Target: Canale Franchising → Cluster A
+├── Modalità: Per Driver "SIM Voce"
+└── Quando istanziata → applica a:
+    ├── Store Milano Centro
+    ├── Store Torino
+    └── Store Genova
+    (solo per driver SIM Voce)
+```
+
+```
+Gara Template "Bonus Accessori"
+├── Target: Canale GDO/GDS → Cluster 1
+├── Modalità: Overall (tutti i driver)
+└── Quando istanziata → applica a tutti i driver
+```
 
 ### Cluster Risorse
-- Le risorse vengono clusterizzate
-- Una risorsa può appartenere a **più cluster di canali differenti**
+
+Le risorse seguono la stessa logica:
+- Appartengono a un **Canale** (tramite lo store dove lavorano)
+- Si raggruppano in **Cluster** (A, B, C...)
+- Cluster può essere **Overall** o **Per Driver**
 
 ---
 
@@ -338,8 +407,9 @@ Il **Valore Commissioning** alimenta il CRM:
 7. ~~UI/UX configuratori~~ ✅ Componenti modulari dinamici per ogni configuratore
 8. ~~TTM~~ ✅ Time To Market predittivo con calendario store
 9. ~~Anatomia gara~~ ✅ Struttura completa documentata
-10. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
+10. ~~Clusterizzazione~~ ✅ Gerarchia Canale → Cluster → Store/Risorse, modalità Overall/Per Driver
+11. Dettaglio calcolo per ogni tipo di configuratore con le 4 variabili
 
 ---
 
-*Ultimo aggiornamento: Anatomia gara, UI/UX dinamica configuratori, TTM predittivo*
+*Ultimo aggiornamento: Clusterizzazione gerarchica Canale → Cluster con modalità Overall/Per Driver*
