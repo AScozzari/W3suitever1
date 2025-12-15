@@ -126,13 +126,30 @@ Pacchetto Valenze "Q4 2025"
 
 ### Relazione con Configuratori
 
+**Regola fondamentale: 1 Configuratore = 1 Pacchetto Valenze**
+
 ```
-GARA
-├── Configuratore (es. Soglie)
-│   └── Richiama → Pacchetto Valenze
-│       └── Legge → Valori variabili per prodotto/listino
-└── Calcola commissioning usando i valori del pacchetto
+GARA "Sprint Natalizio"
+│
+├── Configuratore Soglie ──────→ Pacchetto Valenze "Q4 Retail"
+│   └── Economia generata: €250
+│
+├── Configuratore Gettone ─────→ Pacchetto Valenze "Q4 Accessori"
+│   └── Economia generata: €80
+│
+└── Configuratore % Fatturato ─→ Pacchetto Valenze "Q4 Servizi"
+    └── Economia generata: €45
+
+═══════════════════════════════════════════════════
+ECONOMIA TOTALE GARA = SUM(economie configuratori) = €375
 ```
+
+**Riepilogo:**
+- Ogni **Configuratore** lavora su **1 solo Pacchetto Valenze**
+- Una **Gara** può avere **N Configuratori** (mixabili)
+- L'**Economia della Gara** = Σ delle economie di ogni configuratore
+- I configuratori sono le "**regole del gioco**"
+- I pacchetti valenze sono i "**valori in campo**"
 
 ### UI Wizard Creazione Pacchetto Valenze
 
@@ -507,7 +524,7 @@ Il **Valore Commissioning** alimenta il CRM:
 
 ### Da Approfondire
 1. ~~Variabili configuratori~~ ✅ Definite: Valenza, Gettone Contrattuale, Gettone Gara, Canone Canvass
-2. Come si combinano più configuratori nella stessa gara
+2. ~~Mix configuratori~~ ✅ 1 Configuratore = 1 Pacchetto Valenze, Economia Gara = Σ economie configuratori
 3. ~~Trigger maturazione~~ ✅ Vendita prodotto/listino è il trigger
 4. ~~Gestione storni~~ ✅ Vendita in KO genera storno del valore commissioning
 5. ~~Doppio valore vendita~~ ✅ Fattura + Commissioning, integrazione CRM
@@ -521,4 +538,4 @@ Il **Valore Commissioning** alimenta il CRM:
 
 ---
 
-*Ultimo aggiornamento: Pacchetto Valenze con UI wizard, gestione aggiornamenti listino e notifiche*
+*Ultimo aggiornamento: Regola 1:1 Configuratore-Pacchetto, Economia Gara = Σ configuratori*
