@@ -11,7 +11,7 @@
 import OpenAI from 'openai';
 import { logger } from '../core/logger';
 import { db, setTenantContext } from '../core/db';
-import { drivers } from '../db/schema/public';
+import { drivers } from '../db/schema/w3suite';
 import { crmPipelines } from '../db/schema/w3suite';
 import { aiAgentsRegistry } from '../db/schema/brand-interface';
 import { eq, and, sql } from 'drizzle-orm';
