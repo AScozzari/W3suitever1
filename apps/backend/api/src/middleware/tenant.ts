@@ -73,6 +73,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     if (req.path.startsWith('/auth/') || 
         req.path.startsWith('/public/') ||
         req.path.startsWith('/webhooks/') || // Webhooks are authenticated via HMAC signature, not session
+        req.path.startsWith('/reference/') || // Reference data endpoints (legal-forms, countries, etc.) - public schema data
         isOAuthEndpoint || // OAuth endpoints use query params or session, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||

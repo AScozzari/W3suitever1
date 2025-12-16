@@ -1126,6 +1126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // API-specific exclusions (path relative to /api mount)
         apiPath.startsWith('/auth/') || 
         apiPath.startsWith('/public/') ||
+        apiPath.startsWith('/reference/') || // Reference data endpoints (legal-forms, countries, etc.) - public schema data
         apiPath === '/webhooks' || apiPath.startsWith('/webhooks/') || // Webhooks are authenticated via HMAC signature, not session
         apiPath === '/health' ||
         apiPath === '/tenants/resolve' ||
@@ -1246,6 +1247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath.startsWith('/auth/') || 
         apiPath.startsWith('/public/') ||
         apiPath.startsWith('/oauth2/') ||
+        apiPath.startsWith('/reference/') || // Reference data endpoints (legal-forms, countries, etc.) - public schema data
         apiPath === '/webhooks' || apiPath.startsWith('/webhooks/') ||
         apiPath === '/health' ||
         apiPath === '/tenants/resolve' ||
