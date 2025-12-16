@@ -216,11 +216,13 @@ class OAuth2Client {
       this.codeVerifier = codeVerifier;
       
       // Store PKCE verifier for callback
-      sessionStorage.setItem('oauth2_code_verifier', codeVerifier);
+      // NOTE: Using localStorage instead of sessionStorage for better persistence across redirects
+      // This prevents issues where browser clears sessionStorage on OAuth redirect
+      localStorage.setItem('oauth2_code_verifier', codeVerifier);
       
       // Generate state for CSRF protection
       const state = this.generateRandomString(32);
-      sessionStorage.setItem('oauth2_state', state);
+      localStorage.setItem('oauth2_state', state);
 
       // Build authorization URL
       const authUrl = new URL(this.config.authorizationEndpoint, window.location.origin);
@@ -258,7 +260,7 @@ class OAuth2Client {
       }
 
       // Validate state parameter (CSRF protection)
-      const storedState = sessionStorage.getItem('oauth2_state');
+      const storedState = localStorage.getItem('oauth2_state');
       if (!state || state !== storedState) {
         throw new Error('OAuth2 state mismatch - possible CSRF attack');
       }
@@ -269,7 +271,7 @@ class OAuth2Client {
       }
 
       // Get PKCE verifier
-      const codeVerifier = sessionStorage.getItem('oauth2_code_verifier');
+      const codeVerifier = localStorage.getItem('oauth2_code_verifier');
       if (!codeVerifier) {
         throw new Error('OAuth2 PKCE verifier missing');
       }
@@ -288,8 +290,8 @@ class OAuth2Client {
       localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
       
       // Clear temporary storage
-      sessionStorage.removeItem('oauth2_code_verifier');
-      sessionStorage.removeItem('oauth2_state');
+      localStorage.removeItem('oauth2_code_verifier');
+      localStorage.removeItem('oauth2_state');
 
       // OAuth2 tokens received
 
@@ -567,8 +569,8 @@ class OAuth2Client {
     this.currentTokens = null;
     localStorage.removeItem('oauth2_tokens');
     localStorage.removeItem('auth_token'); // Clear legacy token
-    sessionStorage.removeItem('oauth2_code_verifier');
-    sessionStorage.removeItem('oauth2_state');
+    localStorage.removeItem('oauth2_code_verifier');
+    localStorage.removeItem('oauth2_state');
 
     // OAuth2 logout completed
   }
