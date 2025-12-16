@@ -1,0 +1,66 @@
+52:33, Token expires: 11:00:48
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 10:52:35, Token expires: 11:00:48
+index-BENB-HAn.js:2  GET https://w3suite.it/api/wms/product-serials/PROD-APL-I16P-256-TIT 500 (Internal Server Error)
+lo @ index-BENB-HAn.js:2
+await in lo
+queryFn @ InventoryPage-DEvgmaaR.js:1
+a @ query-BxPMHe9e.js:1
+M @ query-BxPMHe9e.js:1
+start @ query-BxPMHe9e.js:1
+fetch @ query-BxPMHe9e.js:1
+Lt @ query-BxPMHe9e.js:1
+setOptions @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 10:52:36, Token expires: 11:00:48
+index-BENB-HAn.js:2  GET https://w3suite.it/api/wms/product-serials/PROD-APL-I16P-256-TIT 500 (Internal Server Error)
+lo @ index-BENB-HAn.js:2
+await in lo
+queryFn @ InventoryPage-DEvgmaaR.js:1
+a @ query-BxPMHe9e.js:1
+M @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+Promise.then
+(anonime) @ query-BxPMHe9e.js:1
+Promise.catch
+M @ query-BxPMHe9e.js:1
+start @ query-BxPMHe9e.js:1
+fetch @ query-BxPMHe9e.js:1
+Lt @ query-BxPMHe9e.js:1
+setOptions @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 10:52:41, Token expires: 11:00:48
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 10:52:51, Token expires: 11:00:48
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 10:52:52, Token expires: 11:00:48
+index-BENB-HAn.js:2  GET https://w3suite.it/api/wms/inventory-view?storeId=&status=all&search=&identifierType=sku&identifierValue=&supplierId=&categoryId=&typeId=&brand=&dateFrom=&dateTo=&page=1&limit=50&sortBy=name&sortOrder=asc&viewMode=serialized 500 (Internal Server Error)
+queryFn @ index-BENB-HAn.js:2
+await in queryFn
+a @ query-BxPMHe9e.js:1
+M @ query-BxPMHe9e.js:1
+start @ query-BxPMHe9e.js:1
+fetch @ query-BxPMHe9e.js:1
+Lt @ query-BxPMHe9e.js:1
+setOptions @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 10:52:53, Token expires: 11:00:48
+index-BENB-HAn.js:2  GET https://w3suite.it/api/wms/inventory-view?storeId=&status=all&search=&identifierType=sku&identifierValue=&supplierId=&categoryId=&typeId=&brand=&dateFrom=&dateTo=&page=1&limit=50&sortBy=name&sortOrder=asc&viewMode=serialized 500 (Internal Server Error)
