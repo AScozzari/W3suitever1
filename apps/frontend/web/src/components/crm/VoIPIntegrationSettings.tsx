@@ -788,18 +788,7 @@ export function VoIPIntegrationSettings() {
                     onClick={async () => {
                       setWebhookTestLoading(true);
                       try {
-                        const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
-                        const response = await fetch('/api/voip/webhooks/test', {
-                          method: 'POST',
-                          credentials: 'include',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'X-Tenant-ID': tenantId,
-                            'X-Auth-Session': 'authenticated',
-                            'X-Demo-User': 'admin-user'
-                          }
-                        });
-                        const data = await response.json();
+                        const data = await apiRequest('/api/voip/webhooks/test', { method: 'POST' });
                         if (data.success) {
                           toast({
                             title: 'Test Webhook completato',
