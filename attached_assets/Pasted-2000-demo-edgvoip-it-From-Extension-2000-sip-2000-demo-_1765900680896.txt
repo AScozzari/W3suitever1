@@ -1,0 +1,345 @@
+2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=0omukqbof5
+CSeq: 3 REGISTER
+Call-ID: 5l7vujsqcbbdoa5eqm9n
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="9be77ac6-0b66-4573-a1f5-193b7238ad79", uri="sip:demo.edgvoip.it", response="df4a0d22b35e851cd6a73960ff9fbc0c", qop=auth, cnonce="57t2fpcrbgcl", nc=00000001
+Contact: <sip:3r4mijeu@2ggp7s6ee967.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-BENB-HAn.js:2  GET https://w3suite.it/api/reference/legal-forms 500 (Internal Server Error)
+queryFn @ index-BENB-HAn.js:2
+await in queryFn
+a @ query-BxPMHe9e.js:1
+M @ query-BxPMHe9e.js:1
+start @ query-BxPMHe9e.js:1
+fetch @ query-BxPMHe9e.js:1
+Lt @ query-BxPMHe9e.js:1
+onSubscribe @ query-BxPMHe9e.js:1
+subscribe @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:53:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS 2ggp7s6ee967.invalid;branch=z9hG4bK652209;received=127.0.0.1;rport=42672
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=0omukqbof5
+To: <sip:2000@demo.edgvoip.it>;tag=X7g6SKyQN194c
+Call-ID: 5l7vujsqcbbdoa5eqm9n
+CSeq: 3 REGISTER
+Contact: <sip:3r4mijeu@2ggp7s6ee967.invalid;transport=ws>;expires=600
+Date: Tue, 16 Dec 2025 15:53:55 GMT
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:53:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Registered
+Layout-CZlgBNdS.js:86 📡 Registration state: Registered
+Layout-CZlgBNdS.js:86 ✅ SIP Registered successfully
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:53:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+SettingsPage-BZm4dfCT.js:15 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage-BZm4dfCT.js:1 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage-BZm4dfCT.js:1 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:53:55, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:53:55, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:53:56, Token expires: 17:08:52
+index-BENB-HAn.js:2  GET https://w3suite.it/api/reference/legal-forms 500 (Internal Server Error)
+queryFn @ index-BENB-HAn.js:2
+await in queryFn
+a @ query-BxPMHe9e.js:1
+M @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+Promise.then
+(anonime) @ query-BxPMHe9e.js:1
+Promise.catch
+M @ query-BxPMHe9e.js:1
+start @ query-BxPMHe9e.js:1
+fetch @ query-BxPMHe9e.js:1
+Lt @ query-BxPMHe9e.js:1
+onSubscribe @ query-BxPMHe9e.js:1
+subscribe @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:54:05, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:54:25, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:54:25, Token expires: 17:08:52
+2index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:54:26, Token expires: 17:08:52
+installHook.js:1 Tue Dec 16 2025 16:56:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+warn @ Layout-CZlgBNdS.js:58
+onWebSocketClose @ Layout-CZlgBNdS.js:78
+(anonime) @ Layout-CZlgBNdS.js:75Comprendi l'avviso
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:56:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:56:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnected
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:22, Token expires: 17:08:52
+useTenantSafety-BAEZiUKJ.js:5 [TENANT-NAV] Navigating to: /staging/workflow-management
+index-BENB-HAn.js:21 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'workflow-management', tenant: 'staging', *: 'workflow-management'}
+index-BENB-HAn.js:21 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+index-BENB-HAn.js:21 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:25, Token expires: 17:08:52
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS 2ggp7s6ee967.invalid;branch=z9hG4bK2734437
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=0omukqbof5
+CSeq: 4 REGISTER
+Call-ID: 5l7vujsqcbbdoa5eqm9n
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="9be77ac6-0b66-4573-a1f5-193b7238ad79", uri="sip:demo.edgvoip.it", response="df4a0d22b35e851cd6a73960ff9fbc0c", qop=auth, cnonce="57t2fpcrbgcl", nc=00000001
+Contact: <sip:3r4mijeu@2ggp7s6ee967.invalid;transport=ws>;expires=0
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Stopping sip:2000@demo.edgvoip.it
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of registerers
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registerer 5l7vujsqcbbdoa5eqm9n0omukqbof5 in state Registered is being disposed
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+Layout-CZlgBNdS.js:86 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+Layout-CZlgBNdS.js:86 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it/ws (transport: wss)
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Configuration:
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · allowLegacyNotifications: false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationHa1: ""
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationPassword: NOT SHOWN
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationUsername: "2000"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · delegate: {}
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactName: ""
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactParams: {"transport":"ws"}
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · displayName: "Extension 2000"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · forceRport: false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · gracefulShutdown: true
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackAllowUnregisteredOptionTags: false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackIpInContact: false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackViaTcp: false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceId: ""
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceIdAlwaysAdded: false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logBuiltinEnabled: true
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConfiguration: true
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConnector: undefined
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logLevel: "debug"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · noAnswerTimeout: 60
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · preloadedRouteSet: []
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionAttempts: 0
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionDelay: 4
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sendInitialProvisionalResponse: true
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactory: (e,t)=>{o===void 0&&(o=$n());const r={iceGatheringTimeout:(t==null?void 0:t.iceGatheringTimeout)!==void 0?t==null?void 0:t.iceGatheringTimeout:5e3,peerConnectionConfiguration:Object.assign(Object.assign({},kn()),t==null?void 0:t.peerConnectionConfiguration)},n=e.userAgent.getLogger("sip.SessionDescriptionHandler");return new Be(n,o,r)}
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactoryOptions: {}
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtension100rel: "Unsupported"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionReplaces: "Unsupported"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionExtraSupported: []
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipjsId: "tc7fk"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportConstructor: Ft
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportOptions: {"server":"wss://demo.edgvoip.it/ws","connectionTimeout":10}
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · uri: sip:2000@demo.edgvoip.it
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · userAgentString: "SIP.js/0.21.1"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "ocadluolf8cr.invalid"
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it/ws
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+Layout-CZlgBNdS.js:86 No auth token found - login required
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+installHook.js:1 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | Not connected.
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+error @ Layout-CZlgBNdS.js:58
+onTransportError @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:61
+(anonime) @ Layout-CZlgBNdS.js:61
+Promise.catch
+send @ Layout-CZlgBNdS.js:61
+Ie @ Layout-CZlgBNdS.js:61
+init @ Layout-CZlgBNdS.js:71
+xe @ Layout-CZlgBNdS.js:71
+Tn @ Layout-CZlgBNdS.js:71
+register @ Layout-CZlgBNdS.js:71
+unregister @ Layout-CZlgBNdS.js:58
+(anonime) @ Layout-CZlgBNdS.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request transport error. Generating internal 503 Service Unavailable.
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+error @ Layout-CZlgBNdS.js:58
+onTransportError @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:61
+(anonime) @ Layout-CZlgBNdS.js:61
+Promise.catch
+send @ Layout-CZlgBNdS.js:61
+Ie @ Layout-CZlgBNdS.js:61
+init @ Layout-CZlgBNdS.js:71
+xe @ Layout-CZlgBNdS.js:71
+Tn @ Layout-CZlgBNdS.js:71
+register @ Layout-CZlgBNdS.js:71
+unregister @ Layout-CZlgBNdS.js:58
+(anonime) @ Layout-CZlgBNdS.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Unregister rejected with status code 503
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+error @ Layout-CZlgBNdS.js:58
+onReject @ Layout-CZlgBNdS.js:58
+receiveResponse @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:71
+onTransportError @ Layout-CZlgBNdS.js:61
+(anonime) @ Layout-CZlgBNdS.js:61
+Promise.catch
+send @ Layout-CZlgBNdS.js:61
+Ie @ Layout-CZlgBNdS.js:61
+init @ Layout-CZlgBNdS.js:71
+xe @ Layout-CZlgBNdS.js:71
+Tn @ Layout-CZlgBNdS.js:71
+register @ Layout-CZlgBNdS.js:71
+unregister @ Layout-CZlgBNdS.js:58
+(anonime) @ Layout-CZlgBNdS.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+Layout-CZlgBNdS.js:86 📡 Registration state: Unregistered
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Terminated
+Layout-CZlgBNdS.js:86 📡 Registration state: Terminated
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+installHook.js:1 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK2734437 | Not connected.
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+error @ Layout-CZlgBNdS.js:58
+logTransportError @ Layout-CZlgBNdS.js:61
+(anonime) @ Layout-CZlgBNdS.js:61
+Promise.catch
+Ie @ Layout-CZlgBNdS.js:61
+init @ Layout-CZlgBNdS.js:71
+xe @ Layout-CZlgBNdS.js:71
+Tn @ Layout-CZlgBNdS.js:71
+register @ Layout-CZlgBNdS.js:71
+unregister @ Layout-CZlgBNdS.js:58
+(anonime) @ Layout-CZlgBNdS.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK2734437 | Transport error occurred in non-INVITE client transaction with id z9hG4bK2734437.
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+error @ Layout-CZlgBNdS.js:58
+logTransportError @ Layout-CZlgBNdS.js:61
+(anonime) @ Layout-CZlgBNdS.js:61
+Promise.catch
+Ie @ Layout-CZlgBNdS.js:61
+init @ Layout-CZlgBNdS.js:71
+xe @ Layout-CZlgBNdS.js:71
+Tn @ Layout-CZlgBNdS.js:71
+register @ Layout-CZlgBNdS.js:71
+unregister @ Layout-CZlgBNdS.js:58
+(anonime) @ Layout-CZlgBNdS.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK2734437 | Failed to send initial outgoing request.
+overrideMethod @ installHook.js:1
+print @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+genericLog @ Layout-CZlgBNdS.js:58
+error @ Layout-CZlgBNdS.js:58
+logTransportError @ Layout-CZlgBNdS.js:61
+(anonime) @ Layout-CZlgBNdS.js:61
+Promise.catch
+Ie @ Layout-CZlgBNdS.js:61
+init @ Layout-CZlgBNdS.js:71
+xe @ Layout-CZlgBNdS.js:71
+Tn @ Layout-CZlgBNdS.js:71
+register @ Layout-CZlgBNdS.js:71
+unregister @ Layout-CZlgBNdS.js:58
+(anonime) @ Layout-CZlgBNdS.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:57:26, Token expires: 17:08:52
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:57:26 GMT+0100 (Ora standard dell’Europa cent
