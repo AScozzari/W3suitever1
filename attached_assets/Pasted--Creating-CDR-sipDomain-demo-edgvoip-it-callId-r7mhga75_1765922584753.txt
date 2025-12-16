@@ -1,0 +1,45 @@
+📊 Creating CDR: {sipDomain: 'demo.edgvoip.it', callId: 'r7mhga75hmbu501tfl8s2o63rf3v8q', direction: 'outbound', fromUri: '2000@demo.edgvoip.it', toUri: 'sip:+393297626144@demo.edgvoip.it', …}
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 22:58:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session r7mhga75hmbu501tfl8s2o63rf3v8q in state Terminated is being disposed
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 22:58:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.invite-dialog | INVITE dialog r7mhga75hmbu501tfl8s2o63rf3v8q3DtraBpNDcU2K destroyed
+Layout-CZlgBNdS.js:86  POST https://w3suite.it/api/voip/cdr/client 401 (Unauthorized)
+(anonime) @ Layout-CZlgBNdS.js:86
+(anonime) @ Layout-CZlgBNdS.js:86
+(anonime) @ Layout-CZlgBNdS.js:37
+emit @ Layout-CZlgBNdS.js:37
+stateTransition @ Layout-CZlgBNdS.js:58
+onByeRequest @ Layout-CZlgBNdS.js:58
+onBye @ Layout-CZlgBNdS.js:58
+receiveRequest @ Layout-CZlgBNdS.js:71
+receiveInsideDialogRequest @ Layout-CZlgBNdS.js:71
+receiveRequest @ Layout-CZlgBNdS.js:71
+receiveRequestFromTransport @ Layout-CZlgBNdS.js:71
+receiveIncomingRequestFromTransport @ Layout-CZlgBNdS.js:71
+onTransportMessage @ Layout-CZlgBNdS.js:86
+transport.onMessage @ Layout-CZlgBNdS.js:86
+onWebSocketMessage @ Layout-CZlgBNdS.js:84
+(anonime) @ Layout-CZlgBNdS.js:75Comprendi l'errore
+installHook.js:1 ❌ Failed to create CDR: Error: Failed to create CDR
+    at Layout-CZlgBNdS.js:86:16470
+overrideMethod @ installHook.js:1
+(anonime) @ Layout-CZlgBNdS.js:86
+await in (anonime)
+(anonime) @ Layout-CZlgBNdS.js:86
+(anonime) @ Layout-CZlgBNdS.js:37
+emit @ Layout-CZlgBNdS.js:37
+stateTransition @ Layout-CZlgBNdS.js:58
+onByeRequest @ Layout-CZlgBNdS.js:58
+onBye @ Layout-CZlgBNdS.js:58
+receiveRequest @ Layout-CZlgBNdS.js:71
+receiveInsideDialogRequest @ Layout-CZlgBNdS.js:71
+receiveRequest @ Layout-CZlgBNdS.js:71
+receiveRequestFromTransport @ Layout-CZlgBNdS.js:71
+receiveIncomingRequestFromTransport @ Layout-CZlgBNdS.js:71
+onTransportMessage @ Layout-CZlgBNdS.js:86
+transport.onMessage @ Layout-CZlgBNdS.js:86
+onWebSocketMessage @ Layout-CZlgBNdS.js:84
+(anonime) @ Layout-CZlgBNdS.js:75Comprendi l'errore
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 22:58:05, Token expires: 23:09:48
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 22:58:09, Token expires: 23:09:48
+2index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 22:58:12, Token expires: 23:09:48
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 22:58:20, Token expires: 23:09:48
+3index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 22:58:20, Token expires: 23:09:48
