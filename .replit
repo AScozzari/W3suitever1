@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["unzip", "nginx", "jq", "chromium", "sshpass", "openssh", "rsync"]
+packages = ["unzip", "nginx", "jq", "chromium", "sshpass", "openssh", "rsync", "expect"]
 
 [deployment]
 deploymentTarget = "autoscale"

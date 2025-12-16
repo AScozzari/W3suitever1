@@ -262,8 +262,78 @@ export function VoIPIntegrationSettings() {
     return <LoadingState />;
   }
 
+  const hasMissingCredentials = isConfigured && (!config?.hasApiKey || !config?.hasWebhookSecret);
+  const hasApiKeyIssue = isConfigured && !config?.hasApiKey;
+  const hasWebhookIssue = isConfigured && !config?.hasWebhookSecret;
+  const hasConnectionError = config?.connectionStatus === 'error';
+
+  const getCredentialStatusBadge = (hasCredential: boolean | undefined, label: string) => {
+    if (hasCredential) {
+      return (
+        <Badge className="bg-green-100 text-green-800 border border-green-300">
+          <CheckCircle2 className="w-3 h-3 mr-1" />
+          {label}
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-red-100 text-red-800 border border-red-300">
+        <XCircle className="w-3 h-3 mr-1" />
+        {label} mancante
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {hasMissingCredentials && (
+        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 flex items-start gap-3 shadow-sm" data-testid="alert-missing-credentials">
+          <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-800 text-base">Credenziali Incomplete</p>
+            <p className="text-sm text-red-700 mt-1">
+              {hasApiKeyIssue && hasWebhookIssue 
+                ? "La chiave API e il Webhook Secret non sono configurati. La sincronizzazione con EDGVoIP non funzionerà."
+                : hasApiKeyIssue 
+                  ? "La chiave API non è configurata. La sincronizzazione con EDGVoIP non funzionerà."
+                  : "Il Webhook Secret non è configurato. Le notifiche in tempo reale da EDGVoIP non funzioneranno."}
+            </p>
+            <div className="flex gap-2 mt-3">
+              {getCredentialStatusBadge(config?.hasApiKey, 'API Key')}
+              {getCredentialStatusBadge(config?.hasWebhookSecret, 'Webhook Secret')}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasConnectionError && config?.connectionError && (
+        <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 flex items-start gap-3 shadow-sm" data-testid="alert-connection-error">
+          <WifiOff className="w-6 h-6 text-orange-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-orange-800 text-base">Errore di Connessione</p>
+            <p className="text-sm text-orange-700 mt-1">{config.connectionError}</p>
+            <p className="text-xs text-orange-600 mt-2">
+              Ultimo tentativo: {config.lastConnectionTest ? formatDate(config.lastConnectionTest) : 'Mai'}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => testMutation.mutate()}
+            disabled={testMutation.isPending}
+            className="border-orange-400 text-orange-700 hover:bg-orange-100"
+            data-testid="button-retry-connection"
+          >
+            {testMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Riprova
+          </Button>
+        </div>
+      )}
+
       <Card className="bg-white/90 backdrop-blur-xl border-gray-200">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -278,12 +348,14 @@ export function VoIPIntegrationSettings() {
             </div>
             {isConfigured && (
               <div className="flex items-center gap-3">
+                {getCredentialStatusBadge(config?.hasApiKey, 'API Key')}
+                {getCredentialStatusBadge(config?.hasWebhookSecret, 'Webhook')}
                 {getStatusBadge(config?.connectionStatus || 'unknown')}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => testMutation.mutate()}
-                  disabled={testMutation.isPending}
+                  disabled={testMutation.isPending || !config?.hasApiKey}
                   data-testid="button-test-connection"
                 >
                   {testMutation.isPending ? (
