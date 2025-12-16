@@ -3,9 +3,14 @@
  * 
  * HTTP client for fetching trunk and extension data from edgvoip PBX
  * Supports bidirectional sync: W3 Suite can pull fresh data from edgvoip
+ * 
+ * API Key is read from voipTenantConfig table (set from frontend)
  */
 
 import { logger } from '../core/logger';
+import { db, setTenantContext } from '../core/db';
+import { voipTenantConfig } from '../db/schema/w3suite';
+import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
 export interface EdgvoipTrunkData {
@@ -49,6 +54,12 @@ export interface EdgvoipAPIResponse<T> {
   code?: string;
 }
 
+interface EdgvoipConfig {
+  apiUrl: string;
+  webhookSecret: string;
+  accessToken: string;
+}
+
 /**
  * Generate HMAC-SHA256 signature for API authentication
  */
@@ -60,27 +71,59 @@ const generateHMAC = (payload: string, secret: string): string => {
 };
 
 /**
- * Get edgvoip API configuration from environment
+ * Get edgvoip API configuration from database (per-tenant)
+ * Falls back to environment variables if no tenant config exists
  */
-const getEdgvoipConfig = () => {
-  const apiUrl = process.env.EDGVOIP_API_URL;
-  const webhookSecret = process.env.EDGVOIP_WEBHOOK_SECRET;
-  const accessToken = process.env.EDGVOIP_ACCESS_TOKEN;
-
-  if (!apiUrl || !webhookSecret || !accessToken) {
-    const missing = [];
-    if (!apiUrl) missing.push('EDGVOIP_API_URL');
-    if (!webhookSecret) missing.push('EDGVOIP_WEBHOOK_SECRET');
-    if (!accessToken) missing.push('EDGVOIP_ACCESS_TOKEN');
+async function getEdgvoipConfigForTenant(tenantId: string): Promise<EdgvoipConfig | null> {
+  try {
+    // Set tenant context for RLS
+    await setTenantContext(db, tenantId);
     
-    logger.warn('Missing edgvoip configuration - sync disabled', { 
-      missingVars: missing 
-    });
+    // Try to get config from database first
+    const [tenantConfig] = await db.select()
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId))
+      .limit(1);
+    
+    if (tenantConfig && tenantConfig.apiKey && tenantConfig.apiBaseUrl) {
+      logger.info('Using tenant-specific edgvoip config from database', { 
+        tenantId,
+        apiBaseUrl: tenantConfig.apiBaseUrl,
+        hasApiKey: !!tenantConfig.apiKey,
+        hasWebhookSecret: !!tenantConfig.webhookSecret
+      });
+      
+      return {
+        apiUrl: tenantConfig.apiBaseUrl,
+        webhookSecret: tenantConfig.webhookSecret || '',
+        accessToken: tenantConfig.apiKey
+      };
+    }
+    
+    // Fallback to environment variables
+    const apiUrl = process.env.EDGVOIP_API_URL;
+    const webhookSecret = process.env.EDGVOIP_WEBHOOK_SECRET;
+    const accessToken = process.env.EDGVOIP_ACCESS_TOKEN;
+
+    if (!apiUrl || !accessToken) {
+      const missing = [];
+      if (!apiUrl) missing.push('EDGVOIP_API_URL');
+      if (!accessToken) missing.push('EDGVOIP_ACCESS_TOKEN');
+      
+      logger.warn('No edgvoip config in database and missing env vars - sync disabled', { 
+        tenantId,
+        missingVars: missing 
+      });
+      return null;
+    }
+
+    logger.info('Using environment variable edgvoip config (fallback)', { tenantId });
+    return { apiUrl, webhookSecret: webhookSecret || '', accessToken };
+  } catch (error) {
+    logger.error('Error fetching edgvoip config for tenant', { error, tenantId });
     return null;
   }
-
-  return { apiUrl, webhookSecret, accessToken };
-};
+}
 
 /**
  * Make authenticated request to edgvoip API
@@ -91,12 +134,12 @@ async function edgvoipAPIRequest<T>(
   tenantId: string,
   body?: any
 ): Promise<EdgvoipAPIResponse<T>> {
-  const config = getEdgvoipConfig();
+  const config = await getEdgvoipConfigForTenant(tenantId);
   
   if (!config) {
     return {
       success: false,
-      error: 'edgvoip API not configured',
+      error: 'edgvoip API not configured. Please set API key in VoIP settings.',
       code: 'EDGVOIP_NOT_CONFIGURED'
     };
   }
@@ -109,7 +152,7 @@ async function edgvoipAPIRequest<T>(
     const timestamp = new Date().toISOString();
     const payloadString = body ? JSON.stringify(body) : '';
     const signaturePayload = `${method}:${endpoint}:${timestamp}:${payloadString}`;
-    const signature = generateHMAC(signaturePayload, webhookSecret);
+    const signature = webhookSecret ? generateHMAC(signaturePayload, webhookSecret) : '';
 
     logger.info('edgvoip API request', {
       method,
@@ -118,15 +161,20 @@ async function edgvoipAPIRequest<T>(
       url
     });
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'X-W3-Tenant-ID': tenantId,
+      'X-W3-Timestamp': timestamp
+    };
+    
+    if (signature) {
+      headers['X-W3-Signature'] = signature;
+    }
+
     const response = await fetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-        'X-W3-Signature': signature,
-        'X-W3-Tenant-ID': tenantId,
-        'X-W3-Timestamp': timestamp
-      },
+      headers,
       body: payloadString || undefined
     });
 
@@ -232,25 +280,13 @@ export async function fetchExtensionFromEdgvoip(
 export async function checkEdgvoipConnection(
   tenantId: string
 ): Promise<{ available: boolean; error?: string }> {
-  // Check configuration first
-  const apiUrl = process.env.EDGVOIP_API_URL;
-  const webhookSecret = process.env.EDGVOIP_WEBHOOK_SECRET;
-  const accessToken = process.env.EDGVOIP_ACCESS_TOKEN;
-
-  if (!apiUrl || !webhookSecret || !accessToken) {
-    const missing = [];
-    if (!apiUrl) missing.push('EDGVOIP_API_URL');
-    if (!webhookSecret) missing.push('EDGVOIP_WEBHOOK_SECRET');
-    if (!accessToken) missing.push('EDGVOIP_ACCESS_TOKEN');
-    
-    const errorMsg = `Missing required environment variables: ${missing.join(', ')}`;
-    logger.warn('edgvoip connection check failed - missing configuration', { 
-      missingVars: missing 
-    });
-    
+  // Get config from database or env vars
+  const config = await getEdgvoipConfigForTenant(tenantId);
+  
+  if (!config) {
     return { 
       available: false, 
-      error: errorMsg
+      error: 'edgvoip API not configured. Please set API key in VoIP settings (Settings > VoIP).'
     };
   }
 
