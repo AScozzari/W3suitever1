@@ -1,0 +1,50 @@
+er-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-BENB-HAn.js:2  GET https://w3suite.it/api/reference/legal-forms 500 (Internal Server Error)
+queryFn @ index-BENB-HAn.js:2
+await in queryFn
+a @ query-BxPMHe9e.js:1
+M @ query-BxPMHe9e.js:1
+start @ query-BxPMHe9e.js:1
+fetch @ query-BxPMHe9e.js:1
+Lt @ query-BxPMHe9e.js:1
+onSubscribe @ query-BxPMHe9e.js:1
+subscribe @ query-BxPMHe9e.js:1
+(anonime) @ query-BxPMHe9e.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:53:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS 2ggp7s6ee967.invalid;branch=z9hG4bK652209;received=127.0.0.1;rport=42672
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=0omukqbof5
+To: <sip:2000@demo.edgvoip.it>;tag=X7g6SKyQN194c
+Call-ID: 5l7vujsqcbbdoa5eqm9n
+CSeq: 3 REGISTER
+Contact: <sip:3r4mijeu@2ggp7s6ee967.invalid;transport=ws>;expires=600
+Date: Tue, 16 Dec 2025 15:53:55 GMT
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:53:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Registered
+Layout-CZlgBNdS.js:86 📡 Registration state: Registered
+Layout-CZlgBNdS.js:86 ✅ SIP Registered successfully
+Layout-CZlgBNdS.js:58 Tue Dec 16 2025 16:53:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+SettingsPage-BZm4dfCT.js:15 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage-BZm4dfCT.js:1 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage-BZm4dfCT.js:1 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:53:55, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:53:55, Token expires: 17:08:52
+index-BENB-HAn.js:2 🔍 Token expiry check: Current time: 16:53:56, Token expires: 17:08:52
+index-BENB-HAn.js:2  GET https://w3suite.it/api/reference/legal-forms 500 (Internal Server Error)
