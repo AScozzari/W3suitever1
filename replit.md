@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a distinctive WindTre glassmorphism design. The project aims to deliver a unified platform that streamlines diverse business functions, improves data insights, and supports strategic decision-making, with a business vision to become the leading integrated business operations platform.
+W3 Suite is a multi-tenant enterprise platform centralizing and optimizing business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its purpose is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a distinctive WindTre glassmorphism design. The project aims to deliver a unified platform that streamlines diverse business functions, improves data insights, and supports strategic decision-making, with the ambition to become the leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
