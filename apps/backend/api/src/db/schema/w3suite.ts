@@ -9324,3 +9324,153 @@ export const insertWmsMovementTypeConfigSchema = createInsertSchema(wmsMovementT
 });
 export type InsertWmsMovementTypeConfig = z.infer<typeof insertWmsMovementTypeConfigSchema>;
 export type WmsMovementTypeConfig = typeof wmsMovementTypeConfig.$inferSelect;
+
+// ==================== LISTINI POLIFORMI - PRICE LISTS ====================
+
+// Enum for price list origin (brand-pushed or tenant-created)
+export const priceListOriginEnum = pgEnum('price_list_origin', ['brand', 'tenant']);
+
+// Enum for price list type
+export const priceListTypeEnum = pgEnum('price_list_type', ['base', 'promo', 'customer', 'channel', 'volume', 'geographic']);
+
+// Enum for price list item change reason (versioning)
+export const priceListItemChangeReasonEnum = pgEnum('price_list_item_change_reason', ['correction', 'price_update', 'promo', 'supplier_change', 'vat_change']);
+
+// 21) price_lists - Header listino (polimorfo)
+export const priceLists = w3suiteSchema.table("price_lists", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Multi-tenancy: NULL = brand (cross-tenant), UUID = tenant-specific
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Identificazione
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Tipo e priorità
+  type: priceListTypeEnum("type").default('base').notNull(),
+  priority: integer("priority").default(0).notNull(),
+  
+  // Origine (brand-pushed vs tenant-created)
+  origin: priceListOriginEnum("origin").default('tenant').notNull(),
+  isLocked: boolean("is_locked").default(false).notNull(), // If true, tenant cannot modify
+  sourceBrandPriceListId: uuid("source_brand_price_list_id"), // Tracks brand version source
+  
+  // Validità temporale
+  validFrom: timestamp("valid_from").notNull(),
+  validTo: timestamp("valid_to"), // NULL = no expiration
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Versioning header
+  currentVersion: integer("current_version").default(1).notNull(),
+  
+  // Metadata
+  currencyCode: varchar("currency_code", { length: 3 }).default('EUR').notNull(),
+  metadata: jsonb("metadata").default({}),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // Unique code per tenant (or global for brand)
+  uniqueIndex("price_lists_tenant_code_unique").on(table.tenantId, table.code),
+  
+  // Performance indexes
+  index("price_lists_tenant_idx").on(table.tenantId),
+  index("price_lists_origin_idx").on(table.origin),
+  index("price_lists_type_idx").on(table.type),
+  index("price_lists_active_idx").on(table.isActive),
+  index("price_lists_valid_idx").on(table.validFrom, table.validTo),
+]);
+
+export const insertPriceListSchema = createInsertSchema(priceLists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPriceList = z.infer<typeof insertPriceListSchema>;
+export type PriceList = typeof priceLists.$inferSelect;
+
+// 22) price_list_items - Dettaglio listino (polimorfo per tipo prodotto)
+export const priceListItems = w3suiteSchema.table("price_list_items", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Parent reference
+  priceListId: uuid("price_list_id").notNull().references(() => priceLists.id, { onDelete: 'cascade' }),
+  
+  // Multi-tenancy: NULL = brand (cross-tenant), UUID = tenant-specific
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Origine (brand-pushed vs tenant-created)
+  origin: priceListOriginEnum("origin").default('tenant').notNull(),
+  isLocked: boolean("is_locked").default(false).notNull(),
+  sourceBrandItemId: uuid("source_brand_item_id"), // Tracks brand version source
+  
+  // ==================== RIFERIMENTO PRODOTTO ====================
+  productId: varchar("product_id", { length: 100 }).notNull(), // FK logica a products.id (varchar)
+  productVersionId: uuid("product_version_id"), // FK logica a product_versions.id
+  
+  // ==================== FORNITORE ====================
+  supplierId: uuid("supplier_id").references(() => suppliers.id),
+  
+  // ==================== LATO ACQUISTO (PHYSICAL/VIRTUAL/SERVICE) ====================
+  purchaseCost: numeric("purchase_cost", { precision: 12, scale: 2 }), // DP - Dealer Price (netto)
+  purchaseVatRateId: uuid("purchase_vat_rate_id"), // FK logica a public.vat_rates
+  purchaseVatRegimeId: uuid("purchase_vat_regime_id"), // FK logica a public.vat_regimes
+  
+  // ==================== LATO VENDITA ====================
+  salesPriceVatIncl: numeric("sales_price_vat_incl", { precision: 12, scale: 2 }), // SP/EuP - IVA inclusa
+  salesVatRateId: uuid("sales_vat_rate_id"), // FK logica a public.vat_rates
+  salesVatRegimeId: uuid("sales_vat_regime_id"), // FK logica a public.vat_regimes
+  
+  // ==================== SCONTO ====================
+  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }), // Sconto dealer %
+  
+  // ==================== MODALITÀ VENDITA ====================
+  salesModeId: uuid("sales_mode_id"), // FK logica a public.sales_modes (ALL/FIN/VAR)
+  financialEntityId: uuid("financial_entity_id").references(() => financialEntities.id), // Ente finanziatore (se FIN)
+  installmentMethodId: uuid("installment_method_id"), // FK logica a public.installment_methods (se VAR)
+  
+  // ==================== CANVAS-SPECIFIC (solo per prodotti CANVAS) ====================
+  entryFee: numeric("entry_fee", { precision: 12, scale: 2 }), // Anticipo cliente CANVAS
+  
+  // ==================== VALIDITÀ TEMPORALE ====================
+  validFrom: timestamp("valid_from").notNull(),
+  validTo: timestamp("valid_to"), // NULL = no expiration
+  
+  // ==================== VERSIONING ====================
+  version: integer("version").default(1).notNull(),
+  previousVersionId: uuid("previous_version_id"), // Self-reference for version chain
+  changeReason: priceListItemChangeReasonEnum("change_reason"),
+  
+  // ==================== STATUS ====================
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // ==================== AUDIT ====================
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // Unique product per price list per validity period
+  index("price_list_items_pricelist_idx").on(table.priceListId),
+  index("price_list_items_tenant_idx").on(table.tenantId),
+  index("price_list_items_product_idx").on(table.productId),
+  index("price_list_items_origin_idx").on(table.origin),
+  index("price_list_items_supplier_idx").on(table.supplierId),
+  index("price_list_items_sales_mode_idx").on(table.salesModeId),
+  index("price_list_items_valid_idx").on(table.validFrom, table.validTo),
+  index("price_list_items_active_idx").on(table.isActive),
+  index("price_list_items_version_idx").on(table.version),
+]);
+
+export const insertPriceListItemSchema = createInsertSchema(priceListItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPriceListItem = z.infer<typeof insertPriceListItemSchema>;
+export type PriceListItem = typeof priceListItems.$inferSelect;

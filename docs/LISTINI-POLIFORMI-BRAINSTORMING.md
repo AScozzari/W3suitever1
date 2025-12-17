@@ -275,6 +275,33 @@ price_list_item
 | `marginAmount` | salesPriceNet - purchaseCost |
 | `marginPercent` | marginAmount ÷ purchaseCost × 100 |
 
+#### Multi-tenancy & Brand Push (✅ IMPLEMENTATO)
+
+| Campo | Valore | Significato |
+|-------|--------|-------------|
+| `origin` | `'brand'` | Record pushato da Brand Interface (HQ) |
+| `origin` | `'tenant'` | Record creato localmente dal tenant |
+| `tenantId` | `NULL` | Cross-tenant (visibile a tutti i tenant) |
+| `tenantId` | `UUID` | Specifico del tenant |
+| `isLocked` | `true` | Tenant NON può modificare |
+| `sourceBrandItemId` | UUID | Traccia versione Brand di origine |
+
+**RLS Policy**:
+```sql
+WHERE tenant_id = current_tenant_id OR tenant_id IS NULL
+```
+*I tenant vedono i propri record + quelli brand (cross-tenant)*
+
+#### Versioning (✅ IMPLEMENTATO)
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `version` | integer | Numero versione (1, 2, 3...) |
+| `previousVersionId` | uuid | Punta alla versione precedente |
+| `changeReason` | enum | 'correction', 'price_update', 'promo', 'supplier_change', 'vat_change' |
+| `validFrom` | timestamp | Inizio validità versione |
+| `validTo` | timestamp | Fine validità (NULL = senza scadenza) |
+
 ---
 
 ## 3. Schema Database Proposto
