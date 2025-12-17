@@ -542,7 +542,6 @@ export const wmsMovementStatusEnum = pgEnum('wms_movement_status', [
   'completed',              // Completato
   'cancelled'               // Annullato
 ]);
-export const priceListTypeEnum = pgEnum('price_list_type', ['b2c', 'b2b', 'wholesale']);
 
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
