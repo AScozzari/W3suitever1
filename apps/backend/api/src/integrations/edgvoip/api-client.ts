@@ -376,6 +376,28 @@ export class EdgvoipApiClient {
   // ==================== STATUS MONITORING ====================
 
   async getTrunkStatuses(): Promise<EdgvoipApiResponse<TrunkStatus[]>> {
+    // API v2 update: /trunks now includes status fields (sip_registration_status, sip_registration_state)
+    // Fallback to /status/trunks if /trunks fails
+    const trunksResponse = await this.request<any[]>({
+      method: 'GET',
+      endpoint: '/trunks'
+    });
+    
+    if (trunksResponse.success && trunksResponse.data) {
+      // Map trunk data to TrunkStatus format
+      const statuses: TrunkStatus[] = trunksResponse.data.map(trunk => ({
+        trunk_id: trunk.id || trunk.external_id,
+        trunk_name: trunk.name,
+        sip_registration_status: trunk.sip_registration_status || 'Sconosciuto',
+        sip_registration_state: trunk.sip_registration_state || 'unknown',
+        last_registration: trunk.last_registration,
+        registration_ip: trunk.registration_ip,
+        updated_at: trunk.updated_at
+      }));
+      return { success: true, data: statuses };
+    }
+    
+    // Fallback to legacy endpoint
     return this.request<TrunkStatus[]>({
       method: 'GET',
       endpoint: '/status/trunks'
