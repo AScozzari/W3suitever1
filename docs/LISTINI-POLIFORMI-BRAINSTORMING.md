@@ -114,26 +114,52 @@ I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di p
 | `isLocked` | `false` | Tenant può fare fork e personalizzare |
 | `sourceBrandVersionId` | UUID | Traccia la versione Brand da cui deriva |
 
-### 1.5 Modalità di Vendita Preimpostata (🆕)
+### 1.5 Modalità di Vendita (🆕 Tabelle Dedicate)
 
-Ogni item listino può avere una **modalità di vendita** che viene ereditata in cassa:
+Ogni item listino può avere una **modalità di vendita** che viene ereditata in cassa.
+
+#### Tabella `public.sales_modes`
 
 | Campo | Tipo | Descrizione |
 |-------|------|-------------|
-| `salesMode` | varchar(20) | 'STD' \| 'FIN' \| 'VAR' (default: 'STD') |
-| `financingEntityId` | FK → financing_entities | Ente finanziatore (solo se salesMode = 'FIN') |
-| `financingMonths` | integer | Numero rate (12, 24, 36, 48 mesi) |
+| `id` | uuid | PK |
+| `code` | varchar(20) | `ALL`, `FIN`, `VAR` |
+| `name` | varchar(100) | Nome descrittivo |
+| `description` | text | Descrizione estesa |
+| `requiresFinancialEntity` | boolean | true solo per FIN |
+| `requiresInstallmentMethod` | boolean | true solo per VAR |
+| `isActive` | boolean | default true |
+| `displayOrder` | smallint | Ordinamento UI |
+
+#### Tabella `public.installment_methods`
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `id` | uuid | PK |
+| `code` | varchar(20) | `CREDIT_CARD`, `RID` |
+| `name` | varchar(100) | "Carta di Credito", "RID Bancario" |
+| `description` | text | Descrizione |
+| `isActive` | boolean | default true |
+| `displayOrder` | smallint | Ordinamento UI |
+
+#### Campi su price_list_item
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `salesModeId` | FK → public.sales_modes | Modalità vendita |
+| `financialEntityId` | FK → w3suite.financial_entities | Ente finanziatore (opz. se FIN) |
+| `installmentMethodId` | FK → public.installment_methods | Metodo rateizzazione (opz. se VAR) |
 
 **Codici Modalità Vendita WindTre**:
 
-| Codice | Nome WindTre | Descrizione | Impatto |
-|--------|--------------|-------------|---------|
-| **STD** | Standard | Senza vincoli di pagamento | Qualsiasi metodo (contanti, carta, POS) |
-| **FIN** | Finanziato | Ente finanziatore esterno | Richiede selezione ente (Compass, Findomestic, Agos) |
-| **VAR** | Vendita a Rate | Rateizzazione interna WindTre | Rate mensili gestite da WindTre |
+| Codice | Nome | requiresFinancialEntity | requiresInstallmentMethod |
+|--------|------|-------------------------|---------------------------|
+| **ALL** | Tutte le modalità | false | false |
+| **FIN** | Finanziamento | **true** | false |
+| **VAR** | Rateizzazione | false | **true** |
 
 **Impatto su Cassa e Commissioning**:
-- **Cassa**: Mostra opzioni pagamento appropriate, form ente finanziatore
+- **Cassa**: Mostra opzioni pagamento appropriate, form ente finanziatore o metodo rateizzazione
 - **Commissioning**: Regole bonus diverse per modalità (es: FIN paga più del STD)
 - **Override**: Operatore può cambiare modalità in cassa se necessario (vedi Sezione 6)
 
@@ -208,6 +234,46 @@ I **CANVAS** hanno struttura **DIVERSA**:
 | **VIRTUAL** | ✅ Sì | ✅ Sì | ❌ No | Margine vendita |
 | **SERVICE** | ✅ Sì | ✅ Sì | ❌ No | Margine vendita |
 | **CANVAS** | ❌ No | ❌ No | ✅ Sì | **Commissioning** |
+
+### 2.4 Struttura Definitiva Listino STD - Prodotti PHYSICAL (✅ IMPLEMENTAZIONE)
+
+#### Campi Database `price_list_items` per tipo PHYSICAL
+
+| Campo | Tipo | Note |
+|-------|------|------|
+| **productId** | FK → w3suite.products | Prodotto master |
+| **productVersionId** | FK → w3suite.product_versions | Versione specifica (opzionale) |
+| **supplierId** | FK → w3suite.suppliers | Fornitore |
+| **purchaseCost** | numeric(12,2) | DP - Costo acquisto netto |
+| **purchaseVatRateId** | FK → public.vat_rates | Aliquota IVA acquisto |
+| **purchaseVatRegimeId** | FK → public.vat_regimes | Regime fiscale acquisto |
+| **salesPriceVatIncl** | numeric(12,2) | SP/EuP - Prezzo vendita IVA incl. |
+| **salesVatRateId** | FK → public.vat_rates | Aliquota IVA vendita |
+| **salesVatRegimeId** | FK → public.vat_regimes | Regime fiscale vendita |
+| **discountPercent** | numeric(5,2) | Sconto dealer % |
+| **salesModeId** | FK → public.sales_modes | Modalità vendita (ALL/FIN/VAR) |
+| **financialEntityId** | FK → w3suite.financial_entities | Ente finanziatore (opz. se FIN) |
+| **installmentMethodId** | FK → public.installment_methods | Metodo rateizzazione (opz. se VAR) |
+
+#### Collegamenti Logici (via productId → products)
+
+```
+price_list_item
+  └── productId → products
+        ├── driverId → w3suite.drivers (categoria commerciale)
+        ├── categoryId → w3suite.categories (categoria merceologica)
+        └── typeId → w3suite.product_types (tipologia prodotto)
+```
+
+**Nota**: I dati prodotto (SKU, EAN, brand, model, name, memory, color, condition) vengono letti in JOIN dalla tabella `products`.
+
+#### Campi Calcolati (NON salvati - per report/analisi)
+
+| Campo | Formula |
+|-------|---------|
+| `salesPriceNet` | salesPriceVatIncl ÷ (1 + aliquota%) |
+| `marginAmount` | salesPriceNet - purchaseCost |
+| `marginPercent` | marginAmount ÷ purchaseCost × 100 |
 
 ---
 

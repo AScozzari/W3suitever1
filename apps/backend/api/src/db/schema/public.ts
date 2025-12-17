@@ -345,3 +345,47 @@ export const insertVatRegimeSchema = createInsertSchema(vatRegimes).omit({
 });
 export type InsertVatRegime = z.infer<typeof insertVatRegimeSchema>;
 export type VatRegime = typeof vatRegimes.$inferSelect;
+
+// ==================== SALES MODES (Modalità di Vendita) ====================
+export const salesModes = pgTable("sales_modes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 20 }).unique().notNull(), // ALL, FIN, VAR
+  name: varchar("name", { length: 100 }).notNull(), // "Tutte le modalità", "Finanziamento", "Rateizzazione"
+  description: text("description"),
+  requiresFinancialEntity: boolean("requires_financial_entity").default(false), // true solo per FIN
+  requiresInstallmentMethod: boolean("requires_installment_method").default(false), // true solo per VAR
+  isActive: boolean("is_active").default(true),
+  displayOrder: smallint("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_sales_modes_code").on(table.code),
+  index("idx_sales_modes_active").on(table.isActive),
+]);
+
+export const insertSalesModeSchema = createInsertSchema(salesModes).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertSalesMode = z.infer<typeof insertSalesModeSchema>;
+export type SalesMode = typeof salesModes.$inferSelect;
+
+// ==================== INSTALLMENT METHODS (Metodi Rateizzazione) ====================
+export const installmentMethods = pgTable("installment_methods", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 20 }).unique().notNull(), // CREDIT_CARD, RID
+  name: varchar("name", { length: 100 }).notNull(), // "Carta di Credito", "RID Bancario"
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  displayOrder: smallint("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_installment_methods_code").on(table.code),
+  index("idx_installment_methods_active").on(table.isActive),
+]);
+
+export const insertInstallmentMethodSchema = createInsertSchema(installmentMethods).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertInstallmentMethod = z.infer<typeof insertInstallmentMethodSchema>;
+export type InstallmentMethod = typeof installmentMethods.$inferSelect;
