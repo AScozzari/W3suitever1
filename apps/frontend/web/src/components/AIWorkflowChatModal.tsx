@@ -201,7 +201,7 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 max-h-[400px]">
           {messages.map((msg, idx) => (
             <div
               key={idx}
