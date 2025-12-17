@@ -8,150 +8,158 @@
 
 ---
 
-## ⚠️ Punti Critici da Risolvere (Review 17/12/2025)
+## 🎯 Concept Fondamentale
 
-| # | Area | Issue | Azione Richiesta |
-|---|------|-------|------------------|
-| 1 | **Schema DB** | Conflitto convenzioni ID (varchar+nanoid vs UUID) | Allineare con pattern esistenti w3suite |
-| 2 | **RLS** | Manca strategia Row Level Security | Documentare RLS policy per multi-tenancy |
-| 3 | **Brand→Tenant** | Manca propagazione brand_price_lists → tenant copies | Definire flusso publishing |
-| 4 | **Priorità** | Manca tiebreaker deterministico se stessa priorità | Aggiungere `createdAt` come secondary sort |
-| 5 | **Stacking** | Regole non chiare per sconti cumulativi | Definire: override vs accumulate |
-| 6 | **computedPrice** | Denormalizzazione senza strategia refresh | Definire job/worker per ricalcolo |
-| 7 | **Product Version** | Cosa succede quando cambia product_versions? | Invalidazione cache + recalc |
-| 8 | **API** | Mancano specifiche validazione, pagination, errori | Completare contract |
+I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di prodotto. Sono **IBRIDI** perché contengono sia informazioni di **ACQUISTO** che di **VENDITA** nello stesso record, con gestione fiscale italiana completa.
 
 ---
 
-## 1. Stato Attuale del Sistema
+## 1. Struttura IBRIDA dei Listini
 
-### 1.1 Cosa Esiste
+### 1.1 Campi Lato ACQUISTO (📦 Cosa Paghiamo)
 
-#### Database Schema (brand_interface)
-```sql
--- Tabella brand_price_lists (Brand Interface - HQ)
-brand_price_lists
-├── id (UUID)
-├── code (varchar unique)
-├── name (varchar)
-├── description (text)
-├── validFrom (timestamp)
-├── validTo (timestamp)  
-├── isActive (boolean)
-├── priority (integer) -- Per overlapping pricelists
-├── currencyCode (varchar, default 'EUR')
-├── metadata (jsonb)
-├── createdAt, updatedAt
-```
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `purchaseCost` | numeric(12,2) | Costo acquisto da fornitore (netto) |
+| `purchaseTaxRegimeId` | FK | Regime fiscale acquisto (Ordinario, Forfettario, etc.) |
+| `purchaseVatRate` | numeric(5,2) | Aliquota IVA acquisto % (22%, 10%, 4%, 0%) |
+| `supplierId` | FK → suppliers | Fornitore del prodotto |
 
-#### Database Schema (w3suite)
-```sql
--- Tabella product_versions (Versioning prezzi prodotto)
-product_versions
-├── id (UUID)
-├── tenantId
-├── productId → products.id
-├── version (integer incrementale)
-├── monthlyFee (numeric) -- Canone mensile
-├── unitPrice (numeric)  -- Prezzo vendita
-├── costPrice (numeric)  -- Costo base
-├── validFrom, validTo   -- Validità temporale
-├── changeReason ('correction' | 'business_change')
-├── createdBy, createdAt
-```
+### 1.2 Campi Lato VENDITA (💰 Cosa Incassiamo)
 
-#### Frontend (Placeholder)
-- `apps/frontend/web/src/pages/wms/PriceListsPage.tsx` - Pagina vuota "In Arrivo"
-- `apps/frontend/web/src/components/wms/ListiniTabContent.tsx` - Tab con DataTable vuota
-- `apps/frontend/brand-web/src/components/wms/BrandPriceListsTab.tsx` - Brand Interface tab
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `salesPriceVatIncl` | numeric(12,2) | Prezzo vendita **IVA inclusa** (quello che paga il cliente) |
+| `salesPriceNet` | numeric(12,2) | *(calcolato)* Prezzo netto = salesPriceVatIncl / (1 + vatRate) |
+| `salesTaxRegimeId` | FK | Regime fiscale vendita |
+| `salesVatRate` | numeric(5,2) | Aliquota IVA vendita % |
+| `marginAmount` | numeric(12,2) | *(calcolato)* Margine € = salesPriceNet - purchaseCost |
+| `marginPercent` | numeric(5,2) | *(calcolato)* Margine % = marginAmount / purchaseCost * 100 |
 
-### 1.2 Cosa Manca
+### 1.3 Validità e Versioning
 
-1. **Tabella `price_list_items`** - Collegamento listino → prodotto con prezzo specifico
-2. **Regole di applicabilità** - Condizioni per applicare un listino (cliente, canale, volume, etc.)
-3. **Gerarchia listini** - Cascading/override tra listini diversi
-4. **API Backend** - CRUD e calcolo prezzo effettivo
-5. **Frontend funzionale** - Modal creazione, gestione items, preview prezzi
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `validFrom` | timestamp | Data/ora inizio validità |
+| `validTo` | timestamp | Data/ora fine validità (NULL = senza scadenza) |
+| `version` | integer | Numero versione (1, 2, 3...) |
+| `previousVersionId` | FK | Punta alla versione precedente |
+| `changeReason` | enum | 'correction' \| 'price_update' \| 'promo' \| 'supplier_change' |
+
+### 1.4 Origine (Brand vs Tenant)
+
+| Campo | Valore | Significato |
+|-------|--------|-------------|
+| `origin` | `'brand'` | Creato da Brand Interface (HQ), pushato ai tenant |
+| `origin` | `'tenant'` | Creato localmente dal tenant |
+| `isLocked` | `true` | Tenant NON può modificare (aggiornato solo da Brand) |
+| `isLocked` | `false` | Tenant può fare fork e personalizzare |
+| `sourceBrandVersionId` | UUID | Traccia la versione Brand da cui deriva |
 
 ---
 
-## 2. Requisiti Business (Da Validare)
+## 2. Struttura per Tipo Prodotto (POLIFORMA)
 
-### 2.1 Tipologie di Listino
+### 2.1 Prodotti PHYSICAL, VIRTUAL, SERVICE
 
-| Tipo | Descrizione | Esempio |
-|------|-------------|---------|
-| **Base** | Listino default, sempre applicato | "Listino Pubblico 2025" |
-| **Cliente** | Specifico per singolo cliente/gruppo | "Accordo Quadro TIM Retail" |
-| **Canale** | Per canale di vendita | "Listino E-commerce", "Listino Dealer" |
-| **Promozionale** | Temporaneo, validità limitata | "Black Friday 2025" |
-| **Volume** | Basato su quantità acquistata | "Sconto da 100+ pezzi" |
-| **Geografico** | Per area commerciale | "Listino Sud Italia" |
-
-### 2.2 Struttura Prezzo Prodotto
-
-Un prodotto WindTre può avere:
+Questi tre tipi hanno struttura **identica**:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ PRODOTTO: iPhone 15 Pro 256GB                           │
-├─────────────────────────────────────────────────────────┤
-│ Prezzo Base (da product_versions):                      │
-│   - unitPrice: €1.199,00                                │
-│   - costPrice: €950,00                                  │
-│   - monthlyFee: €0 (no canone per device puro)          │
-├─────────────────────────────────────────────────────────┤
-│ Listino "Dealer Gold":                                  │
-│   - Sconto: -15%                                        │
-│   - Prezzo Finale: €1.019,15                            │
-├─────────────────────────────────────────────────────────┤
-│ Listino "Black Friday" (priorità alta, temporaneo):     │
-│   - Override: €999,00 (prezzo fisso)                    │
-│   - Prezzo Finale: €999,00 ✓                            │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ LISTINO ITEM - PHYSICAL/VIRTUAL/SERVICE                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  📦 ACQUISTO                      💰 VENDITA                    │
+│  ─────────────────                ─────────────────             │
+│  • Costo acquisto: €800           • Prezzo IVA incl: €1.199     │
+│  • Regime fiscale: Ordinario      • Regime fiscale: Ordinario   │
+│  • Aliquota IVA: 22%              • Aliquota IVA: 22%           │
+│  • Fornitore: TIM SpA             • Prezzo netto: €982,79       │
+│                                   • Margine: €182,79 (22,8%)    │
+│                                                                 │
+│  ⏰ VALIDITÀ                                                    │
+│  ─────────────────                                              │
+│  • Dal: 01/01/2025 00:00                                        │
+│  • Al: 31/12/2025 23:59                                         │
+│  • Versione: 3                                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 Regole di Priorità
+### 2.2 Prodotti CANVAS (Offerte Composite)
+
+I **CANVAS** hanno struttura **DIVERSA**:
 
 ```
-1. Listino Promozionale (se attivo e in validità) → MASSIMA PRIORITÀ
-2. Listino Cliente Specifico → override altri listini
-3. Listino Canale → applicato se match
-4. Listino Volume → applicato a soglia raggiunta
-5. Listino Base → DEFAULT, sempre presente
+┌─────────────────────────────────────────────────────────────────┐
+│ LISTINO ITEM - CANVAS (Offerta Composita)                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ❌ NESSUN COSTO ACQUISTO                                       │
+│  (Non è un prodotto fisico da comprare)                         │
+│                                                                 │
+│  💳 CANONE CLIENTE                                              │
+│  ─────────────────                                              │
+│  • Canone mensile: €29,99/mese                                  │
+│  • Durata contratto: 24 mesi (opzionale)                        │
+│  • Costo attivazione: €49,00 una tantum (opzionale)             │
+│                                                                 │
+│  🎯 USO PRINCIPALE: COMMISSIONING                               │
+│  ─────────────────                                              │
+│  • Il canone alimenta il calcolo dei bonus agente               │
+│  • Non genera movimento di cassa acquisto                       │
+│  • Ricavo = canone cliente                                      │
+│                                                                 │
+│  📦 COMPONENTI INCLUSI (opzionale)                              │
+│  ─────────────────                                              │
+│  • SIM WindTre (SKU: SIM-W3-001)                                │
+│  • Router Fibra (SKU: RTR-FIBRA-01)                             │
+│  • Attivazione Linea (SKU: SRV-ATT-01)                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+### 2.3 Tabella Riepilogativa per Tipo
+
+| Tipo | Ha Costo Acquisto? | Ha Fornitore? | Ha Canone? | Uso Principale |
+|------|-------------------|---------------|------------|----------------|
+| **PHYSICAL** | ✅ Sì | ✅ Sì | ❌ No | Margine vendita |
+| **VIRTUAL** | ✅ Sì | ✅ Sì | ❌ No | Margine vendita |
+| **SERVICE** | ✅ Sì | ✅ Sì | ❌ No | Margine vendita |
+| **CANVAS** | ❌ No | ❌ No | ✅ Sì | **Commissioning** |
 
 ---
 
-## 3. Architettura Proposta
+## 3. Schema Database Proposto
 
-### 3.1 Modello Dati
-
-#### Tabella `price_lists` (w3suite schema - Tenant)
+### 3.1 Tabella `price_lists` (Header Listino)
 
 ```typescript
-// Schema Drizzle
 export const priceLists = w3suiteSchema.table("price_lists", {
   id: varchar("id", { length: 100 }).primaryKey().$defaultFn(() => nanoid()),
-  tenantId: varchar("tenant_id", { length: 100 }).notNull().references(() => tenants.id),
+  tenantId: varchar("tenant_id", { length: 100 }).notNull(),
   
   // Identificazione
-  code: varchar("code", { length: 50 }).notNull(), // "PL-2025-BASE", "PL-BF-2025"
+  code: varchar("code", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   
   // Tipo e priorità
   type: varchar("type", { length: 50 }).notNull(), // 'base' | 'customer' | 'channel' | 'promo' | 'volume' | 'geographic'
-  priority: integer("priority").default(0).notNull(), // Higher = more priority
+  priority: integer("priority").default(0).notNull(),
   
-  // Validità
+  // Origine
+  origin: varchar("origin", { length: 20 }).default('tenant').notNull(), // 'brand' | 'tenant'
+  isLocked: boolean("is_locked").default(false).notNull(),
+  sourceBrandPriceListId: varchar("source_brand_price_list_id", { length: 100 }),
+  
+  // Validità (a livello listino)
   validFrom: timestamp("valid_from").notNull(),
-  validTo: timestamp("valid_to"), // NULL = no expiration
+  validTo: timestamp("valid_to"),
   isActive: boolean("is_active").default(true).notNull(),
   
-  // Scoping (quando applicare)
-  applicabilityRules: jsonb("applicability_rules").default({}).notNull(),
-  // Esempio: { "channels": ["dealer", "retail"], "minQuantity": 10, "customerGroups": ["gold"] }
+  // Versioning header
+  currentVersion: integer("current_version").default(1).notNull(),
   
   // Metadata
   currencyCode: varchar("currency_code", { length: 3 }).default('EUR').notNull(),
@@ -163,34 +171,82 @@ export const priceLists = w3suiteSchema.table("price_lists", {
 });
 ```
 
-#### Tabella `price_list_items` (w3suite schema - Tenant)
+### 3.2 Tabella `price_list_versions` (Versioning Immutabile)
+
+```typescript
+export const priceListVersions = w3suiteSchema.table("price_list_versions", {
+  id: varchar("id", { length: 100 }).primaryKey().$defaultFn(() => nanoid()),
+  tenantId: varchar("tenant_id", { length: 100 }).notNull(),
+  priceListId: varchar("price_list_id", { length: 100 }).notNull(),
+  
+  // Versioning
+  version: integer("version").notNull(), // 1, 2, 3...
+  previousVersionId: varchar("previous_version_id", { length: 100 }),
+  
+  // Validità versione
+  effectiveFrom: timestamp("effective_from").notNull(),
+  effectiveTo: timestamp("effective_to"), // NULL = versione corrente
+  
+  // Motivo cambio
+  changeReason: varchar("change_reason", { length: 50 }).notNull(), // 'initial' | 'correction' | 'price_update' | 'promo' | 'supplier_change'
+  changeNotes: text("change_notes"),
+  
+  // Tracking Brand
+  sourceBrandVersionId: varchar("source_brand_version_id", { length: 100 }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: varchar("created_by", { length: 100 }),
+});
+```
+
+### 3.3 Tabella `price_list_items` (Item con struttura IBRIDA)
 
 ```typescript
 export const priceListItems = w3suiteSchema.table("price_list_items", {
   id: varchar("id", { length: 100 }).primaryKey().$defaultFn(() => nanoid()),
-  tenantId: varchar("tenant_id", { length: 100 }).notNull().references(() => tenants.id),
+  tenantId: varchar("tenant_id", { length: 100 }).notNull(),
   
   // FK
-  priceListId: varchar("price_list_id", { length: 100 }).notNull().references(() => priceLists.id),
-  productId: varchar("product_id", { length: 100 }).notNull().references(() => products.id),
-  productVersionId: varchar("product_version_id", { length: 100 }), // Opzionale: lock versione specifica
+  priceListId: varchar("price_list_id", { length: 100 }).notNull(),
+  priceListVersionId: varchar("price_list_version_id", { length: 100 }).notNull(),
+  productId: varchar("product_id", { length: 100 }).notNull(),
+  productType: varchar("product_type", { length: 20 }).notNull(), // 'PHYSICAL' | 'VIRTUAL' | 'SERVICE' | 'CANVAS'
   
-  // Tipo di pricing
-  pricingType: varchar("pricing_type", { length: 20 }).notNull(), // 'fixed' | 'discount_percent' | 'discount_amount' | 'markup_percent'
+  // ═══════════════════════════════════════════════════════════════
+  // 📦 LATO ACQUISTO (NULL per CANVAS)
+  // ═══════════════════════════════════════════════════════════════
+  purchaseCost: numeric("purchase_cost", { precision: 12, scale: 2 }),
+  purchaseTaxRegimeId: varchar("purchase_tax_regime_id", { length: 100 }),
+  purchaseVatRate: numeric("purchase_vat_rate", { precision: 5, scale: 2 }),
+  supplierId: varchar("supplier_id", { length: 100 }),
   
-  // Valori
-  fixedPrice: numeric("fixed_price", { precision: 12, scale: 2 }), // Se pricingType = 'fixed'
-  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }), // Se pricingType = 'discount_percent'
-  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }), // Se pricingType = 'discount_amount'
-  markupPercent: numeric("markup_percent", { precision: 5, scale: 2 }), // Se pricingType = 'markup_percent'
+  // ═══════════════════════════════════════════════════════════════
+  // 💰 LATO VENDITA (per PHYSICAL, VIRTUAL, SERVICE)
+  // ═══════════════════════════════════════════════════════════════
+  salesPriceVatIncl: numeric("sales_price_vat_incl", { precision: 12, scale: 2 }),
+  salesPriceNet: numeric("sales_price_net", { precision: 12, scale: 2 }), // Calcolato
+  salesTaxRegimeId: varchar("sales_tax_regime_id", { length: 100 }),
+  salesVatRate: numeric("sales_vat_rate", { precision: 5, scale: 2 }),
   
-  // Prezzi calcolati (denormalizzati per performance)
-  computedPrice: numeric("computed_price", { precision: 12, scale: 2 }).notNull(),
+  // Margini calcolati
+  marginAmount: numeric("margin_amount", { precision: 12, scale: 2 }),
+  marginPercent: numeric("margin_percent", { precision: 5, scale: 2 }),
   
-  // Override canone (per prodotti con monthlyFee)
-  monthlyFeeOverride: numeric("monthly_fee_override", { precision: 12, scale: 2 }),
+  // ═══════════════════════════════════════════════════════════════
+  // 💳 CAMPI SPECIFICI CANVAS
+  // ═══════════════════════════════════════════════════════════════
+  monthlyFee: numeric("monthly_fee", { precision: 12, scale: 2 }), // Canone mensile cliente
+  contractDurationMonths: integer("contract_duration_months"), // 12, 24, 36 mesi
+  activationCost: numeric("activation_cost", { precision: 12, scale: 2 }), // Costo attivazione una tantum
+  includedComponents: jsonb("included_components").default([]), // Array di { productId, quantity }
   
-  // Validità item (può essere diversa dal listino padre)
+  // ═══════════════════════════════════════════════════════════════
+  // 🎯 COMMISSIONING (per CANVAS)
+  // ═══════════════════════════════════════════════════════════════
+  commissionBase: numeric("commission_base", { precision: 12, scale: 2 }), // Base per calcolo bonus agente
+  commissionCategory: varchar("commission_category", { length: 50 }), // Categoria per regole commissioning
+  
+  // Validità item (può essere diversa dal listino)
   validFrom: timestamp("valid_from"),
   validTo: timestamp("valid_to"),
   isActive: boolean("is_active").default(true).notNull(),
@@ -201,312 +257,314 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
 });
 ```
 
-### 3.2 API Design
-
-```
-GET    /api/price-lists                     # Lista listini tenant
-POST   /api/price-lists                     # Crea listino
-GET    /api/price-lists/:id                 # Dettaglio listino
-PUT    /api/price-lists/:id                 # Modifica listino
-DELETE /api/price-lists/:id                 # Elimina listino (soft delete)
-
-GET    /api/price-lists/:id/items           # Items di un listino
-POST   /api/price-lists/:id/items           # Aggiungi prodotto a listino
-PUT    /api/price-lists/:id/items/:itemId   # Modifica item
-DELETE /api/price-lists/:id/items/:itemId   # Rimuovi item
-
-# Calcolo prezzo effettivo
-POST   /api/pricing/calculate               # Calcola prezzo per contesto
-       Body: { productId, quantity, customerId?, channel?, storeId? }
-       Response: { basePrice, discounts[], finalPrice, appliedPriceList }
-```
-
-### 3.3 Logica Calcolo Prezzo
+### 3.4 Tabelle Lookup Fiscali
 
 ```typescript
-interface PricingContext {
-  tenantId: string;
-  productId: string;
-  quantity: number;
-  customerId?: string;
-  customerGroup?: string;
-  channel?: 'retail' | 'dealer' | 'ecommerce' | 'corporate';
-  storeId?: string;
-  commercialAreaId?: string;
-  date?: Date; // Default: now
-}
+// Regimi Fiscali Italiani
+export const taxRegimes = w3suiteSchema.table("tax_regimes", {
+  id: varchar("id", { length: 100 }).primaryKey(),
+  code: varchar("code", { length: 20 }).notNull(), // 'RF01', 'RF02', etc.
+  name: varchar("name", { length: 100 }).notNull(), // 'Ordinario', 'Forfettario', etc.
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+});
 
-interface PricingResult {
-  basePrice: number;           // Da product_versions
-  monthlyFee: number;          // Da product_versions (se applicabile)
-  appliedDiscounts: Discount[];
-  finalUnitPrice: number;
-  finalMonthlyFee: number;
-  appliedPriceListId: string;
-  appliedPriceListName: string;
-  breakdown: PriceBreakdown;
-}
-
-async function calculatePrice(ctx: PricingContext): Promise<PricingResult> {
-  // 1. Get base price from product_versions (latest active)
-  const basePrice = await getProductVersionPrice(ctx.productId, ctx.date);
-  
-  // 2. Find applicable price lists (sorted by priority DESC)
-  const applicableLists = await findApplicablePriceLists(ctx);
-  
-  // 3. Apply highest priority list that has this product
-  for (const list of applicableLists) {
-    const item = await getPriceListItem(list.id, ctx.productId);
-    if (item) {
-      return computeFinalPrice(basePrice, item, list);
-    }
-  }
-  
-  // 4. No special pricing → return base
-  return { ...basePrice, appliedPriceListId: null };
-}
+// Aliquote IVA
+export const vatRates = w3suiteSchema.table("vat_rates", {
+  id: varchar("id", { length: 100 }).primaryKey(),
+  code: varchar("code", { length: 10 }).notNull(), // '22', '10', '4', '0'
+  rate: numeric("rate", { precision: 5, scale: 2 }).notNull(), // 22.00, 10.00, 4.00, 0.00
+  name: varchar("name", { length: 100 }).notNull(), // 'Aliquota ordinaria', 'Aliquota ridotta', etc.
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+});
 ```
 
 ---
 
-## 4. Flusso Utente (UX)
+## 4. Regimi Fiscali Italiani
 
-### 4.1 Brand Interface (HQ)
+### 4.1 Codici Regime Fiscale (SDI)
+
+| Codice | Nome | Descrizione |
+|--------|------|-------------|
+| RF01 | **Ordinario** | Regime IVA ordinario |
+| RF02 | Contribuenti minimi | Art.1 c.96-117 L.244/2007 |
+| RF04 | Agricoltura | Regime speciale agricoltura |
+| RF05 | Pesca | Regime speciale pesca |
+| RF06 | Vendita sali e tabacchi | Regime speciale |
+| RF07 | Commercio fiammiferi | Regime speciale |
+| RF08 | Editoria | Regime speciale editoria |
+| RF09 | Gestione telefoni pubblici | Regime speciale |
+| RF10 | Rivendita documenti trasporto | Regime speciale |
+| RF11 | Agenzie viaggi | Regime speciale |
+| RF12 | Agriturismo | Regime speciale |
+| RF13 | Vendite a domicilio | Regime speciale |
+| RF14 | Rivendita beni usati | Regime margine beni usati |
+| RF15 | Agenzie aste | Regime margine |
+| RF16 | IVA per cassa | Regime IVA per cassa |
+| RF17 | IVA per cassa P.A. | IVA per cassa con P.A. |
+| RF18 | Altro | Altri regimi speciali |
+| RF19 | **Forfettario** | Regime forfettario L.190/2014 |
+
+### 4.2 Aliquote IVA Italia
+
+| Aliquota | Nome | Applicazione Tipica |
+|----------|------|---------------------|
+| **22%** | Ordinaria | Elettronica, accessori, servizi standard |
+| **10%** | Ridotta | Alcuni servizi, ristorazione |
+| **5%** | Super-ridotta | Alcuni beni prima necessità |
+| **4%** | Minima | Alimentari base, libri, giornali |
+| **0%** | Esente/Non imponibile | Esportazioni, operazioni esenti art.10 |
+
+---
+
+## 5. Flusso Brand → Tenant
+
+### 5.1 Publishing Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WMS > Catalogo > Listini                                        │
+│                    BRAND INTERFACE (HQ)                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  [+ Nuovo Listino]   [Importa CSV]   [Esporta]                  │
+│  1. Brand crea "Listino Base 2025" (template)                   │
+│     → origin: 'brand'                                           │
+│     → Items con prezzi acquisto/vendita                         │
 │                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │ 📋 Listino Base 2025          BASE    ✅ Attivo          │   │
-│  │    Dal 01/01/2025 - Senza scadenza                       │   │
-│  │    1.247 prodotti | Priorità: 0                          │   │
-│  └──────────────────────────────────────────────────────────┘   │
+│  2. Brand seleziona tenant destinatari                          │
+│     → [x] Tenant Milano                                         │
+│     → [x] Tenant Roma                                           │
+│     → [ ] Tenant Napoli                                         │
 │                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │ 🏷️ Black Friday 2025          PROMO   ✅ Attivo          │   │
-│  │    Dal 25/11/2025 al 02/12/2025                          │   │
-│  │    89 prodotti | Priorità: 100                           │   │
-│  └──────────────────────────────────────────────────────────┘   │
+│  3. Brand sceglie modalità:                                     │
+│     → ○ Locked (tenant non può modificare)                      │
+│     → ● Unlocked (tenant può fare fork)                         │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      DEPLOY CENTER                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  4. Worker clona listino per ogni tenant selezionato            │
+│     → Crea price_lists con origin='brand'                       │
+│     → Crea price_list_versions (v1)                             │
+│     → Copia tutti price_list_items                              │
+│     → Imposta sourceBrandPriceListId per tracking               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    TENANT W3SUITE                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  5a. Se LOCKED:                                                 │
+│      → Tenant vede listino in sola lettura                      │
+│      → Aggiornamenti Brand sovrascrivono automaticamente        │
+│                                                                 │
+│  5b. Se UNLOCKED:                                               │
+│      → Tenant può fare "Fork" e creare versione locale          │
+│      → Nuova versione: origin='tenant', source = versione brand │
+│      → Aggiornamenti Brand NON sovrascrivono il fork            │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Modal Creazione Listino
+### 5.2 Gestione Aggiornamenti Brand
+
+| Scenario | Listino Tenant | Comportamento |
+|----------|----------------|---------------|
+| Brand pubblica v2 | Locked, nessun fork | Auto-aggiornato a v2 |
+| Brand pubblica v2 | Unlocked, nessun fork | Proposto aggiornamento (accept/ignore) |
+| Brand pubblica v2 | Fork locale esistente | Ignorato (tenant ha versione custom) |
+| Tenant fa fork | Qualsiasi | origin diventa 'tenant', tracking mantenuto |
+
+---
+
+## 6. Integrazione con Commissioning
+
+### 6.1 Come i Listini CANVAS alimentano il Commissioning
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Nuovo Listino                                              [X]  │
+│ VENDITA OFFERTA CANVAS                                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Codice *        [PL-2025-001        ]                          │
-│  Nome *          [Listino Dealer Gold ]                         │
-│  Descrizione     [Prezzi riservati partner Gold...           ]  │
+│  Agente vende: "SuperFibra 1Giga + iPhone 15"                   │
 │                                                                 │
-│  Tipo Listino *  [▼ Cliente Specifico ]                         │
-│                  ○ Base (default)                               │
-│                  ○ Cliente Specifico                            │
-│                  ○ Canale                                       │
-│                  ○ Promozionale                                 │
-│                  ○ Volume                                       │
-│                  ○ Geografico                                   │
+│  Dal Listino CANVAS:                                            │
+│  ├── monthlyFee: €39,99/mese                                    │
+│  ├── commissionBase: €39,99 (base calcolo)                      │
+│  └── commissionCategory: 'fibra_bundle'                         │
 │                                                                 │
-│  ─────────────── Validità ───────────────                       │
-│                                                                 │
-│  Data Inizio *   [📅 01/01/2025]                                │
-│  Data Fine       [📅 ___________]  ☐ Senza scadenza             │
-│                                                                 │
-│  Priorità        [50___] (0-100, alto = prioritario)            │
-│                                                                 │
-│  ─────────────── Applicabilità ───────────────                  │
-│                                                                 │
-│  Canali          [☑ Dealer] [☐ Retail] [☐ E-commerce]           │
-│  Gruppi Cliente  [▼ Gold, Platinum     ]                        │
-│  Aree Commerc.   [▼ Tutte              ]                        │
-│  Quantità Min.   [1____]                                        │
-│                                                                 │
-│                              [Annulla]  [Salva e Aggiungi Prodotti] │
 └─────────────────────────────────────────────────────────────────┘
-```
-
-### 4.3 Gestione Items Listino
-
-```
+                              │
+                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ Listino: Dealer Gold (PL-2025-001)                   [← Indietro] │
+│ MOTORE COMMISSIONING                                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  [+ Aggiungi Prodotti]  [Importa Prezzi CSV]  [Azioni Bulk ▼]   │
+│  Regola: "fibra_bundle" → bonus = commissionBase * 2            │
 │                                                                 │
-│  🔍 [Cerca prodotto...]                                         │
-│                                                                 │
-│  ┌────────┬──────────────────┬─────────┬──────────┬──────────┐  │
-│  │ SKU    │ Prodotto         │ P.Base  │ Sconto   │ P.Finale │  │
-│  ├────────┼──────────────────┼─────────┼──────────┼──────────┤  │
-│  │ IPH15P │ iPhone 15 Pro    │€1.199   │ -15%     │ €1.019   │  │
-│  │ GAL24U │ Galaxy S24 Ultra │€1.399   │ €150 off │ €1.249   │  │
-│  │ SIM001 │ SIM WindTre      │€5,00    │ Fisso €3 │ €3,00    │  │
-│  └────────┴──────────────────┴─────────┴──────────┴──────────┘  │
-│                                                                 │
-│  Mostrando 1-50 di 247 prodotti                    [< 1 2 3 >]  │
+│  Calcolo:                                                       │
+│  └── Bonus agente = €39,99 * 2 = €79,98                         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
+### 6.2 Differenza con Prodotti PHYSICAL
 
-## 5. Domande Aperte (Da Discutere)
-
-### 5.1 Business Rules
-
-1. **Un prodotto può essere in più listini contemporaneamente?**
-   - Proposta: SÌ, il sistema usa priorità per determinare quale applicare
-
-2. **Cosa succede se un listino scade mentre un ordine è in corso?**
-   - Proposta: Il prezzo viene "cristallizzato" al momento dell'ordine
-
-3. **I listini sono ereditati da Brand → Tenant o ogni tenant ha i suoi?**
-   - Proposta: Brand Interface crea "template" che i tenant possono personalizzare
-
-4. **Servono listini a livello negozio (store) oltre che tenant?**
-   - Da validare con stakeholder
-
-### 5.2 Integrazioni
-
-1. **Come si integra con il modulo Commissioning?**
-   - I bonus agente dipendono dal listino applicato?
-
-2. **Come si integra con CRM Opportunità/Ordini?**
-   - L'opportunità deve mostrare prezzo da listino cliente
-
-3. **Sincronizzazione con ERP esterno?**
-   - Previsto import/export CSV? API bidirezionale?
-
-### 5.3 Performance
-
-1. **Quanti listini attivi contemporaneamente per tenant?**
-   - Stima: 5-20 listini attivi
-
-2. **Quanti items per listino?**
-   - Stima: 100-2000 prodotti per listino
-
-3. **Frequenza calcolo prezzo?**
-   - Ogni visualizzazione catalogo → cache necessaria
+| Tipo | Cosa determina il Commissioning? |
+|------|----------------------------------|
+| **CANVAS** | `monthlyFee` + `commissionBase` + `commissionCategory` |
+| **PHYSICAL** | `marginAmount` (margine vendita) o regole fisse |
 
 ---
 
-## 6. Roadmap Implementazione
+## 7. Versioning Strategy
 
-### Fase 1 - MVP (2-3 giorni)
-- [ ] Schema DB `price_lists` + `price_list_items`
-- [ ] CRUD API listini
-- [ ] UI creazione/gestione listino base
-- [ ] Collegamento prodotti a listino (manual)
+### 7.1 Principio: Righe Immutabili
 
-### Fase 2 - Calcolo Prezzi (1-2 giorni)
-- [ ] Servizio `PricingService` con logica priorità
-- [ ] Endpoint `/api/pricing/calculate`
-- [ ] Cache prezzi calcolati (Redis o in-memory)
+Ogni modifica a un listino crea una **nuova versione**. Le versioni precedenti rimangono intatte per:
+- Audit trail
+- Report storici
+- Riferimento ordini passati
 
-### Fase 3 - Applicabilità Avanzata (2 giorni)
-- [ ] Regole per canale, cliente, volume
-- [ ] UI filtri applicabilità nel modal
-- [ ] Preview "chi vedrà questo listino"
+### 7.2 Flusso Creazione Nuova Versione
 
-### Fase 4 - Integrazioni (1-2 giorni)
-- [ ] Integrazione con Product Modal (mostra prezzo listino)
-- [ ] Integrazione con CRM Opportunità
-- [ ] Import/Export CSV
+```
+Listino "Base 2025" versione 1
+├── validFrom: 01/01/2025
+├── validTo: NULL (attivo)
+└── Items: 500 prodotti
+
+              │
+              │ Utente modifica prezzo iPhone
+              ▼
+
+Listino "Base 2025" versione 2
+├── validFrom: 15/03/2025
+├── validTo: NULL (attivo)
+├── previousVersionId: → versione 1
+├── changeReason: 'price_update'
+└── Items: 500 prodotti (con iPhone aggiornato)
+
+(Versione 1 ora ha validTo: 14/03/2025 23:59:59)
+```
+
+### 7.3 Riferimento da Ordini
+
+Quando si crea un ordine:
+```typescript
+order = {
+  productId: 'iphone-15',
+  priceListVersionId: 'v2', // ← Cristallizza la versione listino
+  priceAtOrder: 1199.00,    // ← Prezzo al momento dell'ordine
+  ...
+}
+```
+
+Questo garantisce che i report storici mostrino sempre il prezzo corretto.
 
 ---
 
-## 7. Note Sessioni di Lavoro
+## 8. Domande Aperte (Da Discutere)
+
+### 8.1 Business Rules
+
+1. ~~Un prodotto può essere in più listini contemporaneamente?~~ ✅ SÌ, priorità determina quale applicare
+
+2. **I regimi fiscali acquisto e vendita possono essere diversi?**
+   - Es: acquisto da fornitore estero (regime import) vs vendita italiana
+   - Proposta: SÌ, sono campi separati
+
+3. **Il CANVAS può avere anche un prezzo una tantum oltre al canone?**
+   - Proposta: SÌ, campo `activationCost` per costo attivazione
+
+4. **I componenti inclusi nel CANVAS hanno prezzi propri o solo riferimento?**
+   - Proposta: Solo riferimento (productId), prezzi da rispettivi listini
+
+### 8.2 Validazione Campi per Tipo
+
+| Tipo Prodotto | Campi OBBLIGATORI | Campi VIETATI |
+|---------------|-------------------|---------------|
+| PHYSICAL | purchaseCost, supplierId, salesPriceVatIncl | monthlyFee, activationCost |
+| VIRTUAL | purchaseCost, supplierId, salesPriceVatIncl | monthlyFee, activationCost |
+| SERVICE | purchaseCost, supplierId, salesPriceVatIncl | monthlyFee, activationCost |
+| **CANVAS** | monthlyFee | purchaseCost, supplierId |
+
+### 8.3 Margini per CANVAS
+
+**Problema**: CANVAS non ha `purchaseCost`, quindi `marginPercent` non ha senso.
+
+**Soluzione**:
+- `marginAmount` e `marginPercent` → **NULL** per CANVAS
+- Il "margine" di un CANVAS è il `monthlyFee` stesso (100% ricavo)
+- Per Commissioning usare `commissionBase`, non il margine
+
+### 8.4 Performance
+
+1. **Cache prezzi calcolati?**
+   - Proposta: Redis cache con invalidazione su modifica listino
+
+2. **Denormalizzazione margini?**
+   - Proposta: Calcolare e salvare `marginAmount`/`marginPercent` per evitare calcoli runtime
+   
+3. **Trigger ricalcolo `salesPriceNet`?**
+   - Quando cambia `salesPriceVatIncl` o `salesVatRate`
+   - Implementare via hook Drizzle o trigger DB
+
+---
+
+## 9. Note Sessioni di Lavoro
 
 ### Sessione 17/12/2025
 - Creato documento iniziale
 - Analizzato stato attuale schema DB
 - Proposta architettura base
-- Da validare requisiti business con stakeholder
-- **Review Architect**: Identificati 8 punti critici (vedi tabella inizio documento)
-  - Schema ID deve allinearsi a convenzioni esistenti
-  - Manca strategia RLS
-  - Manca flusso Brand→Tenant publishing
-  - Definire tiebreaker priorità e regole stacking
+- **Review Architect**: Identificati 8 punti critici
+- **Brainstorming struttura IBRIDA**:
+  - Definiti campi lato ACQUISTO (costo, regime, IVA, fornitore)
+  - Definiti campi lato VENDITA (prezzo IVA inclusa, regime, aliquota)
+  - Chiarita differenza PHYSICAL/VIRTUAL/SERVICE vs CANVAS
+  - CANVAS non ha costo acquisto, ha canone per Commissioning
+  - Definito flusso Brand→Tenant con lock/unlock
+  - Documentato versioning immutabile
 
 ---
 
-## 8. Decisioni Architetturali (ADR)
+## 10. Decisioni Architetturali (ADR)
 
-### ADR-001: Stacking vs Override (DA DECIDERE)
+### ADR-001: Stacking vs Override
 
-**Problema**: Quando un prodotto matcha più listini, come si combinano gli sconti?
+**Decisione**: Override puro (Opzione A)
+- Vince il listino con priorità più alta
+- Semplice e prevedibile per MVP
+- Tiebreaker: `createdAt DESC` se stessa priorità
 
-**Opzioni**:
+### ADR-002: Brand→Tenant Publishing
 
-| Opzione | Comportamento | Pro | Contro |
-|---------|---------------|-----|--------|
-| **A) Override puro** | Vince listino priorità più alta, altri ignorati | Semplice, prevedibile | Meno flessibile |
-| **B) Stacking cumulativo** | Tutti gli sconti si sommano/moltiplicano | Massima flessibilità | Complesso, può dare prezzi negativi |
-| **C) Override + Base** | Listino vincente si applica sopra Base | Bilanciato | Richiede distinzione "additive" vs "override" |
+**Decisione**: Clone + Lock/Unlock
+- Brand crea template, Deploy Center clona ai tenant
+- `isLocked=true`: Tenant in sola lettura, aggiornamenti auto
+- `isLocked=false`: Tenant può fare fork indipendente
 
-**Proposta**: Opzione A (Override puro) per MVP, poi valutare C.
+### ADR-003: Versioning Strategy
 
----
+**Decisione**: Righe immutabili in `price_list_versions`
+- Ogni modifica = nuova versione
+- previousVersionId per catena storica
+- Ordini puntano a versionId specifico
 
-### ADR-002: Brand→Tenant Publishing Flow (DA DECIDERE)
+### ADR-004: Struttura Poliforma
 
-**Problema**: Come i listini creati in Brand Interface diventano disponibili ai tenant?
-
-**Flusso proposto**:
-
-```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   BRAND     │      │   DEPLOY    │      │   TENANT    │
-│  INTERFACE  │──────│   CENTER    │──────│   W3SUITE   │
-└─────────────┘      └─────────────┘      └─────────────┘
-     │                     │                     │
-     │ 1. Crea listino     │                     │
-     │    (template)       │                     │
-     │─────────────────────│                     │
-     │                     │                     │
-     │ 2. Pubblica a       │                     │
-     │    tenant selezionati                     │
-     │─────────────────────│                     │
-     │                     │ 3. Clone listino    │
-     │                     │    in w3suite.      │
-     │                     │    price_lists      │
-     │                     │─────────────────────│
-     │                     │                     │
-     │                     │                     │ 4. Tenant può
-     │                     │                     │    personalizzare
-     │                     │                     │    (opzionale)
-```
-
-**Campo tracking**: `sourceBrandPriceListId` + `isLocked` per distinguere copie modificabili/bloccate.
-
----
-
-### ADR-003: computedPrice Refresh Strategy (DA IMPLEMENTARE)
-
-**Problema**: Il campo `computedPrice` è denormalizzato. Come mantenerlo aggiornato?
-
-**Trigger di invalidazione**:
-1. Modifica `product_versions.unitPrice`
-2. Modifica `price_list_items` (sconto, tipo)
-3. Scadenza validità listino
-
-**Strategie**:
-
-| Strategia | Quando | Pro | Contro |
-|-----------|--------|-----|--------|
-| **Eager (on-write)** | Ricalcola subito dopo ogni modifica | Sempre aggiornato | Costoso se bulk update |
-| **Lazy (on-read)** | Ricalcola al primo accesso dopo invalidazione | Efficiente | Prima lettura lenta |
-| **Scheduled (cron)** | Job notturno ricalcola tutto | Semplice | Dati potenzialmente stale |
-
-**Proposta**: Eager per modifiche singole, Scheduled per bulk/expiration.
+**Decisione**: Tabella unica con campi nullable per tipo
+- Campi ACQUISTO: nullable, NULL per CANVAS
+- Campi CANVAS (monthlyFee, etc.): nullable, NULL per altri tipi
+- Discriminatore: `productType` indica quali campi usare
 
 ---
 
@@ -514,14 +572,16 @@ async function calculatePrice(ctx: PricingContext): Promise<PricingResult> {
 
 | Termine | Definizione |
 |---------|-------------|
-| **Listino Base** | Listino default applicato quando nessun altro matcha |
-| **Listino Override** | Listino con priorità alta che sovrascrive altri |
-| **Price List Item** | Singola entry prodotto-prezzo in un listino |
-| **Pricing Context** | Insieme di parametri per calcolare il prezzo (cliente, canale, qty) |
-| **Computed Price** | Prezzo finale calcolato dopo applicazione sconti |
+| **Listino Polimorfo** | Listino che cambia struttura in base al tipo prodotto |
+| **Listino IBRIDO** | Listino con campi sia acquisto che vendita |
+| **CANVAS** | Offerta composita (bundle) con canone mensile |
+| **Fork** | Copia locale di un listino Brand che il tenant può modificare |
+| **Versione Immutabile** | Snapshot del listino in un momento specifico |
+| **Regime Fiscale** | Codice SDI per tipo di regime IVA (RF01, RF19, etc.) |
 
 ## Appendice B - Riferimenti
 
 - WMS Architecture: `docs/WMS-ARCHITECTURE.md`
 - Product Versioning: Sezione 2 di WMS-ARCHITECTURE.md
 - Brand Price Lists Schema: `apps/backend/api/src/db/schema/brand-interface.ts`
+- Commissioning Module: `docs/commissioning.md`
