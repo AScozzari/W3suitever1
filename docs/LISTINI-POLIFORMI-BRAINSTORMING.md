@@ -4,13 +4,71 @@
 > 
 > **Ultimo aggiornamento**: 17 Dicembre 2025
 > 
-> **Stato**: 🟡 In Review - Architettura da raffinare
+> **Stato**: 🟢 Terminologia W3 definita - Pronto per implementazione
 
 ---
 
 ## 🎯 Concept Fondamentale
 
 I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di prodotto. Sono **IBRIDI** perché contengono sia informazioni di **ACQUISTO** che di **VENDITA** nello stesso record, con gestione fiscale italiana completa.
+
+---
+
+## 📖 Glossario Terminologia W3 → W3Suite
+
+| Termine W3 | Significato | Campo W3Suite |
+|------------|-------------|---------------|
+| **EuP** | Euro Pubblico (prezzo pubblico IVA incl.) | `salesPriceVatIncl` |
+| **SP** | Street Price (= EuP) | `salesPriceVatIncl` |
+| **DP** | Dealer Price (costo acquisto dealer) | `purchaseCost` |
+| **NDC** | Nota di Credito (credito amministrativo) | `ndcAmount` (calcolato) |
+| **GA** | Con SIM abbinata (bundle) | Flag su price_list_item |
+| **FIN** | Finanziato (ente esterno: Compass, Findomestic, Agos) | `salesMode = 'FIN'` |
+| **VAR** | Vendita a Rate (rateizzazione interna WindTre) | `salesMode = 'VAR'` |
+| **Cash** | Vendita diretta senza vincoli | `salesMode = 'STD'` |
+| **Codice Oracle (GSI)** | SKU interno gestionale | `products.sku` |
+| **EAN** | Barcode | `products.barcode` |
+| **Entry Fee** | Anticipo pagato dal cliente in cassa | `entryFee` |
+
+### Tipi di Listino W3
+
+| Tipo | Modalità Pagamento | Info Amministrative |
+|------|-------------------|---------------------|
+| **STD** | Decisa in cassa | Nessuna |
+| **Promo Device** | Decisa in cassa | NDC |
+| **CANVAS** | **Preimpostata** (FIN/VAR) | NDC + FIN Credit / VAR Cessione |
+
+### Campi Economici per Tipo di Credito
+
+| Campo | Tipo Credito | Descrizione | Quando si genera |
+|-------|--------------|-------------|------------------|
+| **Entry Fee** | Cash Flow | € incassati in cassa dal cliente | Sempre in vendita CANVAS |
+| **NDC** | Credito Amministrativo | € rimborso da W3 o fornitore | Con promo o CANVAS |
+| **FIN Credit** | Credito Non-Amministrativo | € per match flusso bancario | Solo con `salesMode = 'FIN'` |
+| **VAR Cessione** | Credito Patrimoniale | Asset contabile | Solo con `salesMode = 'VAR'` |
+
+### Flusso Economico Vendita CANVAS Finanziata
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ IN CASSA:                                               │
+│   Cliente paga Entry Fee → Dealer incassa subito        │
+├─────────────────────────────────────────────────────────┤
+│ POST-VENDITA:                                           │
+│   Ente paga FIN Credit → Dealer (match bancario)        │
+│   W3 paga NDC → Dealer (credito amministrativo)         │
+│   Cliente paga Rate → Ente finanziatore                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Colonne Listino W3 Standard
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ Codice Oracle (GSI) | EAN | Vendor | Prodotto | Colore | Categoria       │
+│ Memoria | Rete | SP Cash | SP FIN GA | Ordinabili | Sconto | DP | NDC    │
+└──────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 

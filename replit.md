@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing and optimizing business operations across modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It aims to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution featuring a unique WindTre glassmorphism design, positioning itself as a leading integrated platform in various business sectors.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to enhance operational efficiency and market responsiveness through a scalable, secure, and comprehensive business solution, featuring a distinctive WindTre glassmorphism design. The project aims to deliver a unified platform that streamlines diverse business functions, improves data insights, and supports strategic decision-making, with a business vision to become the leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -134,35 +134,35 @@ W3 Suite is a multi-tenant enterprise platform centralizing and optimizing busin
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System with `shadcn/ui`, `@w3suite/frontend-kit`, CSS variables, and Tailwind CSS. Maintains a consistent layout with fixed header, sidebar, and white backgrounds within a monorepo. `VITE_FONT_SCALE` controls UI zoom at build time.
+- **UI/UX Decisions**: Employs a WindTre Glassmorphism Design System, built with `shadcn/ui` and `@w3suite/frontend-kit`. It uses CSS variables and Tailwind CSS for styling, adhering to a consistent monorepo layout featuring a fixed header, sidebar, white backgrounds, and build-time controlled UI zoom via `VITE_FONT_SCALE`.
 - **Technical Implementations**:
-    - **Database**: 3-schema approach (`w3suite`, `public`, `brand_interface`) on PostgreSQL with Row Level Security (RLS) for multi-tenancy.
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC with Italian role templates.
-    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder (`gpt-4o` for ReactFlow DSL), Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer), AI Voice Agent System (`gpt-4o-realtime`), AI Voice Agent RAG System (`pgvector`).
-    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
-    - **Campaign Management**: Dual-mode campaign creation (wizard and advanced) with GDPR Consent enforcement.
-    - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments use specific build commands and environment variable handling.
-    - **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and Master Catalog System (hybrid architecture using JSON files with Git versioning).
-    - **VoIP Telephony**: Enterprise-grade WebRTC, multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event log, read model, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
-    - **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a System Config page, with approval workflows and linked workflow templates.
-    - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
-    - **Business Drivers Architecture**: Multi-tenant drivers in `w3suite.drivers` with RLS for source types and product type associations.
-    - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) with rules for team membership, type, request routing, and cross-store data access.
+    - **Database**: PostgreSQL with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
+    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), an AI Voice Agent System, and an AI Voice Agent RAG System.
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **Campaign Management**: Supports dual-mode campaign creation (wizard and advanced) with enforced GDPR Consent.
+    - **Deployment & Governance**: Manages deployments via a Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments adhere to specific build commands and environment variable handling.
+    - **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and a Master Catalog System (hybrid architecture using JSON files with Git versioning).
+    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
+    - **WMS Module (CQRS Architecture)**: Supports PHYSICAL and VIRTUAL/CANVAS/SERVICE products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. It includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
+    - **WMS Movement Type Configuration**: A taxonomy of 15 movement types configurable per-tenant via a System Config page, featuring approval workflows and linked workflow templates.
+    - **System Config Page**: A modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS for source types and product type associations.
+    - **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governing team membership, type, request routing, and cross-store data access.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
-- **Redis**: For BullMQ and Unified Notification System.
+- **Redis**: Used for BullMQ and the Unified Notification System.
 - **OAuth2/OIDC Enterprise**: For user authentication.
 - **SHADCN/UI**: UI component library.
 - **Radix UI**: Headless component primitives.
 - **Lucide React**: Icon library.
-- **TanStack React Query**: Server state management.
-- **React Hook Form**: Form management and validation.
+- **TanStack React Query**: For server state management.
+- **React Hook Form**: Handles form management and validation.
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: Database schema management.
+- **Drizzle Kit**: For database schema management.
 - **PostCSS**: CSS pre-processing.
 - **ESBuild**: Server-side code bundling.
-- **Nginx**: Reverse proxy.
-- **OpenAI**: AI services (`gpt-4o`, `gpt-4o-realtime`).
+- **Nginx**: As a reverse proxy.
+- **OpenAI**: Provides AI services (`gpt-4o`, `gpt-4o-realtime`).
