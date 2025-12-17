@@ -89,7 +89,7 @@ export const verifyEdgvoipSignature = (req: HMACRequest, res: Response, next: Ne
 
     const method = req.method;
     // CRITICAL: Use originalUrl to match what the webhook provider signs
-    // req.path is scoped to router ("/trunk"), but provider signs full path ("/api/webhooks/voip/trunk")
+    // req.path is scoped to router, but provider signs full path (e.g., "/api/webhooks/edgvoip")
     const path = req.originalUrl || req.url;
     const bodyString = rawBody.toString('utf8');
     

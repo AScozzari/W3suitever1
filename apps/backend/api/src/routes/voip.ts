@@ -150,8 +150,8 @@ router.get('/trunks', rbacMiddleware, async (req, res) => {
   }
 });
 
-// NOTE: Trunk creation/update/delete managed by edgvoip via webhook
-// See /api/webhooks/voip/trunk for sync endpoint
+// NOTE: Trunk creation/update/delete managed by edgvoip via unified webhook
+// See POST /api/webhooks/edgvoip for all webhook events
 
 // POST /api/voip/trunks/refresh - Manual sync of all trunks from edgvoip
 router.post('/trunks/refresh', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {

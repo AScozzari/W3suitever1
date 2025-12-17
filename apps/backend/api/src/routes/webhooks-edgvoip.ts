@@ -38,8 +38,12 @@ const router = express.Router();
 
 router.use(correlationMiddleware);
 
+// Custom JSON parser with rawBody capture for HMAC signature verification
+// This router is mounted BEFORE the app-level rawBodyMiddleware
 router.use(express.json({
-  verify: (req: any, res, buf) => {
+  limit: '5mb',
+  verify: (req: any, _res, buf) => {
+    // Store raw body buffer for signature verification
     req.rawBody = buf;
   }
 }));

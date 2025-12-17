@@ -65,7 +65,8 @@ export {
   type SIPCredentials
 } from './extensions.service';
 
-// Webhooks Handler
+// Webhooks Handler (DEPRECATED - use unified endpoint POST /api/webhooks/edgvoip)
+// Kept for backwards compatibility with internal queue workers
 export {
   handleWebhookEvent,
   processWebhook,

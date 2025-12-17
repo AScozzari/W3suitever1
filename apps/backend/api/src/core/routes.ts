@@ -1404,10 +1404,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Import and apply raw body middleware for webhook signature validation
   const { rawBodyMiddleware } = await import("../middleware/raw-body.js");
-  app.use('/api/webhooks', rawBodyMiddleware); // Apply BEFORE routes for signature validation
   
-  // EDGVoIP Unified Webhook (single endpoint for ALL events)
+  // EDGVoIP Unified Webhook - has its own body parser, registered BEFORE rawBodyMiddleware
   app.use('/api/webhooks/edgvoip', edgvoipWebhookRoutes);
+  
+  // Apply rawBodyMiddleware to other webhooks (not edgvoip which handles its own parsing)
+  app.use('/api/webhooks', rawBodyMiddleware);
   
   // MCP-specific webhook receivers (Google, AWS, Meta, Microsoft, Stripe, GTM)
   app.use('/api/webhooks/mcp', mcpWebhookRoutes);
