@@ -21,8 +21,8 @@ I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di p
 | Campo | Tipo | Descrizione |
 |-------|------|-------------|
 | `purchaseCost` | numeric(12,2) | Costo acquisto da fornitore (netto) |
-| `purchaseTaxRegimeId` | FK | Regime fiscale acquisto (Ordinario, Forfettario, etc.) |
-| `purchaseVatRate` | numeric(5,2) | Aliquota IVA acquisto % (22%, 10%, 4%, 0%) |
+| `purchaseVatRateId` | FK → public.vat_rates | Aliquota IVA acquisto (lookup da tabella public) |
+| `purchaseVatRegimeId` | FK → public.vat_regimes | Regime fiscale acquisto (lookup da tabella public) |
 | `supplierId` | FK → suppliers | Fornitore del prodotto |
 
 ### 1.2 Campi Lato VENDITA (💰 Cosa Incassiamo)
@@ -30,11 +30,11 @@ I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di p
 | Campo | Tipo | Descrizione |
 |-------|------|-------------|
 | `salesPriceVatIncl` | numeric(12,2) | Prezzo vendita **IVA inclusa** (quello che paga il cliente) |
-| `salesPriceNet` | numeric(12,2) | *(calcolato)* Prezzo netto = salesPriceVatIncl / (1 + vatRate) |
-| `salesTaxRegimeId` | FK | Regime fiscale vendita |
-| `salesVatRate` | numeric(5,2) | Aliquota IVA vendita % |
+| `salesPriceNet` | numeric(12,2) | *(calcolato)* Prezzo netto = salesPriceVatIncl × divisor (da vat_rates) |
+| `salesVatRateId` | FK → public.vat_rates | Aliquota IVA vendita (lookup da tabella public) |
+| `salesVatRegimeId` | FK → public.vat_regimes | Regime fiscale vendita (lookup da tabella public) |
 | `marginAmount` | numeric(12,2) | *(calcolato)* Margine € = salesPriceNet - purchaseCost |
-| `marginPercent` | numeric(5,2) | *(calcolato)* Margine % = marginAmount / purchaseCost * 100 |
+| `marginPercent` | numeric(5,2) | *(calcolato)* Margine % = marginAmount / purchaseCost × 100 |
 
 ### 1.3 Validità e Versioning
 
@@ -55,6 +55,29 @@ I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di p
 | `isLocked` | `true` | Tenant NON può modificare (aggiornato solo da Brand) |
 | `isLocked` | `false` | Tenant può fare fork e personalizzare |
 | `sourceBrandVersionId` | UUID | Traccia la versione Brand da cui deriva |
+
+### 1.5 Modalità di Vendita Preimpostata (🆕)
+
+Ogni item listino può avere una **modalità di vendita** che viene ereditata in cassa:
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `salesMode` | varchar(20) | 'STD' \| 'FIN' \| 'VAR' (default: 'STD') |
+| `financingEntityId` | FK → financing_entities | Ente finanziatore (solo se salesMode = 'FIN') |
+| `financingMonths` | integer | Numero rate (12, 24, 36, 48 mesi) |
+
+**Codici Modalità Vendita WindTre**:
+
+| Codice | Nome WindTre | Descrizione | Impatto |
+|--------|--------------|-------------|---------|
+| **STD** | Standard | Senza vincoli di pagamento | Qualsiasi metodo (contanti, carta, POS) |
+| **FIN** | Finanziato | Ente finanziatore esterno | Richiede selezione ente (Compass, Findomestic, Agos) |
+| **VAR** | Vendita a Rate | Rateizzazione interna WindTre | Rate mensili gestite da WindTre |
+
+**Impatto su Cassa e Commissioning**:
+- **Cassa**: Mostra opzioni pagamento appropriate, form ente finanziatore
+- **Commissioning**: Regole bonus diverse per modalità (es: FIN paga più del STD)
+- **Override**: Operatore può cambiare modalità in cassa se necessario (vedi Sezione 6)
 
 ---
 
@@ -201,6 +224,9 @@ export const priceListVersions = w3suiteSchema.table("price_list_versions", {
 
 ### 3.3 Tabella `price_list_items` (Item con struttura IBRIDA)
 
+> ⚠️ **IMPORTANTE**: I campi fiscali usano FK alle tabelle `public.vat_rates` e `public.vat_regimes`.
+> NON duplicare valori numerici - usare sempre join per recuperare aliquota/regime.
+
 ```typescript
 export const priceListItems = w3suiteSchema.table("price_list_items", {
   id: varchar("id", { length: 100 }).primaryKey().$defaultFn(() => nanoid()),
@@ -216,21 +242,28 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   // 📦 LATO ACQUISTO (NULL per CANVAS)
   // ═══════════════════════════════════════════════════════════════
   purchaseCost: numeric("purchase_cost", { precision: 12, scale: 2 }),
-  purchaseTaxRegimeId: varchar("purchase_tax_regime_id", { length: 100 }),
-  purchaseVatRate: numeric("purchase_vat_rate", { precision: 5, scale: 2 }),
+  purchaseVatRateId: uuid("purchase_vat_rate_id"),        // FK → public.vat_rates.id
+  purchaseVatRegimeId: uuid("purchase_vat_regime_id"),    // FK → public.vat_regimes.id
   supplierId: varchar("supplier_id", { length: 100 }),
   
   // ═══════════════════════════════════════════════════════════════
   // 💰 LATO VENDITA (per PHYSICAL, VIRTUAL, SERVICE)
   // ═══════════════════════════════════════════════════════════════
   salesPriceVatIncl: numeric("sales_price_vat_incl", { precision: 12, scale: 2 }),
-  salesPriceNet: numeric("sales_price_net", { precision: 12, scale: 2 }), // Calcolato
-  salesTaxRegimeId: varchar("sales_tax_regime_id", { length: 100 }),
-  salesVatRate: numeric("sales_vat_rate", { precision: 5, scale: 2 }),
+  salesPriceNet: numeric("sales_price_net", { precision: 12, scale: 2 }), // Calcolato da salesPriceVatIncl / multiplier
+  salesVatRateId: uuid("sales_vat_rate_id"),              // FK → public.vat_rates.id
+  salesVatRegimeId: uuid("sales_vat_regime_id"),          // FK → public.vat_regimes.id
   
-  // Margini calcolati
+  // Margini calcolati (denormalizzati per performance)
   marginAmount: numeric("margin_amount", { precision: 12, scale: 2 }),
   marginPercent: numeric("margin_percent", { precision: 5, scale: 2 }),
+  
+  // ═══════════════════════════════════════════════════════════════
+  // 🛒 MODALITÀ VENDITA (ereditata in cassa)
+  // ═══════════════════════════════════════════════════════════════
+  salesMode: varchar("sales_mode", { length: 20 }).default('STD').notNull(), // 'STD' | 'FIN' | 'VAR'
+  financingEntityId: varchar("financing_entity_id", { length: 100 }), // FK → financing_entities.id
+  financingMonths: integer("financing_months"), // 12, 24, 36, 48 mesi
   
   // ═══════════════════════════════════════════════════════════════
   // 💳 CAMPI SPECIFICI CANVAS
@@ -255,28 +288,76 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ═══════════════════════════════════════════════════════════════
+// NOTA IMPORTANTE: Calcolo salesPriceNet
+// ═══════════════════════════════════════════════════════════════
+// salesPriceNet = salesPriceVatIncl * divisor (da public.vat_rates)
+// Esempio: €1.199 * 0.8197 = €982,83 (per IVA 22%)
+// Questo valore viene calcolato e salvato quando si inserisce/aggiorna l'item.
 ```
 
-### 3.4 Tabelle Lookup Fiscali
+### 3.4 Tabelle Lookup Fiscali (GIÀ ESISTENTI in public schema)
+
+> ⚠️ **NOTA**: Le tabelle fiscali esistono già in `public` schema. NON creare duplicati!
+
+**File**: `apps/backend/api/src/db/schema/public.ts`
+
+#### `public.vat_rates` - Aliquote IVA
 
 ```typescript
-// Regimi Fiscali Italiani
-export const taxRegimes = w3suiteSchema.table("tax_regimes", {
-  id: varchar("id", { length: 100 }).primaryKey(),
-  code: varchar("code", { length: 20 }).notNull(), // 'RF01', 'RF02', etc.
-  name: varchar("name", { length: 100 }).notNull(), // 'Ordinario', 'Forfettario', etc.
-  description: text("description"),
-  isActive: boolean("is_active").default(true).notNull(),
+// GIÀ ESISTENTE - NON DUPLICARE
+export const vatRates = pgTable("vat_rates", {
+  id: uuid("id").primaryKey(),
+  code: varchar("code", { length: 20 }).unique().notNull(),     // STD, RID10, RID5, RID4, ESE
+  name: varchar("name", { length: 100 }).notNull(),              // Ordinaria, Ridotta 10%, etc.
+  ratePercent: varchar("rate_percent", { length: 10 }).notNull(), // "22.00", "10.00", etc.
+  multiplier: varchar("multiplier", { length: 10 }).notNull(),   // "1.22" per calcolo lordo
+  divisor: varchar("divisor", { length: 10 }).notNull(),         // "0.8197" per scorporo IVA
+  naturaFeCode: varchar("natura_fe_code", { length: 10 }),       // Codice SDI (N1, N2, N3, etc.)
+  legalReference: varchar("legal_reference", { length: 100 }),   // DPR 633/72, etc.
+  // ... altri campi
 });
+```
 
-// Aliquote IVA
-export const vatRates = w3suiteSchema.table("vat_rates", {
-  id: varchar("id", { length: 100 }).primaryKey(),
-  code: varchar("code", { length: 10 }).notNull(), // '22', '10', '4', '0'
-  rate: numeric("rate", { precision: 5, scale: 2 }).notNull(), // 22.00, 10.00, 4.00, 0.00
-  name: varchar("name", { length: 100 }).notNull(), // 'Aliquota ordinaria', 'Aliquota ridotta', etc.
+#### `public.vat_regimes` - Regimi Fiscali
+
+```typescript
+// GIÀ ESISTENTE - NON DUPLICARE
+export const vatRegimes = pgTable("vat_regimes", {
+  id: uuid("id").primaryKey(),
+  code: varchar("code", { length: 50 }).unique().notNull(),       // STANDARD, ART10, ART17_RC, etc.
+  name: varchar("name", { length: 150 }).notNull(),               // Regime Ordinario, Esente Art.10, etc.
+  legalReference: varchar("legal_reference", { length: 200 }),    // Art.10 DPR 633/72, etc.
+  rateStrategy: varchar("rate_strategy", { length: 20 }).notNull(), // 'product_rate', 'fixed_rate', 'margin', 'excluded'
+  vatPayer: varchar("vat_payer", { length: 20 }).notNull(),       // 'supplier', 'customer', 'pa', 'none'
+  naturaFeCode: varchar("natura_fe_code", { length: 10 }),        // Codice SDI (N1, N2.1, N3.x, etc.)
+  invoiceNote: text("invoice_note"),                              // Nota obbligatoria in fattura
+  requiresStampDuty: boolean("requires_stamp_duty"),              // Marca da bollo €2
+  // ... altri campi
+});
+```
+
+**FK nei `price_list_items`**:
+- `purchaseVatRateId` → `public.vat_rates.id`
+- `purchaseVatRegimeId` → `public.vat_regimes.id`
+- `salesVatRateId` → `public.vat_rates.id`
+- `salesVatRegimeId` → `public.vat_regimes.id`
+
+### 3.5 Tabella `financing_entities` (Enti Finanziatori)
+
+```typescript
+export const financingEntities = w3suiteSchema.table("financing_entities", {
+  id: varchar("id", { length: 100 }).primaryKey().$defaultFn(() => nanoid()),
+  tenantId: varchar("tenant_id", { length: 100 }).notNull(),
+  code: varchar("code", { length: 20 }).notNull(), // COMPASS, FINDOMESTIC, AGOS, etc.
+  name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
+  apiEndpoint: varchar("api_endpoint", { length: 255 }), // Per integrazione API ente
+  contractTemplate: text("contract_template"), // Template contratto
   isActive: boolean("is_active").default(true).notNull(),
+  metadata: jsonb("metadata").default({}).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 ```
 
@@ -384,9 +465,105 @@ export const vatRates = w3suiteSchema.table("vat_rates", {
 
 ---
 
-## 6. Integrazione con Commissioning
+## 6. Flusso Listino → Cassa → Compliance Fiscale
 
-### 6.1 Come i Listini CANVAS alimentano il Commissioning
+### 6.1 Override in Cassa
+
+Il listino fornisce **defaults intelligenti**, ma la cassa può sovrascrivere ogni valore:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ LISTINO (defaults)                                              │
+├─────────────────────────────────────────────────────────────────┤
+│  • Modalità vendita: FIN (Finanziato Compass)                   │
+│  • Regime fiscale: STANDARD (RF01)                              │
+│  • Aliquota IVA: 22%                                            │
+│  • Prezzo IVA incl: €1.199,00                                   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ Operatore può modificare
+┌─────────────────────────────────────────────────────────────────┐
+│ CASSA (override possibile)                                      │
+├─────────────────────────────────────────────────────────────────┤
+│  • Modalità vendita: STD (cliente paga cash)       ← OVERRIDE   │
+│  • Regime fiscale: ART10 (esente)                  ← OVERRIDE   │
+│  • Aliquota IVA: 0%                                ← OVERRIDE   │
+│  • Prezzo IVA incl: €1.199,00 (invariato)                       │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ Valori finali
+┌─────────────────────────────────────────────────────────────────┐
+│ TRANSAZIONE FINALE                                              │
+├─────────────────────────────────────────────────────────────────┤
+│  • Genera documento fiscale con dati effettivi                  │
+│  • Alimenta Commissioning con valori reali                      │
+│  • Traccia override per audit                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Campi Transazione per Tracciare Override
+
+```typescript
+// Nella tabella transactions o sales
+export const salesTransactions = w3suiteSchema.table("sales_transactions", {
+  // ... altri campi
+  
+  // Valori originali dal listino
+  originalSalesMode: varchar("original_sales_mode", { length: 20 }),
+  originalVatRegimeId: varchar("original_vat_regime_id", { length: 100 }),
+  originalVatRateId: varchar("original_vat_rate_id", { length: 100 }),
+  
+  // Valori finali (dopo override cassa)
+  finalSalesMode: varchar("final_sales_mode", { length: 20 }).notNull(),
+  finalVatRegimeId: varchar("final_vat_regime_id", { length: 100 }).notNull(),
+  finalVatRateId: varchar("final_vat_rate_id", { length: 100 }).notNull(),
+  
+  // Audit
+  wasOverridden: boolean("was_overridden").default(false).notNull(),
+  overrideReason: text("override_reason"),
+  overriddenBy: varchar("overridden_by", { length: 100 }),
+  overriddenAt: timestamp("overridden_at"),
+});
+```
+
+### 6.3 Compliance Fiscale Italiana (SDI/AdE)
+
+Le informazioni fiscali **non sono opzionali** - costruiscono documenti ufficiali per l'Agenzia delle Entrate:
+
+| Documento | Destinazione | Dati dal Listino/Cassa |
+|-----------|--------------|------------------------|
+| **Scontrino fiscale** | Registratore telematico → AdE | Aliquota IVA, importo, natura |
+| **Fattura elettronica** | SDI → Agenzia Entrate | Regime, P.IVA, aliquota, natura |
+| **Corrispettivi giornalieri** | Invio telematico | Totali per aliquota |
+
+#### Campi Obbligatori per Documento Fiscale
+
+| Campo | Da Dove | Descrizione |
+|-------|---------|-------------|
+| `vatRate` | Listino/Cassa | Aliquota IVA applicata |
+| `naturaFeCode` | `public.vat_rates` | Codice natura SDI (N1, N2, N3...) se aliquota 0% |
+| `vatRegime` | Listino/Cassa | Regime fiscale operazione |
+| `invoiceNote` | `public.vat_regimes` | Nota obbligatoria per regimi speciali |
+| `requiresStampDuty` | `public.vat_regimes` | Marca da bollo €2 se importo > €77.47 |
+
+#### Codici Natura SDI (quando aliquota = 0%)
+
+| Codice | Significato | Esempio |
+|--------|-------------|---------|
+| N1 | Escluso art.15 | Anticipazioni nome conto cliente |
+| N2.1 | Non soggetto (art.7 ter) | Servizi a soggetti UE |
+| N2.2 | Non soggetto (altri casi) | Operazioni non territoriali |
+| N3.x | Non imponibile | Esportazioni, triangolazioni |
+| N4 | Esente | Operazioni art.10 DPR 633/72 |
+| N5 | Regime margine | Beni usati |
+| N6.x | Inversione contabile | Reverse charge |
+| N7 | IVA assolta in altro stato | MOSS, OSS |
+
+---
+
+## 7. Integrazione con Commissioning
+
+### 7.1 Come i Listini CANVAS alimentano il Commissioning
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -415,7 +592,7 @@ export const vatRates = w3suiteSchema.table("vat_rates", {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 Differenza con Prodotti PHYSICAL
+### 7.2 Differenza con Prodotti PHYSICAL
 
 | Tipo | Cosa determina il Commissioning? |
 |------|----------------------------------|
@@ -533,6 +710,20 @@ Questo garantisce che i report storici mostrino sempre il prezzo corretto.
   - CANVAS non ha costo acquisto, ha canone per Commissioning
   - Definito flusso Brand→Tenant con lock/unlock
   - Documentato versioning immutabile
+- **Modalità di Vendita (STD/FIN/VAR)** 🆕:
+  - STD = Standard (qualsiasi pagamento, no vincoli)
+  - FIN = Finanziato con ente esterno (Compass, Findomestic, Agos)
+  - VAR = Vendita a Rate (rateizzazione interna WindTre)
+  - Impatto su cassa e commissioning
+- **Override in Cassa** 🆕:
+  - Listino fornisce defaults intelligenti
+  - Cassa può sovrascrivere: modalità vendita, regime fiscale, aliquota IVA
+  - Tracciabilità override per audit
+- **Compliance Fiscale SDI/AdE** 🆕:
+  - Info fiscali costruiscono scontrino/fattura per Agenzia Entrate
+  - Riferimento tabelle esistenti: `public.vat_rates`, `public.vat_regimes`
+  - Codici Natura SDI per aliquota 0%
+  - Non duplicare tabelle fiscali (già in public schema)
 
 ---
 
