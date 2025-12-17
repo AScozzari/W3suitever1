@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, Sparkles, CheckCircle2, XCircle, FileText, Zap } from 'lucide-react';
@@ -19,6 +19,7 @@ interface Message {
 
 export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModalProps) {
   const [prompt, setPrompt] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'system',
@@ -130,6 +131,11 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
       setWorkflowPhase('analyzed'); // Torna alla fase di analisi
     }
   });
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, analyzeMutation.isPending, generateMutation.isPending]);
 
   const handleSend = () => {
     if (!prompt.trim()) return;
@@ -310,6 +316,9 @@ export function AIWorkflowChatModal({ onWorkflowGenerated }: AIWorkflowChatModal
               </div>
             </div>
           )}
+          
+          {/* Auto-scroll anchor */}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="border-t px-6 py-4 space-y-3">
