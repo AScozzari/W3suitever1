@@ -144,13 +144,21 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
     refetchInterval: 15000,
   });
 
-  const getTrunkRegistrationStatus = (trunkId: string) => {
-    const status = trunksRegistrationStatus.find((s: any) => 
+  const getTrunkRegistrationStatus = (trunkId: string, trunkData?: any) => {
+    // First, try to get real-time status from EDGVoIP API
+    const liveStatus = trunksRegistrationStatus.find((s: any) => 
       s.id === trunkId || 
       s.external_id === trunkId || 
       s.externalId === trunkId
     );
-    return status?.status || status?.registration_status || 'unknown';
+    if (liveStatus?.status || liveStatus?.registration_status) {
+      return liveStatus.status || liveStatus.registration_status;
+    }
+    // Fallback to stored registrationStatus from trunk database record
+    if (trunkData?.registrationStatus && trunkData.registrationStatus !== 'unknown') {
+      return trunkData.registrationStatus;
+    }
+    return 'unknown';
   };
 
   const getExtensionRegistrationStatus = (extensionIdOrNumber: string) => {
@@ -465,7 +473,7 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {getStatusBadge(getTrunkRegistrationStatus(trunk.trunk.externalId || trunk.trunk.id))}
+                                {getStatusBadge(getTrunkRegistrationStatus(trunk.trunk.externalId || trunk.trunk.id, trunk.trunk))}
                               </TableCell>
                               <TableCell>
                                 <Badge 

@@ -824,12 +824,26 @@ export async function syncTrunksWithEdgvoip(
           const sipPort = sipConfigSanitized?.port || remoteTrunk.port || 5060;
           const sipProtocol = sipConfigSanitized?.transport?.toLowerCase() || 'udp';
           
+          // Map sip_registration_status from API to database enum values
+          // Database enum: 'registered' | 'unregistered' | 'failed' | 'unknown'
+          const mapRegistrationStatus = (apiStatus?: string): 'registered' | 'unregistered' | 'failed' | 'unknown' => {
+            if (!apiStatus) return 'unknown';
+            const lowerStatus = apiStatus.toLowerCase();
+            if (lowerStatus === 'registered' || lowerStatus.includes('regist')) return 'registered';
+            if (lowerStatus === 'unregistered' || lowerStatus.includes('unregist')) return 'unregistered';
+            if (lowerStatus === 'failed' || lowerStatus.includes('fail') || lowerStatus.includes('error')) return 'failed';
+            return 'unknown';
+          };
+          
+          const registrationStatus = mapRegistrationStatus(remoteTrunk.sip_registration_status);
+          
           const trunkData: Record<string, any> = {
             tenantId,
             externalId: remoteTrunk.external_id,
             name: remoteTrunk.name || 'Unknown Trunk',
             provider: remoteTrunk.provider || 'edgvoip',
             status: remoteTrunk.status || 'active',
+            registrationStatus, // SIP registration status from EDGVoIP
             codecPreferences: codecPrefs,
             syncSource: 'edgvoip' as const,
             syncStatus: 'synced' as const,
