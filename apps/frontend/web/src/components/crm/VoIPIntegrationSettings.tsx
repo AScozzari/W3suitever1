@@ -105,7 +105,8 @@ interface WebhookTestResult {
     statusText: string;
     body: any;
   };
-  error?: string;
+  message?: string;
+  error?: string | null;
 }
 
 const WEBHOOK_EVENT_TYPES = [
@@ -131,28 +132,20 @@ function WebhookTestPanel({ config, onTestComplete }: {
     setIsLoading(true);
     setTestResult(null);
     try {
-      const response = await apiRequest('/api/voip/webhooks/test-advanced', { 
+      const result = await apiRequest('/api/voip/webhooks/test-advanced', { 
         method: 'POST',
         body: JSON.stringify({ eventType: selectedEvent })
-      });
+      }) as WebhookTestResult;
       
-      if (response.success) {
-        setTestResult(response.data);
-        toast({
-          title: response.data.success ? 'Test completato con successo' : 'Test completato con errori',
-          description: response.data.success 
-            ? `Evento ${selectedEvent} processato in ${response.data.diagnostics?.responseTime || 0}ms`
-            : response.data.error || 'Verifica i dettagli del test',
-          variant: response.data.success ? 'default' : 'destructive'
-        });
-        onTestComplete();
-      } else {
-        toast({
-          title: 'Errore test webhook',
-          description: response.error || 'Test fallito',
-          variant: 'destructive'
-        });
-      }
+      setTestResult(result);
+      toast({
+        title: result.success ? 'Test completato con successo' : 'Test completato con errori',
+        description: result.success 
+          ? `Evento ${selectedEvent} processato in ${result.diagnostics?.responseTime || 0}ms`
+          : result.message || result.error || 'Verifica i dettagli del test',
+        variant: result.success ? 'default' : 'destructive'
+      });
+      onTestComplete();
     } catch (error: any) {
       toast({
         title: 'Errore',
