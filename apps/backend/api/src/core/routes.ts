@@ -24,7 +24,7 @@ import pdcAnalyzerRoutes from "../routes/pdc-analyzer";
 import crmRoutes from "../routes/crm";
 import gtmRoutes from "../routes/gtm";
 import voipRoutes from "../routes/voip";
-import voipWebhookRoutes from "../routes/webhooks-voip";
+import edgvoipWebhookRoutes from "../routes/webhooks-edgvoip";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1406,8 +1406,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { rawBodyMiddleware } = await import("../middleware/raw-body.js");
   app.use('/api/webhooks', rawBodyMiddleware); // Apply BEFORE routes for signature validation
   
-  // VoIP Webhooks (edgvoip integration) - MUST be first
-  app.use('/api/webhooks/voip', voipWebhookRoutes);
+  // EDGVoIP Unified Webhook (single endpoint for ALL events)
+  app.use('/api/webhooks/edgvoip', edgvoipWebhookRoutes);
   
   // MCP-specific webhook receivers (Google, AWS, Meta, Microsoft, Stripe, GTM)
   app.use('/api/webhooks/mcp', mcpWebhookRoutes);
