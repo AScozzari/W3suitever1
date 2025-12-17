@@ -2999,4 +2999,308 @@ router.post('/webhooks/test', rbacMiddleware, requirePermission('manage_telephon
   }
 });
 
+// ==================== ADVANCED WEBHOOK TEST ENDPOINT ====================
+// POST /api/voip/webhooks/test-advanced - Advanced webhook test with diagnostics
+router.post('/webhooks/test-advanced', rbacMiddleware, requirePermission('manage_telephony'), async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ error: 'Tenant ID required' });
+    }
+    
+    await setTenantContext(db, tenantId);
+    
+    const { eventType = 'trunk.status' } = req.body || {};
+    
+    // Get tenant config
+    const [config] = await db
+      .select({
+        tenantExternalId: voipTenantConfig.tenantExternalId,
+        webhookSecret: voipTenantConfig.webhookSecret
+      })
+      .from(voipTenantConfig)
+      .where(eq(voipTenantConfig.tenantId, tenantId));
+    
+    const diagnostics = {
+      secretConfigured: false,
+      endpointReachable: false,
+      signatureValid: false,
+      tenantRecognized: false,
+      responseTime: 0
+    };
+    
+    if (!config) {
+      return res.json({
+        success: false,
+        error: 'VoIP not configured',
+        diagnostics,
+        request: null,
+        response: null
+      });
+    }
+    
+    diagnostics.secretConfigured = !!config.webhookSecret;
+    
+    if (!config.webhookSecret) {
+      return res.json({
+        success: false,
+        error: 'Webhook secret not configured',
+        diagnostics,
+        request: null,
+        response: null
+      });
+    }
+    
+    // Generate test payload based on event type
+    const testPayload = generateTestPayload(eventType, config.tenantExternalId, tenantId);
+    const rawPayload = JSON.stringify(testPayload);
+    
+    // Generate HMAC signature
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = 'sha256=' + crypto.createHmac('sha256', config.webhookSecret)
+      .update(rawPayload, 'utf8')
+      .digest('hex');
+    
+    // Build request headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Signature': signature,
+      'X-Timestamp': timestamp,
+      'X-Idempotency-Key': `test-${crypto.randomUUID()}`,
+      'User-Agent': 'W3Suite-Webhook-Tester/1.0'
+    };
+    
+    // Determine webhook URL (internal)
+    const webhookUrl = 'http://localhost:3004/api/webhooks/edgvoip';
+    
+    let responseStatus = 0;
+    let responseStatusText = '';
+    let responseBody: any = null;
+    
+    try {
+      const fetchStartTime = Date.now();
+      const webhookResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers,
+        body: rawPayload
+      });
+      
+      diagnostics.responseTime = Date.now() - fetchStartTime;
+      diagnostics.endpointReachable = true;
+      
+      responseStatus = webhookResponse.status;
+      responseStatusText = webhookResponse.statusText;
+      
+      try {
+        responseBody = await webhookResponse.json();
+      } catch {
+        responseBody = { raw: await webhookResponse.text() };
+      }
+      
+      // Analyze response to determine diagnostics
+      // Note: 400 errors like "Trunk not found" mean the signature was valid
+      // but the test data doesn't exist - this is expected behavior
+      if (responseStatus >= 200 && responseStatus < 300) {
+        diagnostics.signatureValid = true;
+        diagnostics.tenantRecognized = true;
+      } else if (responseStatus === 401) {
+        // 401 = Invalid signature
+        diagnostics.signatureValid = false;
+      } else if (responseStatus === 404) {
+        // 404 = Tenant not recognized
+        diagnostics.tenantRecognized = false;
+      } else if (responseStatus === 400) {
+        // 400 = Signature valid, but operation failed (e.g., trunk not found)
+        // This is expected for test data - signature verification passed!
+        diagnostics.signatureValid = true;
+        diagnostics.tenantRecognized = true;
+      }
+      
+    } catch (fetchError: any) {
+      diagnostics.endpointReachable = false;
+      responseBody = { error: fetchError.message };
+    }
+    
+    // Log test
+    const userId = (req as any).user?.id || 'system';
+    await db.insert(voipActivityLog).values({
+      tenantId,
+      actor: userId,
+      action: 'webhook_test_advanced',
+      targetType: 'webhook',
+      targetId: eventType,
+      status: diagnostics.endpointReachable && diagnostics.signatureValid ? 'success' : 'failed',
+      detailsJson: {
+        eventType,
+        diagnostics,
+        responseStatus,
+        responseTime: diagnostics.responseTime
+      }
+    });
+    
+    // Success = all diagnostics passed (even if response is 400 for missing test data)
+    const success = diagnostics.secretConfigured && 
+                    diagnostics.endpointReachable && 
+                    diagnostics.signatureValid &&
+                    diagnostics.tenantRecognized;
+    
+    // Determine appropriate message
+    let message = null;
+    if (success) {
+      if (responseStatus === 400) {
+        message = 'Webhook configuration valid. Test data not found (expected for simulated events).';
+      } else {
+        message = 'Webhook fully functional - event processed successfully.';
+      }
+    } else {
+      message = responseBody?.error || 'Test failed - check diagnostics';
+    }
+    
+    return res.json({
+      success,
+      diagnostics,
+      request: {
+        url: webhookUrl,
+        method: 'POST',
+        headers,
+        body: testPayload
+      },
+      response: {
+        status: responseStatus,
+        statusText: responseStatusText,
+        body: responseBody
+      },
+      message,
+      error: success ? null : message
+    });
+    
+  } catch (error: any) {
+    logger.error('Error in advanced webhook test', { error, tenantId: getTenantId(req) });
+    return res.status(500).json({ 
+      success: false,
+      error: error.message || 'Failed to test webhook',
+      diagnostics: {
+        secretConfigured: false,
+        endpointReachable: false,
+        signatureValid: false,
+        tenantRecognized: false,
+        responseTime: Date.now() - startTime
+      },
+      request: null,
+      response: null
+    });
+  }
+});
+
+// Helper to generate test payloads for different event types
+function generateTestPayload(eventType: string, tenantExternalId: string, tenantId: string): any {
+  const basePayload = {
+    type: eventType,
+    tenant_id: tenantId,
+    tenant_external_id: tenantExternalId,
+    timestamp: new Date().toISOString()
+  };
+  
+  switch (eventType) {
+    case 'trunk.status':
+      return {
+        ...basePayload,
+        data: {
+          trunk_id: `test-trunk-${crypto.randomUUID().substring(0, 8)}`,
+          trunk_name: 'Test Trunk',
+          previous_status: 'unregistered',
+          current_status: 'registered'
+        }
+      };
+      
+    case 'extension.status':
+      return {
+        ...basePayload,
+        data: {
+          extension_id: `test-ext-${crypto.randomUUID().substring(0, 8)}`,
+          extension_number: '1001',
+          extension_name: 'Test Extension',
+          previous_status: 'offline',
+          current_status: 'online'
+        }
+      };
+      
+    case 'call.started':
+      return {
+        ...basePayload,
+        data: {
+          call_uuid: crypto.randomUUID(),
+          caller_id_number: '+390000000000',
+          caller_id_name: 'Test Caller',
+          destination_number: '2000',
+          call_direction: 'inbound',
+          start_time: new Date().toISOString()
+        }
+      };
+      
+    case 'call.answered':
+      return {
+        ...basePayload,
+        data: {
+          call_uuid: crypto.randomUUID(),
+          caller_id_number: '+390000000000',
+          destination_number: '2000',
+          call_direction: 'inbound',
+          start_time: new Date(Date.now() - 10000).toISOString(),
+          answer_time: new Date().toISOString()
+        }
+      };
+      
+    case 'call.ended':
+      return {
+        ...basePayload,
+        data: {
+          call_uuid: crypto.randomUUID(),
+          caller_id_number: '+390000000000',
+          caller_id_name: 'Test Caller',
+          destination_number: '2000',
+          call_direction: 'inbound',
+          start_time: new Date(Date.now() - 60000).toISOString(),
+          answer_time: new Date(Date.now() - 55000).toISOString(),
+          end_time: new Date().toISOString(),
+          duration: 55,
+          billable_seconds: 55,
+          hangup_cause: 'NORMAL_CLEARING',
+          hangup_cause_code: 16
+        }
+      };
+      
+    case 'cdr.created':
+      return {
+        ...basePayload,
+        data: {
+          cdr_id: crypto.randomUUID(),
+          call_uuid: crypto.randomUUID(),
+          caller_id_number: '+390000000000',
+          caller_id_name: 'Test Caller',
+          destination_number: '2000',
+          call_direction: 'inbound',
+          start_time: new Date(Date.now() - 120000).toISOString(),
+          answer_time: new Date(Date.now() - 115000).toISOString(),
+          end_time: new Date(Date.now() - 60000).toISOString(),
+          duration: 55,
+          billable_seconds: 55,
+          hangup_cause: 'NORMAL_CLEARING',
+          cost: 0.00
+        }
+      };
+      
+    default:
+      return {
+        ...basePayload,
+        data: {
+          test_id: crypto.randomUUID(),
+          message: 'Test webhook event'
+        }
+      };
+  }
+}
+
 export default router;

@@ -85,6 +85,337 @@ interface APITestResponse {
   results: APITestResult[];
 }
 
+interface WebhookTestResult {
+  success: boolean;
+  diagnostics: {
+    secretConfigured: boolean;
+    endpointReachable: boolean;
+    signatureValid: boolean;
+    tenantRecognized: boolean;
+    responseTime: number;
+  };
+  request: {
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body: any;
+  };
+  response: {
+    status: number;
+    statusText: string;
+    body: any;
+  };
+  error?: string;
+}
+
+const WEBHOOK_EVENT_TYPES = [
+  { value: 'trunk.status', label: 'Trunk Status', description: 'Cambio stato registrazione trunk', color: 'bg-purple-500' },
+  { value: 'extension.status', label: 'Extension Status', description: 'Cambio stato estensione', color: 'bg-indigo-500' },
+  { value: 'call.started', label: 'Call Started', description: 'Chiamata iniziata', color: 'bg-green-500' },
+  { value: 'call.answered', label: 'Call Answered', description: 'Chiamata risposta', color: 'bg-blue-500' },
+  { value: 'call.ended', label: 'Call Ended', description: 'Chiamata terminata', color: 'bg-red-500' },
+  { value: 'cdr.created', label: 'CDR Created', description: 'CDR generato', color: 'bg-orange-500' },
+];
+
+function WebhookTestPanel({ config, onTestComplete }: { 
+  config: VoIPSettingsResponse['config'];
+  onTestComplete: () => void;
+}) {
+  const { toast } = useToast();
+  const [selectedEvent, setSelectedEvent] = useState('trunk.status');
+  const [isLoading, setIsLoading] = useState(false);
+  const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
+  const [showPayload, setShowPayload] = useState(false);
+
+  const runWebhookTest = async () => {
+    setIsLoading(true);
+    setTestResult(null);
+    try {
+      const response = await apiRequest('/api/voip/webhooks/test-advanced', { 
+        method: 'POST',
+        body: JSON.stringify({ eventType: selectedEvent })
+      });
+      
+      if (response.success) {
+        setTestResult(response.data);
+        toast({
+          title: response.data.success ? 'Test completato con successo' : 'Test completato con errori',
+          description: response.data.success 
+            ? `Evento ${selectedEvent} processato in ${response.data.diagnostics?.responseTime || 0}ms`
+            : response.data.error || 'Verifica i dettagli del test',
+          variant: response.data.success ? 'default' : 'destructive'
+        });
+        onTestComplete();
+      } else {
+        toast({
+          title: 'Errore test webhook',
+          description: response.error || 'Test fallito',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Impossibile eseguire il test webhook',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!config?.hasWebhookSecret) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
+        <p className="font-medium">Webhook Secret non configurato</p>
+        <p className="text-sm mt-2">
+          Vai alla tab "Configurazione API" e inserisci il Webhook Secret
+          per abilitare i test webhook.
+        </p>
+      </div>
+    );
+  }
+
+  const webhookUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/api/webhooks/edgvoip`
+    : '/api/webhooks/edgvoip';
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
+        <div className="flex-1">
+          <p className="font-medium text-blue-800">Test Avanzato Webhook Bidirezionale</p>
+          <p className="text-sm text-blue-700">
+            Simula eventi webhook da EDGVoIP per verificare firma HMAC, connettività endpoint e processamento eventi.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-4 border-green-200 bg-green-50/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Webhook Secret</p>
+              <p className="font-medium text-green-700">Configurato</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Server className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-600">Endpoint URL</p>
+              <div className="flex items-center gap-2">
+                <code className="text-xs bg-gray-100 px-2 py-1 rounded truncate block">
+                  {webhookUrl}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(webhookUrl);
+                    toast({ title: 'URL copiato!' });
+                  }}
+                  data-testid="button-copy-webhook-url"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4">
+        <h4 className="font-medium mb-4 flex items-center gap-2">
+          <FlaskConical className="w-4 h-4" />
+          Simulatore Eventi
+        </h4>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Tipo Evento da Simulare</label>
+            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+              <SelectTrigger className="w-full" data-testid="select-webhook-event-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WEBHOOK_EVENT_TYPES.map((event) => (
+                  <SelectItem key={event.value} value={event.value}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${event.color}`} />
+                      <span>{event.label}</span>
+                      <span className="text-xs text-gray-500">- {event.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button
+            onClick={runWebhookTest}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            data-testid="button-run-webhook-test"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Esecuzione test...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                Esegui Test Webhook
+              </>
+            )}
+          </Button>
+        </div>
+      </Card>
+
+      {testResult && (
+        <>
+          <Card className={`p-4 ${testResult.success ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              {testResult.success ? (
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-600" />
+              )}
+              <div>
+                <p className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                  {testResult.success ? 'Test Superato' : 'Test Fallito'}
+                </p>
+                {testResult.error && (
+                  <p className="text-sm text-red-600">{testResult.error}</p>
+                )}
+              </div>
+              {testResult.diagnostics?.responseTime && (
+                <Badge className="ml-auto bg-gray-100 text-gray-700">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {testResult.diagnostics.responseTime}ms
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
+              <DiagnosticItem 
+                label="Secret" 
+                passed={testResult.diagnostics?.secretConfigured} 
+              />
+              <DiagnosticItem 
+                label="Endpoint" 
+                passed={testResult.diagnostics?.endpointReachable} 
+              />
+              <DiagnosticItem 
+                label="Firma HMAC" 
+                passed={testResult.diagnostics?.signatureValid} 
+              />
+              <DiagnosticItem 
+                label="Tenant" 
+                passed={testResult.diagnostics?.tenantRecognized} 
+              />
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Dettagli Request/Response
+              </h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPayload(!showPayload)}
+                data-testid="button-toggle-payload"
+              >
+                {showPayload ? 'Nascondi' : 'Mostra'} Payload
+              </Button>
+            </div>
+
+            {showPayload && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">REQUEST</p>
+                  <div className="bg-gray-900 text-green-400 rounded p-3 text-xs font-mono overflow-x-auto">
+                    <div className="text-gray-400">
+                      {testResult.request?.method} {testResult.request?.url}
+                    </div>
+                    {testResult.request?.headers && (
+                      <div className="mt-2 text-gray-500">
+                        {Object.entries(testResult.request.headers).map(([key, value]) => (
+                          <div key={key}>
+                            <span className="text-blue-400">{key}:</span> {String(value).substring(0, 50)}...
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2 text-white whitespace-pre-wrap">
+                      {JSON.stringify(testResult.request?.body, null, 2)}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">RESPONSE</p>
+                  <div className="bg-gray-900 text-green-400 rounded p-3 text-xs font-mono overflow-x-auto">
+                    <div className={testResult.response?.status >= 200 && testResult.response?.status < 300 ? 'text-green-400' : 'text-red-400'}>
+                      HTTP {testResult.response?.status} {testResult.response?.statusText}
+                    </div>
+                    <div className="mt-2 text-white whitespace-pre-wrap">
+                      {JSON.stringify(testResult.response?.body, null, 2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
+
+      <Card className="p-4 bg-gray-50">
+        <h4 className="font-medium mb-3">Eventi Webhook Supportati</h4>
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          {WEBHOOK_EVENT_TYPES.map((event) => (
+            <div key={event.value} className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${event.color}`} />
+              <span className="font-mono text-xs">{event.value}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function DiagnosticItem({ label, passed }: { label: string; passed?: boolean }) {
+  return (
+    <div className={`p-2 rounded text-center ${passed ? 'bg-green-100' : 'bg-red-100'}`}>
+      <div className="flex justify-center mb-1">
+        {passed ? (
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+        ) : (
+          <XCircle className="w-4 h-4 text-red-600" />
+        )}
+      </div>
+      <p className={`text-xs font-medium ${passed ? 'text-green-700' : 'text-red-700'}`}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
 const settingsFormSchema = z.object({
   tenantExternalId: z.string().min(1, "ID esterno tenant obbligatorio"),
   apiKey: z.string().optional(),
@@ -715,127 +1046,10 @@ export function VoIPIntegrationSettings() {
             </TabsContent>
 
             <TabsContent value="webhook" className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium text-blue-800">Test Configurazione Webhook</p>
-                  <p className="text-sm text-blue-700">
-                    Verifica che la firma HMAC-SHA256 venga generata e validata correttamente.
-                    Questo test simula un evento webhook come se fosse ricevuto da EDGVoIP.
-                  </p>
-                </div>
-              </div>
-
-              {config?.hasWebhookSecret ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-medium">Webhook Secret configurato</span>
-                  </div>
-
-                  <Card className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">URL Webhook Endpoint</span>
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">POST /api/webhooks</code>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Algoritmo Firma</span>
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">HMAC-SHA256</code>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Header Signature</span>
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">X-Webhook-Signature</code>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Tenant External ID</span>
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{config?.tenantExternalId || 'N/A'}</code>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Eventi Webhook Supportati</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <span>call.start - Chiamata iniziata</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                        <span>call.ringing - In squillo</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                        <span>call.answered - Risposta</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-red-500 rounded-full" />
-                        <span>call.ended - Terminata</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                        <span>trunk.status - Stato trunk</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full" />
-                        <span>extension.status - Stato interno</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={async () => {
-                      setWebhookTestLoading(true);
-                      try {
-                        const data = await apiRequest('/api/voip/webhooks/test', { method: 'POST' });
-                        if (data.success) {
-                          toast({
-                            title: 'Test Webhook completato',
-                            description: data.data.message,
-                            variant: 'default'
-                          });
-                          refetchLogs();
-                        } else {
-                          toast({
-                            title: 'Errore test webhook',
-                            description: data.error || 'Test fallito',
-                            variant: 'destructive'
-                          });
-                          refetchLogs();
-                        }
-                      } catch (error) {
-                        toast({
-                          title: 'Errore',
-                          description: 'Impossibile eseguire il test webhook',
-                          variant: 'destructive'
-                        });
-                      } finally {
-                        setWebhookTestLoading(false);
-                      }
-                    }}
-                    disabled={webhookTestLoading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    data-testid="button-test-webhook"
-                  >
-                    {webhookTestLoading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Zap className="w-4 h-4 mr-2" />
-                    )}
-                    {webhookTestLoading ? 'Test in corso...' : 'Esegui Test Verifica HMAC'}
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                  <p className="font-medium">Webhook Secret non configurato</p>
-                  <p className="text-sm mt-2">
-                    Vai alla tab "Configurazione API" e inserisci il Webhook Secret
-                    per abilitare la ricezione dei webhook da EDGVoIP.
-                  </p>
-                </div>
-              )}
+              <WebhookTestPanel 
+                config={config ?? null} 
+                onTestComplete={() => refetchLogs()}
+              />
             </TabsContent>
 
             <TabsContent value="logs" className="space-y-6">
