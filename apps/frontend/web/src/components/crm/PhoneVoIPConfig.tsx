@@ -177,10 +177,9 @@ export function PhoneVoIPConfig({ visible, onClose }: PhoneVoIPConfigProps) {
         return <Badge className="bg-green-100 text-green-700 border-green-300"><CheckCircle2 className="w-3 h-3 mr-1" />Registrato</Badge>;
       case 'unregistered':
         return <Badge className="bg-red-100 text-red-700 border-red-300"><XCircle className="w-3 h-3 mr-1" />Non Registrato</Badge>;
-      case 'active':
-        return <Badge className="bg-green-100 text-green-700 border-green-300"><CheckCircle2 className="w-3 h-3 mr-1" />Attivo</Badge>;
-      case 'inactive':
-        return <Badge className="bg-gray-100 text-gray-700 border-gray-300"><AlertCircle className="w-3 h-3 mr-1" />Inattivo</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-700 border-red-300"><XCircle className="w-3 h-3 mr-1" />Fallito</Badge>;
+      case 'unknown':
       default:
         return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300"><AlertCircle className="w-3 h-3 mr-1" />Sconosciuto</Badge>;
     }
