@@ -1,0 +1,110 @@
+ID: aa5f0876-56a0-123f-b290-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-FAYBGFZC.js?v=fac8f799:335:29)
+    at chunk-FAYBGFZC.js?v=fac8f799:239:13
+    at chunk-FAYBGFZC.js?v=fac8f799:162:58
+    at Presence (chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at chunk-FAYBGFZC.js?v=fac8f799:153:64
+    at chunk-TCRT5IO7.js?v=fac8f799:43:13
+    at chunk-TCRT5IO7.js?v=fac8f799:20:13
+    at chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at chunk-3FRVM557.js?v=fac8f799:244:22
+    at Presence (chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at DialogPortal (chunk-FAYBGFZC.js?v=fac8f799:115:11)
+    at _c3 (dialog.tsx:30:6)
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at Dialog (chunk-FAYBGFZC.js?v=fac8f799:56:5)
+    at div (<anonymous>)
+    at ListiniTabContent (ListiniTabContent.tsx:99:39)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at Presence (chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at @radix-ui_react-tabs.js?v=fac8f799:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at @radix-ui_react-tabs.js?v=fac8f799:55:7
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WMSProductsAndListsPage (WMSProductsAndListsPage.tsx:37:45)
+    at AuthenticatedRoute (TenantShell.tsx:558:72)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:234:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:89:59)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-FAYBGFZC.js?v=fac8f799:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'avviso
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-FAYBGFZC.js?v=fac8f799:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=fac8f799:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=fac8f799:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=fac8f799:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'avviso
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+elementWasFocused @ content_script.js:1
+focusInEventHandler @ content_script.js:1Comprendi l'errore
+5content_script.js:1 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at processInputEvent (content_script.js:1:426332)
+(anonime) @ content_script.js:1
+shouldOfferCompletionListForField @ content_script.js:1
+processInputEvent @ content_script.js:1
+setTimeout
+inputEventHandler @ content_script.js:1Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of undefined (reading 'control')
+    at content_script.js:1:422999
+    at Array.some (<anonymous>)
+    at shouldOfferCompletionListForField (content_script.js:1:422984)
+    at elementWasFocused (content_script.js:1:423712)
+    at HTMLDocument.focusInEventHandler (content_script.js:1:423069)

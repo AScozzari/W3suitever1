@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
@@ -1313,6 +1313,9 @@ export default function ListiniTabContent() {
               </div>
               <span className="text-lg">{getStepTitle()}</span>
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Wizard per la creazione di un nuovo listino prezzi
+            </DialogDescription>
           </DialogHeader>
 
           <ScrollArea className="flex-1 pr-4">
@@ -1369,6 +1372,9 @@ export default function ListiniTabContent() {
               <AlertCircle className="h-5 w-5 text-amber-500" />
               Listino Attivo - Gestione Versione
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Scegli come procedere con la modifica del listino attivo
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4 space-y-4">
