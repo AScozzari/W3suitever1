@@ -510,14 +510,14 @@ export default function ListiniTabContent() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Valido Dal *</Label>
-          <Popover>
+          <Popover modal={false}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-from">
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {priceListHeader.validFrom ? format(priceListHeader.validFrom, 'dd/MM/yyyy', { locale: it }) : 'Seleziona...'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-[100]" align="start">
               <Calendar
                 mode="single"
                 selected={priceListHeader.validFrom}
@@ -530,14 +530,14 @@ export default function ListiniTabContent() {
         </div>
         <div>
           <Label>Valido Fino A</Label>
-          <Popover>
+          <Popover modal={false}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-to">
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {priceListHeader.validTo ? format(priceListHeader.validTo, 'dd/MM/yyyy', { locale: it }) : 'Nessuna scadenza'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-[100]" align="start">
               <Calendar
                 mode="single"
                 selected={priceListHeader.validTo || undefined}
