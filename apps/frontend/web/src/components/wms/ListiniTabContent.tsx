@@ -165,8 +165,12 @@ export default function ListiniTabContent() {
   );
 
   const filteredPhysicalProducts = useMemo(() => {
+    // Mostra prodotti solo se c'è almeno 2 caratteri di ricerca o una categoria selezionata
+    if (physicalSearchTerm.length < 2 && physicalCategoryFilter === 'all') {
+      return [];
+    }
     return physicalProducts.filter((p: any) => {
-      if (physicalSearchTerm) {
+      if (physicalSearchTerm.length >= 2) {
         const search = physicalSearchTerm.toLowerCase();
         if (!p.name?.toLowerCase().includes(search) && !p.sku?.toLowerCase().includes(search)) {
           return false;
@@ -180,8 +184,12 @@ export default function ListiniTabContent() {
   }, [physicalProducts, physicalSearchTerm, physicalCategoryFilter]);
 
   const filteredCanvasProducts = useMemo(() => {
+    // Mostra prodotti solo se c'è almeno 2 caratteri di ricerca o una categoria selezionata
+    if (canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all') {
+      return [];
+    }
     return canvasProducts.filter((p: any) => {
-      if (canvasSearchTerm) {
+      if (canvasSearchTerm.length >= 2) {
         const search = canvasSearchTerm.toLowerCase();
         if (!p.name?.toLowerCase().includes(search) && !p.sku?.toLowerCase().includes(search)) {
           return false;
@@ -646,7 +654,9 @@ export default function ListiniTabContent() {
                 {filteredPhysicalProducts.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>Nessun prodotto fisico trovato</p>
+                    <p>{physicalSearchTerm.length < 2 && physicalCategoryFilter === 'all' 
+                      ? 'Digita almeno 2 caratteri o seleziona una categoria' 
+                      : 'Nessun prodotto fisico trovato'}</p>
                   </div>
                 ) : (
                   <div className="p-2 space-y-2">
@@ -711,7 +721,9 @@ export default function ListiniTabContent() {
                 {filteredCanvasProducts.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>Nessun prodotto CANVAS trovato</p>
+                    <p>{canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' 
+                      ? 'Digita almeno 2 caratteri o seleziona una categoria' 
+                      : 'Nessun prodotto CANVAS trovato'}</p>
                   </div>
                 ) : (
                   <div className="p-2 space-y-2">
