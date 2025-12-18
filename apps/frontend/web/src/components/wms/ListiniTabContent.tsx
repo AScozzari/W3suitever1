@@ -510,40 +510,38 @@ export default function ListiniTabContent() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Valido Dal *</Label>
-          <Popover modal={false}>
+          <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-from">
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {priceListHeader.validFrom ? format(priceListHeader.validFrom, 'dd/MM/yyyy', { locale: it }) : 'Seleziona...'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-[100]" align="start">
+            <PopoverContent className="w-auto p-0" align="start" sideOffset={4} style={{ zIndex: 9999, pointerEvents: 'auto' }}>
               <Calendar
                 mode="single"
                 selected={priceListHeader.validFrom}
                 onSelect={(date) => date && setPriceListHeader(prev => ({ ...prev, validFrom: date }))}
                 locale={it}
-                initialFocus
               />
             </PopoverContent>
           </Popover>
         </div>
         <div>
           <Label>Valido Fino A</Label>
-          <Popover modal={false}>
+          <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-to">
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {priceListHeader.validTo ? format(priceListHeader.validTo, 'dd/MM/yyyy', { locale: it }) : 'Nessuna scadenza'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-[100]" align="start">
+            <PopoverContent className="w-auto p-0" align="start" sideOffset={4} style={{ zIndex: 9999, pointerEvents: 'auto' }}>
               <Calendar
                 mode="single"
                 selected={priceListHeader.validTo || undefined}
                 onSelect={(date) => setPriceListHeader(prev => ({ ...prev, validTo: date || null }))}
                 locale={it}
-                initialFocus
               />
             </PopoverContent>
           </Popover>
