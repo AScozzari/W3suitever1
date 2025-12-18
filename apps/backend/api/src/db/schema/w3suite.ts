@@ -9440,6 +9440,7 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   installmentMethodId: uuid("installment_method_id"), // FK logica a public.installment_methods (se VAR)
   
   // ==================== CANVAS-SPECIFIC (solo per prodotti CANVAS) ====================
+  monthlyFee: numeric("monthly_fee", { precision: 12, scale: 2 }), // Canone mensile CANVAS (es. 13,99€/mese)
   entryFee: numeric("entry_fee", { precision: 12, scale: 2 }), // Anticipo cliente CANVAS
   
   // ==================== RATEIZZAZIONE (FIN/VAR) ====================

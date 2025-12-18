@@ -304,6 +304,15 @@ WHERE tenant_id = current_tenant_id OR tenant_id IS NULL
 | `validFrom` | timestamp | Inizio validità versione |
 | `validTo` | timestamp | Fine validità (NULL = senza scadenza) |
 
+#### Campi CANVAS-Specific (✅ IMPLEMENTATO)
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `monthlyFee` | numeric(12,2) | Canone mensile CANVAS (es. 13,99€/mese) |
+| `entryFee` | numeric(12,2) | Anticipo cliente CANVAS |
+
+> **Nota**: Questi campi sono usati solo per prodotti di tipo CANVAS, per PHYSICAL/VIRTUAL/SERVICE rimangono NULL.
+
 #### Rateizzazione FIN/VAR (✅ IMPLEMENTATO)
 
 | Campo | Tipo | Descrizione |
