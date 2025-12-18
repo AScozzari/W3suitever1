@@ -32,13 +32,14 @@ I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di p
 
 ### Tipi di Listino W3 (✅ IMPLEMENTATO)
 
-| Tipo | Codice enum | Modalità Pagamento | Info Amministrative |
-|------|-------------|-------------------|---------------------|
-| **NO PROMO** | `standard` | Decisa in cassa | Nessuna |
-| **Promo Device** | `promo_device` | Decisa in cassa | NDC |
-| **CANVAS** | `promo_canvas` | **Preimpostata** (FIN/VAR) | NDC + FIN Credit / VAR Cessione |
+| Tipo | Codice enum | Descrizione | Campi specifici |
+|------|-------------|-------------|-----------------|
+| **NO PROMO** | `no_promo` | Prodotti senza promozione (fisici, virtuali, servizi) | Solo prezzi base |
+| **CANVAS** | `canvas` | Solo prodotto CANVAS (tariffa pura) | `monthlyFee` (canone) |
+| **Promo Device** | `promo_device` | Device con promozione (senza CANVAS) | Colonne contabili |
+| **Promo CANVAS** | `promo_canvas` | CANVAS + prodotto fisico abbinato | `monthlyFee` + colonne contabili |
 
-**Enum PostgreSQL**: `price_list_type` = ['standard', 'promo_device', 'promo_canvas']
+**Enum PostgreSQL**: `price_list_type` = ['no_promo', 'canvas', 'promo_device', 'promo_canvas']
 
 ### Campi Economici per Tipo di Credito
 
@@ -312,6 +313,16 @@ WHERE tenant_id = current_tenant_id OR tenant_id IS NULL
 | `entryFee` | numeric(12,2) | Anticipo cliente CANVAS |
 
 > **Nota**: Questi campi sono usati solo per prodotti di tipo CANVAS, per PHYSICAL/VIRTUAL/SERVICE rimangono NULL.
+
+#### Colonne Contabili/Amministrative (✅ IMPLEMENTATO)
+
+| Campo | Tipo | Descrizione | Usato da |
+|-------|------|-------------|----------|
+| `creditNoteAmount` | numeric(12,2) | Importo nota di credito | promo_device, promo_canvas |
+| `creditAssignmentAmount` | numeric(12,2) | Importo cessione del credito | promo_device, promo_canvas |
+| `financingAmount` | numeric(12,2) | Importo finanziamento | promo_device, promo_canvas |
+
+> **Nota**: Questi campi sono usati solo per listini promozionali (promo_device, promo_canvas). Per no_promo e canvas rimangono NULL.
 
 #### Rateizzazione FIN/VAR (✅ IMPLEMENTATO)
 

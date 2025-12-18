@@ -9330,7 +9330,7 @@ export type WmsMovementTypeConfig = typeof wmsMovementTypeConfig.$inferSelect;
 export const priceListOriginEnum = pgEnum('price_list_origin', ['brand', 'tenant']);
 
 // Enum for price list type (W3 business taxonomy)
-export const priceListTypeEnum = pgEnum('price_list_type', ['standard', 'promo_device', 'promo_canvas']);
+export const priceListTypeEnum = pgEnum('price_list_type', ['no_promo', 'canvas', 'promo_device', 'promo_canvas']);
 
 // Enum for price list item change reason (versioning)
 export const priceListItemChangeReasonEnum = pgEnum('price_list_item_change_reason', ['correction', 'price_update', 'promo', 'supplier_change', 'vat_change']);
@@ -9354,7 +9354,7 @@ export const priceLists = w3suiteSchema.table("price_lists", {
   description: text("description"),
   
   // Tipo e priorità
-  type: priceListTypeEnum("type").default('standard').notNull(),
+  type: priceListTypeEnum("type").default('no_promo').notNull(),
   priority: integer("priority").default(0).notNull(),
   
   // Origine (brand-pushed vs tenant-created)
@@ -9447,6 +9447,11 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   numberOfInstallments: integer("number_of_installments"), // Numero rate (12, 24, 36, 48)
   installmentAmount: numeric("installment_amount", { precision: 12, scale: 2 }), // Importo singola rata
   totalFinancedAmount: numeric("total_financed_amount", { precision: 12, scale: 2 }), // Totale pagato a rate (manuale, non calcolato)
+  
+  // ==================== CONTABILI/AMMINISTRATIVI (promo_device, promo_canvas) ====================
+  creditNoteAmount: numeric("credit_note_amount", { precision: 12, scale: 2 }), // Importo nota di credito
+  creditAssignmentAmount: numeric("credit_assignment_amount", { precision: 12, scale: 2 }), // Importo cessione del credito
+  financingAmount: numeric("financing_amount", { precision: 12, scale: 2 }), // Importo finanziamento
   
   // ==================== VALIDITÀ TEMPORALE ====================
   validFrom: timestamp("valid_from").notNull(),
