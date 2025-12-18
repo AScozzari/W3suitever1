@@ -9489,8 +9489,13 @@ export type PriceListItem = typeof priceListItems.$inferSelect;
 export const priceListItemCompositions = w3suiteSchema.table("price_list_item_compositions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   
-  // Multi-tenancy
+  // Multi-tenancy: NULL = brand (cross-tenant), UUID = tenant-specific
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Origine (brand-pushed vs tenant-created) - allineato a price_list_items
+  origin: priceListOriginEnum("origin").default('tenant').notNull(),
+  isLocked: boolean("is_locked").default(false).notNull(),
+  sourceBrandCompositionId: uuid("source_brand_composition_id"), // Tracks brand version source
   
   // Bundle reference (CANVAS master item)
   bundleItemId: uuid("bundle_item_id").notNull().references(() => priceListItems.id, { onDelete: 'cascade' }),
@@ -9523,6 +9528,10 @@ export const priceListItemCompositions = w3suiteSchema.table("price_list_item_co
   // Ordinamento componenti nel bundle
   displayOrder: integer("display_order").default(0).notNull(),
   
+  // Validità temporale (per versioning)
+  validFrom: timestamp("valid_from"),
+  validTo: timestamp("valid_to"),
+  
   // Status
   isActive: boolean("is_active").default(true).notNull(),
   
@@ -9532,8 +9541,9 @@ export const priceListItemCompositions = w3suiteSchema.table("price_list_item_co
   createdBy: varchar("created_by").references(() => users.id),
   updatedBy: varchar("updated_by").references(() => users.id),
 }, (table) => [
-  // Chiave univoca: bundle + component + modalità + ente + metodo
+  // Chiave univoca: tenant + bundle + component + modalità + ente + metodo
   uniqueIndex("price_list_compositions_unique").on(
+    table.tenantId,
     table.bundleItemId, 
     table.componentItemId, 
     table.salesModeId, 
@@ -9543,10 +9553,12 @@ export const priceListItemCompositions = w3suiteSchema.table("price_list_item_co
   
   // Performance indexes
   index("price_list_compositions_tenant_idx").on(table.tenantId),
+  index("price_list_compositions_origin_idx").on(table.origin),
   index("price_list_compositions_bundle_idx").on(table.bundleItemId),
   index("price_list_compositions_component_idx").on(table.componentItemId),
   index("price_list_compositions_sales_mode_idx").on(table.salesModeId),
   index("price_list_compositions_active_idx").on(table.isActive),
+  index("price_list_compositions_valid_idx").on(table.validFrom, table.validTo),
 ]);
 
 export const insertPriceListItemCompositionSchema = createInsertSchema(priceListItemCompositions).omit({

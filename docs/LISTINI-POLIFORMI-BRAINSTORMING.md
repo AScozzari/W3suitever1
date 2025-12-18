@@ -2,9 +2,9 @@
 
 > **Documento di lavoro** - Aggiornato man mano che procediamo con l'analisi e lo sviluppo
 > 
-> **Ultimo aggiornamento**: 17 Dicembre 2025
+> **Ultimo aggiornamento**: 18 Dicembre 2025
 > 
-> **Stato**: 🟢 Terminologia W3 definita - Pronto per implementazione
+> **Stato**: 🟢 Schema database implementato - Tabelle `price_lists`, `price_list_items`, `price_list_item_compositions` create
 
 ---
 
@@ -30,13 +30,15 @@ I **Listini Poliformi** sono listini che **cambiano forma** in base al tipo di p
 | **EAN** | Barcode | `products.barcode` |
 | **Entry Fee** | Anticipo pagato dal cliente in cassa | `entryFee` |
 
-### Tipi di Listino W3
+### Tipi di Listino W3 (✅ IMPLEMENTATO)
 
-| Tipo | Modalità Pagamento | Info Amministrative |
-|------|-------------------|---------------------|
-| **STD** | Decisa in cassa | Nessuna |
-| **Promo Device** | Decisa in cassa | NDC |
-| **CANVAS** | **Preimpostata** (FIN/VAR) | NDC + FIN Credit / VAR Cessione |
+| Tipo | Codice enum | Modalità Pagamento | Info Amministrative |
+|------|-------------|-------------------|---------------------|
+| **NO PROMO** | `standard` | Decisa in cassa | Nessuna |
+| **Promo Device** | `promo_device` | Decisa in cassa | NDC |
+| **CANVAS** | `promo_canvas` | **Preimpostata** (FIN/VAR) | NDC + FIN Credit / VAR Cessione |
+
+**Enum PostgreSQL**: `price_list_type` = ['standard', 'promo_device', 'promo_canvas']
 
 ### Campi Economici per Tipo di Credito
 
@@ -301,6 +303,77 @@ WHERE tenant_id = current_tenant_id OR tenant_id IS NULL
 | `changeReason` | enum | 'correction', 'price_update', 'promo', 'supplier_change', 'vat_change' |
 | `validFrom` | timestamp | Inizio validità versione |
 | `validTo` | timestamp | Fine validità (NULL = senza scadenza) |
+
+#### Rateizzazione FIN/VAR (✅ IMPLEMENTATO)
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `numberOfInstallments` | integer | Numero rate (12, 24, 36, 48) |
+| `installmentAmount` | numeric(12,2) | Importo singola rata |
+| `totalFinancedAmount` | numeric(12,2) | Totale pagato a rate (**non calcolato**) |
+
+> ⚠️ **IMPORTANTE**: Tutti i valori sono inseriti manualmente. `totalFinancedAmount` NON è `numberOfInstallments × installmentAmount` perché può includere interessi, commissioni o sconti.
+
+---
+
+## 2.5 Offerte Composite CANVAS + PHYSICAL (✅ IMPLEMENTATO)
+
+### Tabella `price_list_item_compositions`
+
+Le offerte composite collegano un prodotto CANVAS (master) a uno o più componenti (PHYSICAL, SERVICE, ADDON).
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  OFFERTA COMPOSITA: "Powerful + iPhone 17 Pro"              │
+├─────────────────────────────────────────────────────────────┤
+│  MASTER (bundleItemId)                                       │
+│  └── CANVAS "Powerful" - Canone 13,99€/mese                 │
+│                                                              │
+│  COMPONENTE (componentItemId)                                │
+│  └── PHYSICAL "iPhone 17 Pro Red 256GB"                     │
+│      ├── componentRole: primary                             │
+│      ├── pricingStrategy: override                          │
+│      ├── salesMode: FIN (Compass)                           │
+│      ├── overrideSalesPriceVatIncl: 1.500€                  │
+│      ├── overrideEntryFee: 100€                             │
+│      ├── overrideNumberOfInstallments: 24                   │
+│      └── overrideInstallmentAmount: 58,33€                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Enum `component_role`
+
+| Valore | Descrizione |
+|--------|-------------|
+| `primary` | Componente principale obbligatorio (es. iPhone) |
+| `addon` | Servizio aggiuntivo incluso (es. Assicurazione) |
+| `accessory` | Accessorio opzionale (es. Cover) |
+
+### Enum `pricing_strategy`
+
+| Valore | Descrizione |
+|--------|-------------|
+| `inherited` | Usa prezzo dal listino base del componente |
+| `override` | Prezzo specifico per questa composizione |
+| `discount` | Applica sconto % sul prezzo base |
+
+### Chiave Univoca Composizioni
+
+Il prezzo di un componente può variare per:
+- **CANVAS abbinato** (bundleItemId)
+- **Modalità vendita** (salesModeId: ALL/FIN/VAR)
+- **Ente finanziatore** (financialEntityId: Compass, Findomestic, Agos)
+- **Metodo rateizzazione** (installmentMethodId: RID, CDC)
+
+**Esempio iPhone 17 Pro con prezzi diversi:**
+
+| Canvas | Modalità | Ente/Metodo | Prezzo | Anticipo | Rate |
+|--------|----------|-------------|--------|----------|------|
+| Powerful | FIN | Compass | 1.500€ | 100€ | 24×58€ |
+| Powerful | FIN | Findomestic | 1.520€ | 50€ | 24×61€ |
+| Powerful | VAR | RID | 1.400€ | 0€ | 24×58€ |
+| Powerful | VAR | CDC | 1.450€ | 0€ | 24×60€ |
+| Basic | FIN | Compass | 1.600€ | 150€ | 24×60€ |
 
 ---
 
