@@ -10157,6 +10157,140 @@ router.delete("/price-lists/:id", rbacMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/wms/price-lists/:id
+ * Update a price list with optional versioning
+ * If createNewVersion=true, creates a new version with incremented version number
+ */
+router.put("/price-lists/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const { header, createNewVersion, changeReason } = req.body;
+
+    // Get existing price list
+    const [existing] = await db
+      .select()
+      .from(priceLists)
+      .where(eq(priceLists.id, id));
+
+    if (!existing) {
+      return res.status(404).json({ error: "Price list not found" });
+    }
+
+    if (existing.origin === 'brand') {
+      return res.status(403).json({ error: "Brand-pushed price lists cannot be modified" });
+    }
+
+    if (existing.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Check if price list is currently active
+    const now = new Date();
+    const isActive = existing.isActive && 
+      new Date(existing.validFrom) <= now && 
+      (!existing.validTo || new Date(existing.validTo) >= now);
+
+    if (isActive && createNewVersion) {
+      // Create new version - deactivate old one and create new
+      const newVersion = (existing.version || 1) + 1;
+      const newCode = existing.code.replace(/_v\d+$/, '') + `_v${newVersion}`;
+
+      // Deactivate old version
+      await db
+        .update(priceLists)
+        .set({
+          isActive: false,
+          validTo: now,
+          updatedAt: now,
+          updatedBy: userId
+        })
+        .where(eq(priceLists.id, id));
+
+      // Create new version
+      const [newPriceList] = await db
+        .insert(priceLists)
+        .values({
+          ...header,
+          code: newCode,
+          tenantId,
+          origin: 'tenant',
+          version: newVersion,
+          previousVersionId: existing.id,
+          changeReason: changeReason || null,
+          validFrom: new Date(header.validFrom || now),
+          validTo: header.validTo ? new Date(header.validTo) : null,
+          isActive: true,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning();
+
+      // Copy items from old version to new version
+      const oldItems = await db
+        .select()
+        .from(priceListItems)
+        .where(eq(priceListItems.priceListId, id));
+
+      for (const item of oldItems) {
+        const { id: oldItemId, priceListId: _, createdAt: __, updatedAt: ___, ...itemData } = item;
+        await db
+          .insert(priceListItems)
+          .values({
+            ...itemData,
+            priceListId: newPriceList.id,
+            createdBy: userId,
+            updatedBy: userId
+          });
+      }
+
+      return res.json({ 
+        success: true, 
+        data: newPriceList,
+        message: `Created new version ${newVersion} of price list`,
+        isNewVersion: true
+      });
+    } else {
+      // Simple update (no versioning)
+      const [updated] = await db
+        .update(priceLists)
+        .set({
+          name: header.name,
+          description: header.description,
+          validFrom: new Date(header.validFrom),
+          validTo: header.validTo ? new Date(header.validTo) : null,
+          isActive: header.isActive !== undefined ? header.isActive : existing.isActive,
+          updatedAt: now,
+          updatedBy: userId
+        })
+        .where(eq(priceLists.id, id))
+        .returning();
+
+      return res.json({ 
+        success: true, 
+        data: updated,
+        message: "Price list updated successfully",
+        isNewVersion: false
+      });
+    }
+
+  } catch (error) {
+    console.error("Error updating price list:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to update price list",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== PRODUCT-SUPPLIER MAPPINGS API ====================
 
 /**

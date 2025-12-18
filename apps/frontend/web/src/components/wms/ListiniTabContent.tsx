@@ -123,6 +123,12 @@ export default function ListiniTabContent() {
   const [physicalCategoryFilter, setPhysicalCategoryFilter] = useState<string>('all');
   const [canvasCategoryFilter, setCanvasCategoryFilter] = useState<string>('all');
 
+  // Versioning dialog state
+  const [versioningDialogOpen, setVersioningDialogOpen] = useState(false);
+  const [editingPriceListId, setEditingPriceListId] = useState<string | null>(null);
+  const [changeReason, setChangeReason] = useState('');
+  const [pendingUpdate, setPendingUpdate] = useState<any>(null);
+
   const { data: priceListsData = [], isLoading: priceListsLoading, refetch: refetchPriceLists } = useQuery({
     queryKey: ['/api/wms/price-lists'],
     queryFn: async () => {
@@ -352,6 +358,98 @@ export default function ListiniTabContent() {
     } catch (error) {
       console.error('Error saving price list:', error);
       alert(error instanceof Error ? error.message : 'Errore nella creazione del listino');
+    }
+  };
+
+  // Check if a price list is currently active
+  const isPriceListActive = (priceList: any) => {
+    const now = new Date();
+    return priceList.isActive && 
+      new Date(priceList.validFrom) <= now && 
+      (!priceList.validTo || new Date(priceList.validTo) >= now);
+  };
+
+  // Handle edit button click - show versioning dialog if active
+  const handleEditPriceList = (priceList: any) => {
+    if (isPriceListActive(priceList)) {
+      setEditingPriceListId(priceList.id);
+      setPendingUpdate(priceList);
+      setChangeReason('');
+      setVersioningDialogOpen(true);
+    } else {
+      // Non-active lists can be edited directly (future feature)
+      alert('La modifica diretta sarà disponibile nella prossima versione');
+    }
+  };
+
+  // Handle versioning dialog confirmation
+  const handleVersioningConfirm = async (createNewVersion: boolean) => {
+    if (!editingPriceListId || !pendingUpdate) return;
+
+    try {
+      const payload = {
+        header: {
+          name: pendingUpdate.name,
+          description: pendingUpdate.description,
+          validFrom: pendingUpdate.validFrom,
+          validTo: pendingUpdate.validTo
+        },
+        createNewVersion,
+        changeReason: createNewVersion ? changeReason : undefined
+      };
+
+      const res = await fetch(`/api/wms/price-lists/${editingPriceListId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Errore nella modifica del listino');
+      }
+
+      const result = await res.json();
+      await refetchPriceLists();
+      setVersioningDialogOpen(false);
+      setEditingPriceListId(null);
+      setPendingUpdate(null);
+      setChangeReason('');
+      
+      alert(result.isNewVersion 
+        ? `Creata nuova versione del listino`
+        : 'Listino aggiornato con successo');
+    } catch (error) {
+      console.error('Error updating price list:', error);
+      alert(error instanceof Error ? error.message : 'Errore nella modifica del listino');
+    }
+  };
+
+  // Handle delete
+  const handleDeletePriceList = async (priceList: any) => {
+    if (priceList.origin === 'brand') {
+      alert('I listini brand non possono essere eliminati');
+      return;
+    }
+
+    if (!confirm(`Sei sicuro di voler eliminare il listino "${priceList.name}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/wms/price-lists/${priceList.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Errore nella cancellazione');
+      }
+
+      await refetchPriceLists();
+    } catch (error) {
+      console.error('Error deleting price list:', error);
+      alert(error instanceof Error ? error.message : 'Errore nella cancellazione');
     }
   };
 
@@ -1065,25 +1163,131 @@ export default function ListiniTabContent() {
         </div>
       </Card>
 
-      <Card style={{
-        background: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
-      }}>
-        <div className="p-8 text-center">
-          <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-semibold mb-2" data-testid="empty-state-title">Nessun listino presente</h3>
-          <p className="text-gray-500 mb-6" data-testid="empty-state-subtitle">
-            Crea il tuo primo listino per iniziare a gestire i prezzi
-          </p>
-          <Button onClick={openWizard} data-testid="button-create-first-pricelist">
-            <Plus className="h-4 w-4 mr-2" />
-            Crea Primo Listino
-          </Button>
+      {priceListsLoading ? (
+        <Card className="p-8 text-center">
+          <RefreshCw className="h-8 w-8 mx-auto mb-4 text-gray-400 animate-spin" />
+          <p className="text-gray-500">Caricamento listini...</p>
+        </Card>
+      ) : priceListsData.length === 0 ? (
+        <Card style={{
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div className="p-8 text-center">
+            <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-xl font-semibold mb-2" data-testid="empty-state-title">Nessun listino presente</h3>
+            <p className="text-gray-500 mb-6" data-testid="empty-state-subtitle">
+              Crea il tuo primo listino per iniziare a gestire i prezzi
+            </p>
+            <Button onClick={openWizard} data-testid="button-create-first-pricelist">
+              <Plus className="h-4 w-4 mr-2" />
+              Crea Primo Listino
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {priceListsData.map((priceList: any) => {
+            const typeInfo = PRICE_LIST_TYPES.find(t => t.value === priceList.type);
+            const Icon = typeInfo?.icon || FileText;
+            const isActive = isPriceListActive(priceList);
+            const now = new Date();
+            const isFuture = new Date(priceList.validFrom) > now;
+            const isExpired = priceList.validTo && new Date(priceList.validTo) < now;
+
+            return (
+              <Card 
+                key={priceList.id}
+                className="p-4 hover:shadow-lg transition-shadow"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.8)',
+                  backdropFilter: 'blur(10px)',
+                  border: isActive ? `2px solid ${typeInfo?.color || '#10b981'}` : '1px solid rgba(0,0,0,0.1)'
+                }}
+                data-testid={`card-pricelist-${priceList.id}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="p-3 rounded-xl"
+                      style={{ backgroundColor: `${typeInfo?.color || '#6b7280'}20` }}
+                    >
+                      <Icon className="h-6 w-6" style={{ color: typeInfo?.color || '#6b7280' }} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{priceList.name}</h3>
+                        <Badge variant="outline" className="text-xs">
+                          {priceList.code}
+                        </Badge>
+                        {priceList.version && priceList.version > 1 && (
+                          <Badge variant="secondary" className="text-xs">
+                            v{priceList.version}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                        <span>{typeInfo?.label || priceList.type}</span>
+                        <span>•</span>
+                        <span>
+                          {format(new Date(priceList.validFrom), 'dd/MM/yyyy', { locale: it })}
+                          {priceList.validTo && ` - ${format(new Date(priceList.validTo), 'dd/MM/yyyy', { locale: it })}`}
+                        </span>
+                        {priceList.origin === 'brand' && (
+                          <>
+                            <span>•</span>
+                            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                              Brand
+                            </Badge>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      className={`${
+                        isActive ? 'bg-green-100 text-green-700' :
+                        isFuture ? 'bg-blue-100 text-blue-700' :
+                        isExpired ? 'bg-gray-100 text-gray-500' :
+                        'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {isActive ? 'Attivo' : isFuture ? 'Futuro' : isExpired ? 'Scaduto' : 'Inattivo'}
+                    </Badge>
+
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEditPriceList(priceList)}
+                        data-testid={`button-edit-pricelist-${priceList.id}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {priceList.origin !== 'brand' && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDeletePriceList(priceList)}
+                          data-testid={`button-delete-pricelist-${priceList.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
-      </Card>
+      )}
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1153,6 +1357,92 @@ export default function ListiniTabContent() {
                 </Button>
               )}
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Versioning Dialog */}
+      <Dialog open={versioningDialogOpen} onOpenChange={setVersioningDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Listino Attivo - Gestione Versione
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-sm text-amber-800">
+                <strong>Attenzione:</strong> Stai modificando un listino attualmente in vigore.
+                Le modifiche potrebbero influenzare le vendite in corso.
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              Scegli come procedere:
+            </p>
+
+            <div className="space-y-3">
+              <Card 
+                className="p-4 cursor-pointer hover:bg-gray-50 border-2 hover:border-green-500 transition-all"
+                onClick={() => handleVersioningConfirm(true)}
+                data-testid="card-create-new-version"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-green-100">
+                    <Plus className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-green-700">Crea Nuova Versione</h4>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Mantiene lo storico: la versione corrente viene chiusa e ne viene creata una nuova.
+                      Raccomandato per tracciabilità.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card 
+                className="p-4 cursor-pointer hover:bg-gray-50 border-2 hover:border-amber-500 transition-all"
+                onClick={() => handleVersioningConfirm(false)}
+                data-testid="card-update-in-place"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-amber-100">
+                    <RefreshCw className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-amber-700">Aggiorna In-Place</h4>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Sovrascrive i dati esistenti senza creare versioni.
+                      Usare solo per correzioni minori.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="changeReason">Motivo della modifica (opzionale)</Label>
+              <Textarea
+                id="changeReason"
+                placeholder="Es: Aggiornamento prezzi Q1 2025..."
+                value={changeReason}
+                onChange={(e) => setChangeReason(e.target.value)}
+                data-testid="input-change-reason"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setVersioningDialogOpen(false)}
+              data-testid="button-versioning-cancel"
+            >
+              Annulla
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
