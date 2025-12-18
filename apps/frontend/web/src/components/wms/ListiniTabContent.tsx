@@ -953,15 +953,37 @@ export default function ListiniTabContent() {
           )}
 
           {(currentPair.configurations || []).length > 0 && (
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setCurrentPair({ configurations: [] })} data-testid="button-cancel-pair">
-                Annulla Coppia
-              </Button>
-              <Button onClick={savePair} data-testid="button-save-pair">
-                <Check className="h-4 w-4 mr-2" />
-                Salva Coppia
-              </Button>
-            </div>
+            <Card className="p-4 bg-gray-50 border-dashed">
+              <div className="flex flex-col gap-3">
+                <div className="text-sm text-gray-600 font-medium">
+                  Hai configurato {(currentPair.configurations || []).length} modalità di vendita per questa coppia.
+                </div>
+                <div className="flex justify-between items-center">
+                  <Button variant="outline" onClick={() => setCurrentPair({ configurations: [] })} data-testid="button-cancel-pair">
+                    <X className="h-4 w-4 mr-2" />
+                    Annulla Coppia
+                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline"
+                      onClick={addConfiguration}
+                      data-testid="button-add-another-config"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Aggiungi altra configurazione
+                    </Button>
+                    <Button 
+                      onClick={savePair}
+                      style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                      data-testid="button-complete-and-new-pair"
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Completa e seleziona nuova coppia
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
           )}
         </div>
       )}
