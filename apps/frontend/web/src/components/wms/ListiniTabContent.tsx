@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { useTenant } from '@/contexts/TenantContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,8 +96,6 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
 ];
 
 export default function ListiniTabContent() {
-  const { currentTenant } = useTenant();
-  const tenantId = currentTenant?.id;
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -132,79 +129,24 @@ export default function ListiniTabContent() {
   const [changeReason, setChangeReason] = useState('');
   const [pendingUpdate, setPendingUpdate] = useState<any>(null);
 
-  const fetchHeaders = {
-    'Content-Type': 'application/json',
-    'X-Tenant-ID': tenantId || ''
-  };
-
   const { data: priceListsData = [], isLoading: priceListsLoading, refetch: refetchPriceLists } = useQuery({
-    queryKey: ['/api/wms/price-lists', tenantId],
-    queryFn: async () => {
-      const res = await fetch('/api/wms/price-lists', { 
-        credentials: 'include',
-        headers: fetchHeaders
-      });
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.data || [];
-    },
-    enabled: !!tenantId
+    queryKey: ['/api/wms/price-lists']
   });
 
   const { data: suppliersData = [] } = useQuery({
-    queryKey: ['/api/suppliers', tenantId],
-    queryFn: async () => {
-      const res = await fetch('/api/suppliers', {
-        credentials: 'include',
-        headers: fetchHeaders
-      });
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.data || [];
-    },
-    enabled: !!tenantId
+    queryKey: ['/api/suppliers']
   });
 
   const { data: financialEntitiesData = [] } = useQuery({
-    queryKey: ['/api/wms/financial-entities', tenantId],
-    queryFn: async () => {
-      const res = await fetch('/api/wms/financial-entities', {
-        credentials: 'include',
-        headers: fetchHeaders
-      });
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.data || [];
-    },
-    enabled: !!tenantId
+    queryKey: ['/api/wms/financial-entities']
   });
 
   const { data: productsData = [] } = useQuery({
-    queryKey: ['/api/wms/products', tenantId],
-    queryFn: async () => {
-      const res = await fetch('/api/wms/products', {
-        credentials: 'include',
-        headers: fetchHeaders
-      });
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.data || [];
-    },
-    enabled: !!tenantId
+    queryKey: ['/api/wms/products']
   });
 
   const { data: categoriesData = [] } = useQuery({
-    queryKey: ['/api/wms/categories', tenantId],
-    queryFn: async () => {
-      const res = await fetch('/api/wms/categories', {
-        credentials: 'include',
-        headers: fetchHeaders
-      });
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.data || [];
-    },
-    enabled: !!tenantId
+    queryKey: ['/api/wms/categories']
   });
 
   const safeSuppliers = Array.isArray(suppliersData) ? suppliersData : [];

@@ -1,0 +1,156 @@
+d: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+ListiniTabContent.tsx:143  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/price-lists 401 (Unauthorized)
+queryFn @ ListiniTabContent.tsx:143
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+ListiniTabContent.tsx:157  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/suppliers 401 (Unauthorized)
+queryFn @ ListiniTabContent.tsx:157
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+ListiniTabContent.tsx:171  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/financial-entities 401 (Unauthorized)
+queryFn @ ListiniTabContent.tsx:171
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+ListiniTabContent.tsx:185  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/products 401 (Unauthorized)
+queryFn @ ListiniTabContent.tsx:185
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+ListiniTabContent.tsx:199  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/categories 401 (Unauthorized)
+queryFn @ ListiniTabContent.tsx:199
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+useSIPRegistration.ts:154 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+useSIPRegistration.ts:178 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it/ws (transport: wss)
+useSIPRegistration.ts:181 Thu Dec 18 2025 11:51:44 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Configuration:
+useSIPRegistration.ts:181 Thu Dec 18 2025 11:51:44 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · allowLegacyNotifications: false
+useSIPRegistration.ts:181 Thu Dec 18 2025 11:51:44 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationHa1: ""
+useSIPRegistration.ts:181 Thu Dec 18 2025 11:51:44 GMT+0100 (Ora st
