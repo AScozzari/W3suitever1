@@ -1290,7 +1290,11 @@ export default function ListiniTabContent() {
       )}
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent 
+          className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="flex items-center gap-2">
