@@ -324,6 +324,59 @@ WHERE tenant_id = current_tenant_id OR tenant_id IS NULL
 
 > **Nota**: Questi campi sono usati solo per listini promozionali (promo_device, promo_canvas). Per no_promo e canvas rimangono NULL.
 
+---
+
+## 2.6 Mapping SKU Interno ↔ SKU Fornitore (✅ IMPLEMENTATO)
+
+### Problema
+Mappare manualmente ogni prodotto verso ogni fornitore è un effort enorme.
+
+### Soluzione: Approccio Ibrido
+
+**Tabella `product_supplier_mappings`** (persistente, creata una volta, riutilizzata sempre):
+
+| Campo | Tipo | Descrizione |
+|-------|------|-------------|
+| `productId` | varchar | FK al nostro prodotto interno |
+| `supplierId` | uuid | FK al fornitore |
+| `supplierSku` | varchar | SKU usato dal fornitore |
+| `supplierSkuNormalized` | varchar | Versione normalizzata per ricerca (uppercase, trim) |
+| `supplierBarcode` | varchar | EAN/Barcode fornitore (opzionale) |
+| `useInternalSku` | boolean | Se true, SKU fornitore = SKU interno (coincidono) |
+| `isPrimary` | boolean | Fornitore preferito per questo prodotto |
+| `standardPurchaseCost` | numeric | Costo acquisto di riferimento |
+| `leadTimeDays` | integer | Tempo consegna in giorni |
+| `minOrderQty` | integer | Quantità minima ordine |
+
+### Flusso Operativo
+
+**Momento di abbinamento**: Quando inserisci prodotto in un listino fornitore
+1. Selezioni prodotto interno (nostro catalogo)
+2. Sistema cerca: "Esiste già un mapping per questo fornitore?"
+   - **SÌ** → Pre-compila lo SKU fornitore già mappato
+   - **NO** → 3 opzioni:
+     - "Usa SKU interno" (servizi, digitali, SKU coincidono)
+     - "Inserisci SKU fornitore" (prima volta)
+     - "Cerca da storico" (già usato con altro listino)
+3. L'abbinamento viene salvato in `product_supplier_mappings` per riutilizzo futuro
+
+**Caso 1: Fornitore NON ha SKU proprio**
+- Flag `useInternalSku = true`
+- `supplierSku = NULL`
+- In carico magazzino usi direttamente il nostro SKU o EAN
+
+**Caso 2: SKU coincidono**
+- Sistema rileva automaticamente che sono uguali
+- Propone di settare `useInternalSku = true` senza chiederti nulla
+
+### Override per Listino Specifico
+
+In `price_list_items` esiste il campo `supplierSkuOverride`:
+- Se il fornitore usa uno SKU diverso SOLO per quel listino specifico
+- Ha priorità sul mapping standard
+
+---
+
 #### Rateizzazione FIN/VAR (✅ IMPLEMENTATO)
 
 | Campo | Tipo | Descrizione |

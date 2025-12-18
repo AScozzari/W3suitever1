@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to enhance operational efficiency, improve market responsiveness, and facilitate strategic decision-making through a scalable, secure, and comprehensive business solution, featuring a distinctive WindTre glassmorphism design. The platform aims to become a leading integrated business operations platform with significant market potential.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It aims to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, aspiring to be a leading integrated business operations platform with a WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -8,7 +8,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **Route pattern**: `/staging/wms/inventory`, `/staging/crm/dashboard`, etc.
   - **Suppliers are brand-pushed** from tenant_id `00000000-0000-0000-0000-000000000000`
 - **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
-- **❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
+- **❌ NEVER reference shared/schema.ts - IT DOES EXIST**
 - **UI/UX CONSISTENCY RULE**: Tutte le pagine devono mantenere la struttura dell'app con header e sidebar
 - **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
 - **BACKGROUND RULE**: Tutte le pagine devono avere sfondo bianco (#ffffff) con header e sidebar
@@ -134,19 +134,17 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System, built with `shadcn/ui` and `@w3suite/frontend-kit`. Styling uses CSS variables and Tailwind CSS, maintaining a consistent monorepo layout including a fixed header, sidebar, white backgrounds, and a build-time controlled UI zoom via `VITE_FONT_SCALE`.
+- **UI/UX Decisions**: WindTre Glassmorphism Design System, built with `shadcn/ui` and Radix UI primitives. Styling uses CSS variables and Tailwind CSS. The UI maintains a consistent monorepo layout with a fixed header, sidebar, white backgrounds, and build-time controlled UI zoom via `VITE_FONT_SCALE`.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
     - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), and an AI Voice Agent System with RAG.
-    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **Campaign Management**: Dual-mode campaign creation (wizard and advanced) with enforced GDPR Consent.
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
     - **Deployment & Governance**: Deployments managed via Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments follow specific build commands and environment variable handling.
     - **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and a Master Catalog System (hybrid architecture using JSON files with Git versioning).
     - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports physical, virtual, canvas, and service products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views.
-    - **WMS Movement Type Configuration**: Taxonomy of 15 movement types configurable per-tenant via a System Config page, featuring approval workflows and linked workflow templates.
+    - **WMS Module (CQRS Architecture)**: Supports physical, virtual, canvas, and service products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable via a System Config page, featuring approval workflows and linked workflow templates.
     - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
     - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS for source types and product type associations.
     - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governing team membership, type, request routing, and cross-store data access.

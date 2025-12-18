@@ -9324,6 +9324,67 @@ export const insertWmsMovementTypeConfigSchema = createInsertSchema(wmsMovementT
 export type InsertWmsMovementTypeConfig = z.infer<typeof insertWmsMovementTypeConfigSchema>;
 export type WmsMovementTypeConfig = typeof wmsMovementTypeConfig.$inferSelect;
 
+// ==================== PRODUCT-SUPPLIER MAPPINGS ====================
+
+// 20) product_supplier_mappings - Mapping SKU interno ↔ SKU fornitore (persistente)
+export const productSupplierMappings = w3suiteSchema.table("product_supplier_mappings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Multi-tenancy
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Riferimenti
+  productId: varchar("product_id", { length: 100 }).notNull(), // FK logica a products.id (varchar)
+  supplierId: uuid("supplier_id").notNull().references(() => suppliers.id, { onDelete: 'cascade' }),
+  
+  // SKU Fornitore
+  supplierSku: varchar("supplier_sku", { length: 100 }), // SKU usato dal fornitore (NULL se useInternalSku=true)
+  supplierSkuNormalized: varchar("supplier_sku_normalized", { length: 100 }), // Versione normalizzata per ricerca (uppercase, trim)
+  supplierBarcode: varchar("supplier_barcode", { length: 50 }), // EAN/Barcode fornitore (opzionale)
+  
+  // Flags
+  useInternalSku: boolean("use_internal_sku").default(false).notNull(), // Se true, usa SKU interno o sono coincidenti
+  isPrimary: boolean("is_primary").default(false).notNull(), // Fornitore preferito per questo prodotto
+  
+  // Info acquisto standard
+  standardPurchaseCost: numeric("standard_purchase_cost", { precision: 12, scale: 2 }), // Costo acquisto di riferimento
+  leadTimeDays: integer("lead_time_days"), // Tempo consegna in giorni
+  minOrderQty: integer("min_order_qty"), // Quantità minima ordine
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // Unique mapping per tenant/product/supplier
+  uniqueIndex("product_supplier_mappings_unique").on(table.tenantId, table.productId, table.supplierId),
+  
+  // Search indexes
+  index("product_supplier_mappings_tenant_idx").on(table.tenantId),
+  index("product_supplier_mappings_product_idx").on(table.productId),
+  index("product_supplier_mappings_supplier_idx").on(table.supplierId),
+  index("product_supplier_mappings_supplier_sku_idx").on(table.tenantId, table.supplierSkuNormalized),
+  index("product_supplier_mappings_primary_idx").on(table.tenantId, table.productId, table.isPrimary),
+]);
+
+export const insertProductSupplierMappingSchema = createInsertSchema(productSupplierMappings).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  supplierSku: z.string().max(100, "SKU fornitore troppo lungo").optional(),
+  supplierBarcode: z.string().max(50, "Barcode fornitore troppo lungo").optional(),
+  useInternalSku: z.boolean().optional(),
+  isPrimary: z.boolean().optional(),
+});
+export type InsertProductSupplierMapping = z.infer<typeof insertProductSupplierMappingSchema>;
+export type ProductSupplierMapping = typeof productSupplierMappings.$inferSelect;
+
 // ==================== LISTINI POLIFORMI - PRICE LISTS ====================
 
 // Enum for price list origin (brand-pushed or tenant-created)
@@ -9420,6 +9481,7 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   
   // ==================== FORNITORE ====================
   supplierId: uuid("supplier_id").references(() => suppliers.id),
+  supplierSkuOverride: varchar("supplier_sku_override", { length: 100 }), // Override SKU fornitore per questo specifico listino (se diverso dal mapping standard)
   
   // ==================== LATO ACQUISTO (PHYSICAL/VIRTUAL/SERVICE) ====================
   purchaseCost: numeric("purchase_cost", { precision: 12, scale: 2 }), // DP - Dealer Price (netto)
