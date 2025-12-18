@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,13 +82,13 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
   { 
     value: 'promo_device', 
     label: 'Promo Device', 
-    description: 'Dispositivi con rateizzazione (FIN/VAR) e informazioni contabili',
+    description: 'Dispositivi con prezzo promozionale che generano informazioni contabili',
     icon: Smartphone,
     color: '#f59e0b'
   },
   { 
     value: 'promo_canvas', 
-    label: 'Promo CANVAS + Device', 
+    label: 'Promo CANVAS Device', 
     description: 'Bundle: dispositivo fisico abbinato a offerta CANVAS con rate',
     icon: Layers,
     color: '#10b981'
@@ -129,7 +129,7 @@ export default function ListiniTabContent() {
   const [changeReason, setChangeReason] = useState('');
   const [pendingUpdate, setPendingUpdate] = useState<any>(null);
 
-  const { data: priceListsData = [], isLoading: priceListsLoading, refetch: refetchPriceLists } = useQuery({
+  const { data: priceListsData = [], isLoading: priceListsLoading, refetch: refetchPriceLists } = useQuery<any[]>({
     queryKey: ['/api/wms/price-lists']
   });
 
@@ -312,17 +312,11 @@ export default function ListiniTabContent() {
         items: priceListHeader.type !== 'promo_canvas' ? [] : []
       };
 
-      const res = await fetch('/api/wms/price-lists', {
+      await apiRequest('/api/wms/price-lists', {
         method: 'POST',
-        credentials: 'include',
-        headers: fetchHeaders,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Errore nella creazione del listino');
-      }
 
       await refetchPriceLists();
       closeWizard();
@@ -369,19 +363,11 @@ export default function ListiniTabContent() {
         changeReason: createNewVersion ? changeReason : undefined
       };
 
-      const res = await fetch(`/api/wms/price-lists/${editingPriceListId}`, {
+      const result = await apiRequest(`/api/wms/price-lists/${editingPriceListId}`, {
         method: 'PUT',
-        credentials: 'include',
-        headers: fetchHeaders,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Errore nella modifica del listino');
-      }
-
-      const result = await res.json();
       await refetchPriceLists();
       setVersioningDialogOpen(false);
       setEditingPriceListId(null);
@@ -409,16 +395,9 @@ export default function ListiniTabContent() {
     }
 
     try {
-      const res = await fetch(`/api/wms/price-lists/${priceList.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: fetchHeaders
+      await apiRequest(`/api/wms/price-lists/${priceList.id}`, {
+        method: 'DELETE'
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Errore nella cancellazione');
-      }
 
       await refetchPriceLists();
     } catch (error) {
