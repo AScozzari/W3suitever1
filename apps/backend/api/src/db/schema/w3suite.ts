@@ -9329,11 +9329,17 @@ export type WmsMovementTypeConfig = typeof wmsMovementTypeConfig.$inferSelect;
 // Enum for price list origin (brand-pushed or tenant-created)
 export const priceListOriginEnum = pgEnum('price_list_origin', ['brand', 'tenant']);
 
-// Enum for price list type
-export const priceListTypeEnum = pgEnum('price_list_type', ['base', 'promo', 'customer', 'channel', 'volume', 'geographic']);
+// Enum for price list type (W3 business taxonomy)
+export const priceListTypeEnum = pgEnum('price_list_type', ['standard', 'promo_device', 'promo_canvas']);
 
 // Enum for price list item change reason (versioning)
 export const priceListItemChangeReasonEnum = pgEnum('price_list_item_change_reason', ['correction', 'price_update', 'promo', 'supplier_change', 'vat_change']);
+
+// Enum for component role in bundle compositions
+export const componentRoleEnum = pgEnum('component_role', ['primary', 'addon', 'accessory']);
+
+// Enum for pricing strategy in bundle compositions
+export const pricingStrategyEnum = pgEnum('pricing_strategy', ['inherited', 'override', 'discount']);
 
 // 21) price_lists - Header listino (polimorfo)
 export const priceLists = w3suiteSchema.table("price_lists", {
@@ -9348,7 +9354,7 @@ export const priceLists = w3suiteSchema.table("price_lists", {
   description: text("description"),
   
   // Tipo e priorità
-  type: priceListTypeEnum("type").default('base').notNull(),
+  type: priceListTypeEnum("type").default('standard').notNull(),
   priority: integer("priority").default(0).notNull(),
   
   // Origine (brand-pushed vs tenant-created)
@@ -9436,6 +9442,11 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   // ==================== CANVAS-SPECIFIC (solo per prodotti CANVAS) ====================
   entryFee: numeric("entry_fee", { precision: 12, scale: 2 }), // Anticipo cliente CANVAS
   
+  // ==================== RATEIZZAZIONE (FIN/VAR) ====================
+  numberOfInstallments: integer("number_of_installments"), // Numero rate (12, 24, 36, 48)
+  installmentAmount: numeric("installment_amount", { precision: 12, scale: 2 }), // Importo singola rata
+  totalFinancedAmount: numeric("total_financed_amount", { precision: 12, scale: 2 }), // Totale pagato a rate (manuale, non calcolato)
+  
   // ==================== VALIDITÀ TEMPORALE ====================
   validFrom: timestamp("valid_from").notNull(),
   validTo: timestamp("valid_to"), // NULL = no expiration
@@ -9473,3 +9484,75 @@ export const insertPriceListItemSchema = createInsertSchema(priceListItems).omit
 });
 export type InsertPriceListItem = z.infer<typeof insertPriceListItemSchema>;
 export type PriceListItem = typeof priceListItems.$inferSelect;
+
+// 23) price_list_item_compositions - Offerte composite CANVAS + PHYSICAL
+export const priceListItemCompositions = w3suiteSchema.table("price_list_item_compositions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Multi-tenancy
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Bundle reference (CANVAS master item)
+  bundleItemId: uuid("bundle_item_id").notNull().references(() => priceListItems.id, { onDelete: 'cascade' }),
+  
+  // Component reference (PHYSICAL/SERVICE/ADDON item)
+  componentItemId: uuid("component_item_id").notNull().references(() => priceListItems.id, { onDelete: 'cascade' }),
+  
+  // Role and strategy
+  componentRole: componentRoleEnum("component_role").default('primary').notNull(),
+  pricingStrategy: pricingStrategyEnum("pricing_strategy").default('inherited').notNull(),
+  
+  // Chiave combinazione: stesso componente può avere prezzi diversi per modalità/ente/metodo
+  salesModeId: uuid("sales_mode_id"), // FK logica a public.sales_modes (ALL/FIN/VAR)
+  financialEntityId: uuid("financial_entity_id").references(() => financialEntities.id), // Se FIN: Compass, Findomestic...
+  installmentMethodId: uuid("installment_method_id"), // Se VAR: RID, CDC
+  
+  // Override pricing (quando pricingStrategy = 'override')
+  overrideSalesPriceVatIncl: numeric("override_sales_price_vat_incl", { precision: 12, scale: 2 }),
+  overrideEntryFee: numeric("override_entry_fee", { precision: 12, scale: 2 }),
+  overrideNumberOfInstallments: integer("override_number_of_installments"),
+  overrideInstallmentAmount: numeric("override_installment_amount", { precision: 12, scale: 2 }),
+  overrideTotalFinancedAmount: numeric("override_total_financed_amount", { precision: 12, scale: 2 }),
+  
+  // Discount pricing (quando pricingStrategy = 'discount')
+  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }),
+  
+  // Quantità componente nel bundle
+  quantity: integer("quantity").default(1).notNull(),
+  
+  // Ordinamento componenti nel bundle
+  displayOrder: integer("display_order").default(0).notNull(),
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // Chiave univoca: bundle + component + modalità + ente + metodo
+  uniqueIndex("price_list_compositions_unique").on(
+    table.bundleItemId, 
+    table.componentItemId, 
+    table.salesModeId, 
+    table.financialEntityId, 
+    table.installmentMethodId
+  ),
+  
+  // Performance indexes
+  index("price_list_compositions_tenant_idx").on(table.tenantId),
+  index("price_list_compositions_bundle_idx").on(table.bundleItemId),
+  index("price_list_compositions_component_idx").on(table.componentItemId),
+  index("price_list_compositions_sales_mode_idx").on(table.salesModeId),
+  index("price_list_compositions_active_idx").on(table.isActive),
+]);
+
+export const insertPriceListItemCompositionSchema = createInsertSchema(priceListItemCompositions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPriceListItemComposition = z.infer<typeof insertPriceListItemCompositionSchema>;
+export type PriceListItemComposition = typeof priceListItemCompositions.$inferSelect;
