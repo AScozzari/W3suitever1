@@ -155,12 +155,12 @@ export default function ListiniTabContent() {
   const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
 
   const physicalProducts = useMemo(() => 
-    safeProducts.filter((p: any) => p.productType === 'PHYSICAL'),
+    safeProducts.filter((p: any) => p.type === 'PHYSICAL'),
     [safeProducts]
   );
 
   const canvasProducts = useMemo(() => 
-    safeProducts.filter((p: any) => p.productType === 'CANVAS'),
+    safeProducts.filter((p: any) => p.type === 'CANVAS'),
     [safeProducts]
   );
 
@@ -604,8 +604,8 @@ export default function ListiniTabContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  {safeCategories.filter((c: any) => c.productType === 'PHYSICAL').map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -669,8 +669,8 @@ export default function ListiniTabContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  {safeCategories.filter((c: any) => c.productType === 'CANVAS' || c.productType === 'SERVICE').map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
