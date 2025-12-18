@@ -572,6 +572,38 @@ export default function ListiniTabContent() {
 
   const renderStep3PromoCanvas = () => (
     <div className="space-y-6">
+      {/* Riepilogo selezioni correnti */}
+      {(currentPair.physicalProductId || currentPair.canvasProductId) && !isPairComplete && (
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <div className="text-sm text-gray-500 mb-1">Prodotto Fisico</div>
+              {currentPair.physicalProductId ? (
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="font-medium">{currentPair.physicalProductName}</span>
+                  <span className="text-sm text-gray-500">({currentPair.physicalProductSku})</span>
+                </div>
+              ) : (
+                <span className="text-gray-400">Non selezionato</span>
+              )}
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400" />
+            <div className="flex-1">
+              <div className="text-sm text-gray-500 mb-1">Prodotto CANVAS</div>
+              {currentPair.canvasProductId ? (
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="font-medium">{currentPair.canvasProductName}</span>
+                </div>
+              ) : (
+                <span className="text-gray-400">Non selezionato</span>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
       {!isPairComplete ? (
         <div className="grid grid-cols-2 gap-6">
           <Card className="p-4">
