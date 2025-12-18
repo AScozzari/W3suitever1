@@ -124,9 +124,12 @@ export default function ListiniTabContent() {
   const [canvasCategoryFilter, setCanvasCategoryFilter] = useState<string>('all');
 
   const { data: priceListsData = [], isLoading: priceListsLoading, refetch: refetchPriceLists } = useQuery({
-    queryKey: ['/api/price-lists'],
+    queryKey: ['/api/wms/price-lists'],
     queryFn: async () => {
-      return [];
+      const res = await fetch('/api/wms/price-lists');
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.data || [];
     }
   });
 
@@ -141,9 +144,9 @@ export default function ListiniTabContent() {
   });
 
   const { data: financialEntitiesData = [] } = useQuery({
-    queryKey: ['/api/financial-entities'],
+    queryKey: ['/api/wms/financial-entities'],
     queryFn: async () => {
-      const res = await fetch('/api/financial-entities');
+      const res = await fetch('/api/wms/financial-entities');
       if (!res.ok) return [];
       const data = await res.json();
       return data.data || [];
@@ -151,9 +154,9 @@ export default function ListiniTabContent() {
   });
 
   const { data: productsData = [] } = useQuery({
-    queryKey: ['/api/products'],
+    queryKey: ['/api/wms/products'],
     queryFn: async () => {
-      const res = await fetch('/api/products');
+      const res = await fetch('/api/wms/products');
       if (!res.ok) return [];
       const data = await res.json();
       return data.data || [];
@@ -161,9 +164,9 @@ export default function ListiniTabContent() {
   });
 
   const { data: categoriesData = [] } = useQuery({
-    queryKey: ['/api/product-categories'],
+    queryKey: ['/api/wms/categories'],
     queryFn: async () => {
-      const res = await fetch('/api/product-categories');
+      const res = await fetch('/api/wms/categories');
       if (!res.ok) return [];
       const data = await res.json();
       return data.data || [];
@@ -319,11 +322,37 @@ export default function ListiniTabContent() {
   };
 
   const handleSavePriceList = async () => {
-    console.log('Saving price list:', {
-      header: priceListHeader,
-      pairs: savedPairs
-    });
-    closeWizard();
+    try {
+      const payload = {
+        header: {
+          code: priceListHeader.code,
+          name: priceListHeader.name,
+          description: priceListHeader.description,
+          type: priceListHeader.type,
+          validFrom: priceListHeader.validFrom.toISOString(),
+          validTo: priceListHeader.validTo?.toISOString() || null
+        },
+        pairs: priceListHeader.type === 'promo_canvas' ? savedPairs : [],
+        items: priceListHeader.type !== 'promo_canvas' ? [] : []
+      };
+
+      const res = await fetch('/api/wms/price-lists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Errore nella creazione del listino');
+      }
+
+      await refetchPriceLists();
+      closeWizard();
+    } catch (error) {
+      console.error('Error saving price list:', error);
+      alert(error instanceof Error ? error.message : 'Errore nella creazione del listino');
+    }
   };
 
   const getStepTitle = () => {

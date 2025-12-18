@@ -43,7 +43,14 @@ import {
   suppliers,
   drivers,
   financialEntities,
-  insertFinancialEntitySchema
+  insertFinancialEntitySchema,
+  // Price Lists
+  priceLists,
+  priceListItems,
+  priceListItemCompositions,
+  productSupplierMappings,
+  insertPriceListSchema,
+  insertPriceListItemSchema
 } from "../db/schema/w3suite";
 import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -9826,6 +9833,448 @@ router.delete("/financial-entities/:id", rbacMiddleware, async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: "Failed to delete financial entity",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== PRICE LISTS API ====================
+
+/**
+ * GET /api/wms/price-lists
+ * Get all price lists for the tenant (with optional filters)
+ */
+router.get("/price-lists", rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const { type, status, search } = req.query;
+
+    let query = db
+      .select()
+      .from(priceLists)
+      .where(
+        and(
+          or(
+            eq(priceLists.tenantId, tenantId),
+            isNull(priceLists.tenantId) // Include brand-pushed lists
+          )
+        )
+      )
+      .orderBy(desc(priceLists.createdAt));
+
+    const results = await query;
+
+    // Apply filters in memory for flexibility
+    let filtered = results;
+
+    if (type && type !== 'all') {
+      filtered = filtered.filter(p => p.type === type);
+    }
+
+    if (status && status !== 'all') {
+      const now = new Date();
+      if (status === 'active') {
+        filtered = filtered.filter(p => 
+          p.isActive && 
+          new Date(p.validFrom) <= now && 
+          (!p.validTo || new Date(p.validTo) >= now)
+        );
+      } else if (status === 'expired') {
+        filtered = filtered.filter(p => p.validTo && new Date(p.validTo) < now);
+      } else if (status === 'future') {
+        filtered = filtered.filter(p => new Date(p.validFrom) > now);
+      }
+    }
+
+    if (search) {
+      const searchLower = String(search).toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        p.code.toLowerCase().includes(searchLower)
+      );
+    }
+
+    res.json({ success: true, data: filtered });
+
+  } catch (error) {
+    console.error("Error fetching price lists:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch price lists",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/price-lists/:id
+ * Get a single price list with its items
+ */
+router.get("/price-lists/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Get price list header
+    const [priceList] = await db
+      .select()
+      .from(priceLists)
+      .where(eq(priceLists.id, id));
+
+    if (!priceList) {
+      return res.status(404).json({ error: "Price list not found" });
+    }
+
+    // Check access
+    if (priceList.tenantId && priceList.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Get items
+    const items = await db
+      .select()
+      .from(priceListItems)
+      .where(eq(priceListItems.priceListId, id))
+      .orderBy(desc(priceListItems.createdAt));
+
+    // Get compositions for promo_canvas items
+    const itemIds = items.map(i => i.id);
+    let compositions: any[] = [];
+    
+    if (itemIds.length > 0 && priceList.type === 'promo_canvas') {
+      compositions = await db
+        .select()
+        .from(priceListItemCompositions)
+        .where(inArray(priceListItemCompositions.bundleItemId, itemIds));
+    }
+
+    res.json({ 
+      success: true, 
+      data: {
+        ...priceList,
+        items,
+        compositions
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching price list:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch price list",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/price-lists
+ * Create a new price list with items
+ */
+router.post("/price-lists", rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const { header, items, pairs } = req.body;
+
+    // Validate header
+    const headerData = {
+      ...header,
+      tenantId,
+      origin: 'tenant',
+      createdBy: userId,
+      updatedBy: userId
+    };
+
+    // Create price list header
+    const [newPriceList] = await db
+      .insert(priceLists)
+      .values(headerData)
+      .returning();
+
+    // Process items based on type
+    if (header.type === 'promo_canvas' && pairs && pairs.length > 0) {
+      // For promo_canvas, create items from pairs
+      for (const pair of pairs) {
+        // Create master item for the physical product
+        const [physicalItem] = await db
+          .insert(priceListItems)
+          .values({
+            priceListId: newPriceList.id,
+            tenantId,
+            origin: 'tenant',
+            productId: pair.physicalProductId,
+            validFrom: new Date(header.validFrom),
+            validTo: header.validTo ? new Date(header.validTo) : null,
+            createdBy: userId,
+            updatedBy: userId
+          })
+          .returning();
+
+        // Create configurations as separate items with compositions
+        for (const config of pair.configurations) {
+          // Get financial entity if FIN mode
+          let financialEntityId = null;
+          if (config.salesMode === 'FIN' && config.financialEntityId) {
+            financialEntityId = config.financialEntityId;
+          }
+
+          // Create canvas item linked to physical
+          const [canvasItem] = await db
+            .insert(priceListItems)
+            .values({
+              priceListId: newPriceList.id,
+              tenantId,
+              origin: 'tenant',
+              productId: pair.canvasProductId,
+              monthlyFee: pair.canvasMonthlyFee || null,
+              entryFee: config.entryFee || null,
+              salesModeId: null, // TODO: lookup sales mode ID
+              financialEntityId,
+              numberOfInstallments: config.numberOfInstallments || null,
+              installmentAmount: config.installmentAmount || null,
+              creditNoteAmount: config.creditNoteAmount || null,
+              creditAssignmentAmount: config.creditAssignmentAmount || null,
+              financingAmount: config.financingAmount || null,
+              validFrom: new Date(config.validFrom || header.validFrom),
+              validTo: config.validTo ? new Date(config.validTo) : (header.validTo ? new Date(header.validTo) : null),
+              createdBy: userId,
+              updatedBy: userId
+            })
+            .returning();
+
+          // Create composition linking physical to canvas
+          await db
+            .insert(priceListItemCompositions)
+            .values({
+              tenantId,
+              origin: 'tenant',
+              bundleItemId: canvasItem.id,
+              componentItemId: physicalItem.id,
+              componentRole: 'primary',
+              pricingStrategy: 'inherited',
+              createdBy: userId,
+              updatedBy: userId
+            });
+        }
+      }
+    } else if (items && items.length > 0) {
+      // For other types, create items directly
+      for (const item of items) {
+        await db
+          .insert(priceListItems)
+          .values({
+            ...item,
+            priceListId: newPriceList.id,
+            tenantId,
+            origin: 'tenant',
+            validFrom: new Date(item.validFrom || header.validFrom),
+            validTo: item.validTo ? new Date(item.validTo) : null,
+            createdBy: userId,
+            updatedBy: userId
+          });
+      }
+    }
+
+    res.status(201).json({ 
+      success: true, 
+      data: newPriceList,
+      message: "Price list created successfully"
+    });
+
+  } catch (error) {
+    console.error("Error creating price list:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to create price list",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * DELETE /api/wms/price-lists/:id
+ * Delete a price list (only tenant-created, not brand-pushed)
+ */
+router.delete("/price-lists/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Get existing
+    const [existing] = await db
+      .select()
+      .from(priceLists)
+      .where(eq(priceLists.id, id));
+
+    if (!existing) {
+      return res.status(404).json({ error: "Price list not found" });
+    }
+
+    if (existing.origin === 'brand') {
+      return res.status(403).json({ error: "Brand-pushed price lists cannot be deleted" });
+    }
+
+    if (existing.tenantId !== tenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Delete (cascade will handle items and compositions)
+    await db
+      .delete(priceLists)
+      .where(eq(priceLists.id, id));
+
+    res.json({
+      success: true,
+      message: "Price list deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Error deleting price list:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to delete price list",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== PRODUCT-SUPPLIER MAPPINGS API ====================
+
+/**
+ * GET /api/wms/product-supplier-mappings
+ * Get mappings for a product-supplier combination
+ */
+router.get("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const { productId, supplierId } = req.query;
+
+    let query = db
+      .select()
+      .from(productSupplierMappings)
+      .where(eq(productSupplierMappings.tenantId, tenantId));
+
+    const results = await query;
+
+    // Filter in memory
+    let filtered = results;
+    if (productId) {
+      filtered = filtered.filter(m => m.productId === productId);
+    }
+    if (supplierId) {
+      filtered = filtered.filter(m => m.supplierId === supplierId);
+    }
+
+    res.json({ success: true, data: filtered });
+
+  } catch (error) {
+    console.error("Error fetching product-supplier mappings:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch mappings",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/product-supplier-mappings
+ * Create or update a product-supplier mapping
+ */
+router.post("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const { productId, supplierId, supplierSku, useInternalSku, isPrimary } = req.body;
+
+    if (!productId || !supplierId) {
+      return res.status(400).json({ error: "productId and supplierId are required" });
+    }
+
+    // Check if mapping exists
+    const [existing] = await db
+      .select()
+      .from(productSupplierMappings)
+      .where(
+        and(
+          eq(productSupplierMappings.tenantId, tenantId),
+          eq(productSupplierMappings.productId, productId),
+          eq(productSupplierMappings.supplierId, supplierId)
+        )
+      );
+
+    const supplierSkuNormalized = supplierSku ? String(supplierSku).toUpperCase().trim() : null;
+
+    if (existing) {
+      // Update existing
+      const [updated] = await db
+        .update(productSupplierMappings)
+        .set({
+          supplierSku: supplierSku || null,
+          supplierSkuNormalized,
+          useInternalSku: useInternalSku || false,
+          isPrimary: isPrimary || false,
+          updatedAt: new Date(),
+          updatedBy: userId
+        })
+        .where(eq(productSupplierMappings.id, existing.id))
+        .returning();
+
+      res.json({ success: true, data: updated, message: "Mapping updated" });
+    } else {
+      // Create new
+      const [created] = await db
+        .insert(productSupplierMappings)
+        .values({
+          tenantId,
+          productId,
+          supplierId,
+          supplierSku: supplierSku || null,
+          supplierSkuNormalized,
+          useInternalSku: useInternalSku || false,
+          isPrimary: isPrimary || false,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning();
+
+      res.status(201).json({ success: true, data: created, message: "Mapping created" });
+    }
+
+  } catch (error) {
+    console.error("Error creating/updating product-supplier mapping:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to save mapping",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
