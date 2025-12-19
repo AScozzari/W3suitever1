@@ -239,20 +239,12 @@ export default function DriversTabContent() {
   };
 
   const toggleProductType = (type: string) => {
-    setFormData(prev => {
-      const isRemoving = prev.allowedProductTypes.includes(type);
-      const newTypes = isRemoving
+    setFormData(prev => ({
+      ...prev,
+      allowedProductTypes: prev.allowedProductTypes.includes(type)
         ? prev.allowedProductTypes.filter(t => t !== type)
-        : [...prev.allowedProductTypes, type];
-      
-      // Reset operator linkage when CANVAS is removed
-      if (type === 'CANVAS' && isRemoving) {
-        setLinkedToOperator(false);
-        return { ...prev, allowedProductTypes: newTypes, operatorId: null };
-      }
-      
-      return { ...prev, allowedProductTypes: newTypes };
-    });
+        : [...prev.allowedProductTypes, type]
+    }));
   };
 
   const renderDriverTable = (driversList: Driver[], isBrandSection: boolean) => (
@@ -511,16 +503,15 @@ export default function DriversTabContent() {
               </div>
             </div>
 
-            {/* Operator Linking Section - Only for CANVAS drivers */}
-            {formData.allowedProductTypes.includes('CANVAS') && (
-              <div className="p-4 rounded-lg border border-orange-200 bg-orange-50/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <Radio className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
-                  <div>
-                    <Label className="font-medium">Collegamento Operatore (Telco)</Label>
-                    <p className="text-xs text-gray-500">Associa questo driver ad un operatore per i prodotti CANVAS</p>
-                  </div>
+            {/* Operator Linking Section - Available for all drivers */}
+            <div className="p-4 rounded-lg border border-orange-200 bg-orange-50/50">
+              <div className="flex items-center gap-3 mb-3">
+                <Radio className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+                <div>
+                  <Label className="font-medium">Collegamento Operatore (Telco)</Label>
+                  <p className="text-xs text-gray-500">Associa questo driver ad un operatore specifico</p>
                 </div>
+              </div>
                 
                 <div className="flex items-center gap-3 mb-3">
                   <Checkbox
@@ -569,12 +560,11 @@ export default function DriversTabContent() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500 mt-1">
-                      I prodotti CANVAS di questo driver saranno associati a questo operatore
+                      I prodotti di questo driver saranno associati a questo operatore
                     </p>
                   </div>
                 )}
               </div>
-            )}
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
               <div>
