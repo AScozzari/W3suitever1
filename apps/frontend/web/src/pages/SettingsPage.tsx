@@ -3853,11 +3853,7 @@ export default function SettingsPage() {
     enabled: activeTab === 'Legal Entity'
   });
 
-  // Debug logging per Legal Entity tab
-  console.log('[LEGAL-ENTITY-TAB] Query data:', legalEntitiesData, 'activeTab:', activeTab, 'isLoading:', legalEntitiesLoading);
-
   const legalEntitiesList = (legalEntitiesData as any)?.data || [];
-  console.log('[LEGAL-ENTITY-TAB] Extracted list:', legalEntitiesList.length, 'entities');
 
   const handleSaveLegalEntity = async () => {
     try {

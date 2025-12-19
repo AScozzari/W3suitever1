@@ -261,6 +261,7 @@ export default function DriversTabContent() {
             <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
             <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
             <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Tipi Prodotto</th>
+            <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Operatore</th>
             <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
             <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
           </tr>
@@ -268,7 +269,7 @@ export default function DriversTabContent() {
         <tbody>
           {driversList.length === 0 ? (
             <tr>
-              <td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: '#6b7280' }}>
+              <td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#6b7280' }}>
                 {isBrandSection ? 'Nessun driver brand disponibile' : 'Nessun driver personalizzato. Clicca "Nuovo Driver" per crearne uno.'}
               </td>
             </tr>
@@ -297,6 +298,34 @@ export default function DriversTabContent() {
                       </Badge>
                     ))}
                   </div>
+                </td>
+                <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
+                  {driver.operatorId ? (
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const operator = operators.find(op => op.id === driver.operatorId);
+                        if (!operator) return <span className="text-gray-400">-</span>;
+                        return (
+                          <>
+                            {operator.colorHex && (
+                              <div 
+                                style={{ 
+                                  width: '12px', 
+                                  height: '12px', 
+                                  borderRadius: '50%', 
+                                  backgroundColor: operator.colorHex,
+                                  border: '1px solid rgba(0,0,0,0.1)'
+                                }} 
+                              />
+                            )}
+                            <span>{operator.name}</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </td>
                 <td style={{ padding: '16px', textAlign: 'center' }}>
                   <Badge variant={driver.isActive ? 'default' : 'secondary'} className={driver.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}>
