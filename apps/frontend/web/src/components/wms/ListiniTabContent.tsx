@@ -1380,7 +1380,6 @@ export default function ListiniTabContent() {
     };
     
     setNoPromoProducts(prev => [...prev, newProduct]);
-    setExpandedProductRows(prev => new Set([...prev, newProductId]));
   };
 
   const updateNoPromoProduct = (id: string, field: keyof NoPromoProduct, value: any) => {
