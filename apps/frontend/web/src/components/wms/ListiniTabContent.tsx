@@ -983,44 +983,39 @@ export default function ListiniTabContent() {
           )}
 
           {(currentPair.configurations || []).length > 0 && (
-            <Card className="p-4 bg-gray-50 border-dashed">
-              <div className="flex flex-col gap-3">
-                <div className="text-sm text-gray-600 font-medium">
-                  Hai configurato {(currentPair.configurations || []).length} modalità di vendita per questa coppia.
-                </div>
-                <div className="flex justify-between items-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setCurrentPair({ configurations: [] });
-                      setEditingPairId(null);
-                    }} 
-                    data-testid="button-cancel-pair"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    {editingPairId ? 'Annulla Modifica' : 'Annulla Coppia'}
-                  </Button>
-                  <div className="flex gap-3">
-                    <Button 
-                      variant="outline"
-                      onClick={addConfiguration}
-                      data-testid="button-add-another-config"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Aggiungi altra configurazione
-                    </Button>
-                    <Button 
-                      onClick={savePair}
-                      style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
-                      data-testid="button-complete-and-new-pair"
-                    >
-                      <Check className="h-4 w-4 mr-2" />
-                      {editingPairId ? 'Salva Modifiche' : 'Completa e seleziona nuova coppia'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <div className="flex items-center gap-3 pt-4 border-t mt-4">
+              <Button 
+                variant="outline"
+                onClick={addConfiguration}
+                className="flex-1"
+                data-testid="button-add-another-config"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Aggiungi Configurazione
+              </Button>
+              <Button 
+                onClick={savePair}
+                className="flex-1"
+                style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                data-testid="button-complete-and-new-pair"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                {editingPairId ? 'Aggiorna Coppia' : 'Salva Coppia'}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => {
+                  setCurrentPair({ configurations: [] });
+                  setEditingPairId(null);
+                }} 
+                className="text-gray-400 hover:text-red-500"
+                data-testid="button-cancel-pair"
+                title="Annulla"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           )}
         </div>
       )}
@@ -1373,7 +1368,7 @@ export default function ListiniTabContent() {
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent 
-          className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+          className="max-w-4xl h-[85vh] overflow-hidden flex flex-col"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -1404,8 +1399,8 @@ export default function ListiniTabContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4">
-            <div className="py-4">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="py-4 pr-4">
               {wizardStep === 1 && renderStep1()}
               {wizardStep === 2 && renderStep2()}
               {wizardStep === 3 && (
