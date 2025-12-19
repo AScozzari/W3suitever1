@@ -1,0 +1,66 @@
+{sipDomain: 'demo.edgvoip.it', callId: '55itgmphg5ujl9i7h53ji7lmmtpptm', direction: 'outbound', fromUri: '2000@demo.edgvoip.it', toUri: 'sip:+393343759294@demo.edgvoip.it', …}
+Layout-jYoF9LzA.js:58 Fri Dec 19 2025 09:30:47 GMT+0100 (Ora standard dell’Europa centrale) | sip.Inviter | Session 55itgmphg5ujl9i7h53ji7lmmtpptm in state Terminated is being disposed
+Layout-jYoF9LzA.js:86 📞 Call ended
+Layout-jYoF9LzA.js:86  POST https://w3suite.it/api/voip/cdr/client 401 (Unauthorized)
+(anonime) @ Layout-jYoF9LzA.js:86
+(anonime) @ Layout-jYoF9LzA.js:86
+(anonime) @ Layout-jYoF9LzA.js:37
+emit @ Layout-jYoF9LzA.js:37
+stateTransition @ Layout-jYoF9LzA.js:58
+_bye @ Layout-jYoF9LzA.js:58
+bye @ Layout-jYoF9LzA.js:58
+(anonime) @ Layout-jYoF9LzA.js:86
+R @ Layout-jYoF9LzA.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+installHook.js:1 ❌ Failed to create CDR: Error: Failed to create CDR
+    at Layout-jYoF9LzA.js:86:16470
+overrideMethod @ installHook.js:1
+(anonime) @ Layout-jYoF9LzA.js:86
+await in (anonime)
+(anonime) @ Layout-jYoF9LzA.js:86
+(anonime) @ Layout-jYoF9LzA.js:37
+emit @ Layout-jYoF9LzA.js:37
+stateTransition @ Layout-jYoF9LzA.js:58
+_bye @ Layout-jYoF9LzA.js:58
+bye @ Layout-jYoF9LzA.js:58
+(anonime) @ Layout-jYoF9LzA.js:86
+R @ Layout-jYoF9LzA.js:86
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+Layout-jYoF9LzA.js:58 Fri Dec 19 2025 09:30:47 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS p1qa34kep83k.invalid;branch=z9hG4bK1842495;received=127.0.0.1;rport=60626
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=i7lmmtpptm
+To: <sip:+393343759294@demo.edgvoip.it>;tag=5yNKvXvjK0ajS
+Call-ID: 55itgmphg5ujl9i7h53j
+CSeq: 3 BYE
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+index-CayBoM8E.js:2 🔍 Token expiry check: Current time: 09:30:48, Token expires: 09:44:07
+index-CayBoM8E.js:2 🔍 Token expiry check: Current time: 09:30:54, Token expires: 09:44:07
+index-CayBoM8E.js:2 🔍 Token expiry check: Current time: 09:30:59, Token expires: 09:44:07

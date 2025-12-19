@@ -3,6 +3,7 @@ import { UserAgent, Registerer, Inviter, Invitation, Session, SessionState, Regi
 import { useQuery } from '@tanstack/react-query';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuthReadiness } from '@/hooks/useAuthReadiness';
+import { apiRequest } from '@/lib/queryClient';
 
 export interface SIPCredentials {
   sipUsername: string;
@@ -111,27 +112,17 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
 
       console.log('📊 Creating CDR:', cdrPayload);
 
-      const response = await fetch('/api/voip/cdr/client', {
+      // Use apiRequest which handles OAuth2 authentication automatically
+      const result = await apiRequest('/api/voip/cdr/client', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Auth-Session': 'authenticated',
-          ...(currentTenant?.id && { 'X-Tenant-ID': currentTenant.id }),
-        },
-        credentials: 'include',
         body: JSON.stringify(cdrPayload),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create CDR');
-      }
-
-      const result = await response.json();
       console.log('✅ CDR created:', result.data?.id);
     } catch (err) {
       console.error('❌ Failed to create CDR:', err);
     }
-  }, [credentials, currentTenant]);
+  }, [credentials]);
 
   // Initialize remote audio element
   useEffect(() => {
