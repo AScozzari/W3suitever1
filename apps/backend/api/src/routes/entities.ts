@@ -12,7 +12,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers } from '../db/schema/w3suite';
+import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers } from '../db/schema/w3suite';
 import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -123,7 +123,7 @@ router.get('/operators', async (req, res) => {
 
 /**
  * GET /api/legal-entities
- * Get all legal entities for the current tenant
+ * Get all legal entities for the current tenant with child table presence info
  */
 router.get('/legal-entities', async (req, res) => {
   try {
@@ -138,15 +138,51 @@ router.get('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
+    // Get all legal entities
     const entitiesList = await db.query.legalEntities.findMany({
       where: eq(legalEntities.tenantId, tenantId),
       orderBy: [desc(legalEntities.createdAt)]
     });
 
+    // Get linked children for each entity
+    const entitiesWithChildren = await Promise.all(entitiesList.map(async (entity) => {
+      // Check supplier_overrides linked to this legal entity
+      const linkedSuppliers = await db
+        .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name })
+        .from(supplierOverrides)
+        .where(and(
+          eq(supplierOverrides.legalEntityId, entity.id),
+          eq(supplierOverrides.tenantId, tenantId)
+        ));
+
+      // Check financial_entities linked to this legal entity
+      const linkedFinancialEntities = await db
+        .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, origin: financialEntities.origin })
+        .from(financialEntities)
+        .where(eq(financialEntities.legalEntityId, entity.id));
+
+      // Check operators linked to this legal entity (public schema)
+      const linkedOperators = await db
+        .select({ id: operators.id, code: operators.code, name: operators.name })
+        .from(operators)
+        .where(eq(operators.legalEntityId, entity.id));
+
+      return {
+        ...entity,
+        _children: {
+          suppliers: linkedSuppliers,
+          financialEntities: linkedFinancialEntities,
+          operators: linkedOperators,
+          hasSupplier: linkedSuppliers.length > 0,
+          hasFinancialEntity: linkedFinancialEntities.length > 0,
+          hasOperator: linkedOperators.length > 0
+        }
+      };
+    }));
+
     res.status(200).json({
       success: true,
-      data: entitiesList,
+      data: entitiesWithChildren,
       message: 'Legal entities retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
@@ -168,11 +204,14 @@ router.get('/legal-entities', async (req, res) => {
 
 /**
  * POST /api/legal-entities
- * Create a new legal entity
+ * Create a new legal entity with child table propagation
+ * If isSupplier=true → creates supplier_override
+ * If isFinancialEntity=true → creates financial_entity
  */
 router.post('/legal-entities', async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
     if (!tenantId) {
       return res.status(400).json({
         success: false,
@@ -183,15 +222,34 @@ router.post('/legal-entities', async (req, res) => {
 
     const createSchema = z.object({
       codice: z.string().min(1).max(20),
-      ragioneSociale: z.string().min(1).max(255), // Frontend field name
+      ragioneSociale: z.string().min(1).max(255),
       formaGiuridica: z.string().optional(),
       partitaIva: z.string().optional(),
       codiceFiscale: z.string().optional(),
-      settoreAttivita: z.string().optional()
+      settoreAttivita: z.string().optional(),
+      indirizzo: z.string().optional(),
+      citta: z.string().optional(),
+      provincia: z.string().optional(),
+      cap: z.string().optional(),
+      telefono: z.string().optional(),
+      email: z.string().optional(),
+      pec: z.string().optional(),
+      rea: z.string().optional(),
+      registroImprese: z.string().optional(),
+      codiceSDI: z.string().optional(),
+      iban: z.string().optional(),
+      bic: z.string().optional(),
+      website: z.string().optional(),
+      capitaleSociale: z.string().optional(),
+      isSupplier: z.boolean().default(false),
+      isFinancialEntity: z.boolean().default(false),
+      isOperator: z.boolean().default(false),
+      supplierType: z.enum(['products', 'services', 'logistics', 'technology', 'other']).optional(),
+      note: z.string().optional()
     }).transform(data => ({
       ...data,
-      nome: data.ragioneSociale, // Map ragioneSociale → nome for database
-      pIva: data.partitaIva  // Map partitaIva → pIva for database
+      nome: data.ragioneSociale,
+      pIva: data.partitaIva
     }));
 
     const validation = createSchema.safeParse(req.body);
@@ -206,11 +264,11 @@ router.post('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // RULE: Generate deterministic UUID from codice for code → id synchronization
     const entityId = codeToUUID(validation.data.codice);
+    const { supplierType, ...entityFields } = validation.data;
     const entityData = {
-      ...validation.data,
-      id: entityId, // UUID generated from codice
+      ...entityFields,
+      id: entityId,
       tenantId
     };
 
@@ -219,16 +277,84 @@ router.post('/legal-entities', async (req, res) => {
       .values(entityData as any)
       .returning();
 
-    logger.info('Legal entity created with code→UUID sync', { 
+    const createdChildren: { suppliers?: any; financialEntities?: any } = {};
+
+    // Propagate to supplier_overrides if isSupplier flag is set
+    if (validation.data.isSupplier && userId) {
+      const supplierData = {
+        legalEntityId: entity.id,
+        origin: 'tenant' as const,
+        tenantId,
+        code: entity.codice,
+        name: entity.nome,
+        legalName: entity.nome,
+        legalForm: entity.formaGiuridica,
+        supplierType: supplierType || 'other',
+        vatNumber: entity.pIva,
+        taxCode: entity.codiceFiscale,
+        sdiCode: entity.codiceSDI,
+        pecEmail: entity.pec,
+        registeredAddress: entity.indirizzo ? { via: entity.indirizzo, cap: entity.cap, citta: entity.citta, provincia: entity.provincia } : null,
+        email: entity.email,
+        phone: entity.telefono,
+        website: entity.website,
+        iban: entity.iban,
+        bic: entity.bic,
+        countryId: '550e8400-e29b-41d4-a716-446655440000', // Default Italy UUID
+        createdBy: userId,
+        status: 'active' as const
+      };
+
+      const [supplier] = await db
+        .insert(supplierOverrides)
+        .values(supplierData as any)
+        .returning();
+      createdChildren.suppliers = supplier;
+      logger.info('Supplier created from legal entity', { legalEntityId: entity.id, supplierId: supplier.id });
+    }
+
+    // Propagate to financial_entities if isFinancialEntity flag is set
+    if (validation.data.isFinancialEntity) {
+      const financialEntityData = {
+        legalEntityId: entity.id,
+        origin: 'tenant' as const,
+        tenantId,
+        code: entity.codice,
+        name: entity.nome,
+        vatNumber: entity.pIva,
+        taxCode: entity.codiceFiscale,
+        sdiCode: entity.codiceSDI,
+        pecEmail: entity.pec,
+        registeredAddress: entity.indirizzo ? { via: entity.indirizzo, cap: entity.cap, citta: entity.citta, provincia: entity.provincia } : null,
+        email: entity.email,
+        phone: entity.telefono,
+        website: entity.website,
+        iban: entity.iban,
+        bic: entity.bic,
+        capitalStock: entity.capitaleSociale,
+        createdBy: userId,
+        status: 'active' as const
+      };
+
+      const [financialEntity] = await db
+        .insert(financialEntities)
+        .values(financialEntityData as any)
+        .returning();
+      createdChildren.financialEntities = financialEntity;
+      logger.info('Financial entity created from legal entity', { legalEntityId: entity.id, financialEntityId: financialEntity.id });
+    }
+
+    logger.info('Legal entity created with child propagation', { 
       entityId: entity.id, 
       codice: validation.data.codice,
-      generatedUUID: entityId,
+      isSupplier: validation.data.isSupplier,
+      isFinancialEntity: validation.data.isFinancialEntity,
       tenantId 
     });
 
     res.status(201).json({
       success: true,
-      data: entity,
+      data: { ...entity, _createdChildren: createdChildren },
       message: 'Legal entity created successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse<typeof entity>);
@@ -243,6 +369,303 @@ router.post('/legal-entities', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to create legal entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/legal-entities/:id
+ * Update a legal entity and propagate changes to linked children
+ */
+router.put('/legal-entities/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const updateSchema = z.object({
+      codice: z.string().min(1).max(20).optional(),
+      ragioneSociale: z.string().min(1).max(255).optional(),
+      formaGiuridica: z.string().optional(),
+      partitaIva: z.string().optional(),
+      codiceFiscale: z.string().optional(),
+      indirizzo: z.string().optional(),
+      citta: z.string().optional(),
+      provincia: z.string().optional(),
+      cap: z.string().optional(),
+      telefono: z.string().optional(),
+      email: z.string().optional(),
+      pec: z.string().optional(),
+      rea: z.string().optional(),
+      registroImprese: z.string().optional(),
+      codiceSDI: z.string().optional(),
+      iban: z.string().optional(),
+      bic: z.string().optional(),
+      website: z.string().optional(),
+      capitaleSociale: z.string().optional(),
+      isSupplier: z.boolean().optional(),
+      isFinancialEntity: z.boolean().optional(),
+      isOperator: z.boolean().optional(),
+      supplierType: z.enum(['products', 'services', 'logistics', 'technology', 'other']).optional(),
+      stato: z.string().optional(),
+      note: z.string().optional()
+    });
+
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Verify entity exists and belongs to tenant
+    const existingEntity = await db.query.legalEntities.findFirst({
+      where: and(eq(legalEntities.id, id), eq(legalEntities.tenantId, tenantId))
+    });
+
+    if (!existingEntity) {
+      return res.status(404).json({
+        success: false,
+        error: 'Legal entity not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { supplierType, ...updateFields } = validation.data;
+    const updateData: any = {
+      ...updateFields,
+      updatedAt: new Date()
+    };
+    if (updateFields.ragioneSociale) updateData.nome = updateFields.ragioneSociale;
+    if (updateFields.partitaIva) updateData.pIva = updateFields.partitaIva;
+
+    const [entity] = await db
+      .update(legalEntities)
+      .set(updateData)
+      .where(and(eq(legalEntities.id, id), eq(legalEntities.tenantId, tenantId)))
+      .returning();
+
+    // Propagate anagrafica changes to linked suppliers (only tenant-owned)
+    const supplierUpdateData = {
+      name: entity.nome,
+      legalName: entity.nome,
+      legalForm: entity.formaGiuridica,
+      vatNumber: entity.pIva,
+      taxCode: entity.codiceFiscale,
+      sdiCode: entity.codiceSDI,
+      pecEmail: entity.pec,
+      registeredAddress: entity.indirizzo ? { via: entity.indirizzo, cap: entity.cap, citta: entity.citta, provincia: entity.provincia } : null,
+      email: entity.email,
+      phone: entity.telefono,
+      website: entity.website,
+      iban: entity.iban,
+      bic: entity.bic,
+      updatedBy: userId,
+      updatedAt: new Date()
+    };
+
+    await db
+      .update(supplierOverrides)
+      .set(supplierUpdateData)
+      .where(and(
+        eq(supplierOverrides.legalEntityId, id),
+        eq(supplierOverrides.tenantId, tenantId)
+      ));
+
+    // Propagate to financial_entities (only tenant-owned)
+    const financialUpdateData = {
+      name: entity.nome,
+      vatNumber: entity.pIva,
+      taxCode: entity.codiceFiscale,
+      sdiCode: entity.codiceSDI,
+      pecEmail: entity.pec,
+      registeredAddress: entity.indirizzo ? { via: entity.indirizzo, cap: entity.cap, citta: entity.citta, provincia: entity.provincia } : null,
+      email: entity.email,
+      phone: entity.telefono,
+      website: entity.website,
+      iban: entity.iban,
+      bic: entity.bic,
+      capitalStock: entity.capitaleSociale,
+      updatedBy: userId,
+      updatedAt: new Date()
+    };
+
+    await db
+      .update(financialEntities)
+      .set(financialUpdateData)
+      .where(and(
+        eq(financialEntities.legalEntityId, id),
+        eq(financialEntities.origin, 'tenant')
+      ));
+
+    // Handle new role assignments (create children if flag newly set)
+    if (validation.data.isSupplier && !existingEntity.isSupplier && userId) {
+      // Check if supplier already exists
+      const existingSupplier = await db.query.supplierOverrides.findFirst({
+        where: and(eq(supplierOverrides.legalEntityId, id), eq(supplierOverrides.tenantId, tenantId))
+      });
+      if (!existingSupplier) {
+        await db.insert(supplierOverrides).values({
+          legalEntityId: entity.id,
+          origin: 'tenant',
+          tenantId,
+          code: entity.codice,
+          name: entity.nome,
+          legalName: entity.nome,
+          supplierType: supplierType || 'other',
+          vatNumber: entity.pIva,
+          taxCode: entity.codiceFiscale,
+          countryId: '550e8400-e29b-41d4-a716-446655440000',
+          createdBy: userId,
+          status: 'active'
+        } as any);
+      }
+    }
+
+    if (validation.data.isFinancialEntity && !existingEntity.isFinancialEntity) {
+      const existingFE = await db.query.financialEntities.findFirst({
+        where: eq(financialEntities.legalEntityId, id)
+      });
+      if (!existingFE) {
+        await db.insert(financialEntities).values({
+          legalEntityId: entity.id,
+          origin: 'tenant',
+          tenantId,
+          code: entity.codice,
+          name: entity.nome,
+          vatNumber: entity.pIva,
+          taxCode: entity.codiceFiscale,
+          createdBy: userId,
+          status: 'active'
+        } as any);
+      }
+    }
+
+    logger.info('Legal entity updated with child propagation', { entityId: entity.id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: entity,
+      message: 'Legal entity updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof entity>);
+
+  } catch (error: any) {
+    logger.error('Error updating legal entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update legal entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/legal-entities/:id
+ * Delete a legal entity and its tenant-owned children
+ * Blocks deletion if brand-managed children exist
+ */
+router.delete('/legal-entities/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { id } = req.params;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Check for brand-managed children (cannot delete)
+    const brandSuppliers = await db
+      .select({ id: suppliers.id })
+      .from(suppliers)
+      .where(and(eq(suppliers.legalEntityId, id), eq(suppliers.origin, 'brand')));
+
+    const brandFinancialEntities = await db
+      .select({ id: financialEntities.id })
+      .from(financialEntities)
+      .where(and(eq(financialEntities.legalEntityId, id), eq(financialEntities.origin, 'brand')));
+
+    const linkedOperators = await db
+      .select({ id: operators.id })
+      .from(operators)
+      .where(eq(operators.legalEntityId, id));
+
+    if (brandSuppliers.length > 0 || brandFinancialEntities.length > 0 || linkedOperators.length > 0) {
+      return res.status(403).json({
+        success: false,
+        error: 'Cannot delete legal entity with brand-managed children',
+        message: 'This legal entity has suppliers, financial entities or operators managed by the brand. Contact your brand administrator.',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Delete tenant-owned children first
+    await db
+      .delete(supplierOverrides)
+      .where(and(eq(supplierOverrides.legalEntityId, id), eq(supplierOverrides.tenantId, tenantId)));
+
+    await db
+      .delete(financialEntities)
+      .where(and(eq(financialEntities.legalEntityId, id), eq(financialEntities.origin, 'tenant')));
+
+    // Delete the legal entity
+    const [deleted] = await db
+      .delete(legalEntities)
+      .where(and(eq(legalEntities.id, id), eq(legalEntities.tenantId, tenantId)))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: 'Legal entity not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Legal entity deleted with children', { entityId: id, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: deleted,
+      message: 'Legal entity deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting legal entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete legal entity',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
