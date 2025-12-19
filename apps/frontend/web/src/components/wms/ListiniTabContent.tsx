@@ -17,8 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, FileText, Search, X, CalendarIcon, RefreshCw, AlertCircle, Eye, Trash2,
   Package, Smartphone, Tv, ShoppingBag, CreditCard, Building2, ChevronRight, ChevronLeft,
-  Check, Settings2, Layers, DollarSign, Calculator, ArrowRight, Wand2, Info, Euro
+  Check, Settings2, Layers, DollarSign, Calculator, ArrowRight, Wand2, Info, Euro,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format, addMonths } from 'date-fns';
@@ -149,6 +151,7 @@ export default function ListiniTabContent() {
   const [noPromoSearchTerm, setNoPromoSearchTerm] = useState('');
   const [noPromoCategoryFilter, setNoPromoCategoryFilter] = useState<string>('all');
   const [noPromoTypeFilter, setNoPromoTypeFilter] = useState<string>('PHYSICAL');
+  const [expandedProductRows, setExpandedProductRows] = useState<Set<string>>(new Set());
 
   // Physical product type filter for Canvas Device
   const [physicalTypeFilter, setPhysicalTypeFilter] = useState<string>('PHYSICAL');
@@ -1313,6 +1316,43 @@ export default function ListiniTabContent() {
     return { margin, percentage };
   };
 
+  const getProductCompletionStatus = (product: NoPromoProduct): 'complete' | 'partial' | 'empty' => {
+    const hasCost = !!product.purchaseCost && parseFloat(product.purchaseCost) > 0;
+    const hasPrice = !!product.salesPriceVatIncl && parseFloat(product.salesPriceVatIncl) > 0;
+    const hasSku = product.useInternalSku || (!!product.supplierSku && product.supplierSku.trim() !== '');
+    const hasVatRates = !!product.purchaseVatRateId && !!product.salesVatRateId;
+    
+    const allComplete = hasCost && hasPrice && hasSku && hasVatRates;
+    const anyFilled = hasCost || hasPrice || (!!product.supplierSku && !product.useInternalSku);
+    
+    if (allComplete) return 'complete';
+    if (anyFilled) return 'partial';
+    return 'empty';
+  };
+
+  const toggleProductRow = (productId: string) => {
+    setExpandedProductRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const collapseIfComplete = (productId: string) => {
+    const product = noPromoProducts.find(p => p.id === productId);
+    if (product && getProductCompletionStatus(product) === 'complete') {
+      setExpandedProductRows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }
+  };
+
   const addProductToNoPromo = (product: any) => {
     if (noPromoProducts.some(p => p.productId === product.id)) return;
     
@@ -1320,8 +1360,9 @@ export default function ListiniTabContent() {
     const defaultVatRate = getDefaultVatRate();
     const defaultVatRegime = getDefaultVatRegime();
     
+    const newProductId = crypto.randomUUID();
     const newProduct: NoPromoProduct = {
-      id: crypto.randomUUID(),
+      id: newProductId,
       productId: product.id,
       productName: product.name,
       productSku: product.sku,
@@ -1339,6 +1380,7 @@ export default function ListiniTabContent() {
     };
     
     setNoPromoProducts(prev => [...prev, newProduct]);
+    setExpandedProductRows(prev => new Set([...prev, newProductId]));
   };
 
   const updateNoPromoProduct = (id: string, field: keyof NoPromoProduct, value: any) => {
