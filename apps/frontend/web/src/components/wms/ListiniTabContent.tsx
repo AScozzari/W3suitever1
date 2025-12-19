@@ -1557,157 +1557,148 @@ export default function ListiniTabContent() {
                         </Button>
                       </div>
 
-                      {/* Clean 4-column layout */}
-                      <div className="grid grid-cols-4 gap-4">
+                      {/* Wide 5-column layout with larger inputs */}
+                      <div className="grid grid-cols-[180px_1fr_1fr_1fr_140px] gap-6 items-start">
                         {/* Column 1: SKU Fornitore */}
-                        <div>
-                          <Label className="text-xs font-medium text-gray-500 mb-1.5 block">SKU Fornitore</Label>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">SKU Fornitore</Label>
                           <Input
                             value={product.useInternalSku ? product.productSku : product.supplierSku}
                             onChange={(e) => updateNoPromoProduct(product.id, 'supplierSku', e.target.value)}
                             disabled={product.useInternalSku}
-                            className="h-10 text-sm font-mono"
+                            className="h-11 text-sm font-mono"
                             placeholder="SKU"
                             data-testid={`input-supplier-sku-${product.id}`}
                           />
-                          <label className="flex items-center gap-1.5 mt-2 cursor-pointer">
+                          <label className="flex items-center gap-2 cursor-pointer">
                             <Checkbox
                               id={`use-internal-${product.id}`}
                               checked={product.useInternalSku}
                               onCheckedChange={(checked) => updateNoPromoProduct(product.id, 'useInternalSku', !!checked)}
-                              className="h-3.5 w-3.5"
                               data-testid={`checkbox-internal-sku-${product.id}`}
                             />
-                            <span className="text-xs text-gray-500">Usa SKU interno</span>
+                            <span className="text-xs text-gray-600">Usa SKU interno</span>
                           </label>
                         </div>
 
-                        {/* Column 2: Acquisto (Costo netto + IVA + Regime) */}
-                        <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-                          <Label className="text-xs font-semibold text-blue-700 mb-2 block">ACQUISTO (netto IVA escl.)</Label>
-                          <div className="relative mb-2">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
+                        {/* Column 2: Costo Acquisto */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">Costo Acquisto (netto)</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-base font-medium">€</span>
                             <Input
                               type="number"
                               step="0.01"
                               value={product.purchaseCost}
                               onChange={(e) => updateNoPromoProduct(product.id, 'purchaseCost', e.target.value)}
-                              className="h-10 pl-8 text-base font-medium"
+                              className="h-11 pl-9 text-base font-medium"
                               placeholder="0.00"
                               data-testid={`input-purchase-cost-${product.id}`}
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-[10px] text-gray-500 block mb-1">IVA %</span>
-                              <Select 
-                                value={product.purchaseVatRateId} 
-                                onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}
-                              >
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
-                                  <SelectValue placeholder="IVA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRates.map((rate: any) => (
-                                    <SelectItem key={rate.id} value={rate.id}>
-                                      {rate.ratePercent}%
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-gray-500 block mb-1">Regime</span>
-                              <Select 
-                                value={product.purchaseVatRegimeId || ''} 
-                                onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}
-                              >
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-regime-${product.id}`}>
-                                  <SelectValue placeholder="Regime" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRegimes.map((regime: any) => (
-                                    <SelectItem key={regime.id} value={regime.id}>
-                                      {regime.code}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            <Select 
+                              value={product.purchaseVatRateId} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}
+                            >
+                              <SelectTrigger className="h-9" data-testid={`select-purchase-vat-${product.id}`}>
+                                <SelectValue placeholder="IVA %" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRates.map((rate: any) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    {rate.ratePercent}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select 
+                              value={product.purchaseVatRegimeId || ''} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}
+                            >
+                              <SelectTrigger className="h-9" data-testid={`select-purchase-regime-${product.id}`}>
+                                <SelectValue placeholder="Regime" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRegimes.map((regime: any) => (
+                                  <SelectItem key={regime.id} value={regime.id}>
+                                    {regime.code}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 
-                        {/* Column 3: Vendita (Prezzo IVA incl. + IVA + Regime) */}
-                        <div className="bg-orange-50/50 rounded-lg p-3 border border-orange-100">
-                          <Label className="text-xs font-semibold text-orange-700 mb-2 block">VENDITA (IVA inclusa)</Label>
-                          <div className="relative mb-2">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
+                        {/* Column 3: Prezzo Vendita */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">Prezzo Vendita (IVA incl.)</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-base font-medium">€</span>
                             <Input
                               type="number"
                               step="0.01"
                               value={product.salesPriceVatIncl}
                               onChange={(e) => updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value)}
-                              className="h-10 pl-8 text-base font-medium"
+                              className="h-11 pl-9 text-base font-medium"
                               placeholder="0.00"
                               data-testid={`input-sales-price-${product.id}`}
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-[10px] text-gray-500 block mb-1">IVA %</span>
-                              <Select 
-                                value={product.salesVatRateId} 
-                                onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}
-                              >
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-${product.id}`}>
-                                  <SelectValue placeholder="IVA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRates.map((rate: any) => (
-                                    <SelectItem key={rate.id} value={rate.id}>
-                                      {rate.ratePercent}%
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-gray-500 block mb-1">Regime</span>
-                              <Select 
-                                value={product.salesVatRegimeId || ''} 
-                                onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}
-                              >
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-regime-${product.id}`}>
-                                  <SelectValue placeholder="Regime" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRegimes.map((regime: any) => (
-                                    <SelectItem key={regime.id} value={regime.id}>
-                                      {regime.code}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            <Select 
+                              value={product.salesVatRateId} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}
+                            >
+                              <SelectTrigger className="h-9" data-testid={`select-sales-vat-${product.id}`}>
+                                <SelectValue placeholder="IVA %" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRates.map((rate: any) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    {rate.ratePercent}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select 
+                              value={product.salesVatRegimeId || ''} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}
+                            >
+                              <SelectTrigger className="h-9" data-testid={`select-sales-regime-${product.id}`}>
+                                <SelectValue placeholder="Regime" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRegimes.map((regime: any) => (
+                                  <SelectItem key={regime.id} value={regime.id}>
+                                    {regime.code}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 
-                        {/* Column 4: Margine */}
-                        <div className="flex flex-col justify-center">
-                          <Label className="text-xs font-medium text-gray-500 mb-1.5 block text-center">MARGINE</Label>
-                          <div className={`rounded-lg p-3 text-center ${
-                            margin > 0 ? 'bg-green-100 border-2 border-green-300' : 
-                            margin < 0 ? 'bg-red-100 border-2 border-red-300' : 'bg-gray-100 border-2 border-gray-200'
+                        {/* Column 4: Placeholder for alignment */}
+                        <div></div>
+
+                        {/* Column 5: Margine - Pill style */}
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <div className={`w-full px-4 py-3 rounded-xl text-center shadow-sm ${
+                            margin > 0 ? 'bg-gradient-to-br from-green-50 to-green-100 border border-green-200' : 
+                            margin < 0 ? 'bg-gradient-to-br from-red-50 to-red-100 border border-red-200' : 
+                            'bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200'
                           }`}>
-                            <div className={`text-xl font-bold ${
+                            <div className="text-xs text-gray-500 mb-1">Margine</div>
+                            <div className={`text-lg font-bold ${
                               margin > 0 ? 'text-green-700' : margin < 0 ? 'text-red-700' : 'text-gray-500'
                             }`}>
                               €{margin.toFixed(2)}
                             </div>
-                            <div className={`text-sm font-medium ${
+                            <div className={`text-sm font-semibold ${
                               margin > 0 ? 'text-green-600' : margin < 0 ? 'text-red-600' : 'text-gray-400'
                             }`}>
-                              {percentage.toFixed(1)}%
+                              ({percentage.toFixed(1)}%)
                             </div>
                           </div>
                         </div>
@@ -2051,7 +2042,7 @@ export default function ListiniTabContent() {
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent 
-          className={`${wizardStep === 1 ? 'max-w-2xl' : 'max-w-6xl h-[85vh]'} overflow-hidden flex flex-col`}
+          className={`max-w-7xl ${wizardStep === 1 ? 'max-h-[70vh]' : 'h-[85vh]'} overflow-hidden flex flex-col`}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
