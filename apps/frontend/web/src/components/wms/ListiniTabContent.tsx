@@ -117,6 +117,7 @@ export default function ListiniTabContent() {
   });
   const [savedPairs, setSavedPairs] = useState<ProductPair[]>([]);
   const [editingConfigIndex, setEditingConfigIndex] = useState<number | null>(null);
+  const [editingPairId, setEditingPairId] = useState<string | null>(null);
 
   const [physicalSearchTerm, setPhysicalSearchTerm] = useState('');
   const [canvasSearchTerm, setCanvasSearchTerm] = useState('');
@@ -289,19 +290,48 @@ export default function ListiniTabContent() {
   const savePair = () => {
     if (!isPairComplete || (currentPair.configurations || []).length === 0) return;
 
-    const newPair: ProductPair = {
-      id: `pair-${Date.now()}`,
-      physicalProductId: currentPair.physicalProductId!,
-      physicalProductName: currentPair.physicalProductName!,
-      physicalProductSku: currentPair.physicalProductSku!,
-      canvasProductId: currentPair.canvasProductId!,
-      canvasProductName: currentPair.canvasProductName!,
-      canvasMonthlyFee: currentPair.canvasMonthlyFee || '0',
-      configurations: currentPair.configurations || []
-    };
-
-    setSavedPairs(prev => [...prev, newPair]);
+    if (editingPairId) {
+      // Aggiorna coppia esistente
+      setSavedPairs(prev => prev.map(pair => 
+        pair.id === editingPairId 
+          ? {
+              ...pair,
+              configurations: currentPair.configurations || []
+            }
+          : pair
+      ));
+      setEditingPairId(null);
+    } else {
+      // Crea nuova coppia
+      const newPair: ProductPair = {
+        id: `pair-${Date.now()}`,
+        physicalProductId: currentPair.physicalProductId!,
+        physicalProductName: currentPair.physicalProductName!,
+        physicalProductSku: currentPair.physicalProductSku!,
+        canvasProductId: currentPair.canvasProductId!,
+        canvasProductName: currentPair.canvasProductName!,
+        canvasMonthlyFee: currentPair.canvasMonthlyFee || '0',
+        configurations: currentPair.configurations || []
+      };
+      setSavedPairs(prev => [...prev, newPair]);
+    }
+    
     setCurrentPair({ configurations: [] });
+    setEditingConfigIndex(null);
+  };
+
+  // Funzione per caricare una coppia salvata per modifica
+  const loadPairForEditing = (pair: ProductPair) => {
+    setCurrentPair({
+      physicalProductId: pair.physicalProductId,
+      physicalProductName: pair.physicalProductName,
+      physicalProductSku: pair.physicalProductSku,
+      canvasProductId: pair.canvasProductId,
+      canvasProductName: pair.canvasProductName,
+      canvasMonthlyFee: pair.canvasMonthlyFee,
+      configurations: [...pair.configurations]
+    });
+    setEditingPairId(pair.id);
     setEditingConfigIndex(null);
   };
 
@@ -959,9 +989,16 @@ export default function ListiniTabContent() {
                   Hai configurato {(currentPair.configurations || []).length} modalità di vendita per questa coppia.
                 </div>
                 <div className="flex justify-between items-center">
-                  <Button variant="outline" onClick={() => setCurrentPair({ configurations: [] })} data-testid="button-cancel-pair">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setCurrentPair({ configurations: [] });
+                      setEditingPairId(null);
+                    }} 
+                    data-testid="button-cancel-pair"
+                  >
                     <X className="h-4 w-4 mr-2" />
-                    Annulla Coppia
+                    {editingPairId ? 'Annulla Modifica' : 'Annulla Coppia'}
                   </Button>
                   <div className="flex gap-3">
                     <Button 
@@ -978,7 +1015,7 @@ export default function ListiniTabContent() {
                       data-testid="button-complete-and-new-pair"
                     >
                       <Check className="h-4 w-4 mr-2" />
-                      Completa e seleziona nuova coppia
+                      {editingPairId ? 'Salva Modifiche' : 'Completa e seleziona nuova coppia'}
                     </Button>
                   </div>
                 </div>
@@ -997,7 +1034,11 @@ export default function ListiniTabContent() {
           </h4>
           <div className="space-y-3">
             {savedPairs.map((pair) => (
-              <Card key={pair.id} className="p-4">
+              <Card 
+                key={pair.id} 
+                className={`p-4 cursor-pointer transition-all hover:border-orange-300 ${editingPairId === pair.id ? 'border-orange-500 bg-orange-50' : ''}`}
+                onClick={() => loadPairForEditing(pair)}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div>
@@ -1006,15 +1047,39 @@ export default function ListiniTabContent() {
                       <span className="font-medium">{pair.canvasProductName}</span>
                     </div>
                     <Badge variant="outline">{pair.configurations.length} configurazioni</Badge>
+                    {editingPairId === pair.id && (
+                      <Badge className="bg-orange-500 text-white">In modifica</Badge>
+                    )}
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setSavedPairs(prev => prev.filter(p => p.id !== pair.id))}
-                    data-testid={`button-remove-pair-${pair.id}`}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        loadPairForEditing(pair);
+                      }}
+                      data-testid={`button-edit-pair-${pair.id}`}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Aggiungi Config
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSavedPairs(prev => prev.filter(p => p.id !== pair.id));
+                        if (editingPairId === pair.id) {
+                          setEditingPairId(null);
+                          setCurrentPair({ configurations: [] });
+                        }
+                      }}
+                      data-testid={`button-remove-pair-${pair.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
