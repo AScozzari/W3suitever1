@@ -666,6 +666,10 @@ export type User = typeof users.$inferSelect;
 export type UpsertUser = InsertUser;
 
 // ==================== LEGAL ENTITIES ====================
+// Legal Entity is the "parent" hub that propagates core data to child tables:
+// - suppliers (via legal_entity_id)
+// - financial_entities (via legal_entity_id)
+// - operators (via legal_entity_id in public schema)
 export const legalEntities = w3suiteSchema.table("legal_entities", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
@@ -694,6 +698,14 @@ export const legalEntities = w3suiteSchema.table("legal_entities", {
   // New enterprise fields for enhanced functionality
   logo: text("logo"), // PNG file path or base64
   codiceSDI: varchar("codiceSDI", { length: 10 }),
+  // IBAN/BIC for banking coordination
+  iban: varchar("iban", { length: 34 }),
+  bic: varchar("bic", { length: 11 }),
+  website: varchar("website", { length: 255 }),
+  // ==================== ROLE FLAGS (determines child table propagation) ====================
+  isSupplier: boolean("is_supplier").default(false).notNull(), // Propagate to suppliers/supplier_overrides
+  isFinancialEntity: boolean("is_financial_entity").default(false).notNull(), // Propagate to financial_entities
+  isOperator: boolean("is_operator").default(false).notNull(), // Propagate to operators (Brand Interface only)
   // Administrative contact section - using camelCase column names
   refAmminNome: varchar("refAmminNome", { length: 100 }),
   refAmminCognome: varchar("refAmminCognome", { length: 100 }),
@@ -1352,6 +1364,7 @@ export type NotificationPreference = typeof notificationPreferences.$inferSelect
 export const suppliers = w3suiteSchema.table("suppliers", {
   // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id), // FK to parent Legal Entity
   origin: supplierOriginEnum("origin").notNull(), // 'brand' | 'tenant'
   tenantId: uuid("tenant_id").references(() => tenants.id), // NULL per supplier brand-managed
   externalId: varchar("external_id", { length: 100 }), // ID da Brand Interface
@@ -1426,6 +1439,7 @@ export type Supplier = typeof suppliers.$inferSelect;
 export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
   // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id), // FK to parent Legal Entity
   origin: supplierOriginEnum("origin").notNull().default("tenant"), // Always 'tenant' for this table
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id), // Always required for tenant suppliers
   externalId: varchar("external_id", { length: 100 }), // ID from Brand Interface (usually NULL for tenant suppliers)
@@ -1499,6 +1513,7 @@ export type SupplierOverride = typeof supplierOverrides.$inferSelect;
 export const financialEntities = w3suiteSchema.table("financial_entities", {
   // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id), // FK to parent Legal Entity
   origin: financialEntityOriginEnum("origin").notNull(), // 'brand' | 'tenant'
   tenantId: uuid("tenant_id").references(() => tenants.id), // NULL per enti brand-managed
   code: varchar("code", { length: 50 }).notNull(), // Codice univoco (es. COMPASS, FINDOMESTIC)

@@ -36,8 +36,11 @@ export type InsertBrand = z.infer<typeof insertBrandSchema>;
 export type Brand = typeof brands.$inferSelect;
 
 // ==================== OPERATORS (Telco Brands: WindTre, VeryMobile) ====================
+// Operators are brand commercial names that can be linked to a Legal Entity (N:1 relationship)
+// Example: Wind Tre S.p.A. (Legal Entity) → WindTre + VeryMobile (Operators/Brands)
 export const operators = pgTable("operators", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  legalEntityId: uuid("legal_entity_id"), // FK to w3suite.legal_entities (logical, not physical FK due to cross-schema)
   code: varchar("code", { length: 50 }).unique().notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),

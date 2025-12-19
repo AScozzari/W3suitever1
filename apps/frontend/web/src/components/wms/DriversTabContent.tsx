@@ -512,59 +512,59 @@ export default function DriversTabContent() {
                   <p className="text-xs text-gray-500">Associa questo driver ad un operatore specifico</p>
                 </div>
               </div>
-                
-                <div className="flex items-center gap-3 mb-3">
-                  <Checkbox
-                    id="linkedToOperator"
-                    checked={linkedToOperator}
-                    disabled={driverModal.mode === 'view'}
-                    onCheckedChange={(checked) => {
-                      setLinkedToOperator(checked === true);
-                      if (!checked) {
-                        setFormData(prev => ({ ...prev, operatorId: null }));
-                      }
-                    }}
-                    data-testid="checkbox-linked-to-operator"
-                  />
-                  <Label htmlFor="linkedToOperator" className="text-sm cursor-pointer">
-                    Questo driver è legato ad un operatore specifico
-                  </Label>
-                </div>
-
-                {linkedToOperator && (
-                  <div className="ml-6">
-                    <Label className="mb-2 block text-sm">Seleziona Operatore *</Label>
-                    <Select
-                      value={formData.operatorId || ''}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, operatorId: value || null }))}
-                      disabled={driverModal.mode === 'view'}
-                    >
-                      <SelectTrigger className="w-full" data-testid="select-operator">
-                        <SelectValue placeholder="Seleziona un operatore..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {operators.map(op => (
-                          <SelectItem key={op.id} value={op.id} data-testid={`select-operator-${op.code}`}>
-                            <div className="flex items-center gap-2">
-                              {op.colorHex && (
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: op.colorHex }}
-                                />
-                              )}
-                              <span>{op.name}</span>
-                              <span className="text-gray-400 text-xs">({op.code})</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      I prodotti di questo driver saranno associati a questo operatore
-                    </p>
-                  </div>
-                )}
+              
+              <div className="flex items-center gap-3 mb-3">
+                <Checkbox
+                  id="linkedToOperator"
+                  checked={linkedToOperator}
+                  disabled={driverModal.mode === 'view'}
+                  onCheckedChange={(checked) => {
+                    setLinkedToOperator(checked === true);
+                    if (!checked) {
+                      setFormData(prev => ({ ...prev, operatorId: null }));
+                    }
+                  }}
+                  data-testid="checkbox-linked-to-operator"
+                />
+                <Label htmlFor="linkedToOperator" className="text-sm cursor-pointer">
+                  Questo driver è legato ad un operatore specifico
+                </Label>
               </div>
+
+              {linkedToOperator && (
+                <div className="ml-6">
+                  <Label className="mb-2 block text-sm">Seleziona Operatore *</Label>
+                  <Select
+                    value={formData.operatorId || ''}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, operatorId: value || null }))}
+                    disabled={driverModal.mode === 'view'}
+                  >
+                    <SelectTrigger className="w-full" data-testid="select-operator">
+                      <SelectValue placeholder="Seleziona un operatore..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {operators.map(op => (
+                        <SelectItem key={op.id} value={op.id} data-testid={`select-operator-${op.code}`}>
+                          <div className="flex items-center gap-2">
+                            {op.colorHex && (
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: op.colorHex }}
+                              />
+                            )}
+                            <span>{op.name}</span>
+                            <span className="text-gray-400 text-xs">({op.code})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    I prodotti di questo driver saranno associati a questo operatore
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
               <div>
