@@ -531,23 +531,24 @@ export default function ListiniTabContent() {
   );
 
   const renderStep2 = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="code">Codice Listino *</Label>
+        <div className="space-y-1">
+          <Label htmlFor="code" className="text-sm">Codice Listino *</Label>
           <div className="flex gap-2">
             <Input
               id="code"
               value={priceListHeader.code}
               onChange={(e) => setPriceListHeader(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
               placeholder="es. LST-2025-001"
-              className="flex-1"
+              className="flex-1 h-9"
               data-testid="input-pricelist-code"
             />
             <Button
               type="button"
               variant="outline"
               size="icon"
+              className="h-9 w-9"
               onClick={() => setPriceListHeader(prev => ({ ...prev, code: generatePriceListCode() }))}
               title="Genera codice automatico"
               data-testid="button-generate-code"
@@ -556,26 +557,28 @@ export default function ListiniTabContent() {
             </Button>
           </div>
         </div>
-        <div>
-          <Label htmlFor="name">Nome Listino *</Label>
+        <div className="space-y-1">
+          <Label htmlFor="name" className="text-sm">Nome Listino *</Label>
           <Input
             id="name"
             value={priceListHeader.name}
             onChange={(e) => setPriceListHeader(prev => ({ ...prev, name: e.target.value }))}
             placeholder="es. Promo Natale 2025"
+            className="h-9"
             data-testid="input-pricelist-name"
           />
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="description">Descrizione</Label>
+      <div className="space-y-1">
+        <Label htmlFor="description" className="text-sm">Descrizione</Label>
         <Textarea
           id="description"
           value={priceListHeader.description}
           onChange={(e) => setPriceListHeader(prev => ({ ...prev, description: e.target.value }))}
           placeholder="Descrizione opzionale del listino..."
-          rows={3}
+          rows={2}
+          className="resize-none"
           data-testid="input-pricelist-description"
         />
       </div>
