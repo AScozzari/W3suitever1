@@ -194,7 +194,12 @@ export default function ListiniTabContent() {
   const safeSupplierMappings = Array.isArray(supplierMappingsData) ? supplierMappingsData : [];
   const safeFinancialEntities = Array.isArray(financialEntitiesData) ? financialEntitiesData : [];
   const safeProducts = Array.isArray(productsData) ? productsData : [];
-  const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
+  // Categories endpoint returns { success: true, data: [...] }
+  const safeCategories = Array.isArray(categoriesData) 
+    ? categoriesData 
+    : (categoriesData as any)?.data && Array.isArray((categoriesData as any).data) 
+      ? (categoriesData as any).data 
+      : [];
   const safePriceLists = Array.isArray(priceListsData) ? priceListsData : [];
 
   // Genera codice listino progressivo
@@ -1334,7 +1339,7 @@ export default function ListiniTabContent() {
               <SelectContent>
                 <SelectItem value="all">Tutte le categorie</SelectItem>
                 {safeCategories.map((cat: any) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
