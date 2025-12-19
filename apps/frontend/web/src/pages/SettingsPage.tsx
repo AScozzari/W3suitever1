@@ -2036,6 +2036,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
+    { id: 'Legal Entity', label: 'Entità Legali', icon: Landmark },
     { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
     { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
     { id: 'System Settings', label: 'System Settings', icon: Server },
@@ -3818,6 +3819,519 @@ export default function SettingsPage() {
     </div>
   );
 
+  // ==================== LEGAL ENTITY TAB ====================
+  const [legalEntityModalOpen, setLegalEntityModalOpen] = useState(false);
+  const [editingLegalEntity, setEditingLegalEntity] = useState<any>(null);
+  const [legalEntityForm, setLegalEntityForm] = useState({
+    codice: '',
+    ragioneSociale: '',
+    formaGiuridica: '',
+    partitaIva: '',
+    codiceFiscale: '',
+    indirizzo: '',
+    citta: '',
+    provincia: '',
+    cap: '',
+    telefono: '',
+    email: '',
+    pec: '',
+    rea: '',
+    registroImprese: '',
+    codiceSDI: '',
+    iban: '',
+    bic: '',
+    website: '',
+    capitaleSociale: '',
+    isSupplier: false,
+    isFinancialEntity: false,
+    supplierType: 'other' as 'products' | 'services' | 'logistics' | 'technology' | 'other',
+    note: ''
+  });
+
+  const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntities } = useQuery({
+    queryKey: ['/api/legal-entities'],
+    enabled: activeTab === 'Legal Entity'
+  });
+
+  const legalEntitiesList = (legalEntitiesData as any)?.data || [];
+
+  const handleSaveLegalEntity = async () => {
+    try {
+      const url = editingLegalEntity 
+        ? `/api/legal-entities/${editingLegalEntity.id}`
+        : '/api/legal-entities';
+      const method = editingLegalEntity ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': DEMO_TENANT_ID
+        },
+        body: JSON.stringify(legalEntityForm)
+      });
+
+      if (response.ok) {
+        showNotification(editingLegalEntity ? 'Entità legale aggiornata' : 'Entità legale creata', 'success');
+        setLegalEntityModalOpen(false);
+        setEditingLegalEntity(null);
+        setLegalEntityForm({
+          codice: '', ragioneSociale: '', formaGiuridica: '', partitaIva: '', codiceFiscale: '',
+          indirizzo: '', citta: '', provincia: '', cap: '', telefono: '', email: '', pec: '',
+          rea: '', registroImprese: '', codiceSDI: '', iban: '', bic: '', website: '',
+          capitaleSociale: '', isSupplier: false, isFinancialEntity: false, supplierType: 'other', note: ''
+        });
+        refetchLegalEntities();
+      } else {
+        const error = await response.json();
+        showNotification(error.message || 'Errore nel salvataggio', 'error');
+      }
+    } catch (error) {
+      showNotification('Errore di connessione', 'error');
+    }
+  };
+
+  const handleDeleteLegalEntity = async (id: string) => {
+    if (!confirm('Sei sicuro di voler eliminare questa entità legale? Verranno eliminati anche i fornitori e gli enti finanzianti collegati.')) return;
+    
+    try {
+      const response = await fetch(`/api/legal-entities/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-tenant-id': DEMO_TENANT_ID }
+      });
+
+      if (response.ok) {
+        showNotification('Entità legale eliminata', 'success');
+        refetchLegalEntities();
+      } else {
+        const error = await response.json();
+        showNotification(error.message || 'Errore nell\'eliminazione', 'error');
+      }
+    } catch (error) {
+      showNotification('Errore di connessione', 'error');
+    }
+  };
+
+  const openEditLegalEntity = (entity: any) => {
+    setEditingLegalEntity(entity);
+    setLegalEntityForm({
+      codice: entity.codice || '',
+      ragioneSociale: entity.nome || '',
+      formaGiuridica: entity.formaGiuridica || '',
+      partitaIva: entity.pIva || '',
+      codiceFiscale: entity.codiceFiscale || '',
+      indirizzo: entity.indirizzo || '',
+      citta: entity.citta || '',
+      provincia: entity.provincia || '',
+      cap: entity.cap || '',
+      telefono: entity.telefono || '',
+      email: entity.email || '',
+      pec: entity.pec || '',
+      rea: entity.rea || '',
+      registroImprese: entity.registroImprese || '',
+      codiceSDI: entity.codiceSDI || '',
+      iban: entity.iban || '',
+      bic: entity.bic || '',
+      website: entity.website || '',
+      capitaleSociale: entity.capitaleSociale || '',
+      isSupplier: entity.isSupplier || false,
+      isFinancialEntity: entity.isFinancialEntity || false,
+      supplierType: 'other',
+      note: entity.note || ''
+    });
+    setLegalEntityModalOpen(true);
+  };
+
+  const renderLegalEntityTab = () => (
+    <div>
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: '0 0 4px 0' }}>
+            Entità Legali
+          </h2>
+          <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+            Gestisci le entità legali e propaga i dati a fornitori ed enti finanzianti
+          </p>
+        </div>
+        <button
+          data-testid="button-add-legal-entity"
+          onClick={() => {
+            setEditingLegalEntity(null);
+            setLegalEntityForm({
+              codice: '', ragioneSociale: '', formaGiuridica: '', partitaIva: '', codiceFiscale: '',
+              indirizzo: '', citta: '', provincia: '', cap: '', telefono: '', email: '', pec: '',
+              rea: '', registroImprese: '', codiceSDI: '', iban: '', bic: '', website: '',
+              capitaleSociale: '', isSupplier: false, isFinancialEntity: false, supplierType: 'other', note: ''
+            });
+            setLegalEntityModalOpen(true);
+          }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'linear-gradient(135deg, #FF6900, #FF8533)',
+            color: 'white', border: 'none', borderRadius: '10px',
+            padding: '10px 20px', cursor: 'pointer', fontWeight: '600'
+          }}
+        >
+          <Plus size={18} />
+          Nuova Entità Legale
+        </button>
+      </div>
+
+      {/* Data Table */}
+      <div style={{
+        background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb',
+        overflow: 'hidden', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+      }}>
+        {legalEntitiesLoading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Caricamento...</div>
+        ) : legalEntitiesList.length === 0 ? (
+          <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+            <Building2 size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+            <p style={{ margin: 0, fontSize: '16px' }}>Nessuna entità legale trovata</p>
+            <p style={{ margin: '8px 0 0', fontSize: '14px' }}>Clicca su "Nuova Entità Legale" per iniziare</p>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Codice</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ragione Sociale</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>P.IVA</th>
+                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ruoli</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Stato</th>
+                <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {legalEntitiesList.map((entity: any) => (
+                <tr key={entity.id} data-testid={`row-legal-entity-${entity.id}`} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '14px 16px', fontWeight: '500', color: '#111827' }}>{entity.codice}</td>
+                  <td style={{ padding: '14px 16px', color: '#374151' }}>{entity.nome}</td>
+                  <td style={{ padding: '14px 16px', color: '#6b7280', fontFamily: 'monospace' }}>{entity.pIva || '-'}</td>
+                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      {entity.isSupplier && (
+                        <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Fornitore</span>
+                      )}
+                      {entity.isFinancialEntity && (
+                        <span style={{ background: '#d1fae5', color: '#059669', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Ente Fin.</span>
+                      )}
+                      {entity._children?.hasSupplier && !entity.isSupplier && (
+                        <span style={{ background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Forn. Collegato</span>
+                      )}
+                      {entity._children?.hasFinancialEntity && !entity.isFinancialEntity && (
+                        <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>E.F. Collegato</span>
+                      )}
+                      {!entity.isSupplier && !entity.isFinancialEntity && !entity._children?.hasSupplier && !entity._children?.hasFinancialEntity && (
+                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <span style={{
+                      background: entity.stato === 'Attiva' ? '#d1fae5' : '#fee2e2',
+                      color: entity.stato === 'Attiva' ? '#059669' : '#dc2626',
+                      padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '500'
+                    }}>
+                      {entity.stato || 'Attiva'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button
+                        data-testid={`button-edit-legal-entity-${entity.id}`}
+                        onClick={() => openEditLegalEntity(entity)}
+                        style={{
+                          background: '#f3f4f6', border: 'none', borderRadius: '8px',
+                          padding: '8px', cursor: 'pointer', color: '#374151'
+                        }}
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        data-testid={`button-delete-legal-entity-${entity.id}`}
+                        onClick={() => !entity._children?.hasBrandManagedChildren && handleDeleteLegalEntity(entity.id)}
+                        disabled={entity._children?.hasBrandManagedChildren}
+                        title={entity._children?.hasBrandManagedChildren ? 'Non eliminabile: collegata a entità brand-managed' : 'Elimina'}
+                        style={{
+                          background: entity._children?.hasBrandManagedChildren ? '#f3f4f6' : '#fee2e2',
+                          border: 'none', borderRadius: '8px',
+                          padding: '8px',
+                          cursor: entity._children?.hasBrandManagedChildren ? 'not-allowed' : 'pointer',
+                          color: entity._children?.hasBrandManagedChildren ? '#9ca3af' : '#dc2626',
+                          opacity: entity._children?.hasBrandManagedChildren ? 0.6 : 1
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Modal for Create/Edit */}
+      {legalEntityModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '16px', width: '90%', maxWidth: '800px',
+            maxHeight: '90vh', overflow: 'auto', padding: '32px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
+                {editingLegalEntity ? 'Modifica Entità Legale' : 'Nuova Entità Legale'}
+              </h3>
+              <button onClick={() => setLegalEntityModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Form Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Codice *</label>
+                <input
+                  data-testid="input-legal-entity-codice"
+                  value={legalEntityForm.codice}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codice: e.target.value.toUpperCase() }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="ES. LE001"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Ragione Sociale *</label>
+                <input
+                  data-testid="input-legal-entity-ragione-sociale"
+                  value={legalEntityForm.ragioneSociale}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, ragioneSociale: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="Nome della società"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Forma Giuridica</label>
+                <select
+                  value={legalEntityForm.formaGiuridica}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, formaGiuridica: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                >
+                  <option value="">Seleziona...</option>
+                  <option value="S.r.l.">S.r.l.</option>
+                  <option value="S.p.A.">S.p.A.</option>
+                  <option value="S.a.s.">S.a.s.</option>
+                  <option value="S.n.c.">S.n.c.</option>
+                  <option value="Ditta Individuale">Ditta Individuale</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Partita IVA</label>
+                <input
+                  data-testid="input-legal-entity-partita-iva"
+                  value={legalEntityForm.partitaIva}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, partitaIva: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="IT12345678901"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Codice Fiscale</label>
+                <input
+                  value={legalEntityForm.codiceFiscale}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Codice SDI</label>
+                <input
+                  value={legalEntityForm.codiceSDI}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codiceSDI: e.target.value.toUpperCase() }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="0000000"
+                  maxLength={7}
+                />
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Indirizzo</label>
+                <input
+                  value={legalEntityForm.indirizzo}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, indirizzo: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="Via Roma, 1"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Città</label>
+                <input
+                  value={legalEntityForm.citta}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, citta: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Provincia</label>
+                  <input
+                    value={legalEntityForm.provincia}
+                    onChange={(e) => setLegalEntityForm(prev => ({ ...prev, provincia: e.target.value.toUpperCase() }))}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    maxLength={2}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>CAP</label>
+                  <input
+                    value={legalEntityForm.cap}
+                    onChange={(e) => setLegalEntityForm(prev => ({ ...prev, cap: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    maxLength={5}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Telefono</label>
+                <input
+                  value={legalEntityForm.telefono}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, telefono: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Email</label>
+                <input
+                  value={legalEntityForm.email}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, email: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  type="email"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>PEC</label>
+                <input
+                  value={legalEntityForm.pec}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, pec: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Sito Web</label>
+                <input
+                  value={legalEntityForm.website}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, website: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="https://www.example.com"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>IBAN</label>
+                <input
+                  value={legalEntityForm.iban}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, iban: e.target.value.toUpperCase() }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  placeholder="IT60X0542811101000000123456"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>BIC/SWIFT</label>
+                <input
+                  value={legalEntityForm.bic}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, bic: e.target.value.toUpperCase() }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  maxLength={11}
+                />
+              </div>
+
+              {/* Role Checkboxes */}
+              <div style={{ gridColumn: 'span 2', marginTop: '16px', padding: '16px', background: '#f9fafb', borderRadius: '12px' }}>
+                <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Ruoli dell'Entità (Propagazione Automatica)
+                </h4>
+                <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#6b7280' }}>
+                  Selezionando questi ruoli, l'entità verrà automaticamente creata anche nelle tabelle specifiche
+                </p>
+                <div style={{ display: 'flex', gap: '24px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={legalEntityForm.isSupplier}
+                      onChange={(e) => setLegalEntityForm(prev => ({ ...prev, isSupplier: e.target.checked }))}
+                      style={{ width: '18px', height: '18px' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: '500' }}>È un Fornitore</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={legalEntityForm.isFinancialEntity}
+                      onChange={(e) => setLegalEntityForm(prev => ({ ...prev, isFinancialEntity: e.target.checked }))}
+                      style={{ width: '18px', height: '18px' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: '500' }}>È un Ente Finanziante</span>
+                  </label>
+                </div>
+
+                {legalEntityForm.isSupplier && (
+                  <div style={{ marginTop: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Tipo Fornitore</label>
+                    <select
+                      value={legalEntityForm.supplierType}
+                      onChange={(e) => setLegalEntityForm(prev => ({ ...prev, supplierType: e.target.value as any }))}
+                      style={{ width: '200px', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    >
+                      <option value="products">Prodotti</option>
+                      <option value="services">Servizi</option>
+                      <option value="logistics">Logistica</option>
+                      <option value="technology">Tecnologia</option>
+                      <option value="other">Altro</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Note</label>
+                <textarea
+                  value={legalEntityForm.note}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, note: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', minHeight: '80px', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+              <button
+                onClick={() => setLegalEntityModalOpen(false)}
+                style={{ padding: '10px 20px', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Annulla
+              </button>
+              <button
+                data-testid="button-save-legal-entity"
+                onClick={handleSaveLegalEntity}
+                disabled={!legalEntityForm.codice || !legalEntityForm.ragioneSociale}
+                style={{
+                  padding: '10px 20px', border: 'none', borderRadius: '8px',
+                  background: (!legalEntityForm.codice || !legalEntityForm.ragioneSociale) ? '#d1d5db' : 'linear-gradient(135deg, #FF6900, #FF8533)',
+                  color: 'white', cursor: (!legalEntityForm.codice || !legalEntityForm.ragioneSociale) ? 'not-allowed' : 'pointer', fontWeight: '600'
+                }}
+              >
+                {editingLegalEntity ? 'Aggiorna' : 'Crea Entità Legale'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const renderAIAssistant = () => {
     return <AISettingsPage />;
   };
@@ -4899,6 +5413,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'Entity Management':
         return renderEntityManagement();
+      case 'Legal Entity':
+        return renderLegalEntityTab();
       case 'AI Assistant':
         return renderAIAssistant();
       case 'Channel Settings':

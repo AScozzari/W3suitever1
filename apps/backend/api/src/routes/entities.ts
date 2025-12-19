@@ -146,14 +146,26 @@ router.get('/legal-entities', async (req, res) => {
 
     // Get linked children for each entity
     const entitiesWithChildren = await Promise.all(entitiesList.map(async (entity) => {
-      // Check supplier_overrides linked to this legal entity
-      const linkedSuppliers = await db
-        .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name })
+      // Check supplier_overrides (tenant-managed) linked to this legal entity
+      const tenantSuppliers = await db
+        .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, origin: supplierOverrides.origin })
         .from(supplierOverrides)
         .where(and(
           eq(supplierOverrides.legalEntityId, entity.id),
           eq(supplierOverrides.tenantId, tenantId)
         ));
+
+      // Check suppliers (brand-managed) linked to this legal entity
+      const brandSuppliers = await db
+        .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, origin: suppliers.origin })
+        .from(suppliers)
+        .where(eq(suppliers.legalEntityId, entity.id));
+
+      // Combine all suppliers with origin info
+      const allSuppliers = [
+        ...tenantSuppliers.map(s => ({ ...s, origin: s.origin || 'tenant' })),
+        ...brandSuppliers.map(s => ({ ...s, origin: s.origin || 'brand' }))
+      ];
 
       // Check financial_entities linked to this legal entity
       const linkedFinancialEntities = await db
@@ -161,21 +173,27 @@ router.get('/legal-entities', async (req, res) => {
         .from(financialEntities)
         .where(eq(financialEntities.legalEntityId, entity.id));
 
-      // Check operators linked to this legal entity (public schema)
+      // Check operators linked to this legal entity (public schema - always brand-managed)
       const linkedOperators = await db
         .select({ id: operators.id, code: operators.code, name: operators.name })
         .from(operators)
         .where(eq(operators.legalEntityId, entity.id));
 
+      // Determine if any brand-managed children exist (for delete protection)
+      const hasBrandSupplier = brandSuppliers.length > 0;
+      const hasBrandFinancialEntity = linkedFinancialEntities.some(fe => fe.origin === 'brand');
+      const hasBrandManagedChildren = hasBrandSupplier || hasBrandFinancialEntity || linkedOperators.length > 0;
+
       return {
         ...entity,
         _children: {
-          suppliers: linkedSuppliers,
+          suppliers: allSuppliers,
           financialEntities: linkedFinancialEntities,
-          operators: linkedOperators,
-          hasSupplier: linkedSuppliers.length > 0,
+          operators: linkedOperators.map(op => ({ ...op, origin: 'brand' })), // Operators are always brand-managed
+          hasSupplier: allSuppliers.length > 0,
           hasFinancialEntity: linkedFinancialEntities.length > 0,
-          hasOperator: linkedOperators.length > 0
+          hasOperator: linkedOperators.length > 0,
+          hasBrandManagedChildren // Used by UI to disable delete button
         }
       };
     }));
