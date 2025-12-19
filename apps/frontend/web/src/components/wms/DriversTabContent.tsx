@@ -7,13 +7,22 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Zap, Eye, Pencil, Trash2, RefreshCw, AlertCircle, Lock, Building2, Package,
-  ChevronDown, ChevronRight, FolderTree, Tag
+  ChevronDown, ChevronRight, FolderTree, Tag, Radio
 } from 'lucide-react';
+
+interface Operator {
+  id: string;
+  code: string;
+  name: string;
+  colorHex?: string;
+  isActive: boolean;
+}
 
 interface Driver {
   id: string;
@@ -21,6 +30,7 @@ interface Driver {
   name: string;
   description?: string;
   allowedProductTypes: string[];
+  operatorId?: string;
   isActive: boolean;
   source: 'brand' | 'tenant';
   brandDriverId?: string;
@@ -80,13 +90,20 @@ export default function DriversTabContent() {
     name: '',
     description: '',
     allowedProductTypes: [] as string[],
+    operatorId: null as string | null,
     isActive: true,
   });
+  const [linkedToOperator, setLinkedToOperator] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const { data: drivers = [], isLoading, isError, error, refetch } = useQuery<Driver[]>({
     queryKey: ['/api/drivers', { includeInactive: 'true' }],
   });
+
+  const { data: operatorsResponse } = useQuery<{ success: boolean; data: Operator[] }>({
+    queryKey: ['/api/operators'],
+  });
+  const operators = operatorsResponse?.data || [];
 
   // Query per la gerarchia del driver selezionato (solo in modalità view)
   const driverIdForHierarchy = driverModal.data?.id;
@@ -150,7 +167,8 @@ export default function DriversTabContent() {
   });
 
   const handleOpenCreate = () => {
-    setFormData({ code: '', name: '', description: '', allowedProductTypes: [], isActive: true });
+    setFormData({ code: '', name: '', description: '', allowedProductTypes: [], operatorId: null, isActive: true });
+    setLinkedToOperator(false);
     setDriverModal({ open: true, mode: 'create', data: null });
   };
 
@@ -160,8 +178,10 @@ export default function DriversTabContent() {
       name: driver.name,
       description: driver.description || '',
       allowedProductTypes: driver.allowedProductTypes || [],
+      operatorId: driver.operatorId || null,
       isActive: driver.isActive,
     });
+    setLinkedToOperator(!!driver.operatorId);
     setDriverModal({ open: true, mode: 'edit', data: driver });
   };
 
@@ -171,14 +191,17 @@ export default function DriversTabContent() {
       name: driver.name,
       description: driver.description || '',
       allowedProductTypes: driver.allowedProductTypes || [],
+      operatorId: driver.operatorId || null,
       isActive: driver.isActive,
     });
+    setLinkedToOperator(!!driver.operatorId);
     setDriverModal({ open: true, mode: 'view', data: driver });
   };
 
   const handleCloseModal = () => {
     setDriverModal({ open: false, mode: 'create', data: null });
-    setFormData({ code: '', name: '', description: '', allowedProductTypes: [], isActive: true });
+    setFormData({ code: '', name: '', description: '', allowedProductTypes: [], operatorId: null, isActive: true });
+    setLinkedToOperator(false);
     setExpandedCategories(new Set());
   };
 
@@ -469,6 +492,71 @@ export default function DriversTabContent() {
                 ))}
               </div>
             </div>
+
+            {/* Operator Linking Section - Only for CANVAS drivers */}
+            {formData.allowedProductTypes.includes('CANVAS') && (
+              <div className="p-4 rounded-lg border border-orange-200 bg-orange-50/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <Radio className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+                  <div>
+                    <Label className="font-medium">Collegamento Operatore (Telco)</Label>
+                    <p className="text-xs text-gray-500">Associa questo driver ad un operatore per i prodotti CANVAS</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 mb-3">
+                  <Checkbox
+                    id="linkedToOperator"
+                    checked={linkedToOperator}
+                    disabled={driverModal.mode === 'view'}
+                    onCheckedChange={(checked) => {
+                      setLinkedToOperator(checked === true);
+                      if (!checked) {
+                        setFormData(prev => ({ ...prev, operatorId: null }));
+                      }
+                    }}
+                    data-testid="checkbox-linked-to-operator"
+                  />
+                  <Label htmlFor="linkedToOperator" className="text-sm cursor-pointer">
+                    Questo driver è legato ad un operatore specifico
+                  </Label>
+                </div>
+
+                {linkedToOperator && (
+                  <div className="ml-6">
+                    <Label className="mb-2 block text-sm">Seleziona Operatore *</Label>
+                    <Select
+                      value={formData.operatorId || ''}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, operatorId: value || null }))}
+                      disabled={driverModal.mode === 'view'}
+                    >
+                      <SelectTrigger className="w-full" data-testid="select-operator">
+                        <SelectValue placeholder="Seleziona un operatore..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {operators.map(op => (
+                          <SelectItem key={op.id} value={op.id} data-testid={`select-operator-${op.code}`}>
+                            <div className="flex items-center gap-2">
+                              {op.colorHex && (
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: op.colorHex }}
+                                />
+                              )}
+                              <span>{op.name}</span>
+                              <span className="text-gray-400 text-xs">({op.code})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      I prodotti CANVAS di questo driver saranno associati a questo operatore
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
               <div>
