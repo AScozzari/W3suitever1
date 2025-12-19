@@ -2042,7 +2042,7 @@ export default function ListiniTabContent() {
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent 
-          className="max-w-6xl h-[85vh] overflow-hidden flex flex-col"
+          className={`${wizardStep <= 2 ? 'max-w-3xl' : 'max-w-6xl h-[85vh]'} overflow-hidden flex flex-col`}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
