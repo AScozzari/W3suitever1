@@ -13,7 +13,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middlewa
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers } from '../db/schema/w3suite';
-import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions } from '../db/schema/public';
+import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 
@@ -75,6 +75,45 @@ router.get('/commercial-areas', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to retrieve commercial areas',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== OPERATORS (Telco Brands: WindTre, VeryMobile) ====================
+
+/**
+ * GET /api/operators
+ * Get all active operators (from public schema - shared reference data)
+ * Used for driver association and CANVAS product categorization
+ */
+router.get('/operators', async (req, res) => {
+  try {
+    const includeInactive = req.query.includeInactive === 'true';
+    
+    // Operators are in public schema - no tenant filtering needed
+    const operatorsList = await db
+      .select()
+      .from(operators)
+      .where(includeInactive ? undefined : eq(operators.isActive, true))
+      .orderBy(operators.sortOrder, operators.name);
+
+    res.status(200).json({
+      success: true,
+      data: operatorsList,
+      message: 'Operators retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving operators', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve operators',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
@@ -1003,6 +1042,7 @@ router.get('/drivers', async (req, res) => {
         description: drivers.description,
         icon: drivers.icon,
         allowedProductTypes: drivers.allowedProductTypes,
+        operatorId: drivers.operatorId,
         source: drivers.source,
         isBrandSynced: drivers.isBrandSynced,
         isActive: drivers.isActive,
@@ -1024,6 +1064,7 @@ router.get('/drivers', async (req, res) => {
         description: drivers.description,
         icon: drivers.icon,
         allowedProductTypes: drivers.allowedProductTypes,
+        operatorId: drivers.operatorId,
         source: drivers.source,
         isBrandSynced: drivers.isBrandSynced,
         isActive: drivers.isActive,
@@ -1080,7 +1121,7 @@ router.post('/drivers', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    const { code, name, description, allowedProductTypes, isActive } = req.body;
+    const { code, name, description, allowedProductTypes, operatorId, isActive } = req.body;
 
     if (!code || !name) {
       return res.status(400).json({
@@ -1135,6 +1176,7 @@ router.post('/drivers', async (req, res) => {
         name,
         description: description || null,
         allowedProductTypes: allowedProductTypes,
+        operatorId: operatorId || null,
         source: 'tenant',
         isBrandSynced: false,
         isActive: isActive ?? true,
@@ -1183,7 +1225,7 @@ router.put('/drivers/:id', async (req, res) => {
     }
 
     const driverId = req.params.id;
-    const { code, name, description, allowedProductTypes, isActive } = req.body;
+    const { code, name, description, allowedProductTypes, operatorId, isActive } = req.body;
 
     await setTenantContext(tenantId);
 
@@ -1244,6 +1286,7 @@ router.put('/drivers/:id', async (req, res) => {
         name: name ?? existingDriver.name,
         description: description !== undefined ? description : existingDriver.description,
         allowedProductTypes: allowedProductTypes ?? existingDriver.allowedProductTypes,
+        operatorId: operatorId !== undefined ? (operatorId || null) : existingDriver.operatorId,
         isActive: isActive ?? existingDriver.isActive,
         updatedAt: new Date(),
       })

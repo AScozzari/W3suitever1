@@ -7766,6 +7766,10 @@ export const drivers = w3suiteSchema.table("drivers", {
   // ProductType hierarchy connection - Array of allowed product types for this driver
   allowedProductTypes: text("allowed_product_types").array().default([]).notNull(), // ['PHYSICAL', 'CANVAS', 'SERVICE', 'VIRTUAL']
   
+  // Operator association (optional) - FK to public.operators
+  // If set, all categories/typologies/products under this driver are associated with the operator
+  operatorId: uuid("operator_id"), // FK to public.operators.id (WindTre, VeryMobile)
+  
   // Status
   isActive: boolean("is_active").default(true).notNull(),
   sortOrder: smallint("sort_order").default(0).notNull(),
@@ -7782,6 +7786,7 @@ export const drivers = w3suiteSchema.table("drivers", {
   index("drivers_source_idx").on(table.source),
   index("drivers_brand_id_idx").on(table.brandDriverId),
   index("drivers_active_idx").on(table.tenantId, table.isActive),
+  index("drivers_operator_idx").on(table.operatorId),
 ]);
 
 export const insertDriverSchema = createInsertSchema(drivers).omit({
@@ -7797,6 +7802,7 @@ export const insertDriverSchema = createInsertSchema(drivers).omit({
   description: z.string().optional(),
   icon: z.string().max(100).optional(),
   allowedProductTypes: z.array(z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS'])).default([]),
+  operatorId: z.string().uuid().nullable().optional(), // FK to public.operators
   source: z.enum(['brand', 'tenant']).optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.coerce.number().int().min(0).optional(),

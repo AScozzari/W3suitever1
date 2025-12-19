@@ -92,17 +92,20 @@ export type { InsertLegalEntity, LegalEntity } from './w3suite';
 import { 
   brands as publicBrands, 
   channels as publicChannels, 
-  commercialAreas as publicCommercialAreas
+  commercialAreas as publicCommercialAreas,
+  operators as publicOperators
 } from './public';
 
 export const brands = publicBrands;
 export const channels = publicChannels;
 export const commercialAreas = publicCommercialAreas;
+export const operators = publicOperators;
 
 // Export types for backward compatibility
 export type { InsertBrand, Brand } from './public';
 export type { InsertChannel, Channel } from './public';
 export type { InsertCommercialArea, CommercialArea } from './public';
+export type { InsertOperator, Operator } from './public';
 
 // ==================== DRIVERS - FROM W3SUITE SCHEMA ====================
 import { 

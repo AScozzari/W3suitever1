@@ -35,6 +35,28 @@ export const insertBrandSchema = createInsertSchema(brands).omit({
 export type InsertBrand = z.infer<typeof insertBrandSchema>;
 export type Brand = typeof brands.$inferSelect;
 
+// ==================== OPERATORS (Telco Brands: WindTre, VeryMobile) ====================
+export const operators = pgTable("operators", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  logoUrl: varchar("logo_url", { length: 500 }),
+  primaryColor: varchar("primary_color", { length: 7 }), // Hex color es. #FF6900
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertOperatorSchema = createInsertSchema(operators).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertOperator = z.infer<typeof insertOperatorSchema>;
+export type Operator = typeof operators.$inferSelect;
+
 // ==================== CHANNELS ====================
 export const channels = pgTable("channels", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
