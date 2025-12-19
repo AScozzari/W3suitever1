@@ -1607,13 +1607,10 @@ export default function ListiniTabContent() {
                           </div>
                         </div>
 
-                        {/* Margin Preview (when collapsed) */}
-                        {!isExpanded && completionStatus === 'complete' && (
-                          <div className={`text-sm font-semibold px-2 py-0.5 rounded ${
-                            margin > 0 ? 'text-emerald-700 bg-emerald-50' : 
-                            margin < 0 ? 'text-red-700 bg-red-50' : 'text-gray-600'
-                          }`}>
-                            €{margin.toFixed(2)}
+                        {/* Sales Price Preview (when collapsed) */}
+                        {!isExpanded && product.salesPriceVatIncl && (
+                          <div className="text-sm font-semibold px-2 py-0.5 rounded text-blue-700 bg-blue-50">
+                            €{parseFloat(product.salesPriceVatIncl).toFixed(2)}
                           </div>
                         )}
 
@@ -1645,7 +1642,7 @@ export default function ListiniTabContent() {
                               <Label className="text-xs text-gray-600 mb-1 block">SKU Fornitore</Label>
                               <Input
                                 value={product.useInternalSku ? product.productSku : product.supplierSku}
-                                onChange={(e) => { updateNoPromoProduct(product.id, 'supplierSku', e.target.value); collapseIfComplete(product.id); }}
+                                onChange={(e) => updateNoPromoProduct(product.id, 'supplierSku', e.target.value)}
                                 disabled={product.useInternalSku}
                                 className="h-9 text-sm font-mono"
                                 placeholder="SKU fornitore"
@@ -1655,7 +1652,7 @@ export default function ListiniTabContent() {
                             <label className="flex items-center gap-2 cursor-pointer h-9 px-2 rounded border border-gray-200 bg-white hover:bg-gray-50 text-xs">
                               <Checkbox
                                 checked={product.useInternalSku}
-                                onCheckedChange={(checked) => { updateNoPromoProduct(product.id, 'useInternalSku', !!checked); collapseIfComplete(product.id); }}
+                                onCheckedChange={(checked) => updateNoPromoProduct(product.id, 'useInternalSku', !!checked)}
                                 data-testid={`checkbox-internal-sku-${product.id}`}
                               />
                               <span className="text-gray-700">Usa SKU interno</span>
@@ -1679,13 +1676,13 @@ export default function ListiniTabContent() {
                                   type="number"
                                   step="0.01"
                                   value={product.purchaseCost}
-                                  onChange={(e) => { updateNoPromoProduct(product.id, 'purchaseCost', e.target.value); collapseIfComplete(product.id); }}
+                                  onChange={(e) => updateNoPromoProduct(product.id, 'purchaseCost', e.target.value)}
                                   className="h-9 pl-6 text-sm font-semibold"
                                   placeholder="0.00"
                                   data-testid={`input-purchase-cost-${product.id}`}
                                 />
                               </div>
-                              <Select value={product.purchaseVatRateId} onValueChange={(val) => { updateNoPromoProduct(product.id, 'purchaseVatRateId', val); collapseIfComplete(product.id); }}>
+                              <Select value={product.purchaseVatRateId} onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}>
                                 <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
                                   <SelectValue placeholder="Aliquota IVA" />
                                 </SelectTrigger>
@@ -1695,7 +1692,7 @@ export default function ListiniTabContent() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Select value={product.purchaseVatRegimeId || ''} onValueChange={(val) => { updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val); collapseIfComplete(product.id); }}>
+                              <Select value={product.purchaseVatRegimeId || ''} onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}>
                                 <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-regime-${product.id}`}>
                                   <SelectValue placeholder="Regime" />
                                 </SelectTrigger>
@@ -1722,13 +1719,13 @@ export default function ListiniTabContent() {
                                   type="number"
                                   step="0.01"
                                   value={product.salesPriceVatIncl}
-                                  onChange={(e) => { updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value); collapseIfComplete(product.id); }}
+                                  onChange={(e) => updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value)}
                                   className="h-9 pl-6 text-sm font-semibold"
                                   placeholder="0.00"
                                   data-testid={`input-sales-price-${product.id}`}
                                 />
                               </div>
-                              <Select value={product.salesVatRateId} onValueChange={(val) => { updateNoPromoProduct(product.id, 'salesVatRateId', val); collapseIfComplete(product.id); }}>
+                              <Select value={product.salesVatRateId} onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}>
                                 <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-${product.id}`}>
                                   <SelectValue placeholder="Aliquota IVA" />
                                 </SelectTrigger>
@@ -1738,7 +1735,7 @@ export default function ListiniTabContent() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Select value={product.salesVatRegimeId || ''} onValueChange={(val) => { updateNoPromoProduct(product.id, 'salesVatRegimeId', val); collapseIfComplete(product.id); }}>
+                              <Select value={product.salesVatRegimeId || ''} onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}>
                                 <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-regime-${product.id}`}>
                                   <SelectValue placeholder="Regime" />
                                 </SelectTrigger>
