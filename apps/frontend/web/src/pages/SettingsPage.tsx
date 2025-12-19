@@ -3866,7 +3866,9 @@ export default function SettingsPage() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'x-tenant-id': DEMO_TENANT_ID
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
         },
         body: JSON.stringify(legalEntityForm)
       });
@@ -3897,7 +3899,11 @@ export default function SettingsPage() {
     try {
       const response = await fetch(`/api/legal-entities/${id}`, {
         method: 'DELETE',
-        headers: { 'x-tenant-id': DEMO_TENANT_ID }
+        headers: { 
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+        }
       });
 
       if (response.ok) {
