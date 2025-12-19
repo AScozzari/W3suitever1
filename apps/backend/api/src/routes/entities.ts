@@ -2481,6 +2481,41 @@ router.get('/reference/payment-conditions', async (req, res) => {
   }
 });
 
+// ==================== VAT RATES (Reference Data) ====================
+
+/**
+ * GET /api/reference/vat-rates
+ * Get all VAT rates from public.vat_rates
+ */
+router.get('/reference/vat-rates', async (req, res) => {
+  try {
+    const rates = await db
+      .select()
+      .from(vatRates)
+      .where(eq(vatRates.isActive, true))
+      .orderBy(desc(vatRates.sortOrder));
+    
+    res.status(200).json({
+      success: true,
+      data: rates,
+      message: 'VAT rates retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+    
+  } catch (error: any) {
+    logger.error('Error retrieving VAT rates', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve VAT rates',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== VAT REGIMES (Reference Data) ====================
 
 /**

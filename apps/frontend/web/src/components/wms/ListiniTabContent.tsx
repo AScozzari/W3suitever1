@@ -17,8 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, FileText, Search, X, CalendarIcon, RefreshCw, AlertCircle, Eye, Trash2,
   Package, Smartphone, Tv, ShoppingBag, CreditCard, Building2, ChevronRight, ChevronLeft,
-  Check, Settings2, Layers, DollarSign, Calculator, ArrowRight, Wand2
+  Check, Settings2, Layers, DollarSign, Calculator, ArrowRight, Wand2, Info, Euro
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format, addMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -62,6 +64,24 @@ interface ProductPair {
   canvasProductName: string;
   canvasMonthlyFee: string;
   configurations: SalesConfiguration[];
+}
+
+interface NoPromoProduct {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  productBrand: string;
+  productCategory: string;
+  productType: string;
+  supplierSku: string;
+  useInternalSku: boolean;
+  purchaseCost: string;
+  purchaseVatRateId: string;
+  purchaseVatRegimeId: string;
+  salesPriceVatIncl: string;
+  salesVatRateId: string;
+  salesVatRegimeId: string;
 }
 
 const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: string; icon: any; color: string }[] = [
@@ -124,6 +144,11 @@ export default function ListiniTabContent() {
   const [physicalCategoryFilter, setPhysicalCategoryFilter] = useState<string>('all');
   const [canvasCategoryFilter, setCanvasCategoryFilter] = useState<string>('all');
 
+  // No Promo products state
+  const [noPromoProducts, setNoPromoProducts] = useState<NoPromoProduct[]>([]);
+  const [noPromoSearchTerm, setNoPromoSearchTerm] = useState('');
+  const [noPromoCategoryFilter, setNoPromoCategoryFilter] = useState<string>('all');
+
   // Versioning dialog state
   const [versioningDialogOpen, setVersioningDialogOpen] = useState(false);
   const [editingPriceListId, setEditingPriceListId] = useState<string | null>(null);
@@ -150,7 +175,23 @@ export default function ListiniTabContent() {
     queryKey: ['/api/wms/categories']
   });
 
+  const { data: vatRatesData = [] } = useQuery({
+    queryKey: ['/api/reference/vat-rates']
+  });
+
+  const { data: vatRegimesData = [] } = useQuery({
+    queryKey: ['/api/reference/vat-regimes']
+  });
+
+  const { data: supplierMappingsData = [] } = useQuery({
+    queryKey: ['/api/wms/product-supplier-mappings', priceListHeader.supplierId],
+    enabled: !!priceListHeader.supplierId
+  });
+
   const safeSuppliers = Array.isArray(suppliersData) ? suppliersData : [];
+  const safeVatRates = Array.isArray(vatRatesData) ? vatRatesData : [];
+  const safeVatRegimes = Array.isArray(vatRegimesData) ? vatRegimesData : [];
+  const safeSupplierMappings = Array.isArray(supplierMappingsData) ? supplierMappingsData : [];
   const safeFinancialEntities = Array.isArray(financialEntitiesData) ? financialEntitiesData : [];
   const safeProducts = Array.isArray(productsData) ? productsData : [];
   const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
@@ -238,10 +279,13 @@ export default function ListiniTabContent() {
     });
     setCurrentPair({ configurations: [] });
     setSavedPairs([]);
+    setNoPromoProducts([]);
     setPhysicalSearchTerm('');
     setCanvasSearchTerm('');
+    setNoPromoSearchTerm('');
     setPhysicalCategoryFilter('all');
     setCanvasCategoryFilter('all');
+    setNoPromoCategoryFilter('all');
   };
 
   const openWizard = () => {
@@ -359,17 +403,33 @@ export default function ListiniTabContent() {
 
   const handleSavePriceList = async () => {
     try {
+      // Prepare no_promo items with pricing info
+      const noPromoItems = priceListHeader.type === 'no_promo' 
+        ? noPromoProducts.map(p => ({
+            productId: p.productId,
+            supplierSku: p.useInternalSku ? p.productSku : p.supplierSku,
+            useInternalSku: p.useInternalSku,
+            purchaseCost: p.purchaseCost,
+            purchaseVatRateId: p.purchaseVatRateId,
+            purchaseVatRegimeId: p.purchaseVatRegimeId,
+            salesPriceVatIncl: p.salesPriceVatIncl,
+            salesVatRateId: p.salesVatRateId,
+            salesVatRegimeId: p.salesVatRegimeId
+          }))
+        : [];
+
       const payload = {
         header: {
           code: priceListHeader.code,
           name: priceListHeader.name,
           description: priceListHeader.description,
           type: priceListHeader.type,
+          supplierId: priceListHeader.supplierId || null,
           validFrom: priceListHeader.validFrom.toISOString(),
           validTo: priceListHeader.validTo?.toISOString() || null
         },
         pairs: priceListHeader.type === 'promo_canvas' ? savedPairs : [],
-        items: priceListHeader.type !== 'promo_canvas' ? [] : []
+        items: noPromoItems
       };
 
       await apiRequest('/api/wms/price-lists', {
@@ -377,6 +437,31 @@ export default function ListiniTabContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      // Save new SKU mappings for no_promo products
+      if (priceListHeader.type === 'no_promo' && priceListHeader.supplierId) {
+        const mappingsToSave = noPromoProducts.filter(p => !p.useInternalSku && p.supplierSku);
+        for (const product of mappingsToSave) {
+          try {
+            await apiRequest('/api/wms/product-supplier-mappings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                productId: product.productId,
+                supplierId: priceListHeader.supplierId,
+                supplierSku: product.supplierSku,
+                useInternalSku: false,
+                isPrimary: true
+              })
+            });
+          } catch (e) {
+            // Ignore errors for existing mappings
+            console.log('Mapping might already exist:', e);
+          }
+        }
+        // Invalidate mappings cache
+        queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
+      }
 
       await refetchPriceLists();
       closeWizard();
@@ -479,10 +564,18 @@ export default function ListiniTabContent() {
   const canProceed = () => {
     switch (wizardStep) {
       case 1: return true;
-      case 2: return priceListHeader.code && priceListHeader.name && priceListHeader.validFrom;
+      case 2: 
+        const baseValid = priceListHeader.code && priceListHeader.name && priceListHeader.validFrom;
+        if (priceListHeader.type === 'no_promo') {
+          return baseValid && !!priceListHeader.supplierId;
+        }
+        return baseValid;
       case 3: 
         if (priceListHeader.type === 'promo_canvas') {
           return savedPairs.length > 0;
+        }
+        if (priceListHeader.type === 'no_promo') {
+          return noPromoProducts.length > 0;
         }
         return true;
       default: return true;
@@ -627,21 +720,31 @@ export default function ListiniTabContent() {
 
         {(priceListHeader.type === 'no_promo' || priceListHeader.type === 'promo_device') && (
           <div className="space-y-1.5">
-            <Label>Fornitore</Label>
+            <Label>
+              Fornitore {priceListHeader.type === 'no_promo' && <span className="text-red-500">*</span>}
+            </Label>
             <Select 
               value={priceListHeader.supplierId} 
               onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val }))}
             >
-              <SelectTrigger data-testid="select-supplier">
-                <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+              <SelectTrigger 
+                data-testid="select-supplier"
+                className={priceListHeader.type === 'no_promo' && !priceListHeader.supplierId ? 'border-red-300' : ''}
+              >
+                <SelectValue placeholder={priceListHeader.type === 'no_promo' ? "Seleziona fornitore *" : "Seleziona fornitore (opzionale)"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nessun fornitore</SelectItem>
+                {priceListHeader.type !== 'no_promo' && (
+                  <SelectItem value="">Nessun fornitore</SelectItem>
+                )}
                 {safeSuppliers.map((s: any) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {priceListHeader.type === 'no_promo' && (
+              <p className="text-xs text-gray-500">Il fornitore è obbligatorio per i listini base</p>
+            )}
           </div>
         )}
       </div>
@@ -1124,12 +1227,356 @@ export default function ListiniTabContent() {
     </div>
   );
 
+  const getSupplierMapping = (productId: string) => {
+    return safeSupplierMappings.find((m: any) => m.productId === productId);
+  };
+
+  const getDefaultVatRate = () => {
+    return safeVatRates.find((r: any) => r.code === 'STANDARD' || r.rate === '22.00') || safeVatRates[0];
+  };
+
+  const getDefaultVatRegime = () => {
+    return safeVatRegimes.find((r: any) => r.code === 'ORDINARIO' || r.name?.includes('Ordinario')) || safeVatRegimes[0];
+  };
+
+  const calculateMargin = (purchaseCost: string, salesPriceVatIncl: string, vatRate: string = '22') => {
+    const cost = parseFloat(purchaseCost) || 0;
+    const priceIncl = parseFloat(salesPriceVatIncl) || 0;
+    const rate = parseFloat(vatRate) || 22;
+    const priceExcl = priceIncl / (1 + rate / 100);
+    if (cost === 0) return { margin: 0, percentage: 0 };
+    const margin = priceExcl - cost;
+    const percentage = (margin / cost) * 100;
+    return { margin, percentage };
+  };
+
+  const addProductToNoPromo = (product: any) => {
+    if (noPromoProducts.some(p => p.productId === product.id)) return;
+    
+    const mapping = getSupplierMapping(product.id);
+    const defaultVatRate = getDefaultVatRate();
+    const defaultVatRegime = getDefaultVatRegime();
+    
+    const newProduct: NoPromoProduct = {
+      id: crypto.randomUUID(),
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku,
+      productBrand: product.brand || '',
+      productCategory: safeCategories.find((c: any) => c.id === product.categoryId)?.name || '',
+      productType: product.type,
+      supplierSku: mapping?.supplierSku || '',
+      useInternalSku: mapping?.useInternalSku || !mapping?.supplierSku,
+      purchaseCost: '',
+      purchaseVatRateId: defaultVatRate?.id || '',
+      purchaseVatRegimeId: defaultVatRegime?.id || '',
+      salesPriceVatIncl: '',
+      salesVatRateId: defaultVatRate?.id || '',
+      salesVatRegimeId: defaultVatRegime?.id || ''
+    };
+    
+    setNoPromoProducts(prev => [...prev, newProduct]);
+  };
+
+  const updateNoPromoProduct = (id: string, field: keyof NoPromoProduct, value: any) => {
+    setNoPromoProducts(prev => prev.map(p => 
+      p.id === id ? { ...p, [field]: value } : p
+    ));
+  };
+
+  const removeNoPromoProduct = (id: string) => {
+    setNoPromoProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const filteredNoPromoProducts = useMemo(() => {
+    return safeProducts.filter((p: any) => {
+      if (noPromoCategoryFilter !== 'all' && p.categoryId !== noPromoCategoryFilter) return false;
+      if (noPromoSearchTerm) {
+        const search = noPromoSearchTerm.toLowerCase();
+        return p.name?.toLowerCase().includes(search) || 
+               p.sku?.toLowerCase().includes(search) ||
+               p.brand?.toLowerCase().includes(search);
+      }
+      return true;
+    });
+  }, [safeProducts, noPromoCategoryFilter, noPromoSearchTerm]);
+
+  const selectedSupplierName = useMemo(() => {
+    return safeSuppliers.find((s: any) => s.id === priceListHeader.supplierId)?.name || '';
+  }, [safeSuppliers, priceListHeader.supplierId]);
+
+  const renderStep3NoPromo = () => (
+    <TooltipProvider>
+      <div className="flex gap-4 h-[500px]">
+        {/* Left panel: Product search */}
+        <div className="w-1/3 flex flex-col border rounded-lg">
+          <div className="p-3 border-b bg-gray-50">
+            <h4 className="font-semibold text-sm mb-2">Catalogo Prodotti</h4>
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cerca prodotto..."
+                value={noPromoSearchTerm}
+                onChange={(e) => setNoPromoSearchTerm(e.target.value)}
+                className="pl-9 h-8 text-sm"
+                data-testid="input-search-nopromo"
+              />
+            </div>
+            <Select value={noPromoCategoryFilter} onValueChange={setNoPromoCategoryFilter}>
+              <SelectTrigger className="h-8 text-sm" data-testid="select-category-nopromo">
+                <SelectValue placeholder="Tutte le categorie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le categorie</SelectItem>
+                {safeCategories.map((cat: any) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-1">
+              {filteredNoPromoProducts.slice(0, 50).map((product: any) => {
+                const isAdded = noPromoProducts.some(p => p.productId === product.id);
+                return (
+                  <div
+                    key={product.id}
+                    className={`p-2 rounded border cursor-pointer transition-colors ${
+                      isAdded 
+                        ? 'bg-green-50 border-green-200 opacity-60' 
+                        : 'hover:bg-blue-50 border-gray-200'
+                    }`}
+                    onClick={() => !isAdded && addProductToNoPromo(product)}
+                    data-testid={`product-row-${product.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{product.name}</div>
+                        <div className="text-xs text-gray-500 flex gap-2">
+                          <span>{product.sku}</span>
+                          {product.brand && <span>• {product.brand}</span>}
+                        </div>
+                      </div>
+                      {isAdded ? (
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      ) : (
+                        <Plus className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredNoPromoProducts.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  Nessun prodotto trovato
+                </div>
+              )}
+              {filteredNoPromoProducts.length > 50 && (
+                <div className="text-center py-2 text-gray-400 text-xs">
+                  Mostrando 50 di {filteredNoPromoProducts.length} prodotti
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Right panel: Added products with pricing */}
+        <div className="flex-1 flex flex-col border rounded-lg">
+          <div className="p-3 border-b bg-gray-50 flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-sm">Prodotti nel Listino</h4>
+              <p className="text-xs text-gray-500">Fornitore: {selectedSupplierName}</p>
+            </div>
+            <Badge variant="secondary">{noPromoProducts.length} prodotti</Badge>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-3">
+              {noPromoProducts.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">Nessun prodotto aggiunto</p>
+                  <p className="text-xs">Seleziona prodotti dal catalogo</p>
+                </div>
+              ) : (
+                noPromoProducts.map((product) => {
+                  const selectedPurchaseVatRate = safeVatRates.find((r: any) => r.id === product.purchaseVatRateId);
+                  const selectedSalesVatRate = safeVatRates.find((r: any) => r.id === product.salesVatRateId);
+                  const { margin, percentage } = calculateMargin(
+                    product.purchaseCost, 
+                    product.salesPriceVatIncl,
+                    selectedSalesVatRate?.rate
+                  );
+                  
+                  return (
+                    <Card key={product.id} className="p-3" data-testid={`nopromo-product-${product.id}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="font-medium text-sm">{product.productName}</div>
+                          <div className="text-xs text-gray-500 flex gap-2">
+                            <span>SKU: {product.productSku}</span>
+                            {product.productBrand && <span>• {product.productBrand}</span>}
+                            <Badge variant="outline" className="text-[10px] h-4">{product.productType}</Badge>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => removeNoPromoProduct(product.id)}
+                          data-testid={`button-remove-nopromo-${product.id}`}
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+
+                      {/* SKU Fornitore */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">SKU Fornitore</Label>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              value={product.useInternalSku ? product.productSku : product.supplierSku}
+                              onChange={(e) => updateNoPromoProduct(product.id, 'supplierSku', e.target.value)}
+                              disabled={product.useInternalSku}
+                              className="h-8 text-sm flex-1"
+                              placeholder="SKU fornitore"
+                              data-testid={`input-supplier-sku-${product.id}`}
+                            />
+                            <div className="flex items-center gap-1">
+                              <Checkbox
+                                id={`use-internal-${product.id}`}
+                                checked={product.useInternalSku}
+                                onCheckedChange={(checked) => updateNoPromoProduct(product.id, 'useInternalSku', !!checked)}
+                                data-testid={`checkbox-internal-sku-${product.id}`}
+                              />
+                              <Label htmlFor={`use-internal-${product.id}`} className="text-xs whitespace-nowrap">Usa interno</Label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pricing row */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Costo acquisto */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs">Costo Acquisto</Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-gray-400 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Costo netto IVA esclusa</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="flex gap-1">
+                            <div className="relative flex-1">
+                              <Euro className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={product.purchaseCost}
+                                onChange={(e) => updateNoPromoProduct(product.id, 'purchaseCost', e.target.value)}
+                                className="h-8 text-sm pl-6"
+                                placeholder="0.00"
+                                data-testid={`input-purchase-cost-${product.id}`}
+                              />
+                            </div>
+                            <Select 
+                              value={product.purchaseVatRateId} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}
+                            >
+                              <SelectTrigger className="h-8 w-20 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
+                                <SelectValue placeholder="IVA" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRates.map((rate: any) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    {rate.rate}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Prezzo vendita */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs">Prezzo Vendita</Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-gray-400 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Prezzo al pubblico IVA inclusa</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="flex gap-1">
+                            <div className="relative flex-1">
+                              <Euro className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={product.salesPriceVatIncl}
+                                onChange={(e) => updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value)}
+                                className="h-8 text-sm pl-6"
+                                placeholder="0.00"
+                                data-testid={`input-sales-price-${product.id}`}
+                              />
+                            </div>
+                            <Select 
+                              value={product.salesVatRateId} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}
+                            >
+                              <SelectTrigger className="h-8 w-20 text-xs" data-testid={`select-sales-vat-${product.id}`}>
+                                <SelectValue placeholder="IVA" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRates.map((rate: any) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    {rate.rate}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Margine calcolato */}
+                        <div className="space-y-1">
+                          <Label className="text-xs">Margine</Label>
+                          <div className={`h-8 px-3 rounded border flex items-center justify-between text-sm ${
+                            margin > 0 ? 'bg-green-50 border-green-200' : 
+                            margin < 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                          }`}>
+                            <span className={margin > 0 ? 'text-green-700' : margin < 0 ? 'text-red-700' : 'text-gray-500'}>
+                              €{margin.toFixed(2)}
+                            </span>
+                            <span className={`text-xs ${margin > 0 ? 'text-green-600' : margin < 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                              {percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+
   const renderStep3Simple = () => (
     <div className="p-8 text-center">
       <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
       <h3 className="text-xl font-semibold mb-2">Aggiungi Prodotti al Listino</h3>
       <p className="text-gray-500 mb-6">
-        {priceListHeader.type === 'no_promo' && 'Aggiungi prodotti fisici, virtuali o servizi con prezzi standard'}
         {priceListHeader.type === 'canvas' && 'Aggiungi prodotti Canvas con canone mensile'}
         {priceListHeader.type === 'promo_device' && 'Aggiungi dispositivi con opzioni di rateizzazione'}
       </p>
@@ -1188,6 +1635,51 @@ export default function ListiniTabContent() {
                 </div>
               </div>
             ))}
+          </div>
+        </Card>
+      )}
+
+      {priceListHeader.type === 'no_promo' && noPromoProducts.length > 0 && (
+        <Card className="p-6">
+          <h4 className="font-semibold mb-4">Prodotti nel Listino ({noPromoProducts.length})</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 font-medium">Prodotto</th>
+                  <th className="text-left py-2 font-medium">SKU</th>
+                  <th className="text-right py-2 font-medium">Costo (IVA escl.)</th>
+                  <th className="text-right py-2 font-medium">Prezzo (IVA incl.)</th>
+                  <th className="text-right py-2 font-medium">Margine</th>
+                </tr>
+              </thead>
+              <tbody>
+                {noPromoProducts.map((product) => {
+                  const salesVatRate = safeVatRates.find((r: any) => r.id === product.salesVatRateId);
+                  const { margin, percentage } = calculateMargin(
+                    product.purchaseCost,
+                    product.salesPriceVatIncl,
+                    salesVatRate?.rate
+                  );
+                  return (
+                    <tr key={product.id} className="border-b last:border-0">
+                      <td className="py-2">
+                        <div className="font-medium">{product.productName}</div>
+                        <div className="text-xs text-gray-500">{product.productBrand}</div>
+                      </td>
+                      <td className="py-2 text-gray-600">
+                        {product.useInternalSku ? product.productSku : product.supplierSku}
+                      </td>
+                      <td className="py-2 text-right">€{parseFloat(product.purchaseCost || '0').toFixed(2)}</td>
+                      <td className="py-2 text-right">€{parseFloat(product.salesPriceVatIncl || '0').toFixed(2)}</td>
+                      <td className={`py-2 text-right ${margin > 0 ? 'text-green-600' : margin < 0 ? 'text-red-600' : ''}`}>
+                        €{margin.toFixed(2)} ({percentage.toFixed(1)}%)
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </Card>
       )}
@@ -1444,7 +1936,11 @@ export default function ListiniTabContent() {
               {wizardStep === 1 && renderStep1()}
               {wizardStep === 2 && renderStep2()}
               {wizardStep === 3 && (
-                priceListHeader.type === 'promo_canvas' ? renderStep3PromoCanvas() : renderStep3Simple()
+                priceListHeader.type === 'promo_canvas' 
+                  ? renderStep3PromoCanvas() 
+                  : priceListHeader.type === 'no_promo'
+                    ? renderStep3NoPromo()
+                    : renderStep3Simple()
               )}
               {wizardStep === 4 && renderStep4()}
             </div>
