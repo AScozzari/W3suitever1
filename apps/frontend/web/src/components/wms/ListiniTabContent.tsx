@@ -2150,7 +2150,7 @@ export default function ListiniTabContent() {
           </DialogHeader>
 
           <ScrollArea className="flex-1 min-h-0">
-            <div className="py-4 pr-4 h-full min-h-[calc(85vh-180px)]">
+            <div className="py-4 px-4 h-full min-h-[calc(85vh-180px)]">
               {wizardStep === 1 && renderStep1()}
               {wizardStep === 2 && renderStep2()}
               {wizardStep === 3 && (
