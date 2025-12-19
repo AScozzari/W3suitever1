@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It aims to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, aspiring to be a leading integrated business operations platform with a WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution. The platform aims to become a leading integrated business operations platform, characterized by a WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -134,20 +134,20 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism Design System, built with `shadcn/ui` and Radix UI primitives. Styling uses CSS variables and Tailwind CSS. The UI maintains a consistent monorepo layout with a fixed header, sidebar, white backgrounds, and build-time controlled UI zoom via `VITE_FONT_SCALE`.
+- **UI/UX Decisions**: The design system is based on WindTre Glassmorphism, utilizing `shadcn/ui` and Radix UI primitives for components. Styling is managed with CSS variables and Tailwind CSS. The UI maintains a consistent monorepo layout featuring a fixed header, sidebar, white backgrounds, and a build-time controlled UI zoom via `VITE_FONT_SCALE`.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
-    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), and an AI Voice Agent System with RAG.
-    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
-    - **Deployment & Governance**: Deployments managed via Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments follow specific build commands and environment variable handling.
-    - **Brand Interface**: Workflow Builder (n8n-style with Zustand and 106 MCP nodes) and a Master Catalog System (hybrid architecture using JSON files with Git versioning).
+    - **Database**: PostgreSQL is used with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
+    - **Security**: Implemented with OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system featuring Italian role templates.
+    - **Core Systems**: Includes Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), and an AI Voice Agent System with RAG capabilities.
+    - **CRM Module**: Provides a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **Deployment & Governance**: Deployments are managed via a Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments adhere to specific build commands and environment variable handling.
+    - **Brand Interface**: Includes a Workflow Builder (n8n-style, using Zustand with 106 MCP nodes) and a Master Catalog System (hybrid architecture using Git-versioned JSON files).
     - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports physical, virtual, canvas, and service products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable via a System Config page, featuring approval workflows and linked workflow templates.
-    - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
-    - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS for source types and product type associations.
-    - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governing team membership, type, request routing, and cross-store data access.
+    - **WMS Module (CQRS Architecture)**: Supports physical, virtual, canvas, and service products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. It includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable via a System Config page, featuring approval workflows and linked workflow templates.
+    - **System Config Page**: A modular settings dashboard located at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Business Drivers Architecture**: Multi-tenant drivers are stored in `w3suite.drivers` with RLS for source types and product type associations.
+    - **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team membership, type, request routing, and cross-store data access.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
