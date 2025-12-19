@@ -193,8 +193,18 @@ export default function ListiniTabContent() {
   });
 
   const safeSuppliers = Array.isArray(suppliersData) ? suppliersData : [];
-  const safeVatRates = Array.isArray(vatRatesData) ? vatRatesData : [];
-  const safeVatRegimes = Array.isArray(vatRegimesData) ? vatRegimesData : [];
+  // VAT rates endpoint returns { success: true, data: [...] }
+  const safeVatRates = Array.isArray(vatRatesData) 
+    ? vatRatesData 
+    : (vatRatesData as any)?.data && Array.isArray((vatRatesData as any).data) 
+      ? (vatRatesData as any).data 
+      : [];
+  // VAT regimes endpoint returns { success: true, data: [...] }
+  const safeVatRegimes = Array.isArray(vatRegimesData) 
+    ? vatRegimesData 
+    : (vatRegimesData as any)?.data && Array.isArray((vatRegimesData as any).data) 
+      ? (vatRegimesData as any).data 
+      : [];
   const safeSupplierMappings = Array.isArray(supplierMappingsData) ? supplierMappingsData : [];
   const safeFinancialEntities = Array.isArray(financialEntitiesData) ? financialEntitiesData : [];
   const safeProducts = Array.isArray(productsData) ? productsData : [];
@@ -1285,7 +1295,7 @@ export default function ListiniTabContent() {
   };
 
   const getDefaultVatRate = () => {
-    return safeVatRates.find((r: any) => r.code === 'STANDARD' || r.rate === '22.00') || safeVatRates[0];
+    return safeVatRates.find((r: any) => r.code === 'STD' || r.ratePercent === '22.00') || safeVatRates[0];
   };
 
   const getDefaultVatRegime = () => {
@@ -1516,7 +1526,7 @@ export default function ListiniTabContent() {
                   const { margin, percentage } = calculateMargin(
                     product.purchaseCost, 
                     product.salesPriceVatIncl,
-                    selectedSalesVatRate?.rate
+                    selectedSalesVatRate?.ratePercent
                   );
                   
                   return (
@@ -1547,8 +1557,8 @@ export default function ListiniTabContent() {
                         </Button>
                       </div>
 
-                      {/* Grid layout: 4 columns */}
-                      <div className="grid grid-cols-4 gap-4">
+                      {/* Grid layout: 5 columns for better alignment */}
+                      <div className="grid grid-cols-5 gap-3">
                         {/* SKU Fornitore */}
                         <div className="space-y-1.5">
                           <Label className="text-xs font-medium text-gray-600">SKU Fornitore</Label>
@@ -1560,111 +1570,168 @@ export default function ListiniTabContent() {
                             placeholder="SKU fornitore"
                             data-testid={`input-supplier-sku-${product.id}`}
                           />
-                          <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex items-center gap-1.5">
                             <Checkbox
                               id={`use-internal-${product.id}`}
                               checked={product.useInternalSku}
                               onCheckedChange={(checked) => updateNoPromoProduct(product.id, 'useInternalSku', !!checked)}
+                              className="h-3.5 w-3.5"
                               data-testid={`checkbox-internal-sku-${product.id}`}
                             />
-                            <Label htmlFor={`use-internal-${product.id}`} className="text-xs text-gray-500 cursor-pointer">Usa SKU interno</Label>
+                            <Label htmlFor={`use-internal-${product.id}`} className="text-[10px] text-gray-500 cursor-pointer">Usa interno</Label>
                           </div>
                         </div>
 
-                        {/* Costo acquisto */}
+                        {/* Costo acquisto + Aliquota + Regime */}
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-1">
-                            <Label className="text-xs font-medium text-gray-600">Costo Acquisto</Label>
+                            <Label className="text-xs font-medium text-gray-600">Costo Acq. (netto)</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Info className="h-3 w-3 text-gray-400 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Costo netto IVA esclusa</p>
+                                <p className="font-medium">Costo di acquisto</p>
+                                <p className="text-xs text-gray-300">Importo netto IVA esclusa</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
                           <div className="relative">
-                            <Euro className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">€</span>
                             <Input
                               type="number"
                               step="0.01"
                               value={product.purchaseCost}
                               onChange={(e) => updateNoPromoProduct(product.id, 'purchaseCost', e.target.value)}
-                              className="h-9 text-sm pl-8"
+                              className="h-9 text-sm pl-7"
                               placeholder="0.00"
                               data-testid={`input-purchase-cost-${product.id}`}
                             />
                           </div>
-                          <Select 
-                            value={product.purchaseVatRateId} 
-                            onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}
-                          >
-                            <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
-                              <SelectValue placeholder="Aliquota IVA" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {safeVatRates.map((rate: any) => (
-                                <SelectItem key={rate.id} value={rate.id}>
-                                  {rate.rate}%
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-1">
+                            <Select 
+                              value={product.purchaseVatRateId} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px] flex-1" data-testid={`select-purchase-vat-${product.id}`}>
+                                <SelectValue placeholder="IVA %" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRates.map((rate: any) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    <span className="font-medium">{rate.ratePercent}%</span>
+                                    <span className="text-gray-400 ml-1 text-[10px]">{rate.name}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
-                        {/* Prezzo vendita */}
+                        {/* Regime fiscale acquisto */}
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-1">
-                            <Label className="text-xs font-medium text-gray-600">Prezzo Vendita</Label>
+                            <Label className="text-xs font-medium text-gray-600">Regime Acq.</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Info className="h-3 w-3 text-gray-400 cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Prezzo al pubblico IVA inclusa</p>
+                                <p className="font-medium">Regime Fiscale Acquisto</p>
+                                <p className="text-xs text-gray-300">Regime IVA applicato all'acquisto</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <Select 
+                            value={product.purchaseVatRegimeId || ''} 
+                            onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}
+                          >
+                            <SelectTrigger className="h-9 text-xs" data-testid={`select-purchase-regime-${product.id}`}>
+                              <SelectValue placeholder="Regime fiscale" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {safeVatRegimes.map((regime: any) => (
+                                <SelectItem key={regime.id} value={regime.id}>
+                                  <span className="font-medium">{regime.code}</span>
+                                  <span className="text-gray-400 ml-1 text-[10px]">{regime.name}</span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="h-7"></div>
+                        </div>
+
+                        {/* Prezzo vendita + Aliquota + Regime */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs font-medium text-gray-600">Prezzo Vend. (IVA incl.)</Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-gray-400 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="font-medium">Prezzo di vendita</p>
+                                <p className="text-xs text-gray-300">Prezzo al pubblico IVA inclusa</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
                           <div className="relative">
-                            <Euro className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">€</span>
                             <Input
                               type="number"
                               step="0.01"
                               value={product.salesPriceVatIncl}
                               onChange={(e) => updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value)}
-                              className="h-9 text-sm pl-8"
+                              className="h-9 text-sm pl-7"
                               placeholder="0.00"
                               data-testid={`input-sales-price-${product.id}`}
                             />
                           </div>
-                          <Select 
-                            value={product.salesVatRateId} 
-                            onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}
-                          >
-                            <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-${product.id}`}>
-                              <SelectValue placeholder="Aliquota IVA" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {safeVatRates.map((rate: any) => (
-                                <SelectItem key={rate.id} value={rate.id}>
-                                  {rate.rate}%
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-1">
+                            <Select 
+                              value={product.salesVatRateId} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px] flex-1" data-testid={`select-sales-vat-${product.id}`}>
+                                <SelectValue placeholder="IVA %" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRates.map((rate: any) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    <span className="font-medium">{rate.ratePercent}%</span>
+                                    <span className="text-gray-400 ml-1 text-[10px]">{rate.name}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select 
+                              value={product.salesVatRegimeId || ''} 
+                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px] flex-1" data-testid={`select-sales-regime-${product.id}`}>
+                                <SelectValue placeholder="Regime" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeVatRegimes.map((regime: any) => (
+                                  <SelectItem key={regime.id} value={regime.id}>
+                                    <span className="font-medium">{regime.code}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
-                        {/* Margine calcolato */}
+                        {/* Margine calcolato - aligned height */}
                         <div className="space-y-1.5">
                           <Label className="text-xs font-medium text-gray-600">Margine</Label>
-                          <div className={`h-9 px-3 rounded-md border-2 flex items-center justify-center text-sm font-semibold ${
+                          <div className={`h-9 px-2 rounded-md border-2 flex items-center justify-center text-sm font-bold ${
                             margin > 0 ? 'bg-green-50 border-green-300 text-green-700' : 
                             margin < 0 ? 'bg-red-50 border-red-300 text-red-700' : 'bg-gray-50 border-gray-200 text-gray-500'
                           }`}>
                             €{margin.toFixed(2)}
                           </div>
-                          <div className={`h-8 px-3 rounded-md flex items-center justify-center text-sm ${
+                          <div className={`h-7 px-2 rounded-md flex items-center justify-center text-xs font-semibold ${
                             margin > 0 ? 'bg-green-100 text-green-700' : 
                             margin < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
                           }`}>
@@ -1770,7 +1837,7 @@ export default function ListiniTabContent() {
                   const { margin, percentage } = calculateMargin(
                     product.purchaseCost,
                     product.salesPriceVatIncl,
-                    salesVatRate?.rate
+                    salesVatRate?.ratePercent
                   );
                   return (
                     <tr key={product.id} className="border-b last:border-0">
