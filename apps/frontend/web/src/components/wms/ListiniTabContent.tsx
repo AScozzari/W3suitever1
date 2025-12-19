@@ -148,6 +148,10 @@ export default function ListiniTabContent() {
   const [noPromoProducts, setNoPromoProducts] = useState<NoPromoProduct[]>([]);
   const [noPromoSearchTerm, setNoPromoSearchTerm] = useState('');
   const [noPromoCategoryFilter, setNoPromoCategoryFilter] = useState<string>('all');
+  const [noPromoTypeFilter, setNoPromoTypeFilter] = useState<string>('PHYSICAL');
+
+  // Physical product type filter for Canvas Device
+  const [physicalTypeFilter, setPhysicalTypeFilter] = useState<string>('PHYSICAL');
 
   // Versioning dialog state
   const [versioningDialogOpen, setVersioningDialogOpen] = useState(false);
@@ -223,14 +227,22 @@ export default function ListiniTabContent() {
     return `${prefix}${nextNumber}`;
   };
 
+  // Products filtered by type for Canvas Device physical section
   const physicalProducts = useMemo(() => 
-    safeProducts.filter((p: any) => p.type === 'PHYSICAL'),
-    [safeProducts]
+    safeProducts.filter((p: any) => p.type === physicalTypeFilter),
+    [safeProducts, physicalTypeFilter]
   );
 
+  // Canvas products for Canvas/Canvas Device canvas section
   const canvasProducts = useMemo(() => 
     safeProducts.filter((p: any) => p.type === 'CANVAS'),
     [safeProducts]
+  );
+
+  // Products filtered by type for No Promo (Standard) listino
+  const noPromoFilteredByType = useMemo(() => 
+    safeProducts.filter((p: any) => p.type === noPromoTypeFilter),
+    [safeProducts, noPromoTypeFilter]
   );
 
   const filteredPhysicalProducts = useMemo(() => {
@@ -291,6 +303,8 @@ export default function ListiniTabContent() {
     setPhysicalCategoryFilter('all');
     setCanvasCategoryFilter('all');
     setNoPromoCategoryFilter('all');
+    setNoPromoTypeFilter('PHYSICAL');
+    setPhysicalTypeFilter('PHYSICAL');
   };
 
   const openWizard = () => {
@@ -816,44 +830,69 @@ export default function ListiniTabContent() {
                 />
               </div>
 
+              {/* Type filter for physical products */}
+              <Select value={physicalTypeFilter} onValueChange={setPhysicalTypeFilter}>
+                <SelectTrigger data-testid="select-physical-type">
+                  <SelectValue placeholder="Tipo prodotto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PHYSICAL">Fisico</SelectItem>
+                  <SelectItem value="VIRTUAL">Digitale</SelectItem>
+                  <SelectItem value="SERVICE">Servizio</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Select value={physicalCategoryFilter} onValueChange={setPhysicalCategoryFilter}>
                 <SelectTrigger data-testid="select-physical-category">
                   <SelectValue placeholder="Tutte le categorie" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories.filter((c: any) => c.productType === 'PHYSICAL').map((c: any) => (
+                  {safeCategories.filter((c: any) => c.productType === physicalTypeFilter).map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <ScrollArea className="h-[300px] border rounded-lg">
+              <ScrollArea className="h-[280px] border rounded-lg">
                 {filteredPhysicalProducts.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                     <p>{physicalSearchTerm.length < 2 && physicalCategoryFilter === 'all' 
                       ? 'Digita almeno 2 caratteri o seleziona una categoria' 
-                      : 'Nessun prodotto fisico trovato'}</p>
+                      : 'Nessun prodotto trovato'}</p>
                   </div>
                 ) : (
-                  <div className="p-2 space-y-2">
-                    {filteredPhysicalProducts.map((product: any) => (
-                      <div
-                        key={product.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-all ${
-                          currentPair.physicalProductId === product.id 
-                            ? 'bg-orange-100 border-2 border-orange-500' 
-                            : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                        }`}
-                        onClick={() => selectPhysicalProduct(product)}
-                        data-testid={`product-physical-${product.id}`}
-                      >
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-sm text-gray-500">SKU: {product.sku}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <TooltipProvider>
+                    <div className="p-2 space-y-2">
+                      {filteredPhysicalProducts.map((product: any) => (
+                        <Tooltip key={product.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                currentPair.physicalProductId === product.id 
+                                  ? 'bg-orange-100 border-2 border-orange-500' 
+                                  : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                              }`}
+                              onClick={() => selectPhysicalProduct(product)}
+                              data-testid={`product-physical-${product.id}`}
+                            >
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                                <span className="font-mono">{product.sku}</span>
+                                {product.brand && <span>• {product.brand}</span>}
+                                {product.color && <span className="text-blue-600">• {product.color}</span>}
+                                {product.memory && <span className="text-purple-600">• {product.memory}</span>}
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="bg-gray-900 text-white p-3">
+                            {renderProductTooltip(product)}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </TooltipProvider>
                 )}
               </ScrollArea>
             </div>
@@ -889,7 +928,7 @@ export default function ListiniTabContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories.filter((c: any) => c.productType === 'CANVAS' || c.productType === 'SERVICE').map((c: any) => (
+                  {safeCategories.filter((c: any) => c.productType === 'CANVAS').map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
                 </SelectContent>
@@ -904,25 +943,34 @@ export default function ListiniTabContent() {
                       : 'Nessun prodotto Canvas trovato'}</p>
                   </div>
                 ) : (
-                  <div className="p-2 space-y-2">
-                    {filteredCanvasProducts.map((product: any) => (
-                      <div
-                        key={product.id}
-                        className={`p-3 rounded-lg cursor-pointer transition-all ${
-                          currentPair.canvasProductId === product.id 
-                            ? 'bg-purple-100 border-2 border-purple-500' 
-                            : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                        }`}
-                        onClick={() => selectCanvasProduct(product)}
-                        data-testid={`product-canvas-${product.id}`}
-                      >
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {product.monthlyFee ? `€${product.monthlyFee}/mese` : 'Canone da definire'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <TooltipProvider>
+                    <div className="p-2 space-y-2">
+                      {filteredCanvasProducts.map((product: any) => (
+                        <Tooltip key={product.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                currentPair.canvasProductId === product.id 
+                                  ? 'bg-purple-100 border-2 border-purple-500' 
+                                  : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                              }`}
+                              onClick={() => selectCanvasProduct(product)}
+                              data-testid={`product-canvas-${product.id}`}
+                            >
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                                <span className="font-mono">{product.sku}</span>
+                                {product.monthlyFee && <span className="text-green-600">€{product.monthlyFee}/mese</span>}
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="bg-gray-900 text-white p-3">
+                            {renderProductTooltip(product)}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </TooltipProvider>
                 )}
               </ScrollArea>
             </div>
@@ -1299,7 +1347,8 @@ export default function ListiniTabContent() {
       return [];
     }
     
-    return safeProducts.filter((p: any) => {
+    // Use type-filtered products instead of all products
+    return noPromoFilteredByType.filter((p: any) => {
       if (noPromoCategoryFilter !== 'all' && p.categoryId !== noPromoCategoryFilter) return false;
       if (noPromoSearchTerm && noPromoSearchTerm.length >= 2) {
         const search = noPromoSearchTerm.toLowerCase();
@@ -1309,11 +1358,34 @@ export default function ListiniTabContent() {
       }
       return noPromoCategoryFilter !== 'all'; // Show only if category filter is active
     });
-  }, [safeProducts, noPromoCategoryFilter, noPromoSearchTerm]);
+  }, [noPromoFilteredByType, noPromoCategoryFilter, noPromoSearchTerm]);
 
   const selectedSupplierName = useMemo(() => {
     return safeSuppliers.find((s: any) => s.id === priceListHeader.supplierId)?.name || '';
   }, [safeSuppliers, priceListHeader.supplierId]);
+
+  // Helper to render product tooltip content
+  const renderProductTooltip = (product: any) => (
+    <div className="text-xs space-y-1 max-w-xs">
+      <div className="font-semibold text-sm border-b pb-1 mb-1">{product.name}</div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+        <span className="text-gray-400">SKU:</span><span className="font-mono">{product.sku || '-'}</span>
+        <span className="text-gray-400">Brand:</span><span>{product.brand || '-'}</span>
+        <span className="text-gray-400">Modello:</span><span>{product.model || '-'}</span>
+        <span className="text-gray-400">Colore:</span><span>{product.color || '-'}</span>
+        <span className="text-gray-400">Memoria:</span><span>{product.memory || '-'}</span>
+        <span className="text-gray-400">EAN:</span><span className="font-mono">{product.ean || '-'}</span>
+        <span className="text-gray-400">Tipo:</span><span>{product.type || '-'}</span>
+        <span className="text-gray-400">Stato:</span><span>{product.status || '-'}</span>
+      </div>
+      {product.description && (
+        <div className="pt-1 border-t mt-1">
+          <span className="text-gray-400">Descrizione:</span>
+          <p className="text-gray-300 line-clamp-2">{product.description}</p>
+        </div>
+      )}
+    </div>
+  );
 
   const renderStep3NoPromo = () => (
     <TooltipProvider>
@@ -1325,22 +1397,36 @@ export default function ListiniTabContent() {
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Cerca prodotto..."
+                placeholder="Cerca prodotto o scansiona barcode..."
                 value={noPromoSearchTerm}
                 onChange={(e) => setNoPromoSearchTerm(e.target.value)}
                 className="pl-9 h-8 text-sm"
                 data-testid="input-search-nopromo"
               />
             </div>
+            {/* Type filter */}
+            <Select value={noPromoTypeFilter} onValueChange={setNoPromoTypeFilter}>
+              <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-type-nopromo">
+                <SelectValue placeholder="Tipo prodotto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PHYSICAL">Fisico</SelectItem>
+                <SelectItem value="VIRTUAL">Digitale</SelectItem>
+                <SelectItem value="SERVICE">Servizio</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* Category filter */}
             <Select value={noPromoCategoryFilter} onValueChange={setNoPromoCategoryFilter}>
               <SelectTrigger className="h-8 text-sm" data-testid="select-category-nopromo">
                 <SelectValue placeholder="Tutte le categorie" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le categorie</SelectItem>
-                {safeCategories.map((cat: any) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
-                ))}
+                {safeCategories
+                  .filter((cat: any) => cat.productType === noPromoTypeFilter)
+                  .map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -1349,31 +1435,39 @@ export default function ListiniTabContent() {
               {filteredNoPromoProducts.slice(0, 50).map((product: any) => {
                 const isAdded = noPromoProducts.some(p => p.productId === product.id);
                 return (
-                  <div
-                    key={product.id}
-                    className={`p-2 rounded border cursor-pointer transition-colors ${
-                      isAdded 
-                        ? 'bg-green-50 border-green-200 opacity-60' 
-                        : 'hover:bg-blue-50 border-gray-200'
-                    }`}
-                    onClick={() => !isAdded && addProductToNoPromo(product)}
-                    data-testid={`product-row-${product.id}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{product.name}</div>
-                        <div className="text-xs text-gray-500 flex gap-2">
-                          <span>{product.sku}</span>
-                          {product.brand && <span>• {product.brand}</span>}
+                  <Tooltip key={product.id}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`p-2 rounded border cursor-pointer transition-colors ${
+                          isAdded 
+                            ? 'bg-green-50 border-green-200 opacity-60' 
+                            : 'hover:bg-blue-50 border-gray-200'
+                        }`}
+                        onClick={() => !isAdded && addProductToNoPromo(product)}
+                        data-testid={`product-row-${product.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{product.name}</div>
+                            <div className="text-xs text-gray-500 flex flex-wrap gap-x-2 gap-y-0.5">
+                              <span className="font-mono">{product.sku}</span>
+                              {product.brand && <span>• {product.brand}</span>}
+                              {product.color && <span className="text-blue-600">• {product.color}</span>}
+                              {product.memory && <span className="text-purple-600">• {product.memory}</span>}
+                            </div>
+                          </div>
+                          {isAdded ? (
+                            <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Plus className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                          )}
                         </div>
                       </div>
-                      {isAdded ? (
-                        <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      ) : (
-                        <Plus className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                      )}
-                    </div>
-                  </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="bg-gray-900 text-white p-3">
+                      {renderProductTooltip(product)}
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
               {filteredNoPromoProducts.length === 0 && (
