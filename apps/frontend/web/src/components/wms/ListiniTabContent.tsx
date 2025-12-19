@@ -531,24 +531,24 @@ export default function ListiniTabContent() {
   );
 
   const renderStep2 = () => (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full justify-between gap-6">
+      {/* Sezione superiore: Codice e Nome */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label htmlFor="code" className="text-sm">Codice Listino *</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="code">Codice Listino *</Label>
           <div className="flex gap-2">
             <Input
               id="code"
               value={priceListHeader.code}
               onChange={(e) => setPriceListHeader(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
               placeholder="es. LST-2025-001"
-              className="flex-1 h-9"
+              className="flex-1"
               data-testid="input-pricelist-code"
             />
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className="h-9 w-9"
               onClick={() => setPriceListHeader(prev => ({ ...prev, code: generatePriceListCode() }))}
               title="Genera codice automatico"
               data-testid="button-generate-code"
@@ -557,92 +557,94 @@ export default function ListiniTabContent() {
             </Button>
           </div>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="name" className="text-sm">Nome Listino *</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="name">Nome Listino *</Label>
           <Input
             id="name"
             value={priceListHeader.name}
             onChange={(e) => setPriceListHeader(prev => ({ ...prev, name: e.target.value }))}
             placeholder="es. Promo Natale 2025"
-            className="h-9"
             data-testid="input-pricelist-name"
           />
         </div>
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="description" className="text-sm">Descrizione</Label>
+      {/* Sezione centrale: Descrizione (si espande) */}
+      <div className="flex-1 flex flex-col space-y-1.5">
+        <Label htmlFor="description">Descrizione</Label>
         <Textarea
           id="description"
           value={priceListHeader.description}
           onChange={(e) => setPriceListHeader(prev => ({ ...prev, description: e.target.value }))}
           placeholder="Descrizione opzionale del listino..."
-          rows={2}
-          className="resize-none"
+          className="flex-1 min-h-[80px] resize-none"
           data-testid="input-pricelist-description"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Valido Dal *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-from">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {priceListHeader.validFrom ? format(priceListHeader.validFrom, 'dd/MM/yyyy', { locale: it }) : 'Seleziona...'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start" sideOffset={4} style={{ zIndex: 9999, pointerEvents: 'auto' }}>
-              <Calendar
-                mode="single"
-                selected={priceListHeader.validFrom}
-                onSelect={(date) => date && setPriceListHeader(prev => ({ ...prev, validFrom: date }))}
-                locale={it}
-              />
-            </PopoverContent>
-          </Popover>
+      {/* Sezione inferiore: Date e Fornitore */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Valido Dal *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-from">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {priceListHeader.validFrom ? format(priceListHeader.validFrom, 'dd/MM/yyyy', { locale: it }) : 'Seleziona...'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start" sideOffset={4} style={{ zIndex: 9999, pointerEvents: 'auto' }}>
+                <Calendar
+                  mode="single"
+                  selected={priceListHeader.validFrom}
+                  onSelect={(date) => date && setPriceListHeader(prev => ({ ...prev, validFrom: date }))}
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Valido Fino A</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-to">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {priceListHeader.validTo ? format(priceListHeader.validTo, 'dd/MM/yyyy', { locale: it }) : 'Nessuna scadenza'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start" sideOffset={4} style={{ zIndex: 9999, pointerEvents: 'auto' }}>
+                <Calendar
+                  mode="single"
+                  selected={priceListHeader.validTo || undefined}
+                  onSelect={(date) => setPriceListHeader(prev => ({ ...prev, validTo: date || null }))}
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-        <div>
-          <Label>Valido Fino A</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-to">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {priceListHeader.validTo ? format(priceListHeader.validTo, 'dd/MM/yyyy', { locale: it }) : 'Nessuna scadenza'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start" sideOffset={4} style={{ zIndex: 9999, pointerEvents: 'auto' }}>
-              <Calendar
-                mode="single"
-                selected={priceListHeader.validTo || undefined}
-                onSelect={(date) => setPriceListHeader(prev => ({ ...prev, validTo: date || null }))}
-                locale={it}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
 
-      {(priceListHeader.type === 'no_promo' || priceListHeader.type === 'promo_device') && (
-        <div>
-          <Label>Fornitore</Label>
-          <Select 
-            value={priceListHeader.supplierId} 
-            onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val }))}
-          >
-            <SelectTrigger data-testid="select-supplier">
-              <SelectValue placeholder="Seleziona fornitore (opzionale)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nessun fornitore</SelectItem>
-              {safeSuppliers.map((s: any) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+        {(priceListHeader.type === 'no_promo' || priceListHeader.type === 'promo_device') && (
+          <div className="space-y-1.5">
+            <Label>Fornitore</Label>
+            <Select 
+              value={priceListHeader.supplierId} 
+              onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val }))}
+            >
+              <SelectTrigger data-testid="select-supplier">
+                <SelectValue placeholder="Seleziona fornitore (opzionale)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nessun fornitore</SelectItem>
+                {safeSuppliers.map((s: any) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -1438,7 +1440,7 @@ export default function ListiniTabContent() {
           </DialogHeader>
 
           <ScrollArea className="flex-1 min-h-0">
-            <div className="py-4 pr-4">
+            <div className="py-4 pr-4 h-full min-h-[calc(85vh-180px)]">
               {wizardStep === 1 && renderStep1()}
               {wizardStep === 2 && renderStep2()}
               {wizardStep === 3 && (
