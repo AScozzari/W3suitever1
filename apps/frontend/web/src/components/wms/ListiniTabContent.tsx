@@ -1441,10 +1441,10 @@ export default function ListiniTabContent() {
 
   const renderStep3NoPromo = () => (
     <TooltipProvider>
-      <div className="flex gap-4 h-[500px]">
-        {/* Left panel: Product search */}
-        <div className="w-1/3 flex flex-col border rounded-lg">
-          <div className="p-3 border-b bg-gray-50">
+      <div className="flex gap-4 h-full">
+        {/* Left panel: Product search - full height with independent scroll */}
+        <div className="w-1/3 flex flex-col border rounded-lg min-h-0">
+          <div className="p-3 border-b bg-gray-50 shrink-0">
             <h4 className="font-semibold text-sm mb-2">Catalogo Prodotti</h4>
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1482,7 +1482,7 @@ export default function ListiniTabContent() {
               </SelectContent>
             </Select>
           </div>
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-2 space-y-1">
               {filteredNoPromoProducts.slice(0, 50).map((product: any) => {
                 const isAdded = noPromoProducts.some(p => p.productId === product.id);
@@ -1541,19 +1541,19 @@ export default function ListiniTabContent() {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
-        {/* Right panel: Added products with pricing */}
-        <div className="flex-1 flex flex-col border rounded-lg">
-          <div className="p-3 border-b bg-gray-50 flex items-center justify-between">
+        {/* Right panel: Added products with collapsible rows - full height with independent scroll */}
+        <div className="flex-1 flex flex-col border rounded-lg min-h-0">
+          <div className="p-3 border-b bg-gray-50 flex items-center justify-between shrink-0">
             <div>
               <h4 className="font-semibold text-sm">Prodotti nel Listino</h4>
               <p className="text-xs text-gray-500">Fornitore: {selectedSupplierName}</p>
             </div>
             <Badge variant="secondary">{noPromoProducts.length} prodotti</Badge>
           </div>
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-3 space-y-3">
               {noPromoProducts.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
@@ -1563,295 +1563,228 @@ export default function ListiniTabContent() {
                 </div>
               ) : (
                 noPromoProducts.map((product) => {
-                  const selectedPurchaseVatRate = safeVatRates.find((r: any) => r.id === product.purchaseVatRateId);
                   const selectedSalesVatRate = safeVatRates.find((r: any) => r.id === product.salesVatRateId);
                   const { margin, percentage } = calculateMargin(
                     product.purchaseCost, 
                     product.salesPriceVatIncl,
                     selectedSalesVatRate?.ratePercent
                   );
-                  
-                  // Get full product info from catalog
                   const fullProductInfo = safeProducts.find((p: any) => p.id === product.productId);
+                  const completionStatus = getProductCompletionStatus(product);
+                  const isExpanded = expandedProductRows.has(product.id);
                   
                   return (
-                    <Card key={product.id} className="p-5 rounded-xl border border-gray-200 bg-white" data-testid={`nopromo-product-${product.id}`}>
-                      {/* HEADER: Complete product anagrafica */}
-                      <div className="flex items-start justify-between mb-5 pb-4 border-b border-gray-100">
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center border border-gray-200">
-                            <Package className="h-6 w-6 text-gray-500" />
+                    <Collapsible 
+                      key={product.id} 
+                      open={isExpanded}
+                      onOpenChange={() => toggleProductRow(product.id)}
+                      className="border rounded-lg bg-white overflow-hidden"
+                      data-testid={`nopromo-product-${product.id}`}
+                    >
+                      {/* COLLAPSIBLE HEADER - Compact row with full anagrafica */}
+                      <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors">
+                        {/* Completion Badge */}
+                        <div className={`w-3 h-3 rounded-full shrink-0 ${
+                          completionStatus === 'complete' ? 'bg-emerald-500' :
+                          completionStatus === 'partial' ? 'bg-amber-500' :
+                          'bg-red-400'
+                        }`} data-testid={`badge-status-${product.id}`} />
+                        
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-sm text-gray-900 truncate">{product.productName}</span>
+                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 bg-blue-50 text-blue-700 border-blue-200">
+                              {product.productType}
+                            </Badge>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            {/* Row 1: Name + Status + Type badges */}
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold text-lg text-gray-900 truncate">{product.productName}</h3>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs shrink-0 ${
-                                  fullProductInfo?.status === 'ACTIVE' ? 'bg-green-50 text-green-700 border-green-200' :
-                                  fullProductInfo?.status === 'DRAFT' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                  'bg-gray-50 text-gray-600 border-gray-200'
-                                }`}
-                              >
-                                {fullProductInfo?.status || 'ACTIVE'}
-                              </Badge>
-                              <Badge className="text-xs shrink-0 bg-blue-50 text-blue-700 border border-blue-200">
-                                {product.productType}
-                              </Badge>
-                            </div>
-                            {/* Row 2: Metadata grid */}
-                            <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-4 gap-y-1 text-sm">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-gray-400 text-xs">SKU:</span>
-                                <span className="font-mono text-gray-700 truncate">{product.productSku}</span>
-                              </div>
-                              {product.productBrand && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-400 text-xs">Brand:</span>
-                                  <span className="text-gray-700 font-medium">{product.productBrand}</span>
-                                </div>
-                              )}
-                              {fullProductInfo?.memory && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-400 text-xs">Memoria:</span>
-                                  <span className="text-purple-600 font-medium">{fullProductInfo.memory}</span>
-                                </div>
-                              )}
-                              {fullProductInfo?.color && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-400 text-xs">Colore:</span>
-                                  <span className="text-blue-600 font-medium">{fullProductInfo.color}</span>
-                                </div>
-                              )}
-                              {fullProductInfo?.ean && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-400 text-xs">EAN:</span>
-                                  <span className="font-mono text-gray-600 text-xs">{fullProductInfo.ean}</span>
-                                </div>
-                              )}
-                              {product.productCategory && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-400 text-xs">Categoria:</span>
-                                  <span className="text-gray-700">{product.productCategory}</span>
-                                </div>
-                              )}
-                            </div>
-                            {/* Row 3: Description (optional, truncated) */}
-                            {fullProductInfo?.description && (
-                              <p className="text-xs text-gray-500 mt-2 line-clamp-1">{fullProductInfo.description}</p>
-                            )}
+                          <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap mt-0.5">
+                            <span className="font-mono">{product.productSku}</span>
+                            {product.productBrand && <span>• {product.productBrand}</span>}
+                            {fullProductInfo?.memory && <span className="text-purple-600">• {fullProductInfo.memory}</span>}
+                            {fullProductInfo?.color && <span className="text-blue-600">• {fullProductInfo.color}</span>}
+                            {fullProductInfo?.ean && <span className="text-gray-400">• EAN: {fullProductInfo.ean}</span>}
                           </div>
                         </div>
+
+                        {/* Margin Preview (when collapsed) */}
+                        {!isExpanded && completionStatus === 'complete' && (
+                          <div className={`text-sm font-semibold px-2 py-0.5 rounded ${
+                            margin > 0 ? 'text-emerald-700 bg-emerald-50' : 
+                            margin < 0 ? 'text-red-700 bg-red-50' : 'text-gray-600'
+                          }`}>
+                            €{margin.toFixed(2)}
+                          </div>
+                        )}
+
+                        {/* Toggle Button */}
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid={`button-expand-${product.id}`}>
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </CollapsibleTrigger>
+
+                        {/* Delete Button */}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 hover:bg-red-50 shrink-0 ml-2"
-                          onClick={() => removeNoPromoProduct(product.id)}
+                          className="h-8 w-8 hover:bg-red-50 shrink-0"
+                          onClick={(e) => { e.stopPropagation(); removeNoPromoProduct(product.id); }}
                           data-testid={`button-remove-nopromo-${product.id}`}
                         >
                           <X className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>
 
-                      {/* ROW 1: SKU Fornitore + Usa SKU interno (full width) */}
-                      <div className="flex items-end gap-4 mb-5">
-                        <div className="flex-1 max-w-sm">
-                          <Label className="text-sm font-medium text-gray-700 mb-1.5 block">SKU Fornitore</Label>
-                          <Input
-                            value={product.useInternalSku ? product.productSku : product.supplierSku}
-                            onChange={(e) => updateNoPromoProduct(product.id, 'supplierSku', e.target.value)}
-                            disabled={product.useInternalSku}
-                            className="h-10 text-sm font-mono"
-                            placeholder="Inserisci SKU fornitore"
-                            data-testid={`input-supplier-sku-${product.id}`}
-                          />
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors">
-                          <Checkbox
-                            id={`use-internal-${product.id}`}
-                            checked={product.useInternalSku}
-                            onCheckedChange={(checked) => updateNoPromoProduct(product.id, 'useInternalSku', !!checked)}
-                            data-testid={`checkbox-internal-sku-${product.id}`}
-                          />
-                          <span className="text-sm text-gray-700">Usa SKU interno</span>
-                        </label>
-                      </div>
-
-                      {/* ROW 2: 2-column pricing grid */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-                        {/* LEFT COLUMN: Costo Acquisto */}
-                        <div className="rounded-lg border border-gray-200 bg-slate-50/70 p-4 space-y-4">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-gray-800">Costo Acquisto</h4>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="bg-gray-900 text-white">
-                                <p className="text-xs">Prezzo netto IVA esclusa</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          {/* Euro input */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500">Importo (€)</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg font-semibold">€</span>
+                      {/* COLLAPSIBLE CONTENT - Pricing fields in compact grid */}
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 pt-0 space-y-3 border-t bg-gray-50/50">
+                          {/* SKU Fornitore Row */}
+                          <div className="flex items-center gap-3 pt-3">
+                            <div className="flex-1 max-w-xs">
+                              <Label className="text-xs text-gray-600 mb-1 block">SKU Fornitore</Label>
                               <Input
-                                type="number"
-                                step="0.01"
-                                value={product.purchaseCost}
-                                onChange={(e) => updateNoPromoProduct(product.id, 'purchaseCost', e.target.value)}
-                                className="h-11 pl-10 text-lg font-semibold"
-                                placeholder="0.00"
-                                data-testid={`input-purchase-cost-${product.id}`}
+                                value={product.useInternalSku ? product.productSku : product.supplierSku}
+                                onChange={(e) => { updateNoPromoProduct(product.id, 'supplierSku', e.target.value); collapseIfComplete(product.id); }}
+                                disabled={product.useInternalSku}
+                                className="h-9 text-sm font-mono"
+                                placeholder="SKU fornitore"
+                                data-testid={`input-supplier-sku-${product.id}`}
                               />
                             </div>
-                          </div>
-                          {/* Aliquota IVA */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500">Aliquota IVA</Label>
-                            <Select 
-                              value={product.purchaseVatRateId} 
-                              onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}
-                            >
-                              <SelectTrigger className="h-11" data-testid={`select-purchase-vat-${product.id}`}>
-                                <SelectValue placeholder="Seleziona aliquota IVA" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {safeVatRates.map((rate: any) => (
-                                  <SelectItem key={rate.id} value={rate.id}>
-                                    {rate.ratePercent}% - {rate.name || 'Aliquota standard'}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {/* Regime Fiscale */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500">Regime Fiscale</Label>
-                            <Select 
-                              value={product.purchaseVatRegimeId || ''} 
-                              onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}
-                            >
-                              <SelectTrigger className="h-11" data-testid={`select-purchase-regime-${product.id}`}>
-                                <SelectValue placeholder="Seleziona regime" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {safeVatRegimes.map((regime: any) => (
-                                  <SelectItem key={regime.id} value={regime.id}>
-                                    {regime.code} - {regime.name || regime.description || 'Regime'}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        {/* RIGHT COLUMN: Prezzo Vendita */}
-                        <div className="rounded-lg border border-gray-200 bg-slate-50/70 p-4 space-y-4">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-gray-800">Prezzo Vendita</h4>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="bg-gray-900 text-white">
-                                <p className="text-xs">Prezzo al pubblico IVA inclusa</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          {/* Euro input */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500">Importo (€)</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg font-semibold">€</span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={product.salesPriceVatIncl}
-                                onChange={(e) => updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value)}
-                                className="h-11 pl-10 text-lg font-semibold"
-                                placeholder="0.00"
-                                data-testid={`input-sales-price-${product.id}`}
+                            <label className="flex items-center gap-2 cursor-pointer h-9 px-2 rounded border border-gray-200 bg-white hover:bg-gray-50 text-xs">
+                              <Checkbox
+                                checked={product.useInternalSku}
+                                onCheckedChange={(checked) => { updateNoPromoProduct(product.id, 'useInternalSku', !!checked); collapseIfComplete(product.id); }}
+                                data-testid={`checkbox-internal-sku-${product.id}`}
                               />
+                              <span className="text-gray-700">Usa SKU interno</span>
+                            </label>
+                          </div>
+
+                          {/* Pricing Grid - 2 columns, compact */}
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Costo Acquisto */}
+                            <div className="space-y-2 p-2 rounded border bg-white">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-semibold text-gray-700">Costo Acquisto</span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
+                                  <TooltipContent className="bg-gray-900 text-white text-xs">IVA esclusa</TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={product.purchaseCost}
+                                  onChange={(e) => { updateNoPromoProduct(product.id, 'purchaseCost', e.target.value); collapseIfComplete(product.id); }}
+                                  className="h-9 pl-6 text-sm font-semibold"
+                                  placeholder="0.00"
+                                  data-testid={`input-purchase-cost-${product.id}`}
+                                />
+                              </div>
+                              <Select value={product.purchaseVatRateId} onValueChange={(val) => { updateNoPromoProduct(product.id, 'purchaseVatRateId', val); collapseIfComplete(product.id); }}>
+                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
+                                  <SelectValue placeholder="Aliquota IVA" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {safeVatRates.map((rate: any) => (
+                                    <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Select value={product.purchaseVatRegimeId || ''} onValueChange={(val) => { updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val); collapseIfComplete(product.id); }}>
+                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-regime-${product.id}`}>
+                                  <SelectValue placeholder="Regime" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {safeVatRegimes.map((regime: any) => (
+                                    <SelectItem key={regime.id} value={regime.id}>{regime.code}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Prezzo Vendita */}
+                            <div className="space-y-2 p-2 rounded border bg-white">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-semibold text-gray-700">Prezzo Vendita</span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
+                                  <TooltipContent className="bg-gray-900 text-white text-xs">IVA inclusa</TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={product.salesPriceVatIncl}
+                                  onChange={(e) => { updateNoPromoProduct(product.id, 'salesPriceVatIncl', e.target.value); collapseIfComplete(product.id); }}
+                                  className="h-9 pl-6 text-sm font-semibold"
+                                  placeholder="0.00"
+                                  data-testid={`input-sales-price-${product.id}`}
+                                />
+                              </div>
+                              <Select value={product.salesVatRateId} onValueChange={(val) => { updateNoPromoProduct(product.id, 'salesVatRateId', val); collapseIfComplete(product.id); }}>
+                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-${product.id}`}>
+                                  <SelectValue placeholder="Aliquota IVA" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {safeVatRates.map((rate: any) => (
+                                    <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Select value={product.salesVatRegimeId || ''} onValueChange={(val) => { updateNoPromoProduct(product.id, 'salesVatRegimeId', val); collapseIfComplete(product.id); }}>
+                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-regime-${product.id}`}>
+                                  <SelectValue placeholder="Regime" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {safeVatRegimes.map((regime: any) => (
+                                    <SelectItem key={regime.id} value={regime.id}>{regime.code}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
-                          {/* Aliquota IVA */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500">Aliquota IVA</Label>
-                            <Select 
-                              value={product.salesVatRateId} 
-                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}
-                            >
-                              <SelectTrigger className="h-11" data-testid={`select-sales-vat-${product.id}`}>
-                                <SelectValue placeholder="Seleziona aliquota IVA" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {safeVatRates.map((rate: any) => (
-                                  <SelectItem key={rate.id} value={rate.id}>
-                                    {rate.ratePercent}% - {rate.name || 'Aliquota standard'}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {/* Regime Fiscale */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs text-gray-500">Regime Fiscale</Label>
-                            <Select 
-                              value={product.salesVatRegimeId || ''} 
-                              onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}
-                            >
-                              <SelectTrigger className="h-11" data-testid={`select-sales-regime-${product.id}`}>
-                                <SelectValue placeholder="Seleziona regime" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {safeVatRegimes.map((regime: any) => (
-                                  <SelectItem key={regime.id} value={regime.id}>
-                                    {regime.code} - {regime.name || regime.description || 'Regime'}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* FOOTER: Margine full-width */}
-                      <div className={`rounded-lg px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${
-                        margin > 0 ? 'bg-emerald-50 border border-emerald-200' : 
-                        margin < 0 ? 'bg-red-50 border border-red-200' : 
-                        'bg-gray-50 border border-gray-200'
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <Calculator className={`h-5 w-5 ${
-                            margin > 0 ? 'text-emerald-600' : margin < 0 ? 'text-red-600' : 'text-gray-500'
-                          }`} />
-                          <span className="font-medium text-gray-700">Margine Operativo</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className={`text-2xl font-bold ${
-                            margin > 0 ? 'text-emerald-700' : margin < 0 ? 'text-red-700' : 'text-gray-500'
+                          {/* Margin Row */}
+                          <div className={`flex items-center justify-between rounded px-3 py-2 ${
+                            margin > 0 ? 'bg-emerald-50 border border-emerald-200' : 
+                            margin < 0 ? 'bg-red-50 border border-red-200' : 
+                            'bg-gray-100 border border-gray-200'
                           }`}>
-                            €{margin.toFixed(2)}
+                            <div className="flex items-center gap-2">
+                              <Calculator className={`h-4 w-4 ${margin > 0 ? 'text-emerald-600' : margin < 0 ? 'text-red-600' : 'text-gray-500'}`} />
+                              <span className="text-sm text-gray-700">Margine</span>
+                              <Tooltip>
+                                <TooltipTrigger asChild><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
+                                <TooltipContent className="bg-gray-900 text-white text-xs">Al netto dell'IVA</TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-lg font-bold ${margin > 0 ? 'text-emerald-700' : margin < 0 ? 'text-red-700' : 'text-gray-500'}`}>
+                                €{margin.toFixed(2)}
+                              </span>
+                              <Badge className={`text-xs ${
+                                margin > 0 ? 'bg-emerald-100 text-emerald-700' : 
+                                margin < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-600'
+                              }`}>
+                                {percentage >= 0 ? '+' : ''}{percentage.toFixed(1)}%
+                              </Badge>
+                            </div>
                           </div>
-                          <Badge className={`text-sm font-semibold px-3 py-1 ${
-                            margin > 0 ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 
-                            margin < 0 ? 'bg-red-100 text-red-700 border border-red-300' : 
-                            'bg-gray-100 text-gray-600 border border-gray-300'
-                          }`}>
-                            {percentage >= 0 ? '+' : ''}{percentage.toFixed(1)}%
-                          </Badge>
                         </div>
-                      </div>
-                    </Card>
+                      </CollapsibleContent>
+                    </Collapsible>
                   );
                 })
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </div>
     </TooltipProvider>
