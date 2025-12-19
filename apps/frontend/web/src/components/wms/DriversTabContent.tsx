@@ -214,11 +214,21 @@ export default function DriversTabContent() {
       toast({ title: 'Errore', description: 'Seleziona almeno un tipo prodotto', variant: 'destructive' });
       return;
     }
+    if (linkedToOperator && !formData.operatorId) {
+      toast({ title: 'Errore', description: 'Seleziona un operatore o deseleziona il collegamento', variant: 'destructive' });
+      return;
+    }
+
+    // Prepare payload - ensure operatorId is null if not linked
+    const payload = {
+      ...formData,
+      operatorId: linkedToOperator ? formData.operatorId : null,
+    };
 
     if (driverModal.mode === 'create') {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     } else if (driverModal.mode === 'edit' && driverModal.data) {
-      updateMutation.mutate({ id: driverModal.data.id, data: formData });
+      updateMutation.mutate({ id: driverModal.data.id, data: payload });
     }
   };
 
@@ -229,12 +239,20 @@ export default function DriversTabContent() {
   };
 
   const toggleProductType = (type: string) => {
-    setFormData(prev => ({
-      ...prev,
-      allowedProductTypes: prev.allowedProductTypes.includes(type)
+    setFormData(prev => {
+      const isRemoving = prev.allowedProductTypes.includes(type);
+      const newTypes = isRemoving
         ? prev.allowedProductTypes.filter(t => t !== type)
-        : [...prev.allowedProductTypes, type]
-    }));
+        : [...prev.allowedProductTypes, type];
+      
+      // Reset operator linkage when CANVAS is removed
+      if (type === 'CANVAS' && isRemoving) {
+        setLinkedToOperator(false);
+        return { ...prev, allowedProductTypes: newTypes, operatorId: null };
+      }
+      
+      return { ...prev, allowedProductTypes: newTypes };
+    });
   };
 
   const renderDriverTable = (driversList: Driver[], isBrandSection: boolean) => (
