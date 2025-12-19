@@ -134,24 +134,24 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: The design system is based on WindTre Glassmorphism, utilizing `shadcn/ui` and Radix UI primitives for components. Styling is managed with CSS variables and Tailwind CSS. The UI maintains a consistent monorepo layout featuring a fixed header, sidebar, white backgrounds, and a build-time controlled UI zoom via `VITE_FONT_SCALE`.
+- **UI/UX Decisions**: The design system is based on WindTre Glassmorphism, utilizing `shadcn/ui` and Radix UI primitives. Styling uses CSS variables and Tailwind CSS. The UI maintains a consistent monorepo layout with a fixed header, sidebar, white backgrounds, and build-time controlled UI zoom via `VITE_FONT_SCALE`.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL is used with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
-    - **Security**: Implemented with OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system featuring Italian role templates.
-    - **Core Systems**: Includes Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
-    - **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem (PDC Analyzer), and an AI Voice Agent System with RAG capabilities.
-    - **CRM Module**: Provides a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **Deployment & Governance**: Deployments are managed via a Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments adhere to specific build commands and environment variable handling.
-    - **Brand Interface**: Includes a Workflow Builder (n8n-style, using Zustand with 106 MCP nodes) and a Master Catalog System (hybrid architecture using Git-versioned JSON files).
-    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration with per-tenant API keys. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports physical, virtual, canvas, and service products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. It includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable via a System Config page, featuring approval workflows and linked workflow templates.
-    - **System Config Page**: A modular settings dashboard located at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
-    - **Business Drivers Architecture**: Multi-tenant drivers are stored in `w3suite.drivers` with RLS for source types and product type associations.
-    - **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team membership, type, request routing, and cross-store data access.
+    - **Database**: PostgreSQL with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
+    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer), and AI Voice Agent System with RAG capabilities.
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments follow specific build commands and environment variable handling.
+    - **Brand Interface**: Workflow Builder (n8n-style, using Zustand with 106 MCP nodes) and a Master Catalog System (hybrid architecture using Git-versioned JSON files).
+    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
+    - **WMS Module (CQRS Architecture)**: Supports physical, virtual, canvas, and service products, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable via a System Config page with approval workflows and linked workflow templates.
+    - **System Config Page**: Modular settings dashboard at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS for source types and product type associations.
+    - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) for team membership, type, request routing, and cross-store data access.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
-- **Redis**: Used for BullMQ and the Unified Notification System.
+- **Redis**: For BullMQ and the Unified Notification System.
 - **OAuth2/OIDC Enterprise**: For user authentication.
 - **SHADCN/UI**: UI component library.
 - **Radix UI**: Headless component primitives.

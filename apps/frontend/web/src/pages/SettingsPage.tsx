@@ -3848,7 +3848,7 @@ export default function SettingsPage() {
     note: ''
   });
 
-  const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntities } = useQuery({
+  const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntitiesQuery } = useQuery({
     queryKey: ['/api/legal-entities'],
     enabled: activeTab === 'Legal Entity'
   });
@@ -3881,7 +3881,7 @@ export default function SettingsPage() {
           rea: '', registroImprese: '', codiceSDI: '', iban: '', bic: '', website: '',
           capitaleSociale: '', isSupplier: false, isFinancialEntity: false, supplierType: 'other', note: ''
         });
-        refetchLegalEntities();
+        refetchLegalEntitiesQuery();
       } else {
         const error = await response.json();
         showNotification(error.message || 'Errore nel salvataggio', 'error');
@@ -3902,7 +3902,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         showNotification('Entità legale eliminata', 'success');
-        refetchLegalEntities();
+        refetchLegalEntitiesQuery();
       } else {
         const error = await response.json();
         showNotification(error.message || 'Errore nell\'eliminazione', 'error');
