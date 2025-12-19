@@ -109,21 +109,19 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **✅ wsPath**: Sempre `/ws`
   - **✅ URL Pattern**: `wss://{extension.sipServer}/ws`
 - **VPS Deploy Rules (OBBLIGATORIO)**:
-  - **❌ NEVER use `npm run build`** for VPS deploy - produces wrong output file
-  - **✅ ALWAYS use `deploy/vps-deploy.sh`** or manual esbuild command below
-  - **Build Command**: `npx esbuild apps/backend/api/src/index.ts --bundle --platform=node --target=node18 --external:pg-native --external:sharp --external:canvas --outfile=dist/server.cjs`
-  - **Output File**: `dist/server.cjs` (81MB) - NOT `dist/index.js`
-  - **VPS Symlink**: `/var/www/w3suite/current/server.cjs` → release folder
-  - **PM2 Script Path**: `/var/www/w3suite/current/server.cjs`
-  - **❌ NEVER overwrite on VPS**:
-    - `.env.production` (secrets, DB, Redis, VITE_FONT_SCALE)
-    - `.env` (local overrides)
-    - `ecosystem.config.cjs` (PM2 config)
-  - **FRONTEND DEPLOY (OBBLIGATORIO)**:
-    1. Build: `cd apps/frontend/web && VITE_FONT_SCALE=80 npx vite build`
-    2. Upload: `scp -r apps/frontend/web/dist/* root@82.165.16.223:/var/www/w3suite/apps/frontend/web/dist/`
-    3. VPS Path: `/var/www/w3suite/apps/frontend/web/dist/`
-    4. **⚠️ SEMPRE**: Includere `VITE_FONT_SCALE=80` nel comando build!
+  - **🚀 DEPLOY COMMAND**: Quando l'utente scrive "deploia sulla VPS", usare SEMPRE lo script incrementale chiedendo quale tipo:
+    - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)
+    - `./deploy/incremental-deploy.sh frontend` - Solo frontend
+    - `./deploy/incremental-deploy.sh full` - Entrambi
+  - **✅ INCREMENTAL DEPLOY**: Lo script sincronizza solo file sorgenti modificati e builda sulla VPS
+  - **📁 File protetti** (esclusi da rsync in `deploy/rsync-exclude.txt`):
+    - `.env.production`, `.env`, `ecosystem.config.cjs`
+  - **❌ NEVER use full bundle upload** (85MB) - usa sempre deploy incrementale
+  - **VPS Symlink**: `/var/www/w3suite/current/server.cjs`
+  - **PM2 Process**: `w3-api` (porta 3004)
+  - **FRONTEND DEPLOY**:
+    - Build on VPS con `VITE_FONT_SCALE=80`
+    - Output: `/var/www/w3suite/apps/frontend/web/dist/`
 - **VITE_FONT_SCALE (UI Zoom)**:
   - **Location**: Set at BUILD time, not runtime (Vite bakes env vars)
   - **Current Value**: `VITE_FONT_SCALE=80` (80% = 20% smaller like browser zoom)
