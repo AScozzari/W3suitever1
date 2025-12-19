@@ -1,0 +1,38 @@
+# Config files - NEVER overwrite on VPS
+.env
+.env.production
+.env.local
+.env.development
+ecosystem.config.cjs
+ecosystem.config.js
+
+# Build artifacts - built on VPS
+node_modules/
+dist/
+*.cjs
+*.map
+
+# Development files
+.git/
+.gitignore
+*.log
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+
+# Tests
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Documentation (not needed on VPS)
+*.md
+docs/
+
+# OS files
+.DS_Store
+Thumbs.db
