@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, FileText, Search, X, CalendarIcon, RefreshCw, AlertCircle, Eye, Trash2,
   Package, Smartphone, Tv, ShoppingBag, CreditCard, Building2, ChevronRight, ChevronLeft,
-  Check, Settings2, Layers, DollarSign, Calculator, ArrowRight
+  Check, Settings2, Layers, DollarSign, Calculator, ArrowRight, Wand2
 } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -154,6 +154,28 @@ export default function ListiniTabContent() {
   const safeFinancialEntities = Array.isArray(financialEntitiesData) ? financialEntitiesData : [];
   const safeProducts = Array.isArray(productsData) ? productsData : [];
   const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
+  const safePriceLists = Array.isArray(priceListsData) ? priceListsData : [];
+
+  // Genera codice listino progressivo
+  const generatePriceListCode = () => {
+    const year = new Date().getFullYear();
+    const prefix = `LST-${year}-`;
+    
+    // Trova il numero più alto esistente per quest'anno
+    const existingNumbers = safePriceLists
+      .map((pl: any) => pl.code)
+      .filter((code: string) => code?.startsWith(prefix))
+      .map((code: string) => {
+        const numPart = code.replace(prefix, '');
+        return parseInt(numPart, 10);
+      })
+      .filter((n: number) => !isNaN(n));
+    
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+    
+    return `${prefix}${nextNumber}`;
+  };
 
   const physicalProducts = useMemo(() => 
     safeProducts.filter((p: any) => p.type === 'PHYSICAL'),
@@ -513,13 +535,26 @@ export default function ListiniTabContent() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="code">Codice Listino *</Label>
-          <Input
-            id="code"
-            value={priceListHeader.code}
-            onChange={(e) => setPriceListHeader(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-            placeholder="es. LST-2025-001"
-            data-testid="input-pricelist-code"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="code"
+              value={priceListHeader.code}
+              onChange={(e) => setPriceListHeader(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+              placeholder="es. LST-2025-001"
+              className="flex-1"
+              data-testid="input-pricelist-code"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setPriceListHeader(prev => ({ ...prev, code: generatePriceListCode() }))}
+              title="Genera codice automatico"
+              data-testid="button-generate-code"
+            >
+              <Wand2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div>
           <Label htmlFor="name">Nome Listino *</Label>
