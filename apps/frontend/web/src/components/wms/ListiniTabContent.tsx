@@ -74,8 +74,8 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
   },
   { 
     value: 'canvas', 
-    label: 'Listino CANVAS', 
-    description: 'Solo prodotti CANVAS (abbonamenti) con canone mensile',
+    label: 'Listino Canvas', 
+    description: 'Solo prodotti Canvas (abbonamenti) con canone mensile',
     icon: Tv,
     color: '#8b5cf6'
   },
@@ -88,8 +88,8 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
   },
   { 
     value: 'promo_canvas', 
-    label: 'Promo CANVAS Device', 
-    description: 'Bundle: dispositivo fisico abbinato a offerta CANVAS con rate',
+    label: 'Promo Canvas Device', 
+    description: 'Bundle: dispositivo fisico abbinato a offerta Canvas con rate',
     icon: Layers,
     color: '#10b981'
   }
@@ -663,7 +663,7 @@ export default function ListiniTabContent() {
             </div>
             <ArrowRight className="h-5 w-5 text-gray-400" />
             <div className="flex-1">
-              <div className="text-sm text-gray-500 mb-1">Prodotto CANVAS</div>
+              <div className="text-sm text-gray-500 mb-1">Prodotto Canvas</div>
               {currentPair.canvasProductId ? (
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -749,7 +749,7 @@ export default function ListiniTabContent() {
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Tv className="h-5 w-5 text-purple-500" />
-              <h4 className="font-semibold">Prodotto CANVAS</h4>
+              <h4 className="font-semibold">Prodotto Canvas</h4>
               {currentPair.canvasProductId && (
                 <Badge variant="secondary" className="ml-auto">
                   <Check className="h-3 w-3 mr-1" />
@@ -788,7 +788,7 @@ export default function ListiniTabContent() {
                     <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                     <p>{canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' 
                       ? 'Digita almeno 2 caratteri o seleziona una categoria' 
-                      : 'Nessun prodotto CANVAS trovato'}</p>
+                      : 'Nessun prodotto Canvas trovato'}</p>
                   </div>
                 ) : (
                   <div className="p-2 space-y-2">
@@ -1125,11 +1125,11 @@ export default function ListiniTabContent() {
       <h3 className="text-xl font-semibold mb-2">Aggiungi Prodotti al Listino</h3>
       <p className="text-gray-500 mb-6">
         {priceListHeader.type === 'no_promo' && 'Aggiungi prodotti fisici, virtuali o servizi con prezzi standard'}
-        {priceListHeader.type === 'canvas' && 'Aggiungi prodotti CANVAS con canone mensile'}
+        {priceListHeader.type === 'canvas' && 'Aggiungi prodotti Canvas con canone mensile'}
         {priceListHeader.type === 'promo_device' && 'Aggiungi dispositivi con opzioni di rateizzazione'}
       </p>
       <p className="text-sm text-amber-600">
-        Funzionalità in sviluppo - Usa il tipo "Promo CANVAS + Device" per la demo completa
+        Funzionalità in sviluppo - Usa il tipo "Promo Canvas + Device" per la demo completa
       </p>
     </div>
   );
