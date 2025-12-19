@@ -3848,10 +3848,23 @@ export default function SettingsPage() {
     note: ''
   });
 
-  const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntitiesQuery } = useQuery({
+  const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntitiesQuery, isError, error } = useQuery({
     queryKey: ['/api/legal-entities'],
-    enabled: activeTab === 'Legal Entity'
+    enabled: activeTab === 'Legal Entity',
+    staleTime: 0,
+    refetchOnMount: true
   });
+
+  // Debug: log query state
+  if (activeTab === 'Legal Entity') {
+    console.log('[LEGAL-ENTITY] Query state:', { 
+      data: legalEntitiesData, 
+      isLoading: legalEntitiesLoading, 
+      isError, 
+      error,
+      activeTab 
+    });
+  }
 
   const legalEntitiesList = (legalEntitiesData as any)?.data || [];
 
