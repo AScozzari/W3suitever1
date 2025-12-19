@@ -86,6 +86,28 @@ interface NoPromoProduct {
   salesVatRegimeId: string;
 }
 
+interface PromoDeviceProduct {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  productBrand: string;
+  productCategory: string;
+  productType: string;
+  supplierSku: string;
+  useInternalSku: boolean;
+  purchaseCost: string;
+  purchaseVatRateId: string;
+  purchaseVatRegimeId: string;
+  salesPriceVatIncl: string;
+  salesVatRateId: string;
+  salesVatRegimeId: string;
+  ndcAmount: string;
+  discountType: 'percent' | 'euro';
+  discountValue: string;
+  publicPrice: string;
+}
+
 const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: string; icon: any; color: string }[] = [
   { 
     value: 'no_promo', 
@@ -152,6 +174,12 @@ export default function ListiniTabContent() {
   const [noPromoCategoryFilter, setNoPromoCategoryFilter] = useState<string>('all');
   const [noPromoTypeFilter, setNoPromoTypeFilter] = useState<string>('PHYSICAL');
   const [expandedProductRows, setExpandedProductRows] = useState<Set<string>>(new Set());
+
+  // Promo Device products state
+  const [promoDeviceProducts, setPromoDeviceProducts] = useState<PromoDeviceProduct[]>([]);
+  const [promoDeviceSearchTerm, setPromoDeviceSearchTerm] = useState('');
+  const [promoDeviceCategoryFilter, setPromoDeviceCategoryFilter] = useState<string>('all');
+  const [promoDeviceTypeFilter, setPromoDeviceTypeFilter] = useState<string>('PHYSICAL');
 
   // Physical product type filter for Canvas Device
   const [physicalTypeFilter, setPhysicalTypeFilter] = useState<string>('PHYSICAL');
@@ -1391,6 +1419,115 @@ export default function ListiniTabContent() {
   const removeNoPromoProduct = (id: string) => {
     setNoPromoProducts(prev => prev.filter(p => p.id !== id));
   };
+
+  // ===== PROMO DEVICE FUNCTIONS =====
+  const getPromoDeviceCompletionStatus = (product: PromoDeviceProduct): 'complete' | 'partial' | 'empty' => {
+    const hasPrice = !!product.salesPriceVatIncl && parseFloat(product.salesPriceVatIncl) > 0;
+    const hasSku = product.useInternalSku || (!!product.supplierSku && product.supplierSku.trim() !== '');
+    const hasDiscount = !!product.discountValue && parseFloat(product.discountValue) > 0;
+    const hasPublicPrice = !!product.publicPrice && parseFloat(product.publicPrice) > 0;
+    
+    const allComplete = hasPrice && hasSku && hasDiscount && hasPublicPrice;
+    const anyFilled = hasPrice || hasDiscount || (!!product.supplierSku && !product.useInternalSku);
+    
+    if (allComplete) return 'complete';
+    if (anyFilled) return 'partial';
+    return 'empty';
+  };
+
+  const calculatePublicPrice = (salesPrice: string, discountType: 'percent' | 'euro', discountValue: string): string => {
+    const price = parseFloat(salesPrice) || 0;
+    const discount = parseFloat(discountValue) || 0;
+    if (price <= 0) return '';
+    
+    let finalPrice: number;
+    if (discountType === 'percent') {
+      finalPrice = price - (price * discount / 100);
+    } else {
+      finalPrice = price - discount;
+    }
+    
+    return finalPrice > 0 ? finalPrice.toFixed(2) : '0.00';
+  };
+
+  const addProductToPromoDevice = (product: any) => {
+    if (promoDeviceProducts.some(p => p.productId === product.id)) return;
+    
+    const mapping = getSupplierMapping(product.id);
+    const defaultVatRate = getDefaultVatRate();
+    const defaultVatRegime = getDefaultVatRegime();
+    
+    const newProductId = crypto.randomUUID();
+    const newProduct: PromoDeviceProduct = {
+      id: newProductId,
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku,
+      productBrand: product.brand || '',
+      productCategory: safeCategories.find((c: any) => c.id === product.categoryId)?.name || '',
+      productType: product.type,
+      supplierSku: mapping?.supplierSku || '',
+      useInternalSku: mapping?.useInternalSku || !mapping?.supplierSku,
+      purchaseCost: '',
+      purchaseVatRateId: defaultVatRate?.id || '',
+      purchaseVatRegimeId: defaultVatRegime?.id || '',
+      salesPriceVatIncl: '',
+      salesVatRateId: defaultVatRate?.id || '',
+      salesVatRegimeId: defaultVatRegime?.id || '',
+      ndcAmount: '',
+      discountType: 'euro',
+      discountValue: '',
+      publicPrice: ''
+    };
+    
+    setPromoDeviceProducts(prev => [...prev, newProduct]);
+  };
+
+  const updatePromoDeviceProduct = (id: string, field: keyof PromoDeviceProduct, value: any) => {
+    setPromoDeviceProducts(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      
+      const updated = { ...p, [field]: value };
+      
+      if (field === 'salesPriceVatIncl' || field === 'discountType' || field === 'discountValue') {
+        updated.publicPrice = calculatePublicPrice(
+          field === 'salesPriceVatIncl' ? value : updated.salesPriceVatIncl,
+          field === 'discountType' ? value : updated.discountType,
+          field === 'discountValue' ? value : updated.discountValue
+        );
+      }
+      
+      return updated;
+    }));
+  };
+
+  const removePromoDeviceProduct = (id: string) => {
+    setPromoDeviceProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const promoDeviceFilteredByType = useMemo(() => {
+    return safeProducts.filter((p: any) => {
+      if (promoDeviceTypeFilter === 'all') return true;
+      return p.type === promoDeviceTypeFilter;
+    });
+  }, [safeProducts, promoDeviceTypeFilter]);
+
+  const filteredPromoDeviceProducts = useMemo(() => {
+    if (promoDeviceSearchTerm.length < 2 && promoDeviceCategoryFilter === 'all') {
+      return [];
+    }
+    
+    return promoDeviceFilteredByType.filter((p: any) => {
+      if (promoDeviceCategoryFilter !== 'all' && p.categoryId !== promoDeviceCategoryFilter) return false;
+      if (promoDeviceSearchTerm && promoDeviceSearchTerm.length >= 2) {
+        const search = promoDeviceSearchTerm.toLowerCase();
+        return p.name?.toLowerCase().includes(search) || 
+               p.sku?.toLowerCase().includes(search) ||
+               p.brand?.toLowerCase().includes(search);
+      }
+      return promoDeviceCategoryFilter !== 'all';
+    });
+  }, [promoDeviceFilteredByType, promoDeviceCategoryFilter, promoDeviceSearchTerm]);
 
   const filteredNoPromoProducts = useMemo(() => {
     // Show products only after 2+ characters typed (optimized for barcode scanner)
