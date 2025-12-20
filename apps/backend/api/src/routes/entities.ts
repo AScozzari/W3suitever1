@@ -126,6 +126,11 @@ router.get('/operators', async (req, res) => {
  * Get all legal entities for the current tenant with child table presence info
  * Query params:
  * - roleFilter=true: Only return entities with at least one role (supplier, financial_entity, brand/operator)
+ * 
+ * This endpoint returns:
+ * 1. Tenant legal_entities with linked roles
+ * 2. Brand-managed suppliers/financial_entities/operators (from public schema or with origin='brand')
+ *    that may or may not have a legal_entity_id - these are shown as read-only
  */
 router.get('/legal-entities', async (req, res) => {
   try {
@@ -142,96 +147,61 @@ router.get('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // Get all legal entities
+    // ==================== PART 1: Get tenant legal_entities with roles ====================
     const entitiesList = await db.query.legalEntities.findMany({
       where: eq(legalEntities.tenantId, tenantId),
       orderBy: [desc(legalEntities.createdAt)]
     });
 
-    // Get linked children for each entity
     const entitiesWithChildren = await Promise.all(entitiesList.map(async (entity) => {
-      // Check supplier_overrides (tenant-managed) linked to this legal entity
       const tenantSuppliers = await db
         .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, origin: supplierOverrides.origin, status: supplierOverrides.status })
         .from(supplierOverrides)
-        .where(and(
-          eq(supplierOverrides.legalEntityId, entity.id),
-          eq(supplierOverrides.tenantId, tenantId)
-        ));
+        .where(and(eq(supplierOverrides.legalEntityId, entity.id), eq(supplierOverrides.tenantId, tenantId)));
 
-      // Check suppliers (brand-managed) linked to this legal entity
       const brandSuppliers = await db
         .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, origin: suppliers.origin, status: suppliers.status })
         .from(suppliers)
         .where(eq(suppliers.legalEntityId, entity.id));
 
-      // Combine all suppliers with origin info
       const allSuppliers = [
         ...tenantSuppliers.map(s => ({ ...s, origin: s.origin || 'tenant' })),
         ...brandSuppliers.map(s => ({ ...s, origin: s.origin || 'brand' }))
       ];
 
-      // Check financial_entities linked to this legal entity
       const linkedFinancialEntities = await db
         .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, origin: financialEntities.origin, status: financialEntities.status })
         .from(financialEntities)
         .where(eq(financialEntities.legalEntityId, entity.id));
 
-      // Check operators linked to this legal entity (public schema - always brand-managed)
       const linkedOperators = await db
         .select({ id: operators.id, code: operators.code, name: operators.name })
         .from(operators)
         .where(eq(operators.legalEntityId, entity.id));
 
-      // Determine if any brand-managed children exist (for delete protection)
       const hasBrandSupplier = brandSuppliers.length > 0;
       const hasBrandFinancialEntity = linkedFinancialEntities.some(fe => fe.origin === 'brand');
       const hasBrandManagedChildren = hasBrandSupplier || hasBrandFinancialEntity || linkedOperators.length > 0;
 
-      // Build roles array with origin info for each role
       const roles: Array<{ type: 'supplier' | 'financial_entity' | 'brand', origin: 'tenant' | 'brand', label: string }> = [];
-      
-      // Add supplier roles
-      if (tenantSuppliers.length > 0) {
-        roles.push({ type: 'supplier', origin: 'tenant', label: 'Fornitore' });
-      }
-      if (brandSuppliers.length > 0) {
-        roles.push({ type: 'supplier', origin: 'brand', label: 'Fornitore (Brand)' });
-      }
-      
-      // Add financial entity roles
-      const tenantFinancialEntities = linkedFinancialEntities.filter(fe => fe.origin === 'tenant');
-      const brandFinancialEntities = linkedFinancialEntities.filter(fe => fe.origin === 'brand');
-      if (tenantFinancialEntities.length > 0) {
-        roles.push({ type: 'financial_entity', origin: 'tenant', label: 'Ente Finanziante' });
-      }
-      if (brandFinancialEntities.length > 0) {
-        roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
-      }
-      
-      // Add brand/operator role
-      if (linkedOperators.length > 0) {
-        roles.push({ type: 'brand', origin: 'brand', label: 'Brand' });
-      }
+      if (tenantSuppliers.length > 0) roles.push({ type: 'supplier', origin: 'tenant', label: 'Fornitore' });
+      if (brandSuppliers.length > 0) roles.push({ type: 'supplier', origin: 'brand', label: 'Fornitore (Brand)' });
+      const tenantFE = linkedFinancialEntities.filter(fe => fe.origin === 'tenant');
+      const brandFE = linkedFinancialEntities.filter(fe => fe.origin === 'brand');
+      if (tenantFE.length > 0) roles.push({ type: 'financial_entity', origin: 'tenant', label: 'Ente Finanziante' });
+      if (brandFE.length > 0) roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
+      if (linkedOperators.length > 0) roles.push({ type: 'brand', origin: 'brand', label: 'Brand' });
 
-      // Determine editability: editable only if ALL roles are tenant-owned
-      const hasAnyBrandRole = hasBrandManagedChildren;
-      const isEditable = !hasAnyBrandRole;
-
-      // Check dependencies for delete protection (stores linked to this legal entity)
-      const linkedStores = await db
-        .select({ id: stores.id })
-        .from(stores)
-        .where(eq(stores.legalEntityId, entity.id));
+      const linkedStores = await db.select({ id: stores.id }).from(stores).where(eq(stores.legalEntityId, entity.id));
       const hasDependencies = linkedStores.length > 0 || hasBrandManagedChildren;
 
       return {
         ...entity,
-        // Computed fields for UI
         roles,
-        isEditable,
+        isEditable: !hasBrandManagedChildren,
         hasDependencies,
         hasBrandManagedChildren,
+        _source: 'legal_entity' as const,
         _children: {
           suppliers: allSuppliers,
           financialEntities: linkedFinancialEntities,
@@ -244,10 +214,148 @@ router.get('/legal-entities', async (req, res) => {
       };
     }));
 
-    // Apply role filter if requested - only return entities with at least one role
+    // ==================== PART 2: Get standalone entities WITHOUT legal_entity_id ====================
+    // These include:
+    // - Tenant supplier_overrides without legal_entity_id (editable)
+    // - Brand suppliers without legal_entity_id (read-only)
+    // - Brand financial_entities without legal_entity_id (read-only)
+    // - Operators from public schema (read-only, brand-managed)
+    
+    // Get all operators (brands) from public schema - they are always brand-managed
+    const allOperators = await db
+      .select({ id: operators.id, code: operators.code, name: operators.name, legalEntityId: operators.legalEntityId })
+      .from(operators)
+      .where(eq(operators.isActive, true));
+    
+    // Get TENANT supplier_overrides without legal_entity_id (these are tenant-created, editable)
+    const standaloneTenantSuppliers = await db
+      .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, vatNumber: supplierOverrides.vatNumber, status: supplierOverrides.status, origin: supplierOverrides.origin })
+      .from(supplierOverrides)
+      .where(and(eq(supplierOverrides.tenantId, tenantId), sql`${supplierOverrides.legalEntityId} IS NULL`));
+
+    // Get brand suppliers without legal_entity_id (standalone brand suppliers - read-only)
+    const standaloneBrandSuppliers = await db
+      .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, vatNumber: suppliers.vatNumber, status: suppliers.status })
+      .from(suppliers)
+      .where(and(eq(suppliers.origin, 'brand'), sql`${suppliers.legalEntityId} IS NULL`));
+
+    // Get brand financial entities without legal_entity_id
+    const standaloneBrandFE = await db
+      .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, vatNumber: financialEntities.vatNumber, status: financialEntities.status })
+      .from(financialEntities)
+      .where(and(eq(financialEntities.origin, 'brand'), sql`${financialEntities.legalEntityId} IS NULL`));
+
+    // Get standalone operators (without legal_entity_id)
+    const standaloneOperators = allOperators.filter(op => !op.legalEntityId);
+
+    // Build virtual entities for standalone records
+    // Group by code to combine multiple roles for same business
+    const standaloneEntityMap = new Map<string, any>();
+
+    // Add standalone TENANT suppliers (from supplier_overrides - EDITABLE)
+    for (const sup of standaloneTenantSuppliers) {
+      const key = `tenant-${sup.code}`;
+      if (!standaloneEntityMap.has(key)) {
+        standaloneEntityMap.set(key, {
+          id: sup.id, // Use real ID for tenant entities
+          codice: sup.code,
+          nome: sup.name,
+          pIva: sup.vatNumber,
+          stato: sup.status || 'active',
+          roles: [],
+          isEditable: true, // Tenant-created = editable
+          hasDependencies: false,
+          hasBrandManagedChildren: false,
+          _source: 'tenant_supplier' as const,
+          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: false }
+        });
+      }
+      const entity = standaloneEntityMap.get(key);
+      entity.roles.push({ type: 'supplier', origin: 'tenant', label: 'Fornitore' });
+      entity._children.suppliers.push({ ...sup, origin: 'tenant' });
+      entity._children.hasSupplier = true;
+    }
+
+    // Add standalone BRAND suppliers (read-only)
+    for (const sup of standaloneBrandSuppliers) {
+      const key = `brand-${sup.code}`;
+      if (!standaloneEntityMap.has(key)) {
+        standaloneEntityMap.set(key, {
+          id: `brand-${sup.id}`,
+          codice: sup.code,
+          nome: sup.name,
+          pIva: sup.vatNumber,
+          stato: sup.status || 'active',
+          roles: [],
+          isEditable: false,
+          hasDependencies: true,
+          hasBrandManagedChildren: true,
+          _source: 'brand_supplier' as const,
+          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: true }
+        });
+      }
+      const entity = standaloneEntityMap.get(key);
+      entity.roles.push({ type: 'supplier', origin: 'brand', label: 'Fornitore (Brand)' });
+      entity._children.suppliers.push({ ...sup, origin: 'brand' });
+      entity._children.hasSupplier = true;
+    }
+
+    // Add standalone financial entities (brand - read-only)
+    for (const fe of standaloneBrandFE) {
+      const key = `brand-${fe.code}`;
+      if (!standaloneEntityMap.has(key)) {
+        standaloneEntityMap.set(key, {
+          id: `brand-${fe.id}`,
+          codice: fe.code,
+          nome: fe.name,
+          pIva: fe.vatNumber,
+          stato: fe.status || 'active',
+          roles: [],
+          isEditable: false,
+          hasDependencies: true,
+          hasBrandManagedChildren: true,
+          _source: 'brand_financial_entity' as const,
+          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: true }
+        });
+      }
+      const entity = standaloneEntityMap.get(key);
+      entity.roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
+      entity._children.financialEntities.push({ ...fe, origin: 'brand' });
+      entity._children.hasFinancialEntity = true;
+    }
+
+    // Add standalone operators (brands - read-only)
+    for (const op of standaloneOperators) {
+      const key = `brand-${op.code}`;
+      if (!standaloneEntityMap.has(key)) {
+        standaloneEntityMap.set(key, {
+          id: `brand-${op.id}`,
+          codice: op.code,
+          nome: op.name,
+          pIva: null,
+          stato: 'Attiva',
+          roles: [],
+          isEditable: false,
+          hasDependencies: true,
+          hasBrandManagedChildren: true,
+          _source: 'brand_operator' as const,
+          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: true }
+        });
+      }
+      const entity = standaloneEntityMap.get(key);
+      entity.roles.push({ type: 'brand', origin: 'brand', label: 'Brand' });
+      entity._children.operators.push({ ...op, origin: 'brand' });
+      entity._children.hasOperator = true;
+    }
+
+    const standaloneEntities = Array.from(standaloneEntityMap.values());
+
+    // ==================== PART 3: Combine and filter ====================
+    const allEntities = [...entitiesWithChildren, ...standaloneEntities];
+
     const filteredEntities = roleFilter 
-      ? entitiesWithChildren.filter(e => e.roles.length > 0)
-      : entitiesWithChildren;
+      ? allEntities.filter(e => e.roles.length > 0)
+      : allEntities;
 
     res.status(200).json({
       success: true,
