@@ -421,7 +421,7 @@ router.post('/legal-entities', async (req, res) => {
       isSupplier: z.boolean().default(false),
       isFinancialEntity: z.boolean().default(false),
       isOperator: z.boolean().default(false),
-      supplierType: z.enum(['products', 'services', 'logistics', 'technology', 'other']).optional(),
+      supplierType: z.enum(['distributore', 'produttore', 'servizi', 'logistica']).optional(),
       note: z.string().optional()
     }).transform(data => ({
       ...data,
@@ -466,7 +466,7 @@ router.post('/legal-entities', async (req, res) => {
         name: entity.nome,
         legalName: entity.nome,
         legalForm: entity.formaGiuridica,
-        supplierType: supplierType || 'other',
+        supplierType: supplierType || 'distributore',
         vatNumber: entity.pIva,
         taxCode: entity.codiceFiscale,
         sdiCode: entity.codiceSDI,
@@ -477,7 +477,7 @@ router.post('/legal-entities', async (req, res) => {
         website: entity.website,
         iban: entity.iban,
         bic: entity.bic,
-        countryId: '550e8400-e29b-41d4-a716-446655440000', // Default Italy UUID
+        countryId: '987aed38-cc72-4d26-8284-a6e0bff74093', // Italy UUID
         createdBy: userId,
         status: 'active' as const
       };
@@ -592,7 +592,7 @@ router.put('/legal-entities/:id', async (req, res) => {
       isSupplier: z.boolean().optional(),
       isFinancialEntity: z.boolean().optional(),
       isOperator: z.boolean().optional(),
-      supplierType: z.enum(['products', 'services', 'logistics', 'technology', 'other']).optional(),
+      supplierType: z.enum(['distributore', 'produttore', 'servizi', 'logistica']).optional(),
       stato: z.string().optional(),
       note: z.string().optional()
     });
@@ -703,7 +703,7 @@ router.put('/legal-entities/:id', async (req, res) => {
           code: entity.codice,
           name: entity.nome,
           legalName: entity.nome,
-          supplierType: supplierType || 'other',
+          supplierType: supplierType || 'distributore',
           vatNumber: entity.pIva,
           taxCode: entity.codiceFiscale,
           countryId: '550e8400-e29b-41d4-a716-446655440000',
@@ -843,6 +843,331 @@ router.delete('/legal-entities/:id', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to delete legal entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== SUPPLIER OVERRIDES (TENANT SUPPLIERS) ====================
+
+/**
+ * POST /api/supplier-overrides
+ * Create a new tenant supplier with BIDIRECTIONAL legal entity creation
+ * This creates both the supplier_override record AND the corresponding legal_entity
+ */
+router.post('/supplier-overrides', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const createSchema = z.object({
+      code: z.string().min(1).max(20),
+      name: z.string().min(1).max(255),
+      legalName: z.string().optional(),
+      legalForm: z.string().optional(),
+      supplierType: z.enum(['distributore', 'produttore', 'servizi', 'logistica']).default('distributore'),
+      vatNumber: z.string().optional(),
+      taxCode: z.string().optional(),
+      sdiCode: z.string().optional(),
+      pecEmail: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      website: z.string().optional(),
+      iban: z.string().optional(),
+      bic: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      province: z.string().optional(),
+      cap: z.string().optional(),
+      note: z.string().optional(),
+      // Option to link to existing legal entity or create new
+      legalEntityId: z.string().uuid().optional(),
+      createLegalEntity: z.boolean().default(true) // Default: create bidirectionally
+    });
+
+    const validation = createSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+    const data = validation.data;
+    let linkedLegalEntityId = data.legalEntityId;
+
+    // BIDIRECTIONAL: Create legal entity if not linking to existing one
+    if (!linkedLegalEntityId && data.createLegalEntity) {
+      const legalEntityId = codeToUUID(data.code);
+      
+      // Check if legal entity with this code already exists
+      const existingLE = await db.query.legalEntities.findFirst({
+        where: and(eq(legalEntities.codice, data.code), eq(legalEntities.tenantId, tenantId))
+      });
+
+      if (!existingLE) {
+        const [newLegalEntity] = await db
+          .insert(legalEntities)
+          .values({
+            id: legalEntityId,
+            tenantId,
+            codice: data.code,
+            nome: data.legalName || data.name,
+            formaGiuridica: data.legalForm,
+            pIva: data.vatNumber,
+            codiceFiscale: data.taxCode,
+            codiceSDI: data.sdiCode,
+            pec: data.pecEmail,
+            email: data.email,
+            telefono: data.phone,
+            website: data.website,
+            iban: data.iban,
+            bic: data.bic,
+            indirizzo: data.address,
+            citta: data.city,
+            provincia: data.province,
+            cap: data.cap,
+            stato: 'Attiva',
+            isSupplier: true,
+            isFinancialEntity: false
+          } as any)
+          .returning();
+        
+        linkedLegalEntityId = newLegalEntity.id;
+        logger.info('Legal entity created from supplier (bidirectional)', { legalEntityId: newLegalEntity.id, code: data.code });
+      } else {
+        linkedLegalEntityId = existingLE.id;
+        // Update existing legal entity to mark as supplier
+        await db.update(legalEntities)
+          .set({ isSupplier: true, updatedAt: new Date() })
+          .where(eq(legalEntities.id, existingLE.id));
+      }
+    }
+
+    // Create the supplier_override record
+    const supplierData = {
+      legalEntityId: linkedLegalEntityId || null,
+      origin: 'tenant' as const,
+      tenantId,
+      code: data.code,
+      name: data.name,
+      legalName: data.legalName || data.name,
+      legalForm: data.legalForm,
+      supplierType: data.supplierType,
+      vatNumber: data.vatNumber,
+      taxCode: data.taxCode,
+      sdiCode: data.sdiCode,
+      pecEmail: data.pecEmail,
+      registeredAddress: data.address ? { via: data.address, cap: data.cap, citta: data.city, provincia: data.province } : null,
+      email: data.email,
+      phone: data.phone,
+      website: data.website,
+      iban: data.iban,
+      bic: data.bic,
+      countryId: '987aed38-cc72-4d26-8284-a6e0bff74093', // Italy
+      createdBy: userId,
+      status: 'active' as const
+    };
+
+    const [supplier] = await db
+      .insert(supplierOverrides)
+      .values(supplierData as any)
+      .returning();
+
+    logger.info('Supplier created with bidirectional legal entity link', { 
+      supplierId: supplier.id, 
+      legalEntityId: linkedLegalEntityId,
+      code: data.code 
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { ...supplier, _linkedLegalEntityId: linkedLegalEntityId },
+      message: 'Fornitore creato con successo',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating supplier', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create supplier',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== FINANCIAL ENTITIES ====================
+
+/**
+ * POST /api/financial-entities
+ * Create a new financial entity with BIDIRECTIONAL legal entity creation
+ * This creates both the financial_entity record AND the corresponding legal_entity
+ */
+router.post('/financial-entities', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const createSchema = z.object({
+      code: z.string().min(1).max(20),
+      name: z.string().min(1).max(255),
+      vatNumber: z.string().optional(),
+      taxCode: z.string().optional(),
+      sdiCode: z.string().optional(),
+      pecEmail: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      website: z.string().optional(),
+      iban: z.string().optional(),
+      bic: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      province: z.string().optional(),
+      cap: z.string().optional(),
+      capitalStock: z.string().optional(),
+      note: z.string().optional(),
+      // Option to link to existing legal entity or create new
+      legalEntityId: z.string().uuid().optional(),
+      createLegalEntity: z.boolean().default(true) // Default: create bidirectionally
+    });
+
+    const validation = createSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+    const data = validation.data;
+    let linkedLegalEntityId = data.legalEntityId;
+
+    // BIDIRECTIONAL: Create legal entity if not linking to existing one
+    if (!linkedLegalEntityId && data.createLegalEntity) {
+      const legalEntityId = codeToUUID(data.code);
+      
+      // Check if legal entity with this code already exists
+      const existingLE = await db.query.legalEntities.findFirst({
+        where: and(eq(legalEntities.codice, data.code), eq(legalEntities.tenantId, tenantId))
+      });
+
+      if (!existingLE) {
+        const [newLegalEntity] = await db
+          .insert(legalEntities)
+          .values({
+            id: legalEntityId,
+            tenantId,
+            codice: data.code,
+            nome: data.name,
+            pIva: data.vatNumber,
+            codiceFiscale: data.taxCode,
+            codiceSDI: data.sdiCode,
+            pec: data.pecEmail,
+            email: data.email,
+            telefono: data.phone,
+            website: data.website,
+            iban: data.iban,
+            bic: data.bic,
+            indirizzo: data.address,
+            citta: data.city,
+            provincia: data.province,
+            cap: data.cap,
+            capitaleSociale: data.capitalStock,
+            stato: 'Attiva',
+            isSupplier: false,
+            isFinancialEntity: true
+          } as any)
+          .returning();
+        
+        linkedLegalEntityId = newLegalEntity.id;
+        logger.info('Legal entity created from financial entity (bidirectional)', { legalEntityId: newLegalEntity.id, code: data.code });
+      } else {
+        linkedLegalEntityId = existingLE.id;
+        // Update existing legal entity to mark as financial entity
+        await db.update(legalEntities)
+          .set({ isFinancialEntity: true, updatedAt: new Date() })
+          .where(eq(legalEntities.id, existingLE.id));
+      }
+    }
+
+    // Create the financial_entity record
+    const financialEntityData = {
+      legalEntityId: linkedLegalEntityId || null,
+      origin: 'tenant' as const,
+      tenantId,
+      code: data.code,
+      name: data.name,
+      vatNumber: data.vatNumber,
+      taxCode: data.taxCode,
+      sdiCode: data.sdiCode,
+      pecEmail: data.pecEmail,
+      registeredAddress: data.address ? { via: data.address, cap: data.cap, citta: data.city, provincia: data.province } : null,
+      email: data.email,
+      phone: data.phone,
+      website: data.website,
+      iban: data.iban,
+      bic: data.bic,
+      capitalStock: data.capitalStock,
+      createdBy: userId,
+      status: 'active' as const
+    };
+
+    const [financialEntity] = await db
+      .insert(financialEntities)
+      .values(financialEntityData as any)
+      .returning();
+
+    logger.info('Financial entity created with bidirectional legal entity link', { 
+      financialEntityId: financialEntity.id, 
+      legalEntityId: linkedLegalEntityId,
+      code: data.code 
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { ...financialEntity, _linkedLegalEntityId: linkedLegalEntityId },
+      message: 'Ente finanziante creato con successo',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating financial entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create financial entity',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
