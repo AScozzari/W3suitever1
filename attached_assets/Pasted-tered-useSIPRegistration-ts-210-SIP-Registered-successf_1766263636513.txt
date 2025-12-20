@@ -1,0 +1,34 @@
+tered
+useSIPRegistration.ts:210 ✅ SIP Registered successfully
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 21:46:38 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:724 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage.tsx:1514 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:739 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:752 📝 Setting state with data: {legalEntities: 20, users: 21, stores: 5}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:1777 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage.tsx:739 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(2)}
+SettingsPage.tsx:752 📝 Setting state with data: {legalEntities: 0, users: 21, stores: 0}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: Array(20), isLoading: false, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: Array(20), isLoading: false, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage.tsx:3860 [LEGAL-ENTITY] Query state: {data: Array(20), isLoading: false, isError: false, error: null, activeTab: 'Legal Entity'}
+installHook.js:1 [LEGAL-ENTITY] Query state: {data: Array(20), isLoading: false, isError: false, error: null, activeTab: 'Legal Entity'}

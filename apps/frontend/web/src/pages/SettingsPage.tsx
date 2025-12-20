@@ -3866,7 +3866,9 @@ export default function SettingsPage() {
     });
   }
 
-  const legalEntitiesList = (legalEntitiesData as any)?.data || [];
+  const legalEntitiesList = Array.isArray(legalEntitiesData) 
+    ? legalEntitiesData 
+    : (legalEntitiesData as any)?.data || [];
 
   const handleSaveLegalEntity = async () => {
     try {
