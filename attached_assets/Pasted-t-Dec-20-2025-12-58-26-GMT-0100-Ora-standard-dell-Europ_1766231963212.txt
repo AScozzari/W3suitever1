@@ -1,0 +1,15 @@
+t Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+useSIPRegistration.ts:204 📡 Registration state: Unregistered
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Terminated
+useSIPRegistration.ts:204 📡 Registration state: Terminated
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of sessions
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of subscriptions
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of publishers
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of transport
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Disconnecting wss://demo.edgvoip.it/ws
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnecting
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1000)
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnecting to Disconnected
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of core
+sip__js.js?v=fac8f799:6965 Sat Dec 20 2025 12:58:26 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Started to Stopped
