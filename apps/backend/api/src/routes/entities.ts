@@ -124,10 +124,14 @@ router.get('/operators', async (req, res) => {
 /**
  * GET /api/legal-entities
  * Get all legal entities for the current tenant with child table presence info
+ * Query params:
+ * - roleFilter=true: Only return entities with at least one role (supplier, financial_entity, brand/operator)
  */
 router.get('/legal-entities', async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const roleFilter = req.query.roleFilter === 'true';
+    
     if (!tenantId) {
       return res.status(400).json({
         success: false,
@@ -148,7 +152,7 @@ router.get('/legal-entities', async (req, res) => {
     const entitiesWithChildren = await Promise.all(entitiesList.map(async (entity) => {
       // Check supplier_overrides (tenant-managed) linked to this legal entity
       const tenantSuppliers = await db
-        .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, origin: supplierOverrides.origin })
+        .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, origin: supplierOverrides.origin, status: supplierOverrides.status })
         .from(supplierOverrides)
         .where(and(
           eq(supplierOverrides.legalEntityId, entity.id),
@@ -157,7 +161,7 @@ router.get('/legal-entities', async (req, res) => {
 
       // Check suppliers (brand-managed) linked to this legal entity
       const brandSuppliers = await db
-        .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, origin: suppliers.origin })
+        .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, origin: suppliers.origin, status: suppliers.status })
         .from(suppliers)
         .where(eq(suppliers.legalEntityId, entity.id));
 
@@ -169,7 +173,7 @@ router.get('/legal-entities', async (req, res) => {
 
       // Check financial_entities linked to this legal entity
       const linkedFinancialEntities = await db
-        .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, origin: financialEntities.origin })
+        .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, origin: financialEntities.origin, status: financialEntities.status })
         .from(financialEntities)
         .where(eq(financialEntities.legalEntityId, entity.id));
 
@@ -184,23 +188,70 @@ router.get('/legal-entities', async (req, res) => {
       const hasBrandFinancialEntity = linkedFinancialEntities.some(fe => fe.origin === 'brand');
       const hasBrandManagedChildren = hasBrandSupplier || hasBrandFinancialEntity || linkedOperators.length > 0;
 
+      // Build roles array with origin info for each role
+      const roles: Array<{ type: 'supplier' | 'financial_entity' | 'brand', origin: 'tenant' | 'brand', label: string }> = [];
+      
+      // Add supplier roles
+      if (tenantSuppliers.length > 0) {
+        roles.push({ type: 'supplier', origin: 'tenant', label: 'Fornitore' });
+      }
+      if (brandSuppliers.length > 0) {
+        roles.push({ type: 'supplier', origin: 'brand', label: 'Fornitore (Brand)' });
+      }
+      
+      // Add financial entity roles
+      const tenantFinancialEntities = linkedFinancialEntities.filter(fe => fe.origin === 'tenant');
+      const brandFinancialEntities = linkedFinancialEntities.filter(fe => fe.origin === 'brand');
+      if (tenantFinancialEntities.length > 0) {
+        roles.push({ type: 'financial_entity', origin: 'tenant', label: 'Ente Finanziante' });
+      }
+      if (brandFinancialEntities.length > 0) {
+        roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
+      }
+      
+      // Add brand/operator role
+      if (linkedOperators.length > 0) {
+        roles.push({ type: 'brand', origin: 'brand', label: 'Brand' });
+      }
+
+      // Determine editability: editable only if ALL roles are tenant-owned
+      const hasAnyBrandRole = hasBrandManagedChildren;
+      const isEditable = !hasAnyBrandRole;
+
+      // Check dependencies for delete protection (stores linked to this legal entity)
+      const linkedStores = await db
+        .select({ id: stores.id })
+        .from(stores)
+        .where(eq(stores.legalEntityId, entity.id));
+      const hasDependencies = linkedStores.length > 0 || hasBrandManagedChildren;
+
       return {
         ...entity,
+        // Computed fields for UI
+        roles,
+        isEditable,
+        hasDependencies,
+        hasBrandManagedChildren,
         _children: {
           suppliers: allSuppliers,
           financialEntities: linkedFinancialEntities,
-          operators: linkedOperators.map(op => ({ ...op, origin: 'brand' })), // Operators are always brand-managed
+          operators: linkedOperators.map(op => ({ ...op, origin: 'brand' })),
           hasSupplier: allSuppliers.length > 0,
           hasFinancialEntity: linkedFinancialEntities.length > 0,
           hasOperator: linkedOperators.length > 0,
-          hasBrandManagedChildren // Used by UI to disable delete button
+          hasBrandManagedChildren
         }
       };
     }));
 
+    // Apply role filter if requested - only return entities with at least one role
+    const filteredEntities = roleFilter 
+      ? entitiesWithChildren.filter(e => e.roles.length > 0)
+      : entitiesWithChildren;
+
     res.status(200).json({
       success: true,
-      data: entitiesWithChildren,
+      data: filteredEntities,
       message: 'Legal entities retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);

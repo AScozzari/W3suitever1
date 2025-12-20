@@ -111,7 +111,8 @@ import {
   AlertTriangle as Warning,
   XCircle,
   Truck,
-  Landmark
+  Landmark,
+  Archive
 } from 'lucide-react';
 
 // Hardcoded roles data - 10 specific roles instead of backend fetching
@@ -3849,7 +3850,18 @@ export default function SettingsPage() {
   });
 
   const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntitiesQuery, isError, error } = useQuery({
-    queryKey: ['/api/legal-entities'],
+    queryKey: ['/api/legal-entities', { roleFilter: true }],
+    queryFn: async () => {
+      const response = await fetch('/api/legal-entities?roleFilter=true', {
+        headers: {
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch legal entities');
+      return response.json();
+    },
     enabled: activeTab === 'Legal Entity',
     staleTime: 0,
     refetchOnMount: true
@@ -3927,6 +3939,63 @@ export default function SettingsPage() {
       } else {
         const error = await response.json();
         showNotification(error.message || 'Errore nell\'eliminazione', 'error');
+      }
+    } catch (error) {
+      showNotification('Errore di connessione', 'error');
+    }
+  };
+
+  const handleArchiveLegalEntity = async (id: string) => {
+    if (!confirm('Sei sicuro di voler archiviare questa entità legale?')) return;
+    
+    try {
+      const response = await fetch(`/api/legal-entities/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+        },
+        body: JSON.stringify({ stato: 'Archiviata' })
+      });
+
+      if (response.ok) {
+        showNotification('Entità legale archiviata', 'success');
+        refetchLegalEntitiesQuery();
+      } else {
+        const error = await response.json();
+        showNotification(error.message || 'Errore nell\'archiviazione', 'error');
+      }
+    } catch (error) {
+      showNotification('Errore di connessione', 'error');
+    }
+  };
+
+  const handleSuspendLegalEntity = async (id: string, currentStato: string) => {
+    const newStato = currentStato === 'Sospesa' ? 'Attiva' : 'Sospesa';
+    const action = currentStato === 'Sospesa' ? 'riattivare' : 'sospendere';
+    
+    if (!confirm(`Sei sicuro di voler ${action} questa entità legale?`)) return;
+    
+    try {
+      const response = await fetch(`/api/legal-entities/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+        },
+        body: JSON.stringify({ stato: newStato })
+      });
+
+      if (response.ok) {
+        showNotification(`Entità legale ${newStato === 'Sospesa' ? 'sospesa' : 'riattivata'}`, 'success');
+        refetchLegalEntitiesQuery();
+      } else {
+        const error = await response.json();
+        showNotification(error.message || `Errore nel ${action}`, 'error');
       }
     } catch (error) {
       showNotification('Errore di connessione', 'error');
@@ -4030,20 +4099,45 @@ export default function SettingsPage() {
                   <td style={{ padding: '14px 16px', color: '#374151' }}>{entity.nome}</td>
                   <td style={{ padding: '14px 16px', color: '#6b7280', fontFamily: 'monospace' }}>{entity.pIva || '-'}</td>
                   <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                      {entity.isSupplier && (
-                        <span style={{ background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Fornitore</span>
-                      )}
-                      {entity.isFinancialEntity && (
-                        <span style={{ background: '#d1fae5', color: '#059669', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Ente Fin.</span>
-                      )}
-                      {entity._children?.hasSupplier && !entity.isSupplier && (
-                        <span style={{ background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>Forn. Collegato</span>
-                      )}
-                      {entity._children?.hasFinancialEntity && !entity.isFinancialEntity && (
-                        <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>E.F. Collegato</span>
-                      )}
-                      {!entity.isSupplier && !entity.isFinancialEntity && !entity._children?.hasSupplier && !entity._children?.hasFinancialEntity && (
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {entity.roles && entity.roles.length > 0 ? (
+                        entity.roles.map((role: { type: string; origin: string; label: string }, idx: number) => {
+                          // Define colors based on role type and origin
+                          const getBadgeStyle = () => {
+                            if (role.origin === 'brand') {
+                              // Brand-managed = purple/violet tones (read-only)
+                              return { background: '#ede9fe', color: '#7c3aed', border: '1px solid #c4b5fd' };
+                            }
+                            // Tenant-managed colors by type
+                            if (role.type === 'supplier') {
+                              return { background: '#dbeafe', color: '#1d4ed8', border: 'none' };
+                            }
+                            if (role.type === 'financial_entity') {
+                              return { background: '#d1fae5', color: '#059669', border: 'none' };
+                            }
+                            if (role.type === 'brand') {
+                              return { background: '#fef3c7', color: '#d97706', border: 'none' };
+                            }
+                            return { background: '#f3f4f6', color: '#6b7280', border: 'none' };
+                          };
+                          const style = getBadgeStyle();
+                          return (
+                            <span
+                              key={idx}
+                              title={role.origin === 'brand' ? 'Gestito da Brand (sola lettura)' : 'Gestito dal Tenant'}
+                              style={{
+                                ...style,
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontSize: '11px',
+                                fontWeight: '600'
+                              }}
+                            >
+                              {role.label}
+                            </span>
+                          );
+                        })
+                      ) : (
                         <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
                       )}
                     </div>
@@ -4059,28 +4153,70 @@ export default function SettingsPage() {
                   </td>
                   <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      {/* Edit button - disabled for brand-managed entities */}
                       <button
                         data-testid={`button-edit-legal-entity-${entity.id}`}
-                        onClick={() => openEditLegalEntity(entity)}
+                        onClick={() => entity.isEditable && openEditLegalEntity(entity)}
+                        disabled={!entity.isEditable}
+                        title={!entity.isEditable ? 'Non modificabile: gestito da Brand' : 'Modifica'}
                         style={{
-                          background: '#f3f4f6', border: 'none', borderRadius: '8px',
-                          padding: '8px', cursor: 'pointer', color: '#374151'
+                          background: entity.isEditable ? '#f3f4f6' : '#f9fafb',
+                          border: 'none', borderRadius: '8px',
+                          padding: '8px',
+                          cursor: entity.isEditable ? 'pointer' : 'not-allowed',
+                          color: entity.isEditable ? '#374151' : '#9ca3af',
+                          opacity: entity.isEditable ? 1 : 0.6
                         }}
                       >
                         <Edit3 size={16} />
                       </button>
+                      {/* Archive button */}
                       <button
-                        data-testid={`button-delete-legal-entity-${entity.id}`}
-                        onClick={() => !entity._children?.hasBrandManagedChildren && handleDeleteLegalEntity(entity.id)}
-                        disabled={entity._children?.hasBrandManagedChildren}
-                        title={entity._children?.hasBrandManagedChildren ? 'Non eliminabile: collegata a entità brand-managed' : 'Elimina'}
+                        data-testid={`button-archive-legal-entity-${entity.id}`}
+                        onClick={() => entity.isEditable && entity.stato !== 'Archiviata' && handleArchiveLegalEntity(entity.id)}
+                        disabled={!entity.isEditable || entity.stato === 'Archiviata'}
+                        title={!entity.isEditable ? 'Non modificabile: gestito da Brand' : entity.stato === 'Archiviata' ? 'Già archiviata' : 'Archivia'}
                         style={{
-                          background: entity._children?.hasBrandManagedChildren ? '#f3f4f6' : '#fee2e2',
+                          background: entity.isEditable && entity.stato !== 'Archiviata' ? '#fef3c7' : '#f9fafb',
                           border: 'none', borderRadius: '8px',
                           padding: '8px',
-                          cursor: entity._children?.hasBrandManagedChildren ? 'not-allowed' : 'pointer',
-                          color: entity._children?.hasBrandManagedChildren ? '#9ca3af' : '#dc2626',
-                          opacity: entity._children?.hasBrandManagedChildren ? 0.6 : 1
+                          cursor: entity.isEditable && entity.stato !== 'Archiviata' ? 'pointer' : 'not-allowed',
+                          color: entity.isEditable && entity.stato !== 'Archiviata' ? '#d97706' : '#9ca3af',
+                          opacity: entity.isEditable && entity.stato !== 'Archiviata' ? 1 : 0.6
+                        }}
+                      >
+                        <Archive size={16} />
+                      </button>
+                      {/* Suspend button */}
+                      <button
+                        data-testid={`button-suspend-legal-entity-${entity.id}`}
+                        onClick={() => entity.isEditable && handleSuspendLegalEntity(entity.id, entity.stato)}
+                        disabled={!entity.isEditable}
+                        title={!entity.isEditable ? 'Non modificabile: gestito da Brand' : entity.stato === 'Sospesa' ? 'Riattiva' : 'Sospendi'}
+                        style={{
+                          background: entity.isEditable ? (entity.stato === 'Sospesa' ? '#d1fae5' : '#fef3c7') : '#f9fafb',
+                          border: 'none', borderRadius: '8px',
+                          padding: '8px',
+                          cursor: entity.isEditable ? 'pointer' : 'not-allowed',
+                          color: entity.isEditable ? (entity.stato === 'Sospesa' ? '#059669' : '#d97706') : '#9ca3af',
+                          opacity: entity.isEditable ? 1 : 0.6
+                        }}
+                      >
+                        {entity.stato === 'Sospesa' ? <RefreshCw size={16} /> : <Pause size={16} />}
+                      </button>
+                      {/* Delete button - disabled if has dependencies */}
+                      <button
+                        data-testid={`button-delete-legal-entity-${entity.id}`}
+                        onClick={() => !entity.hasDependencies && handleDeleteLegalEntity(entity.id)}
+                        disabled={entity.hasDependencies}
+                        title={entity.hasDependencies ? 'Non eliminabile: ha dipendenze (negozi, brand, etc.)' : 'Elimina'}
+                        style={{
+                          background: entity.hasDependencies ? '#f3f4f6' : '#fee2e2',
+                          border: 'none', borderRadius: '8px',
+                          padding: '8px',
+                          cursor: entity.hasDependencies ? 'not-allowed' : 'pointer',
+                          color: entity.hasDependencies ? '#9ca3af' : '#dc2626',
+                          opacity: entity.hasDependencies ? 0.6 : 1
                         }}
                       >
                         <Trash2 size={16} />
