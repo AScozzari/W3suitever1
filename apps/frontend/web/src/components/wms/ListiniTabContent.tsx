@@ -1925,7 +1925,7 @@ export default function ListiniTabContent() {
 
   const renderStep3PromoDevice = () => (
     <TooltipProvider>
-      <div className="flex gap-4 h-full">
+      <div className="flex gap-4 min-h-[500px]">
         {/* Left panel: Product search */}
         <div className="w-1/3 flex flex-col border rounded-lg min-h-0">
           <div className="p-3 border-b bg-gray-50 shrink-0">
