@@ -2159,8 +2159,8 @@ export default function ListiniTabContent() {
                                   data-testid={`input-purchase-cost-promodevice-${product.id}`}
                                 />
                               </div>
-                              {product.purchaseVatRateId && (
-                                <Select value={product.purchaseVatRateId} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'purchaseVatRateId', val)}>
+                              {safeVatRates.length > 0 && (
+                                <Select value={product.purchaseVatRateId || undefined} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'purchaseVatRateId', val)}>
                                   <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-promodevice-${product.id}`}>
                                     <SelectValue placeholder="Aliquota IVA" />
                                   </SelectTrigger>
@@ -2195,8 +2195,8 @@ export default function ListiniTabContent() {
                                   data-testid={`input-sales-price-promodevice-${product.id}`}
                                 />
                               </div>
-                              {product.salesVatRateId && (
-                                <Select value={product.salesVatRateId} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'salesVatRateId', val)}>
+                              {safeVatRates.length > 0 && (
+                                <Select value={product.salesVatRateId || undefined} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'salesVatRateId', val)}>
                                   <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-promodevice-${product.id}`}>
                                     <SelectValue placeholder="Aliquota IVA" />
                                   </SelectTrigger>
