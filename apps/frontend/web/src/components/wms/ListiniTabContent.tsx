@@ -2651,10 +2651,8 @@ export default function ListiniTabContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="py-4 px-4 h-full min-h-[calc(85vh-180px)]">
-              {wizardStep === 1 && renderStep1()}
-              {wizardStep === 2 && renderStep2()}
+          {wizardStep >= 3 ? (
+            <div className="flex-1 min-h-0 py-4 px-4 overflow-hidden">
               {wizardStep === 3 && (
                 priceListHeader.type === 'promo_canvas' 
                   ? renderStep3PromoCanvas() 
@@ -2666,7 +2664,12 @@ export default function ListiniTabContent() {
               )}
               {wizardStep === 4 && renderStep4()}
             </div>
-          </ScrollArea>
+          ) : (
+            <div className="py-4 px-4">
+              {wizardStep === 1 && renderStep1()}
+              {wizardStep === 2 && renderStep2()}
+            </div>
+          )}
 
           <DialogFooter className="border-t pt-4">
             <div className="flex justify-between w-full">
