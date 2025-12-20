@@ -1925,7 +1925,7 @@ export default function ListiniTabContent() {
 
   const renderStep3PromoDevice = () => (
     <TooltipProvider>
-      <div className="flex gap-4 min-h-[500px]">
+      <div className="flex gap-4 h-full">
         {/* Left panel: Product search */}
         <div className="w-1/3 flex flex-col border rounded-lg min-h-0">
           <div className="p-3 border-b bg-gray-50 shrink-0">
@@ -1957,7 +1957,7 @@ export default function ListiniTabContent() {
               <SelectContent>
                 <SelectItem value="all">Tutte le categorie</SelectItem>
                 {safeCategories
-                  .filter((cat: any) => cat.productType === promoDeviceTypeFilter)
+                  .filter((cat: any) => cat.productType === promoDeviceTypeFilter && cat.id)
                   .map((cat: any) => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
                   ))}
@@ -2028,12 +2028,12 @@ export default function ListiniTabContent() {
 
         {/* Right panel: Added products with collapsible rows */}
         <div className="flex-1 flex flex-col border rounded-lg min-h-0">
-          <div className="p-3 border-b bg-orange-50 flex items-center justify-between shrink-0">
+          <div className="p-3 border-b bg-gray-50 flex items-center justify-between shrink-0">
             <div>
-              <h4 className="font-semibold text-sm">Prodotti Promo Device</h4>
+              <h4 className="font-semibold text-sm">Prodotti nel Listino</h4>
               <p className="text-xs text-gray-500">Fornitore: {selectedSupplierName}</p>
             </div>
-            <Badge variant="secondary" className="bg-orange-100 text-orange-700">{promoDeviceProducts.length} prodotti</Badge>
+            <Badge variant="secondary">{promoDeviceProducts.length} prodotti</Badge>
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-3 space-y-3">
@@ -2054,11 +2054,11 @@ export default function ListiniTabContent() {
                       key={product.id} 
                       open={isExpanded}
                       onOpenChange={() => toggleProductRow(product.id)}
-                      className="border rounded-lg bg-white overflow-hidden border-orange-200"
+                      className="border rounded-lg bg-white overflow-hidden"
                       data-testid={`promodevice-product-${product.id}`}
                     >
                       {/* COLLAPSIBLE HEADER */}
-                      <div className="flex items-center gap-3 p-3 hover:bg-orange-50/50 transition-colors">
+                      <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors">
                         <div className={`w-3 h-3 rounded-full shrink-0 ${
                           completionStatus === 'complete' ? 'bg-emerald-500' :
                           completionStatus === 'partial' ? 'bg-amber-500' :
@@ -2077,6 +2077,7 @@ export default function ListiniTabContent() {
                             {product.productBrand && <span>• {product.productBrand}</span>}
                             {fullProductInfo?.memory && <span className="text-purple-600">• {fullProductInfo.memory}</span>}
                             {fullProductInfo?.color && <span className="text-blue-600">• {fullProductInfo.color}</span>}
+                            {fullProductInfo?.ean && <span className="text-gray-400">• EAN: {fullProductInfo.ean}</span>}
                           </div>
                         </div>
 
@@ -2130,46 +2131,48 @@ export default function ListiniTabContent() {
                             </label>
                           </div>
 
-                          {/* Row 1: Costo Acquisto (facoltativo) + Prezzo Vendita */}
+                          {/* Pricing Grid - 2 columns */}
                           <div className="grid grid-cols-2 gap-3">
                             {/* Costo Acquisto - Facoltativo */}
                             <div className="space-y-2 p-2 rounded border bg-white">
                               <div className="flex items-center gap-1">
-                                <span className="text-xs font-semibold text-gray-500">Costo Acquisto</span>
+                                <span className="text-xs font-semibold text-gray-700">Costo Acquisto</span>
                                 <Badge variant="outline" className="text-[9px] h-4 px-1 text-gray-400 border-gray-300">Facoltativo</Badge>
                               </div>
                               <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
                                 <Input
                                   type="number"
                                   step="0.01"
                                   value={product.purchaseCost}
                                   onChange={(e) => updatePromoDeviceProduct(product.id, 'purchaseCost', e.target.value)}
-                                  className="h-9 pl-6 text-sm"
+                                  className="h-9 pl-6 text-sm font-semibold"
                                   placeholder="0.00"
                                   data-testid={`input-purchase-cost-promodevice-${product.id}`}
                                 />
                               </div>
-                              <Select value={product.purchaseVatRateId} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'purchaseVatRateId', val)}>
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-promodevice-${product.id}`}>
-                                  <SelectValue placeholder="Aliquota IVA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRates.map((rate: any) => (
-                                    <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              {product.purchaseVatRateId && (
+                                <Select value={product.purchaseVatRateId} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'purchaseVatRateId', val)}>
+                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-promodevice-${product.id}`}>
+                                    <SelectValue placeholder="Aliquota IVA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {safeVatRates.filter((rate: any) => rate.id).map((rate: any) => (
+                                      <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
 
                             {/* Prezzo Vendita */}
-                            <div className="space-y-2 p-2 rounded border bg-white border-orange-200">
+                            <div className="space-y-2 p-2 rounded border bg-white">
                               <div className="flex items-center gap-1">
-                                <span className="text-xs font-semibold text-orange-700">Prezzo Vendita</span>
+                                <span className="text-xs font-semibold text-gray-700">Prezzo Vendita</span>
                                 <span className="text-red-500">*</span>
                                 <Tooltip>
                                   <TooltipTrigger asChild><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
-                                  <TooltipContent className="bg-gray-900 text-white text-xs">IVA inclusa - Base per calcolo sconto</TooltipContent>
+                                  <TooltipContent className="bg-gray-900 text-white text-xs">IVA inclusa</TooltipContent>
                                 </Tooltip>
                               </div>
                               <div className="relative">
@@ -2184,110 +2187,89 @@ export default function ListiniTabContent() {
                                   data-testid={`input-sales-price-promodevice-${product.id}`}
                                 />
                               </div>
-                              <Select value={product.salesVatRateId} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'salesVatRateId', val)}>
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-promodevice-${product.id}`}>
-                                  <SelectValue placeholder="Aliquota IVA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRates.map((rate: any) => (
-                                    <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              {product.salesVatRateId && (
+                                <Select value={product.salesVatRateId} onValueChange={(val) => updatePromoDeviceProduct(product.id, 'salesVatRateId', val)}>
+                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-promodevice-${product.id}`}>
+                                    <SelectValue placeholder="Aliquota IVA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {safeVatRates.filter((rate: any) => rate.id).map((rate: any) => (
+                                      <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
                           </div>
 
-                          {/* Row 2: NDC + Sconto + Prezzo Pubblico */}
-                          <div className="grid grid-cols-3 gap-3">
-                            {/* NDC Amount - Amministrativo */}
-                            <div className="space-y-2 p-2 rounded border bg-blue-50 border-blue-200">
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs font-semibold text-blue-700">Importo NDC</span>
-                                <Tooltip>
-                                  <TooltipTrigger asChild><Info className="h-3 w-3 text-blue-400" /></TooltipTrigger>
-                                  <TooltipContent className="bg-gray-900 text-white text-xs max-w-xs">
-                                    Info amministrativa per il fornitore (Non Distribuibile al Cliente)
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                              <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={product.ndcAmount}
-                                  onChange={(e) => updatePromoDeviceProduct(product.id, 'ndcAmount', e.target.value)}
-                                  className="h-9 pl-6 text-sm bg-white"
-                                  placeholder="0.00"
-                                  data-testid={`input-ndc-promodevice-${product.id}`}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Sconto - Commerciale */}
-                            <div className="space-y-2 p-2 rounded border bg-green-50 border-green-200">
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs font-semibold text-green-700">Sconto</span>
-                                <span className="text-red-500">*</span>
-                              </div>
-                              <div className="flex gap-1">
-                                <Button
-                                  type="button"
-                                  variant={product.discountType === 'euro' ? 'default' : 'outline'}
-                                  size="sm"
-                                  className={`h-9 px-3 ${product.discountType === 'euro' ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                                  onClick={() => updatePromoDeviceProduct(product.id, 'discountType', 'euro')}
-                                  data-testid={`button-discount-euro-${product.id}`}
-                                >
-                                  €
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant={product.discountType === 'percent' ? 'default' : 'outline'}
-                                  size="sm"
-                                  className={`h-9 px-3 ${product.discountType === 'percent' ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                                  onClick={() => updatePromoDeviceProduct(product.id, 'discountType', 'percent')}
-                                  data-testid={`button-discount-percent-${product.id}`}
-                                >
-                                  %
-                                </Button>
-                                <div className="relative flex-1">
+                          {/* Promo Row: NDC + Sconto + Prezzo Pubblico */}
+                          <div className={`flex items-center justify-between rounded px-3 py-2 bg-orange-50 border border-orange-200`}>
+                            <div className="flex items-center gap-4">
+                              {/* NDC */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-blue-700 font-medium">NDC:</span>
+                                <div className="relative w-24">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    value={product.discountValue}
-                                    onChange={(e) => updatePromoDeviceProduct(product.id, 'discountValue', e.target.value)}
-                                    className="h-9 text-sm bg-white pr-8"
-                                    placeholder="0"
-                                    data-testid={`input-discount-value-promodevice-${product.id}`}
+                                    value={product.ndcAmount}
+                                    onChange={(e) => updatePromoDeviceProduct(product.id, 'ndcAmount', e.target.value)}
+                                    className="h-7 pl-5 text-xs bg-white"
+                                    placeholder="0.00"
+                                    data-testid={`input-ndc-promodevice-${product.id}`}
                                   />
-                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                                    {product.discountType === 'percent' ? '%' : '€'}
-                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Sconto */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-green-700 font-medium">Sconto:</span>
+                                <div className="flex gap-1">
+                                  <Button
+                                    type="button"
+                                    variant={product.discountType === 'euro' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={`h-7 w-7 p-0 text-xs ${product.discountType === 'euro' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                                    onClick={() => updatePromoDeviceProduct(product.id, 'discountType', 'euro')}
+                                    data-testid={`button-discount-euro-${product.id}`}
+                                  >
+                                    €
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant={product.discountType === 'percent' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={`h-7 w-7 p-0 text-xs ${product.discountType === 'percent' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                                    onClick={() => updatePromoDeviceProduct(product.id, 'discountType', 'percent')}
+                                    data-testid={`button-discount-percent-${product.id}`}
+                                  >
+                                    %
+                                  </Button>
+                                  <div className="relative w-20">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={product.discountValue}
+                                      onChange={(e) => updatePromoDeviceProduct(product.id, 'discountValue', e.target.value)}
+                                      className="h-7 text-xs bg-white pr-6"
+                                      placeholder="0"
+                                      data-testid={`input-discount-value-promodevice-${product.id}`}
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                                      {product.discountType === 'percent' ? '%' : '€'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Prezzo Pubblico - Calcolato */}
-                            <div className="space-y-2 p-2 rounded border bg-orange-100 border-orange-300">
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs font-semibold text-orange-800">Prezzo Pubblico</span>
-                                <Tooltip>
-                                  <TooltipTrigger asChild><Info className="h-3 w-3 text-orange-500" /></TooltipTrigger>
-                                  <TooltipContent className="bg-gray-900 text-white text-xs">Calcolato: Prezzo Vendita - Sconto</TooltipContent>
-                                </Tooltip>
-                              </div>
-                              <div className="h-9 px-3 rounded bg-white border border-orange-200 flex items-center">
-                                <span className="text-lg font-bold text-orange-700">
-                                  €{product.publicPrice ? parseFloat(product.publicPrice).toFixed(2) : '0.00'}
-                                </span>
-                              </div>
-                              {product.salesPriceVatIncl && product.discountValue && (
-                                <div className="text-[10px] text-orange-600">
-                                  Risparmi: €{(parseFloat(product.salesPriceVatIncl) - parseFloat(product.publicPrice || '0')).toFixed(2)}
-                                  {product.discountType === 'percent' && ` (${product.discountValue}%)`}
-                                </div>
-                              )}
+                            {/* Prezzo Pubblico */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-orange-700 font-medium">Prezzo Pubblico:</span>
+                              <span className="text-lg font-bold text-orange-700">
+                                €{product.publicPrice ? parseFloat(product.publicPrice).toFixed(2) : '0.00'}
+                              </span>
                             </div>
                           </div>
                         </div>
