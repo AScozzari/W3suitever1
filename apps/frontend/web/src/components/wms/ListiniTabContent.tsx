@@ -1818,26 +1818,30 @@ export default function ListiniTabContent() {
                                   data-testid={`input-purchase-cost-${product.id}`}
                                 />
                               </div>
-                              <Select value={product.purchaseVatRateId} onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}>
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
-                                  <SelectValue placeholder="Aliquota IVA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRates.map((rate: any) => (
-                                    <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Select value={product.purchaseVatRegimeId || ''} onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}>
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-regime-${product.id}`}>
-                                  <SelectValue placeholder="Regime" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRegimes.map((regime: any) => (
-                                    <SelectItem key={regime.id} value={regime.id}>{regime.code}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              {safeVatRates.length > 0 && (
+                                <Select value={product.purchaseVatRateId || undefined} onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRateId', val)}>
+                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-vat-${product.id}`}>
+                                    <SelectValue placeholder="Aliquota IVA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {safeVatRates.filter((rate: any) => rate.id).map((rate: any) => (
+                                      <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {safeVatRegimes.length > 0 && (
+                                <Select value={product.purchaseVatRegimeId || undefined} onValueChange={(val) => updateNoPromoProduct(product.id, 'purchaseVatRegimeId', val)}>
+                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-purchase-regime-${product.id}`}>
+                                    <SelectValue placeholder="Regime" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {safeVatRegimes.filter((regime: any) => regime.id).map((regime: any) => (
+                                      <SelectItem key={regime.id} value={regime.id}>{regime.code}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
 
                             {/* Prezzo Vendita */}
@@ -1861,26 +1865,30 @@ export default function ListiniTabContent() {
                                   data-testid={`input-sales-price-${product.id}`}
                                 />
                               </div>
-                              <Select value={product.salesVatRateId} onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}>
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-${product.id}`}>
-                                  <SelectValue placeholder="Aliquota IVA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRates.map((rate: any) => (
-                                    <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Select value={product.salesVatRegimeId || ''} onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}>
-                                <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-regime-${product.id}`}>
-                                  <SelectValue placeholder="Regime" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {safeVatRegimes.map((regime: any) => (
-                                    <SelectItem key={regime.id} value={regime.id}>{regime.code}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              {safeVatRates.length > 0 && (
+                                <Select value={product.salesVatRateId || undefined} onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRateId', val)}>
+                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-vat-${product.id}`}>
+                                    <SelectValue placeholder="Aliquota IVA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {safeVatRates.filter((rate: any) => rate.id).map((rate: any) => (
+                                      <SelectItem key={rate.id} value={rate.id}>{rate.ratePercent}%</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {safeVatRegimes.length > 0 && (
+                                <Select value={product.salesVatRegimeId || undefined} onValueChange={(val) => updateNoPromoProduct(product.id, 'salesVatRegimeId', val)}>
+                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-sales-regime-${product.id}`}>
+                                    <SelectValue placeholder="Regime" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {safeVatRegimes.filter((regime: any) => regime.id).map((regime: any) => (
+                                      <SelectItem key={regime.id} value={regime.id}>{regime.code}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
                           </div>
 
