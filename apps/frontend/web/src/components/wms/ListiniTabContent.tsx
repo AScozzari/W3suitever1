@@ -784,8 +784,8 @@ export default function ListiniTabContent() {
               Fornitore {priceListHeader.type === 'no_promo' && <span className="text-red-500">*</span>}
             </Label>
             <Select 
-              value={priceListHeader.supplierId} 
-              onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val }))}
+              value={priceListHeader.supplierId || (priceListHeader.type !== 'no_promo' ? 'none' : undefined)} 
+              onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val === 'none' ? '' : val }))}
             >
               <SelectTrigger 
                 data-testid="select-supplier"
@@ -795,9 +795,9 @@ export default function ListiniTabContent() {
               </SelectTrigger>
               <SelectContent>
                 {priceListHeader.type !== 'no_promo' && (
-                  <SelectItem value="">Nessun fornitore</SelectItem>
+                  <SelectItem value="none">Nessun fornitore</SelectItem>
                 )}
-                {safeSuppliers.map((s: any) => (
+                {safeSuppliers.filter((s: any) => s.id).map((s: any) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                 ))}
               </SelectContent>
