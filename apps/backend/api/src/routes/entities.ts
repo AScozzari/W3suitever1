@@ -171,11 +171,12 @@ router.get('/legal-entities', async (req, res) => {
       .from(operators)
       .where(eq(operators.isActive, true));
     
-    // Get TENANT supplier_overrides without legal_entity_id (these are tenant-created, editable)
-    const standaloneTenantSuppliers = await db
+    // Get ALL TENANT supplier_overrides (these are tenant-created, editable)
+    // Include both those with and without legal_entity_id
+    const tenantSuppliers = await db
       .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, vatNumber: supplierOverrides.vatNumber, status: supplierOverrides.status, origin: supplierOverrides.origin })
       .from(supplierOverrides)
-      .where(and(eq(supplierOverrides.tenantId, tenantId), sql`${supplierOverrides.legalEntityId} IS NULL`));
+      .where(eq(supplierOverrides.tenantId, tenantId));
 
     // Get brand suppliers without legal_entity_id (standalone brand suppliers - read-only)
     const standaloneBrandSuppliers = await db
@@ -196,8 +197,8 @@ router.get('/legal-entities', async (req, res) => {
     // Group by code to combine multiple roles for same business
     const standaloneEntityMap = new Map<string, any>();
 
-    // Add standalone TENANT suppliers (from supplier_overrides - EDITABLE)
-    for (const sup of standaloneTenantSuppliers) {
+    // Add TENANT suppliers (from supplier_overrides - EDITABLE)
+    for (const sup of tenantSuppliers) {
       const key = `tenant-${sup.code}`;
       if (!standaloneEntityMap.has(key)) {
         standaloneEntityMap.set(key, {
