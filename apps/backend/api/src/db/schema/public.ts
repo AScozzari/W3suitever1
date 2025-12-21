@@ -19,7 +19,10 @@ import { z } from "zod";
 
 // ==================== SHARED REFERENCE TABLES ====================
 
-// ==================== BRANDS ====================
+// ==================== BRANDS (DEPRECATED - Use operators instead) ====================
+// The brands table is deprecated. All brand/operator data is now in the operators table
+// with embedded legal entity info (ragione_sociale, piva, etc.)
+// Keeping export for backward compatibility during migration
 export const brands = pgTable("brands", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 50 }).unique().notNull(),

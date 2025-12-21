@@ -4085,6 +4085,7 @@ export default function SettingsPage() {
             <thead>
               <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Codice</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Nome</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ragione Sociale</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>P.IVA</th>
                 <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ruoli</th>
@@ -4097,6 +4098,7 @@ export default function SettingsPage() {
                 <tr key={entity.id} data-testid={`row-legal-entity-${entity.id}`} style={{ borderBottom: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '14px 16px', fontWeight: '500', color: '#111827' }}>{entity.codice}</td>
                   <td style={{ padding: '14px 16px', color: '#374151' }}>{entity.nome}</td>
+                  <td style={{ padding: '14px 16px', color: '#6b7280' }}>{entity.ragioneSociale || entity.nome || '-'}</td>
                   <td style={{ padding: '14px 16px', color: '#6b7280', fontFamily: 'monospace' }}>{entity.pIva || '-'}</td>
                   <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
