@@ -14,7 +14,7 @@ export interface ApiResponse<T> {
 
 class ApiService {
   private baseUrl = '';
-  private readonly REQUEST_TIMEOUT = 8000; // 8 seconds timeout
+  private readonly REQUEST_TIMEOUT = 15000; // 15 seconds timeout
   private readonly BASE_RETRY_DELAY = 500; // Reduced to 500ms
 
   /**
