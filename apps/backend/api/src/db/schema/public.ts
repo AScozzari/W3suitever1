@@ -36,18 +36,42 @@ export type InsertBrand = z.infer<typeof insertBrandSchema>;
 export type Brand = typeof brands.$inferSelect;
 
 // ==================== OPERATORS (Telco Brands: WindTre, VeryMobile) ====================
-// Operators are brand commercial names that can be linked to a Legal Entity (N:1 relationship)
-// Example: Wind Tre S.p.A. (Legal Entity) → WindTre + VeryMobile (Operators/Brands)
+// Operators are brand commercial names with embedded Legal Entity info (ragione sociale)
+// Example: WindTre (Operator) belongs to Wind Tre S.p.A. (ragione_sociale)
 export const operators = pgTable("operators", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  legalEntityId: uuid("legal_entity_id"), // FK to w3suite.legal_entities (logical, not physical FK due to cross-schema)
   code: varchar("code", { length: 50 }).unique().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // Nome commerciale (WindTre, VeryMobile)
   description: text("description"),
   logoUrl: varchar("logo_url", { length: 500 }),
   primaryColor: varchar("primary_color", { length: 7 }), // Hex color es. #FF6900
   isActive: boolean("is_active").default(true).notNull(),
   sortOrder: smallint("sort_order").default(0),
+  
+  // Legal Entity Info (Ragione Sociale)
+  ragioneSociale: varchar("ragione_sociale", { length: 255 }), // Wind Tre S.p.A.
+  piva: varchar("piva", { length: 20 }), // Partita IVA (IT + 11 cifre)
+  codiceFiscale: varchar("codice_fiscale", { length: 16 }), // Codice Fiscale
+  formaGiuridica: varchar("forma_giuridica", { length: 50 }), // S.p.A., S.r.l., etc.
+  
+  // Address
+  indirizzo: text("indirizzo"),
+  citta: varchar("citta", { length: 100 }),
+  provincia: varchar("provincia", { length: 2 }),
+  cap: varchar("cap", { length: 5 }),
+  
+  // Contacts
+  telefono: varchar("telefono", { length: 30 }),
+  email: varchar("email", { length: 255 }),
+  pec: varchar("pec", { length: 255 }),
+  website: varchar("website", { length: 255 }),
+  
+  // SDI / Fatturazione
+  codiceSDI: varchar("codice_sdi", { length: 7 }),
+  rea: varchar("rea", { length: 50 }), // Numero REA
+  registroImprese: varchar("registro_imprese", { length: 100 }),
+  capitaleSociale: varchar("capitale_sociale", { length: 50 }),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
