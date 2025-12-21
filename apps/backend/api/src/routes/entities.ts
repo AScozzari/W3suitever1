@@ -190,7 +190,7 @@ router.get('/legal-entities', async (req, res) => {
       const brandFE = linkedFinancialEntities.filter(fe => fe.origin === 'brand');
       if (tenantFE.length > 0) roles.push({ type: 'financial_entity', origin: 'tenant', label: 'Ente Finanziante' });
       if (brandFE.length > 0) roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
-      if (linkedOperators.length > 0) roles.push({ type: 'brand', origin: 'brand', label: 'Brand' });
+      if (linkedOperators.length > 0) roles.push({ type: 'operator', origin: 'brand', label: 'Operatore' });
 
       const linkedStores = await db.select({ id: stores.id }).from(stores).where(eq(stores.legalEntityId, entity.id));
       const hasDependencies = linkedStores.length > 0 || hasBrandManagedChildren;
@@ -343,7 +343,7 @@ router.get('/legal-entities', async (req, res) => {
         });
       }
       const entity = standaloneEntityMap.get(key);
-      entity.roles.push({ type: 'brand', origin: 'brand', label: 'Brand' });
+      entity.roles.push({ type: 'operator', origin: 'brand', label: 'Operatore' });
       entity._children.operators.push({ ...op, origin: 'brand' });
       entity._children.hasOperator = true;
     }

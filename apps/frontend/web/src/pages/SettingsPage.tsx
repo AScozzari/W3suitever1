@@ -112,7 +112,8 @@ import {
   XCircle,
   Truck,
   Landmark,
-  Archive
+  Archive,
+  Lock
 } from 'lucide-react';
 
 // Hardcoded roles data - 10 specific roles instead of backend fetching
@@ -4115,25 +4116,34 @@ export default function SettingsPage() {
                             if (role.type === 'financial_entity') {
                               return { background: '#d1fae5', color: '#059669', border: 'none' };
                             }
-                            if (role.type === 'brand') {
+                            if (role.type === 'operator' || role.type === 'brand') {
                               return { background: '#fef3c7', color: '#d97706', border: 'none' };
                             }
                             return { background: '#f3f4f6', color: '#6b7280', border: 'none' };
                           };
                           const style = getBadgeStyle();
+                          // Clean label: remove "(Brand)" suffix for display
+                          const cleanLabel = role.label.replace(' (Brand)', '');
                           return (
                             <span
                               key={idx}
-                              title={role.origin === 'brand' ? 'Gestito da Brand (sola lettura)' : 'Gestito dal Tenant'}
+                              title={role.origin === 'brand' ? 'Gestito da Brand Interface - sola lettura' : 'Gestito dal Tenant - modificabile'}
                               style={{
                                 ...style,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
                                 padding: '2px 8px',
                                 borderRadius: '12px',
                                 fontSize: '11px',
-                                fontWeight: '600'
+                                fontWeight: '600',
+                                cursor: 'help'
                               }}
                             >
-                              {role.label}
+                              {cleanLabel}
+                              {role.origin === 'brand' && (
+                                <Lock size={10} style={{ opacity: 0.7 }} />
+                              )}
                             </span>
                           );
                         })
@@ -4143,13 +4153,19 @@ export default function SettingsPage() {
                     </div>
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    <span style={{
-                      background: entity.stato === 'Attiva' ? '#d1fae5' : '#fee2e2',
-                      color: entity.stato === 'Attiva' ? '#059669' : '#dc2626',
-                      padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '500'
-                    }}>
-                      {entity.stato || 'Attiva'}
-                    </span>
+                    {(() => {
+                      const normalizedStatus = (entity.stato === 'Attiva' || entity.status === 'active') ? 'Attiva' : 'Inattiva';
+                      const isActive = normalizedStatus === 'Attiva';
+                      return (
+                        <span style={{
+                          background: isActive ? '#d1fae5' : '#fee2e2',
+                          color: isActive ? '#059669' : '#dc2626',
+                          padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '500'
+                        }}>
+                          {normalizedStatus}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
