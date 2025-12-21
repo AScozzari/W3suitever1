@@ -42,11 +42,11 @@ export default function WMSProductsAndListsPage() {
   const validTabs = useMemo(() => [
     'dashboard',
     'prodotti',
-    'listini',
+    'drivers',
     'categorie',
     'fornitori',
     'enti-finanziari',
-    'drivers'
+    'listini'
   ], []);
 
   const tabConfigs = useMemo(() => [
@@ -63,10 +63,10 @@ export default function WMSProductsAndListsPage() {
       testId: 'tab-prodotti'
     },
     {
-      id: 'listini',
-      label: 'Listini',
-      icon: FileText,
-      testId: 'tab-listini'
+      id: 'drivers',
+      label: 'Drivers',
+      icon: Zap,
+      testId: 'tab-drivers'
     },
     {
       id: 'categorie',
@@ -87,10 +87,10 @@ export default function WMSProductsAndListsPage() {
       testId: 'tab-enti-finanziari'
     },
     {
-      id: 'drivers',
-      label: 'Drivers',
-      icon: Zap,
-      testId: 'tab-drivers'
+      id: 'listini',
+      label: 'Listini',
+      icon: FileText,
+      testId: 'tab-listini'
     }
   ], []);
 
