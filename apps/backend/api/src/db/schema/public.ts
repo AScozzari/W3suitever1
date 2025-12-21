@@ -19,25 +19,6 @@ import { z } from "zod";
 
 // ==================== SHARED REFERENCE TABLES ====================
 
-// ==================== BRANDS (DEPRECATED - Use operators instead) ====================
-// The brands table is deprecated. All brand/operator data is now in the operators table
-// with embedded legal entity info (ragione_sociale, piva, etc.)
-// Keeping export for backward compatibility during migration
-export const brands = pgTable("brands", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 50 }).unique().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  status: varchar("status", { length: 50 }).default("active"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertBrandSchema = createInsertSchema(brands).omit({ 
-  id: true, 
-  createdAt: true 
-});
-export type InsertBrand = z.infer<typeof insertBrandSchema>;
-export type Brand = typeof brands.$inferSelect;
-
 // ==================== OPERATORS (Telco Brands: WindTre, VeryMobile) ====================
 // Operators are brand commercial names with embedded Legal Entity info (ragione sociale)
 // Example: WindTre (Operator) belongs to Wind Tre S.p.A. (ragione_sociale)

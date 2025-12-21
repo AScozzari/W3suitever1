@@ -30,7 +30,8 @@ import { z } from "zod";
 
 // Import public schema tables for FK references
 // NOTE: 'drivers' is now defined locally in w3suite schema (not imported from public)
-import { brands, channels, commercialAreas, countries, italianCities, paymentMethods, paymentMethodsConditions, utmSources, utmMediums } from './public';
+// NOTE: 'brands' is deprecated - use 'operators' instead for store associations
+import { operators, channels, commercialAreas, countries, italianCities, paymentMethods, paymentMethodsConditions, utmSources, utmMediums } from './public';
 
 // Import brand_interface schema tables for FK references
 import { brandWorkflows } from './brand-interface';
@@ -1047,16 +1048,18 @@ export const insertUserLegalEntitySchema = createInsertSchema(userLegalEntities)
 export type InsertUserLegalEntity = z.infer<typeof insertUserLegalEntitySchema>;
 export type UserLegalEntity = typeof userLegalEntities.$inferSelect;
 
-export const storeBrands = w3suiteSchema.table("store_brands", {
+export const storeOperators = w3suiteSchema.table("store_brands", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  brandId: uuid("brand_id").notNull().references(() => brands.id),
+  operatorId: uuid("operator_id").notNull().references(() => operators.id),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   isPrimary: boolean("is_primary").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  primaryKey({ columns: [table.storeId, table.brandId] }),
+  primaryKey({ columns: [table.storeId, table.operatorId] }),
   index("store_brands_tenant_idx").on(table.tenantId),
 ]);
+// Backward compatibility alias
+export const storeBrands = storeOperators;
 
 export const storeDriverPotential = w3suiteSchema.table("store_driver_potential", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
@@ -2545,7 +2548,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   structuredLogs: many(structuredLogs),
   userStores: many(userStores),
   userLegalEntities: many(userLegalEntities),
-  storeBrands: many(storeBrands),
+  storeOperators: many(storeOperators),
   storeDriverPotential: many(storeDriverPotential),
   notifications: many(notifications),
   // HR relations
@@ -2603,7 +2606,7 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
   channel: one(channels, { fields: [stores.channelId], references: [channels.id] }),
   commercialArea: one(commercialAreas, { fields: [stores.commercialAreaId], references: [commercialAreas.id] }),
   userStores: many(userStores),
-  storeBrands: many(storeBrands),
+  storeOperators: many(storeOperators),
   storeDriverPotential: many(storeDriverPotential),
   users: many(users),
   // HR relations
@@ -2643,12 +2646,14 @@ export const userStoresRelations = relations(userStores, ({ one }) => ({
   tenant: one(tenants, { fields: [userStores.tenantId], references: [tenants.id] }),
 }));
 
-// Store Brands Relations
-export const storeBrandsRelations = relations(storeBrands, ({ one }) => ({
-  store: one(stores, { fields: [storeBrands.storeId], references: [stores.id] }),
-  brand: one(brands, { fields: [storeBrands.brandId], references: [brands.id] }),
-  tenant: one(tenants, { fields: [storeBrands.tenantId], references: [tenants.id] }),
+// Store Operators Relations (formerly Store Brands)
+export const storeOperatorsRelations = relations(storeOperators, ({ one }) => ({
+  store: one(stores, { fields: [storeOperators.storeId], references: [stores.id] }),
+  operator: one(operators, { fields: [storeOperators.operatorId], references: [operators.id] }),
+  tenant: one(tenants, { fields: [storeOperators.tenantId], references: [tenants.id] }),
 }));
+// Backward compatibility alias
+export const storeBrandsRelations = storeOperatorsRelations;
 
 // Store Driver Potential Relations
 export const storeDriverPotentialRelations = relations(storeDriverPotential, ({ one }) => ({
