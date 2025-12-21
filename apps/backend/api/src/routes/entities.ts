@@ -174,10 +174,9 @@ router.get('/legal-entities', async (req, res) => {
         .from(financialEntities)
         .where(eq(financialEntities.legalEntityId, entity.id));
 
-      const linkedOperators = await db
-        .select({ id: operators.id, code: operators.code, name: operators.name })
-        .from(operators)
-        .where(eq(operators.legalEntityId, entity.id));
+      // Operators are now standalone in public.operators with embedded ragione_sociale
+      // They don't link via legalEntityId anymore
+      const linkedOperators: Array<{ id: string, code: string, name: string, ragioneSociale: string | null }> = [];
 
       const hasBrandSupplier = brandSuppliers.length > 0;
       const hasBrandFinancialEntity = linkedFinancialEntities.some(fe => fe.origin === 'brand');
@@ -222,8 +221,16 @@ router.get('/legal-entities', async (req, res) => {
     // - Operators from public schema (read-only, brand-managed)
     
     // Get all operators (brands) from public schema - they are always brand-managed
+    // Now includes embedded ragione_sociale and piva from the operator itself
     const allOperators = await db
-      .select({ id: operators.id, code: operators.code, name: operators.name, legalEntityId: operators.legalEntityId })
+      .select({ 
+        id: operators.id, 
+        code: operators.code, 
+        name: operators.name, 
+        ragioneSociale: operators.ragioneSociale,
+        piva: operators.piva,
+        formaGiuridica: operators.formaGiuridica
+      })
       .from(operators)
       .where(eq(operators.isActive, true));
     
@@ -245,8 +252,8 @@ router.get('/legal-entities', async (req, res) => {
       .from(financialEntities)
       .where(and(eq(financialEntities.origin, 'brand'), sql`${financialEntities.legalEntityId} IS NULL`));
 
-    // Get standalone operators (without legal_entity_id)
-    const standaloneOperators = allOperators.filter(op => !op.legalEntityId);
+    // All operators from public.operators are standalone (embedded legal info)
+    const standaloneOperators = allOperators;
 
     // Build virtual entities for standalone records
     // Group by code to combine multiple roles for same business
@@ -324,7 +331,7 @@ router.get('/legal-entities', async (req, res) => {
       entity._children.hasFinancialEntity = true;
     }
 
-    // Add standalone operators (brands - read-only)
+    // Add standalone operators (brands - read-only, with embedded ragione_sociale)
     for (const op of standaloneOperators) {
       const key = `brand-${op.code}`;
       if (!standaloneEntityMap.has(key)) {
@@ -332,7 +339,9 @@ router.get('/legal-entities', async (req, res) => {
           id: `brand-${op.id}`,
           codice: op.code,
           nome: op.name,
-          pIva: null,
+          ragioneSociale: op.ragioneSociale || null, // Embedded ragione sociale (es. Wind Tre S.p.A.)
+          pIva: op.piva || null,
+          formaGiuridica: op.formaGiuridica || null,
           stato: 'Attiva',
           roles: [],
           isEditable: false,
@@ -346,6 +355,12 @@ router.get('/legal-entities', async (req, res) => {
       entity.roles.push({ type: 'operator', origin: 'brand', label: 'Operatore' });
       entity._children.operators.push({ ...op, origin: 'brand' });
       entity._children.hasOperator = true;
+      // Inherit ragioneSociale from operator if entity doesn't have it
+      if (op.ragioneSociale && !entity.ragioneSociale) {
+        entity.ragioneSociale = op.ragioneSociale;
+        entity.pIva = op.piva || entity.pIva;
+        entity.formaGiuridica = op.formaGiuridica || entity.formaGiuridica;
+      }
     }
 
     const standaloneEntities = Array.from(standaloneEntityMap.values());
