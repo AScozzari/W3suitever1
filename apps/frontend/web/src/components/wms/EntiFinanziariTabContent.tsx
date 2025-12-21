@@ -68,6 +68,7 @@ export default function EntiFinanziariTabContent() {
         entity.vat_number?.toLowerCase().includes(search) ||
         entity.vatNumber?.toLowerCase().includes(search) ||
         entity.tax_code?.toLowerCase().includes(search) ||
+        entity.taxCode?.toLowerCase().includes(search) ||
         entity.fiscalCode?.toLowerCase().includes(search) ||
         entity.registeredAddress?.citta?.toLowerCase().includes(search);
       if (!matches) return false;
@@ -78,7 +79,8 @@ export default function EntiFinanziariTabContent() {
     }
 
     if (dateFrom || dateTo) {
-      const createdAt = entity.created_at ? new Date(entity.created_at) : null;
+      const createdAt = entity.createdAt ? new Date(entity.createdAt) : 
+                        entity.created_at ? new Date(entity.created_at) : null;
       if (createdAt) {
         if (dateFrom && createdAt < dateFrom) return false;
         if (dateTo) {
@@ -337,8 +339,8 @@ export default function EntiFinanziariTabContent() {
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
-                      <div>P.IVA: {entity.vat_number || entity.vatNumber || 'N/A'}</div>
-                      <div>C.F.: {entity.tax_code || entity.fiscalCode || 'N/A'}</div>
+                      <div>P.IVA: {entity.vatNumber || entity.vat_number || 'N/A'}</div>
+                      <div>C.F.: {entity.taxCode || entity.tax_code || entity.fiscalCode || 'N/A'}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
