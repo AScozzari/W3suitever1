@@ -2036,7 +2036,7 @@ export default function SettingsPage() {
   };
 
   const tabs = [
-    { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
+    { id: 'Entity Management', label: 'Gestione Organizzazione', icon: Building2 },
     { id: 'Legal Entity', label: 'Entità Legali', icon: Landmark },
     { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
     { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
