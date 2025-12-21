@@ -7,7 +7,7 @@ import {
   BarChart3, UserCheck, Award, DollarSign, BookOpen,
   FileBarChart, Receipt, ChevronDown, ChevronUp,
   Target, Clipboard, TrendingUp, Shield, Package,
-  LayoutDashboard, FolderTree, Building2, Cpu, Server
+  LayoutDashboard, FolderTree, Building2, Cpu, Server, Landmark
 } from 'lucide-react';
 // CompactCalendar rimosso - calendario integrato nel workspace
 
@@ -74,7 +74,8 @@ const defaultMenuItems: MenuItem[] = [
       { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini?tab=prodotti' },
       { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini?tab=listini' },
       { id: 'categorie-tipologie', label: 'Categorie & Tipologie', icon: FolderTree, path: '/prodotti-listini?tab=categorie' },
-      { id: 'fornitori', label: 'Fornitori', icon: Building2, path: '/prodotti-listini?tab=fornitori' }
+      { id: 'fornitori', label: 'Fornitori', icon: Building2, path: '/prodotti-listini?tab=fornitori' },
+      { id: 'enti-finanziari', label: 'Enti Finanziari', icon: Landmark, path: '/prodotti-listini?tab=enti-finanziari' }
     ]
   },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
