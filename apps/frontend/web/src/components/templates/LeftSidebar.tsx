@@ -71,11 +71,12 @@ const defaultMenuItems: MenuItem[] = [
     hasSubmenu: true,
     submenuItems: [
       { id: 'dashboard-prodotti', label: 'Dashboard', icon: LayoutDashboard, path: '/prodotti-listini' },
-      { id: 'catalogo-prodotti', label: 'Catalogo Prodotti', icon: Package, path: '/prodotti-listini?tab=prodotti' },
-      { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini?tab=listini' },
+      { id: 'catalogo-prodotti', label: 'Prodotti', icon: Package, path: '/prodotti-listini?tab=prodotti' },
+      { id: 'drivers', label: 'Drivers', icon: Zap, path: '/prodotti-listini?tab=drivers' },
       { id: 'categorie-tipologie', label: 'Categorie & Tipologie', icon: FolderTree, path: '/prodotti-listini?tab=categorie' },
       { id: 'fornitori', label: 'Fornitori', icon: Building2, path: '/prodotti-listini?tab=fornitori' },
-      { id: 'enti-finanziari', label: 'Enti Finanziari', icon: Landmark, path: '/prodotti-listini?tab=enti-finanziari' }
+      { id: 'enti-finanziari', label: 'Enti Finanziari', icon: Landmark, path: '/prodotti-listini?tab=enti-finanziari' },
+      { id: 'listini-prezzi', label: 'Listini Prezzi', icon: FileText, path: '/prodotti-listini?tab=listini' }
     ]
   },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
