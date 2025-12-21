@@ -147,73 +147,10 @@ router.get('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // ==================== PART 1: Get tenant legal_entities with roles ====================
-    const entitiesList = await db.query.legalEntities.findMany({
-      where: eq(legalEntities.tenantId, tenantId),
-      orderBy: [desc(legalEntities.createdAt)]
-    });
-
-    const entitiesWithChildren = await Promise.all(entitiesList.map(async (entity) => {
-      const tenantSuppliers = await db
-        .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, origin: supplierOverrides.origin, status: supplierOverrides.status })
-        .from(supplierOverrides)
-        .where(and(eq(supplierOverrides.legalEntityId, entity.id), eq(supplierOverrides.tenantId, tenantId)));
-
-      const brandSuppliers = await db
-        .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, origin: suppliers.origin, status: suppliers.status })
-        .from(suppliers)
-        .where(eq(suppliers.legalEntityId, entity.id));
-
-      const allSuppliers = [
-        ...tenantSuppliers.map(s => ({ ...s, origin: s.origin || 'tenant' })),
-        ...brandSuppliers.map(s => ({ ...s, origin: s.origin || 'brand' }))
-      ];
-
-      const linkedFinancialEntities = await db
-        .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, origin: financialEntities.origin, status: financialEntities.status })
-        .from(financialEntities)
-        .where(eq(financialEntities.legalEntityId, entity.id));
-
-      // Operators are now standalone in public.operators with embedded ragione_sociale
-      // They don't link via legalEntityId anymore
-      const linkedOperators: Array<{ id: string, code: string, name: string, ragioneSociale: string | null }> = [];
-
-      const hasBrandSupplier = brandSuppliers.length > 0;
-      const hasBrandFinancialEntity = linkedFinancialEntities.some(fe => fe.origin === 'brand');
-      const hasBrandManagedChildren = hasBrandSupplier || hasBrandFinancialEntity || linkedOperators.length > 0;
-
-      const roles: Array<{ type: 'supplier' | 'financial_entity' | 'brand', origin: 'tenant' | 'brand', label: string }> = [];
-      if (tenantSuppliers.length > 0) roles.push({ type: 'supplier', origin: 'tenant', label: 'Fornitore' });
-      if (brandSuppliers.length > 0) roles.push({ type: 'supplier', origin: 'brand', label: 'Fornitore (Brand)' });
-      const tenantFE = linkedFinancialEntities.filter(fe => fe.origin === 'tenant');
-      const brandFE = linkedFinancialEntities.filter(fe => fe.origin === 'brand');
-      if (tenantFE.length > 0) roles.push({ type: 'financial_entity', origin: 'tenant', label: 'Ente Finanziante' });
-      if (brandFE.length > 0) roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
-      if (linkedOperators.length > 0) roles.push({ type: 'operator', origin: 'brand', label: 'Operatore' });
-
-      const linkedStores = await db.select({ id: stores.id }).from(stores).where(eq(stores.legalEntityId, entity.id));
-      const hasDependencies = linkedStores.length > 0 || hasBrandManagedChildren;
-
-      return {
-        ...entity,
-        roles,
-        isEditable: !hasBrandManagedChildren,
-        hasDependencies,
-        hasBrandManagedChildren,
-        _source: 'legal_entity' as const,
-        _children: {
-          suppliers: allSuppliers,
-          financialEntities: linkedFinancialEntities,
-          operators: linkedOperators.map(op => ({ ...op, origin: 'brand' })),
-          hasSupplier: allSuppliers.length > 0,
-          hasFinancialEntity: linkedFinancialEntities.length > 0,
-          hasOperator: linkedOperators.length > 0,
-          hasBrandManagedChildren
-        }
-      };
-    }));
-
-    // ==================== PART 2: Get standalone entities WITHOUT legal_entity_id ====================
+    // ==================== PARTNER ENTITIES ONLY ====================
+    // This endpoint returns ONLY partner entities (Suppliers, Financial Entities, Operators)
+    // Organization's legal entities (ragioni sociali) are managed separately via hub-spoke system
+    // and are NOT included here to avoid duplication
     // These include:
     // - Tenant supplier_overrides without legal_entity_id (editable)
     // - Brand suppliers without legal_entity_id (read-only)
@@ -363,19 +300,15 @@ router.get('/legal-entities', async (req, res) => {
       }
     }
 
-    const standaloneEntities = Array.from(standaloneEntityMap.values());
+    const partnerEntities = Array.from(standaloneEntityMap.values());
 
-    // ==================== PART 3: Combine and filter ====================
-    const allEntities = [...entitiesWithChildren, ...standaloneEntities];
-
-    const filteredEntities = roleFilter 
-      ? allEntities.filter(e => e.roles.length > 0)
-      : allEntities;
+    // All partner entities have roles by definition (supplier/operator/financial_entity)
+    // No filtering needed - roleFilter parameter is now deprecated (kept for backward compatibility)
 
     res.status(200).json({
       success: true,
-      data: filteredEntities,
-      message: 'Legal entities retrieved successfully',
+      data: partnerEntities,
+      message: 'Partner entities retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
 
