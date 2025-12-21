@@ -8,6 +8,7 @@ import {
   italianVatNumberSchema, italianTaxCodeSchema, pecEmailSchema,
   italianPhoneSchema, ibanSchema
 } from '@/lib/validation/italian-business-validation';
+import { apiService } from '@/services/ApiService';
 
 interface FinancialEntityModalProps {
   isOpen: boolean;
@@ -209,12 +210,6 @@ export default function FinancialEntityModal({
 
     setSaving(true);
     try {
-      const url = mode === 'create' 
-        ? '/api/wms/financial-entities'
-        : `/api/wms/financial-entities/${data.id}`;
-
-      const method = mode === 'create' ? 'POST' : 'PUT';
-
       const payload = {
         ...formData,
         legalFormId: formData.legalFormId ? parseInt(formData.legalFormId) : null,
@@ -222,19 +217,18 @@ export default function FinancialEntityModal({
         capitalStock: formData.capitalStock ? parseFloat(formData.capitalStock) : null
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore durante il salvataggio');
+      let result;
+      if (mode === 'create') {
+        result = await apiService.createFinancialEntity(payload);
+      } else {
+        result = await apiService.updateFinancialEntity(data.id, payload);
       }
 
-      queryClient.invalidateQueries({ queryKey: ['/api/wms/financial-entities'] });
+      if (!result.success) {
+        throw new Error(result.error || 'Errore durante il salvataggio');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['/api/financial-entities'] });
       onSuccess();
       onClose();
     } catch (error: any) {

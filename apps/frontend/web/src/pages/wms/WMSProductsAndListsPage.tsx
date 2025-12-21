@@ -11,13 +11,15 @@ import {
   Building2,
   Plus,
   ShoppingCart,
-  Zap
+  Zap,
+  Landmark
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
 import ListiniTabContent from '@/components/wms/ListiniTabContent';
 import FornitoriTabContent from '@/components/wms/FornitoriTabContent';
 import DriversTabContent from '@/components/wms/DriversTabContent';
 import CategoriesTypologiesTabContent from '@/components/wms/CategoriesTypologiesTabContent';
+import EntiFinanziariTabContent from '@/components/wms/EntiFinanziariTabContent';
 
 // Lazy load heavy components
 const ProductsPage = lazy(() => import('./ProductsPage'));
@@ -43,6 +45,7 @@ export default function WMSProductsAndListsPage() {
     'listini',
     'categorie',
     'fornitori',
+    'enti-finanziari',
     'drivers'
   ], []);
 
@@ -76,6 +79,12 @@ export default function WMSProductsAndListsPage() {
       label: 'Fornitori',
       icon: Building2,
       testId: 'tab-fornitori'
+    },
+    {
+      id: 'enti-finanziari',
+      label: 'Enti Finanziari',
+      icon: Landmark,
+      testId: 'tab-enti-finanziari'
     },
     {
       id: 'drivers',
@@ -161,6 +170,10 @@ export default function WMSProductsAndListsPage() {
 
           <TabsContent value="fornitori" className="mt-0">
             {activeTab === 'fornitori' && <FornitoriTabContent />}
+          </TabsContent>
+
+          <TabsContent value="enti-finanziari" className="mt-0">
+            {activeTab === 'enti-finanziari' && <EntiFinanziariTabContent />}
           </TabsContent>
 
           <TabsContent value="drivers" className="mt-0">

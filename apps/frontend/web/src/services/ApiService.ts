@@ -210,6 +210,30 @@ class ApiService {
     });
   }
 
+  async getFinancialEntities() {
+    return this.makeRequest<any[]>('/api/wms/financial-entities');
+  }
+
+  async createFinancialEntity(entityData: any) {
+    return this.makeRequest<any>('/api/wms/financial-entities', {
+      method: 'POST',
+      body: JSON.stringify(entityData)
+    });
+  }
+
+  async updateFinancialEntity(id: string, entityData: any) {
+    return this.makeRequest<any>(`/api/wms/financial-entities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(entityData)
+    });
+  }
+
+  async deleteFinancialEntity(id: string) {
+    return this.makeRequest<void>(`/api/wms/financial-entities/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
   async getCommercialAreas() {
     return this.makeRequest<any[]>('/api/commercial-areas');
   }
