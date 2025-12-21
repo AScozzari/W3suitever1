@@ -201,12 +201,16 @@ router.get('/legal-entities', async (req, res) => {
     for (const sup of tenantSuppliers) {
       const key = `tenant-${sup.code}`;
       if (!standaloneEntityMap.has(key)) {
+        // Normalize status to Italian labels for frontend
+        const normalizedStato = sup.status === 'active' || !sup.status ? 'Attiva' : 
+                                sup.status === 'suspended' ? 'Sospesa' : 
+                                sup.status === 'inactive' ? 'Inattiva' : sup.status;
         standaloneEntityMap.set(key, {
           id: sup.id, // Use real ID for tenant entities
           codice: sup.code,
           nome: sup.name,
           pIva: sup.vatNumber,
-          stato: sup.status || 'active',
+          stato: normalizedStato,
           roles: [],
           isEditable: true, // Tenant-created = editable
           hasDependencies: false,
@@ -225,12 +229,16 @@ router.get('/legal-entities', async (req, res) => {
     for (const sup of standaloneBrandSuppliers) {
       const key = `brand-${sup.code}`;
       if (!standaloneEntityMap.has(key)) {
+        // Normalize status to Italian labels for frontend
+        const normalizedStato = sup.status === 'active' || !sup.status ? 'Attiva' : 
+                                sup.status === 'suspended' ? 'Sospesa' : 
+                                sup.status === 'inactive' ? 'Inattiva' : sup.status;
         standaloneEntityMap.set(key, {
           id: `brand-${sup.id}`,
           codice: sup.code,
           nome: sup.name,
           pIva: sup.vatNumber,
-          stato: sup.status || 'active',
+          stato: normalizedStato,
           roles: [],
           isEditable: false,
           hasDependencies: true,
@@ -249,12 +257,16 @@ router.get('/legal-entities', async (req, res) => {
     for (const fe of standaloneBrandFE) {
       const key = `brand-${fe.code}`;
       if (!standaloneEntityMap.has(key)) {
+        // Normalize status to Italian labels for frontend
+        const normalizedStato = fe.status === 'active' || !fe.status ? 'Attiva' : 
+                                fe.status === 'suspended' ? 'Sospesa' : 
+                                fe.status === 'inactive' ? 'Inattiva' : fe.status;
         standaloneEntityMap.set(key, {
           id: `brand-${fe.id}`,
           codice: fe.code,
           nome: fe.name,
           pIva: fe.vatNumber,
-          stato: fe.status || 'active',
+          stato: normalizedStato,
           roles: [],
           isEditable: false,
           hasDependencies: true,
