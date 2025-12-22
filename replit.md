@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution. The platform aims to become a leading integrated business operations platform, characterized by a WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, aiming to be a leading integrated business operations platform with a WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -139,7 +139,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: The design system is based on WindTre Glassmorphism, utilizing `shadcn/ui` and Radix UI primitives. Styling uses CSS variables and Tailwind CSS. The UI maintains a consistent monorepo layout with a fixed header, sidebar, white backgrounds, and build-time controlled UI zoom via `VITE_FONT_SCALE`.
+- **UI/UX Decisions**: WindTre Glassmorphism design using `shadcn/ui` and Radix UI primitives. Styling via CSS variables and Tailwind CSS. Consistent monorepo layout with fixed header, sidebar, white backgrounds, and build-time controlled UI zoom (`VITE_FONT_SCALE`).
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
