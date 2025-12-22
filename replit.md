@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and enhance business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency, market responsiveness, and strategic decision-making, with the ambition of becoming a leading integrated business operations platform.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and enhance business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency, market responsiveness, and strategic decision-making, with the ambition of becoming a leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -151,20 +151,24 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and enhanc
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with a fixed header and sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE`). Leverages `shadcn/ui`, Radix UI primitives, CSS variables, and Tailwind CSS for a consistent and accessible user experience.
+- **UI/UX Decisions**: WindTre Glassmorphism design with a fixed header and sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Leverages `shadcn/ui`, Radix UI primitives, CSS variables, and Tailwind CSS for consistency and accessibility.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
-    - **Security**: OAuth2/OIDC, Multi-Factor Authentication (MFA), JWTs, and a 3-level Role-Based Access Control (RBAC).
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and AI Voice Agent System with RAG.
-    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
-    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, incremental VPS deployment scripts (`./deploy/incremental-deploy.sh`), and a specific VPS directory structure (`/var/www/w3suite/`).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, AI Voice Agent System with RAG.
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
+    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, incremental VPS deployment scripts (`./deploy/incremental-deploy.sh`), and a specific VPS directory structure (`/var/www/w3suite/`). VPS SSH via `ssh -i deploy/keys/vps_key root@82.165.16.223` and DB access via local socket `sudo -u postgres psql -d w3suite_prod`.
     - **Brand Interface**: Workflow Builder (Zustand with MCP nodes) and Master Catalog System (Git-versioned JSON files).
     - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. Uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable with approval workflows.
+    - **WMS Module (CQRS Architecture)**: Supports diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable with approval workflows.
     - **System Config Page**: Modular settings dashboard at `/settings/system`, organized by tabs (WMS Movements, VoIP, HR, CRM, Notifications).
     - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS.
-    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team structures and data access, with rules for membership and dynamic request routing. Legal Entities are external partners with defined roles (e.g., Supplier, Financial Entity).
+    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team structures and data access, with rules for membership and dynamic request routing (Functional First, First Wins, Shift-Based). Legal Entities are external partners with defined roles (e.g., Supplier, Financial Entity).
+- **Feature Specifications**:
+    - **Cross-Store Architecture**: Default view is always cross-store (tenant-wide), with access control based on roles, not store selection. Data queries omit `storeId` for cross-store views.
+    - **Request Routing**: Implements "Functional First → First Wins" and "Shift-Based Routing" for handling requests based on team type, supervisor roles, and active shifts.
+    - **Legal Entities**: Represents external partners (Suppliers, Financial Entities, Operators) with specific roles, propagating to relevant tables upon activation.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
