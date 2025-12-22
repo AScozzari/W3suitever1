@@ -2652,17 +2652,19 @@ export default function ListiniTabContent() {
           </DialogHeader>
 
           {wizardStep >= 3 ? (
-            <div className="flex-1 min-h-0 py-4 px-4 overflow-hidden">
-              {wizardStep === 3 && (
-                priceListHeader.type === 'promo_canvas' 
-                  ? renderStep3PromoCanvas() 
-                  : priceListHeader.type === 'no_promo'
-                    ? renderStep3NoPromo()
-                    : priceListHeader.type === 'promo_device'
-                      ? renderStep3PromoDevice()
-                      : renderStep3Simple()
-              )}
-              {wizardStep === 4 && renderStep4()}
+            <div className="flex-1 min-h-0 py-2 px-4 overflow-hidden flex flex-col">
+              <div className="flex-1 min-h-0">
+                {wizardStep === 3 && (
+                  priceListHeader.type === 'promo_canvas' 
+                    ? renderStep3PromoCanvas() 
+                    : priceListHeader.type === 'no_promo'
+                      ? renderStep3NoPromo()
+                      : priceListHeader.type === 'promo_device'
+                        ? renderStep3PromoDevice()
+                        : renderStep3Simple()
+                )}
+                {wizardStep === 4 && renderStep4()}
+              </div>
             </div>
           ) : (
             <div className="py-4 px-4">
