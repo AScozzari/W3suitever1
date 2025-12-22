@@ -1576,8 +1576,9 @@ export default function ListiniTabContent() {
   );
 
   const renderStep3NoPromo = () => (
+    <div className="h-full min-h-0">
     <TooltipProvider>
-      <div className="flex gap-4 h-full">
+      <div className="flex gap-4 h-full min-h-0">
         {/* Left panel: Product search - full height with independent scroll */}
         <div className="w-1/3 flex flex-col border rounded-lg min-h-0">
           <div className="p-3 border-b bg-gray-50 shrink-0">
@@ -1929,11 +1930,13 @@ export default function ListiniTabContent() {
         </div>
       </div>
     </TooltipProvider>
+    </div>
   );
 
   const renderStep3PromoDevice = () => (
+    <div className="h-full min-h-0">
     <TooltipProvider>
-      <div className="flex gap-4 h-full">
+      <div className="flex gap-4 h-full min-h-0">
         {/* Left panel: Product search */}
         <div className="w-1/3 flex flex-col border rounded-lg min-h-0">
           <div className="p-3 border-b bg-gray-50 shrink-0">
@@ -2291,6 +2294,7 @@ export default function ListiniTabContent() {
         </div>
       </div>
     </TooltipProvider>
+    </div>
   );
 
   const renderStep3Simple = () => (
