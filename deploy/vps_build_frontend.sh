@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-cd /var/www/w3suite/app/apps/frontend/web
+cd /var/www/w3suite/apps/frontend/web
 echo "📦 Installing frontend dependencies..."
 npm install
 echo "🎨 Building frontend with VITE_FONT_SCALE=80..."

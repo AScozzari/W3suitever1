@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-cd /var/www/w3suite/app
+cd /var/www/w3suite
 echo "📦 Installing dependencies..."
 npm ci --production=false
 echo "🔨 Building backend..."

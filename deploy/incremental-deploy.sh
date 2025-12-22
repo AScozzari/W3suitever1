@@ -2,7 +2,7 @@
 set -e
 
 VPS_HOST="root@82.165.16.223"
-VPS_APP_DIR="/var/www/w3suite/app"
+VPS_APP_DIR="/var/www/w3suite"
 VPS_RELEASES_DIR="/var/www/w3suite/releases"
 VPS_CURRENT_LINK="/var/www/w3suite/current"
 SSH_KEY="$HOME/.ssh/vps_key"
@@ -36,7 +36,7 @@ rsync -avz --progress \
 if [ "$DEPLOY_TYPE" == "backend" ] || [ "$DEPLOY_TYPE" == "full" ]; then
     echo "🔧 Building backend on VPS..."
     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "$VPS_HOST" << 'ENDSSH'
-        cd /var/www/w3suite/app
+        cd /var/www/w3suite
         
         if [ ! -d "node_modules" ] || [ package.json -nt node_modules ]; then
             echo "📦 Installing dependencies..."
@@ -66,7 +66,7 @@ fi
 if [ "$DEPLOY_TYPE" == "frontend" ] || [ "$DEPLOY_TYPE" == "full" ]; then
     echo "🎨 Building frontend on VPS..."
     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "$VPS_HOST" << 'ENDSSH'
-        cd /var/www/w3suite/app
+        cd /var/www/w3suite
         
         echo "📦 Installing frontend dependencies..."
         cd apps/frontend/web
