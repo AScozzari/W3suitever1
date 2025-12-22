@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution. The platform aims to become a leading integrated business operations platform, characterized by a distinctive WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform that centralizes business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution. The platform aims to become a leading integrated business operations solution, characterized by a distinctive WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -93,8 +93,13 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ MAI**: Auto-selezionare il primo negozio come default
   - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
   - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
+- **LEGAL ENTITIES = PARTNER CON RUOLO (NON ragioni sociali organizzazione)**:
+  - **⚠️ IMPORTANTE**: `legal_entities` NON sono le ragioni sociali del tenant/organizzazione
+  - **✅ Sono**: Partner esterni (Fornitori, Enti Finanzianti, Operatori) con un ruolo specifico
+  - **🔄 Propagazione**: Quando `is_supplier=true` → crea record in `suppliers`, `is_financial_entity=true` → `financial_entities`, etc.
+  - **📋 Ruoli disponibili**: Fornitore, Ente Finanziante, Operatore (flags booleani sulla tabella)
 - **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
-  - **🏢 Struttura**: Tenant → Commercial Area → Legal Entity → Store → Department → Team → User
+  - **🏢 Struttura**: Tenant → Commercial Area → Legal Entity (partner) → Store → Department → Team → User
   - **📊 Reference Data (public schema)**: `commercial_areas` (4 aree: AREA1-4), shared across tenants
   - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `departments`, `teams`, `users`
   - **🏬 Departments Table**: `w3suite.departments` con FK opzionale `store_id` per dipartimenti store-specific
@@ -146,33 +151,33 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design, utilizing `shadcn/ui` and Radix UI primitives. Styling employs CSS variables and Tailwind CSS for consistency, featuring a fixed header, sidebar, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE`).
+- **UI/UX Decisions**: WindTre Glassmorphism design implemented with `shadcn/ui` and Radix UI primitives. Styling uses CSS variables and Tailwind CSS for consistency. Features include a fixed header, sidebar, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE`).
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
-    - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
-    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, and Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem (PDC Analyzer), and AI Voice Agent System with RAG capabilities.
-    - **CRM Module**: Features a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **Deployment & Governance**: Includes a Deploy Center Auto-Commit System and Bidirectional Branch Linking. VPS deployments adhere to specific build commands and environment variable handling.
-    - **Brand Interface**: Incorporates a Workflow Builder (n8n-style, using Zustand with 106 MCP nodes) and a Master Catalog System (hybrid architecture using Git-versioned JSON files).
-    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. VoIP/SIP configuration strictly uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports various product types (physical, virtual, canvas, service), dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. It includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable via a System Config page with approval workflows and linked workflow templates.
-    - **System Config Page**: A modular settings dashboard located at `/settings/system` with dedicated tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
-    - **Business Drivers Architecture**: Multi-tenant drivers are stored in `w3suite.drivers` with RLS for source types and product type associations.
-    - **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) is used for team membership, type, request routing, and cross-store data access.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
+    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, Multi-Provider OAuth (MCP).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, AI Voice Agent System with RAG.
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
+    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, VPS deployments with specific build commands and incremental updates.
+    - **Brand Interface**: Workflow Builder (Zustand with 106 MCP nodes) and Master Catalog System (Git-versioned JSON files).
+    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. VoIP/SIP configuration uses `wss://{sipServer}/ws` on port 443.
+    - **WMS Module (CQRS Architecture)**: Supports various product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable with approval workflows.
+    - **System Config Page**: Modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS.
+    - **Organizational Hierarchy**: Pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) for team management and data access, including specific rules for team membership and request routing.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
-- **Redis**: Used for BullMQ and the Unified Notification System.
-- **OAuth2/OIDC Enterprise**: For user authentication.
+- **Redis**: For BullMQ and Unified Notification System.
+- **OAuth2/OIDC Enterprise**: User authentication.
 - **SHADCN/UI**: UI component library.
 - **Radix UI**: Headless component primitives.
 - **Lucide React**: Icon library.
-- **TanStack React Query**: For server state management.
-- **React Hook Form**: Manages form handling and validation.
+- **TanStack React Query**: Server state management.
+- **React Hook Form**: Form handling and validation.
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: For database schema management.
+- **Drizzle Kit**: Database schema management.
 - **PostCSS**: CSS pre-processing.
 - **ESBuild**: Server-side code bundling.
-- **Nginx**: As a reverse proxy.
-- **OpenAI**: Provides AI services (`gpt-4o`, `gpt-4o-realtime`).
+- **Nginx**: Reverse proxy.
+- **OpenAI**: AI services (`gpt-4o`, `gpt-4o-realtime`).
