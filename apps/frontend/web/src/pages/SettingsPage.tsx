@@ -8,12 +8,26 @@ import { oauth2Client } from '../services/OAuth2Client';
 
 // Helper per fetch autenticate con token Bearer
 const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  const token = await oauth2Client.getAccessToken();
-  const headers: HeadersInit = {
-    ...(options.headers || {}),
-    'Authorization': `Bearer ${token}`
-  };
-  return fetch(url, { ...options, headers, credentials: 'include' });
+  try {
+    const token = await oauth2Client.getAccessToken();
+    console.log('[AUTH-FETCH] Token obtained:', token ? `${token.substring(0, 20)}...` : 'NULL');
+    
+    if (!token) {
+      console.error('[AUTH-FETCH] No token available, redirecting to login');
+      window.location.href = '/oauth2/authorize';
+      throw new Error('No authentication token');
+    }
+    
+    const headers: HeadersInit = {
+      ...(options.headers || {}),
+      'Authorization': `Bearer ${token}`
+    };
+    console.log('[AUTH-FETCH] Making request to:', url);
+    return fetch(url, { ...options, headers, credentials: 'include' });
+  } catch (error) {
+    console.error('[AUTH-FETCH] Error getting token:', error);
+    throw error;
+  }
 };
 import { useLocation } from 'wouter';
 import AvatarSelector from '../components/AvatarSelector';

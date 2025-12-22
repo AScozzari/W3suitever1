@@ -1,0 +1,709 @@
+ms: {0: 'staging', 1: 'dashboard', tenant: 'staging', *: 'dashboard'}
+index-DjZYMQKr.js:1202 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+index-DjZYMQKr.js:1202 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+index-DjZYMQKr.js:1202 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:46, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:46, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:46, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:46, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:46, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/DashboardPage-BB1wDu_1.js 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/query-BNy7z5T9.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/radix-ui-CLSFh9a9.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/Layout-3BRFO574.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/useTenantSafety-RLYhNkzA.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/it-DnNY9yJU.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/icons-DhnPAtO_.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/format-DI4HtZIj.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/endOfMonth-BpiC_VQ1.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/button-BG2gNR7U.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/badge-XWtIGcKx.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/utils-D5y9Z8cT.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/proxy-DMDFFhYY.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/tabs-DIrT69oW.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/separator-CWcj7Jri.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/select-u7LlNPrS.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/flow-BWkjIzJi.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/ApiService-DJ6NMhKt.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/BarChart-yIsA_ZaX.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/PieChart-BMGKP-Wx.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/AreaChart-CpKLlXgS.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+3index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+Layout-3BRFO574-acW7b2ZC.js:86 No auth token found - login required
+2index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+index-DjZYMQKr.js:1189  GET https://w3suite.it/api/legal-entities 500 (Internal Server Error)
+$M @ index-DjZYMQKr.js:1189
+await in $M
+makeRequest @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+getLegalEntities @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+queryFn @ DashboardPage-BB1wDu_1-CVZTmyBs.js:1
+x @ index-DjZYMQKr.js:99
+w @ index-DjZYMQKr.js:99
+start @ index-DjZYMQKr.js:99
+fetch @ index-DjZYMQKr.js:99
+to @ index-DjZYMQKr.js:99
+onSubscribe @ index-DjZYMQKr.js:99
+subscribe @ index-DjZYMQKr.js:99
+(anonime) @ index-DjZYMQKr.js:99
+j0 @ index-DjZYMQKr.js:31
+qs @ index-DjZYMQKr.js:33
+ya @ index-DjZYMQKr.js:33
+(anonime) @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/legal-entities: relation "operators" does not exist
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+await in makeRequest
+getLegalEntities @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+queryFn @ DashboardPage-BB1wDu_1-CVZTmyBs.js:1
+x @ index-DjZYMQKr.js:99
+w @ index-DjZYMQKr.js:99
+start @ index-DjZYMQKr.js:99
+fetch @ index-DjZYMQKr.js:99
+to @ index-DjZYMQKr.js:99
+onSubscribe @ index-DjZYMQKr.js:99
+subscribe @ index-DjZYMQKr.js:99
+(anonime) @ index-DjZYMQKr.js:99
+j0 @ index-DjZYMQKr.js:31
+qs @ index-DjZYMQKr.js:33
+ya @ index-DjZYMQKr.js:33
+(anonime) @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'avviso
+Layout-3BRFO574-acW7b2ZC.js:86 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+Layout-3BRFO574-acW7b2ZC.js:86 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it:443 (transport: wss)
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Configuration:
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · allowLegacyNotifications: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationHa1: ""
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationPassword: NOT SHOWN
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationUsername: "2000"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · delegate: {}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactName: ""
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactParams: {"transport":"ws"}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · displayName: "Extension 2000"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · forceRport: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · gracefulShutdown: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackAllowUnregisteredOptionTags: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackIpInContact: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackViaTcp: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceId: ""
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceIdAlwaysAdded: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logBuiltinEnabled: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConfiguration: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConnector: undefined
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logLevel: "debug"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · noAnswerTimeout: 60
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · preloadedRouteSet: []
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionAttempts: 0
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionDelay: 4
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sendInitialProvisionalResponse: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactory: (e,t)=>{o===void 0&&(o=$n());const s={iceGatheringTimeout:(t==null?void 0:t.iceGatheringTimeout)!==void 0?t==null?void 0:t.iceGatheringTimeout:5e3,peerConnectionConfiguration:Object.assign(Object.assign({},In()),t==null?void 0:t.peerConnectionConfiguration)},r=e.userAgent.getLogger("sip.SessionDescriptionHandler");return new _e(r,o,s)}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactoryOptions: {}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtension100rel: "Unsupported"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionReplaces: "Unsupported"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionExtraSupported: []
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipjsId: "tah2j"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportConstructor: _t
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportOptions: {"server":"wss://demo.edgvoip.it:443","connectionTimeout":10}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · uri: sip:2000@demo.edgvoip.it
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · userAgentString: "SIP.js/0.21.1"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "41n02ln0ijna.invalid"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it:443
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+2index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:48, Token expires: 08:13:45
+useTenantSafety-RLYhNkzA-P9qiBTM5.js:5 [TENANT-NAV] Navigating to: /staging/settings
+index-DjZYMQKr.js:1202 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'settings', tenant: 'staging', *: 'settings'}
+index-DjZYMQKr.js:1202 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+index-DjZYMQKr.js:1202 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/AvatarSelector-NcBNTFB9.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/SettingsPage-CMDB6DZl.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/StandardFields-1Eq7mANy.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/label-BJAjMDgv.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/form-CpiQJwMb.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/LoadingState-DQh3YPqd.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/textarea-C8owGzHx.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/switch-BXHv-3uN.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/ChannelSettingsPage-BX4SmQXU.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/table-BaF6Vh24.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/italian-business-validation-BqwNtw-W.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+Ff @ index-DjZYMQKr.js:33
+Gn @ index-DjZYMQKr.js:31
+(anonime) @ index-DjZYMQKr.js:33Comprendi l'errore
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+Layout-3BRFO574-acW7b2ZC.js:86 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+Layout-3BRFO574-acW7b2ZC.js:86 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it:443 (transport: wss)
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Configuration:
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · allowLegacyNotifications: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationHa1: ""
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationPassword: NOT SHOWN
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · authorizationUsername: "2000"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · delegate: {}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactName: ""
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · contactParams: {"transport":"ws"}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · displayName: "Extension 2000"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · forceRport: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · gracefulShutdown: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackAllowUnregisteredOptionTags: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackIpInContact: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · hackViaTcp: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceId: ""
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · instanceIdAlwaysAdded: false
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logBuiltinEnabled: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConfiguration: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logConnector: undefined
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · logLevel: "debug"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · noAnswerTimeout: 60
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · preloadedRouteSet: []
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionAttempts: 0
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · reconnectionDelay: 4
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sendInitialProvisionalResponse: true
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactory: (e,t)=>{o===void 0&&(o=$n());const s={iceGatheringTimeout:(t==null?void 0:t.iceGatheringTimeout)!==void 0?t==null?void 0:t.iceGatheringTimeout:5e3,peerConnectionConfiguration:Object.assign(Object.assign({},In()),t==null?void 0:t.peerConnectionConfiguration)},r=e.userAgent.getLogger("sip.SessionDescriptionHandler");return new _e(r,o,s)}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sessionDescriptionHandlerFactoryOptions: {}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtension100rel: "Unsupported"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionReplaces: "Unsupported"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipExtensionExtraSupported: []
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · sipjsId: "mebmm"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportConstructor: _t
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · transportOptions: {"server":"wss://demo.edgvoip.it:443","connectionTimeout":10}
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · uri: sip:2000@demo.edgvoip.it
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · userAgentString: "SIP.js/0.21.1"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "btnkl7ov7ct4.invalid"
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it:443
+Layout-3BRFO574-acW7b2ZC.js:58 Mon Dec 22 2025 07:58:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+Layout-3BRFO574-acW7b2ZC.js:86 No auth token found - login required
+5index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+SettingsPage-CMDB6DZl-CkUBMows.js:1 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage-CMDB6DZl-CkUBMows.js:1 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+3index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+SettingsPage-CMDB6DZl-CkUBMows.js:15 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+4index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+SettingsPage-CMDB6DZl-CkUBMows.js:15 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+index-DjZYMQKr.js:1189  GET https://w3suite.it/api/legal-entities 500 (Internal Server Error)
+$M @ index-DjZYMQKr.js:1189
+await in $M
+makeRequest @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+getLegalEntities @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+loadSettingsData @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+(anonime) @ SettingsPage-CMDB6DZl-CkUBMows.js:1
+(anonime) @ SettingsPage-CMDB6DZl-CkUBMows.js:1
+qs @ index-DjZYMQKr.js:33
+ya @ index-DjZYMQKr.js:33
+(anonime) @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/legal-entities: relation "operators" does not exist
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+await in makeRequest
+getLegalEntities @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+loadSettingsData @ ApiService-DJ6NMhKt-G5pml2AI.js:1
+(anonime) @ SettingsPage-CMDB6DZl-CkUBMows.js:1
+(anonime) @ SettingsPage-CMDB6DZl-CkUBMows.js:1
+qs @ index-DjZYMQKr.js:33
+ya @ index-DjZYMQKr.js:33
+(anonime) @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'avviso
+SettingsPage-CMDB6DZl-CkUBMows.js:1 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(1)}
+SettingsPage-CMDB6DZl-CkUBMows.js:1 📝 Setting state with data: {legalEntities: 0, users: 21, stores: 5}
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
+SettingsPage-CMDB6DZl-CkUBMows.js:15 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 07:58:52, Token expires: 08:13:45
