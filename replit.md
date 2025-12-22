@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making by providing a comprehensive and integrated solution for modern businesses, simplifying complex processes and supporting growth.
+W3 Suite is a multi-tenant enterprise platform that centralizes and optimizes business operations across various modules, including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making by providing a comprehensive and integrated solution for modern businesses.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -89,7 +89,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
   - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
   - **📊 Data Queries**: Omettere storeId per vista cross-store, passare solo per filtri specifici
-  - **👤 Admin Role**: Vede tutto, tutti gli utenti, tutti i negozi, senza filtri obbligatori
+  - **👤 Admin Role**: Vede tutto, tutti gli utenti, tutti gli negozi, senza filtri obbligatori
   - **❌ MAI**: Auto-selezionare il primo negozio come default
   - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
   - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
