@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform that centralizes business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution. The platform aims to become a leading integrated business operations solution, characterized by a distinctive WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to boost operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, aiming to become a leading integrated business operations platform with a distinctive WindTre glassmorphism design.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -151,10 +151,10 @@ W3 Suite is a multi-tenant enterprise platform that centralizes business operati
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design implemented with `shadcn/ui` and Radix UI primitives. Styling uses CSS variables and Tailwind CSS for consistency. Features include a fixed header, sidebar, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE`).
+- **UI/UX Decisions**: WindTre Glassmorphism design, fixed header, sidebar, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE`). Implemented using `shadcn/ui` and Radix UI primitives, with styling via CSS variables and Tailwind CSS.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
     - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, AI Voice Agent System with RAG.
     - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, Customer 360° Dashboard.
