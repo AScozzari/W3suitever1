@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through a comprehensive, integrated solution. The platform aims to transform business operations and foster strategic growth by leveraging advanced AI for workflow automation, intelligent routing, and an AI Voice Agent System.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its purpose is to enhance efficiency, market responsiveness, and strategic decision-making through a comprehensive, integrated solution. The platform aims to transform business operations and foster strategic growth by leveraging advanced AI for workflow automation, intelligent routing, and an AI Voice Agent System.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
