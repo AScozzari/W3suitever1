@@ -812,7 +812,7 @@ export default function ListiniTabContent() {
   );
 
   const renderStep3PromoCanvas = () => (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col h-full min-h-0 gap-4">
       {/* Riepilogo selezioni correnti */}
       {(currentPair.physicalProductId || currentPair.canvasProductId) && !isPairComplete && (
         <Card className="p-4 bg-blue-50 border-blue-200 shrink-0">
