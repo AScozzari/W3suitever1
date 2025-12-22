@@ -812,10 +812,10 @@ export default function ListiniTabContent() {
   );
 
   const renderStep3PromoCanvas = () => (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full gap-4">
       {/* Riepilogo selezioni correnti */}
       {(currentPair.physicalProductId || currentPair.canvasProductId) && !isPairComplete && (
-        <Card className="p-4 bg-blue-50 border-blue-200">
+        <Card className="p-4 bg-blue-50 border-blue-200 shrink-0">
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <div className="text-sm text-gray-500 mb-1">Prodotto Fisico</div>
@@ -846,9 +846,9 @@ export default function ListiniTabContent() {
       )}
 
       {!isPairComplete ? (
-        <div className="grid grid-cols-2 gap-6">
-          <Card className="p-4">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+          <Card className="p-4 flex flex-col">
+            <div className="flex items-center gap-2 mb-4 shrink-0">
               <Smartphone className="h-5 w-5 text-orange-500" />
               <h4 className="font-semibold">Prodotto Fisico</h4>
               {currentPair.physicalProductId && (
@@ -859,8 +859,8 @@ export default function ListiniTabContent() {
               )}
             </div>
 
-            <div className="space-y-3">
-              <div className="relative">
+            <div className="flex flex-col flex-1 min-h-0 gap-3">
+              <div className="relative shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Cerca per nome o SKU..."
@@ -873,7 +873,7 @@ export default function ListiniTabContent() {
 
               {/* Type filter for physical products */}
               <Select value={physicalTypeFilter} onValueChange={setPhysicalTypeFilter}>
-                <SelectTrigger data-testid="select-physical-type">
+                <SelectTrigger data-testid="select-physical-type" className="shrink-0">
                   <SelectValue placeholder="Tipo prodotto" />
                 </SelectTrigger>
                 <SelectContent>
@@ -884,7 +884,7 @@ export default function ListiniTabContent() {
               </Select>
 
               <Select value={physicalCategoryFilter} onValueChange={setPhysicalCategoryFilter}>
-                <SelectTrigger data-testid="select-physical-category">
+                <SelectTrigger data-testid="select-physical-category" className="shrink-0">
                   <SelectValue placeholder="Tutte le categorie" />
                 </SelectTrigger>
                 <SelectContent>
@@ -895,7 +895,7 @@ export default function ListiniTabContent() {
                 </SelectContent>
               </Select>
 
-              <ScrollArea className="h-[280px] border rounded-lg">
+              <ScrollArea className="flex-1 min-h-0 border rounded-lg">
                 {filteredPhysicalProducts.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
@@ -939,8 +939,8 @@ export default function ListiniTabContent() {
             </div>
           </Card>
 
-          <Card className="p-4">
-            <div className="flex items-center gap-2 mb-4">
+          <Card className="p-4 flex flex-col">
+            <div className="flex items-center gap-2 mb-4 shrink-0">
               <Tv className="h-5 w-5 text-purple-500" />
               <h4 className="font-semibold">Prodotto Canvas</h4>
               {currentPair.canvasProductId && (
@@ -951,8 +951,8 @@ export default function ListiniTabContent() {
               )}
             </div>
 
-            <div className="space-y-3">
-              <div className="relative">
+            <div className="flex flex-col flex-1 min-h-0 gap-3">
+              <div className="relative shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Cerca per nome o SKU..."
@@ -964,7 +964,7 @@ export default function ListiniTabContent() {
               </div>
 
               <Select value={canvasCategoryFilter} onValueChange={setCanvasCategoryFilter}>
-                <SelectTrigger data-testid="select-canvas-category">
+                <SelectTrigger data-testid="select-canvas-category" className="shrink-0">
                   <SelectValue placeholder="Tutte le categorie" />
                 </SelectTrigger>
                 <SelectContent>
@@ -975,7 +975,7 @@ export default function ListiniTabContent() {
                 </SelectContent>
               </Select>
 
-              <ScrollArea className="h-[300px] border rounded-lg">
+              <ScrollArea className="flex-1 min-h-0 border rounded-lg">
                 {filteredCanvasProducts.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />

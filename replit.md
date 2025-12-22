@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize diverse business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through a comprehensive, integrated solution. The platform aims to transform business operations and foster strategic growth by leveraging advanced AI for workflow automation, intelligent routing, and an AI Voice Agent System.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through a comprehensive, integrated solution. The platform aims to transform business operations and foster strategic growth by leveraging advanced AI for workflow automation, intelligent routing, and an AI Voice Agent System.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -86,7 +86,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **🔧 Implementazione**: `request-trigger-service.ts` → `getActiveShiftStore()` + `isOperationalCategory()`
   - **📁 Action Tags Config**: `apps/backend/api/src/lib/action-tags.ts` → `routingCategory` per ogni tag
 - **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
-  - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
+  - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti gli negozi visibili
   - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
   - **📊 Data Queries**: Omettere storeId per vista cross-store, passare solo per filtri specifici
   - **👤 Admin Role**: Vede tutto, tutti gli utenti, tutti gli negozi, senza filtri obbligatori
@@ -162,7 +162,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **WMS Module (CQRS)**: Implements CQRS, supporting diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views, and tenant-configurable WMS Movement Type Configuration with approval workflows.
+    - **WMS Module (CQRS)**: Implements CQRS, supporting diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables.
     - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, and an incremental VPS deployment script (`./deploy/incremental-deploy.sh`). VPS uses `/var/www/w3suite/` as its root directory and SSH access via `deploy/keys/vps_key`. Database access on VPS is via local socket (`sudo -u postgres psql -d w3suite_prod`). VoIP WebSocket connections are configured to `wss://{extension.sipServer}/ws` on port 443.
     - **Brand Interface**: Features a Workflow Builder (Zustand with MCP nodes) and a Master Catalog System using Git-versioned JSON for product data.
     - **System Config Page**: A modular settings dashboard located at `/settings/system`, organized into tabs for various configurations.
