@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -140,6 +141,7 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
 ];
 
 export default function ListiniTabContent() {
+  const { toast } = useToast();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -551,6 +553,24 @@ export default function ListiniTabContent() {
       ));
       setEditingPairId(null);
     } else {
+      // Verifica duplicati prima di creare nuova coppia
+      const existingPair = savedPairs.find(
+        p => p.physicalProductId === currentPair.physicalProductId && 
+             p.canvasProductId === currentPair.canvasProductId
+      );
+      
+      if (existingPair) {
+        toast({
+          title: "Coppia già esistente",
+          description: `Questa combinazione Device + Canvas è già presente. Puoi modificarla dalla lista.`,
+          variant: "destructive"
+        });
+        // Auto-espandi la coppia duplicata per la modifica
+        setCanvasDeviceViewMode('list');
+        setExpandedPairId(existingPair.id);
+        return;
+      }
+
       // Crea nuova coppia
       const newPair: ProductPair = {
         id: `pair-${Date.now()}`,
