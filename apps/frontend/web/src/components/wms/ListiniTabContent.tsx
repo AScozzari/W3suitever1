@@ -1639,7 +1639,8 @@ export default function ListiniTabContent() {
         </div>
       )}
 
-      {savedPairs.length > 0 && (
+      {/* Vista Compatta (in modalità selezione) */}
+      {savedPairs.length > 0 && canvasDeviceViewMode === 'selection' && (
         <div className="mt-8">
           <Separator className="mb-4" />
           <h4 className="font-semibold mb-4 flex items-center gap-2">
@@ -1707,6 +1708,132 @@ export default function ListiniTabContent() {
               </Card>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Vista Lista con Accordion (in modalità lista) */}
+      {canvasDeviceViewMode === 'list' && (
+        <div className="flex-1 min-h-0 flex flex-col gap-4">
+          <ScrollArea className="flex-1">
+            <div className="space-y-3 p-1">
+              {savedPairs.map((pair) => {
+                const completionStatus = getCanvasDevicePairCompletionStatus(pair);
+                const isExpanded = expandedPairId === pair.id;
+                return (
+                  <Collapsible 
+                    key={pair.id} 
+                    open={isExpanded}
+                    onOpenChange={() => setExpandedPairId(isExpanded ? null : pair.id)}
+                  >
+                    <Card className={`overflow-hidden ${isExpanded ? 'border-orange-400' : ''}`}>
+                      <CollapsibleTrigger asChild>
+                        <div className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              completionStatus === 'complete' ? 'bg-green-500' : 
+                              completionStatus === 'partial' ? 'bg-yellow-500' : 'bg-red-500'
+                            }`} />
+                            {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronRight className="h-4 w-4 text-gray-500" />}
+                            <div>
+                              <div className="font-medium">{pair.physicalProductName}</div>
+                              <div className="text-sm text-gray-500 flex items-center gap-2">
+                                <span>+</span>
+                                <span>{pair.canvasProductName}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{pair.configurations.length} config</Badge>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSavedPairs(prev => prev.filter(p => p.id !== pair.id));
+                              }}
+                              data-testid={`btn-delete-pair-${pair.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="border-t p-4 bg-gray-50 space-y-4">
+                          {pair.configurations.length === 0 ? (
+                            <div className="text-center py-4 text-gray-500">
+                              <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                              <p className="text-sm">Nessuna configurazione</p>
+                              <Button 
+                                size="sm" 
+                                className="mt-2"
+                                onClick={() => {
+                                  loadPairForEditing(pair);
+                                  setCanvasDeviceViewMode('selection');
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Aggiungi
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {pair.configurations.map((config, idx) => (
+                                <div key={config.id} className="bg-white rounded-lg p-3 border">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant={config.salesMode === 'ALL' ? 'default' : config.salesMode === 'FIN' ? 'secondary' : 'outline'} className="text-xs">
+                                        {config.salesMode === 'ALL' && 'Pagamento Unico'}
+                                        {config.salesMode === 'FIN' && 'Finanziamento'}
+                                        {config.salesMode === 'VAR' && 'Variabile'}
+                                      </Badge>
+                                      {config.financialEntityName && (
+                                        <span className="text-xs text-gray-500">{config.financialEntityName}</span>
+                                      )}
+                                      {config.numberOfInstallments && (
+                                        <span className="text-xs text-purple-600">{config.numberOfInstallments} rate</span>
+                                      )}
+                                      {config.installmentAmount && (
+                                        <span className="text-xs font-medium">€{config.installmentAmount}/mese</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full"
+                                onClick={() => {
+                                  loadPairForEditing(pair);
+                                  setCanvasDeviceViewMode('selection');
+                                }}
+                              >
+                                <Settings2 className="h-3 w-3 mr-1" />
+                                Modifica Configurazioni
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          </ScrollArea>
+          
+          <div className="shrink-0 pt-4 border-t">
+            <Button 
+              onClick={() => setCanvasDeviceViewMode('selection')}
+              className="w-full"
+              style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+              data-testid="btn-add-more-pairs"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Aggiungi Altre Coppie
+            </Button>
           </div>
         </div>
       )}
