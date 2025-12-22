@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary purpose is to boost operational efficiency, improve market responsiveness, and facilitate strategic decision-making. The project aims to establish W3 Suite as a leading integrated platform for comprehensive business operations.
+W3 Suite is a multi-tenant enterprise platform centralizing business operations with integrated CRM, POS, WMS, Analytics, HR, CMS, and Bidding functionalities. It aims to enhance operational efficiency, market responsiveness, and strategic decision-making to become a leading comprehensive business platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -93,18 +93,22 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ MAI**: Auto-selezionare il primo negozio come default
   - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
   - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
-- **LEGAL ENTITIES = PARTNER CON RUOLO (NON ragioni sociali organizzazione)**:
-  - **⚠️ IMPORTANTE**: `legal_entities` NON sono le ragioni sociali del tenant/organizzazione
-  - **✅ Sono**: Partner esterni (Fornitori, Enti Finanzianti, Operatori) con un ruolo specifico
-  - **🔄 Propagazione**: Quando `is_supplier=true` → crea record in `suppliers`, `is_financial_entity=true` → `financial_entities`, etc.
-  - **📋 Ruoli disponibili**: Fornitore, Ente Finanziante, Operatore (flags booleani sulla tabella)
+- **ENTITY ARCHITECTURE (DUAL-TABLE SEPARATION)**:
+  - **🏢 `organization_entities`**: Ragioni Sociali del tenant/organizzazione (collegate a stores via `organization_entity_id`)
+    - Endpoint: `GET/POST/PUT/DELETE /api/organization-entities`
+    - Frontend: dropdown "Ragione Sociale" in StoreFormModal
+  - **🤝 `legal_entities`**: Partner esterni con ruolo (Fornitori, Enti Finanzianti, Operatori)
+    - **🔄 Propagazione**: Quando `is_supplier=true` → crea record in `suppliers`, `is_financial_entity=true` → `financial_entities`, etc.
+    - **📋 Ruoli disponibili**: Fornitore, Ente Finanziante, Operatore (flags booleani sulla tabella)
+  - **⚠️ IMPORTANTE**: Le due tabelle servono scopi diversi - NON confonderle!
+  - **🔧 Stores FK**: Usare `organizationEntityId` (colonna `organization_entity_id`), `legalEntityId` è DEPRECATED
 - **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
-  - **🏢 Struttura**: Tenant → Commercial Area → Legal Entity (partner) → Store → Department → Team → User
+  - **🏢 Struttura**: Tenant → Commercial Area → Organization Entity (RS) → Store → Department → Team → User
   - **📊 Reference Data (public schema)**: `commercial_areas` (4 aree: AREA1-4), shared across tenants
-  - **🏪 Tenant Data (w3suite schema)**: `stores`, `legal_entities`, `departments`, `teams`, `users`
+  - **🏪 Tenant Data (w3suite schema)**: `stores`, `organization_entities`, `legal_entities`, `departments`, `teams`, `users`
   - **🏬 Departments Table**: `w3suite.departments` con FK opzionale `store_id` per dipartimenti store-specific
   - **🔗 Team-Departments**: Tabella junction `team_departments` per relazione many-to-many
-  - **🎯 Cascading Filters (User Modal)**: Area selection → filters Legal Entities → filters Stores
+  - **🎯 Cascading Filters (User Modal)**: Area selection → filters Organization Entities → filters Stores
   - **⚠️ Area Mismatch Validation (Team Modal)**: Warning quando supervisor appartiene a area diversa dai membri
 - **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
   - **📞 WebSocket URL Format**: SEMPRE `wss://{sipServer}/ws` sulla porta 443
@@ -151,36 +155,37 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: Employs a WindTre Glassmorphism design featuring a fixed header and sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It leverages `shadcn/ui`, Radix UI, CSS variables, and Tailwind CSS for a consistent, accessible, and responsive user experience.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed header/sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Utilizes `shadcn/ui`, Radix UI, CSS variables, and Tailwind CSS for consistency, accessibility, and responsiveness.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
-    - **Security**: Robust security measures including OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC) system.
-    - **Core Systems**: Incorporates a Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
-    - **AI Integration**: Features an AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, a comprehensive AI Tools Ecosystem, and an AI Voice Agent System with Retrieval-Augmented Generation (RAG).
-    - **CRM Module**: Includes a person-centric identity graph, omnichannel engagement capabilities, pipeline management, GDPR compliance tools, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **Deployment & Governance**: Managed by a Deploy Center Auto-Commit System, Bidirectional Branch Linking, and an incremental VPS deployment script (`./deploy/incremental-deploy.sh`). The VPS uses a standardized directory structure (`/var/www/w3suite/`) and SSH access via `ssh -i deploy/keys/vps_key root@82.165.16.223`, with database access via local socket (`sudo -u postgres psql -d w3suite_prod`).
-    - **Brand Interface**: Comprises a Workflow Builder (utilizing Zustand with MCP nodes) and a Master Catalog System based on Git-versioned JSON files.
-    - **VoIP Telephony**: Provides enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, Call Detail Record (CDR) analytics, policy-based routing, and EDGVoIP PBX Integration. All WebSocket connections use `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS)**: Designed with a Command Query Responsibility Segregation (CQRS) pattern, supporting diverse product types, dual-layer product versioning, 13 logistic states, serialized and non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. It includes an Enterprise Inventory Dashboard with KPIs and cross-store views, and tenant-configurable WMS Movement Type Configuration with approval workflows.
-    - **System Config Page**: A modular settings dashboard located at `/settings/system`, organized into tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with RAG.
+    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
+    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, and incremental VPS deployment script (`./deploy/incremental-deploy.sh`). VPS uses `/var/www/w3suite/` and SSH access via `ssh -i deploy/keys/vps_key root@82.165.16.223`, with DB access via local socket (`sudo -u postgres psql -d w3suite_prod`).
+    - **Brand Interface**: Workflow Builder (Zustand with MCP nodes) and a Master Catalog System (Git-versioned JSON).
+    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. WebSocket connections use `wss://{sipServer}/ws` on port 443.
+    - **WMS Module (CQRS)**: CQRS pattern, supporting diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes Enterprise Inventory Dashboard with KPIs and cross-store views, and tenant-configurable WMS Movement Type Configuration with approval workflows.
+    - **System Config Page**: Modular settings dashboard at `/settings/system`, organized into tabs.
 - **System Design Choices**:
-    - **Business Drivers Architecture**: Multi-tenant drivers are stored in `w3suite.drivers` with Row Level Security (RLS).
-    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team structures and data access. It includes rules for team membership and dynamic request routing (Functional First, First Wins, Shift-Based). Legal Entities are defined as external partners with specific roles (e.g., Supplier, Financial Entity).
-    - **Cross-Store Architecture**: The default view is always cross-store (tenant-wide), with access control determined by user roles rather than store selection. Data queries are designed to omit `storeId` for cross-store views, with optional filters for drilling down.
-    - **Request Routing**: Implements "Functional First → First Wins" and "Shift-Based Routing" mechanisms to intelligently route requests based on team types, supervisor roles, and active shifts.
+    - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS.
+    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity (RS) → Store → Department → Team → User) governing team structures and data access, including rules for membership and dynamic request routing. Legal Entities are external partners with specific roles.
+    - **Entity Architecture**: Dual-table separation - `organization_entities` for tenant's legal business entities (Ragioni Sociali, linked to stores via `organization_entity_id`), and `legal_entities` for external partners with roles (suppliers, financial entities, operators). Stores use `organizationEntityId`, `legalEntityId` is deprecated.
+    - **Cross-Store Architecture**: Default view is always cross-store (tenant-wide); access control is role-based, not store selection-based. Data queries omit `storeId` for cross-store views, with optional filters.
+    - **Request Routing**: Implements "Functional First → First Wins" and "Shift-Based Routing" mechanisms for intelligent request routing.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
-- **Redis**: Used for BullMQ and the Unified Notification System
-- **OAuth2/OIDC Enterprise**: For user authentication and authorization
+- **Redis**: For BullMQ and Unified Notification System
+- **OAuth2/OIDC Enterprise**: Authentication and authorization
 - **SHADCN/UI**: Primary UI component library
-- **Radix UI**: Headless component primitives for accessibility
+- **Radix UI**: Headless component primitives
 - **Lucide React**: Icon library
-- **TanStack React Query**: For server state management and data fetching
-- **React Hook Form**: Used for form management and validation
+- **TanStack React Query**: Server state management
+- **React Hook Form**: Form management and validation
 - **Vite**: Frontend build tool
-- **Drizzle Kit**: For database schema management and migrations
+- **Drizzle Kit**: Database schema management
 - **PostCSS**: CSS pre-processing
 - **ESBuild**: Bundles server-side code
-- **Nginx**: Acts as a reverse proxy
-- **OpenAI**: Provides AI services, specifically `gpt-4o` and `gpt-4o-realtime`
+- **Nginx**: Reverse proxy
+- **OpenAI**: AI services (`gpt-4o`, `gpt-4o-realtime`)
