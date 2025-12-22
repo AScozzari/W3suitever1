@@ -4,6 +4,17 @@ import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuthReadiness } from '@/hooks/useAuthReadiness';
+import { oauth2Client } from '../services/OAuth2Client';
+
+// Helper per fetch autenticate con token Bearer
+const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const token = await oauth2Client.getAccessToken();
+  const headers: HeadersInit = {
+    ...(options.headers || {}),
+    'Authorization': `Bearer ${token}`
+  };
+  return fetch(url, { ...options, headers, credentials: 'include' });
+};
 import { useLocation } from 'wouter';
 import AvatarSelector from '../components/AvatarSelector';
 import HierarchyTreeView from '@/components/HierarchyTreeView';
@@ -1368,9 +1379,8 @@ export default function SettingsPage() {
     try {
       const currentTenantId = DEMO_TENANT_ID;
       
-      const response = await fetch(`/api/legal-entities/${legalEntityId}`, {
+      const response = await authenticatedFetch(`/api/legal-entities/${legalEntityId}`, {
         method: 'DELETE',
-        credentials: 'include',
         headers: {
           'X-Tenant-ID': currentTenantId
         }
@@ -3597,8 +3607,7 @@ export default function SettingsPage() {
   const { data: legalEntitiesData, isLoading: legalEntitiesLoading, refetch: refetchLegalEntitiesQuery, isError, error } = useQuery({
     queryKey: ['/api/legal-entities', { roleFilter: true }],
     queryFn: async () => {
-      const response = await fetch('/api/legal-entities?roleFilter=true', {
-        credentials: 'include',
+      const response = await authenticatedFetch('/api/legal-entities?roleFilter=true', {
         headers: {
           'X-Tenant-ID': DEMO_TENANT_ID
         }
@@ -3633,9 +3642,8 @@ export default function SettingsPage() {
         : '/api/legal-entities';
       const method = editingLegalEntity ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         method,
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-ID': DEMO_TENANT_ID
@@ -3667,9 +3675,8 @@ export default function SettingsPage() {
     if (!confirm('Sei sicuro di voler eliminare questa entità legale? Verranno eliminati anche i fornitori e gli enti finanzianti collegati.')) return;
     
     try {
-      const response = await fetch(`/api/legal-entities/${id}`, {
+      const response = await authenticatedFetch(`/api/legal-entities/${id}`, {
         method: 'DELETE',
-        credentials: 'include',
         headers: { 
           'X-Tenant-ID': DEMO_TENANT_ID
         }
@@ -3691,9 +3698,8 @@ export default function SettingsPage() {
     if (!confirm('Sei sicuro di voler archiviare questa entità legale?')) return;
     
     try {
-      const response = await fetch(`/api/legal-entities/${id}`, {
+      const response = await authenticatedFetch(`/api/legal-entities/${id}`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json',
           'X-Tenant-ID': DEMO_TENANT_ID
@@ -3720,9 +3726,8 @@ export default function SettingsPage() {
     if (!confirm(`Sei sicuro di voler ${action} questa entità legale?`)) return;
     
     try {
-      const response = await fetch(`/api/legal-entities/${id}`, {
+      const response = await authenticatedFetch(`/api/legal-entities/${id}`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json',
           'X-Tenant-ID': DEMO_TENANT_ID
