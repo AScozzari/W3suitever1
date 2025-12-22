@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. It aims to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, aspiring to be a leading integrated business operations platform with a distinctive WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, with the ambition of becoming a leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -151,33 +151,33 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design featuring a fixed header, sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE`). The UI is constructed with `shadcn/ui` and Radix UI primitives, styled using CSS variables and Tailwind CSS.
+- **UI/UX Decisions**: Employs a WindTre Glassmorphism design with a fixed header and sidebar, white backgrounds, and a build-time UI zoom controlled by `VITE_FONT_SCALE`. The frontend leverages `shadcn/ui`, Radix UI primitives, CSS variables, and Tailwind CSS for a consistent and accessible user experience.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
-    - **Security**: OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Universal Workflow, Unified Notification, Centralized Webhook, Task Management, Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with RAG.
-    - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, and supports VPS deployments with incremental updates.
-    - **Brand Interface**: Workflow Builder (Zustand with 106 MCP nodes) and Master Catalog System (Git-versioned JSON files).
-    - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. VoIP/SIP configuration uses `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS Architecture)**: Supports various product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable with approval workflows.
-    - **System Config Page**: A modular settings dashboard at `/settings/system` with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
-    - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS.
-    - **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) manages team structures and data access, with specific rules for team membership and request routing.
+    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for robust multi-tenancy.
+    - **Security**: Implements OAuth2/OIDC, Multi-Factor Authentication (MFA), JWTs, and a 3-level Role-Based Access Control (RBAC) system.
+    - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: Includes AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem, and an AI Voice Agent System with RAG capabilities.
+    - **CRM Module**: Provides a person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **Deployment & Governance**: Features a Deploy Center Auto-Commit System, Bidirectional Branch Linking, and incremental VPS deployment scripts.
+    - **Brand Interface**: Contains a Workflow Builder (using Zustand with MCP nodes) and a Master Catalog System (managed via Git-versioned JSON files).
+    - **VoIP Telephony**: Offers enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. All WebSocket connections for VoIP use `wss://{sipServer}/ws` on port 443.
+    - **WMS Module (CQRS Architecture)**: Supports diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. It includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable with approval workflows.
+    - **System Config Page**: A modular settings dashboard located at `/settings/system`, organized with tabs for WMS Movements, VoIP, HR, CRM, and Notifications.
+    - **Business Drivers Architecture**: Utilizes multi-tenant drivers stored in `w3suite.drivers` with RLS.
+    - **Organizational Hierarchy**: A pyramidal scoping structure (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team structures and data access, with specific rules for team membership and dynamic request routing logic.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon).
 - **Redis**: Used for BullMQ and the Unified Notification System.
-- **OAuth2/OIDC Enterprise**: For user authentication.
+- **OAuth2/OIDC Enterprise**: For user authentication and authorization.
 - **SHADCN/UI**: Primary UI component library.
-- **Radix UI**: Provides headless component primitives.
+- **Radix UI**: Provides headless component primitives for accessibility.
 - **Lucide React**: Icon library.
-- **TanStack React Query**: Manages server state.
+- **TanStack React Query**: Manages server state and data fetching.
 - **React Hook Form**: Handles form management and validation.
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: For database schema management.
+- **Drizzle Kit**: For database schema management and migrations.
 - **PostCSS**: Used for CSS pre-processing.
 - **ESBuild**: Bundles server-side code.
-- **Nginx**: Acts as a reverse proxy.
+- **Nginx**: Acts as a reverse proxy for the application.
 - **OpenAI**: Provides AI services, specifically `gpt-4o` and `gpt-4o-realtime`.
