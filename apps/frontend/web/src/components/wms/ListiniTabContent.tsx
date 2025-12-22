@@ -184,6 +184,14 @@ export default function ListiniTabContent() {
   // Physical product type filter for Canvas Device
   const [physicalTypeFilter, setPhysicalTypeFilter] = useState<string>('PHYSICAL');
 
+  // Massive view toggle states for Canvas Device wizard
+  const [deviceViewMode, setDeviceViewMode] = useState<'single' | 'massive'>('single');
+  const [canvasViewMode, setCanvasViewMode] = useState<'single' | 'massive'>('single');
+  const [canvasFeeRangeFilter, setCanvasFeeRangeFilter] = useState<string>('all');
+  const [expandedDeviceGroups, setExpandedDeviceGroups] = useState<Set<string>>(new Set());
+  const [selectedDeviceVariants, setSelectedDeviceVariants] = useState<Set<string>>(new Set());
+  const [selectedCanvasProducts, setSelectedCanvasProducts] = useState<Set<string>>(new Set());
+
   // Versioning dialog state
   const [versioningDialogOpen, setVersioningDialogOpen] = useState(false);
   const [editingPriceListId, setEditingPriceListId] = useState<string | null>(null);
@@ -323,6 +331,116 @@ export default function ListiniTabContent() {
       return true;
     });
   }, [canvasProducts, canvasSearchTerm, canvasCategoryFilter]);
+
+  // Grouped physical products by model+memory for massive view
+  const groupedPhysicalProducts = useMemo(() => {
+    const groups: Record<string, { key: string; model: string; memory: string; brand: string; variants: any[] }> = {};
+    filteredPhysicalProducts.forEach((product: any) => {
+      const model = product.model || product.name?.replace(/\s+(nero|bianco|blu|rosso|verde|viola|grigio|oro|argento|titanio|black|white|blue|red|green|purple|gray|gold|silver|titanium).*$/i, '').trim() || 'Altro';
+      const memory = product.memory || 'N/A';
+      const brand = product.brand || 'N/A';
+      const groupKey = `${brand}-${model}-${memory}`;
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = { key: groupKey, model, memory, brand, variants: [] };
+      }
+      groups[groupKey].variants.push(product);
+    });
+    return Object.values(groups).sort((a, b) => a.model.localeCompare(b.model));
+  }, [filteredPhysicalProducts]);
+
+  // Filtered canvas products with fee range for massive view
+  const filteredCanvasWithFee = useMemo(() => {
+    let products = filteredCanvasProducts;
+    if (canvasFeeRangeFilter !== 'all') {
+      products = products.filter((p: any) => {
+        const fee = parseFloat(p.monthlyFee || '0');
+        switch (canvasFeeRangeFilter) {
+          case '0-10': return fee >= 0 && fee <= 10;
+          case '10-20': return fee > 10 && fee <= 20;
+          case '20-30': return fee > 20 && fee <= 30;
+          case '30+': return fee > 30;
+          default: return true;
+        }
+      });
+    }
+    return products;
+  }, [filteredCanvasProducts, canvasFeeRangeFilter]);
+
+  // Helper to create massive pairs from selections
+  const createMassivePairs = () => {
+    const deviceIds = Array.from(selectedDeviceVariants);
+    const canvasIds = Array.from(selectedCanvasProducts);
+    
+    if (deviceIds.length === 0 || canvasIds.length === 0) return;
+    
+    const newPairs: ProductPair[] = [];
+    deviceIds.forEach(deviceId => {
+      const device = safeProducts.find((p: any) => p.id === deviceId);
+      if (!device) return;
+      
+      canvasIds.forEach(canvasId => {
+        const canvas = safeProducts.find((p: any) => p.id === canvasId);
+        if (!canvas) return;
+        
+        newPairs.push({
+          id: `pair-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          physicalProductId: deviceId,
+          physicalProductName: device.name,
+          physicalProductSku: device.sku,
+          canvasProductId: canvasId,
+          canvasProductName: canvas.name,
+          canvasMonthlyFee: canvas.monthlyFee || '0',
+          configurations: []
+        });
+      });
+    });
+    
+    setSavedPairs(prev => [...prev, ...newPairs]);
+    setSelectedDeviceVariants(new Set());
+    setSelectedCanvasProducts(new Set());
+    setDeviceViewMode('single');
+    setCanvasViewMode('single');
+  };
+
+  // Toggle device group expansion
+  const toggleDeviceGroup = (groupKey: string) => {
+    setExpandedDeviceGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
+      return next;
+    });
+  };
+
+  // Toggle device variant selection
+  const toggleDeviceVariant = (productId: string) => {
+    setSelectedDeviceVariants(prev => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  // Toggle canvas product selection
+  const toggleCanvasProduct = (productId: string) => {
+    setSelectedCanvasProducts(prev => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  // Select all variants in a group
+  const selectAllInGroup = (group: { variants: any[] }) => {
+    setSelectedDeviceVariants(prev => {
+      const next = new Set(prev);
+      group.variants.forEach(v => next.add(v.id));
+      return next;
+    });
+  };
 
   const resetWizard = () => {
     setWizardStep(1);
@@ -851,12 +969,37 @@ export default function ListiniTabContent() {
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Smartphone className="h-5 w-5 text-orange-500" />
               <h4 className="font-semibold">Prodotto Fisico</h4>
-              {currentPair.physicalProductId && (
+              {currentPair.physicalProductId && deviceViewMode === 'single' && (
                 <Badge variant="secondary" className="ml-auto">
                   <Check className="h-3 w-3 mr-1" />
                   Selezionato
                 </Badge>
               )}
+              {deviceViewMode === 'massive' && selectedDeviceVariants.size > 0 && (
+                <Badge className="ml-auto bg-orange-500">
+                  {selectedDeviceVariants.size} selezionati
+                </Badge>
+              )}
+              <div className="flex items-center gap-1 ml-2 border rounded-lg p-1 bg-gray-50">
+                <Button
+                  variant={deviceViewMode === 'single' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setDeviceViewMode('single')}
+                  data-testid="btn-device-view-single"
+                >
+                  Singola
+                </Button>
+                <Button
+                  variant={deviceViewMode === 'massive' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setDeviceViewMode('massive')}
+                  data-testid="btn-device-view-massive"
+                >
+                  Massiva
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-col flex-1 min-h-0 gap-3">
@@ -896,44 +1039,125 @@ export default function ListiniTabContent() {
               </Select>
 
               <ScrollArea className="flex-1 min-h-0 border rounded-lg">
-                {filteredPhysicalProducts.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>{physicalSearchTerm.length < 2 && physicalCategoryFilter === 'all' 
-                      ? 'Digita almeno 2 caratteri o seleziona una categoria' 
-                      : 'Nessun prodotto trovato'}</p>
-                  </div>
-                ) : (
-                  <TooltipProvider>
-                    <div className="p-2 space-y-2">
-                      {filteredPhysicalProducts.map((product: any) => (
-                        <Tooltip key={product.id}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={`p-3 rounded-lg cursor-pointer transition-all ${
-                                currentPair.physicalProductId === product.id 
-                                  ? 'bg-orange-100 border-2 border-orange-500' 
-                                  : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                              }`}
-                              onClick={() => selectPhysicalProduct(product)}
-                              data-testid={`product-physical-${product.id}`}
-                            >
-                              <div className="font-medium">{product.name}</div>
-                              <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
-                                <span className="font-mono">{product.sku}</span>
-                                {product.brand && <span>• {product.brand}</span>}
-                                {product.color && <span className="text-blue-600">• {product.color}</span>}
-                                {product.memory && <span className="text-purple-600">• {product.memory}</span>}
+                {deviceViewMode === 'single' ? (
+                  /* VISTA SINGOLA - originale */
+                  filteredPhysicalProducts.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>{physicalSearchTerm.length < 2 && physicalCategoryFilter === 'all' 
+                        ? 'Digita almeno 2 caratteri o seleziona una categoria' 
+                        : 'Nessun prodotto trovato'}</p>
+                    </div>
+                  ) : (
+                    <TooltipProvider>
+                      <div className="p-2 space-y-2">
+                        {filteredPhysicalProducts.map((product: any) => (
+                          <Tooltip key={product.id}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                  currentPair.physicalProductId === product.id 
+                                    ? 'bg-orange-100 border-2 border-orange-500' 
+                                    : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                                }`}
+                                onClick={() => selectPhysicalProduct(product)}
+                                data-testid={`product-physical-${product.id}`}
+                              >
+                                <div className="font-medium">{product.name}</div>
+                                <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                                  <span className="font-mono">{product.sku}</span>
+                                  {product.brand && <span>• {product.brand}</span>}
+                                  {product.color && <span className="text-blue-600">• {product.color}</span>}
+                                  {product.memory && <span className="text-purple-600">• {product.memory}</span>}
+                                </div>
                               </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="bg-gray-900 text-white p-3">
-                            {renderProductTooltip(product)}
-                          </TooltipContent>
-                        </Tooltip>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-gray-900 text-white p-3">
+                              {renderProductTooltip(product)}
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
+                    </TooltipProvider>
+                  )
+                ) : (
+                  /* VISTA MASSIVA - raggruppata per modello+memoria */
+                  groupedPhysicalProducts.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>{physicalSearchTerm.length < 2 && physicalCategoryFilter === 'all' 
+                        ? 'Digita almeno 2 caratteri o seleziona una categoria' 
+                        : 'Nessun prodotto trovato'}</p>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-2">
+                      {groupedPhysicalProducts.map((group) => (
+                        <Collapsible 
+                          key={group.key} 
+                          open={expandedDeviceGroups.has(group.key)}
+                          onOpenChange={() => toggleDeviceGroup(group.key)}
+                        >
+                          <div className="border rounded-lg bg-gray-50">
+                            <CollapsibleTrigger asChild>
+                              <div className="p-3 cursor-pointer hover:bg-gray-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {expandedDeviceGroups.has(group.key) ? (
+                                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                                  )}
+                                  <div>
+                                    <div className="font-medium">{group.brand} {group.model}</div>
+                                    <div className="text-sm text-purple-600">{group.memory}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline">{group.variants.length} varianti</Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs"
+                                    onClick={(e) => { e.stopPropagation(); selectAllInGroup(group); }}
+                                    data-testid={`btn-select-all-${group.key}`}
+                                  >
+                                    Seleziona tutti
+                                  </Button>
+                                </div>
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="border-t px-3 pb-3 pt-2 space-y-1">
+                                {group.variants.map((variant: any) => (
+                                  <div 
+                                    key={variant.id}
+                                    className={`p-2 rounded flex items-center gap-2 cursor-pointer transition-all ${
+                                      selectedDeviceVariants.has(variant.id)
+                                        ? 'bg-orange-100 border border-orange-400'
+                                        : 'hover:bg-gray-100 border border-transparent'
+                                    }`}
+                                    onClick={() => toggleDeviceVariant(variant.id)}
+                                    data-testid={`variant-${variant.id}`}
+                                  >
+                                    <Checkbox 
+                                      checked={selectedDeviceVariants.has(variant.id)}
+                                      className="pointer-events-none"
+                                    />
+                                    <div className="flex-1">
+                                      <span className="text-sm">{variant.name}</span>
+                                      <div className="text-xs text-gray-500 flex gap-2">
+                                        <span className="font-mono">{variant.sku}</span>
+                                        {variant.color && <span className="text-blue-600">{variant.color}</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
                       ))}
                     </div>
-                  </TooltipProvider>
+                  )
                 )}
               </ScrollArea>
             </div>
@@ -943,12 +1167,37 @@ export default function ListiniTabContent() {
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Tv className="h-5 w-5 text-purple-500" />
               <h4 className="font-semibold">Prodotto Canvas</h4>
-              {currentPair.canvasProductId && (
+              {currentPair.canvasProductId && canvasViewMode === 'single' && (
                 <Badge variant="secondary" className="ml-auto">
                   <Check className="h-3 w-3 mr-1" />
                   Selezionato
                 </Badge>
               )}
+              {canvasViewMode === 'massive' && selectedCanvasProducts.size > 0 && (
+                <Badge className="ml-auto bg-purple-500">
+                  {selectedCanvasProducts.size} selezionati
+                </Badge>
+              )}
+              <div className="flex items-center gap-1 ml-2 border rounded-lg p-1 bg-gray-50">
+                <Button
+                  variant={canvasViewMode === 'single' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setCanvasViewMode('single')}
+                  data-testid="btn-canvas-view-single"
+                >
+                  Singola
+                </Button>
+                <Button
+                  variant={canvasViewMode === 'massive' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => setCanvasViewMode('massive')}
+                  data-testid="btn-canvas-view-massive"
+                >
+                  Massiva
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-col flex-1 min-h-0 gap-3">
@@ -975,47 +1224,137 @@ export default function ListiniTabContent() {
                 </SelectContent>
               </Select>
 
+              {/* Filtro fascia canone - solo in vista massiva */}
+              {canvasViewMode === 'massive' && (
+                <Select value={canvasFeeRangeFilter} onValueChange={setCanvasFeeRangeFilter}>
+                  <SelectTrigger data-testid="select-canvas-fee-range" className="shrink-0">
+                    <SelectValue placeholder="Fascia canone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le fasce</SelectItem>
+                    <SelectItem value="0-10">€0 - €10/mese</SelectItem>
+                    <SelectItem value="10-20">€10 - €20/mese</SelectItem>
+                    <SelectItem value="20-30">€20 - €30/mese</SelectItem>
+                    <SelectItem value="30+">Oltre €30/mese</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
               <ScrollArea className="flex-1 min-h-0 border rounded-lg">
-                {filteredCanvasProducts.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>{canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' 
-                      ? 'Digita almeno 2 caratteri o seleziona una categoria' 
-                      : 'Nessun prodotto Canvas trovato'}</p>
-                  </div>
-                ) : (
-                  <TooltipProvider>
-                    <div className="p-2 space-y-2">
-                      {filteredCanvasProducts.map((product: any) => (
-                        <Tooltip key={product.id}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={`p-3 rounded-lg cursor-pointer transition-all ${
-                                currentPair.canvasProductId === product.id 
-                                  ? 'bg-purple-100 border-2 border-purple-500' 
-                                  : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                              }`}
-                              onClick={() => selectCanvasProduct(product)}
-                              data-testid={`product-canvas-${product.id}`}
-                            >
-                              <div className="font-medium">{product.name}</div>
-                              <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
-                                <span className="font-mono">{product.sku}</span>
-                                {product.monthlyFee && <span className="text-green-600">€{product.monthlyFee}/mese</span>}
+                {canvasViewMode === 'single' ? (
+                  /* VISTA SINGOLA - originale */
+                  filteredCanvasProducts.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>{canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' 
+                        ? 'Digita almeno 2 caratteri o seleziona una categoria' 
+                        : 'Nessun prodotto Canvas trovato'}</p>
+                    </div>
+                  ) : (
+                    <TooltipProvider>
+                      <div className="p-2 space-y-2">
+                        {filteredCanvasProducts.map((product: any) => (
+                          <Tooltip key={product.id}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                  currentPair.canvasProductId === product.id 
+                                    ? 'bg-purple-100 border-2 border-purple-500' 
+                                    : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                                }`}
+                                onClick={() => selectCanvasProduct(product)}
+                                data-testid={`product-canvas-${product.id}`}
+                              >
+                                <div className="font-medium">{product.name}</div>
+                                <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                                  <span className="font-mono">{product.sku}</span>
+                                  {product.monthlyFee && <span className="text-green-600">€{product.monthlyFee}/mese</span>}
+                                </div>
                               </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="bg-gray-900 text-white p-3">
+                              {renderProductTooltip(product)}
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
+                    </TooltipProvider>
+                  )
+                ) : (
+                  /* VISTA MASSIVA - con selezione multipla */
+                  filteredCanvasWithFee.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>{canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' 
+                        ? 'Digita almeno 2 caratteri o seleziona una categoria' 
+                        : 'Nessun prodotto Canvas trovato'}</p>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-2">
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-sm text-gray-500">{filteredCanvasWithFee.length} offerte</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => {
+                            const allIds = new Set(filteredCanvasWithFee.map((p: any) => p.id));
+                            setSelectedCanvasProducts(allIds);
+                          }}
+                          data-testid="btn-select-all-canvas"
+                        >
+                          Seleziona tutti
+                        </Button>
+                      </div>
+                      {filteredCanvasWithFee.map((product: any) => (
+                        <div 
+                          key={product.id}
+                          className={`p-3 rounded-lg cursor-pointer transition-all flex items-center gap-3 ${
+                            selectedCanvasProducts.has(product.id)
+                              ? 'bg-purple-100 border-2 border-purple-500'
+                              : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                          }`}
+                          onClick={() => toggleCanvasProduct(product.id)}
+                          data-testid={`canvas-massive-${product.id}`}
+                        >
+                          <Checkbox 
+                            checked={selectedCanvasProducts.has(product.id)}
+                            className="pointer-events-none"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                              <span className="font-mono">{product.sku}</span>
+                              {product.monthlyFee && (
+                                <Badge variant="outline" className="text-green-600 border-green-300">
+                                  €{product.monthlyFee}/mese
+                                </Badge>
+                              )}
                             </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="bg-gray-900 text-white p-3">
-                            {renderProductTooltip(product)}
-                          </TooltipContent>
-                        </Tooltip>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </TooltipProvider>
+                  )
                 )}
               </ScrollArea>
             </div>
           </Card>
+
+          {/* Pulsante per creare abbinamenti massivi */}
+          {(deviceViewMode === 'massive' || canvasViewMode === 'massive') && 
+           selectedDeviceVariants.size > 0 && selectedCanvasProducts.size > 0 && (
+            <div className="col-span-2 flex justify-center">
+              <Button
+                onClick={createMassivePairs}
+                className="bg-gradient-to-r from-orange-500 to-purple-500 text-white px-8"
+                data-testid="btn-create-massive-pairs"
+              >
+                <Layers className="h-4 w-4 mr-2" />
+                Crea {selectedDeviceVariants.size * selectedCanvasProducts.size} Abbinamenti
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
