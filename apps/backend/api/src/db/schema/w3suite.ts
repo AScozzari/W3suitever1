@@ -794,10 +794,8 @@ export type LegalEntity = typeof legalEntities.$inferSelect;
 export const stores = w3suiteSchema.table("stores", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  // New FK to organization_entities (RS dell'organizzazione)
+  // FK to organization_entities (RS dell'organizzazione - Ragioni Sociali interne)
   organizationEntityId: uuid("organization_entity_id").references(() => organizationEntities.id),
-  // Legacy FK (deprecated - kept for backward compatibility during migration)
-  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id),
   code: varchar("code", { length: 50 }).notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   channelId: uuid("channel_id").notNull().references(() => channels.id),
@@ -2664,7 +2662,6 @@ export const legalEntitiesRelations = relations(legalEntities, ({ one, many }) =
 export const storesRelations = relations(stores, ({ one, many }) => ({
   tenant: one(tenants, { fields: [stores.tenantId], references: [tenants.id] }),
   organizationEntity: one(organizationEntities, { fields: [stores.organizationEntityId], references: [organizationEntities.id] }),
-  legalEntity: one(legalEntities, { fields: [stores.legalEntityId], references: [legalEntities.id] }), // DEPRECATED - use organizationEntity
   channel: one(channels, { fields: [stores.channelId], references: [channels.id] }),
   commercialArea: one(commercialAreas, { fields: [stores.commercialAreaId], references: [commercialAreas.id] }),
   userStores: many(userStores),

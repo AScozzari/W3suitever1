@@ -3,6 +3,7 @@ import {
   users,
   tenants,
   legalEntities,
+  organizationEntities,
   stores,
   suppliers,
   supplierOverrides,
@@ -555,7 +556,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: stores.id,
         tenantId: stores.tenantId,
-        legalEntityId: stores.legalEntityId,
+        organizationEntityId: stores.organizationEntityId,
         code: stores.code,
         nome: stores.nome,
         address: stores.address,
@@ -578,8 +579,8 @@ export class DatabaseStorage implements IStorage {
         channel_name: channels.name,
         commercialAreaId: stores.commercialAreaId,  
         commercial_area_name: commercialAreas.name,
-        ragioneSociale_id: stores.legalEntityId,
-        ragioneSociale_name: legalEntities.nome,
+        ragioneSociale_id: stores.organizationEntityId,
+        ragioneSociale_name: organizationEntities.nome,
         status: stores.status,
         openedAt: stores.openedAt,
         closedAt: stores.closedAt,
@@ -591,7 +592,7 @@ export class DatabaseStorage implements IStorage {
       .from(stores)
       .leftJoin(commercialAreas, eq(stores.commercialAreaId, commercialAreas.id))
       .leftJoin(channels, eq(stores.channelId, channels.id))
-      .leftJoin(legalEntities, eq(stores.legalEntityId, legalEntities.id))
+      .leftJoin(organizationEntities, eq(stores.organizationEntityId, organizationEntities.id))
       .where(eq(stores.tenantId, tenantId));
     
     console.log(`[STORAGE-RLS] ✅ getStoresByTenant: Found ${result.length} stores for tenant ${tenantId}`);

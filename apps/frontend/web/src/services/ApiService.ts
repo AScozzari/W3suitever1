@@ -354,10 +354,9 @@ class ApiService {
       };
     }
 
-    // Return available data - uses organizationEntities (new) and legalEntities (deprecated alias)
+    // Return available data - organizationEntities = RS dell'organizzazione (Ragioni Sociali interne)
     const data = {
       organizationEntities: organizationEntities || [],
-      legalEntities: organizationEntities || [], // DEPRECATED: use organizationEntities instead
       users: users || [],
       stores: stores || []
     };

@@ -1,0 +1,44 @@
+12:51:04, Token expires: 12:58:25
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 12:51:09, Token expires: 12:58:25
+index-C5sqXzkh.js:2  GET https://w3suite.it/api/wms/product-supplier-mappings?0=0&1=b&2=9&3=6&4=9&5=2&6=0&7=c&8=-&9=1&10=c&11=2&12=0&13=-&14=4&15=b&16=3&17=8&18=-&19=8&20=3&21=7&22=5&23=-&24=e&25=4&26=5&27=3&28=b&29=4&30=7&31=2&32=b&33=f&34=c&35=8 500 (Internal Server Error)
+queryFn @ index-C5sqXzkh.js:2
+await in queryFn
+a @ query-KgrfZB9A.js:1
+M @ query-KgrfZB9A.js:1
+start @ query-KgrfZB9A.js:1
+fetch @ query-KgrfZB9A.js:1
+Lt @ query-KgrfZB9A.js:1
+setOptions @ query-KgrfZB9A.js:1
+(anonime) @ query-KgrfZB9A.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 12:51:09, Token expires: 12:58:25
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 12:51:10, Token expires: 12:58:25
+index-C5sqXzkh.js:2  GET https://w3suite.it/api/wms/product-supplier-mappings?0=0&1=b&2=9&3=6&4=9&5=2&6=0&7=c&8=-&9=1&10=c&11=2&12=0&13=-&14=4&15=b&16=3&17=8&18=-&19=8&20=3&21=7&22=5&23=-&24=e&25=4&26=5&27=3&28=b&29=4&30=7&31=2&32=b&33=f&34=c&35=8 500 (Internal Server Error)
+queryFn @ index-C5sqXzkh.js:2
+await in queryFn
+a @ query-KgrfZB9A.js:1
+M @ query-KgrfZB9A.js:1
+(anonime) @ query-KgrfZB9A.js:1
+Promise.then
+(anonime) @ query-KgrfZB9A.js:1
+Promise.catch
+M @ query-KgrfZB9A.js:1
+start @ query-KgrfZB9A.js:1
+fetch @ query-KgrfZB9A.js:1
+Lt @ query-KgrfZB9A.js:1
+setOptions @ query-KgrfZB9A.js:1
+(anonime) @ query-KgrfZB9A.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 12:51:14, Token expires: 12:58:25

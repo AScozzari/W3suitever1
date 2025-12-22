@@ -727,11 +727,11 @@ export default function SettingsPage() {
         // Dati caricati con successo - aggiorna state
         if (result.data) {
           console.log('📝 Setting state with data:', {
-            legalEntities: result.data.legalEntities?.length,
+            organizationEntities: result.data.organizationEntities?.length,
             users: result.data.users?.length,
             stores: result.data.stores?.length
           });
-          setRagioneSocialiList(result.data.legalEntities || []);
+          setRagioneSocialiList(result.data.organizationEntities || []);
           setUtentiList(result.data.users || []);
           setPuntiVenditaList(result.data.stores || []);
         }
@@ -747,15 +747,15 @@ export default function SettingsPage() {
     loadData();
   }, [activeTab]); // Re-run when activeTab changes
 
-  // Funzione per ricaricare i dati delle ragioni sociali
-  const refetchLegalEntities = async () => {
+  // Funzione per ricaricare i dati delle ragioni sociali (organization entities)
+  const refetchOrganizationEntities = async () => {
     try {
       const result = await apiService.loadSettingsData();
       if (result.success && result.data) {
-        setRagioneSocialiList(result.data.legalEntities);
+        setRagioneSocialiList(result.data.organizationEntities);
       }
     } catch (error) {
-      console.error('Error refetching legal entities:', error);
+      console.error('Error refetching organization entities:', error);
     }
   };
 
@@ -1388,12 +1388,12 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler per eliminare una ragione sociale - USA API REALE
-  const handleDeleteRagioneSociale = async (legalEntityId: string) => {
+  // Handler per eliminare una ragione sociale (organization entity) - USA API REALE
+  const handleDeleteRagioneSociale = async (organizationEntityId: string) => {
     try {
       const currentTenantId = DEMO_TENANT_ID;
       
-      const response = await authenticatedFetch(`/api/legal-entities/${legalEntityId}`, {
+      const response = await authenticatedFetch(`/api/organization-entities/${organizationEntityId}`, {
         method: 'DELETE',
         headers: {
           'X-Tenant-ID': currentTenantId
@@ -1401,16 +1401,16 @@ export default function SettingsPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to delete legal entity: ${response.statusText}`);
+        throw new Error(`Failed to delete organization entity: ${response.statusText}`);
       }
 
-      console.log('✅ Legal entity deleted successfully');
+      console.log('✅ Organization entity deleted successfully');
       
       // Refresh the list dopo l'eliminazione
-      await refetchLegalEntities();
+      await refetchOrganizationEntities();
       
     } catch (error) {
-      console.error('❌ Error deleting legal entity:', error);
+      console.error('❌ Error deleting organization entity:', error);
       alert('Errore nell\'eliminazione della ragione sociale. Riprova.');
     }
   };

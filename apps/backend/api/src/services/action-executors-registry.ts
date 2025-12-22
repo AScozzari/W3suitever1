@@ -103,19 +103,19 @@ export async function validateUserScope(
         return { hasAccess: true };
       }
 
-      // Get store's legal entity to check indirect access
+      // Get store's organization entity to check indirect access
       const [store] = await db
-        .select({ legalEntityId: stores.legalEntityId })
+        .select({ organizationEntityId: stores.organizationEntityId })
         .from(stores)
         .where(eq(stores.id, storeId))
         .limit(1);
 
-      if (store?.legalEntityId) {
-        const hasLegalEntityAccess = assignments.some(
-          a => a.scopeType === 'legal_entity' && a.scopeId === store.legalEntityId
+      if (store?.organizationEntityId) {
+        const hasOrganizationEntityAccess = assignments.some(
+          a => a.scopeType === 'organization_entity' && a.scopeId === store.organizationEntityId
         );
         
-        if (hasLegalEntityAccess) {
+        if (hasOrganizationEntityAccess) {
           return { hasAccess: true };
         }
       }

@@ -79,6 +79,7 @@ import {
   userAssignments,
   roles,
   legalEntities,
+  organizationEntities,
   InsertTenant, 
   InsertLegalEntity, 
   InsertStore, 
@@ -14418,19 +14419,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await setTenantContext(tenantId);
       
-      // ✅ POPULATE ENTERPRISE RELATIONS: Get user's primary store and legal entity
-      console.log(`[UNIVERSAL-REQUESTS] 🔍 Fetching user ${userId} primary store and legal entity`);
+      // ✅ POPULATE ENTERPRISE RELATIONS: Get user's primary store and organization entity
+      console.log(`[UNIVERSAL-REQUESTS] 🔍 Fetching user ${userId} primary store and organization entity`);
       
       const [userStoreData] = await db
         .select({
           storeId: userStores.storeId,
           storeName: stores.nome,
-          legalEntityId: stores.legalEntityId,
-          legalEntityName: legalEntities.nome
+          organizationEntityId: stores.organizationEntityId,
+          organizationEntityName: organizationEntities.nome
         })
         .from(userStores)
         .leftJoin(stores, eq(userStores.storeId, stores.id))
-        .leftJoin(legalEntities, eq(stores.legalEntityId, legalEntities.id))
+        .leftJoin(organizationEntities, eq(stores.organizationEntityId, organizationEntities.id))
         .where(and(
           eq(userStores.userId, userId),
           eq(userStores.tenantId, tenantId),
@@ -14441,8 +14442,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[UNIVERSAL-REQUESTS] 📊 User ${userId} store data:`, {
         storeId: userStoreData?.storeId,
         storeName: userStoreData?.storeName,
-        legalEntityId: userStoreData?.legalEntityId,
-        legalEntityName: userStoreData?.legalEntityName
+        organizationEntityId: userStoreData?.organizationEntityId,
+        organizationEntityName: userStoreData?.organizationEntityName
       });
       
       // Set required fields with populated relations
@@ -14455,7 +14456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedBy: userId,
         // ✅ ENTERPRISE RELATIONS: Auto-populate from user context
         storeId: userStoreData?.storeId || null,
-        legalEntityId: userStoreData?.legalEntityId || null,
+        legalEntityId: userStoreData?.organizationEntityId || null,
         onBehalfOf: validatedData.onBehalfOf || null
       };
       
