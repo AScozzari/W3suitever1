@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its purpose is to enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution, aiming to be a leading integrated business operations platform with a WindTre glassmorphism design.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to significantly enhance operational efficiency, market responsiveness, and strategic decision-making through a scalable, secure, and comprehensive solution. The platform aims to become a leading integrated business operations solution, featuring a distinctive WindTre glassmorphism design language.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -129,6 +129,13 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
   - **📁 Configs**: `/var/www/w3suite/configs/`
   - **❌ MAI**: Non esiste più `/var/www/w3suite/app/` (struttura vecchia eliminata)
   - **✅ SEMPRE**: Usare path senza `/app/` intermedio
+- **VPS SSH & DATABASE**:
+  - **🔑 SSH Key**: `deploy/keys/vps_key` (file permanente, NON usare secrets)
+  - **📡 SSH Command**: `ssh -i deploy/keys/vps_key root@82.165.16.223`
+  - **🗃️ Database**: `w3suite_prod` (non `w3suite`)
+  - **🔧 DB Access**: `sudo -u postgres psql -d w3suite_prod`
+  - **❌ MAI**: Usare connessione TCP (porta 5432 non esposta)
+  - **✅ SEMPRE**: Usare socket locale via SSH
 - **VITE_FONT_SCALE (UI Zoom)**:
   - **Location**: Set at BUILD time, not runtime (Vite bakes env vars)
   - **Current Value**: `VITE_FONT_SCALE=80` (80% = 20% smaller like browser zoom)
@@ -139,7 +146,7 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design using `shadcn/ui` and Radix UI primitives. Styling via CSS variables and Tailwind CSS. Consistent monorepo layout with fixed header, sidebar, white backgrounds, and build-time controlled UI zoom (`VITE_FONT_SCALE`).
+- **UI/UX Decisions**: WindTre Glassmorphism design, utilizing `shadcn/ui` and Radix UI primitives. Styling is managed via CSS variables and Tailwind CSS. The monorepo layout enforces consistency with a fixed header, sidebar, white backgrounds, and a build-time controlled UI zoom (`VITE_FONT_SCALE`).
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema approach (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Italian role templates.
