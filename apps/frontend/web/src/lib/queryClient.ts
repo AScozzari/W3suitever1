@@ -111,7 +111,8 @@ export const queryClient = new QueryClient({
         
         // Build URL with query parameters
         let finalUrl = baseUrl;
-        if (params && Object.keys(params).length > 0) {
+        // Only process params if it's a non-null object (not a string or primitive)
+        if (params && typeof params === 'object' && !Array.isArray(params) && Object.keys(params).length > 0) {
           const searchParams = new URLSearchParams();
           Object.entries(params).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {

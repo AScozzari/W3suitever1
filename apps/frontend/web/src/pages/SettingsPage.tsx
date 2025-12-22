@@ -3929,6 +3929,49 @@ export default function SettingsPage() {
                   </td>
                   <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      {/* View button - always enabled for all entities */}
+                      <button
+                        data-testid={`button-view-legal-entity-${entity.id}`}
+                        onClick={() => {
+                          setEditingLegalEntity(entity);
+                          setLegalEntityForm({
+                            codice: entity.codice || '',
+                            ragioneSociale: entity.nome || '',
+                            formaGiuridica: entity.formaGiuridica || '',
+                            partitaIva: entity.pIva || '',
+                            codiceFiscale: entity.codiceFiscale || '',
+                            indirizzo: entity.indirizzo || '',
+                            citta: entity.citta || '',
+                            provincia: entity.provincia || '',
+                            cap: entity.cap || '',
+                            telefono: entity.telefono || '',
+                            email: entity.email || '',
+                            pec: entity.pec || '',
+                            rea: entity.rea || '',
+                            registroImprese: entity.registroImprese || '',
+                            codiceSDI: entity.codiceSDI || '',
+                            iban: entity.iban || '',
+                            bic: entity.bic || '',
+                            website: entity.website || '',
+                            capitaleSociale: entity.capitaleSociale || '',
+                            isSupplier: entity.isSupplier || false,
+                            isFinancialEntity: entity.isFinancialEntity || false,
+                            supplierType: 'other',
+                            note: entity.note || ''
+                          });
+                          setLegalEntityModalOpen(true);
+                        }}
+                        title="Visualizza dettagli"
+                        style={{
+                          background: '#e0f2fe',
+                          border: 'none', borderRadius: '8px',
+                          padding: '8px',
+                          cursor: 'pointer',
+                          color: '#0284c7'
+                        }}
+                      >
+                        <Eye size={16} />
+                      </button>
                       {/* Edit button - disabled for brand-managed entities */}
                       <button
                         data-testid={`button-edit-legal-entity-${entity.id}`}

@@ -219,7 +219,7 @@ export default function ListiniTabContent() {
   });
 
   const { data: supplierMappingsData = [] } = useQuery({
-    queryKey: ['/api/wms/product-supplier-mappings', priceListHeader.supplierId],
+    queryKey: ['/api/wms/product-supplier-mappings', { supplierId: priceListHeader.supplierId }],
     enabled: !!priceListHeader.supplierId
   });
 
