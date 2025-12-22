@@ -1,0 +1,51 @@
+asData: false, data: undefined, …}
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 08:13:08, Token expires: 08:27:32
+SettingsPage-j-4DS8Zl.js:1 [AUTH-FETCH] Token obtained: eyJhbGciOiJIUzI1NiIs...
+SettingsPage-j-4DS8Zl.js:1 [AUTH-FETCH] Making request to: /api/legal-entities?roleFilter=true
+SettingsPage-j-4DS8Zl.js:1  GET https://w3suite.it/api/legal-entities?roleFilter=true 500 (Internal Server Error)
+bt @ SettingsPage-j-4DS8Zl.js:1
+await in bt
+queryFn @ SettingsPage-j-4DS8Zl.js:15
+a @ query-KgrfZB9A.js:1
+M @ query-KgrfZB9A.js:1
+start @ query-KgrfZB9A.js:1
+fetch @ query-KgrfZB9A.js:1
+Lt @ query-KgrfZB9A.js:1
+setOptions @ query-KgrfZB9A.js:1
+(anonime) @ query-KgrfZB9A.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 08:13:09, Token expires: 08:27:32
+SettingsPage-j-4DS8Zl.js:1 [AUTH-FETCH] Token obtained: eyJhbGciOiJIUzI1NiIs...
+SettingsPage-j-4DS8Zl.js:1 [AUTH-FETCH] Making request to: /api/legal-entities?roleFilter=true
+SettingsPage-j-4DS8Zl.js:1  GET https://w3suite.it/api/legal-entities?roleFilter=true 500 (Internal Server Error)
+bt @ SettingsPage-j-4DS8Zl.js:1
+await in bt
+queryFn @ SettingsPage-j-4DS8Zl.js:15
+a @ query-KgrfZB9A.js:1
+M @ query-KgrfZB9A.js:1
+(anonime) @ query-KgrfZB9A.js:1
+Promise.then
+(anonime) @ query-KgrfZB9A.js:1
+Promise.catch
+M @ query-KgrfZB9A.js:1
+start @ query-KgrfZB9A.js:1
+fetch @ query-KgrfZB9A.js:1
+Lt @ query-KgrfZB9A.js:1
+setOptions @ query-KgrfZB9A.js:1
+(anonime) @ query-KgrfZB9A.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+SettingsPage-j-4DS8Zl.js:15 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: false, isError: true, error: Error: Failed to fetch legal entities
+    at queryFn (https://w3suite.it/assets/SettingsPage-j-4DS8…, activeTab: 'Legal Entity'}
+index-C5sqXzkh.js:2 🔍 Token expiry check: Current time: 08:13:09, Token expires: 08:27:32
