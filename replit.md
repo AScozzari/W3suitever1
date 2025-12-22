@@ -122,6 +122,13 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize business o
   - **FRONTEND DEPLOY**:
     - Build on VPS con `VITE_FONT_SCALE=80`
     - Output: `/var/www/w3suite/apps/frontend/web/dist/`
+- **VPS DIRECTORY STRUCTURE (UGUALE A REPLIT)**:
+  - **📁 Root**: `/var/www/w3suite/` (come root Replit)
+  - **📁 Apps**: `/var/www/w3suite/apps/` (backend, frontend, voice-gateway)
+  - **📁 Packages**: `/var/www/w3suite/packages/`
+  - **📁 Configs**: `/var/www/w3suite/configs/`
+  - **❌ MAI**: Non esiste più `/var/www/w3suite/app/` (struttura vecchia eliminata)
+  - **✅ SEMPRE**: Usare path senza `/app/` intermedio
 - **VITE_FONT_SCALE (UI Zoom)**:
   - **Location**: Set at BUILD time, not runtime (Vite bakes env vars)
   - **Current Value**: `VITE_FONT_SCALE=80` (80% = 20% smaller like browser zoom)
