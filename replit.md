@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform centralizing business operations with integrated CRM, POS, WMS, Analytics, HR, CMS, and Bidding functionalities. It aims to enhance operational efficiency, market responsiveness, and strategic decision-making to become a leading comprehensive business platform.
+W3 Suite is a multi-tenant enterprise platform designed to centralize business operations through integrated CRM, POS, WMS, Analytics, HR, CMS, and Bidding functionalities. Its primary goal is to enhance operational efficiency, market responsiveness, and strategic decision-making, positioning itself as a leading comprehensive business solution.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -155,22 +155,22 @@ W3 Suite is a multi-tenant enterprise platform centralizing business operations 
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed header/sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Utilizes `shadcn/ui`, Radix UI, CSS variables, and Tailwind CSS for consistency, accessibility, and responsiveness.
+- **UI/UX Decisions**: WindTre Glassmorphism design with a fixed header/sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It leverages `shadcn/ui`, Radix UI, CSS variables, and Tailwind CSS for consistency, accessibility, and responsiveness.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with RAG.
     - **CRM Module**: Person-centric identity graph, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and Customer 360° Dashboard.
-    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, and incremental VPS deployment script (`./deploy/incremental-deploy.sh`). VPS uses `/var/www/w3suite/` and SSH access via `ssh -i deploy/keys/vps_key root@82.165.16.223`, with DB access via local socket (`sudo -u postgres psql -d w3suite_prod`).
+    - **Deployment & Governance**: Deploy Center Auto-Commit System, Bidirectional Branch Linking, and an incremental VPS deployment script (`./deploy/incremental-deploy.sh`). VPS uses `/var/www/w3suite/` and SSH access via `ssh -i deploy/keys/vps_key root@82.165.16.223`, with DB access via local socket (`sudo -u postgres psql -d w3suite_prod`).
     - **Brand Interface**: Workflow Builder (Zustand with MCP nodes) and a Master Catalog System (Git-versioned JSON).
     - **VoIP Telephony**: Enterprise-grade WebRTC with multi-store trunks, SIP, WebRTC extensions, CRM integration, CDR analytics, policy-based routing, and EDGVoIP PBX Integration. WebSocket connections use `wss://{sipServer}/ws` on port 443.
-    - **WMS Module (CQRS)**: CQRS pattern, supporting diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes Enterprise Inventory Dashboard with KPIs and cross-store views, and tenant-configurable WMS Movement Type Configuration with approval workflows.
+    - **WMS Module (CQRS)**: Implements CQRS pattern, supporting diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views, and tenant-configurable WMS Movement Type Configuration with approval workflows.
     - **System Config Page**: Modular settings dashboard at `/settings/system`, organized into tabs.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS.
-    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity (RS) → Store → Department → Team → User) governing team structures and data access, including rules for membership and dynamic request routing. Legal Entities are external partners with specific roles.
-    - **Entity Architecture**: Dual-table separation - `organization_entities` for tenant's legal business entities (Ragioni Sociali, linked to stores via `organization_entity_id`), and `legal_entities` for external partners with roles (suppliers, financial entities, operators). Stores use `organizationEntityId`, `legalEntityId` is deprecated.
+    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity (RS) → Store → Department → Team → User) governs team structures and data access, including rules for membership and dynamic request routing. Legal Entities are external partners with specific roles.
+    - **Entity Architecture**: Dual-table separation with `organization_entities` for tenant's legal business entities (linked to stores via `organization_entity_id`) and `legal_entities` for external partners with roles (suppliers, financial entities, operators). `organizationEntityId` is used for stores, `legalEntityId` is deprecated.
     - **Cross-Store Architecture**: Default view is always cross-store (tenant-wide); access control is role-based, not store selection-based. Data queries omit `storeId` for cross-store views, with optional filters.
     - **Request Routing**: Implements "Functional First → First Wins" and "Shift-Based Routing" mechanisms for intelligent request routing.
 
