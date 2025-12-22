@@ -666,8 +666,66 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type UpsertUser = InsertUser;
 
-// ==================== LEGAL ENTITIES ====================
-// Legal Entity is the "parent" hub that propagates core data to child tables:
+// ==================== ORGANIZATION ENTITIES (Ragioni Sociali dell'Organizzazione) ====================
+// Internal legal entities representing the tenant's own business structure
+// These are linked to stores and represent the organization's legal identity
+// NOT for partners (suppliers, financial entities, operators) - those go in legal_entities
+export const organizationEntities = w3suiteSchema.table("organization_entities", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  codice: varchar("codice", { length: 20 }).notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  pIva: varchar("piva", { length: 50 }),
+  billingProfileId: uuid("billing_profile_id"),
+  stato: varchar("stato", { length: 50 }).default("Attiva"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  archivedAt: timestamp("archived_at"),
+  // Extended enterprise fields
+  codiceFiscale: varchar("codiceFiscale", { length: 50 }),
+  formaGiuridica: varchar("formaGiuridica", { length: 100 }),
+  capitaleSociale: varchar("capitaleSociale", { length: 50 }),
+  dataCostituzione: date("dataCostituzione"),
+  indirizzo: text("indirizzo"),
+  citta: varchar("citta", { length: 100 }),
+  provincia: varchar("provincia", { length: 10 }),
+  cap: varchar("cap", { length: 10 }),
+  telefono: varchar("telefono", { length: 50 }),
+  email: varchar("email", { length: 255 }),
+  pec: varchar("pec", { length: 255 }),
+  rea: varchar("rea", { length: 100 }),
+  registroImprese: varchar("registroImprese", { length: 255 }),
+  logo: text("logo"),
+  codiceSDI: varchar("codiceSDI", { length: 10 }),
+  iban: varchar("iban", { length: 34 }),
+  bic: varchar("bic", { length: 11 }),
+  website: varchar("website", { length: 255 }),
+  // Administrative contact section
+  refAmminNome: varchar("refAmminNome", { length: 100 }),
+  refAmminCognome: varchar("refAmminCognome", { length: 100 }),
+  refAmminEmail: varchar("refAmminEmail", { length: 255 }),
+  refAmminCodiceFiscale: varchar("refAmminCodiceFiscale", { length: 16 }),
+  refAmminIndirizzo: text("refAmminIndirizzo"),
+  refAmminCitta: varchar("refAmminCitta", { length: 100 }),
+  refAmminCap: varchar("refAmminCap", { length: 10 }),
+  refAmminPaese: varchar("refAmminPaese", { length: 100 }),
+  note: text("note"),
+}, (table) => [
+  uniqueIndex("organization_entities_tenant_codice_unique").on(table.tenantId, table.codice),
+]);
+
+export const insertOrganizationEntitySchema = createInsertSchema(organizationEntities).omit({ 
+  createdAt: true, 
+  updatedAt: true 
+}).extend({
+  id: z.string().uuid().optional()
+});
+export type InsertOrganizationEntity = z.infer<typeof insertOrganizationEntitySchema>;
+export type OrganizationEntity = typeof organizationEntities.$inferSelect;
+
+// ==================== LEGAL ENTITIES (Partner Entities Only) ====================
+// Partner entities: Suppliers, Financial Entities, Operators
+// These have role flags to determine which child tables they propagate to
 // - suppliers (via legal_entity_id)
 // - financial_entities (via legal_entity_id)
 // - operators (via legal_entity_id in public schema)
@@ -736,7 +794,10 @@ export type LegalEntity = typeof legalEntities.$inferSelect;
 export const stores = w3suiteSchema.table("stores", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  legalEntityId: uuid("legal_entity_id").notNull().references(() => legalEntities.id),
+  // New FK to organization_entities (RS dell'organizzazione)
+  organizationEntityId: uuid("organization_entity_id").references(() => organizationEntities.id),
+  // Legacy FK (deprecated - kept for backward compatibility during migration)
+  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id),
   code: varchar("code", { length: 50 }).notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   channelId: uuid("channel_id").notNull().references(() => channels.id),

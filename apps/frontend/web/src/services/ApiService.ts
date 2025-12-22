@@ -134,6 +134,35 @@ class ApiService {
   /**
    * API Endpoints per Settings Page
    */
+  
+  // ==================== ORGANIZATION ENTITIES ====================
+  // RS dell'organizzazione (Ragioni Sociali interne, linked to stores)
+  async getOrganizationEntities() {
+    return this.makeRequest<any[]>('/api/organization-entities');
+  }
+
+  async createOrganizationEntity(data: any) {
+    return this.makeRequest<any>('/api/organization-entities', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async updateOrganizationEntity(id: string, data: any) {
+    return this.makeRequest<any>(`/api/organization-entities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async deleteOrganizationEntity(id: string) {
+    return this.makeRequest<void>(`/api/organization-entities/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // ==================== LEGAL ENTITIES (Partner Entities) ====================
+  // Partner entities: Suppliers, Financial Entities, Operators
   async getLegalEntities() {
     return this.makeRequest<any[]>('/api/legal-entities');
   }
@@ -284,26 +313,29 @@ class ApiService {
 
   /**
    * Loads all settings data in parallel with optimized error handling
+   * Uses organization-entities for RS dell'organizzazione (linked to stores)
    */
   async loadSettingsData() {
     // Optimized parallel loading with graceful degradation
+    // Now uses getOrganizationEntities for RS (not getLegalEntities which is for partners)
     const apiCalls = await Promise.allSettled([
-      this.getLegalEntities(),
+      this.getOrganizationEntities(),
       this.getUsers(), 
       this.getStores()
     ]);
 
-    const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
+    const [orgEntitiesResult, usersResult, storesResult] = apiCalls;
 
     // Map fields from API format (snake_case/lowercase) to frontend format (camelCase)
-    const mapLegalEntity = (item: any) => ({
+    const mapOrgEntity = (item: any) => ({
       ...item,
       pIva: item.piva || item.pIva,
     });
 
     // Extract successful results, fallback to empty arrays for failures
-    const legalEntities = legalEntitiesResult.status === 'fulfilled' && legalEntitiesResult.value.success 
-      ? (legalEntitiesResult.value.data || []).map(mapLegalEntity) : [];
+    // Note: "legalEntities" key kept for backward compatibility with frontend
+    const legalEntities = orgEntitiesResult.status === 'fulfilled' && orgEntitiesResult.value.success 
+      ? (orgEntitiesResult.value.data || []).map(mapOrgEntity) : [];
     
     const users = usersResult.status === 'fulfilled' && usersResult.value.success 
       ? usersResult.value.data : [];
@@ -312,7 +344,7 @@ class ApiService {
       ? storesResult.value.data : [];
 
     // Check for authentication requirements
-    const authRequired = [legalEntitiesResult, usersResult, storesResult].some(
+    const authRequired = [orgEntitiesResult, usersResult, storesResult].some(
       result => result.status === 'fulfilled' && result.value.needsAuth
     );
     if (authRequired) {
@@ -325,7 +357,7 @@ class ApiService {
 
     // Return available data even if some APIs failed (graceful degradation)
     const data = {
-      legalEntities: legalEntities || [],
+      legalEntities: legalEntities || [], // Kept as "legalEntities" for backward compatibility
       users: users || [],
       stores: stores || []
     };
@@ -333,7 +365,7 @@ class ApiService {
     const hasAnyData = data.legalEntities.length > 0 || data.users.length > 0 || data.stores.length > 0;
 
     const warnings = [
-      legalEntitiesResult.status === 'rejected' || (legalEntitiesResult.status === 'fulfilled' && !legalEntitiesResult.value.success) ? 'Legal entities service unavailable' : null,
+      orgEntitiesResult.status === 'rejected' || (orgEntitiesResult.status === 'fulfilled' && !orgEntitiesResult.value.success) ? 'Organization entities service unavailable' : null,
       usersResult.status === 'rejected' || (usersResult.status === 'fulfilled' && !usersResult.value.success) ? 'Users service unavailable' : null,
       storesResult.status === 'rejected' || (storesResult.status === 'fulfilled' && !storesResult.value.success) ? 'Stores service unavailable' : null
     ].filter(Boolean);

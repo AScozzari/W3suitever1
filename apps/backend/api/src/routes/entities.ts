@@ -12,7 +12,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers } from '../db/schema/w3suite';
+import { legalEntities, organizationEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers, insertOrganizationEntitySchema } from '../db/schema/w3suite';
 import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -119,18 +119,300 @@ router.get('/operators', async (req, res) => {
   }
 });
 
-// ==================== LEGAL ENTITIES ====================
+// ==================== ORGANIZATION ENTITIES (Ragioni Sociali dell'Organizzazione) ====================
+
+/**
+ * GET /api/organization-entities
+ * Get all organization entities (Ragioni Sociali) for the current tenant
+ * These are the tenant's own legal entities linked to stores
+ * NOT partner entities (suppliers, financial entities, operators)
+ */
+router.get('/organization-entities', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Get all organization entities for the tenant with their linked stores
+    const orgEntities = await db
+      .select({
+        id: organizationEntities.id,
+        codice: organizationEntities.codice,
+        nome: organizationEntities.nome,
+        pIva: organizationEntities.pIva,
+        stato: organizationEntities.stato,
+        codiceFiscale: organizationEntities.codiceFiscale,
+        formaGiuridica: organizationEntities.formaGiuridica,
+        capitaleSociale: organizationEntities.capitaleSociale,
+        dataCostituzione: organizationEntities.dataCostituzione,
+        indirizzo: organizationEntities.indirizzo,
+        citta: organizationEntities.citta,
+        provincia: organizationEntities.provincia,
+        cap: organizationEntities.cap,
+        telefono: organizationEntities.telefono,
+        email: organizationEntities.email,
+        pec: organizationEntities.pec,
+        rea: organizationEntities.rea,
+        registroImprese: organizationEntities.registroImprese,
+        logo: organizationEntities.logo,
+        codiceSDI: organizationEntities.codiceSDI,
+        iban: organizationEntities.iban,
+        bic: organizationEntities.bic,
+        website: organizationEntities.website,
+        refAmminNome: organizationEntities.refAmminNome,
+        refAmminCognome: organizationEntities.refAmminCognome,
+        refAmminEmail: organizationEntities.refAmminEmail,
+        note: organizationEntities.note,
+        createdAt: organizationEntities.createdAt,
+        updatedAt: organizationEntities.updatedAt,
+      })
+      .from(organizationEntities)
+      .where(eq(organizationEntities.tenantId, tenantId))
+      .orderBy(organizationEntities.codice);
+
+    // Get linked stores count for each organization entity
+    const storesData = await db
+      .select({
+        organizationEntityId: stores.organizationEntityId,
+        storeCount: sql<number>`count(*)::int`,
+      })
+      .from(stores)
+      .where(eq(stores.tenantId, tenantId))
+      .groupBy(stores.organizationEntityId);
+
+    const storesCountMap = new Map(
+      storesData.map(s => [s.organizationEntityId, s.storeCount])
+    );
+
+    // Enhance entities with store count
+    const enhancedEntities = orgEntities.map(entity => ({
+      ...entity,
+      storeCount: storesCountMap.get(entity.id) || 0,
+      hasDependencies: (storesCountMap.get(entity.id) || 0) > 0,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: enhancedEntities,
+      message: 'Organization entities retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving organization entities', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve organization entities',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * POST /api/organization-entities
+ * Create a new organization entity
+ */
+router.post('/organization-entities', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const validatedData = insertOrganizationEntitySchema.parse({
+      ...req.body,
+      tenantId
+    });
+
+    const [newEntity] = await db
+      .insert(organizationEntities)
+      .values(validatedData)
+      .returning();
+
+    res.status(201).json({
+      success: true,
+      data: newEntity,
+      message: 'Organization entity created successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error creating organization entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to create organization entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/organization-entities/:id
+ * Update an organization entity
+ */
+router.put('/organization-entities/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const { tenantId: _, id: __, createdAt, updatedAt, ...updateData } = req.body;
+
+    const [updatedEntity] = await db
+      .update(organizationEntities)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(
+        eq(organizationEntities.id, id),
+        eq(organizationEntities.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updatedEntity) {
+      return res.status(404).json({
+        success: false,
+        error: 'Organization entity not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedEntity,
+      message: 'Organization entity updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating organization entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update organization entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * DELETE /api/organization-entities/:id
+ * Delete an organization entity (only if no linked stores)
+ */
+router.delete('/organization-entities/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Check if entity has linked stores
+    const linkedStores = await db
+      .select({ id: stores.id })
+      .from(stores)
+      .where(and(
+        eq(stores.organizationEntityId, id),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (linkedStores.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete organization entity with linked stores',
+        message: 'Rimuovi prima gli store collegati a questa ragione sociale',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [deletedEntity] = await db
+      .delete(organizationEntities)
+      .where(and(
+        eq(organizationEntities.id, id),
+        eq(organizationEntities.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deletedEntity) {
+      return res.status(404).json({
+        success: false,
+        error: 'Organization entity not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: deletedEntity,
+      message: 'Organization entity deleted successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error deleting organization entity', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to delete organization entity',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== LEGAL ENTITIES (Partner Entities Only) ====================
 
 /**
  * GET /api/legal-entities
- * Get all legal entities for the current tenant with child table presence info
+ * Get all partner entities (Suppliers, Financial Entities, Operators) for the current tenant
  * Query params:
- * - roleFilter=true: Only return entities with at least one role (supplier, financial_entity, brand/operator)
+ * - roleFilter=true: Only return entities with at least one role
  * 
- * This endpoint returns:
- * 1. Tenant legal_entities with linked roles
- * 2. Brand-managed suppliers/financial_entities/operators (from public schema or with origin='brand')
- *    that may or may not have a legal_entity_id - these are shown as read-only
+ * NOTE: This endpoint returns ONLY partner entities, NOT organization's ragioni sociali
+ * For organization entities, use /api/organization-entities instead
  */
 router.get('/legal-entities', async (req, res) => {
   try {

@@ -82,7 +82,14 @@ export const tenants = w3suiteTenantsTable;
 export type { InsertUser, User } from './w3suite';
 export type { InsertTenant, Tenant } from './w3suite';
 
+// ==================== ORGANIZATION ENTITIES RE-EXPORTED FROM W3SUITE ====================
+// Internal legal entities (Ragioni Sociali dell'Organizzazione) - linked to stores
+import { organizationEntities as w3suiteOrganizationEntitiesTable } from './w3suite';
+export const organizationEntities = w3suiteOrganizationEntitiesTable;
+export type { InsertOrganizationEntity, OrganizationEntity } from './w3suite';
+
 // ==================== LEGAL ENTITIES RE-EXPORTED FROM W3SUITE ====================
+// Partner entities only (Suppliers, Financial Entities, Operators)
 import { legalEntities as w3suiteLegalEntitiesTable } from './w3suite';
 export const legalEntities = w3suiteLegalEntitiesTable;
 export type { InsertLegalEntity, LegalEntity } from './w3suite';

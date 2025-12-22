@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and enhance business operations across various domains including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to boost operational efficiency, market responsiveness, and strategic decision-making, with the ambition of becoming a leading integrated business operations platform.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and enhance business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its primary goal is to boost operational efficiency, improve market responsiveness, and facilitate strategic decision-making, with the ambition to become a leading integrated business operations platform.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -122,16 +122,16 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and enhanc
   - **📁 File protetti** (esclusi da rsync in `deploy/rsync-exclude.txt`):
     - `.env.production`, `.env`, `ecosystem.config.cjs`
   - **❌ NEVER use full bundle upload** (85MB) - usa sempre deploy incrementale
-  - **VPS Symlink**: `/var/www/w3suite/current/server.cjs`
+  - **VPS Symlink**: `/var/w3suite/current/server.cjs`
   - **PM2 Process**: `w3-api` (porta 3004)
   - **FRONTEND DEPLOY**:
     - Build on VPS con `VITE_FONT_SCALE=80`
-    - Output: `/var/www/w3suite/apps/frontend/web/dist/`
+    - Output: `/var/w3suite/apps/frontend/web/dist/`
 - **VPS DIRECTORY STRUCTURE (UGUALE A REPLIT)**:
   - **📁 Root**: `/var/www/w3suite/` (come root Replit)
-  - **📁 Apps**: `/var/www/w3suite/apps/` (backend, frontend, voice-gateway)
-  - **📁 Packages**: `/var/www/w3suite/packages/`
-  - **📁 Configs**: `/var/www/w3suite/configs/`
+  - **📁 Apps**: `/var/w3suite/apps/` (backend, frontend, voice-gateway)
+  - **📁 Packages**: `/var/w3suite/packages/`
+  - **📁 Configs**: `/var/w3suite/configs/`
   - **❌ MAI**: Non esiste più `/var/www/w3suite/app/` (struttura vecchia eliminata)
   - **✅ SEMPRE**: Usare path senza `/app/` intermedio
 - **VPS SSH & DATABASE**:
@@ -151,7 +151,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and enhanc
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with a fixed header and sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Leverages `shadcn/ui`, Radix UI primitives, CSS variables, and Tailwind CSS for consistency and accessibility.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed header and sidebar, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Leverages `shadcn/ui`, Radix UI primitives, CSS variables, and Tailwind CSS for consistency and accessibility.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) for multi-tenancy.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
@@ -164,8 +164,8 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and enhanc
     - **WMS Module (CQRS Architecture)**: Supports diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, document tables. Includes an Enterprise Inventory Dashboard with KPIs and cross-store views. WMS Movement Type Configuration is tenant-configurable with approval workflows.
     - **System Config Page**: Modular settings dashboard at `/settings/system`, organized by tabs (WMS Movements, VoIP, HR, CRM, Notifications).
     - **Business Drivers Architecture**: Multi-tenant drivers stored in `w3suite.drivers` with RLS.
+- **System Design Choices**:
     - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Legal Entity → Store → Department → Team → User) governs team structures and data access, with rules for membership and dynamic request routing (Functional First, First Wins, Shift-Based). Legal Entities are external partners with defined roles (e.g., Supplier, Financial Entity).
-- **Feature Specifications**:
     - **Cross-Store Architecture**: Default view is always cross-store (tenant-wide), with access control based on roles, not store selection. Data queries omit `storeId` for cross-store views.
     - **Request Routing**: Implements "Functional First → First Wins" and "Shift-Based Routing" for handling requests based on team type, supervisor roles, and active shifts.
     - **Legal Entities**: Represents external partners (Suppliers, Financial Entities, Operators) with specific roles, propagating to relevant tables upon activation.
