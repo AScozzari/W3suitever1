@@ -381,7 +381,15 @@ export default function ListiniTabContent() {
     
     if (deviceIds.length === 0 || canvasIds.length === 0) return;
     
+    // Create set of existing pairs for quick duplicate check
+    const existingPairKeys = new Set(
+      savedPairs.map(p => `${p.physicalProductId}:${p.canvasProductId}`)
+    );
+    
     const newPairs: ProductPair[] = [];
+    const addedPairKeys = new Set<string>(); // Track intra-batch duplicates
+    let duplicatesSkipped = 0;
+    
     deviceIds.forEach(deviceId => {
       const device = safeProducts.find((p: any) => p.id === deviceId);
       if (!device) return;
@@ -390,6 +398,15 @@ export default function ListiniTabContent() {
         const canvas = safeProducts.find((p: any) => p.id === canvasId);
         if (!canvas) return;
         
+        const pairKey = `${deviceId}:${canvasId}`;
+        
+        // Skip if already exists in savedPairs or in current batch
+        if (existingPairKeys.has(pairKey) || addedPairKeys.has(pairKey)) {
+          duplicatesSkipped++;
+          return;
+        }
+        
+        addedPairKeys.add(pairKey);
         newPairs.push({
           id: `pair-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           physicalProductId: deviceId,
@@ -403,11 +420,33 @@ export default function ListiniTabContent() {
       });
     });
     
-    setSavedPairs(prev => [...prev, ...newPairs]);
+    if (newPairs.length > 0) {
+      setSavedPairs(prev => [...prev, ...newPairs]);
+    }
+    
+    // Show feedback toast
+    if (duplicatesSkipped > 0) {
+      toast({
+        title: `${newPairs.length} coppie create`,
+        description: `${duplicatesSkipped} duplicati ignorati`,
+        variant: newPairs.length > 0 ? "default" : "destructive"
+      });
+    } else if (newPairs.length > 0) {
+      toast({
+        title: `${newPairs.length} coppie create`,
+        description: "Passa alla vista Lista per configurarle"
+      });
+    }
+    
     setSelectedDeviceVariants(new Set());
     setSelectedCanvasProducts(new Set());
     setDeviceViewMode('single');
     setCanvasViewMode('single');
+    
+    // Auto-switch to list view if pairs were created
+    if (newPairs.length > 0) {
+      setCanvasDeviceViewMode('list');
+    }
   };
 
   // Toggle device group expansion
