@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,7 +140,6 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
 ];
 
 export default function ListiniTabContent() {
-  const { toast } = useToast();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -447,202 +445,6 @@ export default function ListiniTabContent() {
       group.variants.forEach(v => next.add(v.id));
       return next;
     });
-  };
-
-  // Calculate completion status for a pair based on configurations
-  const getPairCompletionStatus = (pair: ProductPair): 'pending' | 'partial' | 'complete' => {
-    if (!pair.configurations || pair.configurations.length === 0) {
-      return 'pending';
-    }
-    
-    let allComplete = true;
-    let hasPartial = false;
-    
-    pair.configurations.forEach(config => {
-      const hasRequiredFields = config.salesMode;
-      const hasFinanceFields = config.salesMode !== 'FIN' || config.financialEntityId;
-      const hasInstallments = config.salesMode === 'ALL' || (config.numberOfInstallments && config.installmentAmount);
-      
-      if (!hasRequiredFields) {
-        allComplete = false;
-      } else if (!hasFinanceFields || !hasInstallments) {
-        allComplete = false;
-        hasPartial = true;
-      } else {
-        hasPartial = true;
-      }
-    });
-    
-    if (allComplete && pair.configurations.length > 0) return 'complete';
-    if (hasPartial) return 'partial';
-    return 'pending';
-  };
-
-  // Get badge color based on completion status
-  const getStatusBadge = (status: 'pending' | 'partial' | 'complete') => {
-    switch (status) {
-      case 'complete':
-        return <Badge className="bg-green-500 text-white"><Check className="h-3 w-3 mr-1" />Completo</Badge>;
-      case 'partial':
-        return <Badge className="bg-yellow-500 text-white"><AlertCircle className="h-3 w-3 mr-1" />Parziale</Badge>;
-      default:
-        return <Badge className="bg-red-500 text-white"><X className="h-3 w-3 mr-1" />Da configurare</Badge>;
-    }
-  };
-
-  // Check if a pair already exists in savedPairs
-  const findExistingPair = (physicalId: string, canvasId: string): ProductPair | undefined => {
-    return savedPairs.find(p => 
-      p.physicalProductId === physicalId && p.canvasProductId === canvasId
-    );
-  };
-
-  // Add pairs with duplicate check
-  const addPairsWithDuplicateCheck = (newPairs: ProductPair[]) => {
-    const duplicates: ProductPair[] = [];
-    const toAdd: ProductPair[] = [];
-    
-    newPairs.forEach(pair => {
-      const existing = findExistingPair(pair.physicalProductId!, pair.canvasProductId!);
-      if (existing) {
-        duplicates.push(existing);
-      } else {
-        toAdd.push(pair);
-      }
-    });
-    
-    if (duplicates.length > 0) {
-      toast({
-        title: "Coppie già esistenti",
-        description: `${duplicates.length} coppia/e già presente/i in elenco. Usa la vista elenco per modificarle.`,
-        variant: "destructive"
-      });
-      // Auto-expand the first duplicate for editing
-      if (duplicates.length === 1) {
-        setExpandedPairId(duplicates[0].id);
-        setCanvasDeviceViewMode('list');
-      }
-    }
-    
-    if (toAdd.length > 0) {
-      setSavedPairs(prev => [...prev, ...toAdd]);
-      toast({
-        title: "Coppie aggiunte",
-        description: `${toAdd.length} nuova/e coppia/e aggiunta/e all'elenco.`
-      });
-    }
-    
-    // Switch to list view if we have pairs
-    if (toAdd.length > 0 || savedPairs.length > 0) {
-      setCanvasDeviceViewMode('list');
-    }
-    
-    // Clear selections
-    setSelectedDeviceVariants(new Set());
-    setSelectedCanvasProducts(new Set());
-    setCurrentPair({ configurations: [] });
-  };
-
-  // Modified createMassivePairs to use duplicate check
-  const createMassivePairsWithCheck = () => {
-    const deviceIds = Array.from(selectedDeviceVariants);
-    const canvasIds = Array.from(selectedCanvasProducts);
-    
-    if (deviceIds.length === 0 || canvasIds.length === 0) return;
-    
-    const newPairs: ProductPair[] = [];
-    deviceIds.forEach(deviceId => {
-      const device = safeProducts.find((p: any) => p.id === deviceId);
-      if (!device) return;
-      
-      canvasIds.forEach(canvasId => {
-        const canvas = safeProducts.find((p: any) => p.id === canvasId);
-        if (!canvas) return;
-        
-        newPairs.push({
-          id: `pair-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          physicalProductId: deviceId,
-          physicalProductName: device.name,
-          physicalProductSku: device.sku,
-          canvasProductId: canvasId,
-          canvasProductName: canvas.name,
-          canvasMonthlyFee: canvas.monthlyFee || '0',
-          configurations: []
-        });
-      });
-    });
-    
-    addPairsWithDuplicateCheck(newPairs);
-  };
-
-  // Add single pair with duplicate check
-  const addSinglePairWithCheck = () => {
-    if (!currentPair.physicalProductId || !currentPair.canvasProductId) return;
-    
-    const newPair: ProductPair = {
-      id: `pair-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      physicalProductId: currentPair.physicalProductId,
-      physicalProductName: currentPair.physicalProductName || '',
-      physicalProductSku: currentPair.physicalProductSku || '',
-      canvasProductId: currentPair.canvasProductId,
-      canvasProductName: currentPair.canvasProductName || '',
-      canvasMonthlyFee: currentPair.canvasMonthlyFee || '0',
-      configurations: []
-    };
-    
-    addPairsWithDuplicateCheck([newPair]);
-  };
-
-  // Delete a pair from savedPairs
-  const deletePair = (pairId: string) => {
-    setSavedPairs(prev => prev.filter(p => p.id !== pairId));
-    if (expandedPairId === pairId) {
-      setExpandedPairId(null);
-    }
-    toast({
-      title: "Coppia eliminata",
-      description: "La coppia è stata rimossa dall'elenco."
-    });
-  };
-
-  // Update configuration for a specific pair in savedPairs
-  const updatePairConfiguration = (pairId: string, configIndex: number, updates: Partial<SalesConfiguration>) => {
-    setSavedPairs(prev => prev.map(pair => {
-      if (pair.id !== pairId) return pair;
-      const newConfigs = [...pair.configurations];
-      newConfigs[configIndex] = { ...newConfigs[configIndex], ...updates };
-      return { ...pair, configurations: newConfigs };
-    }));
-  };
-
-  // Add configuration to a specific pair
-  const addConfigurationToPair = (pairId: string) => {
-    setSavedPairs(prev => prev.map(pair => {
-      if (pair.id !== pairId) return pair;
-      return {
-        ...pair,
-        configurations: [...pair.configurations, {
-          id: `config-${Date.now()}`,
-          salesMode: 'ALL' as SalesMode,
-          entryFee: '',
-          installmentAmount: '',
-          creditNoteAmount: '',
-          creditAssignmentAmount: '',
-          financingAmount: '',
-          validFrom: priceListHeader.validFrom,
-          validTo: priceListHeader.validTo
-        }]
-      };
-    }));
-  };
-
-  // Remove configuration from a specific pair
-  const removeConfigurationFromPair = (pairId: string, configIndex: number) => {
-    setSavedPairs(prev => prev.map(pair => {
-      if (pair.id !== pairId) return pair;
-      const newConfigs = pair.configurations.filter((_, i) => i !== configIndex);
-      return { ...pair, configurations: newConfigs };
-    }));
   };
 
   const resetWizard = () => {
@@ -1132,291 +934,8 @@ export default function ListiniTabContent() {
     </div>
   );
 
-  // Render the pairs list view with inline accordion for configuration
-  const renderPairsListView = () => (
-    <div className="flex flex-col h-full min-h-0 gap-4">
-      {/* Header con conteggio e pulsante aggiungi */}
-      <div className="flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <h4 className="font-semibold flex items-center gap-2">
-            <Layers className="h-5 w-5" />
-            Coppie Prodotto ({savedPairs.length})
-          </h4>
-          <div className="flex gap-1">
-            {(() => {
-              const complete = savedPairs.filter(p => getPairCompletionStatus(p) === 'complete').length;
-              const partial = savedPairs.filter(p => getPairCompletionStatus(p) === 'partial').length;
-              const pending = savedPairs.filter(p => getPairCompletionStatus(p) === 'pending').length;
-              return (
-                <>
-                  {complete > 0 && <Badge className="bg-green-500 text-white">{complete} ✓</Badge>}
-                  {partial > 0 && <Badge className="bg-yellow-500 text-white">{partial} ⚠</Badge>}
-                  {pending > 0 && <Badge className="bg-red-500 text-white">{pending} ✗</Badge>}
-                </>
-              );
-            })()}
-          </div>
-        </div>
-        <Button 
-          onClick={() => setCanvasDeviceViewMode('selection')}
-          variant="outline"
-          data-testid="btn-add-more-pairs"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Aggiungi altre coppie
-        </Button>
-      </div>
-
-      {/* Lista coppie con accordion */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="space-y-3 pr-4">
-          {savedPairs.map((pair) => {
-            const status = getPairCompletionStatus(pair);
-            const isExpanded = expandedPairId === pair.id;
-            
-            return (
-              <Card 
-                key={pair.id} 
-                className={`transition-all ${
-                  status === 'complete' ? 'border-green-300' : 
-                  status === 'partial' ? 'border-yellow-300' : 'border-red-300'
-                }`}
-              >
-                {/* Header della coppia - sempre visibile */}
-                <div 
-                  className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
-                  onClick={() => setExpandedPairId(isExpanded ? null : pair.id)}
-                  data-testid={`pair-row-${pair.id}`}
-                >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="flex items-center gap-2">
-                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </div>
-                    <div className="flex items-center gap-2 flex-1">
-                      <Smartphone className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">{pair.physicalProductName}</span>
-                      <ArrowRight className="h-4 w-4 text-gray-400" />
-                      <Tv className="h-4 w-4 text-purple-500" />
-                      <span className="font-medium">{pair.canvasProductName}</span>
-                      <Badge variant="outline" className="text-green-600">€{pair.canvasMonthlyFee}/mese</Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {getStatusBadge(status)}
-                    <Badge variant="outline">{pair.configurations.length} config</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deletePair(pair.id);
-                      }}
-                      data-testid={`btn-delete-pair-${pair.id}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Contenuto espanso - configurazioni */}
-                {isExpanded && (
-                  <div className="border-t p-4 bg-gray-50 space-y-4">
-                    {pair.configurations.length === 0 ? (
-                      <div className="text-center py-4">
-                        <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                        <p className="text-gray-500 mb-3">Nessuna configurazione vendita</p>
-                        <Button 
-                          onClick={() => addConfigurationToPair(pair.id)}
-                          size="sm"
-                          data-testid={`btn-add-first-config-${pair.id}`}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Aggiungi Configurazione
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        {pair.configurations.map((config, configIndex) => (
-                          <Card key={config.id} className="p-4 bg-white">
-                            <div className="flex items-start justify-between mb-4">
-                              <Badge variant={config.salesMode === 'ALL' ? 'default' : config.salesMode === 'FIN' ? 'secondary' : 'outline'}>
-                                {config.salesMode === 'ALL' && 'Pagamento Unico'}
-                                {config.salesMode === 'FIN' && 'Finanziamento'}
-                                {config.salesMode === 'VAR' && 'Variabile'}
-                              </Badge>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => removeConfigurationFromPair(pair.id, configIndex)}
-                                data-testid={`btn-remove-config-${pair.id}-${configIndex}`}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                              <div>
-                                <Label>Modalità Vendita *</Label>
-                                <Select 
-                                  value={config.salesMode} 
-                                  onValueChange={(val: SalesMode) => updatePairConfiguration(pair.id, configIndex, { salesMode: val })}
-                                >
-                                  <SelectTrigger data-testid={`select-sales-mode-${pair.id}-${configIndex}`}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="ALL">ALL - Pagamento Unico</SelectItem>
-                                    <SelectItem value="FIN">FIN - Finanziamento</SelectItem>
-                                    <SelectItem value="VAR">VAR - Variabile (RID/CDC)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              {config.salesMode === 'FIN' && (
-                                <div>
-                                  <Label>Ente Finanziante *</Label>
-                                  <Select 
-                                    value={config.financialEntityId || ''} 
-                                    onValueChange={(val) => {
-                                      const entity = safeFinancialEntities.find((e: any) => e.id === val);
-                                      updatePairConfiguration(pair.id, configIndex, { 
-                                        financialEntityId: val,
-                                        financialEntityName: entity?.name || ''
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger data-testid={`select-financial-entity-${pair.id}-${configIndex}`}>
-                                      <SelectValue placeholder="Seleziona..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {safeFinancialEntities.map((e: any) => (
-                                        <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
-
-                              {(config.salesMode === 'FIN' || config.salesMode === 'VAR') && (
-                                <>
-                                  <div>
-                                    <Label>Numero Rate</Label>
-                                    <Select 
-                                      value={config.numberOfInstallments?.toString() || ''} 
-                                      onValueChange={(val) => updatePairConfiguration(pair.id, configIndex, { numberOfInstallments: parseInt(val) })}
-                                    >
-                                      <SelectTrigger data-testid={`select-installments-${pair.id}-${configIndex}`}>
-                                        <SelectValue placeholder="Rate..." />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="12">12 rate</SelectItem>
-                                        <SelectItem value="24">24 rate</SelectItem>
-                                        <SelectItem value="36">36 rate</SelectItem>
-                                        <SelectItem value="48">48 rate</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label>Importo Rata (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={config.installmentAmount || ''}
-                                      onChange={(e) => updatePairConfiguration(pair.id, configIndex, { installmentAmount: e.target.value })}
-                                      placeholder="0.00"
-                                      data-testid={`input-installment-amount-${pair.id}-${configIndex}`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label>Anticipo (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={config.entryFee || ''}
-                                      onChange={(e) => updatePairConfiguration(pair.id, configIndex, { entryFee: e.target.value })}
-                                      placeholder="0.00"
-                                      data-testid={`input-entry-fee-${pair.id}-${configIndex}`}
-                                    />
-                                  </div>
-                                </>
-                              )}
-                            </div>
-
-                            <Separator className="my-4" />
-
-                            <div>
-                              <Label className="flex items-center gap-2 mb-3">
-                                <Calculator className="h-4 w-4" />
-                                Informazioni Contabili
-                              </Label>
-                              <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                  <Label className="text-xs text-gray-500">Nota di Credito (€)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={config.creditNoteAmount || ''}
-                                    onChange={(e) => updatePairConfiguration(pair.id, configIndex, { creditNoteAmount: e.target.value })}
-                                    placeholder="0.00"
-                                    data-testid={`input-credit-note-${pair.id}-${configIndex}`}
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs text-gray-500">Cessione Credito (€)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={config.creditAssignmentAmount || ''}
-                                    onChange={(e) => updatePairConfiguration(pair.id, configIndex, { creditAssignmentAmount: e.target.value })}
-                                    placeholder="0.00"
-                                    data-testid={`input-credit-assignment-${pair.id}-${configIndex}`}
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs text-gray-500">Finanziamento (€)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={config.financingAmount || ''}
-                                    onChange={(e) => updatePairConfiguration(pair.id, configIndex, { financingAmount: e.target.value })}
-                                    placeholder="0.00"
-                                    data-testid={`input-financing-${pair.id}-${configIndex}`}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                        
-                        <Button 
-                          onClick={() => addConfigurationToPair(pair.id)}
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          data-testid={`btn-add-more-config-${pair.id}`}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Aggiungi Configurazione
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      </ScrollArea>
-    </div>
-  );
-
   const renderStep3PromoCanvas = () => (
     <div className="flex flex-col h-full min-h-0 gap-4">
-      {/* Se ci sono coppie salvate e siamo in modalità lista, mostra la lista */}
-      {savedPairs.length > 0 && canvasDeviceViewMode === 'list' ? (
-        renderPairsListView()
-      ) : (
-      <>
       {/* Riepilogo selezioni correnti */}
       {(currentPair.physicalProductId || currentPair.canvasProductId) && !isPairComplete && (
         <Card className="p-4 bg-blue-50 border-blue-200 shrink-0">
@@ -2328,6 +1847,36 @@ export default function ListiniTabContent() {
 
   const removePromoDeviceProduct = (id: string) => {
     setPromoDeviceProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  // ===== CANVAS DEVICE HELPER FUNCTIONS =====
+  const getCanvasDevicePairCompletionStatus = (pair: ProductPair): 'complete' | 'partial' | 'pending' => {
+    if (pair.configurations.length === 0) return 'pending';
+    
+    let hasComplete = false;
+    let hasIncomplete = false;
+    
+    for (const config of pair.configurations) {
+      const hasMode = !!config.salesMode;
+      const hasFinancialEntity = config.salesMode === 'FIN' ? !!config.financialEntityId : true;
+      const hasInstallments = (config.salesMode === 'FIN' || config.salesMode === 'VAR') 
+        ? (!!config.numberOfInstallments && config.numberOfInstallments > 0 && !!config.installmentAmount && parseFloat(config.installmentAmount) > 0)
+        : true;
+      
+      const configComplete = hasMode && hasFinancialEntity && hasInstallments;
+      if (configComplete) hasComplete = true;
+      else hasIncomplete = true;
+    }
+    
+    if (hasComplete && !hasIncomplete) return 'complete';
+    if (hasComplete || pair.configurations.length > 0) return 'partial';
+    return 'pending';
+  };
+
+  const findDuplicatePair = (physicalProductId: string, canvasProductId: string): ProductPair | undefined => {
+    return currentPair.physicalProductId === physicalProductId && currentPair.canvasProductId === canvasProductId
+      ? { ...currentPair, id: 'current' } as ProductPair
+      : savedPairs.find(p => p.physicalProductId === physicalProductId && p.canvasProductId === canvasProductId);
   };
 
   const promoDeviceFilteredByType = useMemo(() => {
