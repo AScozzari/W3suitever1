@@ -1,0 +1,60 @@
+="791a2727-36d1-4538-b523-ceb60b1f24b4", stale=true, algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+Layout-CCb8e1QR.js:58 Mon Dec 22 2025 13:51:43 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS kj1fcu0pmgu3.invalid;branch=z9hG4bK9281917
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=pqii4j2tel
+CSeq: 5 REGISTER
+Call-ID: f3g9bkkdocsirorahd5j
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="791a2727-36d1-4538-b523-ceb60b1f24b4", uri="sip:demo.edgvoip.it", response="91f68f76186b082eb241b51f32cfa480", qop=auth, cnonce="jlp4gl8k9520", nc=00000001
+Contact: <sip:ufmdh0sh@kj1fcu0pmgu3.invalid;transport=ws>;expires=0
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-DNOc502J.js:2  GET https://w3suite.it/api/organization-entities 500 (Internal Server Error)
+lo @ index-DNOc502J.js:2
+await in lo
+makeRequest @ ApiService-C2rxrvxA.js:1
+getOrganizationEntities @ ApiService-C2rxrvxA.js:1
+loadSettingsData @ ApiService-C2rxrvxA.js:1
+(anonime) @ SettingsPage-DMkOrOv5.js:1
+(anonime) @ SettingsPage-DMkOrOv5.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/organization-entities: column "codiceFiscale" does not exist
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-C2rxrvxA.js:1
+await in makeRequest
+getOrganizationEntities @ ApiService-C2rxrvxA.js:1
+loadSettingsData @ ApiService-C2rxrvxA.js:1
+(anonime) @ SettingsPage-DMkOrOv5.js:1
+(anonime) @ SettingsPage-DMkOrOv5.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+(anonime) @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'avviso
+SettingsPage-DMkOrOv5.js:1 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(1)}
+SettingsPage-DMkOrOv5.js:1 📝 Setting state with data: {organizationEntities: 0, users: 21, stores: 5}
+index-DNOc502J.js:2 🔍 Token expiry check: Current time: 13:51:43, Token expires: 14:06:39
+SettingsPage-DMkOrOv5.js:15 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+Layout-CCb8e1QR.js:58 Mon Dec 22 2025 13:51:43 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS kj1fcu0pmgu3.invalid;branch=z9hG4bK9281917;received=127.0.0.1;rport=51714
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=pqii4j2tel
+To: <sip:2000@demo.edgvoip.it>;tag=j1ej0H7N2DjQc
+Call-ID: f3g9bkkdocsirorahd5j
+CSeq: 5 REGISTER
