@@ -1330,6 +1330,7 @@ export default function SettingsPage() {
       
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'X-Tenant-ID': currentTenantId
         }
@@ -1369,6 +1370,7 @@ export default function SettingsPage() {
       
       const response = await fetch(`/api/legal-entities/${legalEntityId}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'X-Tenant-ID': currentTenantId
         }
@@ -3596,10 +3598,9 @@ export default function SettingsPage() {
     queryKey: ['/api/legal-entities', { roleFilter: true }],
     queryFn: async () => {
       const response = await fetch('/api/legal-entities?roleFilter=true', {
+        credentials: 'include',
         headers: {
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+          'X-Tenant-ID': DEMO_TENANT_ID
         }
       });
       if (!response.ok) throw new Error('Failed to fetch legal entities');
@@ -3634,11 +3635,10 @@ export default function SettingsPage() {
 
       const response = await fetch(url, {
         method,
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+          'X-Tenant-ID': DEMO_TENANT_ID
         },
         body: JSON.stringify(legalEntityForm)
       });
@@ -3669,10 +3669,9 @@ export default function SettingsPage() {
     try {
       const response = await fetch(`/api/legal-entities/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: { 
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+          'X-Tenant-ID': DEMO_TENANT_ID
         }
       });
 
@@ -3694,11 +3693,10 @@ export default function SettingsPage() {
     try {
       const response = await fetch(`/api/legal-entities/${id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+          'X-Tenant-ID': DEMO_TENANT_ID
         },
         body: JSON.stringify({ stato: 'Archiviata' })
       });
@@ -3724,11 +3722,10 @@ export default function SettingsPage() {
     try {
       const response = await fetch(`/api/legal-entities/${id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': localStorage.getItem('demo_user_id') || 'admin-user'
+          'X-Tenant-ID': DEMO_TENANT_ID
         },
         body: JSON.stringify({ stato: newStato })
       });
