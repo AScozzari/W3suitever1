@@ -2918,57 +2918,173 @@ export default function ListiniTabContent() {
     </div>
   );
 
-  const renderStep4 = () => (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <h4 className="font-semibold mb-4">Riepilogo Listino</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+  const renderStep4 = () => {
+    const completePairs = savedPairs.filter(p => getCanvasDevicePairCompletionStatus(p) === 'complete').length;
+    const pendingPairs = savedPairs.filter(p => getCanvasDevicePairCompletionStatus(p) === 'pending').length;
+    const partialPairs = savedPairs.filter(p => getCanvasDevicePairCompletionStatus(p) === 'partial').length;
+    
+    return (
+    <div className="h-full min-h-0 flex flex-col">
+      <Card className="p-4 shrink-0">
+        <div className="flex items-center justify-between">
           <div>
-            <span className="text-gray-500">Codice:</span>
-            <span className="ml-2 font-medium">{priceListHeader.code}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Nome:</span>
-            <span className="ml-2 font-medium">{priceListHeader.name}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Tipo:</span>
-            <span className="ml-2">
+            <h4 className="font-semibold">Riepilogo Listino</h4>
+            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+              <span><strong>{priceListHeader.code}</strong> - {priceListHeader.name}</span>
               <Badge>{PRICE_LIST_TYPES.find(t => t.value === priceListHeader.type)?.label}</Badge>
-            </span>
+              <span>
+                {format(priceListHeader.validFrom, 'dd/MM/yyyy', { locale: it })}
+                {priceListHeader.validTo && ` - ${format(priceListHeader.validTo, 'dd/MM/yyyy', { locale: it })}`}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-500">Validità:</span>
-            <span className="ml-2 font-medium">
-              {format(priceListHeader.validFrom, 'dd/MM/yyyy', { locale: it })}
-              {priceListHeader.validTo && ` - ${format(priceListHeader.validTo, 'dd/MM/yyyy', { locale: it })}`}
-            </span>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setWizardStep(3)}
+            data-testid="btn-back-to-add-pairs"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Aggiungi Altre Combinazioni
+          </Button>
         </div>
       </Card>
 
-      {priceListHeader.type === 'promo_canvas' && savedPairs.length > 0 && (
-        <Card className="p-6">
-          <h4 className="font-semibold mb-4">Coppie Configurate ({savedPairs.length})</h4>
-          <div className="space-y-4">
-            {savedPairs.map((pair) => (
-              <div key={pair.id} className="border-b pb-4 last:border-0 last:pb-0">
-                <div className="font-medium mb-2">
-                  {pair.physicalProductName} + {pair.canvasProductName}
+      {priceListHeader.type === 'promo_canvas' && (
+        <div className="flex-1 min-h-0 flex flex-col mt-4">
+          <div className="flex items-center justify-between mb-3 shrink-0">
+            <div className="flex items-center gap-4">
+              <h4 className="font-semibold">Coppie Device + Canvas ({savedPairs.length})</h4>
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-gray-600">{completePairs} complete</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {pair.configurations.map((config, idx) => (
-                    <Badge key={idx} variant="outline">
-                      {config.salesMode}
-                      {config.numberOfInstallments && ` ${config.numberOfInstallments}x`}
-                      {config.installmentAmount && ` €${config.installmentAmount}`}
-                    </Badge>
-                  ))}
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <span className="text-gray-600">{partialPairs} parziali</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="text-gray-600">{pendingPairs} da configurare</span>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </Card>
+          
+          {savedPairs.length === 0 ? (
+            <Card className="flex-1 flex items-center justify-center">
+              <div className="text-center py-8">
+                <Layers className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-500 mb-4">Nessuna coppia configurata</p>
+                <Button onClick={() => setWizardStep(3)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Aggiungi Coppie
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <ScrollArea className="flex-1 border rounded-lg">
+              <div className="space-y-2 p-3">
+                {savedPairs.map((pair) => {
+                  const completionStatus = getCanvasDevicePairCompletionStatus(pair);
+                  const isExpanded = expandedPairId === pair.id;
+                  return (
+                    <Collapsible 
+                      key={pair.id} 
+                      open={isExpanded}
+                      onOpenChange={() => setExpandedPairId(isExpanded ? null : pair.id)}
+                    >
+                      <Card className={`overflow-hidden ${isExpanded ? 'border-orange-400' : ''}`}>
+                        <CollapsibleTrigger asChild>
+                          <div className="p-3 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${
+                                completionStatus === 'complete' ? 'bg-green-500' : 
+                                completionStatus === 'partial' ? 'bg-yellow-500' : 'bg-red-500'
+                              }`} />
+                              {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronRight className="h-4 w-4 text-gray-500" />}
+                              <div>
+                                <div className="font-medium text-sm">{pair.physicalProductName}</div>
+                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                  <span>+</span>
+                                  <span>{pair.canvasProductName}</span>
+                                  {pair.canvasMonthlyFee && <span className="text-purple-600 ml-1">€{pair.canvasMonthlyFee}/mese</span>}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">{pair.configurations.length} config</Badge>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSavedPairs(prev => prev.filter(p => p.id !== pair.id));
+                                }}
+                                data-testid={`btn-step4-delete-pair-${pair.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="border-t p-3 bg-gray-50 space-y-3">
+                            {pair.configurations.length === 0 ? (
+                              <div className="text-center py-3 text-gray-500">
+                                <CreditCard className="h-6 w-6 mx-auto mb-2 text-gray-300" />
+                                <p className="text-sm">Nessuna configurazione - Torna indietro per configurare</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {pair.configurations.map((config) => (
+                                  <div key={config.id} className="bg-white rounded-lg p-3 border">
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                      <Badge variant={config.salesMode === 'ALL' ? 'default' : config.salesMode === 'FIN' ? 'secondary' : 'outline'}>
+                                        {config.salesMode === 'ALL' && 'Pagamento Unico'}
+                                        {config.salesMode === 'FIN' && 'Finanziamento'}
+                                        {config.salesMode === 'VAR' && 'Variabile'}
+                                      </Badge>
+                                      {config.financialEntityName && (
+                                        <span className="text-sm text-gray-600">{config.financialEntityName}</span>
+                                      )}
+                                      {config.numberOfInstallments && (
+                                        <span className="text-sm text-purple-600 font-medium">{config.numberOfInstallments} rate</span>
+                                      )}
+                                      {config.installmentAmount && (
+                                        <span className="text-sm font-semibold">€{config.installmentAmount}/mese</span>
+                                      )}
+                                      {config.creditNoteAmount && parseFloat(config.creditNoteAmount) > 0 && (
+                                        <span className="text-xs text-green-600">Nota credito: €{config.creditNoteAmount}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => {
+                                loadPairForEditing(pair);
+                                setCanvasDeviceViewMode('selection');
+                                setWizardStep(3);
+                              }}
+                            >
+                              <Settings2 className="h-3 w-3 mr-1" />
+                              Modifica Configurazioni
+                            </Button>
+                          </div>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
       )}
 
       {priceListHeader.type === 'no_promo' && noPromoProducts.length > 0 && (
@@ -3017,6 +3133,7 @@ export default function ListiniTabContent() {
       )}
     </div>
   );
+  };
 
   return (
     <div className="space-y-6" data-testid="listini-content">

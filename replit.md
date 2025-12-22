@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The vision is to provide a comprehensive, intelligent solution for operational management that drives efficiency and strategic advantage for businesses.
+W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. Its primary goal is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive, intelligent solution for operational management, driving efficiency and strategic advantage for businesses.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -155,7 +155,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: The platform uses a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). A component-first approach with `shadcn/ui` and Radix UI ensures accessibility. CSS variables and Tailwind CSS are used for styling. All new content integrates into existing dashboard structures for a consistent user experience.
+- **UI/UX Decisions**: The platform uses a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). A component-first approach with `shadcn/ui` and Radix UI ensures accessibility. CSS variables and Tailwind CSS are used for styling, and all new content integrates into existing dashboard structures.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: Implements OAuth2/OIDC, Multi-Factor Authentication (MFA), JWTs, and 3-level Role-Based Access Control (RBAC).
