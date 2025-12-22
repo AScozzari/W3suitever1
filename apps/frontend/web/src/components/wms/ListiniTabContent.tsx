@@ -1609,7 +1609,9 @@ export default function ListiniTabContent() {
             Coppie Salvate ({savedPairs.length})
           </h4>
           <div className="space-y-3">
-            {savedPairs.map((pair) => (
+            {savedPairs.map((pair) => {
+              const completionStatus = getCanvasDevicePairCompletionStatus(pair);
+              return (
               <Card 
                 key={pair.id} 
                 className={`p-4 cursor-pointer transition-all hover:border-orange-300 ${editingPairId === pair.id ? 'border-orange-500 bg-orange-50' : ''}`}
@@ -1617,6 +1619,13 @@ export default function ListiniTabContent() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
+                    <div className={`w-3 h-3 rounded-full ${
+                      completionStatus === 'complete' ? 'bg-green-500' : 
+                      completionStatus === 'partial' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`} title={
+                      completionStatus === 'complete' ? 'Configurazione completa' : 
+                      completionStatus === 'partial' ? 'Configurazione parziale' : 'Configurazione mancante'
+                    } />
                     <div>
                       <span className="font-medium">{pair.physicalProductName}</span>
                       <span className="text-gray-400 mx-2">+</span>
@@ -1658,7 +1667,8 @@ export default function ListiniTabContent() {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

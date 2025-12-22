@@ -97,7 +97,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **🏢 `organization_entities`**: Ragioni Sociali del tenant/organizzazione (collegate a stores via `organization_entity_id`)
     - Endpoint: `GET/POST/PUT/DELETE /api/organization-entities`
     - Frontend: dropdown "Ragione Sociale" in StoreFormModal
-  - **🤝 `legal_entities`**: Partner esterni con ruolo (Fornitori, Enti Finanzianti, Operatori)
+  - **🤝 `legal_entities`**: Partner esterni con ruolo (Fornitori, Ente Finanzianti, Operatori)
     - **🔄 Propagazione**: Quando `is_supplier=true` → crea record in `suppliers`, `is_financial_entity=true` → `financial_entities`, etc.
     - **📋 Ruoli disponibili**: Fornitore, Ente Finanziante, Operatore (flags booleane sulla tabella)
   - **⚠️ IMPORTANTE**: Le due tabelle serve scopi diversi - NON confonderle!
