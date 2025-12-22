@@ -1551,8 +1551,8 @@ router.post('/stores', async (req, res) => {
     const createSchema = z.object({
       code: z.string().min(1).max(50),
       nome: z.string().min(1).max(255),
-      legalEntityId: z.string().uuid(),
-      channelId: z.string().uuid(),
+      organizationEntityId: z.string().uuid(),
+      channelId: z.string().uuid().optional(),
       commercialAreaId: z.string().uuid(),
       address: z.string().optional(),
       city: z.string().optional(),
@@ -1620,6 +1620,94 @@ router.post('/stores', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to create store',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/stores/:id
+ * Update an existing store
+ */
+router.put('/stores/:id', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const storeId = req.params.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const updateSchema = z.object({
+      code: z.string().min(1).max(50).optional(),
+      nome: z.string().min(1).max(255).optional(),
+      organizationEntityId: z.string().uuid().optional(),
+      channelId: z.string().uuid().optional().nullable(),
+      commercialAreaId: z.string().uuid().optional(),
+      category: z.enum(['sales_point', 'office', 'warehouse']).optional(),
+      hasWarehouse: z.boolean().optional(),
+      address: z.string().optional(),
+      citta: z.string().optional(),
+      provincia: z.string().optional(),
+      cap: z.string().optional(),
+      region: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().email().optional().nullable(),
+      status: z.string().optional()
+    });
+
+    const validation = updateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const [updatedStore] = await db
+      .update(stores)
+      .set({
+        ...validation.data,
+        updatedAt: new Date()
+      })
+      .where(and(eq(stores.id, storeId), eq(stores.tenantId, tenantId)))
+      .returning();
+
+    if (!updatedStore) {
+      return res.status(404).json({
+        success: false,
+        error: 'Store not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('Store updated', { storeId, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: updatedStore,
+      message: 'Store updated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof updatedStore>);
+
+  } catch (error: any) {
+    logger.error('Error updating store', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId 
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to update store',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

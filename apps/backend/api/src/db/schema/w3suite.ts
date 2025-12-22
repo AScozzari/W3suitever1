@@ -2663,7 +2663,8 @@ export const legalEntitiesRelations = relations(legalEntities, ({ one, many }) =
 // Stores Relations
 export const storesRelations = relations(stores, ({ one, many }) => ({
   tenant: one(tenants, { fields: [stores.tenantId], references: [tenants.id] }),
-  legalEntity: one(legalEntities, { fields: [stores.legalEntityId], references: [legalEntities.id] }),
+  organizationEntity: one(organizationEntities, { fields: [stores.organizationEntityId], references: [organizationEntities.id] }),
+  legalEntity: one(legalEntities, { fields: [stores.legalEntityId], references: [legalEntities.id] }), // DEPRECATED - use organizationEntity
   channel: one(channels, { fields: [stores.channelId], references: [channels.id] }),
   commercialArea: one(commercialAreas, { fields: [stores.commercialAreaId], references: [commercialAreas.id] }),
   userStores: many(userStores),

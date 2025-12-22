@@ -5383,7 +5383,7 @@ export default function SettingsPage() {
     tiktok: '',                            // Database: tiktok
     google_maps_url: '',                   // Database: google_maps_url
     telegram: '',                          // Database: telegram
-    legal_entity_id: null as string | null,  // Database: legal_entity_id (UUID)
+    organization_entity_id: null as string | null,  // Database: organization_entity_id (UUID)
     commercial_area_id: null as string | null, // Database: commercial_area_id (UUID)
     channel_id: null as string | null,     // Database: channel_id (UUID)
     status: 'active',                      // Database: status (default 'active')
@@ -5634,7 +5634,7 @@ export default function SettingsPage() {
         tiktok: item.tiktok || '',
         google_maps_url: item.googleMapsUrl || item.google_maps_url || '',
         telegram: item.telegram || '',
-        legal_entity_id: item.legalEntityId || item.legal_entity_id || null,
+        organization_entity_id: item.organizationEntityId || item.organization_entity_id || item.legalEntityId || item.legal_entity_id || null,
         commercial_area_id: item.commercialAreaId || item.commercial_area_id || null,
         channel_id: item.channelId || item.channel_id || null,
         status: item.status || 'active',
@@ -5664,7 +5664,7 @@ export default function SettingsPage() {
         tiktok: '',
         google_maps_url: '',
         telegram: '',
-        legal_entity_id: null,
+        organization_entity_id: null,
         commercial_area_id: null,
         channel_id: null,
         status: 'active',
@@ -5956,7 +5956,7 @@ export default function SettingsPage() {
       const currentTenantId = DEMO_TENANT_ID;
       
       // ✅ VALIDAZIONE RELAZIONI 1:1 OBBLIGATORIE
-      if (!newStore.legal_entity_id) {
+      if (!newStore.organization_entity_id) {
         alert('Errore: Ragione Sociale è obbligatoria per creare una sede operativa.');
         return;
       }
@@ -6002,7 +6002,7 @@ export default function SettingsPage() {
       
       const storeData = {
         tenantId: currentTenantId,
-        legalEntityId: newStore.legal_entity_id,
+        organizationEntityId: newStore.organization_entity_id,
         category: newStore.category,              // ✅ Category field added
         hasWarehouse: newStore.hasWarehouse,      // ✅ Warehouse flag added
         code: newCode,                        
@@ -6061,7 +6061,7 @@ export default function SettingsPage() {
           tiktok: '',
           google_maps_url: '',
           telegram: '',
-          legal_entity_id: null,
+          organization_entity_id: null,
           commercial_area_id: null,
           channel_id: null,
           status: 'active',
@@ -7941,8 +7941,8 @@ export default function SettingsPage() {
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
-                    value={newStore.legal_entity_id || ''}
-                    onChange={(e) => setNewStore({ ...newStore, legal_entity_id: e.target.value || null })}
+                    value={newStore.organization_entity_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, organization_entity_id: e.target.value || null })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',

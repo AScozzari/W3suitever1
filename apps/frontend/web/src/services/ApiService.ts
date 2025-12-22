@@ -333,8 +333,7 @@ class ApiService {
     });
 
     // Extract successful results, fallback to empty arrays for failures
-    // Note: "legalEntities" key kept for backward compatibility with frontend
-    const legalEntities = orgEntitiesResult.status === 'fulfilled' && orgEntitiesResult.value.success 
+    const organizationEntities = orgEntitiesResult.status === 'fulfilled' && orgEntitiesResult.value.success 
       ? (orgEntitiesResult.value.data || []).map(mapOrgEntity) : [];
     
     const users = usersResult.status === 'fulfilled' && usersResult.value.success 
@@ -355,14 +354,15 @@ class ApiService {
       };
     }
 
-    // Return available data even if some APIs failed (graceful degradation)
+    // Return available data - uses organizationEntities (new) and legalEntities (deprecated alias)
     const data = {
-      legalEntities: legalEntities || [], // Kept as "legalEntities" for backward compatibility
+      organizationEntities: organizationEntities || [],
+      legalEntities: organizationEntities || [], // DEPRECATED: use organizationEntities instead
       users: users || [],
       stores: stores || []
     };
 
-    const hasAnyData = data.legalEntities.length > 0 || data.users.length > 0 || data.stores.length > 0;
+    const hasAnyData = data.organizationEntities.length > 0 || data.users.length > 0 || data.stores.length > 0;
 
     const warnings = [
       orgEntitiesResult.status === 'rejected' || (orgEntitiesResult.status === 'fulfilled' && !orgEntitiesResult.value.success) ? 'Organization entities service unavailable' : null,

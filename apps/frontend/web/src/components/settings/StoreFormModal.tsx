@@ -12,7 +12,7 @@ interface StoreFormModalProps {
   data: any | null;
   onClose: () => void;
   onSave: (storeData: any) => Promise<void>;
-  legalEntities: any[];
+  organizationEntities: any[];
   commercialAreas: any[];
   channels: any[];
   brands: any[];
@@ -38,7 +38,7 @@ const initialStoreData = {
   tiktok: '',
   google_maps_url: '',
   telegram: '',
-  legal_entity_id: null as number | null,
+  organization_entity_id: null as string | null,
   commercial_area_id: null as string | null,
   channel_id: null as number | null,
   brands: [] as number[],
@@ -53,7 +53,7 @@ export default function StoreFormModal({
   data,
   onClose,
   onSave,
-  legalEntities,
+  organizationEntities,
   commercialAreas,
   channels,
   brands
@@ -87,7 +87,7 @@ export default function StoreFormModal({
         tiktok: data.tiktok || '',
         google_maps_url: data.google_maps_url || '',
         telegram: data.telegram || '',
-        legal_entity_id: data.legal_entity_id || data.legalEntityId || null,
+        organization_entity_id: data.organization_entity_id || data.organizationEntityId || data.legal_entity_id || data.legalEntityId || null,
         commercial_area_id: data.commercial_area_id || data.commercialAreaId || null,
         channel_id: data.channel_id || data.channelId || null,
         brands: data.brands || [],
@@ -108,7 +108,7 @@ export default function StoreFormModal({
       setErrors({ general: 'Nome sede è obbligatorio' });
       return;
     }
-    if (!formData.legal_entity_id) {
+    if (!formData.organization_entity_id) {
       setErrors({ general: 'Ragione Sociale è obbligatoria' });
       return;
     }
@@ -228,15 +228,15 @@ export default function StoreFormModal({
             <div>
               <label style={formStyles.label}>Ragione Sociale <span style={{ color: '#ef4444' }}>*</span></label>
               <select
-                value={formData.legal_entity_id || ''}
-                onChange={(e) => setFormData({ ...formData, legal_entity_id: e.target.value ? parseInt(e.target.value) : null })}
+                value={formData.organization_entity_id || ''}
+                onChange={(e) => setFormData({ ...formData, organization_entity_id: e.target.value || null })}
                 disabled={isReadOnly}
                 style={selectStyle}
-                data-testid="select-store-legal-entity"
+                data-testid="select-store-organization-entity"
               >
                 <option value="">-- Seleziona --</option>
-                {legalEntities.map((le: any) => (
-                  <option key={le.id} value={le.id}>{le.nome || le.name}</option>
+                {organizationEntities.map((oe: any) => (
+                  <option key={oe.id} value={oe.id}>{oe.nome || oe.name}</option>
                 ))}
               </select>
             </div>
