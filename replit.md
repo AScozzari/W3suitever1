@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through a comprehensive, integrated solution. The platform provides a unified user experience, incorporating advanced AI for workflow automation, intelligent routing, and an AI Voice Agent System, aiming to transform business processes and drive growth.
+W3 Suite is a multi-tenant enterprise platform designed to centralize and optimize business operations across various modules like CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through a comprehensive, integrated solution. The platform incorporates advanced AI for workflow automation, intelligent routing, and an AI Voice Agent System, aiming to transform business operations and foster strategic growth.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -100,7 +100,7 @@ W3 Suite is a multi-tenant enterprise platform designed to centralize and optimi
   - **🤝 `legal_entities`**: Partner esterni con ruolo (Fornitori, Enti Finanzianti, Operatori)
     - **🔄 Propagazione**: Quando `is_supplier=true` → crea record in `suppliers`, `is_financial_entity=true` → `financial_entities`, etc.
     - **📋 Ruoli disponibili**: Fornitore, Ente Finanziante, Operatore (flags booleane sulla tabella)
-  - **⚠️ IMPORTANTE**: Le due tabelle servono scopi diversi - NON confonderle!
+  - **⚠️ IMPORTANTE**: Le due tabelle serve scopi diversi - NON confonderle!
   - **🔧 Stores FK**: Usare `organizationEntityId` (colonna `organization_entity_id`), `legalEntityId` è DEPRECATED
 - **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
   - **🏢 Struttura**: Tenant → Commercial Area → Organization Entity (RS) → Store → Department → Team → User
