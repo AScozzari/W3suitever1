@@ -1096,7 +1096,7 @@ export default function ListiniTabContent() {
   );
 
   const renderStep3PromoCanvas = () => (
-    <div className="flex flex-col h-full min-h-0 gap-4">
+    <div className="flex flex-col h-full flex-1 min-h-0 gap-4">
       {/* Header con Toggle vista e contatore coppie - SEMPRE VISIBILE */}
       <div className="flex items-center justify-between shrink-0 bg-gradient-to-r from-orange-50 to-purple-50 p-3 rounded-lg border">
         <div className="flex items-center gap-4">
@@ -1199,7 +1199,7 @@ export default function ListiniTabContent() {
       {/* Pannelli selezione - SEMPRE VISIBILI in modalità selection */}
       {canvasDeviceViewMode === 'selection' && (
         <div className="grid grid-cols-2 gap-6 flex-1 min-h-0 overflow-hidden">
-          <Card className="p-4 flex flex-col overflow-hidden">
+          <Card className="p-4 flex flex-col h-full flex-1 min-h-0 overflow-hidden">
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Smartphone className="h-5 w-5 text-orange-500" />
               <h4 className="font-semibold">Prodotto Fisico</h4>
@@ -1401,7 +1401,7 @@ export default function ListiniTabContent() {
             </div>
           </Card>
 
-          <Card className="p-4 flex flex-col overflow-hidden">
+          <Card className="p-4 flex flex-col h-full flex-1 min-h-0 overflow-hidden">
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Tv className="h-5 w-5 text-purple-500" />
               <h4 className="font-semibold">Prodotto Canvas</h4>
@@ -1620,8 +1620,8 @@ export default function ListiniTabContent() {
 
       {/* Vista Lista con Accordion (in modalità lista) - Pattern Promo Device */}
       {canvasDeviceViewMode === 'list' && (
-        <div className="flex-1 min-h-0 flex flex-col gap-4">
-          <ScrollArea className="flex-1">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="space-y-3 p-1">
               {savedPairs.map((pair) => {
                 const completionStatus = getCanvasDevicePairCompletionStatus(pair);
@@ -3655,7 +3655,7 @@ export default function ListiniTabContent() {
 
           {wizardStep >= 3 ? (
             <div className="flex-1 min-h-0 py-2 px-4 overflow-hidden flex flex-col">
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 flex flex-col">
                 {wizardStep === 3 && (
                   priceListHeader.type === 'promo_canvas' 
                     ? renderStep3PromoCanvas() 
