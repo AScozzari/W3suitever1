@@ -2559,15 +2559,6 @@ export default function ListiniTabContent() {
     }).slice(0, 30);
   }, [safeProducts, addonTypeFilter, addonCategoryFilter, addonTypologyFilter]);
 
-  // Get unique typologies for Canvas products
-  const canvasTypologies = useMemo(() => {
-    const typologies = new Set<string>();
-    safeProducts.filter((p: any) => p.type === 'CANVAS' && p.categoryId === canvasListCategoryFilter).forEach((p: any) => {
-      if (p.typology) typologies.add(p.typology);
-    });
-    return Array.from(typologies);
-  }, [safeProducts, canvasListCategoryFilter]);
-
   // ===== CANVAS DEVICE HELPER FUNCTIONS =====
   const getCanvasDevicePairCompletionStatus = (pair: ProductPair): 'complete' | 'partial' | 'pending' => {
     // 🔴 Rosso: nessuna configurazione
