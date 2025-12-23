@@ -1096,7 +1096,7 @@ export default function ListiniTabContent() {
   );
 
   const renderStep3PromoCanvas = () => (
-    <div className="flex flex-col h-full flex-1 min-h-0 gap-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-4 overflow-hidden">
       {/* Header con Toggle vista e contatore coppie - SEMPRE VISIBILE */}
       <div className="flex items-center justify-between shrink-0 bg-gradient-to-r from-orange-50 to-purple-50 p-3 rounded-lg border">
         <div className="flex items-center gap-4">
