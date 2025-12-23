@@ -1272,7 +1272,7 @@ export default function ListiniTabContent() {
                 </SelectContent>
               </Select>
 
-              <ScrollArea className="flex-1 min-h-0 border rounded-lg" style={{ maxHeight: 'calc(100vh - 500px)', minHeight: '200px' }}>
+              <ScrollArea className="flex-1 min-h-0 border rounded-lg">
                 {deviceViewMode === 'single' ? (
                   /* VISTA SINGOLA - originale */
                   filteredPhysicalProducts.length === 0 ? (
@@ -1496,7 +1496,7 @@ export default function ListiniTabContent() {
                 </Select>
               </div>
 
-              <ScrollArea className="flex-1 min-h-0 border rounded-lg" style={{ maxHeight: 'calc(100vh - 500px)', minHeight: '200px' }}>
+              <ScrollArea className="flex-1 min-h-0 border rounded-lg">
                 {canvasViewMode === 'single' ? (
                   /* VISTA SINGOLA - usa filtro canone */
                   filteredCanvasWithFee.length === 0 ? (
