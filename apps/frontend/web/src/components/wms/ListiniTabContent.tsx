@@ -406,6 +406,17 @@ export default function ListiniTabContent() {
     return products;
   }, [filteredCanvasProducts, canvasFeeFilter]);
 
+  // Track products already used in saved pairs (for visual highlighting)
+  const usedProductIds = useMemo(() => {
+    const physicalIds = new Set<string>();
+    const canvasIds = new Set<string>();
+    savedPairs.forEach(pair => {
+      if (pair.physicalProductId) physicalIds.add(pair.physicalProductId);
+      if (pair.canvasProductId) canvasIds.add(pair.canvasProductId);
+    });
+    return { physicalIds, canvasIds };
+  }, [savedPairs]);
+
   // Helper to create massive pairs from selections
   const createMassivePairs = () => {
     const deviceIds = Array.from(selectedDeviceVariants);
@@ -1281,7 +1292,9 @@ export default function ListiniTabContent() {
                                 className={`p-3 rounded-lg cursor-pointer transition-all ${
                                   currentPair.physicalProductId === product.id 
                                     ? 'bg-orange-100 border-2 border-orange-500' 
-                                    : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                                    : usedProductIds.physicalIds.has(product.id)
+                                      ? 'bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                                      : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                                 }`}
                                 onClick={() => selectPhysicalProduct(product)}
                                 data-testid={`product-physical-${product.id}`}
@@ -1356,7 +1369,9 @@ export default function ListiniTabContent() {
                                     className={`p-2 rounded flex items-center gap-2 cursor-pointer transition-all ${
                                       selectedDeviceVariants.has(variant.id)
                                         ? 'bg-orange-100 border border-orange-400'
-                                        : 'hover:bg-gray-100 border border-transparent'
+                                        : usedProductIds.physicalIds.has(variant.id)
+                                          ? 'bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                                          : 'hover:bg-gray-100 border border-transparent'
                                     }`}
                                     onClick={() => toggleDeviceVariant(variant.id)}
                                     data-testid={`variant-${variant.id}`}
@@ -1501,7 +1516,9 @@ export default function ListiniTabContent() {
                                 className={`p-3 rounded-lg cursor-pointer transition-all ${
                                   currentPair.canvasProductId === product.id 
                                     ? 'bg-purple-100 border-2 border-purple-500' 
-                                    : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                                    : usedProductIds.canvasIds.has(product.id)
+                                      ? 'bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                                      : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                                 }`}
                                 onClick={() => selectCanvasProduct(product)}
                                 data-testid={`product-canvas-${product.id}`}
@@ -1553,7 +1570,9 @@ export default function ListiniTabContent() {
                           className={`p-3 rounded-lg cursor-pointer transition-all flex items-center gap-3 ${
                             selectedCanvasProducts.has(product.id)
                               ? 'bg-purple-100 border-2 border-purple-500'
-                              : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                              : usedProductIds.canvasIds.has(product.id)
+                                ? 'bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                                : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                           }`}
                           onClick={() => toggleCanvasProduct(product.id)}
                           data-testid={`canvas-massive-${product.id}`}
