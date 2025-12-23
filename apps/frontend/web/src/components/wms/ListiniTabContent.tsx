@@ -31,6 +31,7 @@ const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 type PriceListType = 'no_promo' | 'canvas' | 'promo_device' | 'promo_canvas';
 type SalesMode = 'ALL' | 'FIN' | 'VAR';
+type PaymentMethod = 'RID' | 'CARD';
 
 interface PriceListHeader {
   code: string;
@@ -47,13 +48,12 @@ interface SalesConfiguration {
   salesMode: SalesMode;
   financialEntityId?: string;
   financialEntityName?: string;
-  installmentMethodId?: string;
+  paymentMethod?: PaymentMethod; // RID o CARD - solo per VAR
   numberOfInstallments?: number;
   installmentAmount?: string;
-  entryFee?: string;
   creditNoteAmount?: string;
-  creditAssignmentAmount?: string;
-  financingAmount?: string;
+  creditAssignmentAmount?: string; // solo per VAR
+  financingAmount?: string; // solo per FIN
   validFrom: Date;
   validTo: Date | null;
 }
@@ -1675,145 +1675,384 @@ export default function ListiniTabContent() {
                       </div>
                     </CollapsibleTrigger>
 
-                    {/* CONTENT - Form unico completo */}
+                    {/* CONTENT - Form configurazioni multiple */}
                     <CollapsibleContent>
-                      <div className="px-3 pb-3 pt-0 space-y-4 border-t bg-gray-50/50">
+                      <div className="px-3 pb-3 pt-0 space-y-3 border-t bg-gray-50/50">
                         
-                        {/* Sezione Modalità Vendita */}
-                        <div className="pt-3">
-                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Modalità di Vendita <span className="text-red-500">*</span></Label>
-                          <div className="flex gap-2">
-                            {[
-                              { value: 'ALL', label: 'ALL - Pagamento Unico', desc: 'Pagamento completo in una sola rata' },
-                              { value: 'FIN', label: 'FIN - Finanziamento', desc: 'Rateizzazione tramite ente finanziatore' },
-                              { value: 'VAR', label: 'VAR - Variabile', desc: 'Rate flessibili senza ente' }
-                            ].map(mode => (
-                              <Button
-                                key={mode.value}
-                                variant={config.salesMode === mode.value ? 'default' : 'outline'}
-                                size="sm"
-                                className={`flex-1 ${config.salesMode === mode.value ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
-                                onClick={() => updatePairConfig('salesMode', mode.value)}
-                              >
-                                {mode.label}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
+                        {/* Lista configurazioni esistenti */}
+                        {pair.configurations.map((cfg, cfgIndex) => (
+                          <div key={cfg.id} className="pt-3 space-y-3 border-b border-gray-200 pb-3 last:border-b-0">
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-xs">
+                                Configurazione {cfgIndex + 1}: {cfg.salesMode === 'ALL' ? 'Pagamento Unico' : cfg.salesMode === 'FIN' ? 'Finanziamento' : 'Vendita a Rate'}
+                              </Badge>
+                              {pair.configurations.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setSavedPairs(prev => prev.map(p => {
+                                      if (p.id !== pair.id) return p;
+                                      return { ...p, configurations: p.configurations.filter((_, i) => i !== cfgIndex) };
+                                    }));
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Rimuovi
+                                </Button>
+                              )}
+                            </div>
 
-                        {/* Sezione Ente Finanziatore (solo FIN) */}
-                        {config.salesMode === 'FIN' && (
-                          <div className="p-3 rounded border bg-white">
-                            <Label className="text-xs font-semibold text-gray-700 mb-2 block">Ente Finanziatore <span className="text-red-500">*</span></Label>
-                            <Select 
-                              value={config.financialEntityId || ''} 
-                              onValueChange={(val) => {
-                                const entity = safeFinancialEntities.find((e: any) => e.id === val);
-                                updatePairConfig('financialEntityId', val);
-                                updatePairConfig('financialEntityName', entity?.name);
-                              }}
-                            >
-                              <SelectTrigger className={`h-9 ${!config.financialEntityId ? 'border-red-300' : ''}`}>
-                                <SelectValue placeholder="Seleziona ente finanziatore..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {safeFinancialEntities.map((e: any) => (
-                                  <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                            {/* Modalità Vendita */}
+                            <div>
+                              <Label className="text-xs font-semibold text-gray-700 mb-2 block">Modalità di Vendita <span className="text-red-500">*</span></Label>
+                              <div className="flex gap-2">
+                                {[
+                                  { value: 'ALL', label: 'Pagamento Unico' },
+                                  { value: 'FIN', label: 'Finanziamento' },
+                                  { value: 'VAR', label: 'Vendita a Rate' }
+                                ].map(mode => (
+                                  <Button
+                                    key={mode.value}
+                                    variant={cfg.salesMode === mode.value ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={`flex-1 ${cfg.salesMode === mode.value ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                                    onClick={() => {
+                                      setSavedPairs(prev => prev.map(p => {
+                                        if (p.id !== pair.id) return p;
+                                        const newConfigs = [...p.configurations];
+                                        newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], salesMode: mode.value as SalesMode };
+                                        return { ...p, configurations: newConfigs };
+                                      }));
+                                    }}
+                                  >
+                                    {mode.label}
+                                  </Button>
                                 ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
+                              </div>
+                            </div>
 
-                        {/* Sezione Rate (FIN o VAR) */}
-                        {(config.salesMode === 'FIN' || config.salesMode === 'VAR') && (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3 rounded border bg-white">
-                              <Label className="text-xs font-semibold text-gray-700 mb-2 block">Numero Rate <span className="text-red-500">*</span></Label>
-                              <Select 
-                                value={config.numberOfInstallments?.toString() || ''} 
-                                onValueChange={(val) => updatePairConfig('numberOfInstallments', parseInt(val))}
-                              >
-                                <SelectTrigger className={`h-9 ${!config.numberOfInstallments ? 'border-red-300' : ''}`}>
-                                  <SelectValue placeholder="Seleziona..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {[6, 12, 18, 24, 30, 36, 48].map(n => (
-                                    <SelectItem key={n} value={n.toString()}>{n} rate</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="p-3 rounded border bg-white">
-                              <Label className="text-xs font-semibold text-gray-700 mb-2 block">Importo Rata <span className="text-red-500">*</span></Label>
-                              <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
-                                <Input 
-                                  type="number"
-                                  step="0.01"
-                                  value={config.installmentAmount || ''}
-                                  onChange={(e) => updatePairConfig('installmentAmount', e.target.value)}
-                                  className={`h-9 pl-6 ${!config.installmentAmount ? 'border-red-300' : ''}`}
-                                  placeholder="0.00"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                            {/* Campi per FIN (Finanziamento) */}
+                            {cfg.salesMode === 'FIN' && (
+                              <>
+                                <div className="p-3 rounded border bg-white">
+                                  <Label className="text-xs font-semibold text-gray-700 mb-2 block">Ente Finanziatore <span className="text-red-500">*</span></Label>
+                                  <Select 
+                                    value={cfg.financialEntityId || ''} 
+                                    onValueChange={(val) => {
+                                      const entity = safeFinancialEntities.find((e: any) => e.id === val);
+                                      setSavedPairs(prev => prev.map(p => {
+                                        if (p.id !== pair.id) return p;
+                                        const newConfigs = [...p.configurations];
+                                        newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], financialEntityId: val, financialEntityName: entity?.name };
+                                        return { ...p, configurations: newConfigs };
+                                      }));
+                                    }}
+                                  >
+                                    <SelectTrigger className={`h-9 ${!cfg.financialEntityId ? 'border-red-300' : ''}`}>
+                                      <SelectValue placeholder="Seleziona ente finanziatore..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {safeFinancialEntities.map((e: any) => (
+                                        <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
 
-                        {/* Sezione Importi Amministrativi */}
-                        {config.salesMode && (
-                          <div className="p-3 rounded border bg-blue-50/50">
-                            <Label className="text-xs font-semibold text-gray-700 mb-3 block flex items-center gap-2">
-                              <CreditCard className="h-4 w-4 text-blue-500" />
-                              Importi Amministrativi
-                            </Label>
-                            <div className="grid grid-cols-3 gap-3">
-                              <div>
-                                <Label className="text-xs text-gray-600 mb-1 block">Nota di Credito</Label>
-                                <div className="relative">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
-                                  <Input 
-                                    type="number"
-                                    step="0.01"
-                                    value={config.creditNoteAmount || ''}
-                                    onChange={(e) => updatePairConfig('creditNoteAmount', e.target.value)}
-                                    className="h-8 pl-5 text-sm"
-                                    placeholder="0.00"
-                                  />
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="p-3 rounded border bg-white">
+                                    <Label className="text-xs font-semibold text-gray-700 mb-2 block">Numero Rate <span className="text-red-500">*</span></Label>
+                                    <Select 
+                                      value={cfg.numberOfInstallments?.toString() || ''} 
+                                      onValueChange={(val) => {
+                                        setSavedPairs(prev => prev.map(p => {
+                                          if (p.id !== pair.id) return p;
+                                          const newConfigs = [...p.configurations];
+                                          newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], numberOfInstallments: parseInt(val) };
+                                          return { ...p, configurations: newConfigs };
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger className={`h-9 ${!cfg.numberOfInstallments ? 'border-red-300' : ''}`}>
+                                        <SelectValue placeholder="Seleziona..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {[6, 12, 18, 24, 30, 36, 48].map(n => (
+                                          <SelectItem key={n} value={n.toString()}>{n} rate</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="p-3 rounded border bg-white">
+                                    <Label className="text-xs font-semibold text-gray-700 mb-2 block">Importo Rata <span className="text-red-500">*</span></Label>
+                                    <div className="relative">
+                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
+                                      <Input 
+                                        type="number"
+                                        step="0.01"
+                                        value={cfg.installmentAmount || ''}
+                                        onChange={(e) => {
+                                          setSavedPairs(prev => prev.map(p => {
+                                            if (p.id !== pair.id) return p;
+                                            const newConfigs = [...p.configurations];
+                                            newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], installmentAmount: e.target.value };
+                                            return { ...p, configurations: newConfigs };
+                                          }));
+                                        }}
+                                        className={`h-9 pl-6 ${!cfg.installmentAmount ? 'border-red-300' : ''}`}
+                                        placeholder="0.00"
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-600 mb-1 block">Cessione Credito</Label>
-                                <div className="relative">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
-                                  <Input 
-                                    type="number"
-                                    step="0.01"
-                                    value={config.creditAssignmentAmount || ''}
-                                    onChange={(e) => updatePairConfig('creditAssignmentAmount', e.target.value)}
-                                    className="h-8 pl-5 text-sm"
-                                    placeholder="0.00"
-                                  />
+
+                                {/* Contabili FIN: Importo Finanziamento + Nota Credito */}
+                                <div className="p-3 rounded border bg-blue-50/50">
+                                  <Label className="text-xs font-semibold text-gray-700 mb-3 block flex items-center gap-2">
+                                    <Calculator className="h-4 w-4 text-blue-500" />
+                                    Informazioni Contabili
+                                  </Label>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs text-gray-600 mb-1 block">Importo Finanziamento <span className="text-red-500">*</span></Label>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                        <Input 
+                                          type="number"
+                                          step="0.01"
+                                          value={cfg.financingAmount || ''}
+                                          onChange={(e) => {
+                                            setSavedPairs(prev => prev.map(p => {
+                                              if (p.id !== pair.id) return p;
+                                              const newConfigs = [...p.configurations];
+                                              newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], financingAmount: e.target.value };
+                                              return { ...p, configurations: newConfigs };
+                                            }));
+                                          }}
+                                          className={`h-8 pl-5 text-sm ${!cfg.financingAmount ? 'border-red-300' : ''}`}
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-gray-600 mb-1 block">Nota di Credito</Label>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                        <Input 
+                                          type="number"
+                                          step="0.01"
+                                          value={cfg.creditNoteAmount || ''}
+                                          onChange={(e) => {
+                                            setSavedPairs(prev => prev.map(p => {
+                                              if (p.id !== pair.id) return p;
+                                              const newConfigs = [...p.configurations];
+                                              newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], creditNoteAmount: e.target.value };
+                                              return { ...p, configurations: newConfigs };
+                                            }));
+                                          }}
+                                          className="h-8 pl-5 text-sm"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-600 mb-1 block">Importo Finanziamento</Label>
-                                <div className="relative">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
-                                  <Input 
-                                    type="number"
-                                    step="0.01"
-                                    value={config.financingAmount || ''}
-                                    onChange={(e) => updatePairConfig('financingAmount', e.target.value)}
-                                    className="h-8 pl-5 text-sm"
-                                    placeholder="0.00"
-                                  />
+                              </>
+                            )}
+
+                            {/* Campi per VAR (Vendita a Rate) */}
+                            {cfg.salesMode === 'VAR' && (
+                              <>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="p-3 rounded border bg-white">
+                                    <Label className="text-xs font-semibold text-gray-700 mb-2 block">Ente Finanziatore <span className="text-red-500">*</span></Label>
+                                    <Select 
+                                      value={cfg.financialEntityId || ''} 
+                                      onValueChange={(val) => {
+                                        const entity = safeFinancialEntities.find((e: any) => e.id === val);
+                                        setSavedPairs(prev => prev.map(p => {
+                                          if (p.id !== pair.id) return p;
+                                          const newConfigs = [...p.configurations];
+                                          newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], financialEntityId: val, financialEntityName: entity?.name };
+                                          return { ...p, configurations: newConfigs };
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger className={`h-9 ${!cfg.financialEntityId ? 'border-red-300' : ''}`}>
+                                        <SelectValue placeholder="Seleziona ente..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {safeFinancialEntities.map((e: any) => (
+                                          <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="p-3 rounded border bg-white">
+                                    <Label className="text-xs font-semibold text-gray-700 mb-2 block">Metodo Pagamento <span className="text-red-500">*</span></Label>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant={cfg.paymentMethod === 'RID' ? 'default' : 'outline'}
+                                        size="sm"
+                                        className={`flex-1 ${cfg.paymentMethod === 'RID' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                                        onClick={() => {
+                                          setSavedPairs(prev => prev.map(p => {
+                                            if (p.id !== pair.id) return p;
+                                            const newConfigs = [...p.configurations];
+                                            newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], paymentMethod: 'RID' };
+                                            return { ...p, configurations: newConfigs };
+                                          }));
+                                        }}
+                                      >
+                                        RID
+                                      </Button>
+                                      <Button
+                                        variant={cfg.paymentMethod === 'CARD' ? 'default' : 'outline'}
+                                        size="sm"
+                                        className={`flex-1 ${cfg.paymentMethod === 'CARD' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+                                        onClick={() => {
+                                          setSavedPairs(prev => prev.map(p => {
+                                            if (p.id !== pair.id) return p;
+                                            const newConfigs = [...p.configurations];
+                                            newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], paymentMethod: 'CARD' };
+                                            return { ...p, configurations: newConfigs };
+                                          }));
+                                        }}
+                                      >
+                                        Carta di Credito
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="p-3 rounded border bg-white">
+                                    <Label className="text-xs font-semibold text-gray-700 mb-2 block">Numero Rate <span className="text-red-500">*</span></Label>
+                                    <Select 
+                                      value={cfg.numberOfInstallments?.toString() || ''} 
+                                      onValueChange={(val) => {
+                                        setSavedPairs(prev => prev.map(p => {
+                                          if (p.id !== pair.id) return p;
+                                          const newConfigs = [...p.configurations];
+                                          newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], numberOfInstallments: parseInt(val) };
+                                          return { ...p, configurations: newConfigs };
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger className={`h-9 ${!cfg.numberOfInstallments ? 'border-red-300' : ''}`}>
+                                        <SelectValue placeholder="Seleziona..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {[6, 12, 18, 24, 30, 36, 48].map(n => (
+                                          <SelectItem key={n} value={n.toString()}>{n} rate</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="p-3 rounded border bg-white">
+                                    <Label className="text-xs font-semibold text-gray-700 mb-2 block">Importo Rata <span className="text-red-500">*</span></Label>
+                                    <div className="relative">
+                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
+                                      <Input 
+                                        type="number"
+                                        step="0.01"
+                                        value={cfg.installmentAmount || ''}
+                                        onChange={(e) => {
+                                          setSavedPairs(prev => prev.map(p => {
+                                            if (p.id !== pair.id) return p;
+                                            const newConfigs = [...p.configurations];
+                                            newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], installmentAmount: e.target.value };
+                                            return { ...p, configurations: newConfigs };
+                                          }));
+                                        }}
+                                        className={`h-9 pl-6 ${!cfg.installmentAmount ? 'border-red-300' : ''}`}
+                                        placeholder="0.00"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Contabili VAR: Nota Credito + Cessione Credito */}
+                                <div className="p-3 rounded border bg-green-50/50">
+                                  <Label className="text-xs font-semibold text-gray-700 mb-3 block flex items-center gap-2">
+                                    <Calculator className="h-4 w-4 text-green-500" />
+                                    Informazioni Contabili
+                                  </Label>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs text-gray-600 mb-1 block">Nota di Credito</Label>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                        <Input 
+                                          type="number"
+                                          step="0.01"
+                                          value={cfg.creditNoteAmount || ''}
+                                          onChange={(e) => {
+                                            setSavedPairs(prev => prev.map(p => {
+                                              if (p.id !== pair.id) return p;
+                                              const newConfigs = [...p.configurations];
+                                              newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], creditNoteAmount: e.target.value };
+                                              return { ...p, configurations: newConfigs };
+                                            }));
+                                          }}
+                                          className="h-8 pl-5 text-sm"
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-gray-600 mb-1 block">Cessione Credito <span className="text-red-500">*</span></Label>
+                                      <div className="relative">
+                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                        <Input 
+                                          type="number"
+                                          step="0.01"
+                                          value={cfg.creditAssignmentAmount || ''}
+                                          onChange={(e) => {
+                                            setSavedPairs(prev => prev.map(p => {
+                                              if (p.id !== pair.id) return p;
+                                              const newConfigs = [...p.configurations];
+                                              newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], creditAssignmentAmount: e.target.value };
+                                              return { ...p, configurations: newConfigs };
+                                            }));
+                                          }}
+                                          className={`h-8 pl-5 text-sm ${!cfg.creditAssignmentAmount ? 'border-red-300' : ''}`}
+                                          placeholder="0.00"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* ALL non ha campi extra */}
                           </div>
-                        )}
+                        ))}
+
+                        {/* Pulsante Aggiungi Configurazione */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-2 border-dashed"
+                          onClick={() => {
+                            setSavedPairs(prev => prev.map(p => {
+                              if (p.id !== pair.id) return p;
+                              const newConfig: SalesConfiguration = {
+                                id: `config-${Date.now()}`,
+                                salesMode: 'ALL',
+                                validFrom: priceListHeader.validFrom,
+                                validTo: priceListHeader.validTo
+                              };
+                              return { ...p, configurations: [...p.configurations, newConfig] };
+                            }));
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Aggiungi Altra Configurazione
+                        </Button>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -2030,13 +2269,28 @@ export default function ListiniTabContent() {
     let hasIncomplete = false;
     
     for (const config of pair.configurations) {
-      const hasMode = !!config.salesMode;
-      const hasFinancialEntity = config.salesMode === 'FIN' ? !!config.financialEntityId : true;
-      const hasInstallments = (config.salesMode === 'FIN' || config.salesMode === 'VAR') 
-        ? (!!config.numberOfInstallments && config.numberOfInstallments > 0 && !!config.installmentAmount && parseFloat(config.installmentAmount) > 0)
-        : true;
+      let configComplete = false;
       
-      const configComplete = hasMode && hasFinancialEntity && hasInstallments;
+      if (config.salesMode === 'ALL') {
+        // ALL: non richiede campi extra - sempre completo
+        configComplete = true;
+      } else if (config.salesMode === 'FIN') {
+        // FIN: Ente Finanziatore, Rate, Importo Rata, Importo Finanziamento
+        const hasFinancialEntity = !!config.financialEntityId;
+        const hasInstallments = !!config.numberOfInstallments && config.numberOfInstallments > 0;
+        const hasInstallmentAmount = !!config.installmentAmount && parseFloat(config.installmentAmount) > 0;
+        const hasFinancingAmount = !!config.financingAmount && parseFloat(config.financingAmount) > 0;
+        configComplete = hasFinancialEntity && hasInstallments && hasInstallmentAmount && hasFinancingAmount;
+      } else if (config.salesMode === 'VAR') {
+        // VAR: Ente Finanziatore, Metodo Pagamento, Rate, Importo Rata, Cessione Credito
+        const hasFinancialEntity = !!config.financialEntityId;
+        const hasPaymentMethod = !!config.paymentMethod;
+        const hasInstallments = !!config.numberOfInstallments && config.numberOfInstallments > 0;
+        const hasInstallmentAmount = !!config.installmentAmount && parseFloat(config.installmentAmount) > 0;
+        const hasCreditAssignment = !!config.creditAssignmentAmount && parseFloat(config.creditAssignmentAmount) > 0;
+        configComplete = hasFinancialEntity && hasPaymentMethod && hasInstallments && hasInstallmentAmount && hasCreditAssignment;
+      }
+      
       if (configComplete) hasComplete = true;
       else hasIncomplete = true;
     }
