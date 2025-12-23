@@ -636,7 +636,7 @@ export default function ListiniTabContent() {
   const addConfiguration = () => {
     const newConfig: SalesConfiguration = {
       id: `config-${Date.now()}`,
-      salesMode: 'ALL',
+      salesMode: undefined as any, // Non preselezionato - utente deve scegliere
       validFrom: priceListHeader.validFrom,
       validTo: priceListHeader.validTo,
       creditNoteAmount: '',
@@ -1609,7 +1609,7 @@ export default function ListiniTabContent() {
                 const isExpanded = expandedPairId === pair.id;
                 const config = pair.configurations[0] || {
                   id: `config-${pair.id}`,
-                  salesMode: 'ALL' as SalesMode,
+                  salesMode: undefined as any, // Non preselezionato
                   validFrom: priceListHeader.validFrom,
                   validTo: priceListHeader.validTo,
                   creditNoteAmount: '',
@@ -1683,8 +1683,8 @@ export default function ListiniTabContent() {
                         {pair.configurations.map((cfg, cfgIndex) => (
                           <div key={cfg.id} className="pt-3 space-y-3 border-b border-gray-200 pb-3 last:border-b-0">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-xs">
-                                Configurazione {cfgIndex + 1}: {cfg.salesMode === 'ALL' ? 'Pagamento Unico' : cfg.salesMode === 'FIN' ? 'Finanziamento' : 'Vendita a Rate'}
+                              <Badge variant="outline" className={`text-xs ${!cfg.salesMode ? 'border-red-300 text-red-600' : ''}`}>
+                                Configurazione {cfgIndex + 1}: {!cfg.salesMode ? '⚠️ Da configurare' : cfg.salesMode === 'ALL' ? 'Pagamento Unico' : cfg.salesMode === 'FIN' ? 'Finanziamento' : 'Vendita a Rate'}
                               </Badge>
                               {pair.configurations.length > 1 && (
                                 <Button
@@ -2081,7 +2081,7 @@ export default function ListiniTabContent() {
                               if (p.id !== pair.id) return p;
                               const newConfig: SalesConfiguration = {
                                 id: `config-${Date.now()}`,
-                                salesMode: 'ALL',
+                                salesMode: undefined as any, // Non preselezionato
                                 validFrom: priceListHeader.validFrom,
                                 validTo: priceListHeader.validTo
                               };
@@ -2302,6 +2302,7 @@ export default function ListiniTabContent() {
 
   // ===== CANVAS DEVICE HELPER FUNCTIONS =====
   const getCanvasDevicePairCompletionStatus = (pair: ProductPair): 'complete' | 'partial' | 'pending' => {
+    // 🔴 Rosso: nessuna configurazione
     if (pair.configurations.length === 0) return 'pending';
     
     let hasComplete = false;
@@ -2310,8 +2311,14 @@ export default function ListiniTabContent() {
     for (const config of pair.configurations) {
       let configComplete = false;
       
+      // Se salesMode non è selezionato, la configurazione è incompleta
+      if (!config.salesMode) {
+        hasIncomplete = true;
+        continue;
+      }
+      
       if (config.salesMode === 'ALL') {
-        // ALL: non richiede campi extra - sempre completo
+        // ALL: completo solo se l'utente ha esplicitamente scelto questa modalità
         configComplete = true;
       } else if (config.salesMode === 'FIN') {
         // FIN: Ente Finanziatore, Rate, Importo Rata, Importo Finanziamento
@@ -2334,8 +2341,11 @@ export default function ListiniTabContent() {
       else hasIncomplete = true;
     }
     
+    // 🟢 Verde: TUTTE le configurazioni complete
     if (hasComplete && !hasIncomplete) return 'complete';
+    // 🟡 Giallo: almeno una configurazione ma non tutte complete
     if (hasComplete || pair.configurations.length > 0) return 'partial';
+    // 🔴 Rosso: nessuna configurazione
     return 'pending';
   };
 
