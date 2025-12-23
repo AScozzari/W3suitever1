@@ -554,24 +554,83 @@ export default function ListiniTabContent() {
     resetWizard();
   };
 
+  // Funzione helper per salvare coppia senza configurazioni (per selezione rapida)
+  const saveQuickPair = (physicalProduct: any, canvasProduct: any) => {
+    const pairKey = `${physicalProduct.id}:${canvasProduct.id}`;
+    
+    // Verifica duplicati
+    const existingPair = savedPairs.find(
+      p => p.physicalProductId === physicalProduct.id && p.canvasProductId === canvasProduct.id
+    );
+    
+    if (existingPair) {
+      toast({
+        title: "Coppia già esistente",
+        description: `${physicalProduct.name} + ${canvasProduct.name} è già presente.`,
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Crea nuova coppia senza configurazioni
+    const newPair: ProductPair = {
+      id: `pair-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      physicalProductId: physicalProduct.id,
+      physicalProductName: physicalProduct.name,
+      physicalProductSku: physicalProduct.sku,
+      canvasProductId: canvasProduct.id,
+      canvasProductName: canvasProduct.name,
+      canvasMonthlyFee: canvasProduct.monthlyFee || '0',
+      configurations: []
+    };
+    
+    setSavedPairs(prev => [...prev, newPair]);
+    toast({
+      title: "Coppia aggiunta",
+      description: `${physicalProduct.name} + ${canvasProduct.name}`,
+    });
+    return true;
+  };
+
   const selectPhysicalProduct = (product: any) => {
-    setCurrentPair(prev => ({
-      ...prev,
-      physicalProductId: product.id,
-      physicalProductName: product.name,
-      physicalProductSku: product.sku
-    }));
+    // Se c'è già un Canvas selezionato, salva la coppia automaticamente
+    if (currentPair.canvasProductId) {
+      const canvasProduct = safeProducts.find((p: any) => p.id === currentPair.canvasProductId);
+      if (canvasProduct && saveQuickPair(product, canvasProduct)) {
+        // Reset per nuova selezione - mantieni canvas selezionato per selezione rapida
+        setCurrentPair({ configurations: [] });
+      }
+    } else {
+      // Salva solo il device
+      setCurrentPair(prev => ({
+        ...prev,
+        physicalProductId: product.id,
+        physicalProductName: product.name,
+        physicalProductSku: product.sku
+      }));
+    }
   };
 
   const selectCanvasProduct = (product: any) => {
-    setCurrentPair(prev => ({
-      ...prev,
-      canvasProductId: product.id,
-      canvasProductName: product.name,
-      canvasMonthlyFee: product.monthlyFee || '0'
-    }));
+    // Se c'è già un Device selezionato, salva la coppia automaticamente
+    if (currentPair.physicalProductId) {
+      const physicalProduct = safeProducts.find((p: any) => p.id === currentPair.physicalProductId);
+      if (physicalProduct && saveQuickPair(physicalProduct, product)) {
+        // Reset per nuova selezione - mantieni device selezionato per selezione rapida
+        setCurrentPair({ configurations: [] });
+      }
+    } else {
+      // Salva solo il canvas
+      setCurrentPair(prev => ({
+        ...prev,
+        canvasProductId: product.id,
+        canvasProductName: product.name,
+        canvasMonthlyFee: product.monthlyFee || '0'
+      }));
+    }
   };
 
+  // isPairComplete non viene più usato per nascondere i pannelli
   const isPairComplete = currentPair.physicalProductId && currentPair.canvasProductId;
 
   const addConfiguration = () => {
@@ -1075,7 +1134,8 @@ export default function ListiniTabContent() {
       </div>
 
       {/* Riepilogo selezioni correnti */}
-      {canvasDeviceViewMode === 'selection' && (currentPair.physicalProductId || currentPair.canvasProductId) && !isPairComplete && (
+      {/* Riepilogo selezione corrente - mostra cosa è selezionato per la prossima coppia */}
+      {canvasDeviceViewMode === 'selection' && (currentPair.physicalProductId || currentPair.canvasProductId) && (
         <Card className="p-4 bg-blue-50 border-blue-200 shrink-0">
           <div className="flex items-center gap-4">
             <div className="flex-1">
@@ -1085,9 +1145,17 @@ export default function ListiniTabContent() {
                   <Check className="h-4 w-4 text-green-500" />
                   <span className="font-medium">{currentPair.physicalProductName}</span>
                   <span className="text-sm text-gray-500">({currentPair.physicalProductSku})</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 px-2 ml-2"
+                    onClick={() => setCurrentPair(prev => ({ ...prev, physicalProductId: undefined, physicalProductName: undefined, physicalProductSku: undefined }))}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               ) : (
-                <span className="text-gray-400">Non selezionato</span>
+                <span className="text-gray-400">Seleziona un device...</span>
               )}
             </div>
             <ArrowRight className="h-5 w-5 text-gray-400" />
@@ -1097,16 +1165,28 @@ export default function ListiniTabContent() {
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
                   <span className="font-medium">{currentPair.canvasProductName}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 px-2 ml-2"
+                    onClick={() => setCurrentPair(prev => ({ ...prev, canvasProductId: undefined, canvasProductName: undefined, canvasMonthlyFee: undefined }))}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               ) : (
-                <span className="text-gray-400">Non selezionato</span>
+                <span className="text-gray-400">Seleziona un canvas...</span>
               )}
+            </div>
+            <div className="text-sm text-blue-600 font-medium">
+              Seleziona entrambi per aggiungere la coppia
             </div>
           </div>
         </Card>
       )}
 
-      {canvasDeviceViewMode === 'selection' && !isPairComplete ? (
+      {/* Pannelli selezione - SEMPRE VISIBILI in modalità selection */}
+      {canvasDeviceViewMode === 'selection' ? (
         <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
           <Card className="p-4 flex flex-col">
             <div className="flex items-center gap-2 mb-4 shrink-0">
@@ -1878,61 +1958,134 @@ export default function ListiniTabContent() {
                         </div>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <div className="border-t p-4 bg-gray-50 space-y-4">
-                          {pair.configurations.length === 0 ? (
-                            <div className="text-center py-4 text-gray-500">
-                              <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                              <p className="text-sm">Nessuna configurazione</p>
-                              <Button 
-                                size="sm" 
-                                className="mt-2"
-                                onClick={() => {
-                                  loadPairForEditing(pair);
-                                  setCanvasDeviceViewMode('selection');
-                                }}
-                              >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Aggiungi
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {pair.configurations.map((config, idx) => (
-                                <div key={config.id} className="bg-white rounded-lg p-3 border">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant={config.salesMode === 'ALL' ? 'default' : config.salesMode === 'FIN' ? 'secondary' : 'outline'} className="text-xs">
-                                        {config.salesMode === 'ALL' && 'Pagamento Unico'}
-                                        {config.salesMode === 'FIN' && 'Finanziamento'}
-                                        {config.salesMode === 'VAR' && 'Variabile'}
-                                      </Badge>
-                                      {config.financialEntityName && (
-                                        <span className="text-xs text-gray-500">{config.financialEntityName}</span>
-                                      )}
-                                      {config.numberOfInstallments && (
-                                        <span className="text-xs text-purple-600">{config.numberOfInstallments} rate</span>
-                                      )}
-                                      {config.installmentAmount && (
-                                        <span className="text-xs font-medium">€{config.installmentAmount}/mese</span>
-                                      )}
-                                    </div>
-                                  </div>
+                        <div className="border-t p-4 bg-gray-50 space-y-3">
+                          {/* Configurazioni esistenti */}
+                          {pair.configurations.map((config, idx) => (
+                            <div key={config.id} className="bg-white rounded-lg p-3 border">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 flex-wrap flex-1">
+                                  <Select 
+                                    value={config.salesMode}
+                                    onValueChange={(val: SalesMode) => {
+                                      setSavedPairs(prev => prev.map(p => 
+                                        p.id === pair.id 
+                                          ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, salesMode: val } : c) }
+                                          : p
+                                      ));
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8 w-40 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="ALL">ALL - Unico</SelectItem>
+                                      <SelectItem value="FIN">FIN - Finanz.</SelectItem>
+                                      <SelectItem value="VAR">VAR - Variabile</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  {config.salesMode === 'FIN' && (
+                                    <Select 
+                                      value={config.financialEntityId || ''}
+                                      onValueChange={(val) => {
+                                        const entity = safeFinancialEntities.find((e: any) => e.id === val);
+                                        setSavedPairs(prev => prev.map(p => 
+                                          p.id === pair.id 
+                                            ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, financialEntityId: val, financialEntityName: entity?.name } : c) }
+                                            : p
+                                        ));
+                                      }}
+                                    >
+                                      <SelectTrigger className={`h-8 w-32 text-xs ${!config.financialEntityId ? 'border-red-300' : ''}`}>
+                                        <SelectValue placeholder="Ente *" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {safeFinancialEntities.map((e: any) => (
+                                          <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                  
+                                  {(config.salesMode === 'FIN' || config.salesMode === 'VAR') && (
+                                    <>
+                                      <Select 
+                                        value={config.numberOfInstallments?.toString() || ''}
+                                        onValueChange={(val) => {
+                                          setSavedPairs(prev => prev.map(p => 
+                                            p.id === pair.id 
+                                              ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, numberOfInstallments: parseInt(val) } : c) }
+                                              : p
+                                          ));
+                                        }}
+                                      >
+                                        <SelectTrigger className={`h-8 w-24 text-xs ${!config.numberOfInstallments ? 'border-red-300' : ''}`}>
+                                          <SelectValue placeholder="Rate *" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {[6, 12, 18, 24, 30, 36, 48].map(n => (
+                                            <SelectItem key={n} value={n.toString()}>{n} rate</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <Input 
+                                        type="number"
+                                        placeholder="€/mese *"
+                                        className={`h-8 w-24 text-xs ${!config.installmentAmount ? 'border-red-300' : ''}`}
+                                        value={config.installmentAmount || ''}
+                                        onChange={(e) => {
+                                          setSavedPairs(prev => prev.map(p => 
+                                            p.id === pair.id 
+                                              ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, installmentAmount: e.target.value } : c) }
+                                              : p
+                                          ));
+                                        }}
+                                      />
+                                    </>
+                                  )}
                                 </div>
-                              ))}
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full"
-                                onClick={() => {
-                                  loadPairForEditing(pair);
-                                  setCanvasDeviceViewMode('selection');
-                                }}
-                              >
-                                <Settings2 className="h-3 w-3 mr-1" />
-                                Modifica Configurazioni
-                              </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSavedPairs(prev => prev.map(p => 
+                                      p.id === pair.id 
+                                        ? { ...p, configurations: p.configurations.filter((_, i) => i !== idx) }
+                                        : p
+                                    ));
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3 text-red-500" />
+                                </Button>
+                              </div>
                             </div>
-                          )}
+                          ))}
+                          
+                          {/* Pulsante aggiungi configurazione */}
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full border-dashed"
+                            onClick={() => {
+                              const newConfig: SalesConfiguration = {
+                                id: `config-${Date.now()}`,
+                                salesMode: 'ALL',
+                                validFrom: priceListHeader.validFrom,
+                                validTo: priceListHeader.validTo,
+                                creditNoteAmount: '',
+                                creditAssignmentAmount: '',
+                                financingAmount: ''
+                              };
+                              setSavedPairs(prev => prev.map(p => 
+                                p.id === pair.id 
+                                  ? { ...p, configurations: [...p.configurations, newConfig] }
+                                  : p
+                              ));
+                            }}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Aggiungi Configurazione
+                          </Button>
                         </div>
                       </CollapsibleContent>
                     </Card>
