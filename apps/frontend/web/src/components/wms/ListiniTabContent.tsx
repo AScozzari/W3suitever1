@@ -813,7 +813,8 @@ export default function ListiniTabContent() {
             purchaseVatRegimeId: p.purchaseVatRegimeId,
             salesPriceVatIncl: p.salesPriceVatIncl,
             salesVatRateId: p.salesVatRateId,
-            salesVatRegimeId: p.salesVatRegimeId
+            salesVatRegimeId: p.salesVatRegimeId,
+            discountPercent: p.discountPercent || null
           }))
         : [];
 
@@ -4112,6 +4113,7 @@ export default function ListiniTabContent() {
                   <th className="text-left py-2 font-medium">SKU</th>
                   <th className="text-right py-2 font-medium">Costo (IVA escl.)</th>
                   <th className="text-right py-2 font-medium">Prezzo (IVA incl.)</th>
+                  <th className="text-right py-2 font-medium">Sconto %</th>
                   <th className="text-right py-2 font-medium">Margine</th>
                 </tr>
               </thead>
@@ -4134,6 +4136,7 @@ export default function ListiniTabContent() {
                       </td>
                       <td className="py-2 text-right">€{parseFloat(product.purchaseCost || '0').toFixed(2)}</td>
                       <td className="py-2 text-right">€{parseFloat(product.salesPriceVatIncl || '0').toFixed(2)}</td>
+                      <td className="py-2 text-right text-blue-600">{product.discountPercent ? `${product.discountPercent}%` : '-'}</td>
                       <td className={`py-2 text-right ${margin > 0 ? 'text-green-600' : margin < 0 ? 'text-red-600' : ''}`}>
                         €{margin.toFixed(2)} ({percentage.toFixed(1)}%)
                       </td>
