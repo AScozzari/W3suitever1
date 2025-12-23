@@ -2092,6 +2092,18 @@ export default function ListiniTabContent() {
                           <Plus className="h-4 w-4 mr-2" />
                           Aggiungi Altra Configurazione
                         </Button>
+
+                        {/* Pulsante Salva e Chiudi */}
+                        <Button
+                          size="sm"
+                          className="w-full mt-3"
+                          style={{ background: 'hsl(var(--brand-orange))', color: 'white' }}
+                          onClick={() => setExpandedPairId(null)}
+                          data-testid={`btn-save-config-${pair.id}`}
+                        >
+                          <Check className="h-4 w-4 mr-2" />
+                          Salva e Chiudi
+                        </Button>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
