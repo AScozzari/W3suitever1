@@ -1910,7 +1910,7 @@ export default function ListiniTabContent() {
         </div>
       )}
 
-      {/* Vista Lista con Accordion (in modalità lista) */}
+      {/* Vista Lista con Accordion (in modalità lista) - Pattern Promo Device */}
       {canvasDeviceViewMode === 'list' && (
         <div className="flex-1 min-h-0 flex flex-col gap-4">
           <ScrollArea className="flex-1">
@@ -1918,177 +1918,215 @@ export default function ListiniTabContent() {
               {savedPairs.map((pair) => {
                 const completionStatus = getCanvasDevicePairCompletionStatus(pair);
                 const isExpanded = expandedPairId === pair.id;
+                const config = pair.configurations[0] || {
+                  id: `config-${pair.id}`,
+                  salesMode: 'ALL' as SalesMode,
+                  validFrom: priceListHeader.validFrom,
+                  validTo: priceListHeader.validTo,
+                  creditNoteAmount: '',
+                  creditAssignmentAmount: '',
+                  financingAmount: ''
+                };
+                
+                const updatePairConfig = (field: string, value: any) => {
+                  setSavedPairs(prev => prev.map(p => {
+                    if (p.id !== pair.id) return p;
+                    const existingConfig = p.configurations[0];
+                    if (existingConfig) {
+                      return { ...p, configurations: [{ ...existingConfig, [field]: value }] };
+                    } else {
+                      return { ...p, configurations: [{ ...config, [field]: value }] };
+                    }
+                  }));
+                };
+                
                 return (
                   <Collapsible 
                     key={pair.id} 
                     open={isExpanded}
                     onOpenChange={() => setExpandedPairId(isExpanded ? null : pair.id)}
+                    className="border rounded-lg bg-white overflow-hidden"
                   >
-                    <Card className={`overflow-hidden ${isExpanded ? 'border-orange-400' : ''}`}>
-                      <CollapsibleTrigger asChild>
-                        <div className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${
-                              completionStatus === 'complete' ? 'bg-green-500' : 
-                              completionStatus === 'partial' ? 'bg-yellow-500' : 'bg-red-500'
-                            }`} />
-                            {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronRight className="h-4 w-4 text-gray-500" />}
-                            <div>
-                              <div className="font-medium">{pair.physicalProductName}</div>
-                              <div className="text-sm text-gray-500 flex items-center gap-2">
-                                <span>+</span>
-                                <span>{pair.canvasProductName}</span>
-                              </div>
-                            </div>
+                    {/* HEADER - Tutto cliccabile come Promo Device */}
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div className={`w-3 h-3 rounded-full shrink-0 ${
+                          completionStatus === 'complete' ? 'bg-emerald-500' :
+                          completionStatus === 'partial' ? 'bg-amber-500' : 'bg-red-400'
+                        }`} />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Smartphone className="h-4 w-4 text-gray-400 shrink-0" />
+                            <span className="font-medium text-sm text-gray-900 truncate">{pair.physicalProductName}</span>
+                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0">
+                              {pair.physicalProductSku}
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{pair.configurations.length} config</Badge>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSavedPairs(prev => prev.filter(p => p.id !== pair.id));
+                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                            <FileText className="h-3 w-3 text-blue-500" />
+                            <span className="truncate">{pair.canvasProductName}</span>
+                            {pair.canvasMonthlyFee && (
+                              <span className="text-blue-600 font-medium">€{pair.canvasMonthlyFee}/mese</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-500 shrink-0" /> : <ChevronDown className="h-4 w-4 text-gray-500 shrink-0" />}
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-red-50 shrink-0"
+                          onClick={(e) => { e.stopPropagation(); setSavedPairs(prev => prev.filter(p => p.id !== pair.id)); }}
+                          data-testid={`btn-delete-pair-${pair.id}`}
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </CollapsibleTrigger>
+
+                    {/* CONTENT - Form unico completo */}
+                    <CollapsibleContent>
+                      <div className="px-3 pb-3 pt-0 space-y-4 border-t bg-gray-50/50">
+                        
+                        {/* Sezione Modalità Vendita */}
+                        <div className="pt-3">
+                          <Label className="text-xs font-semibold text-gray-700 mb-2 block">Modalità di Vendita <span className="text-red-500">*</span></Label>
+                          <div className="flex gap-2">
+                            {[
+                              { value: 'ALL', label: 'ALL - Pagamento Unico', desc: 'Pagamento completo in una sola rata' },
+                              { value: 'FIN', label: 'FIN - Finanziamento', desc: 'Rateizzazione tramite ente finanziatore' },
+                              { value: 'VAR', label: 'VAR - Variabile', desc: 'Rate flessibili senza ente' }
+                            ].map(mode => (
+                              <Button
+                                key={mode.value}
+                                variant={config.salesMode === mode.value ? 'default' : 'outline'}
+                                size="sm"
+                                className={`flex-1 ${config.salesMode === mode.value ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                                onClick={() => updatePairConfig('salesMode', mode.value)}
+                              >
+                                {mode.label}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sezione Ente Finanziatore (solo FIN) */}
+                        {config.salesMode === 'FIN' && (
+                          <div className="p-3 rounded border bg-white">
+                            <Label className="text-xs font-semibold text-gray-700 mb-2 block">Ente Finanziatore <span className="text-red-500">*</span></Label>
+                            <Select 
+                              value={config.financialEntityId || ''} 
+                              onValueChange={(val) => {
+                                const entity = safeFinancialEntities.find((e: any) => e.id === val);
+                                updatePairConfig('financialEntityId', val);
+                                updatePairConfig('financialEntityName', entity?.name);
                               }}
-                              data-testid={`btn-delete-pair-${pair.id}`}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                              <SelectTrigger className={`h-9 ${!config.financialEntityId ? 'border-red-300' : ''}`}>
+                                <SelectValue placeholder="Seleziona ente finanziatore..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {safeFinancialEntities.map((e: any) => (
+                                  <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="border-t p-4 bg-gray-50 space-y-3">
-                          {/* Configurazioni esistenti */}
-                          {pair.configurations.map((config, idx) => (
-                            <div key={config.id} className="bg-white rounded-lg p-3 border">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 flex-wrap flex-1">
-                                  <Select 
-                                    value={config.salesMode}
-                                    onValueChange={(val: SalesMode) => {
-                                      setSavedPairs(prev => prev.map(p => 
-                                        p.id === pair.id 
-                                          ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, salesMode: val } : c) }
-                                          : p
-                                      ));
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8 w-40 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="ALL">ALL - Unico</SelectItem>
-                                      <SelectItem value="FIN">FIN - Finanz.</SelectItem>
-                                      <SelectItem value="VAR">VAR - Variabile</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  
-                                  {config.salesMode === 'FIN' && (
-                                    <Select 
-                                      value={config.financialEntityId || ''}
-                                      onValueChange={(val) => {
-                                        const entity = safeFinancialEntities.find((e: any) => e.id === val);
-                                        setSavedPairs(prev => prev.map(p => 
-                                          p.id === pair.id 
-                                            ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, financialEntityId: val, financialEntityName: entity?.name } : c) }
-                                            : p
-                                        ));
-                                      }}
-                                    >
-                                      <SelectTrigger className={`h-8 w-32 text-xs ${!config.financialEntityId ? 'border-red-300' : ''}`}>
-                                        <SelectValue placeholder="Ente *" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {safeFinancialEntities.map((e: any) => (
-                                          <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
-                                  
-                                  {(config.salesMode === 'FIN' || config.salesMode === 'VAR') && (
-                                    <>
-                                      <Select 
-                                        value={config.numberOfInstallments?.toString() || ''}
-                                        onValueChange={(val) => {
-                                          setSavedPairs(prev => prev.map(p => 
-                                            p.id === pair.id 
-                                              ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, numberOfInstallments: parseInt(val) } : c) }
-                                              : p
-                                          ));
-                                        }}
-                                      >
-                                        <SelectTrigger className={`h-8 w-24 text-xs ${!config.numberOfInstallments ? 'border-red-300' : ''}`}>
-                                          <SelectValue placeholder="Rate *" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {[6, 12, 18, 24, 30, 36, 48].map(n => (
-                                            <SelectItem key={n} value={n.toString()}>{n} rate</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                      <Input 
-                                        type="number"
-                                        placeholder="€/mese *"
-                                        className={`h-8 w-24 text-xs ${!config.installmentAmount ? 'border-red-300' : ''}`}
-                                        value={config.installmentAmount || ''}
-                                        onChange={(e) => {
-                                          setSavedPairs(prev => prev.map(p => 
-                                            p.id === pair.id 
-                                              ? { ...p, configurations: p.configurations.map((c, i) => i === idx ? { ...c, installmentAmount: e.target.value } : c) }
-                                              : p
-                                          ));
-                                        }}
-                                      />
-                                    </>
-                                  )}
-                                </div>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setSavedPairs(prev => prev.map(p => 
-                                      p.id === pair.id 
-                                        ? { ...p, configurations: p.configurations.filter((_, i) => i !== idx) }
-                                        : p
-                                    ));
-                                  }}
-                                >
-                                  <Trash2 className="h-3 w-3 text-red-500" />
-                                </Button>
+                        )}
+
+                        {/* Sezione Rate (FIN o VAR) */}
+                        {(config.salesMode === 'FIN' || config.salesMode === 'VAR') && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 rounded border bg-white">
+                              <Label className="text-xs font-semibold text-gray-700 mb-2 block">Numero Rate <span className="text-red-500">*</span></Label>
+                              <Select 
+                                value={config.numberOfInstallments?.toString() || ''} 
+                                onValueChange={(val) => updatePairConfig('numberOfInstallments', parseInt(val))}
+                              >
+                                <SelectTrigger className={`h-9 ${!config.numberOfInstallments ? 'border-red-300' : ''}`}>
+                                  <SelectValue placeholder="Seleziona..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[6, 12, 18, 24, 30, 36, 48].map(n => (
+                                    <SelectItem key={n} value={n.toString()}>{n} rate</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="p-3 rounded border bg-white">
+                              <Label className="text-xs font-semibold text-gray-700 mb-2 block">Importo Rata <span className="text-red-500">*</span></Label>
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
+                                <Input 
+                                  type="number"
+                                  step="0.01"
+                                  value={config.installmentAmount || ''}
+                                  onChange={(e) => updatePairConfig('installmentAmount', e.target.value)}
+                                  className={`h-9 pl-6 ${!config.installmentAmount ? 'border-red-300' : ''}`}
+                                  placeholder="0.00"
+                                />
                               </div>
                             </div>
-                          ))}
-                          
-                          {/* Pulsante aggiungi configurazione */}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full border-dashed"
-                            onClick={() => {
-                              const newConfig: SalesConfiguration = {
-                                id: `config-${Date.now()}`,
-                                salesMode: 'ALL',
-                                validFrom: priceListHeader.validFrom,
-                                validTo: priceListHeader.validTo,
-                                creditNoteAmount: '',
-                                creditAssignmentAmount: '',
-                                financingAmount: ''
-                              };
-                              setSavedPairs(prev => prev.map(p => 
-                                p.id === pair.id 
-                                  ? { ...p, configurations: [...p.configurations, newConfig] }
-                                  : p
-                              ));
-                            }}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Aggiungi Configurazione
-                          </Button>
-                        </div>
-                      </CollapsibleContent>
-                    </Card>
+                          </div>
+                        )}
+
+                        {/* Sezione Importi Amministrativi */}
+                        {config.salesMode && (
+                          <div className="p-3 rounded border bg-blue-50/50">
+                            <Label className="text-xs font-semibold text-gray-700 mb-3 block flex items-center gap-2">
+                              <CreditCard className="h-4 w-4 text-blue-500" />
+                              Importi Amministrativi
+                            </Label>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Nota di Credito</Label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                  <Input 
+                                    type="number"
+                                    step="0.01"
+                                    value={config.creditNoteAmount || ''}
+                                    onChange={(e) => updatePairConfig('creditNoteAmount', e.target.value)}
+                                    className="h-8 pl-5 text-sm"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Cessione Credito</Label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                  <Input 
+                                    type="number"
+                                    step="0.01"
+                                    value={config.creditAssignmentAmount || ''}
+                                    onChange={(e) => updatePairConfig('creditAssignmentAmount', e.target.value)}
+                                    className="h-8 pl-5 text-sm"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Importo Finanziamento</Label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                  <Input 
+                                    type="number"
+                                    step="0.01"
+                                    value={config.financingAmount || ''}
+                                    onChange={(e) => updatePairConfig('financingAmount', e.target.value)}
+                                    className="h-8 pl-5 text-sm"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
                   </Collapsible>
                 );
               })}

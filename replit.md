@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize business operations through a comprehensive suite of modules including CRM, POS, WMS, Analytics, HR, CMS, and Bidding. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making by integrating workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a unified, intelligent ecosystem for operational management.
+W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes business operations across CRM, POS, WMS, Analytics, HR, CMS, and Bidding modules. Its primary purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System, providing a unified ecosystem for operational management. The platform aims to streamline complex business processes and offer a comprehensive solution for enterprise resource planning.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -155,35 +155,35 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It employs a component-first approach leveraging `shadcn/ui` and Radix UI for accessibility. Styling is managed via CSS variables and Tailwind CSS, integrating new content into existing dashboard structures.
+- **UI/UX Decisions**: The platform features a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It adopts a component-first approach leveraging `shadcn/ui` and Radix UI for accessibility. Styling is managed through CSS variables and Tailwind CSS, ensuring content integrates seamlessly into existing dashboard structures.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
-    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **Database**: Utilizes PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
+    - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
+    - **Core Systems**: Includes a Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: Features AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
+    - **CRM Module**: Focuses on person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, handling diverse product types, dual-layer product versioning, 13 logistic states, serialized/non-serialized product management, immutable event logs, read models, historical snapshots, and document tables.
     - **Brand Interface**: Provides a Workflow Builder (Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` with RLS.
-    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing, using `public` schema for reference data and `w3suite` for tenant-specific data.
-    - **Entity Architecture**: Differentiates internal `organization_entities` from external `legal_entities` (partners like suppliers or financial entities).
-    - **Cross-Store Architecture**: Data views are tenant-wide by default, with access control based on roles. Aggregated data queries omit `storeId`, with optional filters for drill-down.
-    - **Request Routing**: Employs "Functional First → First Wins" and "Shift-Based Routing" strategies based on team types, roles, and operational shifts.
-    - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment uses `./deploy/incremental-deploy.sh`. The VPS root is `/var/www/w3suite/`, with SSH access via `deploy/keys/vps_key`. Database access to `w3suite_prod` is exclusively via local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
+    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing, utilizing the `public` schema for reference data and `w3suite` for tenant-specific data.
+    - **Entity Architecture**: Distinguishes between internal `organization_entities` and external `legal_entities` (partners like suppliers or financial entities).
+    - **Cross-Store Architecture**: Data views are tenant-wide by default, with access control based on roles. Aggregated data queries omit `storeId`, providing optional filters for drill-down.
+    - **Request Routing**: Employs "Functional First → First Wins" and "Shift-Based Routing" strategies, determined by team types, roles, and operational shifts.
+    - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment is managed via `./deploy/incremental-deploy.sh`. The VPS root directory is `/var/www/w3suite/`, with SSH access secured by `deploy/keys/vps_key`. Database access to `w3suite_prod` is exclusively via local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
-- **Redis**: For BullMQ and the Unified Notification System
-- **OAuth2/OIDC Enterprise**: Authentication and authorization services
-- **SHADCN/UI**: Primary UI component library
-- **Radix UI**: Accessible component primitives
-- **Lucide React**: Icon library
-- **TanStack React Query**: Server state and data fetching
-- **React Hook Form**: Form management and validation
-- **Vite**: Frontend build tool
-- **Drizzle Kit**: Database schema management
-- **PostCSS**: CSS pre-processor
-- **ESBuild**: Server-side code bundling
-- **Nginx**: Reverse proxy
-- **OpenAI**: Integrated for advanced AI services (`gpt-4o`, `gpt-4o-realtime`)
+- **Redis**: Used for BullMQ and the Unified Notification System.
+- **OAuth2/OIDC Enterprise**: Provides authentication and authorization services.
+- **SHADCN/UI**: The primary UI component library.
+- **Radix UI**: Supplies accessible component primitives.
+- **Lucide React**: The icon library utilized in the UI.
+- **TanStack React Query**: Manages server state and data fetching.
+- **React Hook Form**: Handles form management and validation.
+- **Vite**: The frontend build tool.
+- **Drizzle Kit**: Used for database schema management.
+- **PostCSS**: A CSS pre-processor.
+- **ESBuild**: Used for server-side code bundling.
+- **Nginx**: Functions as a reverse proxy.
+- **OpenAI**: Integrated for advanced AI services, including `gpt-4o` and `gpt-4o-realtime`.
