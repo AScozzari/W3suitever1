@@ -2530,24 +2530,66 @@ export default function ListiniTabContent() {
     return baseFee + addonsFee;
   };
 
+  // Categorie Canvas root per Canvas List (senza parent)
+  const canvasListRootCategories = useMemo(() => 
+    safeCategories.filter((c: any) => c.productType === 'CANVAS' && !c.parentCategoryId),
+    [safeCategories]
+  );
+
+  // Tipologie Canvas List (categorie figlie della categoria selezionata)
+  const canvasListTypologies = useMemo(() => {
+    if (canvasListCategoryFilter === 'all') return [];
+    return safeCategories.filter((c: any) => c.parentCategoryId === canvasListCategoryFilter);
+  }, [safeCategories, canvasListCategoryFilter]);
+
+  // Canoni unici Canvas List
+  const uniqueCanvasListFees = useMemo(() => {
+    const fees = new Set<string>();
+    safeProducts.filter((p: any) => p.type === 'CANVAS').forEach((p: any) => {
+      if (p.monthlyFee) {
+        fees.add(p.monthlyFee);
+      }
+    });
+    return Array.from(fees).sort((a, b) => parseFloat(a) - parseFloat(b));
+  }, [safeProducts]);
+
   // Filtered products for Canvas List
   const filteredCanvasListProducts = useMemo(() => {
-    if (canvasListSearchTerm.length < 2 && canvasListCategoryFilter === 'all') {
+    if (canvasListSearchTerm.length < 2 && canvasListCategoryFilter === 'all' && canvasListTypologyFilter === 'all') {
       return [];
     }
     
     return safeProducts.filter((p: any) => {
       if (p.type !== 'CANVAS') return false;
-      if (canvasListCategoryFilter !== 'all' && p.categoryId !== canvasListCategoryFilter) return false;
-      if (canvasListTypologyFilter !== 'all' && p.typology !== canvasListTypologyFilter) return false;
+      // Filtro tipologia (ha precedenza sulla categoria se selezionata)
+      if (canvasListTypologyFilter !== 'all') {
+        if (p.categoryId !== canvasListTypologyFilter) {
+          return false;
+        }
+      } else if (canvasListCategoryFilter !== 'all') {
+        // Filtro categoria: mostra prodotti della categoria O delle sue figlie
+        const isInCategory = p.categoryId === canvasListCategoryFilter;
+        const childCategoryIds = safeCategories
+          .filter((c: any) => c.parentCategoryId === canvasListCategoryFilter)
+          .map((c: any) => c.id);
+        const isInChildCategory = childCategoryIds.includes(p.categoryId);
+        if (!isInCategory && !isInChildCategory) {
+          return false;
+        }
+      }
+      // Filtro canone
+      if (canvasListFeeFilter !== 'all' && p.monthlyFee !== canvasListFeeFilter) {
+        return false;
+      }
+      // Filtro ricerca
       if (canvasListSearchTerm && canvasListSearchTerm.length >= 2) {
         const search = canvasListSearchTerm.toLowerCase();
         return p.name?.toLowerCase().includes(search) || 
                p.sku?.toLowerCase().includes(search);
       }
-      return canvasListCategoryFilter !== 'all';
+      return canvasListCategoryFilter !== 'all' || canvasListTypologyFilter !== 'all';
     });
-  }, [safeProducts, canvasListCategoryFilter, canvasListTypologyFilter, canvasListSearchTerm]);
+  }, [safeProducts, safeCategories, canvasListCategoryFilter, canvasListTypologyFilter, canvasListFeeFilter, canvasListSearchTerm]);
 
   // Filtered products for Addon selection
   const filteredAddonProducts = useMemo(() => {
@@ -3431,7 +3473,7 @@ export default function ListiniTabContent() {
                   data-testid="input-search-canvas-list"
                 />
               </div>
-              {/* Category filter */}
+              {/* Category filter - only root categories */}
               <Select value={canvasListCategoryFilter} onValueChange={(val) => {
                 setCanvasListCategoryFilter(val);
                 setCanvasListTypologyFilter('all');
@@ -3441,23 +3483,35 @@ export default function ListiniTabContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories
-                    .filter((cat: any) => cat.productType === 'CANVAS')
-                    .map((cat: any) => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
-                    ))}
+                  {canvasListRootCategories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {/* Typology filter */}
-              {canvasListCategoryFilter !== 'all' && canvasTypologies.length > 0 && (
+              {/* Typology filter - child categories */}
+              {canvasListCategoryFilter !== 'all' && canvasListTypologies.length > 0 && (
                 <Select value={canvasListTypologyFilter} onValueChange={setCanvasListTypologyFilter}>
-                  <SelectTrigger className="h-8 text-sm" data-testid="select-typology-canvas-list">
+                  <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-typology-canvas-list">
                     <SelectValue placeholder="Tutte le tipologie" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte le tipologie</SelectItem>
-                    {canvasTypologies.map((typ: string) => (
-                      <SelectItem key={typ} value={typ}>{typ}</SelectItem>
+                    {canvasListTypologies.map((typ: any) => (
+                      <SelectItem key={typ.id} value={typ.id}>{typ.nome || typ.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {/* Fee filter */}
+              {uniqueCanvasListFees.length > 0 && (
+                <Select value={canvasListFeeFilter} onValueChange={setCanvasListFeeFilter}>
+                  <SelectTrigger className="h-8 text-sm" data-testid="select-fee-canvas-list">
+                    <SelectValue placeholder="Tutti i canoni" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i canoni</SelectItem>
+                    {uniqueCanvasListFees.map((fee: string) => (
+                      <SelectItem key={fee} value={fee}>€{fee}/mese</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
