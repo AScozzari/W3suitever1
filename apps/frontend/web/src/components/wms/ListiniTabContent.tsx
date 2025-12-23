@@ -202,6 +202,7 @@ export default function ListiniTabContent() {
   const [noPromoProducts, setNoPromoProducts] = useState<NoPromoProduct[]>([]);
   const [noPromoSearchTerm, setNoPromoSearchTerm] = useState('');
   const [noPromoCategoryFilter, setNoPromoCategoryFilter] = useState<string>('all');
+  const [noPromoTypologyFilter, setNoPromoTypologyFilter] = useState<string>('all');
   const [noPromoTypeFilter, setNoPromoTypeFilter] = useState<string>('PHYSICAL');
   const [expandedProductRows, setExpandedProductRows] = useState<Set<string>>(new Set());
 
@@ -209,6 +210,7 @@ export default function ListiniTabContent() {
   const [promoDeviceProducts, setPromoDeviceProducts] = useState<PromoDeviceProduct[]>([]);
   const [promoDeviceSearchTerm, setPromoDeviceSearchTerm] = useState('');
   const [promoDeviceCategoryFilter, setPromoDeviceCategoryFilter] = useState<string>('all');
+  const [promoDeviceTypologyFilter, setPromoDeviceTypologyFilter] = useState<string>('all');
   const [promoDeviceTypeFilter, setPromoDeviceTypeFilter] = useState<string>('PHYSICAL');
 
   // Canvas List products state (for canvas price list type)
@@ -2663,41 +2665,63 @@ export default function ListiniTabContent() {
     });
   }, [safeProducts, promoDeviceTypeFilter]);
 
+  // Tipologie per Promo Device (filtrate per categoryId selezionata)
+  const promoDeviceTypologies = useMemo(() => {
+    if (promoDeviceCategoryFilter === 'all') return [];
+    return safeProductTypes.filter((pt: any) => pt.categoryId === promoDeviceCategoryFilter && pt.isActive);
+  }, [safeProductTypes, promoDeviceCategoryFilter]);
+
+  // Tipologie per No Promo (filtrate per categoryId selezionata)
+  const noPromoTypologies = useMemo(() => {
+    if (noPromoCategoryFilter === 'all') return [];
+    return safeProductTypes.filter((pt: any) => pt.categoryId === noPromoCategoryFilter && pt.isActive);
+  }, [safeProductTypes, noPromoCategoryFilter]);
+
   const filteredPromoDeviceProducts = useMemo(() => {
-    if (promoDeviceSearchTerm.length < 2 && promoDeviceCategoryFilter === 'all') {
+    if (promoDeviceSearchTerm.length < 2 && promoDeviceCategoryFilter === 'all' && promoDeviceTypologyFilter === 'all') {
       return [];
     }
     
     return promoDeviceFilteredByType.filter((p: any) => {
-      if (promoDeviceCategoryFilter !== 'all' && p.categoryId !== promoDeviceCategoryFilter) return false;
+      // Filtro tipologia (ha precedenza sulla categoria)
+      if (promoDeviceTypologyFilter !== 'all') {
+        if (p.typeId !== promoDeviceTypologyFilter) return false;
+      } else if (promoDeviceCategoryFilter !== 'all') {
+        if (p.categoryId !== promoDeviceCategoryFilter) return false;
+      }
       if (promoDeviceSearchTerm && promoDeviceSearchTerm.length >= 2) {
         const search = promoDeviceSearchTerm.toLowerCase();
         return p.name?.toLowerCase().includes(search) || 
                p.sku?.toLowerCase().includes(search) ||
                p.brand?.toLowerCase().includes(search);
       }
-      return promoDeviceCategoryFilter !== 'all';
+      return promoDeviceCategoryFilter !== 'all' || promoDeviceTypologyFilter !== 'all';
     });
-  }, [promoDeviceFilteredByType, promoDeviceCategoryFilter, promoDeviceSearchTerm]);
+  }, [promoDeviceFilteredByType, promoDeviceCategoryFilter, promoDeviceTypologyFilter, promoDeviceSearchTerm]);
 
   const filteredNoPromoProducts = useMemo(() => {
-    // Show products only after 2+ characters typed (optimized for barcode scanner)
-    if (noPromoSearchTerm.length < 2 && noPromoCategoryFilter === 'all') {
+    // Show products only after 2+ characters typed or category/typology selected
+    if (noPromoSearchTerm.length < 2 && noPromoCategoryFilter === 'all' && noPromoTypologyFilter === 'all') {
       return [];
     }
     
     // Use type-filtered products instead of all products
     return noPromoFilteredByType.filter((p: any) => {
-      if (noPromoCategoryFilter !== 'all' && p.categoryId !== noPromoCategoryFilter) return false;
+      // Filtro tipologia (ha precedenza sulla categoria)
+      if (noPromoTypologyFilter !== 'all') {
+        if (p.typeId !== noPromoTypologyFilter) return false;
+      } else if (noPromoCategoryFilter !== 'all') {
+        if (p.categoryId !== noPromoCategoryFilter) return false;
+      }
       if (noPromoSearchTerm && noPromoSearchTerm.length >= 2) {
         const search = noPromoSearchTerm.toLowerCase();
         return p.name?.toLowerCase().includes(search) || 
                p.sku?.toLowerCase().includes(search) ||
                p.brand?.toLowerCase().includes(search);
       }
-      return noPromoCategoryFilter !== 'all'; // Show only if category filter is active
+      return noPromoCategoryFilter !== 'all' || noPromoTypologyFilter !== 'all';
     });
-  }, [noPromoFilteredByType, noPromoCategoryFilter, noPromoSearchTerm]);
+  }, [noPromoFilteredByType, noPromoCategoryFilter, noPromoTypologyFilter, noPromoSearchTerm]);
 
   const selectedSupplierName = useMemo(() => {
     return safeSuppliers.find((s: any) => s.id === priceListHeader.supplierId)?.name || '';
@@ -2756,8 +2780,11 @@ export default function ListiniTabContent() {
               </SelectContent>
             </Select>
             {/* Category filter */}
-            <Select value={noPromoCategoryFilter} onValueChange={setNoPromoCategoryFilter}>
-              <SelectTrigger className="h-8 text-sm" data-testid="select-category-nopromo">
+            <Select value={noPromoCategoryFilter} onValueChange={(val) => {
+              setNoPromoCategoryFilter(val);
+              setNoPromoTypologyFilter('all');
+            }}>
+              <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-category-nopromo">
                 <SelectValue placeholder="Tutte le categorie" />
               </SelectTrigger>
               <SelectContent>
@@ -2769,6 +2796,20 @@ export default function ListiniTabContent() {
                   ))}
               </SelectContent>
             </Select>
+            {/* Typology filter - shows when category is selected */}
+            {noPromoCategoryFilter !== 'all' && noPromoTypologies.length > 0 && (
+              <Select value={noPromoTypologyFilter} onValueChange={setNoPromoTypologyFilter}>
+                <SelectTrigger className="h-8 text-sm" data-testid="select-typology-nopromo">
+                  <SelectValue placeholder="Tutte le tipologie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le tipologie</SelectItem>
+                  {noPromoTypologies.map((typ: any) => (
+                    <SelectItem key={typ.id} value={typ.id}>{typ.nome || typ.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-2 space-y-1">
@@ -2812,11 +2853,11 @@ export default function ListiniTabContent() {
               })}
               {filteredNoPromoProducts.length === 0 && (
                 <div className="text-center py-8 text-gray-400 text-sm">
-                  {noPromoSearchTerm.length < 2 && noPromoCategoryFilter === 'all' ? (
+                  {noPromoSearchTerm.length < 2 && noPromoCategoryFilter === 'all' && noPromoTypologyFilter === 'all' ? (
                     <>
                       <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Digita almeno 2 caratteri per cercare</p>
-                      <p className="text-xs mt-1">Oppure seleziona una categoria</p>
+                      <p className="text-xs mt-1">Oppure seleziona categoria/tipologia</p>
                     </>
                   ) : (
                     'Nessun prodotto trovato'
@@ -3112,8 +3153,11 @@ export default function ListiniTabContent() {
                 <SelectItem value="SERVICE">Servizio</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={promoDeviceCategoryFilter} onValueChange={setPromoDeviceCategoryFilter}>
-              <SelectTrigger className="h-8 text-sm" data-testid="select-category-promodevice">
+            <Select value={promoDeviceCategoryFilter} onValueChange={(val) => {
+              setPromoDeviceCategoryFilter(val);
+              setPromoDeviceTypologyFilter('all');
+            }}>
+              <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-category-promodevice">
                 <SelectValue placeholder="Tutte le categorie" />
               </SelectTrigger>
               <SelectContent>
@@ -3125,6 +3169,20 @@ export default function ListiniTabContent() {
                   ))}
               </SelectContent>
             </Select>
+            {/* Typology filter - shows when category is selected */}
+            {promoDeviceCategoryFilter !== 'all' && promoDeviceTypologies.length > 0 && (
+              <Select value={promoDeviceTypologyFilter} onValueChange={setPromoDeviceTypologyFilter}>
+                <SelectTrigger className="h-8 text-sm" data-testid="select-typology-promodevice">
+                  <SelectValue placeholder="Tutte le tipologie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le tipologie</SelectItem>
+                  {promoDeviceTypologies.map((typ: any) => (
+                    <SelectItem key={typ.id} value={typ.id}>{typ.nome || typ.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-2 space-y-1">
@@ -3168,11 +3226,11 @@ export default function ListiniTabContent() {
               })}
               {filteredPromoDeviceProducts.length === 0 && (
                 <div className="text-center py-8 text-gray-400 text-sm">
-                  {promoDeviceSearchTerm.length < 2 && promoDeviceCategoryFilter === 'all' ? (
+                  {promoDeviceSearchTerm.length < 2 && promoDeviceCategoryFilter === 'all' && promoDeviceTypologyFilter === 'all' ? (
                     <>
                       <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>Digita almeno 2 caratteri per cercare</p>
-                      <p className="text-xs mt-1">Oppure seleziona una categoria</p>
+                      <p className="text-xs mt-1">Oppure seleziona categoria/tipologia</p>
                     </>
                   ) : (
                     'Nessun prodotto trovato'
