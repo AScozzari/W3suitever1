@@ -1187,8 +1187,8 @@ export default function ListiniTabContent() {
 
       {/* Pannelli selezione - SEMPRE VISIBILI in modalità selection */}
       {canvasDeviceViewMode === 'selection' && (
-        <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
-          <Card className="p-4 flex flex-col">
+        <div className="grid grid-cols-2 gap-6 flex-1 min-h-0 overflow-hidden">
+          <Card className="p-4 flex flex-col overflow-hidden">
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Smartphone className="h-5 w-5 text-orange-500" />
               <h4 className="font-semibold">Prodotto Fisico</h4>
@@ -1261,7 +1261,7 @@ export default function ListiniTabContent() {
                 </SelectContent>
               </Select>
 
-              <ScrollArea className="flex-1 min-h-0 border rounded-lg">
+              <ScrollArea className="flex-1 min-h-0 border rounded-lg" style={{ maxHeight: 'calc(100vh - 500px)', minHeight: '200px' }}>
                 {deviceViewMode === 'single' ? (
                   /* VISTA SINGOLA - originale */
                   filteredPhysicalProducts.length === 0 ? (
@@ -1386,7 +1386,7 @@ export default function ListiniTabContent() {
             </div>
           </Card>
 
-          <Card className="p-4 flex flex-col">
+          <Card className="p-4 flex flex-col overflow-hidden">
             <div className="flex items-center gap-2 mb-4 shrink-0">
               <Tv className="h-5 w-5 text-purple-500" />
               <h4 className="font-semibold">Prodotto Canvas</h4>
@@ -1481,7 +1481,7 @@ export default function ListiniTabContent() {
                 </Select>
               </div>
 
-              <ScrollArea className="flex-1 min-h-0 border rounded-lg">
+              <ScrollArea className="flex-1 min-h-0 border rounded-lg" style={{ maxHeight: 'calc(100vh - 500px)', minHeight: '200px' }}>
                 {canvasViewMode === 'single' ? (
                   /* VISTA SINGOLA - usa filtro canone */
                   filteredCanvasWithFee.length === 0 ? (
