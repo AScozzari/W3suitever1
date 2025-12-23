@@ -995,12 +995,12 @@ export default function ListiniTabContent() {
 
   const renderStep3PromoCanvas = () => (
     <div className="flex flex-col h-full min-h-0 gap-4">
-      {/* Toggle vista selezione/lista */}
-      {savedPairs.length > 0 && (
-        <div className="flex items-center justify-between shrink-0">
+      {/* Header con Toggle vista e contatore coppie - SEMPRE VISIBILE */}
+      <div className="flex items-center justify-between shrink-0 bg-gradient-to-r from-orange-50 to-purple-50 p-3 rounded-lg border">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Vista:</span>
-            <div className="flex items-center gap-1 border rounded-lg p-1 bg-gray-50">
+            <span className="text-sm font-medium text-gray-700">Vista:</span>
+            <div className="flex items-center gap-1 border rounded-lg p-1 bg-white shadow-sm">
               <Button
                 variant={canvasDeviceViewMode === 'selection' ? 'default' : 'ghost'}
                 size="sm"
@@ -1009,29 +1009,38 @@ export default function ListiniTabContent() {
                 data-testid="btn-view-selection"
               >
                 <Plus className="h-3 w-3 mr-1" />
-                Selezione
+                Aggiungi
               </Button>
               <Button
                 variant={canvasDeviceViewMode === 'list' ? 'default' : 'ghost'}
                 size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => setCanvasDeviceViewMode('list')}
+                className={`h-7 px-3 text-xs ${savedPairs.length === 0 ? 'opacity-50' : ''}`}
+                onClick={() => savedPairs.length > 0 && setCanvasDeviceViewMode('list')}
+                disabled={savedPairs.length === 0}
                 data-testid="btn-view-list"
               >
                 <Layers className="h-3 w-3 mr-1" />
-                Lista ({savedPairs.length})
+                Lista
               </Button>
             </div>
           </div>
-          {canvasDeviceViewMode === 'list' && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Completo</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /> Parziale</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Mancante</span>
-            </div>
-          )}
+          
+          {/* Contatore coppie salvate */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+            savedPairs.length > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+          }`}>
+            <Package className="h-4 w-4" />
+            <span>{savedPairs.length} coppie salvate</span>
+          </div>
         </div>
-      )}
+        
+        {/* Legenda indicatori - sempre visibile */}
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Mancante</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /> Parziale</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Completo</span>
+        </div>
+      </div>
 
       {/* Riepilogo selezioni correnti */}
       {canvasDeviceViewMode === 'selection' && (currentPair.physicalProductId || currentPair.canvasProductId) && !isPairComplete && (
@@ -1314,22 +1323,22 @@ export default function ListiniTabContent() {
                 />
               </div>
 
-              <Select value={canvasCategoryFilter} onValueChange={setCanvasCategoryFilter}>
-                <SelectTrigger data-testid="select-canvas-category" className="shrink-0">
-                  <SelectValue placeholder="Tutte le categorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories.filter((c: any) => c.productType === 'CANVAS').map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 shrink-0">
+                <Select value={canvasCategoryFilter} onValueChange={setCanvasCategoryFilter}>
+                  <SelectTrigger data-testid="select-canvas-category" className="flex-1">
+                    <SelectValue placeholder="Tutte le categorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le categorie</SelectItem>
+                    {safeCategories.filter((c: any) => c.productType === 'CANVAS').map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {/* Filtro fascia canone - solo in vista massiva */}
-              {canvasViewMode === 'massive' && (
+                {/* Filtro fascia canone - SEMPRE VISIBILE */}
                 <Select value={canvasFeeRangeFilter} onValueChange={setCanvasFeeRangeFilter}>
-                  <SelectTrigger data-testid="select-canvas-fee-range" className="shrink-0">
+                  <SelectTrigger data-testid="select-canvas-fee-range" className="flex-1">
                     <SelectValue placeholder="Fascia canone" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1340,12 +1349,12 @@ export default function ListiniTabContent() {
                     <SelectItem value="30+">Oltre €30/mese</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
+              </div>
 
               <ScrollArea className="flex-1 min-h-0 border rounded-lg">
                 {canvasViewMode === 'single' ? (
-                  /* VISTA SINGOLA - originale */
-                  filteredCanvasProducts.length === 0 ? (
+                  /* VISTA SINGOLA - usa filtro canone */
+                  filteredCanvasWithFee.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                       <Tv className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                       <p>{canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' 
@@ -1355,7 +1364,7 @@ export default function ListiniTabContent() {
                   ) : (
                     <TooltipProvider>
                       <div className="p-2 space-y-2">
-                        {filteredCanvasProducts.map((product: any) => (
+                        {filteredCanvasWithFee.map((product: any) => (
                           <Tooltip key={product.id}>
                             <TooltipTrigger asChild>
                               <div
