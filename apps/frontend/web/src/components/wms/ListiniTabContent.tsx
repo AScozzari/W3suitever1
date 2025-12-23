@@ -1696,20 +1696,47 @@ export default function ListiniTabContent() {
 
                     {/* CONTENT - Form configurazioni multiple */}
                     <CollapsibleContent>
-                      <div className="px-3 pb-3 pt-0 space-y-3 border-t bg-gray-50/50">
+                      <div className="px-3 pb-3 pt-3 space-y-4 border-t bg-gray-50/50">
                         
                         {/* Lista configurazioni esistenti */}
                         {pair.configurations.map((cfg, cfgIndex) => (
-                          <div key={cfg.id} className="pt-3 space-y-3 border-b border-gray-200 pb-3 last:border-b-0">
-                            <div className="flex items-center justify-between">
-                              <Badge variant="outline" className={`text-xs ${!cfg.salesMode ? 'border-red-300 text-red-600' : ''}`}>
-                                Configurazione {cfgIndex + 1}: {!cfg.salesMode ? '⚠️ Da configurare' : cfg.salesMode === 'ALL' ? 'Pagamento Unico' : cfg.salesMode === 'FIN' ? 'Finanziamento' : 'Vendita a Rate'}
-                              </Badge>
+                          <div 
+                            key={cfg.id} 
+                            className={`rounded-lg border-2 p-4 space-y-4 ${
+                              !cfg.salesMode 
+                                ? 'bg-red-50/50 border-red-200' 
+                                : cfg.salesMode === 'ALL' 
+                                  ? 'bg-blue-50/30 border-blue-200' 
+                                  : cfg.salesMode === 'FIN' 
+                                    ? 'bg-purple-50/30 border-purple-200' 
+                                    : 'bg-green-50/30 border-green-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                  !cfg.salesMode 
+                                    ? 'bg-red-100 text-red-600' 
+                                    : cfg.salesMode === 'ALL' 
+                                      ? 'bg-blue-100 text-blue-600' 
+                                      : cfg.salesMode === 'FIN' 
+                                        ? 'bg-purple-100 text-purple-600' 
+                                        : 'bg-green-100 text-green-600'
+                                }`}>
+                                  {cfgIndex + 1}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-sm text-gray-800">
+                                    {!cfg.salesMode ? '⚠️ Da configurare' : cfg.salesMode === 'ALL' ? 'Pagamento Unico' : cfg.salesMode === 'FIN' ? 'Finanziamento' : 'Vendita a Rate'}
+                                  </div>
+                                  <div className="text-xs text-gray-500">Configurazione {cfgIndex + 1}</div>
+                                </div>
+                              </div>
                               {pair.configurations.length > 1 && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  className="h-7 px-2 text-red-500 hover:text-red-700 hover:bg-red-100"
                                   onClick={() => {
                                     setSavedPairs(prev => prev.map(p => {
                                       if (p.id !== pair.id) return p;
