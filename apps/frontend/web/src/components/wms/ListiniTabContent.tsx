@@ -1620,8 +1620,8 @@ export default function ListiniTabContent() {
 
       {/* Vista Lista con Accordion (in modalità lista) - Pattern Promo Device */}
       {canvasDeviceViewMode === 'list' && (
-        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-          <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
             <div className="space-y-3 p-1">
               {savedPairs.map((pair) => {
                 const completionStatus = getCanvasDevicePairCompletionStatus(pair);
@@ -2129,9 +2129,9 @@ export default function ListiniTabContent() {
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
           
-          <div className="shrink-0 pt-4 border-t">
+          <div className="shrink-0 pt-4 border-t mt-4">
             <Button 
               onClick={() => setCanvasDeviceViewMode('selection')}
               className="w-full"
