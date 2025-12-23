@@ -1722,7 +1722,46 @@ export default function ListiniTabContent() {
                                       setSavedPairs(prev => prev.map(p => {
                                         if (p.id !== pair.id) return p;
                                         const newConfigs = [...p.configurations];
-                                        newConfigs[cfgIndex] = { ...newConfigs[cfgIndex], salesMode: mode.value as SalesMode };
+                                        const newMode = mode.value as SalesMode;
+                                        
+                                        // Reset completo: crea nuova config con solo campi del nuovo mode
+                                        const baseConfig = {
+                                          id: newConfigs[cfgIndex].id,
+                                          salesMode: newMode,
+                                          validFrom: newConfigs[cfgIndex].validFrom,
+                                          validTo: newConfigs[cfgIndex].validTo
+                                        };
+                                        
+                                        let resetConfig: SalesConfiguration;
+                                        if (newMode === 'ALL') {
+                                          // ALL: nessun campo extra
+                                          resetConfig = baseConfig;
+                                        } else if (newMode === 'FIN') {
+                                          // FIN: mantieni solo campi FIN-compatibili
+                                          resetConfig = {
+                                            ...baseConfig,
+                                            financialEntityId: newConfigs[cfgIndex].financialEntityId,
+                                            financialEntityName: newConfigs[cfgIndex].financialEntityName,
+                                            numberOfInstallments: newConfigs[cfgIndex].numberOfInstallments,
+                                            installmentAmount: newConfigs[cfgIndex].installmentAmount,
+                                            financingAmount: newConfigs[cfgIndex].financingAmount,
+                                            creditNoteAmount: newConfigs[cfgIndex].creditNoteAmount
+                                          };
+                                        } else {
+                                          // VAR: mantieni solo campi VAR-compatibili
+                                          resetConfig = {
+                                            ...baseConfig,
+                                            financialEntityId: newConfigs[cfgIndex].financialEntityId,
+                                            financialEntityName: newConfigs[cfgIndex].financialEntityName,
+                                            numberOfInstallments: newConfigs[cfgIndex].numberOfInstallments,
+                                            installmentAmount: newConfigs[cfgIndex].installmentAmount,
+                                            paymentMethod: newConfigs[cfgIndex].paymentMethod,
+                                            creditAssignmentAmount: newConfigs[cfgIndex].creditAssignmentAmount,
+                                            creditNoteAmount: newConfigs[cfgIndex].creditNoteAmount
+                                          };
+                                        }
+                                        
+                                        newConfigs[cfgIndex] = resetConfig;
                                         return { ...p, configurations: newConfigs };
                                       }));
                                     }}
