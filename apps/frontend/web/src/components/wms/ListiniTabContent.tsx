@@ -282,7 +282,7 @@ export default function ListiniTabContent() {
   });
 
   const { data: productTypesData = [] } = useQuery({
-    queryKey: ['/api/wms/product-types', DEMO_TENANT_ID]
+    queryKey: ['/api/wms/product-types']
   });
 
   const safeSuppliers = Array.isArray(suppliersData) ? suppliersData : [];
