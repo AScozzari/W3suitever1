@@ -86,6 +86,7 @@ interface NoPromoProduct {
   salesPriceVatIncl: string;
   salesVatRateId: string;
   salesVatRegimeId: string;
+  discountPercent: string;
 }
 
 interface PromoDeviceProduct {
@@ -2348,7 +2349,8 @@ export default function ListiniTabContent() {
       purchaseVatRegimeId: defaultVatRegime?.id || '',
       salesPriceVatIncl: '',
       salesVatRateId: defaultVatRate?.id || '',
-      salesVatRegimeId: defaultVatRegime?.id || ''
+      salesVatRegimeId: defaultVatRegime?.id || '',
+      discountPercent: ''
     };
     
     setNoPromoProducts(prev => [...prev, newProduct]);
@@ -3082,6 +3084,31 @@ export default function ListiniTabContent() {
                                   </SelectContent>
                                 </Select>
                               )}
+                            </div>
+
+                            {/* Sconto Dealer */}
+                            <div className="space-y-2 p-2 rounded border bg-white">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-semibold text-gray-700">Sconto Dealer</span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild><Info className="h-3 w-3 text-gray-400" /></TooltipTrigger>
+                                  <TooltipContent className="bg-gray-900 text-white text-xs">Percentuale sconto dealer</TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  max="100"
+                                  value={product.discountPercent}
+                                  onChange={(e) => updateNoPromoProduct(product.id, 'discountPercent', e.target.value)}
+                                  className="h-9 pr-6 text-sm font-semibold"
+                                  placeholder="0.00"
+                                  data-testid={`input-discount-percent-${product.id}`}
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
+                              </div>
                             </div>
                           </div>
 
