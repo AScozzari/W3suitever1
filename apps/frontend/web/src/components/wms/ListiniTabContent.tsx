@@ -169,6 +169,8 @@ export default function ListiniTabContent() {
   const [canvasSearchTerm, setCanvasSearchTerm] = useState('');
   const [physicalCategoryFilter, setPhysicalCategoryFilter] = useState<string>('all');
   const [canvasCategoryFilter, setCanvasCategoryFilter] = useState<string>('all');
+  const [canvasTypologyFilter, setCanvasTypologyFilter] = useState<string>('all');
+  const [canvasFeeFilter, setCanvasFeeFilter] = useState<string>('all');
 
   // No Promo products state
   const [noPromoProducts, setNoPromoProducts] = useState<NoPromoProduct[]>([]);
@@ -189,7 +191,6 @@ export default function ListiniTabContent() {
   // Massive view toggle states for Canvas Device wizard
   const [deviceViewMode, setDeviceViewMode] = useState<'single' | 'massive'>('single');
   const [canvasViewMode, setCanvasViewMode] = useState<'single' | 'massive'>('single');
-  const [canvasFeeRangeFilter, setCanvasFeeRangeFilter] = useState<string>('all');
   const [expandedDeviceGroups, setExpandedDeviceGroups] = useState<Set<string>>(new Set());
   const [selectedDeviceVariants, setSelectedDeviceVariants] = useState<Set<string>>(new Set());
   const [selectedCanvasProducts, setSelectedCanvasProducts] = useState<Set<string>>(new Set());
@@ -320,24 +321,63 @@ export default function ListiniTabContent() {
     });
   }, [physicalProducts, physicalSearchTerm, physicalCategoryFilter]);
 
+  // Categorie Canvas root (senza parent)
+  const canvasRootCategories = useMemo(() => 
+    safeCategories.filter((c: any) => c.productType === 'CANVAS' && !c.parentCategoryId),
+    [safeCategories]
+  );
+
+  // Tipologie Canvas (figlie della categoria selezionata)
+  const canvasTypologies = useMemo(() => {
+    if (canvasCategoryFilter === 'all') return [];
+    return safeCategories.filter((c: any) => c.parentCategoryId === canvasCategoryFilter);
+  }, [safeCategories, canvasCategoryFilter]);
+
+  // Reset tipologia quando cambia categoria
+  const handleCanvasCategoryChange = (value: string) => {
+    setCanvasCategoryFilter(value);
+    setCanvasTypologyFilter('all');
+  };
+
+  // Valori di canone unici dai prodotti Canvas
+  const uniqueCanvasFees = useMemo(() => {
+    const fees = new Set<string>();
+    canvasProducts.forEach((p: any) => {
+      if (p.monthlyFee) {
+        fees.add(p.monthlyFee);
+      }
+    });
+    return Array.from(fees).sort((a, b) => parseFloat(a) - parseFloat(b));
+  }, [canvasProducts]);
+
   const filteredCanvasProducts = useMemo(() => {
-    // Mostra prodotti solo se c'è almeno 2 caratteri di ricerca o una categoria selezionata
-    if (canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all') {
+    // Mostra prodotti solo se c'è almeno 2 caratteri di ricerca o una categoria/tipologia selezionata
+    if (canvasSearchTerm.length < 2 && canvasCategoryFilter === 'all' && canvasTypologyFilter === 'all') {
       return [];
     }
     return canvasProducts.filter((p: any) => {
+      // Filtro ricerca
       if (canvasSearchTerm.length >= 2) {
         const search = canvasSearchTerm.toLowerCase();
         if (!p.name?.toLowerCase().includes(search) && !p.sku?.toLowerCase().includes(search)) {
           return false;
         }
       }
-      if (canvasCategoryFilter !== 'all' && p.categoryId !== canvasCategoryFilter) {
-        return false;
+      // Filtro tipologia (ha precedenza sulla categoria se selezionata)
+      if (canvasTypologyFilter !== 'all') {
+        if (p.categoryId !== canvasTypologyFilter) {
+          return false;
+        }
+      } else if (canvasCategoryFilter !== 'all') {
+        // Filtro categoria: include prodotti della categoria O delle sue tipologie figlie
+        const typologyIds = canvasTypologies.map((t: any) => t.id);
+        if (p.categoryId !== canvasCategoryFilter && !typologyIds.includes(p.categoryId)) {
+          return false;
+        }
       }
       return true;
     });
-  }, [canvasProducts, canvasSearchTerm, canvasCategoryFilter]);
+  }, [canvasProducts, canvasSearchTerm, canvasCategoryFilter, canvasTypologyFilter, canvasTypologies]);
 
   // Grouped physical products by model+memory for massive view
   const groupedPhysicalProducts = useMemo(() => {
@@ -356,23 +396,15 @@ export default function ListiniTabContent() {
     return Object.values(groups).sort((a, b) => a.model.localeCompare(b.model));
   }, [filteredPhysicalProducts]);
 
-  // Filtered canvas products with fee range for massive view
+  // Filtered canvas products with specific fee filter
   const filteredCanvasWithFee = useMemo(() => {
     let products = filteredCanvasProducts;
-    if (canvasFeeRangeFilter !== 'all') {
-      products = products.filter((p: any) => {
-        const fee = parseFloat(p.monthlyFee || '0');
-        switch (canvasFeeRangeFilter) {
-          case '0-10': return fee >= 0 && fee <= 10;
-          case '10-20': return fee > 10 && fee <= 20;
-          case '20-30': return fee > 20 && fee <= 30;
-          case '30+': return fee > 30;
-          default: return true;
-        }
-      });
+    // Filtro canone specifico (indipendente da categoria/tipologia)
+    if (canvasFeeFilter !== 'all') {
+      products = products.filter((p: any) => p.monthlyFee === canvasFeeFilter);
     }
     return products;
-  }, [filteredCanvasProducts, canvasFeeRangeFilter]);
+  }, [filteredCanvasProducts, canvasFeeFilter]);
 
   // Helper to create massive pairs from selections
   const createMassivePairs = () => {
@@ -1323,30 +1355,48 @@ export default function ListiniTabContent() {
                 />
               </div>
 
+              {/* Filtri Canvas: Categoria → Tipologia → Canone */}
               <div className="flex gap-2 shrink-0">
-                <Select value={canvasCategoryFilter} onValueChange={setCanvasCategoryFilter}>
+                {/* Categoria */}
+                <Select value={canvasCategoryFilter} onValueChange={handleCanvasCategoryChange}>
                   <SelectTrigger data-testid="select-canvas-category" className="flex-1">
-                    <SelectValue placeholder="Tutte le categorie" />
+                    <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte le categorie</SelectItem>
-                    {safeCategories.filter((c: any) => c.productType === 'CANVAS').map((c: any) => (
+                    {canvasRootCategories.map((c: any) => (
                       <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                {/* Filtro fascia canone - SEMPRE VISIBILE */}
-                <Select value={canvasFeeRangeFilter} onValueChange={setCanvasFeeRangeFilter}>
-                  <SelectTrigger data-testid="select-canvas-fee-range" className="flex-1">
-                    <SelectValue placeholder="Fascia canone" />
+                {/* Tipologia (figlia della categoria) */}
+                <Select 
+                  value={canvasTypologyFilter} 
+                  onValueChange={setCanvasTypologyFilter}
+                  disabled={canvasCategoryFilter === 'all'}
+                >
+                  <SelectTrigger data-testid="select-canvas-typology" className="flex-1">
+                    <SelectValue placeholder="Tipologia" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutte le fasce</SelectItem>
-                    <SelectItem value="0-10">€0 - €10/mese</SelectItem>
-                    <SelectItem value="10-20">€10 - €20/mese</SelectItem>
-                    <SelectItem value="20-30">€20 - €30/mese</SelectItem>
-                    <SelectItem value="30+">Oltre €30/mese</SelectItem>
+                    <SelectItem value="all">Tutte le tipologie</SelectItem>
+                    {canvasTypologies.map((t: any) => (
+                      <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Canone specifico (indipendente) */}
+                <Select value={canvasFeeFilter} onValueChange={setCanvasFeeFilter}>
+                  <SelectTrigger data-testid="select-canvas-fee" className="flex-1">
+                    <SelectValue placeholder="Canone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i canoni</SelectItem>
+                    {uniqueCanvasFees.map((fee: string) => (
+                      <SelectItem key={fee} value={fee}>€{fee}/mese</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
