@@ -281,7 +281,16 @@ export default function ListiniTabContent() {
     queryKey: ['/api/operators']
   });
 
+  const { data: productTypesData = [] } = useQuery({
+    queryKey: ['/api/wms/product-types', DEMO_TENANT_ID]
+  });
+
   const safeSuppliers = Array.isArray(suppliersData) ? suppliersData : [];
+  const safeProductTypes = Array.isArray(productTypesData) 
+    ? productTypesData 
+    : (productTypesData as any)?.data && Array.isArray((productTypesData as any).data) 
+      ? (productTypesData as any).data 
+      : [];
   const safeOperators = Array.isArray(operatorsData) ? operatorsData : [];
   // VAT rates endpoint returns { success: true, data: [...] }
   const safeVatRates = Array.isArray(vatRatesData) 
@@ -2530,17 +2539,17 @@ export default function ListiniTabContent() {
     return baseFee + addonsFee;
   };
 
-  // Categorie Canvas root per Canvas List (senza parent)
-  const canvasListRootCategories = useMemo(() => 
-    safeCategories.filter((c: any) => c.productType === 'CANVAS' && !c.parentCategoryId),
+  // Categorie Canvas per Canvas List (dalla tabella wms_categories)
+  const canvasListCategories = useMemo(() => 
+    safeCategories.filter((c: any) => c.productType === 'CANVAS'),
     [safeCategories]
   );
 
-  // Tipologie Canvas List (categorie figlie della categoria selezionata)
+  // Tipologie Canvas List (dalla tabella wms_product_types, filtrate per categoryId)
   const canvasListTypologies = useMemo(() => {
     if (canvasListCategoryFilter === 'all') return [];
-    return safeCategories.filter((c: any) => c.parentCategoryId === canvasListCategoryFilter);
-  }, [safeCategories, canvasListCategoryFilter]);
+    return safeProductTypes.filter((pt: any) => pt.categoryId === canvasListCategoryFilter && pt.isActive);
+  }, [safeProductTypes, canvasListCategoryFilter]);
 
   // Canoni unici Canvas List
   const uniqueCanvasListFees = useMemo(() => {
@@ -2555,15 +2564,18 @@ export default function ListiniTabContent() {
 
   // Filtered products for Canvas List
   const filteredCanvasListProducts = useMemo(() => {
-    if (canvasListSearchTerm.length < 2 && canvasListCategoryFilter === 'all' && canvasListFeeFilter === 'all') {
+    if (canvasListSearchTerm.length < 2 && canvasListCategoryFilter === 'all' && canvasListTypologyFilter === 'all' && canvasListFeeFilter === 'all') {
       return [];
     }
     
     return safeProducts.filter((p: any) => {
       if (p.type !== 'CANVAS') return false;
-      // Filtro categoria
-      if (canvasListCategoryFilter !== 'all' && p.categoryId !== canvasListCategoryFilter) {
-        return false;
+      // Filtro tipologia (ha precedenza sulla categoria)
+      if (canvasListTypologyFilter !== 'all') {
+        if (p.typeId !== canvasListTypologyFilter) return false;
+      } else if (canvasListCategoryFilter !== 'all') {
+        // Filtro categoria
+        if (p.categoryId !== canvasListCategoryFilter) return false;
       }
       // Filtro canone
       if (canvasListFeeFilter !== 'all' && p.monthlyFee !== canvasListFeeFilter) {
@@ -2575,9 +2587,9 @@ export default function ListiniTabContent() {
         return p.name?.toLowerCase().includes(search) || 
                p.sku?.toLowerCase().includes(search);
       }
-      return canvasListCategoryFilter !== 'all' || canvasListFeeFilter !== 'all';
+      return canvasListCategoryFilter !== 'all' || canvasListTypologyFilter !== 'all' || canvasListFeeFilter !== 'all';
     });
-  }, [safeProducts, canvasListCategoryFilter, canvasListFeeFilter, canvasListSearchTerm]);
+  }, [safeProducts, canvasListCategoryFilter, canvasListTypologyFilter, canvasListFeeFilter, canvasListSearchTerm]);
 
   // Filtered products for Addon selection
   const filteredAddonProducts = useMemo(() => {
@@ -3462,19 +3474,34 @@ export default function ListiniTabContent() {
                 />
               </div>
               {/* Category filter */}
-              <Select value={canvasListCategoryFilter} onValueChange={setCanvasListCategoryFilter}>
+              <Select value={canvasListCategoryFilter} onValueChange={(val) => {
+                setCanvasListCategoryFilter(val);
+                setCanvasListTypologyFilter('all');
+              }}>
                 <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-category-canvas-list">
                   <SelectValue placeholder="Tutte le categorie" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
-                  {safeCategories
-                    .filter((cat: any) => cat.productType === 'CANVAS')
-                    .map((cat: any) => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
-                    ))}
+                  {canvasListCategories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {/* Typology filter - shows when category is selected */}
+              {canvasListCategoryFilter !== 'all' && canvasListTypologies.length > 0 && (
+                <Select value={canvasListTypologyFilter} onValueChange={setCanvasListTypologyFilter}>
+                  <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-typology-canvas-list">
+                    <SelectValue placeholder="Tutte le tipologie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le tipologie</SelectItem>
+                    {canvasListTypologies.map((typ: any) => (
+                      <SelectItem key={typ.id} value={typ.id}>{typ.nome || typ.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {/* Fee filter */}
               <Select value={canvasListFeeFilter} onValueChange={setCanvasListFeeFilter}>
                 <SelectTrigger className="h-8 text-sm" data-testid="select-fee-canvas-list">
