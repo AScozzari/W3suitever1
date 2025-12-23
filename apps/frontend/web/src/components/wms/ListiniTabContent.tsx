@@ -39,6 +39,7 @@ interface PriceListHeader {
   description: string;
   type: PriceListType;
   supplierId: string;
+  operatorId: string;
   validFrom: Date;
   validTo: Date | null;
 }
@@ -109,6 +110,30 @@ interface PromoDeviceProduct {
   publicPrice: string;
 }
 
+// Canvas product for Canvas price list
+interface CanvasListProduct {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  productCategory: string;
+  productTypology: string;
+  monthlyFee: string;
+  contractDuration: number;
+  entryFee: string;
+  notes: string;
+  hasAddons: boolean;
+  addons: CanvasAddon[];
+}
+
+interface CanvasAddon {
+  id: string;
+  productId: string;
+  productName: string;
+  productType: string;
+  monthlyFee?: string;
+}
+
 const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: string; icon: any; color: string }[] = [
   { 
     value: 'no_promo', 
@@ -154,6 +179,7 @@ export default function ListiniTabContent() {
     description: '',
     type: 'no_promo',
     supplierId: '',
+    operatorId: '',
     validFrom: new Date(),
     validTo: addMonths(new Date(), 12)
   });
@@ -184,6 +210,18 @@ export default function ListiniTabContent() {
   const [promoDeviceSearchTerm, setPromoDeviceSearchTerm] = useState('');
   const [promoDeviceCategoryFilter, setPromoDeviceCategoryFilter] = useState<string>('all');
   const [promoDeviceTypeFilter, setPromoDeviceTypeFilter] = useState<string>('PHYSICAL');
+
+  // Canvas List products state (for canvas price list type)
+  const [canvasListProducts, setCanvasListProducts] = useState<CanvasListProduct[]>([]);
+  const [canvasListSearchTerm, setCanvasListSearchTerm] = useState('');
+  const [canvasListCategoryFilter, setCanvasListCategoryFilter] = useState<string>('all');
+  const [canvasListTypologyFilter, setCanvasListTypologyFilter] = useState<string>('all');
+  const [canvasListFeeFilter, setCanvasListFeeFilter] = useState<string>('all');
+  const [expandedCanvasListRows, setExpandedCanvasListRows] = useState<Set<string>>(new Set());
+  // Addon selection state
+  const [addonTypeFilter, setAddonTypeFilter] = useState<string>('PHYSICAL');
+  const [addonCategoryFilter, setAddonCategoryFilter] = useState<string>('all');
+  const [addonTypologyFilter, setAddonTypologyFilter] = useState<string>('all');
 
   // Physical product type filter for Canvas Device
   const [physicalTypeFilter, setPhysicalTypeFilter] = useState<string>('PHYSICAL');
@@ -239,7 +277,12 @@ export default function ListiniTabContent() {
     enabled: !!priceListHeader.supplierId
   });
 
+  const { data: operatorsData = [] } = useQuery({
+    queryKey: ['/api/operators']
+  });
+
   const safeSuppliers = Array.isArray(suppliersData) ? suppliersData : [];
+  const safeOperators = Array.isArray(operatorsData) ? operatorsData : [];
   // VAT rates endpoint returns { success: true, data: [...] }
   const safeVatRates = Array.isArray(vatRatesData) 
     ? vatRatesData 
@@ -913,6 +956,9 @@ export default function ListiniTabContent() {
         if (priceListHeader.type === 'no_promo') {
           return baseValid && !!priceListHeader.supplierId;
         }
+        if (priceListHeader.type === 'canvas') {
+          return baseValid && !!priceListHeader.operatorId;
+        }
         return baseValid;
       case 3: 
         if (priceListHeader.type === 'promo_canvas') {
@@ -920,6 +966,9 @@ export default function ListiniTabContent() {
         }
         if (priceListHeader.type === 'no_promo') {
           return noPromoProducts.length > 0;
+        }
+        if (priceListHeader.type === 'canvas') {
+          return canvasListProducts.length > 0;
         }
         return true;
       default: return true;
@@ -1089,6 +1138,37 @@ export default function ListiniTabContent() {
             {priceListHeader.type === 'no_promo' && (
               <p className="text-xs text-gray-500">Il fornitore è obbligatorio per i listini base</p>
             )}
+          </div>
+        )}
+
+        {/* Operatore per listini Canvas */}
+        {priceListHeader.type === 'canvas' && (
+          <div className="space-y-1.5">
+            <Label>
+              Operatore <span className="text-red-500">*</span>
+            </Label>
+            <Select 
+              value={priceListHeader.operatorId || undefined} 
+              onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, operatorId: val }))}
+            >
+              <SelectTrigger 
+                data-testid="select-operator"
+                className={!priceListHeader.operatorId ? 'border-red-300' : ''}
+              >
+                <SelectValue placeholder="Seleziona operatore *" />
+              </SelectTrigger>
+              <SelectContent>
+                {safeOperators.filter((o: any) => o.id && o.isActive !== false).map((o: any) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    <div className="flex items-center gap-2">
+                      {o.logoUrl && <img src={o.logoUrl} alt={o.name} className="h-4 w-4 object-contain" />}
+                      {o.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">Seleziona l'operatore telecom per questo listino Canvas</p>
           </div>
         )}
       </div>
@@ -2358,6 +2438,136 @@ export default function ListiniTabContent() {
     setPromoDeviceProducts(prev => prev.filter(p => p.id !== id));
   };
 
+  // ===== CANVAS LIST FUNCTIONS (for canvas price list type) =====
+  const getCanvasListProductCompletionStatus = (product: CanvasListProduct): 'complete' | 'partial' | 'empty' => {
+    const hasMonthlyFee = !!product.monthlyFee && parseFloat(product.monthlyFee) > 0;
+    const hasContractDuration = !!product.contractDuration && product.contractDuration > 0;
+    const hasEntryFee = product.entryFee !== undefined; // Can be 0
+    
+    const allComplete = hasMonthlyFee && hasContractDuration;
+    const anyFilled = hasMonthlyFee || hasContractDuration || (!!product.entryFee && parseFloat(product.entryFee) > 0);
+    
+    if (allComplete) return 'complete';
+    if (anyFilled) return 'partial';
+    return 'empty';
+  };
+
+  const addProductToCanvasList = (product: any) => {
+    if (canvasListProducts.some(p => p.productId === product.id)) return;
+    
+    const category = safeCategories.find((c: any) => c.id === product.categoryId);
+    
+    const newProduct: CanvasListProduct = {
+      id: crypto.randomUUID(),
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku,
+      productCategory: category?.name || '',
+      productTypology: product.typology || '',
+      monthlyFee: product.monthlyFee?.toString() || '',
+      contractDuration: 24,
+      entryFee: '',
+      notes: '',
+      hasAddons: false,
+      addons: []
+    };
+    
+    setCanvasListProducts(prev => [...prev, newProduct]);
+    setExpandedCanvasListRows(prev => new Set([...prev, newProduct.id]));
+  };
+
+  const updateCanvasListProduct = (id: string, field: keyof CanvasListProduct, value: any) => {
+    setCanvasListProducts(prev => prev.map(p => 
+      p.id === id ? { ...p, [field]: value } : p
+    ));
+  };
+
+  const removeCanvasListProduct = (id: string) => {
+    setCanvasListProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const toggleCanvasListRow = (productId: string) => {
+    setExpandedCanvasListRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const addAddonToCanvasProduct = (canvasProductId: string, addonProduct: any) => {
+    setCanvasListProducts(prev => prev.map(p => {
+      if (p.id !== canvasProductId) return p;
+      if (p.addons.some(a => a.productId === addonProduct.id)) return p;
+      
+      const newAddon: CanvasAddon = {
+        id: crypto.randomUUID(),
+        productId: addonProduct.id,
+        productName: addonProduct.name,
+        productType: addonProduct.type,
+        monthlyFee: addonProduct.type === 'CANVAS' ? addonProduct.monthlyFee?.toString() : undefined
+      };
+      
+      return { ...p, addons: [...p.addons, newAddon] };
+    }));
+  };
+
+  const removeAddonFromCanvasProduct = (canvasProductId: string, addonId: string) => {
+    setCanvasListProducts(prev => prev.map(p => {
+      if (p.id !== canvasProductId) return p;
+      return { ...p, addons: p.addons.filter(a => a.id !== addonId) };
+    }));
+  };
+
+  const calculateBundleMonthlyFee = (product: CanvasListProduct): number => {
+    const baseFee = parseFloat(product.monthlyFee) || 0;
+    const addonsFee = product.addons.reduce((sum, addon) => {
+      return sum + (parseFloat(addon.monthlyFee || '0') || 0);
+    }, 0);
+    return baseFee + addonsFee;
+  };
+
+  // Filtered products for Canvas List
+  const filteredCanvasListProducts = useMemo(() => {
+    if (canvasListSearchTerm.length < 2 && canvasListCategoryFilter === 'all') {
+      return [];
+    }
+    
+    return safeProducts.filter((p: any) => {
+      if (p.type !== 'CANVAS') return false;
+      if (canvasListCategoryFilter !== 'all' && p.categoryId !== canvasListCategoryFilter) return false;
+      if (canvasListTypologyFilter !== 'all' && p.typology !== canvasListTypologyFilter) return false;
+      if (canvasListSearchTerm && canvasListSearchTerm.length >= 2) {
+        const search = canvasListSearchTerm.toLowerCase();
+        return p.name?.toLowerCase().includes(search) || 
+               p.sku?.toLowerCase().includes(search);
+      }
+      return canvasListCategoryFilter !== 'all';
+    });
+  }, [safeProducts, canvasListCategoryFilter, canvasListTypologyFilter, canvasListSearchTerm]);
+
+  // Filtered products for Addon selection
+  const filteredAddonProducts = useMemo(() => {
+    return safeProducts.filter((p: any) => {
+      if (addonTypeFilter !== 'all' && p.type !== addonTypeFilter) return false;
+      if (addonCategoryFilter !== 'all' && p.categoryId !== addonCategoryFilter) return false;
+      if (addonTypologyFilter !== 'all' && p.typology !== addonTypologyFilter) return false;
+      return true;
+    }).slice(0, 30);
+  }, [safeProducts, addonTypeFilter, addonCategoryFilter, addonTypologyFilter]);
+
+  // Get unique typologies for Canvas products
+  const canvasTypologies = useMemo(() => {
+    const typologies = new Set<string>();
+    safeProducts.filter((p: any) => p.type === 'CANVAS' && p.categoryId === canvasListCategoryFilter).forEach((p: any) => {
+      if (p.typology) typologies.add(p.typology);
+    });
+    return Array.from(typologies);
+  }, [safeProducts, canvasListCategoryFilter]);
+
   // ===== CANVAS DEVICE HELPER FUNCTIONS =====
   const getCanvasDevicePairCompletionStatus = (pair: ProductPair): 'complete' | 'partial' | 'pending' => {
     // 🔴 Rosso: nessuna configurazione
@@ -3205,15 +3415,391 @@ export default function ListiniTabContent() {
     </div>
   );
 
+  // ===== RENDER STEP 3 CANVAS (Canvas Price List) =====
+  const renderStep3Canvas = () => {
+    const selectedOperator = safeOperators.find((o: any) => o.id === priceListHeader.operatorId);
+    
+    return (
+    <div className="flex flex-col flex-1 min-h-0 gap-4 overflow-hidden">
+      <TooltipProvider>
+        <div className="flex gap-4 h-full min-h-0">
+          {/* Left panel: Product search - full height with independent scroll */}
+          <div className="w-1/3 flex flex-col border rounded-lg min-h-0">
+            <div className="p-3 border-b bg-purple-50 shrink-0">
+              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <Tv className="h-4 w-4 text-purple-600" />
+                Catalogo Prodotti Canvas
+              </h4>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Cerca prodotto Canvas..."
+                  value={canvasListSearchTerm}
+                  onChange={(e) => setCanvasListSearchTerm(e.target.value)}
+                  className="pl-9 h-8 text-sm"
+                  data-testid="input-search-canvas-list"
+                />
+              </div>
+              {/* Category filter */}
+              <Select value={canvasListCategoryFilter} onValueChange={(val) => {
+                setCanvasListCategoryFilter(val);
+                setCanvasListTypologyFilter('all');
+              }}>
+                <SelectTrigger className="h-8 text-sm mb-2" data-testid="select-category-canvas-list">
+                  <SelectValue placeholder="Tutte le categorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le categorie</SelectItem>
+                  {safeCategories
+                    .filter((cat: any) => cat.productType === 'CANVAS')
+                    .map((cat: any) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {/* Typology filter */}
+              {canvasListCategoryFilter !== 'all' && canvasTypologies.length > 0 && (
+                <Select value={canvasListTypologyFilter} onValueChange={setCanvasListTypologyFilter}>
+                  <SelectTrigger className="h-8 text-sm" data-testid="select-typology-canvas-list">
+                    <SelectValue placeholder="Tutte le tipologie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le tipologie</SelectItem>
+                    {canvasTypologies.map((typ: string) => (
+                      <SelectItem key={typ} value={typ}>{typ}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="p-2 space-y-1">
+                {filteredCanvasListProducts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Cerca o filtra per categoria</p>
+                    <p className="text-xs">Minimo 2 caratteri per la ricerca</p>
+                  </div>
+                ) : (
+                  filteredCanvasListProducts.slice(0, 50).map((product: any) => {
+                    const isAdded = canvasListProducts.some(p => p.productId === product.id);
+                    return (
+                      <Tooltip key={product.id}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={`p-2 rounded border cursor-pointer transition-colors ${
+                              isAdded 
+                                ? 'bg-purple-50 border-purple-200 opacity-60' 
+                                : 'hover:bg-purple-50 hover:border-purple-200'
+                            }`}
+                            onClick={() => !isAdded && addProductToCanvasList(product)}
+                            data-testid={`canvas-list-product-${product.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm truncate">{product.name}</span>
+                                  {isAdded && <Check className="h-4 w-4 text-purple-500 shrink-0" />}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <span>{product.sku}</span>
+                                  {product.monthlyFee && (
+                                    <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-600 border-purple-200">
+                                      €{product.monthlyFee}/mese
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <Plus className="h-4 w-4 text-gray-400 shrink-0" />
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-sm">
+                          <div className="space-y-1">
+                            <p className="font-semibold">{product.name}</p>
+                            <p className="text-xs">SKU: {product.sku}</p>
+                            {product.description && <p className="text-xs text-gray-400">{product.description}</p>}
+                            {product.monthlyFee && <p className="text-xs text-purple-600">Canone: €{product.monthlyFee}/mese</p>}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right panel: Added products with collapsible rows */}
+          <div className="flex-1 flex flex-col border rounded-lg min-h-0">
+            <div className="p-3 border-b bg-purple-50 shrink-0 flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-sm">Prodotti nel Listino</h4>
+                {selectedOperator && (
+                  <p className="text-xs text-gray-500">Operatore: {selectedOperator.name}</p>
+                )}
+              </div>
+              <Badge variant="secondary">{canvasListProducts.length} prodotti</Badge>
+            </div>
+            <div className="flex items-center gap-3 text-xs px-3 py-2 border-b bg-gray-50 shrink-0">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Mancante</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /> Parziale</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Completo</span>
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="p-3 space-y-3">
+                {canvasListProducts.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">Nessun prodotto aggiunto</p>
+                    <p className="text-xs">Seleziona prodotti dal catalogo</p>
+                  </div>
+                ) : (
+                  canvasListProducts.map((product) => {
+                    const completionStatus = getCanvasListProductCompletionStatus(product);
+                    const isExpanded = expandedCanvasListRows.has(product.id);
+                    const bundleFee = calculateBundleMonthlyFee(product);
+                    
+                    return (
+                      <Collapsible 
+                        key={product.id} 
+                        open={isExpanded}
+                        onOpenChange={() => toggleCanvasListRow(product.id)}
+                        className="border rounded-lg bg-white overflow-hidden"
+                        data-testid={`canvas-list-item-${product.id}`}
+                      >
+                        {/* COLLAPSIBLE HEADER */}
+                        <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors">
+                          {/* Completion Badge */}
+                          <div className={`w-3 h-3 rounded-full shrink-0 ${
+                            completionStatus === 'complete' ? 'bg-emerald-500' :
+                            completionStatus === 'partial' ? 'bg-amber-500' :
+                            'bg-red-400'
+                          }`} />
+                          
+                          {/* Product Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-sm text-gray-900 truncate">{product.productName}</span>
+                              <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 bg-purple-50 text-purple-700 border-purple-200">
+                                CANVAS
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <span>{product.productSku}</span>
+                              <span className="text-purple-600 font-medium">
+                                €{bundleFee.toFixed(2)}/mese
+                                {product.addons.length > 0 && ` (bundle: ${product.addons.length} add-on)`}
+                              </span>
+                            </div>
+                          </div>
+
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+                          </CollapsibleTrigger>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-red-50"
+                            onClick={(e) => { e.stopPropagation(); removeCanvasListProduct(product.id); }}
+                            data-testid={`btn-delete-canvas-${product.id}`}
+                          >
+                            <X className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+
+                        <CollapsibleContent>
+                          <div className="px-3 pb-3 pt-0 space-y-4 border-t bg-gray-50/50">
+                            {/* Configuration Fields */}
+                            <div className="grid grid-cols-3 gap-3 pt-3">
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Canone Mensile <span className="text-red-500">*</span></Label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                  <Input 
+                                    type="number"
+                                    step="0.01"
+                                    value={product.monthlyFee}
+                                    onChange={(e) => updateCanvasListProduct(product.id, 'monthlyFee', e.target.value)}
+                                    className={`h-8 pl-5 text-sm ${!product.monthlyFee ? 'border-red-300' : 'border-green-300'}`}
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Durata Contratto <span className="text-red-500">*</span></Label>
+                                <Select 
+                                  value={product.contractDuration?.toString() || ''} 
+                                  onValueChange={(val) => updateCanvasListProduct(product.id, 'contractDuration', parseInt(val))}
+                                >
+                                  <SelectTrigger className={`h-8 text-sm ${!product.contractDuration ? 'border-red-300' : 'border-green-300'}`}>
+                                    <SelectValue placeholder="Seleziona..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="12">12 mesi</SelectItem>
+                                    <SelectItem value="24">24 mesi</SelectItem>
+                                    <SelectItem value="36">36 mesi</SelectItem>
+                                    <SelectItem value="48">48 mesi</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Costo Attivazione</Label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">€</span>
+                                  <Input 
+                                    type="number"
+                                    step="0.01"
+                                    value={product.entryFee}
+                                    onChange={(e) => updateCanvasListProduct(product.id, 'entryFee', e.target.value)}
+                                    className="h-8 pl-5 text-sm"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Notes */}
+                            <div>
+                              <Label className="text-xs text-gray-600 mb-1 block">Note</Label>
+                              <Input 
+                                value={product.notes}
+                                onChange={(e) => updateCanvasListProduct(product.id, 'notes', e.target.value)}
+                                className="h-8 text-sm"
+                                placeholder="Note opzionali..."
+                              />
+                            </div>
+
+                            {/* Addons Section */}
+                            <div className="border-t pt-3">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Checkbox 
+                                  id={`addon-toggle-${product.id}`}
+                                  checked={product.hasAddons}
+                                  onCheckedChange={(checked) => updateCanvasListProduct(product.id, 'hasAddons', checked)}
+                                />
+                                <Label htmlFor={`addon-toggle-${product.id}`} className="text-sm font-medium cursor-pointer">
+                                  Ha prodotti add-on
+                                </Label>
+                              </div>
+
+                              {product.hasAddons && (
+                                <div className="space-y-3 bg-white p-3 rounded border">
+                                  {/* Addon filters */}
+                                  <div className="flex gap-2">
+                                    <Select value={addonTypeFilter} onValueChange={setAddonTypeFilter}>
+                                      <SelectTrigger className="h-8 text-sm flex-1">
+                                        <SelectValue placeholder="Tipo" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="all">Tutti i tipi</SelectItem>
+                                        <SelectItem value="PHYSICAL">Prodotti Fisici</SelectItem>
+                                        <SelectItem value="SERVICE">Servizi</SelectItem>
+                                        <SelectItem value="CANVAS">Canvas</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <Select value={addonCategoryFilter} onValueChange={setAddonCategoryFilter}>
+                                      <SelectTrigger className="h-8 text-sm flex-1">
+                                        <SelectValue placeholder="Categoria" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="all">Tutte</SelectItem>
+                                        {safeCategories
+                                          .filter((cat: any) => addonTypeFilter === 'all' || cat.productType === addonTypeFilter)
+                                          .map((cat: any) => (
+                                            <SelectItem key={cat.id} value={cat.id}>{cat.nome || cat.name}</SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {/* Addon list */}
+                                  <div className="max-h-32 overflow-y-auto space-y-1">
+                                    {filteredAddonProducts.map((addon: any) => {
+                                      const isAdded = product.addons.some(a => a.productId === addon.id);
+                                      return (
+                                        <div 
+                                          key={addon.id}
+                                          className={`p-2 rounded border cursor-pointer text-sm flex items-center justify-between ${
+                                            isAdded ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'
+                                          }`}
+                                          onClick={() => isAdded 
+                                            ? removeAddonFromCanvasProduct(product.id, product.addons.find(a => a.productId === addon.id)?.id || '')
+                                            : addAddonToCanvasProduct(product.id, addon)
+                                          }
+                                        >
+                                          <div>
+                                            <span className="font-medium">{addon.name}</span>
+                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                              <Badge variant="outline" className="text-[10px]">{addon.type}</Badge>
+                                              {addon.type === 'CANVAS' && addon.monthlyFee && (
+                                                <span className="text-purple-600">€{addon.monthlyFee}/mese</span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          {isAdded ? <Check className="h-4 w-4 text-green-500" /> : <Plus className="h-4 w-4 text-gray-400" />}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Added addons */}
+                                  {product.addons.length > 0 && (
+                                    <div className="pt-2 border-t">
+                                      <p className="text-xs text-gray-500 mb-2">Add-on selezionati ({product.addons.length}):</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {product.addons.map(addon => (
+                                          <Badge 
+                                            key={addon.id} 
+                                            variant="secondary" 
+                                            className="text-xs cursor-pointer hover:bg-red-100"
+                                            onClick={() => removeAddonFromCanvasProduct(product.id, addon.id)}
+                                          >
+                                            {addon.productName}
+                                            {addon.monthlyFee && ` (€${addon.monthlyFee}/m)`}
+                                            <X className="h-3 w-3 ml-1" />
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Bundle Monthly Fee */}
+                            <div className="flex items-center justify-between pt-3 border-t">
+                              <span className="text-sm font-medium text-gray-700">Canone Mese del Bundle:</span>
+                              <span className="text-lg font-bold text-purple-700">
+                                €{bundleFee.toFixed(2)}/mese
+                              </span>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </TooltipProvider>
+    </div>
+  )};
+
   const renderStep3Simple = () => (
     <div className="p-8 text-center">
       <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
       <h3 className="text-xl font-semibold mb-2">Aggiungi Prodotti al Listino</h3>
       <p className="text-gray-500 mb-6">
-        {priceListHeader.type === 'canvas' && 'Aggiungi prodotti Canvas con canone mensile'}
+        Funzionalità in sviluppo
       </p>
       <p className="text-sm text-amber-600">
-        Funzionalità in sviluppo - Usa il tipo "Promo Canvas + Device" per la demo completa
+        Usa i tipi "Listino Base", "Listino Canvas" o "Promo Canvas + Device" per la demo completa
       </p>
     </div>
   );
@@ -3690,7 +4276,9 @@ export default function ListiniTabContent() {
                       ? renderStep3NoPromo()
                       : priceListHeader.type === 'promo_device'
                         ? renderStep3PromoDevice()
-                        : renderStep3Simple()
+                        : priceListHeader.type === 'canvas'
+                          ? renderStep3Canvas()
+                          : renderStep3Simple()
                 )}
                 {wizardStep === 4 && renderStep4()}
               </div>
