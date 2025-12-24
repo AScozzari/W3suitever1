@@ -41,6 +41,7 @@ import {
   wmsInventoryBalances,
   wmsInventorySnapshots,
   suppliers,
+  supplierOverrides,
   drivers,
   financialEntities,
   insertFinancialEntitySchema,
@@ -217,15 +218,41 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
         )
       );
 
-    // Count financial entities
+    // Count financial entities (tenant-scoped)
     const [financialEntitiesCount] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(financialEntities)
-      .where(eq(financialEntities.status, 'active'));
+      .where(
+        and(
+          eq(financialEntities.tenantId, tenantId),
+          eq(financialEntities.status, 'active')
+        )
+      );
 
-    // TODO: Replace with real counts when tables are implemented
-    // Suppliers table (wms_suppliers) - planned for future implementation
-    const suppliersCount = 0;
+    // Count suppliers from base suppliers table (brand-pushed)
+    const [baseSuppliersCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(suppliers)
+      .where(
+        and(
+          eq(suppliers.tenantId, tenantId),
+          eq(suppliers.status, 'active')
+        )
+      );
+
+    // Count suppliers from supplier_overrides table (tenant-created or overridden)
+    const [overrideSuppliersCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(supplierOverrides)
+      .where(
+        and(
+          eq(supplierOverrides.tenantId, tenantId),
+          eq(supplierOverrides.status, 'active')
+        )
+      );
+
+    // Total suppliers = base + overrides
+    const suppliersCount = (baseSuppliersCount?.count || 0) + (overrideSuppliersCount?.count || 0);
     
     // Price lists table (wms_price_lists) - planned for future implementation
     const priceListsCount = 0;
