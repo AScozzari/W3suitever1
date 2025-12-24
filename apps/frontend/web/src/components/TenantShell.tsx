@@ -42,6 +42,9 @@ const PriceListsPage = lazy(() => import('../pages/wms/PriceListsPage'));
 const InventoryPage = lazy(() => import('../pages/wms/InventoryPage'));
 const WMSDashboardPage = lazy(() => import('../pages/wms/WMSDashboardPage'));
 
+// Commissioning Pages
+const CommissioningPage = lazy(() => import('../pages/commissioning/CommissioningPage'));
+
 // Loading fallback component
 const PageLoader = () => (
   <div style={{
@@ -483,6 +486,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/prodotti-listini`}>
         <AuthenticatedRoute>
           <WMSProductsAndListsPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🏆 COMMISSIONING - Gare, Incentivi e Commissioni */}
+      <Route path={`/${tenantSlug}/commissioning`}>
+        <AuthenticatedRoute>
+          <CommissioningPage />
         </AuthenticatedRoute>
       </Route>
       

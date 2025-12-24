@@ -13,7 +13,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
   LogOut, HelpCircle, MapPin, UserCircle, Store, ListTodo, Package,
-  LayoutDashboard, FolderTree, Building2
+  LayoutDashboard, FolderTree, Building2, Award
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useTenant } from '../contexts/TenantContext';
@@ -591,6 +591,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         { id: 'fornitori', label: 'Fornitori', icon: Building2, path: '/prodotti-listini?tab=fornitori' }
       ]
     },
+    { id: 'commissioning', label: 'Commissioning', icon: Award, path: '/commissioning' },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag, path: '/cassa' },
     { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
   ];
