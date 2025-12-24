@@ -596,6 +596,7 @@ export default function ListiniTabContent() {
       description: '',
       type: 'no_promo',
       supplierId: '',
+      operatorId: '',
       validFrom: new Date(),
       validTo: addMonths(new Date(), 12)
     });
@@ -610,6 +611,17 @@ export default function ListiniTabContent() {
     setNoPromoCategoryFilter('all');
     setNoPromoTypeFilter('PHYSICAL');
     setPhysicalTypeFilter('PHYSICAL');
+    // Reset Canvas List search fields
+    setCanvasListSearchTerm('');
+    setCanvasListCategoryFilter('all');
+    setCanvasListTypologyFilter('all');
+    setCanvasListFeeFilter('all');
+    setCanvasListProducts([]);
+    // Reset Promo Device search fields
+    setPromoDeviceSearchTerm('');
+    setPromoDeviceCategoryFilter('all');
+    setPromoDeviceTypologyFilter('all');
+    setPromoDeviceProducts([]);
   };
 
   const openWizard = () => {
@@ -849,7 +861,7 @@ export default function ListiniTabContent() {
             entryFee: p.entryFee || null,
             contractDuration: p.contractDuration || null,
             notes: p.notes || null,
-            addons: p.addons?.map(a => ({
+            addons: p.addons?.map((a: { productId: string; monthlyFee: string }) => ({
               productId: a.productId,
               monthlyFee: a.monthlyFee || null,
               isIncluded: !a.monthlyFee || a.monthlyFee === '0'
