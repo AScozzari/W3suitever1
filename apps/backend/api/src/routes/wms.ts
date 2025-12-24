@@ -53,7 +53,8 @@ import {
   productSupplierMappings,
   insertPriceListSchema,
   insertPriceListItemSchema,
-  insertPriceListItemCanvasSchema
+  insertPriceListItemCanvasSchema,
+  driverCategoryMappings
 } from "../db/schema/w3suite";
 import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -5045,6 +5046,22 @@ router.get("/categories", rbacMiddleware, requirePermission('wms.category.read')
       .groupBy(wmsProductTypes.categoryId)
       .as('type_counts');
 
+    // Subquery for driver IDs per category
+    const driverMappingsSubquery = db
+      .select({
+        categoryId: driverCategoryMappings.categoryId,
+        driverIds: sql<string[]>`array_agg(${driverCategoryMappings.driverId}::text)`.as('driver_ids')
+      })
+      .from(driverCategoryMappings)
+      .where(
+        and(
+          eq(driverCategoryMappings.tenantId, sessionTenantId),
+          eq(driverCategoryMappings.isActive, true)
+        )
+      )
+      .groupBy(driverCategoryMappings.categoryId)
+      .as('driver_mappings');
+
     const categories = await db
       .select({
         id: wmsCategories.id,
@@ -5061,10 +5078,12 @@ router.get("/categories", rbacMiddleware, requirePermission('wms.category.read')
         versionNumber: wmsCategories.versionNumber,
         productCount: sql<number>`COALESCE(${productCountSubquery.productCount}, 0)`.as('productCount'),
         typeCount: sql<number>`COALESCE(${typeCountSubquery.typeCount}, 0)`.as('typeCount'),
+        driverIds: sql<string[]>`COALESCE(${driverMappingsSubquery.driverIds}, ARRAY[]::text[])`.as('driverIds'),
       })
       .from(wmsCategories)
       .leftJoin(productCountSubquery, eq(wmsCategories.id, productCountSubquery.categoryId))
       .leftJoin(typeCountSubquery, eq(wmsCategories.id, typeCountSubquery.categoryId))
+      .leftJoin(driverMappingsSubquery, eq(wmsCategories.id, driverMappingsSubquery.categoryId))
       .where(and(...conditions))
       .orderBy(asc(wmsCategories.ordine), asc(wmsCategories.nome));
 
@@ -5119,6 +5138,31 @@ router.post("/categories", rbacMiddleware, requirePermission('wms.category.creat
       })
       .returning();
 
+    // Handle driver mappings if provided
+    const { driverIds } = req.body;
+    if (driverIds && Array.isArray(driverIds) && driverIds.length > 0) {
+      const mappingValues = driverIds.map((driverId: string) => ({
+        tenantId: sessionTenantId,
+        id: crypto.randomUUID(),
+        source: 'tenant' as const,
+        driverId,
+        productType: validatedData.productType,
+        categoryId,
+        isActive: true,
+        createdBy: userId || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      await db.insert(driverCategoryMappings).values(mappingValues);
+
+      logger.info('Driver-category mappings created', {
+        tenantId: sessionTenantId,
+        categoryId,
+        driverIds,
+      });
+    }
+
     logger.info('WMS category created', {
       tenantId: sessionTenantId,
       categoryId,
@@ -5128,7 +5172,7 @@ router.post("/categories", rbacMiddleware, requirePermission('wms.category.creat
 
     res.status(201).json({
       success: true,
-      data: newCategory
+      data: { ...newCategory, driverIds: driverIds || [] }
     });
   } catch (error) {
     console.error("Error creating category:", error);
@@ -5213,6 +5257,44 @@ router.patch("/categories/:id", rbacMiddleware, requirePermission('wms.category.
       )
       .returning();
 
+    // Handle driver mappings if provided
+    const { driverIds } = req.body;
+    if (driverIds !== undefined && Array.isArray(driverIds)) {
+      // Delete existing mappings for this category
+      await db
+        .delete(driverCategoryMappings)
+        .where(
+          and(
+            eq(driverCategoryMappings.tenantId, sessionTenantId),
+            eq(driverCategoryMappings.categoryId, categoryId)
+          )
+        );
+
+      // Insert new mappings
+      if (driverIds.length > 0) {
+        const mappingValues = driverIds.map((driverId: string) => ({
+          tenantId: sessionTenantId,
+          id: crypto.randomUUID(),
+          source: 'tenant' as const,
+          driverId,
+          productType: updatedCategory.productType,
+          categoryId,
+          isActive: true,
+          createdBy: userId || null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }));
+
+        await db.insert(driverCategoryMappings).values(mappingValues);
+      }
+
+      logger.info('Driver-category mappings updated', {
+        tenantId: sessionTenantId,
+        categoryId,
+        driverIds,
+      });
+    }
+
     logger.info('WMS category updated', {
       tenantId: sessionTenantId,
       categoryId,
@@ -5221,7 +5303,7 @@ router.patch("/categories/:id", rbacMiddleware, requirePermission('wms.category.
 
     res.json({
       success: true,
-      data: updatedCategory
+      data: { ...updatedCategory, driverIds: driverIds || [] }
     });
   } catch (error) {
     console.error("Error updating category:", error);
