@@ -215,18 +215,28 @@ export default function DashboardTabContent() {
       color: PRODUCT_TYPE_COLORS[key] || '#6B7280'
     }));
 
-  // Calcola prodotti per categoria (top 5)
-  const categoryProductCounts = categoryList.reduce((acc, cat) => {
-    const count = products.filter(p => p.categoryName === cat.name).length;
-    if (count > 0) {
-      acc.push({ name: cat.name.length > 15 ? cat.name.substring(0, 15) + '...' : cat.name, count });
+  // Calcola prodotti per categoria (top 5) - preferisce dati aggregati dal backend
+  const barChartData = (() => {
+    // Usa i dati aggregati dal backend se disponibili
+    if (dashboardStats.categoriesByType && dashboardStats.categoriesByType.length > 0) {
+      return dashboardStats.categoriesByType
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map(cat => ({
+          name: cat.name.length > 15 ? cat.name.substring(0, 15) + '...' : cat.name,
+          count: cat.count
+        }));
     }
-    return acc;
-  }, [] as { name: string; count: number }[]);
-
-  const barChartData = categoryProductCounts
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    // Fallback: calcola dai prodotti recenti (meno accurato)
+    const categoryProductCounts = categoryList.reduce((acc, cat) => {
+      const count = products.filter(p => p.categoryName === cat.name).length;
+      if (count > 0) {
+        acc.push({ name: cat.name.length > 15 ? cat.name.substring(0, 15) + '...' : cat.name, count });
+      }
+      return acc;
+    }, [] as { name: string; count: number }[]);
+    return categoryProductCounts.sort((a, b) => b.count - a.count).slice(0, 5);
+  })();
 
   // Sorting della tabella
   const sortedProducts = [...products].sort((a, b) => {
@@ -261,6 +271,7 @@ export default function DashboardTabContent() {
     <th
       className="text-left py-3 px-4 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors"
       onClick={() => handleSort(field)}
+      data-testid={`header-${field}`}
     >
       <div className="flex items-center gap-1">
         {label}
@@ -344,7 +355,7 @@ export default function DashboardTabContent() {
           }}
           data-testid="chart-product-types"
         >
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800" data-testid="chart-product-types-title">
             Distribuzione Prodotti per Tipo
           </h3>
           {pieChartData.length > 0 ? (
@@ -403,7 +414,7 @@ export default function DashboardTabContent() {
           }}
           data-testid="chart-top-categories"
         >
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800" data-testid="chart-top-categories-title">
             Top 5 Categorie per Prodotti
           </h3>
           {barChartData.length > 0 ? (
@@ -446,7 +457,7 @@ export default function DashboardTabContent() {
       </div>
 
       {/* Breakdown per Tipo Prodotto */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="product-type-breakdown">
         {Object.entries(PRODUCT_TYPE_LABELS).map(([key, label]) => (
           <Card
             key={key}
@@ -456,6 +467,7 @@ export default function DashboardTabContent() {
               border: `2px solid ${PRODUCT_TYPE_COLORS[key]}20`,
               borderRadius: '12px',
             }}
+            data-testid={`breakdown-card-${key.toLowerCase()}`}
           >
             <div 
               className="p-2 rounded-lg"
@@ -466,10 +478,10 @@ export default function DashboardTabContent() {
               </div>
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: PRODUCT_TYPE_COLORS[key] }}>
+              <p className="text-2xl font-bold" style={{ color: PRODUCT_TYPE_COLORS[key] }} data-testid={`breakdown-value-${key.toLowerCase()}`}>
                 {productsByType[key as keyof typeof productsByType] || 0}
               </p>
-              <p className="text-xs text-gray-500">{label}</p>
+              <p className="text-xs text-gray-500" data-testid={`breakdown-label-${key.toLowerCase()}`}>{label}</p>
             </div>
           </Card>
         ))}
@@ -488,7 +500,7 @@ export default function DashboardTabContent() {
         data-testid="recent-products-card"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-lg font-semibold text-gray-800" data-testid="recent-products-title">
             Prodotti Recenti
           </h3>
           <Badge variant="outline" className="text-xs">
@@ -510,12 +522,12 @@ export default function DashboardTabContent() {
                   <SortHeader field="sku" label="SKU" />
                   <SortHeader field="nome" label="Nome" />
                   <SortHeader field="productType" label="Tipo" />
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700" data-testid="header-category">
                     Categoria
                   </th>
                   <SortHeader field="prezzoVendita" label="Prezzo" />
                   <SortHeader field="quantitaDisponibile" label="Stock" />
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700" data-testid="header-actions">
                     Azioni
                   </th>
                 </tr>
@@ -527,15 +539,15 @@ export default function DashboardTabContent() {
                     className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors"
                     data-testid={`product-row-${product.id}`}
                   >
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4" data-testid={`product-sku-${product.id}`}>
                       <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
                         {product.sku}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4" data-testid={`product-nome-${product.id}`}>
                       <p className="font-medium text-gray-800">{product.nome || '-'}</p>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4" data-testid={`product-type-${product.id}`}>
                       <Badge
                         style={{
                           background: `${PRODUCT_TYPE_COLORS[product.productType] || '#6B7280'}15`,
@@ -547,17 +559,17 @@ export default function DashboardTabContent() {
                         {PRODUCT_TYPE_LABELS[product.productType] || product.productType}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className="py-3 px-4 text-sm text-gray-600" data-testid={`product-category-${product.id}`}>
                       {product.categoryName || '-'}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right" data-testid={`product-price-${product.id}`}>
                       <span className="font-semibold">
                         {product.prezzoVendita 
                           ? `€${product.prezzoVendita.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` 
                           : '-'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right" data-testid={`product-stock-${product.id}`}>
                       <Badge
                         variant={product.quantitaDisponibile > 10 ? 'default' : product.quantitaDisponibile > 0 ? 'secondary' : 'destructive'}
                         className={
@@ -571,10 +583,10 @@ export default function DashboardTabContent() {
                         {product.quantitaDisponibile}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 px-4 text-center" data-testid={`product-actions-${product.id}`}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`product-actions-trigger-${product.id}`}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -606,7 +618,7 @@ export default function DashboardTabContent() {
         }}
         data-testid="quick-actions-card"
       >
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800" data-testid="quick-actions-title">
           Azioni Rapide
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" data-testid="quick-actions-buttons">
