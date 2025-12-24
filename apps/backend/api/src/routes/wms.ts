@@ -209,14 +209,17 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
         )
       );
 
-    // Count financial entities (tenant-scoped)
+    // Count financial entities (brand-pushed + tenant-specific)
     const [financialEntitiesCount] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(financialEntities)
       .where(
         and(
-          eq(financialEntities.tenantId, tenantId),
-          eq(financialEntities.status, 'active')
+          eq(financialEntities.status, 'active'),
+          or(
+            eq(financialEntities.origin, 'brand'),
+            eq(financialEntities.tenantId, tenantId)
+          )
         )
       );
 
