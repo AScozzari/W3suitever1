@@ -154,7 +154,7 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
   },
   { 
     value: 'promo_device', 
-    label: 'Promo Device', 
+    label: 'Listino Promo', 
     description: 'Dispositivi con prezzo promozionale che generano informazioni contabili',
     icon: Smartphone,
     color: '#f59e0b'
