@@ -93,7 +93,6 @@ export default function DriversTabContent() {
     operatorId: null as string | null,
     isActive: true,
   });
-  const [linkedToOperator, setLinkedToOperator] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const { data: drivers = [], isLoading, isError, error, refetch } = useQuery<Driver[]>({
@@ -168,7 +167,6 @@ export default function DriversTabContent() {
 
   const handleOpenCreate = () => {
     setFormData({ code: '', name: '', description: '', allowedProductTypes: [], operatorId: null, isActive: true });
-    setLinkedToOperator(false);
     setDriverModal({ open: true, mode: 'create', data: null });
   };
 
@@ -181,7 +179,6 @@ export default function DriversTabContent() {
       operatorId: driver.operatorId || null,
       isActive: driver.isActive,
     });
-    setLinkedToOperator(!!driver.operatorId);
     setDriverModal({ open: true, mode: 'edit', data: driver });
   };
 
@@ -194,14 +191,12 @@ export default function DriversTabContent() {
       operatorId: driver.operatorId || null,
       isActive: driver.isActive,
     });
-    setLinkedToOperator(!!driver.operatorId);
     setDriverModal({ open: true, mode: 'view', data: driver });
   };
 
   const handleCloseModal = () => {
     setDriverModal({ open: false, mode: 'create', data: null });
     setFormData({ code: '', name: '', description: '', allowedProductTypes: [], operatorId: null, isActive: true });
-    setLinkedToOperator(false);
     setExpandedCategories(new Set());
   };
 
@@ -214,15 +209,10 @@ export default function DriversTabContent() {
       toast({ title: 'Errore', description: 'Seleziona almeno un tipo prodotto', variant: 'destructive' });
       return;
     }
-    if (linkedToOperator && !formData.operatorId) {
-      toast({ title: 'Errore', description: 'Seleziona un operatore o deseleziona il collegamento', variant: 'destructive' });
-      return;
-    }
 
-    // Prepare payload - ensure operatorId is null if not linked
+    // Prepare payload - operatorId is already correctly set (null for Over All)
     const payload = {
       ...formData,
-      operatorId: linkedToOperator ? formData.operatorId : null,
     };
 
     if (driverModal.mode === 'create') {
@@ -506,8 +496,13 @@ export default function DriversTabContent() {
             </div>
 
             <div>
-              <Label className="mb-3 block">Tipi Prodotto Consentiti *</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="block">Tipi Prodotto Consentiti <span className="text-red-500">*</span></Label>
+                {formData.allowedProductTypes.length === 0 && driverModal.mode !== 'view' && (
+                  <span className="text-xs text-red-500">Seleziona almeno un tipo</span>
+                )}
+              </div>
+              <div className={`grid grid-cols-2 gap-3 ${formData.allowedProductTypes.length === 0 && driverModal.mode !== 'view' ? 'ring-2 ring-red-200 rounded-lg p-1' : ''}`}>
                 {PRODUCT_TYPES.map(type => (
                   <div
                     key={type.value}
@@ -532,67 +527,57 @@ export default function DriversTabContent() {
               </div>
             </div>
 
-            {/* Operator Linking Section - Available for all drivers */}
+            {/* Operator Selection - Always visible with "Over All" as default */}
             <div className="p-4 rounded-lg border border-orange-200 bg-orange-50/50">
               <div className="flex items-center gap-3 mb-3">
                 <Radio className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
                 <div>
-                  <Label className="font-medium">Collegamento Operatore (Telco)</Label>
-                  <p className="text-xs text-gray-500">Associa questo driver ad un operatore specifico</p>
+                  <Label className="font-medium">Operatore Associato</Label>
+                  <p className="text-xs text-gray-500">Seleziona l'operatore o lascia "Over All" per tutti</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 mb-3">
-                <Checkbox
-                  id="linkedToOperator"
-                  checked={linkedToOperator}
-                  disabled={driverModal.mode === 'view'}
-                  onCheckedChange={(checked) => {
-                    setLinkedToOperator(checked === true);
-                    if (!checked) {
-                      setFormData(prev => ({ ...prev, operatorId: null }));
-                    }
-                  }}
-                  data-testid="checkbox-linked-to-operator"
-                />
-                <Label htmlFor="linkedToOperator" className="text-sm cursor-pointer">
-                  Questo driver è legato ad un operatore specifico
-                </Label>
-              </div>
-
-              {linkedToOperator && (
-                <div className="ml-6">
-                  <Label className="mb-2 block text-sm">Seleziona Operatore *</Label>
-                  <Select
-                    value={formData.operatorId || ''}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, operatorId: value || null }))}
-                    disabled={driverModal.mode === 'view'}
-                  >
-                    <SelectTrigger className="w-full" data-testid="select-operator">
-                      <SelectValue placeholder="Seleziona un operatore..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operators.map(op => (
-                        <SelectItem key={op.id} value={op.id} data-testid={`select-operator-${op.code}`}>
-                          <div className="flex items-center gap-2">
-                            {op.colorHex && (
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: op.colorHex }}
-                              />
-                            )}
-                            <span>{op.name}</span>
-                            <span className="text-gray-400 text-xs">({op.code})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    I prodotti di questo driver saranno associati a questo operatore
-                  </p>
-                </div>
-              )}
+              <Select
+                value={formData.operatorId || 'over_all'}
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  operatorId: value === 'over_all' ? null : value 
+                }))}
+                disabled={driverModal.mode === 'view'}
+              >
+                <SelectTrigger className="w-full" data-testid="select-operator">
+                  <SelectValue placeholder="Seleziona operatore..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="over_all" data-testid="select-operator-over-all">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-gray-400 to-gray-600" />
+                      <span className="font-medium">Over All</span>
+                      <span className="text-gray-400 text-xs">(tutti gli operatori)</span>
+                    </div>
+                  </SelectItem>
+                  {operators.map(op => (
+                    <SelectItem key={op.id} value={op.id} data-testid={`select-operator-${op.code}`}>
+                      <div className="flex items-center gap-2">
+                        {op.colorHex && (
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: op.colorHex }}
+                          />
+                        )}
+                        <span>{op.name}</span>
+                        <span className="text-gray-400 text-xs">({op.code})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-2">
+                {formData.operatorId 
+                  ? "I prodotti di questo driver saranno associati all'operatore selezionato"
+                  : "I prodotti di questo driver saranno disponibili per tutti gli operatori"
+                }
+              </p>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
@@ -711,7 +696,13 @@ export default function DriversTabContent() {
             {driverModal.mode !== 'view' && (
               <Button
                 onClick={handleSubmit}
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={
+                  createMutation.isPending || 
+                  updateMutation.isPending || 
+                  !formData.code.trim() || 
+                  !formData.name.trim() || 
+                  formData.allowedProductTypes.length === 0
+                }
                 style={{ background: 'hsl(var(--brand-orange))' }}
                 data-testid="button-save-driver"
               >
