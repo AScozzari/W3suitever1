@@ -100,10 +100,10 @@ export default function DriversTabContent() {
     queryKey: ['/api/drivers', { includeInactive: 'true' }],
   });
 
-  const { data: operatorsResponse } = useQuery<{ success: boolean; data: Operator[] }>({
+  const { data: operatorsData = [] } = useQuery({
     queryKey: ['/api/operators'],
   });
-  const operators = operatorsResponse?.data || [];
+  const operators = Array.isArray(operatorsData) ? operatorsData : (operatorsData as any)?.data || [];
 
   // Query per la gerarchia del driver selezionato (solo in modalità view)
   const driverIdForHierarchy = driverModal.data?.id;
