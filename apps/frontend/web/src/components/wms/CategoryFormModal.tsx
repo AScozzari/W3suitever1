@@ -1,17 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { ProductType, Category } from './CategoriesTypologiesTabContent';
+import { Layers, Zap } from 'lucide-react';
+
+interface Driver {
+  id: string;
+  code: string;
+  name: string;
+  allowedProductTypes: string[];
+  operatorId?: string;
+  isActive: boolean;
+}
 
 const categorySchema = z.object({
   productType: z.enum(['PHYSICAL', 'VIRTUAL', 'SERVICE', 'CANVAS']),
@@ -19,6 +31,7 @@ const categorySchema = z.object({
   descrizione: z.string().optional(),
   icona: z.string().max(10).optional(),
   ordine: z.number().int().min(0).optional(),
+  driverIds: z.array(z.string()).optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -43,8 +56,26 @@ export function CategoryFormModal({ open, onClose, category, initialProductType 
       descrizione: '',
       icona: '',
       ordine: 0,
+      driverIds: [],
     },
   });
+
+  // Watch productType to filter drivers
+  const selectedProductType = form.watch('productType');
+
+  // Query all active drivers
+  const { data: driversData = [] } = useQuery({
+    queryKey: ['/api/drivers'],
+  });
+  const allDrivers: Driver[] = Array.isArray(driversData) ? driversData : (driversData as any)?.data || [];
+
+  // Filter drivers by selected productType
+  const availableDrivers = useMemo(() => {
+    return allDrivers.filter((driver: Driver) => 
+      driver.isActive && 
+      driver.allowedProductTypes?.includes(selectedProductType)
+    );
+  }, [allDrivers, selectedProductType]);
 
   // Reset form when modal opens/closes or category changes
   useEffect(() => {
@@ -56,6 +87,7 @@ export function CategoryFormModal({ open, onClose, category, initialProductType 
           descrizione: category.descrizione || '',
           icona: category.icona || '',
           ordine: category.ordine,
+          driverIds: (category as any).driverIds || [],
         });
       } else {
         form.reset({
@@ -64,6 +96,7 @@ export function CategoryFormModal({ open, onClose, category, initialProductType 
           descrizione: '',
           icona: '',
           ordine: 0,
+          driverIds: [],
         });
       }
     }
@@ -205,6 +238,81 @@ export function CategoryFormModal({ open, onClose, category, initialProductType 
                       data-testid="input-descrizione"
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Driver Association */}
+            <FormField
+              control={form.control}
+              name="driverIds"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Layers className="h-4 w-4 text-purple-600" />
+                    <FormLabel className="text-base font-semibold">Driver Associati</FormLabel>
+                    {field.value && field.value.length > 0 && (
+                      <Badge variant="secondary" className="ml-auto">
+                        {field.value.length} selezionati
+                      </Badge>
+                    )}
+                  </div>
+                  <FormDescription className="text-xs text-gray-500 mb-3">
+                    Seleziona i driver business a cui associare questa categoria. Tipologie e prodotti erediteranno automaticamente questa associazione.
+                  </FormDescription>
+                  
+                  {availableDrivers.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center">
+                      <Zap className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm text-gray-500">
+                        Nessun driver disponibile per il tipo prodotto "{selectedProductType}"
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Crea un driver con questo tipo prodotto nella sezione Driver
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+                      {availableDrivers.map((driver) => {
+                        const isChecked = field.value?.includes(driver.id) || false;
+                        return (
+                          <div
+                            key={driver.id}
+                            className={`flex items-center gap-3 p-2 rounded-lg transition-colors cursor-pointer ${
+                              isChecked ? 'bg-purple-50 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => {
+                              const newValue = isChecked
+                                ? (field.value || []).filter((id: string) => id !== driver.id)
+                                : [...(field.value || []), driver.id];
+                              field.onChange(newValue);
+                            }}
+                            data-testid={`driver-checkbox-${driver.id}`}
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                const newValue = checked
+                                  ? [...(field.value || []), driver.id]
+                                  : (field.value || []).filter((id: string) => id !== driver.id);
+                                field.onChange(newValue);
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{driver.name}</span>
+                                <Badge variant="outline" className="text-xs">{driver.code}</Badge>
+                              </div>
+                              {driver.operatorId && (
+                                <span className="text-xs text-blue-600">Associato a operatore</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
