@@ -111,7 +111,7 @@ const getObjectStorageClient = (): Client => {
 /**
  * GET /api/wms/dashboard/stats
  * Get aggregate KPI statistics for WMS dashboard
- * Returns: total products, categories, suppliers, price lists
+ * Returns: total products, categories, suppliers, price lists, productsByType, categoriesByType
  */
 router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.read'), async (req, res) => {
   try {
@@ -136,6 +136,38 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
         )
       );
 
+    // Count products by type
+    const productsByTypeResult = await db
+      .select({ 
+        type: products.type,
+        count: sql<number>`count(*)::int` 
+      })
+      .from(products)
+      .where(
+        and(
+          eq(products.tenantId, tenantId),
+          eq(products.isActive, true),
+          or(
+            isNull(products.validTo),
+            gte(products.validTo, sql`CURRENT_DATE`)
+          )
+        )
+      )
+      .groupBy(products.type);
+
+    // Transform to object format
+    const productsByType = {
+      PHYSICAL: 0,
+      VIRTUAL: 0,
+      CANVAS: 0,
+      SERVICE: 0
+    };
+    productsByTypeResult.forEach(row => {
+      if (row.type && row.type in productsByType) {
+        productsByType[row.type as keyof typeof productsByType] = row.count;
+      }
+    });
+
     // Count active categories
     const [categoriesCount] = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -146,6 +178,50 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
           eq(wmsCategories.isActive, true)
         )
       );
+
+    // Count products per category (for top categories chart)
+    const categoriesByTypeResult = await db
+      .select({ 
+        name: wmsCategories.name,
+        count: sql<number>`count(${products.id})::int` 
+      })
+      .from(wmsCategories)
+      .leftJoin(products, and(
+        eq(products.categoryId, wmsCategories.id),
+        eq(products.tenantId, tenantId),
+        eq(products.isActive, true)
+      ))
+      .where(
+        and(
+          eq(wmsCategories.tenantId, tenantId),
+          eq(wmsCategories.isActive, true)
+        )
+      )
+      .groupBy(wmsCategories.id, wmsCategories.name)
+      .orderBy(sql`count(${products.id}) DESC`)
+      .limit(10);
+
+    const categoriesByType = categoriesByTypeResult.map(row => ({
+      name: row.name,
+      count: row.count || 0
+    }));
+
+    // Count typologies
+    const [typologiesCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(wmsProductTypes)
+      .where(
+        and(
+          eq(wmsProductTypes.tenantId, tenantId),
+          eq(wmsProductTypes.isActive, true)
+        )
+      );
+
+    // Count financial entities
+    const [financialEntitiesCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(financialEntities)
+      .where(eq(financialEntities.status, 'active'));
 
     // TODO: Replace with real counts when tables are implemented
     // Suppliers table (wms_suppliers) - planned for future implementation
@@ -159,8 +235,12 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
       data: {
         totalProducts: productsCount?.count || 0,
         totalCategories: categoriesCount?.count || 0,
-        totalSuppliers: suppliersCount, // TODO: Implement wms_suppliers table
-        totalPriceLists: priceListsCount // TODO: Implement wms_price_lists table
+        totalTypologies: typologiesCount?.count || 0,
+        totalSuppliers: suppliersCount,
+        totalFinancialEntities: financialEntitiesCount?.count || 0,
+        totalPriceLists: priceListsCount,
+        productsByType,
+        categoriesByType
       }
     });
   } catch (error: any) {
