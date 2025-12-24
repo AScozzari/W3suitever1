@@ -2622,13 +2622,8 @@ router.delete('/drivers/:id', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    // Check for dependencies: store_driver_potential
-    const { storeDriverPotential, driverCategoryMappings, crmLeads, crmPipelines } = await import("../db/schema/w3suite");
-    
-    const potentialCount = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(storeDriverPotential)
-      .where(eq(storeDriverPotential.driverId, driverId));
+    // Check for dependencies: driver_category_mappings, crm_leads, crm_pipelines
+    const { driverCategoryMappings, crmLeads, crmPipelines } = await import("../db/schema/w3suite");
     
     // Check for dependencies: driver_category_mappings
     const mappingsCount = await db
@@ -2648,16 +2643,14 @@ router.delete('/drivers/:id', async (req, res) => {
       .from(crmPipelines)
       .where(eq(crmPipelines.driverId, driverId));
 
-    const totalPotential = potentialCount[0]?.count ?? 0;
     const totalMappings = mappingsCount[0]?.count ?? 0;
     const totalLeads = leadsCount[0]?.count ?? 0;
     const totalPipelines = pipelinesCount[0]?.count ?? 0;
     
-    const hasDependencies = totalPotential > 0 || totalMappings > 0 || totalLeads > 0 || totalPipelines > 0;
+    const hasDependencies = totalMappings > 0 || totalLeads > 0 || totalPipelines > 0;
 
     if (hasDependencies) {
       const dependencies = [];
-      if (totalPotential > 0) dependencies.push(`${totalPotential} potenziali negozio`);
       if (totalMappings > 0) dependencies.push(`${totalMappings} mappature categoria`);
       if (totalLeads > 0) dependencies.push(`${totalLeads} lead CRM`);
       if (totalPipelines > 0) dependencies.push(`${totalPipelines} pipeline CRM`);
@@ -2669,7 +2662,6 @@ router.delete('/drivers/:id', async (req, res) => {
         canDelete: false,
         canArchive: true,
         dependencies: {
-          potential: totalPotential,
           mappings: totalMappings,
           leads: totalLeads,
           pipelines: totalPipelines

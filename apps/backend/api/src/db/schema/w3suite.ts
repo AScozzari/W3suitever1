@@ -1120,19 +1120,6 @@ export const storeOperators = w3suiteSchema.table("store_brands", {
 // Backward compatibility alias
 export const storeBrands = storeOperators;
 
-export const storeDriverPotential = w3suiteSchema.table("store_driver_potential", {
-  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  driverId: uuid("driver_id").notNull().references(() => drivers.id),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  potentialScore: smallint("potential_score").notNull(),
-  clusterLabel: varchar("cluster_label", { length: 50 }),
-  kpis: jsonb("kpis"),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.storeId, table.driverId] }),
-  index("store_driver_potential_tenant_idx").on(table.tenantId),
-]);
-
 // ==================== ENTITY LOGS ====================
 export const entityLogs = w3suiteSchema.table('entity_logs', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
@@ -2608,7 +2595,6 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   userStores: many(userStores),
   userLegalEntities: many(userLegalEntities),
   storeOperators: many(storeOperators),
-  storeDriverPotential: many(storeDriverPotential),
   notifications: many(notifications),
   // HR relations
   calendarEvents: many(calendarEvents),
@@ -2666,7 +2652,6 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
   commercialArea: one(commercialAreas, { fields: [stores.commercialAreaId], references: [commercialAreas.id] }),
   userStores: many(userStores),
   storeOperators: many(storeOperators),
-  storeDriverPotential: many(storeDriverPotential),
   users: many(users),
   // HR relations
   calendarEvents: many(calendarEvents),
@@ -2713,13 +2698,6 @@ export const storeOperatorsRelations = relations(storeOperators, ({ one }) => ({
 }));
 // Backward compatibility alias
 export const storeBrandsRelations = storeOperatorsRelations;
-
-// Store Driver Potential Relations
-export const storeDriverPotentialRelations = relations(storeDriverPotential, ({ one }) => ({
-  store: one(stores, { fields: [storeDriverPotential.storeId], references: [stores.id] }),
-  driver: one(drivers, { fields: [storeDriverPotential.driverId], references: [drivers.id] }),
-  tenant: one(tenants, { fields: [storeDriverPotential.tenantId], references: [tenants.id] }),
-}));
 
 // Entity Logs Relations
 export const entityLogsRelations = relations(entityLogs, ({ one }) => ({

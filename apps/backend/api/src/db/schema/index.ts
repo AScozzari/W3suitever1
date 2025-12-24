@@ -143,12 +143,10 @@ export type { InsertStore, Store } from './w3suite';
 // ==================== STORE ASSOCIATIONS RE-EXPORTED FROM W3SUITE ====================
 // Import and re-export from w3suite schema for backward compatibility
 import { 
-  storeBrands as w3suiteStoreBrands,
-  storeDriverPotential as w3suiteStoreDriverPotential
+  storeBrands as w3suiteStoreBrands
 } from './w3suite';
 
 export const storeBrands = w3suiteStoreBrands;
-export const storeDriverPotential = w3suiteStoreDriverPotential;
 
 // ==================== RBAC SYSTEM RE-EXPORTED FROM W3SUITE ====================
 // Import and re-export from w3suite schema for backward compatibility
