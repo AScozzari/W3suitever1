@@ -10089,8 +10089,10 @@ router.post("/price-lists", rbacMiddleware, async (req, res) => {
       }
     } else if (header.type === 'promo_canvas' && pairs && pairs.length > 0) {
       // For promo_canvas (bundle), create items from pairs
+      // Note: compositions FK requires both bundleItemId and componentItemId to reference price_list_items
+      // So we create device items for both physical and canvas products, plus canvas-specific data in dedicated table
       for (const pair of pairs) {
-        // Create master item for the physical product (in device table)
+        // 1. Create device item for the physical product
         const [physicalItem] = await db
           .insert(priceListItems)
           .values({
@@ -10105,8 +10107,23 @@ router.post("/price-lists", rbacMiddleware, async (req, res) => {
           })
           .returning();
 
-        // Create canvas item in dedicated table
-        const [canvasItem] = await db
+        // 2. Create device item for canvas product (required for composition FK)
+        const [canvasDeviceItem] = await db
+          .insert(priceListItems)
+          .values({
+            priceListId: newPriceList.id,
+            tenantId,
+            origin: 'tenant',
+            productId: pair.canvasProductId,
+            validFrom: new Date(header.validFrom),
+            validTo: header.validTo ? new Date(header.validTo) : null,
+            createdBy: userId,
+            updatedBy: userId
+          })
+          .returning();
+
+        // 3. Create canvas-specific data in dedicated table (for pricing details)
+        await db
           .insert(priceListItemsCanvas)
           .values({
             priceListId: newPriceList.id,
@@ -10116,24 +10133,23 @@ router.post("/price-lists", rbacMiddleware, async (req, res) => {
             monthlyFee: pair.canvasMonthlyFee || null,
             createdBy: userId,
             updatedBy: userId
-          })
-          .returning();
+          });
 
-        // Create configurations as compositions
+        // 4. Create configurations as compositions (linking device items)
         for (const config of pair.configurations) {
           let financialEntityId = null;
           if (config.salesMode === 'FIN' && config.financialEntityId) {
             financialEntityId = config.financialEntityId;
           }
 
-          // Create composition linking physical to canvas
+          // Create composition linking physical device to canvas device
           await db
             .insert(priceListItemCompositions)
             .values({
               tenantId,
               origin: 'tenant',
               bundleItemId: physicalItem.id,
-              componentItemId: canvasItem.id,
+              componentItemId: canvasDeviceItem.id, // Now correctly references price_list_items
               componentRole: 'primary',
               pricingStrategy: 'inherited',
               financialEntityId,
@@ -10307,8 +10323,12 @@ router.put("/price-lists/:id", rbacMiddleware, async (req, res) => {
         .returning();
 
       // Copy items from old version to new version based on type
+      // Map old item IDs to new item IDs for composition linking
+      const deviceItemIdMap = new Map<string, string>();
+      const canvasItemIdMap = new Map<string, string>();
+
       if (existing.type === 'canvas') {
-        // Copy canvas items
+        // Canvas-only: Copy canvas items + addons
         const oldCanvasItems = await db
           .select()
           .from(priceListItemsCanvas)
@@ -10326,6 +10346,8 @@ router.put("/price-lists/:id", rbacMiddleware, async (req, res) => {
             })
             .returning();
 
+          canvasItemIdMap.set(oldItemId, newCanvasItem.id);
+
           // Copy addons for this canvas item
           const oldAddons = await db
             .select()
@@ -10342,8 +10364,93 @@ router.put("/price-lists/:id", rbacMiddleware, async (req, res) => {
               });
           }
         }
+      } else if (existing.type === 'promo_canvas') {
+        // Promo Canvas (Bundle): Copy device items + canvas items + addons + compositions
+        
+        // 1. Copy device items
+        const oldDeviceItems = await db
+          .select()
+          .from(priceListItems)
+          .where(eq(priceListItems.priceListId, id));
+
+        for (const item of oldDeviceItems) {
+          const { id: oldItemId, priceListId: _, createdAt: __, updatedAt: ___, ...itemData } = item;
+          const [newItem] = await db
+            .insert(priceListItems)
+            .values({
+              ...itemData,
+              priceListId: newPriceList.id,
+              createdBy: userId,
+              updatedBy: userId
+            })
+            .returning();
+          
+          deviceItemIdMap.set(oldItemId, newItem.id);
+        }
+
+        // 2. Copy canvas items + addons
+        const oldCanvasItems = await db
+          .select()
+          .from(priceListItemsCanvas)
+          .where(eq(priceListItemsCanvas.priceListId, id));
+
+        for (const item of oldCanvasItems) {
+          const { id: oldItemId, priceListId: _, createdAt: __, updatedAt: ___, ...itemData } = item;
+          const [newCanvasItem] = await db
+            .insert(priceListItemsCanvas)
+            .values({
+              ...itemData,
+              priceListId: newPriceList.id,
+              createdBy: userId,
+              updatedBy: userId
+            })
+            .returning();
+
+          canvasItemIdMap.set(oldItemId, newCanvasItem.id);
+
+          // Copy addons
+          const oldAddons = await db
+            .select()
+            .from(priceListItemCanvasAddons)
+            .where(eq(priceListItemCanvasAddons.canvasItemId, oldItemId));
+
+          for (const addon of oldAddons) {
+            const { id: addonId, canvasItemId: _, createdAt: __, updatedAt: ___, ...addonData } = addon;
+            await db
+              .insert(priceListItemCanvasAddons)
+              .values({
+                ...addonData,
+                canvasItemId: newCanvasItem.id
+              });
+          }
+        }
+
+        // 3. Copy compositions (linking device items together)
+        const oldItemIds = Array.from(deviceItemIdMap.keys());
+        if (oldItemIds.length > 0) {
+          const oldCompositions = await db
+            .select()
+            .from(priceListItemCompositions)
+            .where(inArray(priceListItemCompositions.bundleItemId, oldItemIds));
+
+          for (const comp of oldCompositions) {
+            const { id: compId, createdAt: __, updatedAt: ___, ...compData } = comp;
+            const newBundleId = deviceItemIdMap.get(comp.bundleItemId);
+            const newComponentId = deviceItemIdMap.get(comp.componentItemId);
+            
+            if (newBundleId && newComponentId) {
+              await db
+                .insert(priceListItemCompositions)
+                .values({
+                  ...compData,
+                  bundleItemId: newBundleId,
+                  componentItemId: newComponentId
+                });
+            }
+          }
+        }
       } else {
-        // Copy device items (no_promo, promo_device)
+        // Device-only (no_promo, promo_device): Copy device items
         const oldItems = await db
           .select()
           .from(priceListItems)

@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules (CRM, POS, WMS, Analytics, HR, CMS). Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules including CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -61,62 +61,6 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **CRITICAL BUG PREVENTION: Double Tenant Slug in URLs**
   - **✅ ALWAYS use `useTenantNavigation` hook**
   - **❌ FORBIDDEN - Template Literals with tenantSlug**
-- **TEAM MEMBERSHIP RULES (ANTI SELF-APPROVAL)**:
-  - **🔒 Regola**: Se sei supervisore (primario o secondario) di un team, NON puoi essere membro (`userMembers`) dello stesso team
-  - **✅ Supervisore multi-team**: Un supervisore PUÒ supervisionare più team dello stesso dipartimento
-  - **✅ Supervisore come membro altrove**: Un supervisore PUÒ essere membro di un ALTRO team (anche stesso dipartimento)
-  - **❌ Auto-approvazione**: Prevenuta dal vincolo supervisore ≠ membro stesso team
-- **TEAM TYPE RULES (FUNCTIONAL vs TEMPORARY)**:
-  - **🔒 Functional Teams**: Max 1 per dipartimento per utente - rappresenta il team "primario" permanente
-  - **⏰ Temporary/Project Teams**: Nessun limite - l'utente può appartenere a multipli team temporanei per lo stesso dipartimento
-  - **Tooltip**: Spiega all'utente il significato di ogni tipo di team
-- **REQUEST ROUTING (FUNCTIONAL FIRST → FIRST WINS)**:
-  - **Step 1**: Se l'utente ha un team FUNCTIONAL per il dipartimento della richiesta → route al supervisore primario
-  - **Step 2**: Se nessun team functional, trova TUTTI i team temporanei dell'utente → notifica TUTTI i supervisori (First Wins)
-  - **⚡ First Wins Pattern**: Il primo supervisore che risponde "vince" e gestisce la richiesta
-  - **HTTP 409 Conflict**: Se un second supervisore prova ad approvare, riceve errore "Richiesta già gestita"
-- **SHIFT-BASED ROUTING (ROUTING IBRIDO TURNI)**:
-  - **📋 Categorie Operative**: `cambio_turno`, `straordinario`, `timbratura`, `turno_extra` → verificano turno attivo
-  - **📋 Categorie Amministrative**: Tutto il resto (ferie, permessi, malattia) → sempre sede anagrafica
-  - **🏪 Logica Routing**:
-    1. Se richiesta è OPERATIVA E utente ha turno attivo in sede diversa dalla sua anagrafica → route a supervisore sede turno
-    2. Se richiesta è OPERATIVA MA nessun turno attivo altrove → route a supervisore sede anagrafica
-    3. Se richiesta è AMMINISTRATIVA → sempre supervisore sede anagrafica
-  - **📊 Tracciabilità**: Metadata richiesta include `shiftBasedRouting` con storeId, storeName, shiftId
-  - **🔧 Implementazione**: `request-trigger-service.ts` → `getActiveShiftStore()` + `isOperationalCategory()`
-  - **📁 Action Tags Config**: `apps/backend/api/src/lib/action-tags.ts` → `routingCategory` per ogni tag
-- **CROSS-STORE ARCHITECTURE (PATTERN FONDAMENTALE)**:
-  - **🌐 Default View**: SEMPRE cross-store (tenant-wide) - tutti i negozi visibili
-  - **🔐 Access Control**: Permessi basati su RUOLO, non su selezione negozio
-  - **📊 Data Queries**: Omettere storeId per vista cross-store, passare solo per filtri specifici
-  - **👤 Admin Role**: Vede tutto, tutti gli utenti, tutti gli negozi, senza filtri obbligatori
-  - **❌ MAI**: Auto-selezionare il primo negozio come default
-  - **❌ MAI**: Richiedere selezione negozio per visualizzare dati
-  - **✅ SEMPRE**: Mostrare aggregato cross-store, con filtri opzionali per drill-down
-- **ENTITY ARCHITECTURE (DUAL-TABLE SEPARATION)**:
-  - **🏢 `organization_entities`**: Ragioni Sociali del tenant/organizzazione (collegate a stores via `organization_entity_id`)
-    - Endpoint: `GET/POST/PUT/DELETE /api/organization-entities`
-    - Frontend: dropdown "Ragione Sociale" in StoreFormModal
-  - **🤝 `legal_entities`**: Partner esterni con ruolo (Fornitori, Ente Finanzianti, Operatori)
-    - **🔄 Propagazione**: Quando `is_supplier=true` → crea record in `suppliers`, `is_financial_entity=true` → `financial_entities`, etc.
-    - **📋 Ruoli disponibili**: Fornitore, Ente Finanziante, Operatore (flags booleane sulla tabella)
-  - **⚠️ IMPORTANTE**: Le due tabelle serve scopi diversi - NON confonderle!
-  - **🔧 Stores FK**: Usare `organizationEntityId` (colonna `organization_entity_id`), `legalEntityId` è DEPRECATED
-- **ORGANIZATIONAL HIERARCHY (SCOPING PIRAMIDALE)**:
-  - **🏢 Struttura**: Tenant → Commercial Area → Organization Entity (RS) → Store → Department → Team → User
-  - **📊 Reference Data (public schema)**: `commercial_areas` (4 aree: AREA1-4), shared across tenants
-  - **🏪 Tenant Data (w3suite schema)**: `stores`, `organization_entities`, `legal_entities`, `departments`, `teams`, `users`
-  - **🏬 Departments Table**: `w3suite.departments` con FK opzionale `store_id` per dipartimenti store-specific
-  - **🔗 Team-Departments**: Tabella junction `team_departments` per relazione many-to-many
-  - **🎯 Cascading Filters (User Modal)**: Area selection → filters Organization Entities → filters Stores
-  - **⚠️ Area Mismatch Validation (Team Modal)**: Warning quando supervisor appartenente a area diversa dai membri
-- **VOIP/SIP CONFIGURATION (REGOLA ASSOLUTA)**:
-  - **📞 WebSocket URL Format**: SEMPRE `wss://{sipServer}/ws` sulla porta 443
-  - **❌ MAI usare porta 8443** - non esiste, usare sempre 443
-  - **❌ MAI hardcodare server** - usare SEMPRE `sipServer` dall'estensione
-  - **✅ wsPort**: Sempre 443 per WSS
-  - **✅ wsPath**: Sempre `/ws`
-  - **✅ URL Pattern**: `wss://{extension.sipServer}/ws`
 - **VPS Deploy Rules (OBBLIGATORIO)**:
   - **🚀 DEPLOY COMMAND**: Quando l'utente scrive "deploia sulla VPS", usare SEMPRE lo script incrementale chiedendo quale tipo:
     - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)
@@ -153,50 +97,25 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
-- **PRICE LIST ARCHITECTURE (Struttura Definitiva Dic 2024)**:
-  - **📦 Tabella `price_list_items`** (Device: Standard + PromoDevice):
-    - Identità: id, priceListId, tenantId, origin, isLocked, sourceBrandItemId
-    - Prodotto: productId, productVersionId
-    - Partner: supplierId (fornitore), supplierSkuOverride
-    - Acquisto: purchaseCost, purchaseVatRateId → `public.vat_rates`, purchaseVatRegimeId → `public.vat_regimes`
-    - Vendita: salesPriceVatIncl, salesVatRateId, salesVatRegimeId
-    - Sconto: discountPercent, discountAmount (€), extraMarginPercent (%)
-    - Modalità (opzionali): salesModeId → `public.sales_modes`, financialEntityId, installmentMethodId → `public.installment_methods`
-    - Rateizzazione (opzionali): numberOfInstallments, installmentAmount, totalFinancedAmount
-    - Contabili (opzionali): creditNoteAmount, creditAssignmentAmount, financingAmount
-    - Validità: validFrom, validTo, version, isActive
-  - **📺 Tabella `price_list_items_canvas`** (Canvas dedicato):
-    - id, priceListId, tenantId, origin, productId
-    - partnerId (operatore telecom)
-    - monthlyFee, entryFee, contractDuration, notes
-    - validFrom, validTo, isActive, audit fields
-  - **🎯 Tabella `price_list_item_canvas_addons`**:
-    - canvasItemId → FK, productId, monthlyFee, isIncluded, displayOrder
-  - **🎁 Tabella `price_list_item_compositions`** (Bundle promo_canvas):
-    - Mantiene struttura esistente per collegare device + canvas
-  - **Regola tipo listino**:
-    - `no_promo`, `promo_device` → usano `price_list_items`
-    - `canvas` → usa `price_list_items_canvas`
-    - `promo_canvas` → usa `price_list_items` + `price_list_items_canvas` + `compositions`
 
 # System Architecture
-- **UI/UX Decisions**: The platform utilizes a WindTre Glassmorphism design, incorporating fixed headers and sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It integrates all content into existing dashboard structures, leveraging `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
+- **UI/UX Decisions**: The platform features a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Content is integrated into existing dashboards, leveraging `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
-    - **AI Integration**: Includes AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
-    - **CRM Module**: Offers person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
+    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
-    - **Brand Interface**: Comprises a Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
+    - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
     - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing, using `public` for reference data and `w3suite` for tenant-specific data.
-    - **Entity Architecture**: Distinguishes between internal `organization_entities` (company legal entities) and external `legal_entities` (partners like suppliers), with specific propagation rules.
+    - **Entity Architecture**: Differentiates between internal `organization_entities` (company legal entities) and external `legal_entities` (partners like suppliers), with specific propagation rules.
     - **Cross-Store Architecture**: Provides default tenant-wide data views with role-based access control, allowing optional filters for drill-down, and explicitly forbidding auto-selection of stores.
     - **Request Routing**: Implements "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location, with specific rules for operational vs. administrative categories.
     - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment is managed via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access uses `deploy/keys/vps_key`, and database access to `w3suite_prod` is exclusively via a local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
-    - **Price List Architecture**: Defines a detailed structure for `price_list_items` (for devices), `price_list_items_canvas` (for canvases), and `price_list_item_compositions` (for bundles), with distinct usage rules based on price list type (`no_promo`, `promo_device`, `canvas`, `promo_canvas`).
+    - **Price List Architecture**: Defines a detailed structure for `price_list_items` (for devices), `price_list_items_canvas` (for canvases), and `price_list_item_compositions` (for bundles), with distinct usage rules based on price list type.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
