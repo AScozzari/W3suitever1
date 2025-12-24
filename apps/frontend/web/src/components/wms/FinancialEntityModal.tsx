@@ -228,7 +228,7 @@ export default function FinancialEntityModal({
         throw new Error(result.error || 'Errore durante il salvataggio');
       }
 
-      queryClient.invalidateQueries({ queryKey: ['/api/financial-entities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/financial-entities'] });
       onSuccess();
       onClose();
     } catch (error: any) {

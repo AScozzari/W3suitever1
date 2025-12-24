@@ -167,7 +167,7 @@ export default function DashboardTabContent({ onNavigate }: DashboardTabContentP
   });
 
   const { data: financialEntities } = useQuery<any[]>({
-    queryKey: ['/api/financial-entities'],
+    queryKey: ['/api/wms/financial-entities'],
   });
 
   const isLoading = statsLoading || productsLoading;
