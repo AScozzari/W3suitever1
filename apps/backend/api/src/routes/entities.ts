@@ -119,6 +119,42 @@ router.get('/operators', async (req, res) => {
   }
 });
 
+// ==================== CHANNELS (Sales Channels) ====================
+
+/**
+ * GET /api/reference/channels
+ * Get all sales channels (from public schema - shared reference data)
+ * Used for CANVAS product targeting (e.g., flagship, corner, shop-in-shop)
+ */
+router.get('/reference/channels', async (req, res) => {
+  try {
+    // Channels are in public schema - no tenant filtering needed
+    const channelsList = await db
+      .select()
+      .from(channels)
+      .orderBy(channels.name);
+
+    res.status(200).json({
+      success: true,
+      data: channelsList,
+      message: 'Channels retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving channels', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve channels',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 // ==================== ORGANIZATION ENTITIES (Ragioni Sociali dell'Organizzazione) ====================
 
 /**

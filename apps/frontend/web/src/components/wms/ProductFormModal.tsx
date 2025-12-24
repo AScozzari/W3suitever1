@@ -40,6 +40,8 @@ const productSchema = z.object({
   isSerializable: z.boolean(),
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0).optional(),
+  channelId: z.string().optional(),
+  customerScope: z.enum(['consumer', 'business', 'mixed']).optional(),
   unitOfMeasure: z.string().optional(),
   categoryId: z.string().max(100).optional(),
   typeId: z.string().max(100).optional(),
@@ -145,6 +147,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       isSerializable: false,
       serialType: undefined,
       monthlyFee: undefined,
+      channelId: undefined,
+      customerScope: undefined,
       unitOfMeasure: 'pz',
       categoryId: undefined,
       typeId: undefined,
@@ -226,9 +230,16 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
     enabled: !!tenantId,
   });
 
+  // Fetch sales channels (for CANVAS products)
+  const { data: channelsData } = useQuery<any[]>({
+    queryKey: ['/api/reference/channels'],
+    enabled: !!tenantId && watchType === 'CANVAS',
+  });
+
   // FIX: queryClient unwraps {data: [...]} automatically (see queryClient.ts line 218)
   const categories = categoriesData || [];
   const productTypes = typesData || [];
+  const channels = channelsData || [];
 
   // Reset typeId when categoryId changes (but NOT on initial mount/hydration)
   useEffect(() => {
@@ -864,31 +875,98 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 />
               )}
 
-              {/* CAMPO CONDIZIONALE: Canone Mensile (solo per CANVAS) - Posizionato dopo Unità di Misura */}
+              {/* CAMPI CONDIZIONALI CANVAS: Canone Mensile, Canale e Scope Cliente */}
               {watchType === 'CANVAS' && (
-                <FormField
-                  control={form.control}
-                  name="monthlyFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Canone Mensile (€/mese) <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="es. 19.99" 
-                          data-testid="input-monthly-fee"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Importo mensile pagato dal cliente
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <>
+                  <FormField
+                    control={form.control}
+                    name="monthlyFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Canone Mensile (€/mese) <span className="text-red-500">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="es. 19.99" 
+                            data-testid="input-monthly-fee"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Importo mensile pagato dal cliente
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Canale di Vendita (CANVAS only) */}
+                  <FormField
+                    control={form.control}
+                    name="channelId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Canale di Vendita</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || undefined}
+                          data-testid="select-channel"
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleziona canale" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="_all">Tutti i canali</SelectItem>
+                            {channels.map((channel: any) => (
+                              <SelectItem key={channel.id} value={channel.id}>
+                                {channel.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Canale di vendita specifico o tutti i canali
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Scope Cliente Target (CANVAS only) */}
+                  <FormField
+                    control={form.control}
+                    name="customerScope"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clienti Target</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || undefined}
+                          data-testid="select-customer-scope"
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleziona target" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="consumer">Consumer (Privati)</SelectItem>
+                            <SelectItem value="business">Business (P.IVA)</SelectItem>
+                            <SelectItem value="mixed">Misto (Consumer + Business)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Tipologia di clienti a cui è destinato il prodotto
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
             </div>
 
