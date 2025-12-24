@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across CRM, POS, WMS, Analytics, HR, and CMS modules. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform provides a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules (CRM, POS, WMS, Analytics, HR, CMS). Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -180,22 +180,23 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
     - `promo_canvas` → usa `price_list_items` + `price_list_items_canvas` + `compositions`
 
 # System Architecture
-- **UI/UX Decisions**: The platform uses a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It leverages `shadcn/ui` and Radix UI for accessibility, CSS variables, and Tailwind CSS, integrating all content into existing dashboard structures.
+- **UI/UX Decisions**: The platform utilizes a WindTre Glassmorphism design, incorporating fixed headers and sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It integrates all content into existing dashboard structures, leveraging `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP).
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
-    - **CRM Module**: Features person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
-    - **Brand Interface**: Includes a Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
+    - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
+    - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
+    - **AI Integration**: Includes AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, an AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
+    - **CRM Module**: Offers person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
+    - **Brand Interface**: Comprises a Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
-    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing, utilizing `public` for reference data and `w3suite` for tenant-specific data.
-    - **Entity Architecture**: Differentiates between internal `organization_entities` (company legal entities) and external `legal_entities` (partners like suppliers).
-    - **Cross-Store Architecture**: Provides default tenant-wide data views with role-based access control, allowing optional filters for drill-down.
-    - **Request Routing**: Implements "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location.
-    - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment uses `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access utilizes `deploy/keys/vps_key`, and database access to `w3suite_prod` is via a local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
+    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing, using `public` for reference data and `w3suite` for tenant-specific data.
+    - **Entity Architecture**: Distinguishes between internal `organization_entities` (company legal entities) and external `legal_entities` (partners like suppliers), with specific propagation rules.
+    - **Cross-Store Architecture**: Provides default tenant-wide data views with role-based access control, allowing optional filters for drill-down, and explicitly forbidding auto-selection of stores.
+    - **Request Routing**: Implements "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location, with specific rules for operational vs. administrative categories.
+    - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment is managed via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access uses `deploy/keys/vps_key`, and database access to `w3suite_prod` is exclusively via a local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
+    - **Price List Architecture**: Defines a detailed structure for `price_list_items` (for devices), `price_list_items_canvas` (for canvases), and `price_list_item_compositions` (for bundles), with distinct usage rules based on price list type (`no_promo`, `promo_device`, `canvas`, `promo_canvas`).
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)

@@ -47,10 +47,13 @@ import {
   // Price Lists
   priceLists,
   priceListItems,
+  priceListItemsCanvas,
+  priceListItemCanvasAddons,
   priceListItemCompositions,
   productSupplierMappings,
   insertPriceListSchema,
-  insertPriceListItemSchema
+  insertPriceListItemSchema,
+  insertPriceListItemCanvasSchema
 } from "../db/schema/w3suite";
 import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -9939,22 +9942,57 @@ router.get("/price-lists/:id", rbacMiddleware, async (req, res) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Get items
-    const items = await db
-      .select()
-      .from(priceListItems)
-      .where(eq(priceListItems.priceListId, id))
-      .orderBy(desc(priceListItems.createdAt));
-
-    // Get compositions for promo_canvas items
-    const itemIds = items.map(i => i.id);
+    // Get items based on price list type
+    let items: any[] = [];
+    let canvasItems: any[] = [];
+    let canvasAddons: any[] = [];
     let compositions: any[] = [];
-    
-    if (itemIds.length > 0 && priceList.type === 'promo_canvas') {
-      compositions = await db
+
+    if (priceList.type === 'canvas') {
+      // Canvas type: get from dedicated canvas table
+      canvasItems = await db
         .select()
-        .from(priceListItemCompositions)
-        .where(inArray(priceListItemCompositions.bundleItemId, itemIds));
+        .from(priceListItemsCanvas)
+        .where(eq(priceListItemsCanvas.priceListId, id))
+        .orderBy(desc(priceListItemsCanvas.createdAt));
+
+      // Get addons for each canvas item
+      if (canvasItems.length > 0) {
+        const canvasItemIds = canvasItems.map(i => i.id);
+        canvasAddons = await db
+          .select()
+          .from(priceListItemCanvasAddons)
+          .where(inArray(priceListItemCanvasAddons.canvasItemId, canvasItemIds));
+      }
+    } else if (priceList.type === 'promo_canvas') {
+      // Bundle type: get both device items and canvas items
+      items = await db
+        .select()
+        .from(priceListItems)
+        .where(eq(priceListItems.priceListId, id))
+        .orderBy(desc(priceListItems.createdAt));
+
+      canvasItems = await db
+        .select()
+        .from(priceListItemsCanvas)
+        .where(eq(priceListItemsCanvas.priceListId, id))
+        .orderBy(desc(priceListItemsCanvas.createdAt));
+
+      // Get compositions
+      const itemIds = items.map(i => i.id);
+      if (itemIds.length > 0) {
+        compositions = await db
+          .select()
+          .from(priceListItemCompositions)
+          .where(inArray(priceListItemCompositions.bundleItemId, itemIds));
+      }
+    } else {
+      // Standard (no_promo) or PromoDevice (promo_device): get from device items table
+      items = await db
+        .select()
+        .from(priceListItems)
+        .where(eq(priceListItems.priceListId, id))
+        .orderBy(desc(priceListItems.createdAt));
     }
 
     res.json({ 
@@ -9962,6 +10000,8 @@ router.get("/price-lists/:id", rbacMiddleware, async (req, res) => {
       data: {
         ...priceList,
         items,
+        canvasItems,
+        canvasAddons,
         compositions
       }
     });
@@ -10007,10 +10047,50 @@ router.post("/price-lists", rbacMiddleware, async (req, res) => {
       .returning();
 
     // Process items based on type
-    if (header.type === 'promo_canvas' && pairs && pairs.length > 0) {
-      // For promo_canvas, create items from pairs
+    const { canvasItems } = req.body; // For canvas type
+    
+    if (header.type === 'canvas' && canvasItems && canvasItems.length > 0) {
+      // Canvas type: insert into dedicated canvas table
+      for (const item of canvasItems) {
+        const [canvasItem] = await db
+          .insert(priceListItemsCanvas)
+          .values({
+            priceListId: newPriceList.id,
+            tenantId,
+            origin: 'tenant',
+            productId: item.productId,
+            partnerId: item.partnerId || null,
+            monthlyFee: item.monthlyFee || null,
+            entryFee: item.entryFee || null,
+            contractDuration: item.contractDuration || null,
+            notes: item.notes || null,
+            validFrom: item.validFrom ? new Date(item.validFrom) : null,
+            validTo: item.validTo ? new Date(item.validTo) : null,
+            createdBy: userId,
+            updatedBy: userId
+          })
+          .returning();
+
+        // Insert addons if provided
+        if (item.addons && item.addons.length > 0) {
+          for (let i = 0; i < item.addons.length; i++) {
+            const addon = item.addons[i];
+            await db
+              .insert(priceListItemCanvasAddons)
+              .values({
+                canvasItemId: canvasItem.id,
+                productId: addon.productId,
+                monthlyFee: addon.monthlyFee || null,
+                isIncluded: addon.isIncluded || false,
+                displayOrder: i
+              });
+          }
+        }
+      }
+    } else if (header.type === 'promo_canvas' && pairs && pairs.length > 0) {
+      // For promo_canvas (bundle), create items from pairs
       for (const pair of pairs) {
-        // Create master item for the physical product
+        // Create master item for the physical product (in device table)
         const [physicalItem] = await db
           .insert(priceListItems)
           .values({
@@ -10025,37 +10105,26 @@ router.post("/price-lists", rbacMiddleware, async (req, res) => {
           })
           .returning();
 
-        // Create configurations as separate items with compositions
+        // Create canvas item in dedicated table
+        const [canvasItem] = await db
+          .insert(priceListItemsCanvas)
+          .values({
+            priceListId: newPriceList.id,
+            tenantId,
+            origin: 'tenant',
+            productId: pair.canvasProductId,
+            monthlyFee: pair.canvasMonthlyFee || null,
+            createdBy: userId,
+            updatedBy: userId
+          })
+          .returning();
+
+        // Create configurations as compositions
         for (const config of pair.configurations) {
-          // Get financial entity if FIN mode
           let financialEntityId = null;
           if (config.salesMode === 'FIN' && config.financialEntityId) {
             financialEntityId = config.financialEntityId;
           }
-
-          // Create canvas item linked to physical
-          const [canvasItem] = await db
-            .insert(priceListItems)
-            .values({
-              priceListId: newPriceList.id,
-              tenantId,
-              origin: 'tenant',
-              productId: pair.canvasProductId,
-              monthlyFee: pair.canvasMonthlyFee || null,
-              entryFee: config.entryFee || null,
-              salesModeId: null, // TODO: lookup sales mode ID
-              financialEntityId,
-              numberOfInstallments: config.numberOfInstallments || null,
-              installmentAmount: config.installmentAmount || null,
-              creditNoteAmount: config.creditNoteAmount || null,
-              creditAssignmentAmount: config.creditAssignmentAmount || null,
-              financingAmount: config.financingAmount || null,
-              validFrom: new Date(config.validFrom || header.validFrom),
-              validTo: config.validTo ? new Date(config.validTo) : (header.validTo ? new Date(header.validTo) : null),
-              createdBy: userId,
-              updatedBy: userId
-            })
-            .returning();
 
           // Create composition linking physical to canvas
           await db
@@ -10063,17 +10132,21 @@ router.post("/price-lists", rbacMiddleware, async (req, res) => {
             .values({
               tenantId,
               origin: 'tenant',
-              bundleItemId: canvasItem.id,
-              componentItemId: physicalItem.id,
+              bundleItemId: physicalItem.id,
+              componentItemId: canvasItem.id,
               componentRole: 'primary',
               pricingStrategy: 'inherited',
+              financialEntityId,
+              overrideEntryFee: config.entryFee || null,
+              overrideNumberOfInstallments: config.numberOfInstallments || null,
+              overrideInstallmentAmount: config.installmentAmount || null,
               createdBy: userId,
               updatedBy: userId
             });
         }
       }
     } else if (items && items.length > 0) {
-      // For other types, create items directly
+      // For device types (no_promo, promo_device): insert into device items table
       for (const item of items) {
         await db
           .insert(priceListItems)
@@ -10233,22 +10306,60 @@ router.put("/price-lists/:id", rbacMiddleware, async (req, res) => {
         })
         .returning();
 
-      // Copy items from old version to new version
-      const oldItems = await db
-        .select()
-        .from(priceListItems)
-        .where(eq(priceListItems.priceListId, id));
+      // Copy items from old version to new version based on type
+      if (existing.type === 'canvas') {
+        // Copy canvas items
+        const oldCanvasItems = await db
+          .select()
+          .from(priceListItemsCanvas)
+          .where(eq(priceListItemsCanvas.priceListId, id));
 
-      for (const item of oldItems) {
-        const { id: oldItemId, priceListId: _, createdAt: __, updatedAt: ___, ...itemData } = item;
-        await db
-          .insert(priceListItems)
-          .values({
-            ...itemData,
-            priceListId: newPriceList.id,
-            createdBy: userId,
-            updatedBy: userId
-          });
+        for (const item of oldCanvasItems) {
+          const { id: oldItemId, priceListId: _, createdAt: __, updatedAt: ___, ...itemData } = item;
+          const [newCanvasItem] = await db
+            .insert(priceListItemsCanvas)
+            .values({
+              ...itemData,
+              priceListId: newPriceList.id,
+              createdBy: userId,
+              updatedBy: userId
+            })
+            .returning();
+
+          // Copy addons for this canvas item
+          const oldAddons = await db
+            .select()
+            .from(priceListItemCanvasAddons)
+            .where(eq(priceListItemCanvasAddons.canvasItemId, oldItemId));
+
+          for (const addon of oldAddons) {
+            const { id: addonId, canvasItemId: _, createdAt: __, updatedAt: ___, ...addonData } = addon;
+            await db
+              .insert(priceListItemCanvasAddons)
+              .values({
+                ...addonData,
+                canvasItemId: newCanvasItem.id
+              });
+          }
+        }
+      } else {
+        // Copy device items (no_promo, promo_device)
+        const oldItems = await db
+          .select()
+          .from(priceListItems)
+          .where(eq(priceListItems.priceListId, id));
+
+        for (const item of oldItems) {
+          const { id: oldItemId, priceListId: _, createdAt: __, updatedAt: ___, ...itemData } = item;
+          await db
+            .insert(priceListItems)
+            .values({
+              ...itemData,
+              priceListId: newPriceList.id,
+              createdBy: userId,
+              updatedBy: userId
+            });
+        }
       }
 
       return res.json({ 

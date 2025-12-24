@@ -9580,15 +9580,13 @@ export const priceListItems = w3suiteSchema.table("price_list_items", {
   
   // ==================== SCONTO ====================
   discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }), // Sconto dealer %
+  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }), // Sconto importo fisso €
+  extraMarginPercent: numeric("extra_margin_percent", { precision: 5, scale: 2 }), // Extra margine dealer %
   
   // ==================== MODALITÀ VENDITA ====================
   salesModeId: uuid("sales_mode_id"), // FK logica a public.sales_modes (ALL/FIN/VAR)
   financialEntityId: uuid("financial_entity_id").references(() => financialEntities.id), // Ente finanziatore (se FIN)
   installmentMethodId: uuid("installment_method_id"), // FK logica a public.installment_methods (se VAR)
-  
-  // ==================== CANVAS-SPECIFIC (solo per prodotti CANVAS) ====================
-  monthlyFee: numeric("monthly_fee", { precision: 12, scale: 2 }), // Canone mensile CANVAS (es. 13,99€/mese)
-  entryFee: numeric("entry_fee", { precision: 12, scale: 2 }), // Anticipo cliente CANVAS
   
   // ==================== RATEIZZAZIONE (FIN/VAR) ====================
   numberOfInstallments: integer("number_of_installments"), // Numero rate (12, 24, 36, 48)
@@ -9637,6 +9635,97 @@ export const insertPriceListItemSchema = createInsertSchema(priceListItems).omit
 });
 export type InsertPriceListItem = z.infer<typeof insertPriceListItemSchema>;
 export type PriceListItem = typeof priceListItems.$inferSelect;
+
+// 22b) price_list_items_canvas - Dettaglio listino CANVAS (tabella dedicata)
+export const priceListItemsCanvas = w3suiteSchema.table("price_list_items_canvas", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Parent reference
+  priceListId: uuid("price_list_id").notNull().references(() => priceLists.id, { onDelete: 'cascade' }),
+  
+  // Multi-tenancy
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Origine (brand-pushed vs tenant-created)
+  origin: priceListOriginEnum("origin").default('tenant').notNull(),
+  isLocked: boolean("is_locked").default(false).notNull(),
+  sourceBrandItemId: uuid("source_brand_item_id"),
+  
+  // ==================== RIFERIMENTO PRODOTTO ====================
+  productId: varchar("product_id", { length: 100 }).notNull(), // FK logica a products.id (prodotto CANVAS)
+  
+  // ==================== PARTNER (OPERATORE TELECOM) ====================
+  partnerId: uuid("partner_id").references(() => suppliers.id), // Es: WindTre, Vodafone, TIM
+  
+  // ==================== PRICING CANVAS ====================
+  monthlyFee: numeric("monthly_fee", { precision: 12, scale: 2 }), // Canone mensile (es. 13,99€/mese)
+  entryFee: numeric("entry_fee", { precision: 12, scale: 2 }), // Anticipo attivazione
+  contractDuration: integer("contract_duration"), // Durata contratto in mesi (24, 36, 48)
+  
+  // ==================== NOTE ====================
+  notes: text("notes"),
+  
+  // ==================== VALIDITÀ TEMPORALE ====================
+  validFrom: timestamp("valid_from"),
+  validTo: timestamp("valid_to"),
+  
+  // ==================== STATUS ====================
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // ==================== AUDIT ====================
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("price_list_items_canvas_pricelist_idx").on(table.priceListId),
+  index("price_list_items_canvas_tenant_idx").on(table.tenantId),
+  index("price_list_items_canvas_product_idx").on(table.productId),
+  index("price_list_items_canvas_partner_idx").on(table.partnerId),
+  index("price_list_items_canvas_origin_idx").on(table.origin),
+  index("price_list_items_canvas_active_idx").on(table.isActive),
+]);
+
+export const insertPriceListItemCanvasSchema = createInsertSchema(priceListItemsCanvas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPriceListItemCanvas = z.infer<typeof insertPriceListItemCanvasSchema>;
+export type PriceListItemCanvas = typeof priceListItemsCanvas.$inferSelect;
+
+// 22c) price_list_item_canvas_addons - Addon per prodotti CANVAS
+export const priceListItemCanvasAddons = w3suiteSchema.table("price_list_item_canvas_addons", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Parent canvas item reference
+  canvasItemId: uuid("canvas_item_id").notNull().references(() => priceListItemsCanvas.id, { onDelete: 'cascade' }),
+  
+  // ==================== PRODOTTO ADDON ====================
+  productId: varchar("product_id", { length: 100 }).notNull(), // FK logica a products.id (addon)
+  
+  // ==================== PRICING ADDON ====================
+  monthlyFee: numeric("monthly_fee", { precision: 12, scale: 2 }), // Canone addon (0 se incluso)
+  isIncluded: boolean("is_included").default(false).notNull(), // Se incluso nel prezzo base
+  
+  // ==================== ORDINAMENTO ====================
+  displayOrder: integer("display_order").default(0).notNull(),
+  
+  // ==================== AUDIT ====================
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("price_list_item_canvas_addons_canvas_idx").on(table.canvasItemId),
+  index("price_list_item_canvas_addons_product_idx").on(table.productId),
+]);
+
+export const insertPriceListItemCanvasAddonSchema = createInsertSchema(priceListItemCanvasAddons).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPriceListItemCanvasAddon = z.infer<typeof insertPriceListItemCanvasAddonSchema>;
+export type PriceListItemCanvasAddon = typeof priceListItemCanvasAddons.$inferSelect;
 
 // 23) price_list_item_compositions - Offerte composite CANVAS + PHYSICAL
 export const priceListItemCompositions = w3suiteSchema.table("price_list_item_compositions", {

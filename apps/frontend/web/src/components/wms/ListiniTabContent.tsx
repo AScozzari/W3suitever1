@@ -108,6 +108,7 @@ interface PromoDeviceProduct {
   ndcAmount: string;
   discountType: 'percent' | 'euro';
   discountValue: string;
+  extraMarginPercent: string;
   publicPrice: string;
 }
 
@@ -818,6 +819,50 @@ export default function ListiniTabContent() {
           }))
         : [];
 
+      // Prepare promo_device items with discount mapping
+      const promoDeviceItems = priceListHeader.type === 'promo_device'
+        ? promoDeviceProducts.map(p => ({
+            productId: p.productId,
+            supplierSku: p.useInternalSku ? p.productSku : p.supplierSku,
+            useInternalSku: p.useInternalSku,
+            purchaseCost: p.purchaseCost,
+            purchaseVatRateId: p.purchaseVatRateId,
+            purchaseVatRegimeId: p.purchaseVatRegimeId,
+            salesPriceVatIncl: p.salesPriceVatIncl,
+            salesVatRateId: p.salesVatRateId,
+            salesVatRegimeId: p.salesVatRegimeId,
+            discountPercent: p.discountType === 'percent' ? p.discountValue : null,
+            discountAmount: p.discountType === 'euro' ? p.discountValue : null,
+            extraMarginPercent: p.extraMarginPercent || null,
+            creditNoteAmount: p.ndcAmount || null
+          }))
+        : [];
+
+      // Prepare canvas items for dedicated table
+      const canvasItemsPayload = priceListHeader.type === 'canvas'
+        ? canvasProducts.map(p => ({
+            productId: p.productId,
+            partnerId: priceListHeader.operatorId || null,
+            monthlyFee: p.monthlyFee,
+            entryFee: p.entryFee || null,
+            contractDuration: p.contractDuration || null,
+            notes: p.notes || null,
+            addons: p.addons?.map(a => ({
+              productId: a.productId,
+              monthlyFee: a.monthlyFee || null,
+              isIncluded: !a.monthlyFee || a.monthlyFee === '0'
+            })) || []
+          }))
+        : [];
+
+      // Determine which items to send
+      let items: any[] = [];
+      if (priceListHeader.type === 'no_promo') {
+        items = noPromoItems;
+      } else if (priceListHeader.type === 'promo_device') {
+        items = promoDeviceItems;
+      }
+
       const payload = {
         header: {
           code: priceListHeader.code,
@@ -829,7 +874,8 @@ export default function ListiniTabContent() {
           validTo: priceListHeader.validTo?.toISOString() || null
         },
         pairs: priceListHeader.type === 'promo_canvas' ? savedPairs : [],
-        items: noPromoItems
+        items: items,
+        canvasItems: canvasItemsPayload
       };
 
       await apiRequest('/api/wms/price-lists', {
@@ -2424,6 +2470,7 @@ export default function ListiniTabContent() {
       ndcAmount: '',
       discountType: 'euro',
       discountValue: '',
+      extraMarginPercent: '',
       publicPrice: ''
     };
     
@@ -3509,6 +3556,23 @@ export default function ListiniTabContent() {
                                     </span>
                                   </div>
                                 </div>
+                              </div>
+                            </div>
+
+                            {/* Extra Margine % */}
+                            <div>
+                              <Label className="text-xs text-gray-600 mb-1 block">Extra Margine %</Label>
+                              <div className="relative w-24">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={product.extraMarginPercent}
+                                  onChange={(e) => updatePromoDeviceProduct(product.id, 'extraMarginPercent', e.target.value)}
+                                  className="h-7 text-xs bg-white pr-6"
+                                  placeholder="0"
+                                  data-testid={`input-extra-margin-promodevice-${product.id}`}
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
                               </div>
                             </div>
 
