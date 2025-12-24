@@ -2963,10 +2963,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DELETE /api/suppliers/:id - Elimina fornitore (solo tenant overrides)
+  // DELETE /api/suppliers/:id - Archivia fornitore (solo tenant overrides, con controllo dipendenze)
   app.delete('/api/suppliers/:id', ...authWithRBAC, requirePermission('suppliers.delete'), async (req: any, res) => {
     try {
       // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID fornitore', res)) return;
+
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      const supplierId = req.params.id;
+      
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      // Import WMS tables for dependency checking (only existing tables)
+      const { priceListItems, productSupplierMappings } = await import("../db/schema/w3suite");
+      
+      // Check for dependencies: price_list_items with this supplier
+      const priceListCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(priceListItems)
+        .where(eq(priceListItems.supplierId, supplierId));
+        
+      // Check for dependencies: product_supplier_mappings
+      const mappingsCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productSupplierMappings)
+        .where(eq(productSupplierMappings.supplierId, supplierId));
+
+      const totalPriceItems = priceListCount[0]?.count ?? 0;
+      const totalMappings = mappingsCount[0]?.count ?? 0;
+      
+      const hasDependencies = totalPriceItems > 0 || totalMappings > 0;
+
+      if (hasDependencies) {
+        const dependencies = [];
+        if (totalPriceItems > 0) dependencies.push(`${totalPriceItems} voci listino`);
+        if (totalMappings > 0) dependencies.push(`${totalMappings} mappature prodotto`);
+        
+        return res.status(400).json({
+          error: 'has_dependencies',
+          message: `Impossibile eliminare il fornitore: esistono ${dependencies.join(', ')} associati. Puoi solo archiviarlo.`,
+          canDelete: false,
+          canArchive: true,
+          dependencies: {
+            priceListItems: totalPriceItems,
+            mappings: totalMappings
+          }
+        });
+      }
+
+      // No dependencies - safe to delete
+      await storage.deleteTenantSupplier(supplierId, tenantId);
+      res.status(204).send();
+    } catch (error: any) {
+      handleApiError(error, res, 'eliminazione fornitore');
+    }
+  });
+  
+  // PATCH /api/suppliers/:id/archive - Archivia fornitore (soft-delete)
+  app.patch('/api/suppliers/:id/archive', ...authWithRBAC, requirePermission('suppliers.update'), async (req: any, res) => {
+    try {
       if (!validateUUIDParam(req.params.id, 'ID fornitore', res)) return;
 
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
@@ -2977,10 +3037,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      await storage.deleteTenantSupplier(req.params.id, tenantId);
-      res.status(204).send();
+      const supplier = await storage.updateTenantSupplier(req.params.id, {
+        status: 'archived',
+        updatedBy: req.user?.id || 'system'
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Fornitore archiviato con successo',
+        data: supplier 
+      });
     } catch (error: any) {
-      handleApiError(error, res, 'eliminazione fornitore');
+      handleApiError(error, res, 'archiviazione fornitore');
     }
   });
 

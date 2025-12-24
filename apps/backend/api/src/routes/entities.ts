@@ -2576,7 +2576,7 @@ router.put('/drivers/:id', async (req, res) => {
 
 /**
  * DELETE /api/drivers/:id
- * Delete a tenant-custom driver (cannot delete brand drivers)
+ * Delete a tenant-custom driver (cannot delete brand drivers, check dependencies)
  */
 router.delete('/drivers/:id', async (req, res) => {
   try {
@@ -2622,6 +2622,63 @@ router.delete('/drivers/:id', async (req, res) => {
       } as ApiErrorResponse);
     }
 
+    // Check for dependencies: store_driver_potential
+    const { storeDriverPotential, driverCategoryMappings, crmLeads, crmPipelines } = await import("../db/schema/w3suite");
+    
+    const potentialCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(storeDriverPotential)
+      .where(eq(storeDriverPotential.driverId, driverId));
+    
+    // Check for dependencies: driver_category_mappings
+    const mappingsCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(driverCategoryMappings)
+      .where(eq(driverCategoryMappings.driverId, driverId));
+    
+    // Check for dependencies: crm_leads
+    const leadsCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmLeads)
+      .where(eq(crmLeads.driverId, driverId));
+    
+    // Check for dependencies: crm_pipelines
+    const pipelinesCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(crmPipelines)
+      .where(eq(crmPipelines.driverId, driverId));
+
+    const totalPotential = potentialCount[0]?.count ?? 0;
+    const totalMappings = mappingsCount[0]?.count ?? 0;
+    const totalLeads = leadsCount[0]?.count ?? 0;
+    const totalPipelines = pipelinesCount[0]?.count ?? 0;
+    
+    const hasDependencies = totalPotential > 0 || totalMappings > 0 || totalLeads > 0 || totalPipelines > 0;
+
+    if (hasDependencies) {
+      const dependencies = [];
+      if (totalPotential > 0) dependencies.push(`${totalPotential} potenziali negozio`);
+      if (totalMappings > 0) dependencies.push(`${totalMappings} mappature categoria`);
+      if (totalLeads > 0) dependencies.push(`${totalLeads} lead CRM`);
+      if (totalPipelines > 0) dependencies.push(`${totalPipelines} pipeline CRM`);
+      
+      return res.status(400).json({
+        success: false,
+        error: 'has_dependencies',
+        message: `Impossibile eliminare il driver: esistono ${dependencies.join(', ')} associati. Puoi solo archiviarlo.`,
+        canDelete: false,
+        canArchive: true,
+        dependencies: {
+          potential: totalPotential,
+          mappings: totalMappings,
+          leads: totalLeads,
+          pipelines: totalPipelines
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // No dependencies - safe to delete
     await db
       .delete(drivers)
       .where(eq(drivers.id, driverId));
@@ -2646,6 +2703,88 @@ router.delete('/drivers/:id', async (req, res) => {
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to delete driver',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PATCH /api/drivers/:id/archive
+ * Archive a tenant-custom driver (soft-delete)
+ */
+router.patch('/drivers/:id/archive', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const driverId = req.params.id;
+    await setTenantContext(tenantId);
+
+    // Find driver and verify it's tenant-owned
+    const [existingDriver] = await db
+      .select()
+      .from(drivers)
+      .where(and(
+        eq(drivers.id, driverId),
+        eq(drivers.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existingDriver) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Driver not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (existingDriver.source === 'brand') {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Cannot archive brand drivers',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Soft-delete by setting isActive to false
+    const [archivedDriver] = await db
+      .update(drivers)
+      .set({
+        isActive: false,
+        updatedAt: new Date()
+      })
+      .where(eq(drivers.id, driverId))
+      .returning();
+
+    logger.info('Tenant driver archived', { driverId, code: existingDriver.code, tenantId });
+
+    res.status(200).json({
+      success: true,
+      data: archivedDriver,
+      message: 'Driver archiviato con successo',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error archiving driver', { 
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      driverId: req.params.id,
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to archive driver',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

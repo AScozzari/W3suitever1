@@ -9962,7 +9962,7 @@ router.put("/financial-entities/:id", rbacMiddleware, async (req, res) => {
 
 /**
  * DELETE /api/wms/financial-entities/:id
- * Delete a tenant-specific financial entity (brand entities cannot be deleted)
+ * Delete a tenant-specific financial entity (brand entities cannot be deleted, check dependencies)
  */
 router.delete("/financial-entities/:id", rbacMiddleware, async (req, res) => {
   try {
@@ -9993,6 +9993,42 @@ router.delete("/financial-entities/:id", rbacMiddleware, async (req, res) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
+    // Check for dependencies: price_list_items with this financial entity
+    const priceListItemsCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(priceListItems)
+      .where(eq(priceListItems.financialEntityId, id));
+    
+    // Check for dependencies: price_list_item_compositions with this financial entity
+    const compositionsCount = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(priceListItemCompositions)
+      .where(eq(priceListItemCompositions.financialEntityId, id));
+
+    const totalPriceItems = priceListItemsCount[0]?.count ?? 0;
+    const totalCompositions = compositionsCount[0]?.count ?? 0;
+    
+    const hasDependencies = totalPriceItems > 0 || totalCompositions > 0;
+
+    if (hasDependencies) {
+      const dependencies = [];
+      if (totalPriceItems > 0) dependencies.push(`${totalPriceItems} voci listino`);
+      if (totalCompositions > 0) dependencies.push(`${totalCompositions} composizioni listino`);
+      
+      return res.status(400).json({
+        success: false,
+        error: 'has_dependencies',
+        message: `Impossibile eliminare l'ente finanziario: esistono ${dependencies.join(', ')} associati. Puoi solo archiviarlo.`,
+        canDelete: false,
+        canArchive: true,
+        dependencies: {
+          priceListItems: totalPriceItems,
+          compositions: totalCompositions
+        }
+      });
+    }
+
+    // No dependencies - safe to delete
     await db
       .delete(financialEntities)
       .where(eq(financialEntities.id, id));
@@ -10007,6 +10043,67 @@ router.delete("/financial-entities/:id", rbacMiddleware, async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: "Failed to delete financial entity",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * PATCH /api/wms/financial-entities/:id/archive
+ * Archive a tenant-specific financial entity (soft-delete)
+ */
+router.patch("/financial-entities/:id/archive", rbacMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sessionTenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    // Get existing entity
+    const [existing] = await db
+      .select()
+      .from(financialEntities)
+      .where(eq(financialEntities.id, id));
+
+    if (!existing) {
+      return res.status(404).json({ error: "Financial entity not found" });
+    }
+
+    // Brand entities cannot be archived by tenants
+    if (existing.origin === 'brand') {
+      return res.status(403).json({ error: "Brand-pushed entities cannot be archived" });
+    }
+
+    // Tenant entities can only be archived by their own tenant
+    if (existing.tenantId !== sessionTenantId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Soft-delete by setting status to 'blocked' (archived)
+    const [archived] = await db
+      .update(financialEntities)
+      .set({
+        status: 'blocked',
+        updatedBy: userId,
+        updatedAt: new Date(),
+      })
+      .where(eq(financialEntities.id, id))
+      .returning();
+
+    res.json({
+      success: true,
+      message: "Ente finanziario archiviato con successo",
+      data: archived
+    });
+
+  } catch (error) {
+    console.error("Error archiving financial entity:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to archive financial entity",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
