@@ -106,10 +106,10 @@ const KPICard = ({ icon, label, value, subValue, color, trend = 'neutral', trend
 interface Product {
   id: string;
   sku: string;
-  nome: string;
-  productType: string;
-  prezzoVendita: number | null;
-  quantitaDisponibile: number;
+  name: string;
+  type: string;
+  monthlyFee?: string | null;
+  quantityAvailable: number;
   categoryName?: string;
   isActive?: boolean;
   createdAt: string;
@@ -143,7 +143,7 @@ const PRODUCT_TYPE_ICONS: Record<string, React.ReactNode> = {
   SERVICE: <Wrench className="h-4 w-4" />
 };
 
-type SortField = 'sku' | 'nome' | 'productType' | 'prezzoVendita' | 'quantitaDisponibile';
+type SortField = 'sku' | 'name' | 'type' | 'monthlyFee' | 'quantityAvailable';
 type SortOrder = 'asc' | 'desc';
 
 interface DashboardTabContentProps {
@@ -205,10 +205,10 @@ export default function DashboardTabContent({ onNavigate }: DashboardTabContentP
 
   // Calcola distribuzione prodotti per tipo
   const productsByType = dashboardStats.productsByType || {
-    PHYSICAL: products.filter(p => p.productType === 'PHYSICAL').length,
-    VIRTUAL: products.filter(p => p.productType === 'VIRTUAL').length,
-    CANVAS: products.filter(p => p.productType === 'CANVAS').length,
-    SERVICE: products.filter(p => p.productType === 'SERVICE').length
+    PHYSICAL: products.filter(p => p.type === 'PHYSICAL').length,
+    VIRTUAL: products.filter(p => p.type === 'VIRTUAL').length,
+    CANVAS: products.filter(p => p.type === 'CANVAS').length,
+    SERVICE: products.filter(p => p.type === 'SERVICE').length
   };
 
   const pieChartData = Object.entries(productsByType)
@@ -247,7 +247,12 @@ export default function DashboardTabContent({ onNavigate }: DashboardTabContentP
     let aVal: any = a[sortField];
     let bVal: any = b[sortField];
     
-    if (sortField === 'prezzoVendita') {
+    if (sortField === 'monthlyFee') {
+      aVal = parseFloat(aVal) || 0;
+      bVal = parseFloat(bVal) || 0;
+    }
+    
+    if (sortField === 'quantityAvailable') {
       aVal = aVal || 0;
       bVal = bVal || 0;
     }
@@ -524,13 +529,13 @@ export default function DashboardTabContent({ onNavigate }: DashboardTabContentP
               <thead>
                 <tr className="border-b-2 border-gray-100">
                   <SortHeader field="sku" label="SKU" />
-                  <SortHeader field="nome" label="Nome" />
-                  <SortHeader field="productType" label="Tipo" />
+                  <SortHeader field="name" label="Nome" />
+                  <SortHeader field="type" label="Tipo" />
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700" data-testid="header-category">
                     Categoria
                   </th>
-                  <SortHeader field="prezzoVendita" label="Prezzo" />
-                  <SortHeader field="quantitaDisponibile" label="Stock" />
+                  <SortHeader field="monthlyFee" label="Prezzo" />
+                  <SortHeader field="quantityAvailable" label="Stock" />
                   <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700" data-testid="header-actions">
                     Azioni
                   </th>
@@ -549,18 +554,18 @@ export default function DashboardTabContent({ onNavigate }: DashboardTabContentP
                       </span>
                     </td>
                     <td className="py-3 px-4" data-testid={`product-nome-${product.id}`}>
-                      <p className="font-medium text-gray-800">{product.nome || '-'}</p>
+                      <p className="font-medium text-gray-800">{product.name || '-'}</p>
                     </td>
                     <td className="py-3 px-4" data-testid={`product-type-${product.id}`}>
                       <Badge
                         style={{
-                          background: `${PRODUCT_TYPE_COLORS[product.productType] || '#6B7280'}15`,
-                          color: PRODUCT_TYPE_COLORS[product.productType] || '#6B7280',
-                          border: `1px solid ${PRODUCT_TYPE_COLORS[product.productType] || '#6B7280'}30`
+                          background: `${PRODUCT_TYPE_COLORS[product.type] || '#6B7280'}15`,
+                          color: PRODUCT_TYPE_COLORS[product.type] || '#6B7280',
+                          border: `1px solid ${PRODUCT_TYPE_COLORS[product.type] || '#6B7280'}30`
                         }}
                         className="font-medium"
                       >
-                        {PRODUCT_TYPE_LABELS[product.productType] || product.productType}
+                        {PRODUCT_TYPE_LABELS[product.type] || product.type}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600" data-testid={`product-category-${product.id}`}>
@@ -568,23 +573,23 @@ export default function DashboardTabContent({ onNavigate }: DashboardTabContentP
                     </td>
                     <td className="py-3 px-4 text-right" data-testid={`product-price-${product.id}`}>
                       <span className="font-semibold">
-                        {product.prezzoVendita 
-                          ? `€${product.prezzoVendita.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` 
+                        {product.monthlyFee 
+                          ? `€${parseFloat(product.monthlyFee).toLocaleString('it-IT', { minimumFractionDigits: 2 })}` 
                           : '-'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right" data-testid={`product-stock-${product.id}`}>
                       <Badge
-                        variant={product.quantitaDisponibile > 10 ? 'default' : product.quantitaDisponibile > 0 ? 'secondary' : 'destructive'}
+                        variant={product.quantityAvailable > 10 ? 'default' : product.quantityAvailable > 0 ? 'secondary' : 'destructive'}
                         className={
-                          product.quantitaDisponibile > 10 
+                          product.quantityAvailable > 10 
                             ? 'bg-green-100 text-green-700 hover:bg-green-100' 
-                            : product.quantitaDisponibile > 0 
+                            : product.quantityAvailable > 0 
                               ? 'bg-amber-100 text-amber-700 hover:bg-amber-100'
                               : ''
                         }
                       >
-                        {product.quantitaDisponibile}
+                        {product.quantityAvailable}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-center" data-testid={`product-actions-${product.id}`}>
