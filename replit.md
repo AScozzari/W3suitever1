@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across CRM, POS, WMS, Analytics, HR, and CMS modules. It aims to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform provides a comprehensive solution for managing complex business processes and data, driving growth across diverse industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across CRM, POS, WMS, Analytics, HR, and CMS modules. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform provides a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -153,6 +153,31 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
+- **PRICE LIST ARCHITECTURE (Struttura Definitiva Dic 2024)**:
+  - **📦 Tabella `price_list_items`** (Device: Standard + PromoDevice):
+    - Identità: id, priceListId, tenantId, origin, isLocked, sourceBrandItemId
+    - Prodotto: productId, productVersionId
+    - Partner: supplierId (fornitore), supplierSkuOverride
+    - Acquisto: purchaseCost, purchaseVatRateId → `public.vat_rates`, purchaseVatRegimeId → `public.vat_regimes`
+    - Vendita: salesPriceVatIncl, salesVatRateId, salesVatRegimeId
+    - Sconto: discountPercent, discountAmount (€), extraMarginPercent (%)
+    - Modalità (opzionali): salesModeId → `public.sales_modes`, financialEntityId, installmentMethodId → `public.installment_methods`
+    - Rateizzazione (opzionali): numberOfInstallments, installmentAmount, totalFinancedAmount
+    - Contabili (opzionali): creditNoteAmount, creditAssignmentAmount, financingAmount
+    - Validità: validFrom, validTo, version, isActive
+  - **📺 Tabella `price_list_items_canvas`** (Canvas dedicato):
+    - id, priceListId, tenantId, origin, productId
+    - partnerId (operatore telecom)
+    - monthlyFee, entryFee, contractDuration, notes
+    - validFrom, validTo, isActive, audit fields
+  - **🎯 Tabella `price_list_item_canvas_addons`**:
+    - canvasItemId → FK, productId, monthlyFee, isIncluded, displayOrder
+  - **🎁 Tabella `price_list_item_compositions`** (Bundle promo_canvas):
+    - Mantiene struttura esistente per collegare device + canvas
+  - **Regola tipo listino**:
+    - `no_promo`, `promo_device` → usano `price_list_items`
+    - `canvas` → usa `price_list_items_canvas`
+    - `promo_canvas` → usa `price_list_items` + `price_list_items_canvas` + `compositions`
 
 # System Architecture
 - **UI/UX Decisions**: The platform uses a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). It leverages `shadcn/ui` and Radix UI for accessibility, CSS variables, and Tailwind CSS, integrating all content into existing dashboard structures.
