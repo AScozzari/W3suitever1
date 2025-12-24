@@ -569,14 +569,14 @@ export default function CategoriesTypologiesDataTable() {
                 <Badge variant="secondary" className="ml-auto">{brandCategories.length} categorie</Badge>
               </div>
               <div className="rounded-md border">
-                <Table>
+                <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo Prodotto</TableHead>
-                      <TableHead>Versione</TableHead>
-                      <TableHead>Data Creazione</TableHead>
-                      <TableHead className="text-center">Azioni</TableHead>
+                      <TableHead className="w-[35%]">Nome</TableHead>
+                      <TableHead className="w-[20%]">Tipo Prodotto</TableHead>
+                      <TableHead className="w-[12%]">Versione</TableHead>
+                      <TableHead className="w-[20%]">Data Creazione</TableHead>
+                      <TableHead className="w-[13%] text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -645,14 +645,14 @@ export default function CategoriesTypologiesDataTable() {
                 <Badge variant="secondary" className="ml-auto">{tenantCategories.length} categorie</Badge>
               </div>
               <div className="rounded-md border">
-                <Table>
+                <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Tipo Prodotto</TableHead>
-                      <TableHead>Versione</TableHead>
-                      <TableHead>Data Creazione</TableHead>
-                      <TableHead className="text-center">Azioni</TableHead>
+                      <TableHead className="w-[35%]">Nome</TableHead>
+                      <TableHead className="w-[20%]">Tipo Prodotto</TableHead>
+                      <TableHead className="w-[12%]">Versione</TableHead>
+                      <TableHead className="w-[20%]">Data Creazione</TableHead>
+                      <TableHead className="w-[13%] text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -719,14 +719,14 @@ export default function CategoriesTypologiesDataTable() {
                 <Badge variant="secondary" className="ml-auto">{brandTypologies.length} tipologie</Badge>
               </div>
               <div className="rounded-md border">
-                <Table>
+                <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Versione</TableHead>
-                      <TableHead>Data Creazione</TableHead>
-                      <TableHead className="text-center">Azioni</TableHead>
+                      <TableHead className="w-[35%]">Nome</TableHead>
+                      <TableHead className="w-[20%]">Categoria</TableHead>
+                      <TableHead className="w-[12%]">Versione</TableHead>
+                      <TableHead className="w-[20%]">Data Creazione</TableHead>
+                      <TableHead className="w-[13%] text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -788,14 +788,14 @@ export default function CategoriesTypologiesDataTable() {
                 <Badge variant="secondary" className="ml-auto">{tenantTypologies.length} tipologie</Badge>
               </div>
               <div className="rounded-md border">
-                <Table>
+                <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Versione</TableHead>
-                      <TableHead>Data Creazione</TableHead>
-                      <TableHead className="text-center">Azioni</TableHead>
+                      <TableHead className="w-[35%]">Nome</TableHead>
+                      <TableHead className="w-[20%]">Categoria</TableHead>
+                      <TableHead className="w-[12%]">Versione</TableHead>
+                      <TableHead className="w-[20%]">Data Creazione</TableHead>
+                      <TableHead className="w-[13%] text-center">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
