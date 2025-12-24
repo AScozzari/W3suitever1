@@ -469,6 +469,7 @@ export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
   'internal_use'        // AD uso interno
 ]);
 export const serialTypeEnum = pgEnum('serial_type', ['imei', 'iccid', 'mac_address', 'other']);
+export const customerScopeEnum = pgEnum('customer_scope', ['consumer', 'business', 'mixed']);
 export const productBatchStatusEnum = pgEnum('product_batch_status', ['available', 'reserved', 'damaged', 'expired']);
 export const pickingStrategyEnum = pgEnum('picking_strategy', ['fifo', 'lifo']);
 export const stockMovementTypeEnum = pgEnum('stock_movement_type', [
@@ -7978,6 +7979,10 @@ export const products = w3suiteSchema.table("products", {
   isSerializable: boolean("is_serializable").default(false).notNull(), // Track at item-level if true
   serialType: serialTypeEnum("serial_type"), // Tipo seriale: imei | iccid | mac_address | other (required if isSerializable=true)
   monthlyFee: numeric("monthly_fee", { precision: 10, scale: 2 }), // Canone mensile €/mese (required if type=CANVAS)
+  
+  // CANVAS-specific fields (sales channel & target customer scope)
+  channelId: uuid("channel_id").references(() => channels.id), // FK to public.channels (CANVAS only - sales channel)
+  customerScope: customerScopeEnum("customer_scope"), // consumer | business | mixed (CANVAS only - target customers)
   
   // Validity period (for time-limited products, promotions, seasonal items)
   validFrom: date("valid_from"), // Start date of validity (optional)
