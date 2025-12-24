@@ -40,7 +40,9 @@ import {
   X,
   Eye,
   AlertTriangle,
-  Info
+  Info,
+  Lock,
+  FolderTree
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -217,6 +219,24 @@ export default function CategoriesTypologiesDataTable() {
     });
   }, [typologies, searchTerm, sourceFilter, categoryFilter, dateFrom, dateTo]);
 
+  // Separazione Brand vs Tenant
+  const brandCategories = useMemo(() => 
+    filteredCategories.filter(cat => cat.source === 'brand' || cat.isBrandSynced), 
+    [filteredCategories]
+  );
+  const tenantCategories = useMemo(() => 
+    filteredCategories.filter(cat => cat.source !== 'brand' && !cat.isBrandSynced), 
+    [filteredCategories]
+  );
+  const brandTypologies = useMemo(() => 
+    filteredTypologies.filter(typ => typ.source === 'brand' || typ.isBrandSynced), 
+    [filteredTypologies]
+  );
+  const tenantTypologies = useMemo(() => 
+    filteredTypologies.filter(typ => typ.source !== 'brand' && !typ.isBrandSynced), 
+    [filteredTypologies]
+  );
+
   const getCategoryName = (categoryId: string) => {
     const cat = categories.find(c => c.id === categoryId);
     return cat?.nome || categoryId;
@@ -332,7 +352,7 @@ export default function CategoriesTypologiesDataTable() {
     }
 
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-center gap-1">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -532,120 +552,289 @@ export default function CategoriesTypologiesDataTable() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="categories" className="mt-4">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo Prodotto</TableHead>
-                    <TableHead>Origine</TableHead>
-                    <TableHead>Versione</TableHead>
-                    <TableHead>Data Creazione</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categoriesLoading ? (
+          <TabsContent value="categories" className="mt-4 space-y-6">
+            {/* Brand Categories Section (Read-only) */}
+            <div data-testid="brand-categories-section">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    Categorie Brand
+                    <Lock className="h-4 w-4 text-gray-400" />
+                  </h4>
+                  <p className="text-sm text-gray-500">Categorie sincronizzate dal brand (sola lettura)</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{brandCategories.length} categorie</Badge>
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        Caricamento...
-                      </TableCell>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo Prodotto</TableHead>
+                      <TableHead>Versione</TableHead>
+                      <TableHead>Data Creazione</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
-                  ) : filteredCategories.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        Nessuna categoria trovata
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredCategories.map((cat) => (
-                      <TableRow key={cat.id} data-testid={`row-category-${cat.id}`}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {cat.icona && <span>{cat.icona}</span>}
-                            {cat.nome}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{getProductTypeLabel(cat.productType)}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <SourceBadge source={cat.source} isBrandSynced={cat.isBrandSynced} />
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">v{cat.versionNumber || 1}</span>
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(cat.createdAt), 'dd/MM/yyyy HH:mm', { locale: it })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <ActionButtons 
-                            type="category" 
-                            item={cat} 
-                            isBrandManaged={cat.source === 'brand' || cat.isBrandSynced}
-                          />
+                  </TableHeader>
+                  <TableBody>
+                    {categoriesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Caricamento...
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : brandCategories.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Nessuna categoria Brand disponibile
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      brandCategories.map((cat) => (
+                        <TableRow key={cat.id} data-testid={`row-brand-category-${cat.id}`}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {cat.icona && <span>{cat.icona}</span>}
+                              {cat.nome}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{getProductTypeLabel(cat.productType)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">v{cat.versionNumber || 1}</span>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(cat.createdAt), 'dd/MM/yyyy HH:mm', { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Eye className="h-4 w-4 text-gray-400" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Categoria Brand - Solo visualizzazione</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Tenant Categories Section (CRUD) */}
+            <div data-testid="tenant-categories-section">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                  <FolderTree className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900">Categorie Personalizzate</h4>
+                  <p className="text-sm text-gray-500">Categorie create dal tuo negozio</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{tenantCategories.length} categorie</Badge>
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo Prodotto</TableHead>
+                      <TableHead>Versione</TableHead>
+                      <TableHead>Data Creazione</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categoriesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Caricamento...
+                        </TableCell>
+                      </TableRow>
+                    ) : tenantCategories.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Nessuna categoria personalizzata trovata
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      tenantCategories.map((cat) => (
+                        <TableRow key={cat.id} data-testid={`row-tenant-category-${cat.id}`}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {cat.icona && <span>{cat.icona}</span>}
+                              {cat.nome}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{getProductTypeLabel(cat.productType)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">v{cat.versionNumber || 1}</span>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(cat.createdAt), 'dd/MM/yyyy HH:mm', { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <ActionButtons 
+                              type="category" 
+                              item={cat} 
+                              isBrandManaged={false}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="typologies" className="mt-4">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Origine</TableHead>
-                    <TableHead>Versione</TableHead>
-                    <TableHead>Data Creazione</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {typologiesLoading ? (
+          <TabsContent value="typologies" className="mt-4 space-y-6">
+            {/* Brand Typologies Section (Read-only) */}
+            <div data-testid="brand-typologies-section">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    Tipologie Brand
+                    <Lock className="h-4 w-4 text-gray-400" />
+                  </h4>
+                  <p className="text-sm text-gray-500">Tipologie sincronizzate dal brand (sola lettura)</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{brandTypologies.length} tipologie</Badge>
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        Caricamento...
-                      </TableCell>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Versione</TableHead>
+                      <TableHead>Data Creazione</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
                     </TableRow>
-                  ) : filteredTypologies.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        Nessuna tipologia trovata
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredTypologies.map((typ) => (
-                      <TableRow key={typ.id} data-testid={`row-typology-${typ.id}`}>
-                        <TableCell className="font-medium">{typ.nome}</TableCell>
-                        <TableCell>{getCategoryName(typ.categoryId)}</TableCell>
-                        <TableCell>
-                          <SourceBadge source={typ.source} isBrandSynced={typ.isBrandSynced} />
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">v{typ.versionNumber || 1}</span>
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(typ.createdAt), 'dd/MM/yyyy HH:mm', { locale: it })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <ActionButtons 
-                            type="typology" 
-                            item={typ} 
-                            isBrandManaged={typ.source === 'brand' || typ.isBrandSynced}
-                          />
+                  </TableHeader>
+                  <TableBody>
+                    {typologiesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Caricamento...
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : brandTypologies.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Nessuna tipologia Brand disponibile
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      brandTypologies.map((typ) => (
+                        <TableRow key={typ.id} data-testid={`row-brand-typology-${typ.id}`}>
+                          <TableCell className="font-medium">{typ.nome}</TableCell>
+                          <TableCell>{getCategoryName(typ.categoryId)}</TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">v{typ.versionNumber || 1}</span>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(typ.createdAt), 'dd/MM/yyyy HH:mm', { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Eye className="h-4 w-4 text-gray-400" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Tipologia Brand - Solo visualizzazione</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Tenant Typologies Section (CRUD) */}
+            <div data-testid="tenant-typologies-section">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                  <FolderTree className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900">Tipologie Personalizzate</h4>
+                  <p className="text-sm text-gray-500">Tipologie create dal tuo negozio</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{tenantTypologies.length} tipologie</Badge>
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Versione</TableHead>
+                      <TableHead>Data Creazione</TableHead>
+                      <TableHead className="text-center">Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {typologiesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Caricamento...
+                        </TableCell>
+                      </TableRow>
+                    ) : tenantTypologies.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          Nessuna tipologia personalizzata trovata
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      tenantTypologies.map((typ) => (
+                        <TableRow key={typ.id} data-testid={`row-tenant-typology-${typ.id}`}>
+                          <TableCell className="font-medium">{typ.nome}</TableCell>
+                          <TableCell>{getCategoryName(typ.categoryId)}</TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">v{typ.versionNumber || 1}</span>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(typ.createdAt), 'dd/MM/yyyy HH:mm', { locale: it })}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <ActionButtons 
+                              type="typology" 
+                              item={typ} 
+                              isBrandManaged={false}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
