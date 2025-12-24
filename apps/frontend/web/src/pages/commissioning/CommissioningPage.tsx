@@ -8,9 +8,11 @@ import {
   Trophy, 
   Building2,
   Settings,
-  Award
+  Award,
+  Zap
 } from 'lucide-react';
 import AnalyticsTabContent from '@/components/commissioning/AnalyticsTabContent';
+import DriversTabContent from '@/components/wms/DriversTabContent';
 import GareOperatoreTabContent from '@/components/commissioning/GareOperatoreTabContent';
 import GareInterneTabContent from '@/components/commissioning/GareInterneTabContent';
 import ImpostazioniTabContent from '@/components/commissioning/ImpostazioniTabContent';
@@ -20,6 +22,7 @@ export default function CommissioningPage() {
 
   const validTabs = useMemo(() => [
     'analytics',
+    'drivers',
     'gare-operatore',
     'gare-interne',
     'impostazioni'
@@ -31,6 +34,12 @@ export default function CommissioningPage() {
       label: 'Analytics',
       icon: BarChart3,
       testId: 'tab-analytics'
+    },
+    {
+      id: 'drivers',
+      label: 'Drivers',
+      icon: Zap,
+      testId: 'tab-drivers'
     },
     {
       id: 'gare-operatore',
@@ -96,19 +105,23 @@ export default function CommissioningPage() {
         <div className="flex-1 p-6">
           <Tabs value={activeTab} onValueChange={setTab}>
             <TabsContent value="analytics" className="mt-0">
-              <AnalyticsTabContent />
+              {activeTab === 'analytics' && <AnalyticsTabContent />}
+            </TabsContent>
+            
+            <TabsContent value="drivers" className="mt-0">
+              {activeTab === 'drivers' && <DriversTabContent />}
             </TabsContent>
             
             <TabsContent value="gare-operatore" className="mt-0">
-              <GareOperatoreTabContent />
+              {activeTab === 'gare-operatore' && <GareOperatoreTabContent />}
             </TabsContent>
             
             <TabsContent value="gare-interne" className="mt-0">
-              <GareInterneTabContent />
+              {activeTab === 'gare-interne' && <GareInterneTabContent />}
             </TabsContent>
             
             <TabsContent value="impostazioni" className="mt-0">
-              <ImpostazioniTabContent />
+              {activeTab === 'impostazioni' && <ImpostazioniTabContent />}
             </TabsContent>
           </Tabs>
         </div>

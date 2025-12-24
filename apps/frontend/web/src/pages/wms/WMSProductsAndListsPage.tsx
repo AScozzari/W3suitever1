@@ -11,13 +11,11 @@ import {
   Building2,
   Plus,
   ShoppingCart,
-  Zap,
   Landmark
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
 import ListiniTabContent from '@/components/wms/ListiniTabContent';
 import FornitoriTabContent from '@/components/wms/FornitoriTabContent';
-import DriversTabContent from '@/components/wms/DriversTabContent';
 import CategoriesTypologiesTabContent from '@/components/wms/CategoriesTypologiesTabContent';
 import EntiFinanziariTabContent from '@/components/wms/EntiFinanziariTabContent';
 
@@ -42,7 +40,6 @@ export default function WMSProductsAndListsPage() {
   const validTabs = useMemo(() => [
     'dashboard',
     'prodotti',
-    'drivers',
     'categorie',
     'fornitori',
     'enti-finanziari',
@@ -61,12 +58,6 @@ export default function WMSProductsAndListsPage() {
       label: 'Prodotti',
       icon: Package,
       testId: 'tab-prodotti'
-    },
-    {
-      id: 'drivers',
-      label: 'Drivers',
-      icon: Zap,
-      testId: 'tab-drivers'
     },
     {
       id: 'categorie',
@@ -176,9 +167,6 @@ export default function WMSProductsAndListsPage() {
             {activeTab === 'enti-finanziari' && <EntiFinanziariTabContent />}
           </TabsContent>
 
-          <TabsContent value="drivers" className="mt-0">
-            {activeTab === 'drivers' && <DriversTabContent />}
-          </TabsContent>
         </Tabs>
         </div>
       </div>
