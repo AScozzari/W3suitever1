@@ -181,28 +181,19 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
       );
 
     // Count products per category (for top categories chart)
-    const categoriesByTypeResult = await db
-      .select({ 
-        name: wmsCategories.name,
-        count: sql<number>`count(${products.id})::int` 
-      })
-      .from(wmsCategories)
-      .leftJoin(products, and(
-        eq(products.categoryId, wmsCategories.id),
-        eq(products.tenantId, tenantId),
-        eq(products.isActive, true)
-      ))
-      .where(
-        and(
-          eq(wmsCategories.tenantId, tenantId),
-          eq(wmsCategories.isActive, true)
-        )
-      )
-      .groupBy(wmsCategories.id, wmsCategories.name)
-      .orderBy(sql`count(${products.id}) DESC`)
-      .limit(10);
+    const categoriesByTypeResult = await db.execute(sql`
+      SELECT c.nome as name, COUNT(p.id)::int as count
+      FROM w3suite.wms_categories c
+      LEFT JOIN w3suite.products p ON p.category_id = c.id AND p.tenant_id = ${tenantId} AND p.is_active = true
+      WHERE c.tenant_id = ${tenantId} AND c.is_active = true
+      GROUP BY c.id, c.nome
+      ORDER BY COUNT(p.id) DESC
+      LIMIT 10
+    `);
 
-    const categoriesByType = categoriesByTypeResult.map(row => ({
+    // Extract rows from the result
+    const categoryRows = categoriesByTypeResult?.rows || [];
+    const categoriesByType = categoryRows.map((row: any) => ({
       name: row.name,
       count: row.count || 0
     }));
@@ -229,30 +220,18 @@ router.get("/dashboard/stats", rbacMiddleware, requirePermission('wms.analytics.
         )
       );
 
-    // Count suppliers from base suppliers table (brand-pushed)
-    const [baseSuppliersCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(suppliers)
-      .where(
-        and(
-          eq(suppliers.tenantId, tenantId),
-          eq(suppliers.status, 'active')
-        )
-      );
+    // Count suppliers from both tables
+    const suppliersResult = await db.execute(sql`
+      SELECT COALESCE(SUM(c), 0)::int as count FROM (
+        SELECT COUNT(*) as c FROM w3suite.suppliers 
+        WHERE tenant_id = ${tenantId} AND status = 'active'
+        UNION ALL
+        SELECT COUNT(*) as c FROM w3suite.supplier_overrides 
+        WHERE tenant_id = ${tenantId} AND status = 'active'
+      ) t
+    `);
 
-    // Count suppliers from supplier_overrides table (tenant-created or overridden)
-    const [overrideSuppliersCount] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(supplierOverrides)
-      .where(
-        and(
-          eq(supplierOverrides.tenantId, tenantId),
-          eq(supplierOverrides.status, 'active')
-        )
-      );
-
-    // Total suppliers = base + overrides
-    const suppliersCount = (baseSuppliersCount?.count || 0) + (overrideSuppliersCount?.count || 0);
+    const suppliersCount = suppliersResult?.rows?.[0]?.count || 0;
     
     // Price lists table (wms_price_lists) - planned for future implementation
     const priceListsCount = 0;
