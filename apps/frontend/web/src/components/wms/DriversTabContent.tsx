@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Zap, Eye, Pencil, Trash2, RefreshCw, AlertCircle, Lock, Building2, Package,
-  ChevronDown, ChevronRight, FolderTree, Tag, Radio
+  ChevronDown, ChevronRight, FolderTree, Tag, Radio, Wand2
 } from 'lucide-react';
 
 interface Operator {
@@ -461,14 +461,34 @@ export default function DriversTabContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="code">Codice *</Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                  placeholder="es. MOBILE"
-                  disabled={driverModal.mode === 'view'}
-                  data-testid="input-driver-code"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    placeholder="es. MOBILE"
+                    disabled={driverModal.mode === 'view'}
+                    data-testid="input-driver-code"
+                    className="flex-1"
+                  />
+                  {driverModal.mode !== 'view' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const timestamp = Date.now().toString().slice(-6);
+                        const newCode = `DRV${timestamp}`;
+                        setFormData(prev => ({ ...prev, code: newCode }));
+                      }}
+                      title="Genera automaticamente un codice driver univoco"
+                      data-testid="button-auto-generate-code"
+                      className="shrink-0"
+                    >
+                      <Wand2 className="h-4 w-4 text-indigo-500" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <div>
                 <Label htmlFor="name">Nome *</Label>
