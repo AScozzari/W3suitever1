@@ -40,12 +40,21 @@ const productSchema = z.object({
   isSerializable: z.boolean(),
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0).optional(),
-  unitOfMeasure: z.string().min(1, 'Unità di misura obbligatoria'),
+  unitOfMeasure: z.string().optional(),
   categoryId: z.string().max(100).optional(),
   typeId: z.string().max(100).optional(),
   validFrom: z.coerce.date().optional(), // Date object from DatePicker (formatted to YYYY-MM-DD on submit)
   validTo: z.coerce.date().optional(),   // Date object from DatePicker (formatted to YYYY-MM-DD on submit)
   pickingStrategy: z.enum(['fifo', 'lifo']).optional(),
+}).refine((data) => {
+  // Validation Rule: unitOfMeasure is required for non-CANVAS products
+  if (data.type !== 'CANVAS' && (!data.unitOfMeasure || data.unitOfMeasure.length === 0)) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Unità di misura obbligatoria per prodotti non-CANVAS',
+  path: ['unitOfMeasure'],
 }).refine((data) => {
   // Validation Rule: serialType is required if isSerializable is true
   if (data.isSerializable && !data.serialType) {
@@ -718,25 +727,27 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 )}
               />
 
-              {/* EAN/Barcode */}
-              <FormField
-                control={form.control}
-                name="ean"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>EAN/Barcode</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="es. 8032454078463" 
-                        data-testid="input-ean"
-                        maxLength={13}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* EAN/Barcode - Solo per prodotti fisici (non CANVAS) */}
+              {watchType !== 'CANVAS' && (
+                <FormField
+                  control={form.control}
+                  name="ean"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>EAN/Barcode</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="es. 8032454078463" 
+                          data-testid="input-ean"
+                          maxLength={13}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Memoria (solo per PHYSICAL) */}
               {watchType === 'PHYSICAL' && (
@@ -786,68 +797,72 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                 />
               )}
 
-              {/* Unità di Misura */}
-              <FormField
-                control={form.control}
-                name="unitOfMeasure"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unità di Misura <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="es. pz, kg, m" 
-                        data-testid="input-unit-of-measure"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Strategia Prelievo (FIFO/LIFO) */}
-              <FormField
-                control={form.control}
-                name="pickingStrategy"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-1">
-                      Strategia Prelievo
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs text-sm">
-                            <p className="font-medium mb-1">Strategia di prelievo predefinita</p>
-                            <p className="text-muted-foreground">
-                              <strong>FIFO:</strong> I prodotti più vecchi escono prima (consigliato per deperibili).<br/>
-                              <strong>LIFO:</strong> Gli ultimi arrivati escono prima.<br/><br/>
-                              <em>Nota:</em> Questa impostazione può essere sovrascritta a livello di singolo lotto durante la fase di carico merce.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || 'fifo'}
-                      data-testid="select-picking-strategy"
-                    >
+              {/* Unità di Misura - Solo per prodotti fisici (non CANVAS) */}
+              {watchType !== 'CANVAS' && (
+                <FormField
+                  control={form.control}
+                  name="unitOfMeasure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unità di Misura <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona strategia" />
-                        </SelectTrigger>
+                        <Input 
+                          placeholder="es. pz, kg, m" 
+                          data-testid="input-unit-of-measure"
+                          {...field} 
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="fifo">FIFO (First In, First Out)</SelectItem>
-                        <SelectItem value="lifo">LIFO (Last In, First Out)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Strategia Prelievo (FIFO/LIFO) - Solo per prodotti fisici (non CANVAS) */}
+              {watchType !== 'CANVAS' && (
+                <FormField
+                  control={form.control}
+                  name="pickingStrategy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1">
+                        Strategia Prelievo
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-sm">
+                              <p className="font-medium mb-1">Strategia di prelievo predefinita</p>
+                              <p className="text-muted-foreground">
+                                <strong>FIFO:</strong> I prodotti più vecchi escono prima (consigliato per deperibili).<br/>
+                                <strong>LIFO:</strong> Gli ultimi arrivati escono prima.<br/><br/>
+                                <em>Nota:</em> Questa impostazione può essere sovrascritta a livello di singolo lotto durante la fase di carico merce.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || 'fifo'}
+                        data-testid="select-picking-strategy"
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleziona strategia" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="fifo">FIFO (First In, First Out)</SelectItem>
+                          <SelectItem value="lifo">LIFO (Last In, First Out)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* CAMPO CONDIZIONALE: Canone Mensile (solo per CANVAS) - Posizionato dopo Unità di Misura */}
               {watchType === 'CANVAS' && (
