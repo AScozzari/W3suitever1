@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/services/ApiService';
 import { queryClient } from '@/lib/queryClient';
 import { supplierValidationSchema, type SupplierValidation } from '@/lib/validation/italian-business-validation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   Plus, Building2, Eye, Trash2, RefreshCw, AlertCircle, X, MapPin, Phone, CreditCard, Truck, Mail, FileText,
-  Search, CalendarIcon, Filter, Wand2, CheckCircle2, XCircle
+  Search, CalendarIcon, Filter, Wand2, CheckCircle2, XCircle, Lock, Store
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -419,6 +420,173 @@ export default function FornitoriTabContent() {
 
   const hasActiveFilters = searchTerm || sourceFilter !== 'all' || dateFrom || dateTo;
 
+  // Separate suppliers into Brand and Tenant
+  const brandSuppliers = useMemo(() => 
+    filteredSuppliers.filter((s: any) => s.origin === 'brand'), 
+    [filteredSuppliers]
+  );
+  
+  const tenantSuppliers = useMemo(() => 
+    filteredSuppliers.filter((s: any) => s.origin !== 'brand'), 
+    [filteredSuppliers]
+  );
+
+  // Shared table column widths for alignment
+  const columnWidths = {
+    code: 'w-[12%]',
+    name: 'w-[22%]',
+    vatTax: 'w-[18%]',
+    city: 'w-[14%]',
+    status: 'w-[12%]',
+    actions: 'w-[12%]'
+  };
+
+  // Reusable table header component
+  const TableHeader = () => (
+    <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+      <th className={columnWidths.code} style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
+      <th className={columnWidths.name} style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
+      <th className={columnWidths.vatTax} style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
+      <th className={columnWidths.city} style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+      <th className={columnWidths.status} style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+      <th className={columnWidths.actions} style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+    </tr>
+  );
+
+  // Reusable supplier row component
+  const SupplierRow = ({ supplier, index, isBrand }: { supplier: any; index: number; isBrand: boolean }) => (
+    <tr
+      key={supplier.id}
+      data-testid={`row-${isBrand ? 'brand' : 'tenant'}-supplier-${supplier.id}`}
+      style={{
+        background: index % 2 === 0 ? '#ffffff' : '#fafafa',
+        borderBottom: '1px solid #f3f4f6',
+        transition: 'background-color 0.2s ease'
+      }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.background = isBrand ? '#eff6ff' : '#f0fdf4';
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.background = index % 2 === 0 ? '#ffffff' : '#fafafa';
+      }}>
+      <td className={columnWidths.code} style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+        {supplier.code}
+      </td>
+      <td className={columnWidths.name} style={{ padding: '16px' }}>
+        <div>
+          <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{supplier.name}</div>
+          {supplier.legal_name && (
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>{supplier.legal_name}</div>
+          )}
+        </div>
+      </td>
+      <td className={columnWidths.vatTax} style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+        <div>
+          <div>P.IVA: {supplier.vat_number || 'N/A'}</div>
+          <div>C.F.: {supplier.tax_code || 'N/A'}</div>
+        </div>
+      </td>
+      <td className={columnWidths.city} style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+        {supplier.city || '-'} ({supplier.province || '-'})
+      </td>
+      <td className={columnWidths.status} style={{ padding: '16px' }}>
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 12px',
+          background: supplier.status === 'active' || supplier.status === 'Attivo'
+            ? '#dcfce7'
+            : supplier.status === 'suspended' || supplier.status === 'Sospeso'
+            ? '#fef3c7'
+            : supplier.status === 'archived' || supplier.status === 'Archiviato'
+            ? '#fecaca'
+            : '#f1f5f9',
+          color: supplier.status === 'active' || supplier.status === 'Attivo'
+            ? '#15803d' 
+            : supplier.status === 'suspended' || supplier.status === 'Sospeso'
+            ? '#d97706'
+            : supplier.status === 'archived' || supplier.status === 'Archiviato'
+            ? '#dc2626'
+            : '#475569',
+          border: `1px solid ${supplier.status === 'active' || supplier.status === 'Attivo'
+            ? '#bbf7d0' 
+            : supplier.status === 'suspended' || supplier.status === 'Sospeso'
+            ? '#fcd34d'
+            : supplier.status === 'archived' || supplier.status === 'Archiviato'
+            ? '#fca5a5'
+            : '#e2e8f0'}`,
+          borderRadius: '20px',
+          fontSize: '12px',
+          fontWeight: '600',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            background: 'white'
+          }} />
+          {supplier.status === 'active' ? 'Attivo' : supplier.status === 'suspended' ? 'Sospeso' : supplier.status === 'archived' ? 'Archiviato' : supplier.status}
+        </span>
+      </td>
+      <td className={columnWidths.actions} style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <button
+            data-testid={`button-view-supplier-${supplier.id}`}
+            onClick={() => setSupplierModal({ open: true, data: supplier })}
+            style={{
+              background: 'transparent',
+              border: '1px solid #e5e7eb',
+              borderRadius: '6px',
+              padding: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = isBrand ? '#dbeafe' : '#f0fdf4';
+              e.currentTarget.style.borderColor = isBrand ? '#93c5fd' : '#bbf7d0';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+            }}>
+            <Eye size={14} style={{ color: isBrand ? '#3b82f6' : '#10b981' }} />
+          </button>
+          {!isBrand && (
+            <button
+              data-testid={`button-delete-supplier-${supplier.id}`}
+              onClick={() => handleDeleteSupplier(supplier.id)}
+              style={{
+                background: 'transparent',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#fee2e2';
+                e.currentTarget.style.borderColor = '#fca5a5';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = '#e5e7eb';
+              }}>
+              <Trash2 size={14} style={{ color: '#ef4444' }} />
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="space-y-6" data-testid="fornitori-content">
         {/* Header */}
@@ -549,275 +717,155 @@ export default function FornitoriTabContent() {
           </div>
         </Card>
 
-        {/* DataTable */}
-        <div style={{
-          background: 'white',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          border: '1px solid #e5e7eb'
-        }}>
-          {suppliersLoading ? (
-            <div style={{ 
-              padding: '48px 16px', 
-              textAlign: 'center', 
-              color: '#6b7280',
-              fontSize: '14px'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                <RefreshCw size={32} style={{ color: '#d1d5db', animation: 'spin 1s linear infinite' }} />
-                <div>Caricamento fornitori...</div>
-              </div>
-              <style>{`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
+        {/* Loading/Error State */}
+        {suppliersLoading ? (
+          <div style={{ 
+            padding: '48px 16px', 
+            textAlign: 'center', 
+            color: '#6b7280',
+            fontSize: '14px'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <RefreshCw size={32} style={{ color: '#d1d5db', animation: 'spin 1s linear infinite' }} />
+              <div>Caricamento fornitori...</div>
             </div>
-          ) : suppliersIsError ? (
-            <div style={{ 
-              padding: '48px 16px', 
-              textAlign: 'center', 
-              color: '#ef4444',
-              fontSize: '14px'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                <AlertCircle size={32} style={{ color: '#ef4444' }} />
-                <div>Errore nel caricamento dei fornitori</div>
-                <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                  {suppliersError?.message || 'Si è verificato un errore imprevisto'}
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        ) : suppliersIsError ? (
+          <div style={{ 
+            padding: '48px 16px', 
+            textAlign: 'center', 
+            color: '#ef4444',
+            fontSize: '14px'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <AlertCircle size={32} style={{ color: '#ef4444' }} />
+              <div>Errore nel caricamento dei fornitori</div>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                {suppliersError?.message || 'Si è verificato un errore imprevisto'}
+              </div>
+              <button
+                onClick={() => refetchSuppliersQuery()}
+                style={{
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  marginTop: '8px'
+                }}
+              >
+                Riprova
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* BRAND SUPPLIERS SECTION (Read-only) */}
+            <div data-testid="brand-suppliers-section">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
+                  <Building2 className="h-5 w-5 text-white" />
                 </div>
-                <button
-                  onClick={() => refetchSuppliersQuery()}
-                  style={{
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                    marginTop: '8px'
-                  }}
-                >
-                  Riprova
-                </button>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    Fornitori Brand
+                    <Lock className="h-4 w-4 text-gray-400" />
+                  </h4>
+                  <p className="text-sm text-gray-500">Fornitori sincronizzati dal brand (sola lettura)</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{brandSuppliers.length} fornitori</Badge>
+              </div>
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                border: '1px solid #e5e7eb'
+              }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <thead>
+                    <TableHeader />
+                  </thead>
+                  <tbody>
+                    {brandSuppliers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ 
+                          padding: '32px 16px', 
+                          textAlign: 'center', 
+                          color: '#6b7280',
+                          fontSize: '14px'
+                        }}>
+                          Nessun fornitore Brand disponibile
+                        </td>
+                      </tr>
+                    ) : (
+                      brandSuppliers.map((supplier: any, index: number) => (
+                        <SupplierRow key={supplier.id} supplier={supplier} index={index} isBrand={true} />
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Origine</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                  <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSuppliers.map((supplier: any, index: number) => (
-                <tr
-                  key={supplier.id}
-                  data-testid={`row-supplier-${supplier.id}`}
-                  style={{
-                    background: index % 2 === 0 ? '#ffffff' : '#fafafa',
-                    borderBottom: '1px solid #f3f4f6',
-                    transition: 'background-color 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#f0fdf4';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = index % 2 === 0 ? '#ffffff' : '#fafafa';
-                  }}>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
-                    {supplier.code}
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{supplier.name}</div>
-                      {supplier.legal_name && (
-                        <div style={{ fontSize: '12px', color: '#6b7280' }}>{supplier.legal_name}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    <div>
-                      <div>P.IVA: {supplier.vat_number || 'N/A'}</div>
-                      <div>C.F.: {supplier.tax_code || 'N/A'}</div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    {supplier.city || '-'} ({supplier.province || '-'})
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    {supplier.origin === 'brand' ? (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 10px',
-                        background: '#dbeafe',
-                        color: '#1d4ed8',
-                        border: '1px solid #93c5fd',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}
-                      title="Gestito centralmente dal Brand HQ - Solo visualizzazione"
-                      >
-                        <Building2 size={12} />
-                        Brand
-                      </span>
-                    ) : (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 10px',
-                        background: '#f3f4f6',
-                        color: '#374151',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '500'
-                      }}>
-                        Tenant
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
-                      background: supplier.status === 'active' || supplier.status === 'Attivo'
-                        ? '#dcfce7'
-                        : supplier.status === 'suspended' || supplier.status === 'Sospeso'
-                        ? '#fef3c7'
-                        : supplier.status === 'archived' || supplier.status === 'Archiviato'
-                        ? '#fecaca'
-                        : '#f1f5f9',
-                      color: supplier.status === 'active' || supplier.status === 'Attivo'
-                        ? '#15803d' 
-                        : supplier.status === 'suspended' || supplier.status === 'Sospeso'
-                        ? '#d97706'
-                        : supplier.status === 'archived' || supplier.status === 'Archiviato'
-                        ? '#dc2626'
-                        : '#475569',
-                      border: `1px solid ${supplier.status === 'active' || supplier.status === 'Attivo'
-                        ? '#bbf7d0' 
-                        : supplier.status === 'suspended' || supplier.status === 'Sospeso'
-                        ? '#fcd34d'
-                        : supplier.status === 'archived' || supplier.status === 'Archiviato'
-                        ? '#fca5a5'
-                        : '#e2e8f0'}`,
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: 'white'
-                      }} />
-                      {supplier.status === 'active' ? 'Attivo' : supplier.status === 'suspended' ? 'Sospeso' : supplier.status === 'archived' ? 'Archiviato' : supplier.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        data-testid={`button-view-supplier-${supplier.id}`}
-                        onClick={() => setSupplierModal({ open: true, data: supplier })}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.background = '#f0fdf4';
-                          e.currentTarget.style.borderColor = '#bbf7d0';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.borderColor = '#e5e7eb';
-                        }}>
-                        <Eye size={14} style={{ color: '#10b981' }} />
-                      </button>
-                      {supplier.origin === 'tenant' && (
-                        <button
-                          data-testid={`button-delete-supplier-${supplier.id}`}
-                          onClick={() => handleDeleteSupplier(supplier.id)}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '6px',
-                            padding: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = '#fee2e2';
-                            e.currentTarget.style.borderColor = '#fca5a5';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.borderColor = '#e5e7eb';
-                          }}>
-                          <Trash2 size={14} style={{ color: '#ef4444' }} />
-                        </button>
-                      )}
-                      {supplier.origin === 'brand' && (
-                        <div style={{
-                          padding: '6px 8px',
-                          fontSize: '11px',
+
+            {/* TENANT SUPPLIERS SECTION (Full CRUD) */}
+            <div data-testid="tenant-suppliers-section">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                  <Store className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900">Fornitori Personalizzati</h4>
+                  <p className="text-sm text-gray-500">Fornitori creati dal tuo negozio</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto">{tenantSuppliers.length} fornitori</Badge>
+              </div>
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                border: '1px solid #e5e7eb'
+              }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <thead>
+                    <TableHeader />
+                  </thead>
+                  <tbody>
+                    {tenantSuppliers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ 
+                          padding: '32px 16px', 
+                          textAlign: 'center', 
                           color: '#6b7280',
-                          background: '#f9fafb',
-                          borderRadius: '4px'
+                          fontSize: '14px'
                         }}>
-                          View Only
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-                {filteredSuppliers.length === 0 && (
-                  <tr>
-                    <td colSpan={7} style={{ 
-                      padding: '48px 16px', 
-                      textAlign: 'center', 
-                      color: '#6b7280',
-                      fontSize: '14px'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                        <Truck size={32} style={{ color: '#d1d5db' }} />
-                        <div>Nessun fornitore configurato</div>
-                        <div style={{ fontSize: '12px' }}>Crea il primo fornitore per iniziare</div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                            <Truck size={32} style={{ color: '#d1d5db' }} />
+                            <div>Nessun fornitore personalizzato</div>
+                            <div style={{ fontSize: '12px' }}>Crea il primo fornitore per iniziare</div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      tenantSuppliers.map((supplier: any, index: number) => (
+                        <SupplierRow key={supplier.id} supplier={supplier} index={index} isBrand={false} />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Modal Fornitore (from SettingsPage lines 9384-10500) */}
       {supplierModal.open && (
