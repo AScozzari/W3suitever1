@@ -146,7 +146,11 @@ const PRODUCT_TYPE_ICONS: Record<string, React.ReactNode> = {
 type SortField = 'sku' | 'nome' | 'productType' | 'prezzoVendita' | 'quantitaDisponibile';
 type SortOrder = 'asc' | 'desc';
 
-export default function DashboardTabContent() {
+interface DashboardTabContentProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export default function DashboardTabContent({ onNavigate }: DashboardTabContentProps) {
   const [sortField, setSortField] = useState<SortField>('sku');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
@@ -628,6 +632,7 @@ export default function DashboardTabContent() {
               background: 'hsl(var(--brand-orange))',
               color: 'white',
             }}
+            onClick={() => onNavigate?.('prodotti')}
             data-testid="button-quick-new-product"
           >
             <Package className="h-5 w-5" />
@@ -636,6 +641,7 @@ export default function DashboardTabContent() {
           <Button
             variant="outline"
             className="h-auto py-4 flex flex-col gap-2 hover:border-purple-300 hover:bg-purple-50"
+            onClick={() => onNavigate?.('categorie')}
             data-testid="button-quick-new-category"
           >
             <FolderTree className="h-5 w-5 text-purple-600" />
@@ -644,6 +650,7 @@ export default function DashboardTabContent() {
           <Button
             variant="outline"
             className="h-auto py-4 flex flex-col gap-2 hover:border-green-300 hover:bg-green-50"
+            onClick={() => onNavigate?.('fornitori')}
             data-testid="button-quick-new-supplier"
           >
             <Building2 className="h-5 w-5 text-green-600" />
@@ -652,6 +659,7 @@ export default function DashboardTabContent() {
           <Button
             variant="outline"
             className="h-auto py-4 flex flex-col gap-2 hover:border-amber-300 hover:bg-amber-50"
+            onClick={() => onNavigate?.('enti-finanziari')}
             data-testid="button-quick-new-financial-entity"
           >
             <Landmark className="h-5 w-5 text-amber-600" />
@@ -660,6 +668,7 @@ export default function DashboardTabContent() {
           <Button
             variant="outline"
             className="h-auto py-4 flex flex-col gap-2 hover:border-blue-300 hover:bg-blue-50"
+            onClick={() => onNavigate?.('listini')}
             data-testid="button-quick-new-pricelist"
           >
             <FileText className="h-5 w-5 text-blue-600" />

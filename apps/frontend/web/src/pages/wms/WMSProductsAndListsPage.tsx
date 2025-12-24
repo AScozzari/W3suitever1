@@ -136,7 +136,7 @@ export default function WMSProductsAndListsPage() {
 
           {/* Tab Contents with conditional mounting */}
           <TabsContent value="dashboard" className="mt-0">
-            {activeTab === 'dashboard' && <DashboardTabContent />}
+            {activeTab === 'dashboard' && <DashboardTabContent onNavigate={setTab} />}
           </TabsContent>
 
           <TabsContent value="prodotti" className="mt-0">
