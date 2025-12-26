@@ -23,6 +23,8 @@ import {
   FileText
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { ReceivingModal } from './ReceivingModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReceivingStats {
   todayReceived: number;
@@ -60,6 +62,16 @@ export function ReceivingTabContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('today');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleReceivingSubmit = (data: any) => {
+    console.log('Receiving data:', data);
+    toast({
+      title: 'Carico registrato',
+      description: `${data.items.length} prodotti caricati con successo`,
+    });
+  };
 
   const stats: ReceivingStats = {
     todayReceived: 47,
@@ -135,6 +147,7 @@ export function ReceivingTabContent() {
         <Button 
           className="bg-orange-500 hover:bg-orange-600"
           data-testid="btn-new-receiving"
+          onClick={() => setIsModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
           Nuovo Carico
@@ -368,6 +381,12 @@ export function ReceivingTabContent() {
           </div>
         </CardContent>
       </Card>
+
+      <ReceivingModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSubmit={handleReceivingSubmit}
+      />
     </div>
   );
 }
