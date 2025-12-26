@@ -166,6 +166,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const [lastDeletedSerial, setLastDeletedSerial] = useState<{ serial: string; index: number } | null>(null);
   const [serialFilter, setSerialFilter] = useState('');
   const [showUndoToast, setShowUndoToast] = useState(false);
+  const [showSkuMappingForm, setShowSkuMappingForm] = useState(false);
+  const [unmappedSupplierSku, setUnmappedSupplierSku] = useState('');
+  const [internalProductSearch, setInternalProductSearch] = useState('');
+  const [internalProductResults, setInternalProductResults] = useState<Product[]>([]);
+  const [showInternalResults, setShowInternalResults] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -219,11 +224,58 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
       );
       setSearchResults(results);
       setShowSearchResults(true);
+      
+      // If no results and query looks like a supplier SKU, show mapping option
+      if (results.length === 0 && query.length >= 5) {
+        setUnmappedSupplierSku(searchQuery);
+      } else {
+        setShowSkuMappingForm(false);
+      }
     } else {
       setSearchResults([]);
       setShowSearchResults(false);
+      setShowSkuMappingForm(false);
     }
   }, [searchQuery]);
+
+  // Search for internal products when mapping
+  useEffect(() => {
+    if (internalProductSearch.length >= 2) {
+      const query = internalProductSearch.toLowerCase();
+      const results = MOCK_PRODUCTS.filter(p => 
+        p.name.toLowerCase().includes(query) ||
+        p.sku.toLowerCase().includes(query) ||
+        p.ean?.includes(query)
+      );
+      setInternalProductResults(results);
+      setShowInternalResults(true);
+    } else {
+      setInternalProductResults([]);
+      setShowInternalResults(false);
+    }
+  }, [internalProductSearch]);
+
+  const handleCreateMapping = (product: Product) => {
+    // Create mapping: associate unmappedSupplierSku to this product
+    const mappedProduct: Product = {
+      ...product,
+      supplierSku: unmappedSupplierSku
+    };
+    
+    // TODO: Save mapping to backend via POST /api/wms/product-supplier-mappings
+    console.log('Creating SKU mapping:', { 
+      productId: product.id, 
+      supplierSku: unmappedSupplierSku,
+      supplierId: selectedSupplierId 
+    });
+    
+    // Select the product and reset mapping form
+    setShowSkuMappingForm(false);
+    setUnmappedSupplierSku('');
+    setInternalProductSearch('');
+    setShowInternalResults(false);
+    handleProductSelect(mappedProduct);
+  };
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
@@ -693,6 +745,85 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+                    
+                    {/* No results - show mapping option */}
+                    {showSearchResults && searchResults.length === 0 && unmappedSupplierSku && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg">
+                        <div className="p-4 border-b bg-amber-50">
+                          <div className="flex items-center gap-2 text-amber-700 mb-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="font-medium">Codice non trovato</span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Il codice "<span className="font-mono font-medium">{unmappedSupplierSku}</span>" non è mappato a nessun prodotto interno.
+                          </p>
+                          {!showSkuMappingForm ? (
+                            <Button 
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-3"
+                              onClick={() => setShowSkuMappingForm(true)}
+                              data-testid="button-create-mapping"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Crea Abbinamento SKU
+                            </Button>
+                          ) : (
+                            <div className="mt-3 space-y-3">
+                              <div className="relative">
+                                <Label className="text-xs text-gray-500 mb-1 block">Cerca prodotto interno (SKU, nome, EAN)</Label>
+                                <Search className="absolute left-3 top-8 h-4 w-4 text-gray-400" />
+                                <Input
+                                  value={internalProductSearch}
+                                  onChange={(e) => setInternalProductSearch(e.target.value)}
+                                  placeholder="Cerca prodotto da collegare..."
+                                  className="pl-9"
+                                  data-testid="input-internal-product-search"
+                                />
+                              </div>
+                              
+                              {showInternalResults && internalProductResults.length > 0 && (
+                                <div className="border rounded-md bg-white max-h-48 overflow-y-auto">
+                                  {internalProductResults.map(product => (
+                                    <div
+                                      key={product.id}
+                                      className="p-2 hover:bg-green-50 cursor-pointer border-b last:border-b-0 flex items-center justify-between"
+                                      onClick={() => handleCreateMapping(product)}
+                                      data-testid={`mapping-result-${product.id}`}
+                                    >
+                                      <div>
+                                        <p className="font-medium text-sm text-gray-900">{product.name}</p>
+                                        <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                                      </div>
+                                      <Button type="button" size="sm" variant="ghost" className="text-green-600">
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {showInternalResults && internalProductResults.length === 0 && (
+                                <p className="text-sm text-gray-500">Nessun prodotto trovato. Verifica l'anagrafica.</p>
+                              )}
+                              
+                              <Button 
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setShowSkuMappingForm(false);
+                                  setInternalProductSearch('');
+                                }}
+                              >
+                                Annulla
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
