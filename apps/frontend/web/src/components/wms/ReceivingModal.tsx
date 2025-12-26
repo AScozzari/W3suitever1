@@ -254,16 +254,45 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     if (e.key === 'Enter' && serialInput.trim()) {
       e.preventDefault();
       
+      // Check for duplicates
       if (currentSerials.includes(serialInput.trim())) {
+        setSerialInput('');
+        serialInputRef.current?.focus();
         return;
       }
       
-      setCurrentSerials(prev => [...prev, serialInput.trim()]);
+      const newSerials = [...currentSerials, serialInput.trim()];
+      setCurrentSerials(newSerials);
       setSerialInput('');
       
-      if (currentSerials.length + 1 >= targetQuantity) {
+      // Keep focus on serial input for rapid scanning
+      setTimeout(() => {
+        serialInputRef.current?.focus();
+      }, 50);
+      
+      // Only exit scan mode when ALL serials are captured
+      if (newSerials.length >= targetQuantity) {
         setSerialScanMode(false);
       }
+    }
+  };
+
+  // Handle quantity input - allow empty values during typing
+  const handleQuantityChange = (value: string) => {
+    if (value === '') {
+      setTargetQuantity(0);
+    } else {
+      const parsed = parseInt(value);
+      if (!isNaN(parsed) && parsed >= 0) {
+        setTargetQuantity(parsed);
+      }
+    }
+  };
+
+  // Validate quantity on blur - ensure minimum of 1
+  const handleQuantityBlur = () => {
+    if (targetQuantity < 1) {
+      setTargetQuantity(1);
     }
   };
 
@@ -656,8 +685,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                                 <Input
                                   type="number"
                                   min={1}
-                                  value={targetQuantity}
-                                  onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
+                                  value={targetQuantity || ''}
+                                  onChange={(e) => handleQuantityChange(e.target.value)}
+                                  onBlur={handleQuantityBlur}
                                   className="mt-1"
                                   data-testid="input-quantity"
                                 />
@@ -719,8 +749,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                                 <Input
                                   type="number"
                                   min={1}
-                                  value={targetQuantity}
-                                  onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
+                                  value={targetQuantity || ''}
+                                  onChange={(e) => handleQuantityChange(e.target.value)}
+                                  onBlur={handleQuantityBlur}
                                   className="mt-1"
                                   data-testid="input-quantity"
                                 />
@@ -799,8 +830,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                               <Input
                                 type="number"
                                 min={1}
-                                value={targetQuantity}
-                                onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
+                                value={targetQuantity || ''}
+                                onChange={(e) => handleQuantityChange(e.target.value)}
+                                onBlur={handleQuantityBlur}
                                 className="mt-1"
                                 data-testid="input-quantity"
                               />
