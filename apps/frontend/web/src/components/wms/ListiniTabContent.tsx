@@ -40,6 +40,9 @@ interface PriceListHeader {
   type: PriceListType;
   supplierId: string;
   operatorId: string;
+  channelId: string;
+  customerScope: string;
+  supplierIds: string[];
   validFrom: Date;
   validTo: Date | null;
 }
@@ -183,6 +186,9 @@ export default function ListiniTabContent() {
     type: 'no_promo',
     supplierId: '',
     operatorId: '',
+    channelId: '',
+    customerScope: '',
+    supplierIds: [],
     validFrom: new Date(),
     validTo: addMonths(new Date(), 12)
   });
@@ -286,6 +292,10 @@ export default function ListiniTabContent() {
     queryKey: ['/api/operators']
   });
 
+  const { data: channelsData = [] } = useQuery({
+    queryKey: ['/api/reference/channels']
+  });
+
   const { data: productTypesData = [] } = useQuery({
     queryKey: ['/api/wms/product-types']
   });
@@ -297,6 +307,7 @@ export default function ListiniTabContent() {
       ? (productTypesData as any).data 
       : [];
   const safeOperators = Array.isArray(operatorsData) ? operatorsData : [];
+  const safeChannels = Array.isArray(channelsData) ? channelsData : [];
   // VAT rates endpoint returns { success: true, data: [...] }
   const safeVatRates = Array.isArray(vatRatesData) 
     ? vatRatesData 
@@ -597,6 +608,9 @@ export default function ListiniTabContent() {
       type: 'no_promo',
       supplierId: '',
       operatorId: '',
+      channelId: '',
+      customerScope: '',
+      supplierIds: [],
       validFrom: new Date(),
       validTo: addMonths(new Date(), 12)
     });
@@ -1243,6 +1257,49 @@ export default function ListiniTabContent() {
             </Select>
             <p className="text-xs text-gray-500">Seleziona l'operatore telecom per questo listino Canvas</p>
           </div>
+        )}
+
+        {/* Canale e Target Cliente per listini Canvas e Promo Canvas */}
+        {(priceListHeader.type === 'canvas' || priceListHeader.type === 'promo_canvas') && (
+          <>
+            <div className="space-y-1.5">
+              <Label>Canale di Vendita</Label>
+              <Select 
+                value={priceListHeader.channelId || '_all'} 
+                onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, channelId: val === '_all' ? '' : val }))}
+              >
+                <SelectTrigger data-testid="select-channel">
+                  <SelectValue placeholder="Tutti i canali" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Tutti i canali</SelectItem>
+                  {safeChannels.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">Filtra per canale (Franchising, Dealer, etc.)</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Target Cliente</Label>
+              <Select 
+                value={priceListHeader.customerScope || '_all'} 
+                onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, customerScope: val === '_all' ? '' : val }))}
+              >
+                <SelectTrigger data-testid="select-customer-scope">
+                  <SelectValue placeholder="Tutti i target" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Tutti i target</SelectItem>
+                  <SelectItem value="consumer">Consumer (Privati)</SelectItem>
+                  <SelectItem value="business">Business (P.IVA)</SelectItem>
+                  <SelectItem value="mixed">Misto (Consumer + Business)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">Tipologia clienti destinatari del listino</p>
+            </div>
+          </>
         )}
       </div>
     </div>
