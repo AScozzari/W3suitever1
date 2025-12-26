@@ -20,11 +20,26 @@ import {
   ChevronRight,
   Calendar,
   Building2,
-  FileText
+  FileText,
+  Pause,
+  Play,
+  Trash2,
+  Loader2
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { ReceivingModal } from './ReceivingModal';
 import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ReceivingStats {
   todayReceived: number;
@@ -42,6 +57,27 @@ interface ReceivingOperation {
   itemsReceived: number;
   createdAt: string;
   hasDiscrepancy: boolean;
+}
+
+interface ReceivingDraft {
+  id: string;
+  supplierId?: string;
+  supplierName?: string;
+  documentNumber?: string;
+  documentDate?: string;
+  expectedDeliveryDate?: string;
+  storeId?: string;
+  storeName?: string;
+  notes?: string;
+  productsData: any[];
+  totalProducts: number;
+  totalQuantity: number;
+  status: 'suspended' | 'resumed' | 'completed' | 'cancelled';
+  lastStep: number;
+  createdBy?: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const STATUS_CONFIG = {
@@ -63,7 +99,37 @@ export function ReceivingTabContent() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('today');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resumeDraft, setResumeDraft] = useState<ReceivingDraft | null>(null);
+  const [deleteConfirmDraft, setDeleteConfirmDraft] = useState<ReceivingDraft | null>(null);
   const { toast } = useToast();
+
+  // Fetch suspended drafts
+  const { data: draftsData, isLoading: draftsLoading } = useQuery<{ success: boolean; data: ReceivingDraft[] }>({
+    queryKey: ['/api/wms/receiving/drafts'],
+  });
+  const suspendedDrafts = draftsData?.data || [];
+
+  // Delete draft mutation
+  const deleteDraftMutation = useMutation({
+    mutationFn: async (draftId: string) => {
+      await apiRequest('DELETE', `/api/wms/receiving/drafts/${draftId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
+      toast({
+        title: 'Bozza eliminata',
+        description: 'La bozza è stata eliminata con successo.',
+      });
+      setDeleteConfirmDraft(null);
+    },
+    onError: () => {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile eliminare la bozza. Riprova.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleReceivingSubmit = (data: any) => {
     console.log('Receiving data:', data);
@@ -71,6 +137,24 @@ export function ReceivingTabContent() {
       title: 'Carico registrato',
       description: `${data.items.length} prodotti caricati con successo`,
     });
+    // Clear resume draft after successful submission
+    setResumeDraft(null);
+  };
+
+  const handleResumeDraft = (draft: ReceivingDraft) => {
+    setResumeDraft(draft);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      setResumeDraft(null);
+    }
+  };
+
+  const handleDraftSaved = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
   };
 
   const stats: ReceivingStats = {
@@ -382,11 +466,139 @@ export function ReceivingTabContent() {
         </CardContent>
       </Card>
 
+      {/* Suspended Receiving Sessions (Carichi Sospesi) */}
+      {suspendedDrafts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Pause className="h-5 w-5 text-yellow-600" />
+              <CardTitle className="text-base font-medium">Carichi Sospesi</CardTitle>
+              <Badge variant="secondary" className="ml-2">
+                {suspendedDrafts.length}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left px-4 py-2 font-medium text-gray-600">Data</th>
+                    <th className="text-left px-4 py-2 font-medium text-gray-600">Fornitore</th>
+                    <th className="text-left px-4 py-2 font-medium text-gray-600">N. Documento</th>
+                    <th className="text-center px-4 py-2 font-medium text-gray-600">Prodotti</th>
+                    <th className="text-center px-4 py-2 font-medium text-gray-600">Quantità</th>
+                    <th className="text-center px-4 py-2 font-medium text-gray-600">Ultimo Step</th>
+                    <th className="text-right px-4 py-2 font-medium text-gray-600">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {suspendedDrafts.map((draft) => (
+                    <tr key={draft.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-gray-700">
+                        {new Date(draft.updatedAt).toLocaleDateString('it-IT', { 
+                          day: '2-digit', 
+                          month: '2-digit', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-gray-900">
+                          {draft.supplierName || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {draft.documentNumber || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge variant="outline">{draft.totalProducts}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge variant="outline">{draft.totalQuantity}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge 
+                          className={
+                            draft.lastStep === 1 ? 'bg-gray-100 text-gray-700' :
+                            draft.lastStep === 2 ? 'bg-blue-100 text-blue-700' :
+                            'bg-green-100 text-green-700'
+                          }
+                        >
+                          Step {draft.lastStep}/3
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleResumeDraft(draft)}
+                            data-testid={`btn-resume-draft-${draft.id}`}
+                          >
+                            <Play className="h-4 w-4 mr-1" />
+                            Riprendi
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => setDeleteConfirmDraft(draft)}
+                            data-testid={`btn-delete-draft-${draft.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <ReceivingModal
         open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={handleModalClose}
         onSubmit={handleReceivingSubmit}
+        resumeDraft={resumeDraft}
+        onDraftSaved={handleDraftSaved}
       />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteConfirmDraft} onOpenChange={(open) => !open && setDeleteConfirmDraft(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare questa bozza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare la bozza del carico
+              {deleteConfirmDraft?.supplierName && ` da "${deleteConfirmDraft.supplierName}"`}
+              {deleteConfirmDraft?.documentNumber && ` (${deleteConfirmDraft.documentNumber})`}?
+              Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deleteConfirmDraft && deleteDraftMutation.mutate(deleteConfirmDraft.id)}
+              disabled={deleteDraftMutation.isPending}
+            >
+              {deleteDraftMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Elimina'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -3,6 +3,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,8 +43,11 @@ import {
   Clock,
   Edit,
   Warehouse,
-  Save
+  Save,
+  Pause
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
 
 interface SupplierFromAPI {
@@ -133,10 +146,40 @@ interface ReceivingItem {
   expectedQuantity?: number;
 }
 
+// Draft data structure for suspended receiving sessions
+interface ReceivingDraft {
+  id: string;
+  supplierId?: string;
+  supplierName?: string;
+  documentNumber?: string;
+  documentDate?: string;
+  expectedDeliveryDate?: string;
+  storeId?: string;
+  storeName?: string;
+  notes?: string;
+  productsData: Array<{
+    productId: string;
+    productName: string;
+    sku: string;
+    ean?: string;
+    quantity: number;
+    serials?: string[];
+    serialEntries?: SerialEntry[];
+    lot?: string;
+    unitPrice?: number;
+    isSerializable: boolean;
+    serialType?: string;
+    serialCount?: number;
+  }>;
+  lastStep: number;
+}
+
 interface ReceivingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ReceivingFormData) => void;
+  resumeDraft?: ReceivingDraft | null; // Optional draft to resume
+  onDraftSaved?: () => void; // Callback when draft is saved
 }
 
 interface ReceivingFormData {
@@ -189,7 +232,8 @@ const MOCK_PRODUCTS: Product[] = [
 ];
 
 
-export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalProps) {
+export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDraftSaved }: ReceivingModalProps) {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [items, setItems] = useState<ReceivingItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,10 +248,15 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const [serialScanMode, setSerialScanMode] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuspending, setIsSuspending] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [lastDeletedSerial, setLastDeletedSerial] = useState<{ serial: string; index: number } | null>(null);
   const [serialFilter, setSerialFilter] = useState('');
   const [showUndoToast, setShowUndoToast] = useState(false);
   const [showSkuMappingForm, setShowSkuMappingForm] = useState(false);
+  const [isCheckingSerials, setIsCheckingSerials] = useState(false);
+  const [serialConflicts, setSerialConflicts] = useState<{ serial: string; existingProductName?: string }[]>([]);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [unmappedSupplierSku, setUnmappedSupplierSku] = useState('');
   const [internalProductSearch, setInternalProductSearch] = useState('');
   const [internalProductResults, setInternalProductResults] = useState<Product[]>([]);
@@ -246,12 +295,131 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const selectedSupplierId = form.watch('supplierId');
   const selectedOrderId = form.watch('orderId');
   
-  // Reset step when modal closes
+  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setCurrentStep(1);
+      setItems([]);
+      setCurrentDraftId(null);
+      form.reset();
     }
   }, [open]);
+
+  // Resume draft: populate form and items when resumeDraft is provided
+  useEffect(() => {
+    if (open && resumeDraft) {
+      setCurrentDraftId(resumeDraft.id);
+      
+      // Populate form fields
+      form.setValue('supplierId', resumeDraft.supplierId || '');
+      form.setValue('documentNumber', resumeDraft.documentNumber || '');
+      form.setValue('documentDate', resumeDraft.documentDate || new Date().toISOString().split('T')[0]);
+      form.setValue('notes', resumeDraft.notes || '');
+      form.setValue('storeId', resumeDraft.storeId || '');
+      
+      // Reconstruct items from productsData
+      if (resumeDraft.productsData && resumeDraft.productsData.length > 0) {
+        const reconstructedItems: ReceivingItem[] = resumeDraft.productsData.map((p, idx) => ({
+          id: `resumed-${idx}-${Date.now()}`,
+          product: {
+            id: p.productId,
+            name: p.productName,
+            sku: p.sku,
+            ean: p.ean,
+            isSerializable: p.isSerializable,
+            serialType: p.serialType as any,
+            serialCount: p.serialCount,
+          },
+          quantity: p.quantity,
+          serials: p.serials || [],
+          serialEntries: p.serialEntries,
+          lot: p.lot,
+          unitPrice: p.unitPrice,
+        }));
+        setItems(reconstructedItems);
+      }
+      
+      // Go to the last saved step
+      setCurrentStep((resumeDraft.lastStep || 1) as 1 | 2 | 3);
+      
+      // Mark draft as resumed
+      apiRequest('POST', `/api/wms/receiving/drafts/${resumeDraft.id}/resume`).catch(() => {});
+    }
+  }, [open, resumeDraft]);
+
+  // Handle suspend (save draft)
+  const handleSuspend = async () => {
+    const formValues = form.getValues();
+    const selectedSupplier = suppliersData.find(s => s.id === formValues.supplierId);
+    const selectedStore = storesData.find(s => s.id === formValues.storeId);
+    
+    setIsSuspending(true);
+    try {
+      // Prepare products data for storage
+      const productsData = items.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        sku: item.product.sku,
+        ean: item.product.ean,
+        quantity: item.quantity,
+        serials: item.serials,
+        serialEntries: item.serialEntries,
+        lot: item.lot,
+        unitPrice: item.unitPrice,
+        isSerializable: item.product.isSerializable,
+        serialType: item.product.serialType,
+        serialCount: item.product.serialCount,
+      }));
+
+      if (currentDraftId) {
+        // Update existing draft
+        await apiRequest('PATCH', `/api/wms/receiving/drafts/${currentDraftId}`, {
+          supplierId: formValues.supplierId || null,
+          supplierName: selectedSupplier?.name || null,
+          documentNumber: formValues.documentNumber || null,
+          documentDate: formValues.documentDate || null,
+          storeId: formValues.storeId || null,
+          storeName: selectedStore?.name || null,
+          notes: formValues.notes || null,
+          productsData,
+          lastStep: currentStep,
+          status: 'suspended',
+        });
+      } else {
+        // Create new draft
+        await apiRequest('POST', '/api/wms/receiving/drafts', {
+          supplierId: formValues.supplierId || null,
+          supplierName: selectedSupplier?.name || null,
+          documentNumber: formValues.documentNumber || null,
+          documentDate: formValues.documentDate || null,
+          storeId: formValues.storeId || null,
+          storeName: selectedStore?.name || null,
+          notes: formValues.notes || null,
+          productsData,
+          lastStep: currentStep,
+        });
+      }
+
+      // Invalidate drafts query
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
+      
+      toast({
+        title: 'Carico sospeso',
+        description: 'Il carico è stato salvato come bozza. Potrai riprenderlo in seguito.',
+      });
+      
+      onDraftSaved?.();
+      onOpenChange(false);
+    } catch (error) {
+      toast({
+        title: 'Errore',
+        description: 'Impossibile salvare la bozza. Riprova.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSuspending(false);
+    }
+  };
 
   const availableOrders = MOCK_ORDERS.filter(o => o.supplierId === selectedSupplierId);
 
@@ -555,12 +723,95 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     setItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleFormSubmit = (values: FormValues) => {
-    onSubmit({
-      ...values,
-      items,
+  // Check for duplicate serials before final submission
+  const checkSerialDuplicates = async (): Promise<{ serial: string; existingProductName?: string }[]> => {
+    // Collect all serials from all items
+    const allSerials: string[] = [];
+    items.forEach(item => {
+      if (item.product.isSerializable && item.serials.length > 0) {
+        allSerials.push(...item.serials);
+      }
     });
-    onOpenChange(false);
+    
+    if (allSerials.length === 0) return [];
+    
+    try {
+      const response = await apiRequest('POST', '/api/wms/receiving/check-serials', { serials: allSerials });
+      const data = response as { success: boolean; data: { hasDuplicates: boolean; duplicates: { serial: string; existingProductName?: string }[] } };
+      
+      if (data.success && data.data.hasDuplicates) {
+        return data.data.duplicates;
+      }
+    } catch (error) {
+      console.error('Error checking serial duplicates:', error);
+      // Don't block submission on API error, just warn
+      toast({
+        title: 'Attenzione',
+        description: 'Impossibile verificare i duplicati IMEI. Procedi con cautela.',
+        variant: 'destructive',
+      });
+    }
+    
+    return [];
+  };
+
+  const handleFormSubmit = async (values: FormValues) => {
+    setIsCheckingSerials(true);
+    
+    try {
+      // Check for duplicate serials before submitting
+      const duplicates = await checkSerialDuplicates();
+      
+      if (duplicates.length > 0) {
+        setSerialConflicts(duplicates);
+        setShowConflictDialog(true);
+        setIsCheckingSerials(false);
+        return; // Don't submit yet, show conflict dialog
+      }
+      
+      // No conflicts, proceed with submission
+      await submitReceiving(values);
+    } catch (error) {
+      console.error('Error during submission:', error);
+      toast({
+        title: 'Errore',
+        description: 'Errore durante la verifica. Riprova.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCheckingSerials(false);
+    }
+  };
+
+  const submitReceiving = async (values: FormValues) => {
+    setIsSubmitting(true);
+    try {
+      onSubmit({
+        ...values,
+        items,
+      });
+      
+      // If resuming a draft, mark it as completed
+      if (currentDraftId) {
+        try {
+          await apiRequest('POST', `/api/wms/receiving/drafts/${currentDraftId}/complete`);
+          queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
+        } catch (error) {
+          console.error('Error marking draft as completed:', error);
+        }
+      }
+      
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForceSubmit = async () => {
+    // User chose to ignore conflicts and proceed anyway
+    setShowConflictDialog(false);
+    const values = form.getValues();
+    await submitReceiving(values);
   };
 
   const canAddItem = (): boolean => {
@@ -598,6 +849,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] min-h-[70vh] overflow-y-auto flex flex-col">
         <DialogHeader>
@@ -1616,7 +1868,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
               </Card>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="flex-wrap gap-2 sm:justify-between">
               {currentStep === 1 && (
                 <>
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -1635,11 +1887,27 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                 </>
               )}
               {currentStep === 2 && (
-                <>
-                  <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Indietro
-                  </Button>
+                <div className="flex w-full justify-between">
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Indietro
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleSuspend}
+                      disabled={isSuspending}
+                      data-testid="btn-suspend-receiving"
+                    >
+                      {isSuspending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Pause className="h-4 w-4 mr-2" />
+                      )}
+                      Sospendi Carico
+                    </Button>
+                  </div>
                   <Button 
                     type="button"
                     className="bg-orange-500 hover:bg-orange-600"
@@ -1650,21 +1918,42 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                     Vai al Riepilogo
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                </>
+                </div>
               )}
               {currentStep === 3 && (
-                <>
-                  <Button type="button" variant="outline" onClick={() => setCurrentStep(2)}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Modifica Prodotti
-                  </Button>
+                <div className="flex w-full justify-between">
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => setCurrentStep(2)}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Modifica Prodotti
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleSuspend}
+                      disabled={isSuspending}
+                      data-testid="btn-suspend-receiving-step3"
+                    >
+                      {isSuspending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Pause className="h-4 w-4 mr-2" />
+                      )}
+                      Sospendi Carico
+                    </Button>
+                  </div>
                   <Button 
                     type="submit" 
                     className="bg-green-600 hover:bg-green-700"
-                    disabled={items.length === 0 || isSubmitting}
+                    disabled={items.length === 0 || isSubmitting || isCheckingSerials}
                     data-testid="btn-submit-receiving"
                   >
-                    {isSubmitting ? (
+                    {isCheckingSerials ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Verifica seriali...
+                      </>
+                    ) : isSubmitting ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Caricamento...
@@ -1676,13 +1965,65 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                       </>
                     )}
                   </Button>
-                </>
+                </div>
               )}
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Serial Conflict Dialog */}
+    <AlertDialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
+      <AlertDialogContent className="max-w-lg">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+            <AlertTriangle className="h-5 w-5" />
+            IMEI/Seriali Duplicati Rilevati
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-3">
+            <p>
+              I seguenti seriali sono già presenti nel sistema e non possono essere caricati di nuovo:
+            </p>
+            <div className="max-h-48 overflow-y-auto bg-red-50 border border-red-200 rounded-lg p-3">
+              <ul className="space-y-1 text-sm">
+                {serialConflicts.map((conflict, idx) => (
+                  <li key={idx} className="flex items-center gap-2">
+                    <span className="font-mono bg-red-100 px-2 py-0.5 rounded text-red-700">
+                      {conflict.serial}
+                    </span>
+                    {conflict.existingProductName && (
+                      <span className="text-gray-500 text-xs">
+                        ({conflict.existingProductName})
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-sm text-gray-600">
+              Correggi i seriali duplicati nello Step 2 prima di procedere, 
+              oppure procedi comunque (i seriali duplicati saranno ignorati).
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => {
+            setShowConflictDialog(false);
+            setCurrentStep(2); // Go back to edit products
+          }}>
+            Modifica Seriali
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-orange-500 hover:bg-orange-600"
+            onClick={handleForceSubmit}
+          >
+            Procedi Comunque
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
