@@ -26,7 +26,10 @@ import {
   Barcode,
   Hash,
   ScanLine,
-  X
+  X,
+  ClipboardList,
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -467,6 +470,20 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
               </CardContent>
             </Card>
 
+            {selectedOrderId && selectedOrderId !== '' && (
+              <OrderMatchSection 
+                order={MOCK_ORDERS.find(o => o.id === selectedOrderId)}
+                receivedItems={items}
+                onAddFromOrder={(orderItem) => {
+                  const product = MOCK_PRODUCTS.find(p => p.sku.includes(orderItem.sku));
+                  if (product) {
+                    handleProductSelect(product);
+                    setTargetQuantity(orderItem.quantityOrdered - orderItem.quantityReceived);
+                  }
+                }}
+              />
+            )}
+
             <Card>
               <CardContent className="pt-4">
                 <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
@@ -809,5 +826,149 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
         </Form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface OrderMatchSectionProps {
+  order?: Order;
+  receivedItems: ReceivingItem[];
+  onAddFromOrder: (item: OrderItem) => void;
+}
+
+function OrderMatchSection({ order, receivedItems, onAddFromOrder }: OrderMatchSectionProps) {
+  if (!order) return null;
+
+  const getReceivedQuantity = (productId: string, sku: string): number => {
+    return receivedItems
+      .filter(item => item.product.id === productId || item.product.sku.includes(sku))
+      .reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const getItemStatus = (orderItem: OrderItem): 'pending' | 'partial' | 'complete' | 'over' => {
+    const received = getReceivedQuantity(orderItem.productId, orderItem.sku);
+    if (received === 0) return 'pending';
+    if (received < orderItem.quantityOrdered) return 'partial';
+    if (received === orderItem.quantityOrdered) return 'complete';
+    return 'over';
+  };
+
+  const statusConfig = {
+    pending: { label: 'In attesa', color: 'bg-gray-100 text-gray-700', icon: Clock },
+    partial: { label: 'Parziale', color: 'bg-yellow-100 text-yellow-700', icon: AlertTriangle },
+    complete: { label: 'Completo', color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
+    over: { label: 'Eccedenza', color: 'bg-red-100 text-red-700', icon: AlertTriangle },
+  };
+
+  const totalOrdered = order.items.reduce((sum, i) => sum + i.quantityOrdered, 0);
+  const totalReceived = order.items.reduce((sum, i) => sum + getReceivedQuantity(i.productId, i.sku), 0);
+  const hasDiscrepancies = order.items.some(i => {
+    const status = getItemStatus(i);
+    return status === 'partial' || status === 'over';
+  });
+
+  return (
+    <Card className={hasDiscrepancies ? 'border-yellow-300 bg-yellow-50/30' : 'border-blue-200 bg-blue-50/30'}>
+      <CardContent className="pt-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-medium text-gray-900 flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Confronto con Ordine: {order.orderNumber}
+          </h3>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="flex items-center gap-1">
+              <span className="text-gray-600">Ordinato:</span>
+              <span className="font-semibold">{totalOrdered}</span>
+            </Badge>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+            <Badge 
+              variant="outline" 
+              className={`flex items-center gap-1 ${
+                totalReceived === totalOrdered 
+                  ? 'border-green-300 bg-green-50' 
+                  : 'border-yellow-300 bg-yellow-50'
+              }`}
+            >
+              <span className="text-gray-600">Ricevuto:</span>
+              <span className="font-semibold">{totalReceived}</span>
+            </Badge>
+          </div>
+        </div>
+
+        <div className="rounded-md border bg-white">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-gray-50">
+                <th className="px-3 py-2 text-left text-sm font-medium text-gray-600">Prodotto</th>
+                <th className="px-3 py-2 text-center text-sm font-medium text-gray-600">Ordinato</th>
+                <th className="px-3 py-2 text-center text-sm font-medium text-gray-600">Ricevuto</th>
+                <th className="px-3 py-2 text-center text-sm font-medium text-gray-600">Delta</th>
+                <th className="px-3 py-2 text-center text-sm font-medium text-gray-600">Stato</th>
+                <th className="px-3 py-2 text-right text-sm font-medium text-gray-600"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((orderItem) => {
+                const received = getReceivedQuantity(orderItem.productId, orderItem.sku);
+                const delta = received - orderItem.quantityOrdered;
+                const status = getItemStatus(orderItem);
+                const StatusIcon = statusConfig[status].icon;
+                const remaining = orderItem.quantityOrdered - received;
+
+                return (
+                  <tr key={orderItem.productId} className="border-b" data-testid={`order-item-${orderItem.productId}`}>
+                    <td className="px-3 py-2">
+                      <p className="font-medium text-sm">{orderItem.productName}</p>
+                      <p className="text-xs text-gray-500">SKU: {orderItem.sku}</p>
+                    </td>
+                    <td className="px-3 py-2 text-center text-sm font-medium">
+                      {orderItem.quantityOrdered}
+                    </td>
+                    <td className="px-3 py-2 text-center text-sm font-medium">
+                      {received}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className={`text-sm font-medium ${
+                        delta === 0 ? 'text-green-600' : delta > 0 ? 'text-red-600' : 'text-yellow-600'
+                      }`}>
+                        {delta > 0 ? `+${delta}` : delta}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <Badge className={`${statusConfig[status].color} text-xs`}>
+                        <StatusIcon className="h-3 w-3 mr-1" />
+                        {statusConfig[status].label}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {remaining > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onAddFromOrder(orderItem)}
+                          data-testid={`btn-add-from-order-${orderItem.productId}`}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Carica ({remaining})
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {hasDiscrepancies && (
+          <div className="mt-3 flex items-center gap-2 p-2 bg-yellow-100 rounded-md">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <span className="text-sm text-yellow-800">
+              Attenzione: rilevate discrepanze rispetto all'ordine. Gli articoli mancanti genereranno un back-order automatico.
+            </span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
