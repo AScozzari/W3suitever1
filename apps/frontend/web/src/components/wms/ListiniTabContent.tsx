@@ -352,16 +352,51 @@ export default function ListiniTabContent() {
     return `${prefix}${nextNumber}`;
   };
 
-  // Products filtered by type for Canvas Device physical section
+  // Products filtered by type for Canvas Device physical section - filtered by selected suppliers
   const physicalProducts = useMemo(() => 
-    safeProducts.filter((p: any) => p.type === physicalTypeFilter),
-    [safeProducts, physicalTypeFilter]
+    safeProducts.filter((p: any) => {
+      if (p.type !== physicalTypeFilter) return false;
+      
+      // Filtro per Fornitori (per listini promo_canvas)
+      if (priceListHeader.type === 'promo_canvas' && priceListHeader.supplierIds?.length > 0) {
+        if (!p.supplierId || !priceListHeader.supplierIds.includes(p.supplierId)) {
+          return false;
+        }
+      }
+      
+      return true;
+    }),
+    [safeProducts, physicalTypeFilter, priceListHeader.type, priceListHeader.supplierIds]
   );
 
-  // Canvas products for Canvas/Canvas Device canvas section
+  // Canvas products for Canvas/Canvas Device canvas section - filtered by price list targeting
   const canvasProducts = useMemo(() => 
-    safeProducts.filter((p: any) => p.type === 'CANVAS'),
-    [safeProducts]
+    safeProducts.filter((p: any) => {
+      if (p.type !== 'CANVAS') return false;
+      
+      // Filtro per Operatore (se selezionato nel listino)
+      if (priceListHeader.operatorId && p.operatorId && p.operatorId !== priceListHeader.operatorId) {
+        return false;
+      }
+      
+      // Filtro per Canale (se selezionato nel listino e nel prodotto)
+      if (priceListHeader.channelId && p.channelId && p.channelId !== priceListHeader.channelId) {
+        return false;
+      }
+      
+      // Filtro per Target Cliente (se selezionato nel listino e nel prodotto)
+      if (priceListHeader.customerScope && p.customerScope) {
+        // 'mixed' è compatibile con tutto, altrimenti deve coincidere
+        if (priceListHeader.customerScope !== 'mixed' && 
+            p.customerScope !== 'mixed' && 
+            p.customerScope !== priceListHeader.customerScope) {
+          return false;
+        }
+      }
+      
+      return true;
+    }),
+    [safeProducts, priceListHeader.operatorId, priceListHeader.channelId, priceListHeader.customerScope]
   );
 
   // Products filtered by type for No Promo (Standard) listino
