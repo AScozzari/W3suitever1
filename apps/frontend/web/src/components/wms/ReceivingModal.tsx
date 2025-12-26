@@ -33,10 +33,15 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
-interface Supplier {
+interface SupplierFromAPI {
   id: string;
-  name: string;
   code: string;
+  name: string;
+  legalName?: string;
+  supplierType: string;
+  vatNumber?: string;
+  status: string;
+  origin: string;
 }
 
 interface Order {
@@ -103,11 +108,7 @@ const receivingSchema = z.object({
 
 type FormValues = z.infer<typeof receivingSchema>;
 
-const MOCK_SUPPLIERS: Supplier[] = [
-  { id: '1', name: 'TechDistribution Srl', code: 'TECH001' },
-  { id: '2', name: 'MobileWorld SpA', code: 'MOB002' },
-  { id: '3', name: 'AccessoriPlus', code: 'ACC003' },
-];
+// MOCK_SUPPLIERS removed - now using real API endpoint
 
 const MOCK_ORDERS: Order[] = [
   { 
@@ -136,6 +137,7 @@ const MOCK_STORES = [
 ];
 
 export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalProps) {
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [items, setItems] = useState<ReceivingItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -151,6 +153,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch suppliers from API (brand + tenant)
+  const { data: suppliersData = [], isLoading: suppliersLoading } = useQuery<SupplierFromAPI[]>({
+    queryKey: ['/api/wms/suppliers'],
+    enabled: open,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(receivingSchema),
     defaultValues: {
@@ -165,6 +173,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
 
   const selectedSupplierId = form.watch('supplierId');
   const selectedOrderId = form.watch('orderId');
+  
+  // Reset step when modal closes
+  useEffect(() => {
+    if (!open) {
+      setCurrentStep(1);
+    }
+  }, [open]);
 
   const availableOrders = MOCK_ORDERS.filter(o => o.supplierId === selectedSupplierId);
 
@@ -298,21 +313,59 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     return targetQuantity > 0;
   };
 
+  // Validate Step 1 fields before proceeding
+  const canProceedToStep2 = (): boolean => {
+    const values = form.getValues();
+    return !!(values.supplierId && values.documentNumber && values.documentDate && values.storeId);
+  };
+
+  const handleProceedToStep2 = async () => {
+    // Trigger validation for Step 1 fields
+    const isValid = await form.trigger(['supplierId', 'documentNumber', 'documentDate', 'storeId']);
+    if (isValid) {
+      setCurrentStep(2);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-orange-500" />
-            Nuovo Carico Merce
+            Nuovo Carico Merce - {currentStep === 1 ? 'Dati Documento' : 'Carico Prodotti'}
           </DialogTitle>
           <DialogDescription>
-            Registra il ricevimento di nuova merce da fornitore
+            {currentStep === 1 
+              ? 'Inserisci i dati del documento di carico' 
+              : 'Aggiungi i prodotti da caricare in magazzino'}
           </DialogDescription>
+          
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 mt-3">
+            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+              currentStep === 1 ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-500'
+            }`}>
+              <span className="w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center">1</span>
+              Documento
+            </div>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+              currentStep === 2 ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-500'
+            }`}>
+              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center ${
+                currentStep === 2 ? 'bg-orange-500 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>2</span>
+              Prodotti
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            
+            {/* STEP 1: Document Data */}
+            {currentStep === 1 && (
             <Card>
               <CardContent className="pt-4">
                 <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
@@ -327,14 +380,17 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Fornitore *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={suppliersLoading}>
                           <FormControl>
                             <SelectTrigger data-testid="select-supplier">
-                              <SelectValue placeholder="Seleziona fornitore" />
+                              <SelectValue placeholder={suppliersLoading ? "Caricamento..." : "Seleziona fornitore"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {MOCK_SUPPLIERS.map(s => (
+                            {suppliersData.length === 0 && !suppliersLoading && (
+                              <SelectItem value="no-suppliers" disabled>Nessun fornitore disponibile</SelectItem>
+                            )}
+                            {suppliersData.map(s => (
                               <SelectItem key={s.id} value={s.id}>
                                 {s.name} ({s.code})
                               </SelectItem>
@@ -431,11 +487,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                     name="storeId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Store Destinazione *</FormLabel>
+                        <FormLabel>Magazzino di Destinazione *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger data-testid="select-store">
-                              <SelectValue placeholder="Seleziona store" />
+                            <SelectTrigger data-testid="select-warehouse">
+                              <SelectValue placeholder="Seleziona magazzino" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -472,8 +528,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                 </div>
               </CardContent>
             </Card>
+            )}
 
-            {selectedOrderId && selectedOrderId !== '' && (
+            {/* STEP 2: Products */}
+            {currentStep === 2 && (
+              <>
+            {selectedOrderId && selectedOrderId !== '' && selectedOrderId !== 'none' && (
               <OrderMatchSection 
                 order={MOCK_ORDERS.find(o => o.id === selectedOrderId)}
                 receivedItems={items}
@@ -810,20 +870,42 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                 </div>
               </CardContent>
             </Card>
+              </>
+            )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Annulla
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-orange-500 hover:bg-orange-600"
-                disabled={items.length === 0}
-                data-testid="btn-submit-receiving"
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Conferma Carico ({items.length} prodotti)
-              </Button>
+              {currentStep === 1 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Annulla
+                  </Button>
+                  <Button 
+                    type="button"
+                    className="bg-orange-500 hover:bg-orange-600"
+                    onClick={handleProceedToStep2}
+                    disabled={!canProceedToStep2()}
+                    data-testid="btn-next-step"
+                  >
+                    Avanti
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
+                    Indietro
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-orange-500 hover:bg-orange-600"
+                    disabled={items.length === 0}
+                    data-testid="btn-submit-receiving"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Conferma Carico ({items.length} prodotti)
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </form>
         </Form>

@@ -5618,8 +5618,8 @@ router.post("/categories/:id/archive", rbacMiddleware, requirePermission('wms.ca
 
 /**
  * GET /api/wms/suppliers
- * Get all suppliers for a tenant (placeholder endpoint)
- * TODO: Implement full suppliers management when supplier table is created
+ * Get all suppliers for a tenant (union of brand-managed + tenant-specific)
+ * Returns suppliers from both 'suppliers' (brand-pushed) and 'supplier_overrides' (tenant-created) tables
  */
 router.get("/suppliers", rbacMiddleware, async (req, res) => {
   try {
@@ -5629,8 +5629,54 @@ router.get("/suppliers", rbacMiddleware, async (req, res) => {
       return res.status(401).json({ error: "Tenant ID not found in session" });
     }
 
-    // Placeholder - return empty array until suppliers table is implemented
-    res.json([]);
+    // Get brand-pushed suppliers (origin='brand' with tenantId NULL or matching)
+    const brandSuppliersList = await db
+      .select({
+        id: suppliers.id,
+        code: suppliers.code,
+        name: suppliers.name,
+        legalName: suppliers.legalName,
+        supplierType: suppliers.supplierType,
+        vatNumber: suppliers.vatNumber,
+        status: suppliers.status,
+        origin: suppliers.origin,
+      })
+      .from(suppliers)
+      .where(
+        and(
+          eq(suppliers.status, 'active'),
+          or(
+            isNull(suppliers.tenantId), // Brand-wide suppliers
+            eq(suppliers.tenantId, sessionTenantId) // Brand-pushed to this tenant
+          )
+        )
+      );
+
+    // Get tenant-specific suppliers from supplier_overrides
+    const tenantSuppliersList = await db
+      .select({
+        id: supplierOverrides.id,
+        code: supplierOverrides.code,
+        name: supplierOverrides.name,
+        legalName: supplierOverrides.legalName,
+        supplierType: supplierOverrides.supplierType,
+        vatNumber: supplierOverrides.vatNumber,
+        status: supplierOverrides.status,
+        origin: supplierOverrides.origin,
+      })
+      .from(supplierOverrides)
+      .where(
+        and(
+          eq(supplierOverrides.tenantId, sessionTenantId),
+          eq(supplierOverrides.status, 'active')
+        )
+      );
+
+    // Merge and sort by name
+    const allSuppliers = [...brandSuppliersList, ...tenantSuppliersList]
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json(allSuppliers);
   } catch (error) {
     console.error("Error fetching suppliers:", error);
     res.status(500).json({ 
