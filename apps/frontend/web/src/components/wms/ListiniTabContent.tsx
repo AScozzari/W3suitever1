@@ -934,7 +934,12 @@ export default function ListiniTabContent() {
           type: priceListHeader.type,
           supplierId: priceListHeader.supplierId || null,
           validFrom: priceListHeader.validFrom.toISOString(),
-          validTo: priceListHeader.validTo?.toISOString() || null
+          validTo: priceListHeader.validTo?.toISOString() || null,
+          // Targeting fields for CANVAS/promo_canvas
+          operatorId: priceListHeader.operatorId || null,
+          channelId: priceListHeader.channelId || null,
+          customerScope: priceListHeader.customerScope || null,
+          supplierIds: priceListHeader.supplierIds?.length > 0 ? priceListHeader.supplierIds : null
         },
         pairs: priceListHeader.type === 'promo_canvas' ? savedPairs : [],
         items: items,
