@@ -29,7 +29,11 @@ import {
   X,
   ClipboardList,
   ArrowRight,
-  Clock
+  ArrowLeft,
+  Clock,
+  Edit,
+  Warehouse,
+  Save
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -137,7 +141,7 @@ const MOCK_STORES = [
 ];
 
 export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalProps) {
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [items, setItems] = useState<ReceivingItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -149,6 +153,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const [lotInput, setLotInput] = useState('');
   const [unitPriceInput, setUnitPriceInput] = useState('');
   const [serialScanMode, setSerialScanMode] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -333,12 +339,14 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-orange-500" />
-            Nuovo Carico Merce - {currentStep === 1 ? 'Dati Documento' : 'Carico Prodotti'}
+            Nuovo Carico Merce - {currentStep === 1 ? 'Dati Documento' : currentStep === 2 ? 'Carico Prodotti' : 'Riepilogo'}
           </DialogTitle>
           <DialogDescription>
             {currentStep === 1 
               ? 'Inserisci i dati del documento di carico' 
-              : 'Aggiungi i prodotti da caricare in magazzino'}
+              : currentStep === 2 
+                ? 'Aggiungi i prodotti da caricare in magazzino'
+                : 'Verifica i dati e conferma il carico'}
           </DialogDescription>
           
           {/* Step indicator */}
@@ -346,7 +354,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
             <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
               currentStep === 1 ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-500'
             }`}>
-              <span className="w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center">1</span>
+              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center ${
+                currentStep >= 1 ? 'bg-orange-500 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>1</span>
               Documento
             </div>
             <ArrowRight className="h-4 w-4 text-gray-400" />
@@ -354,9 +364,18 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
               currentStep === 2 ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-500'
             }`}>
               <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center ${
-                currentStep === 2 ? 'bg-orange-500 text-white' : 'bg-gray-300 text-gray-600'
+                currentStep >= 2 ? 'bg-orange-500 text-white' : 'bg-gray-300 text-gray-600'
               }`}>2</span>
               Prodotti
+            </div>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+              currentStep === 3 ? 'bg-orange-100 text-orange-700 font-medium' : 'bg-gray-100 text-gray-500'
+            }`}>
+              <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center ${
+                currentStep >= 3 ? 'bg-orange-500 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>3</span>
+              Riepilogo
             </div>
           </div>
         </DialogHeader>
@@ -873,8 +892,179 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
               </>
             )}
 
+            {/* STEP 3: Review Summary */}
+            {currentStep === 3 && (
+              <Card>
+                <CardContent className="pt-4">
+                  {/* Document Summary */}
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Dati Documento
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Fornitore:</span>
+                        <p className="font-medium">{suppliersData.find(s => s.id === form.getValues('supplierId'))?.name || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">DDT/Fattura:</span>
+                        <p className="font-medium">{form.getValues('documentNumber')}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Data:</span>
+                        <p className="font-medium">{form.getValues('documentDate')}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Magazzino:</span>
+                        <p className="font-medium">{MOCK_STORES.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
+                      </div>
+                    </div>
+                    {form.getValues('notes') && (
+                      <div className="mt-3 pt-3 border-t">
+                        <span className="text-gray-500 text-sm">Note:</span>
+                        <p className="text-sm">{form.getValues('notes')}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Riepilogo Prodotti ({items.length} righe)
+                  </h3>
+
+                  {items.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                      <p>Nessun prodotto aggiunto</p>
+                      <Button 
+                        type="button" 
+                        variant="link" 
+                        onClick={() => setCurrentStep(2)}
+                        className="mt-2"
+                      >
+                        Torna al carico prodotti
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">Prodotto</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">SKU</th>
+                            <th className="px-4 py-3 text-center font-medium text-gray-700">Qtà</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">Lotto</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">Seriali</th>
+                            <th className="px-4 py-3 text-right font-medium text-gray-700">Azioni</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item) => (
+                            <tr 
+                              key={item.id} 
+                              className={`border-t hover:bg-gray-50 cursor-pointer transition-colors ${
+                                selectedItemId === item.id ? 'bg-orange-50 border-l-4 border-l-orange-500' : ''
+                              }`}
+                              onClick={() => setSelectedItemId(selectedItemId === item.id ? null : item.id)}
+                              data-testid={`review-row-${item.id}`}
+                            >
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-900">{item.product.name}</p>
+                                {item.product.isSerializable && (
+                                  <Badge variant="outline" className="mt-1 text-xs">
+                                    {getSerialLabel(item.product.serialType)}
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">{item.product.sku}</td>
+                              <td className="px-4 py-3 text-center">
+                                <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+                                  {item.quantity}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">{item.lot || '-'}</td>
+                              <td className="px-4 py-3">
+                                {item.serials.length > 0 ? (
+                                  <div className="flex items-center gap-1">
+                                    <Barcode className="h-3 w-3 text-gray-400" />
+                                    <Badge variant="secondary" className="text-xs">
+                                      {item.serials.length} seriali
+                                    </Badge>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedItemId(item.id);
+                                      // Go back to Step 2 to edit
+                                      setCurrentStep(2);
+                                    }}
+                                    data-testid={`btn-edit-item-${item.id}`}
+                                  >
+                                    <Edit className="h-4 w-4 text-blue-500" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeItem(item.id);
+                                    }}
+                                    data-testid={`btn-delete-item-${item.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-gray-50">
+                          <tr>
+                            <td colSpan={2} className="px-4 py-3 font-medium text-gray-700">
+                              Totale
+                            </td>
+                            <td className="px-4 py-3 text-center font-bold text-orange-600">
+                              {items.reduce((sum, i) => sum + i.quantity, 0)}
+                            </td>
+                            <td colSpan={3}></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Confirmation message */}
+                  {items.length > 0 && (
+                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-green-800">Pronto per il carico</p>
+                          <p className="text-sm text-green-700">
+                            Verifica i dati sopra e clicca "Conferma Carico" per registrare {items.length} prodotti 
+                            ({items.reduce((sum, i) => sum + i.quantity, 0)} unità totali) in magazzino.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <DialogFooter>
-              {currentStep === 1 ? (
+              {currentStep === 1 && (
                 <>
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                     Annulla
@@ -890,19 +1080,48 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </>
-              ) : (
+              )}
+              {currentStep === 2 && (
                 <>
                   <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
                     Indietro
                   </Button>
                   <Button 
-                    type="submit" 
+                    type="button"
                     className="bg-orange-500 hover:bg-orange-600"
+                    onClick={() => setCurrentStep(3)}
                     disabled={items.length === 0}
+                    data-testid="btn-to-review"
+                  >
+                    Vai al Riepilogo
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </>
+              )}
+              {currentStep === 3 && (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setCurrentStep(2)}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Modifica Prodotti
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={items.length === 0 || isSubmitting}
                     data-testid="btn-submit-receiving"
                   >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Conferma Carico ({items.length} prodotti)
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Caricamento...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Conferma Carico ({items.reduce((sum, i) => sum + i.quantity, 0)} unità)
+                      </>
+                    )}
                   </Button>
                 </>
               )}
