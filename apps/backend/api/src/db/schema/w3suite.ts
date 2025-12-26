@@ -9503,6 +9503,16 @@ export const priceLists = w3suiteSchema.table("price_lists", {
   currencyCode: varchar("currency_code", { length: 3 }).default('EUR').notNull(),
   metadata: jsonb("metadata").default({}),
   
+  // ==================== TARGETING (for POS & Commissioning) ====================
+  // Operator: WindTre, VeryMobile (required for CANVAS/promo_canvas types)
+  operatorId: uuid("operator_id").references(() => operators.id),
+  // Channel: Franchising, Dealer, Flagship, Top Dealer
+  channelId: uuid("channel_id").references(() => channels.id),
+  // Customer target: consumer, business, mixed
+  customerScope: customerScopeEnum("customer_scope"),
+  // Supplier IDs: for DEVICE filtering in promo_device type (array, multiple suppliers allowed)
+  supplierIds: uuid("supplier_ids").array(),
+  
   // Audit
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -9518,6 +9528,10 @@ export const priceLists = w3suiteSchema.table("price_lists", {
   index("price_lists_type_idx").on(table.type),
   index("price_lists_active_idx").on(table.isActive),
   index("price_lists_valid_idx").on(table.validFrom, table.validTo),
+  // Targeting indexes for POS filtering
+  index("price_lists_operator_idx").on(table.operatorId),
+  index("price_lists_channel_idx").on(table.channelId),
+  index("price_lists_customer_scope_idx").on(table.customerScope),
 ]);
 
 export const insertPriceListSchema = createInsertSchema(priceLists).omit({
