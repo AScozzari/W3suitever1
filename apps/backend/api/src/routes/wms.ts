@@ -62,6 +62,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middlewa
 import { logger } from "../core/logger";
 import { z } from "zod";
 import { wmsWorkflowService } from "../services/wms-workflow.service";
+import { wmsStatusHistoryService } from "../services/wms-status-history.service";
 import { analyzeProductChanges, VERSIONING_INFO_TOOLTIP } from "../lib/wms-versioning-config";
 
 // Active product_items logistic statuses (prevent product deletion)
@@ -10895,6 +10896,66 @@ router.post("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: "Failed to save mapping",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== STATUS HISTORY API ====================
+
+/**
+ * GET /api/wms/product-items/:id/status-history
+ * Get status change history for a serialized product item
+ */
+router.get("/product-items/:id/status-history", rbacMiddleware, requirePermission('wms.products.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    const history = await wmsStatusHistoryService.getItemStatusHistory(id, tenantId);
+    
+    res.json({
+      success: true,
+      data: history
+    });
+    
+  } catch (error) {
+    logger.error('Error fetching item status history', { error });
+    res.status(500).json({ 
+      error: "Failed to fetch status history",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/product-batches/:id/status-history
+ * Get status change history for a product batch
+ */
+router.get("/product-batches/:id/status-history", rbacMiddleware, requirePermission('wms.products.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    const history = await wmsStatusHistoryService.getBatchStatusHistory(id, tenantId);
+    
+    res.json({
+      success: true,
+      data: history
+    });
+    
+  } catch (error) {
+    logger.error('Error fetching batch status history', { error });
+    res.status(500).json({ 
+      error: "Failed to fetch status history",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }

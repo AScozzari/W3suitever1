@@ -434,6 +434,18 @@ Timestamp T2: Fattura Attiva (collegata al DDT)
 - `product_item_status_history` → Prodotti serializzati (IMEI, SN)
 - `product_batch_status_history` → Prodotti a lotto/quantità (include `quantityAffected` e `targetLogisticStatus`)
 
+**API per consultare storico:**
+```
+GET /api/wms/product-items/:id/status-history
+GET /api/wms/product-batches/:id/status-history
+```
+
+**Service Layer:** `wmsStatusHistoryService` in `apps/backend/api/src/services/wms-status-history.service.ts`
+- `recordItemStatusChange()` - Singolo prodotto serializzato
+- `recordBulkItemStatusChange()` - Multipli prodotti con groupId atomico
+- `recordBatchStatusChange()` - Batch con quantità
+- `processDocumentStatusChange()` - Auto-applica stato da DOCUMENT_STATUS_MAP
+
 **UI Requirement:** Ogni movimento deve mostrare una **timeline dei documenti** allegati.
 
 ### 6.1 Documenti Carico (Acquisti da Fornitore)
