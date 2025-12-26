@@ -106,42 +106,16 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
-    - **WMS Movements Architecture**:
-      - **Relazione 1:N Movimento-Documenti**: UN movimento può avere MULTIPLI documenti correlati nel suo ciclo di vita (es. Ordine → DDT 1 → DDT 2 → Fattura 1 → Fattura 2)
-      - **Tabella ponte**: `wms_movement_documents` gestisce la relazione 1:N con movementId FK
-      - **Tipi documento**: order, ddt, receipt, invoice, credit_note, debit_note, fiscal_receipt (scontrino)
-      - **Categorie documento**: `movement_specific` (file allegati) e `administrative` (FK a documenti contabili)
-      - **UI requirement**: Timeline documenti allegati per ogni movimento
-      - **Schema DB esistente**: wms_stock_movements, wms_movement_documents, wms_movement_type_config, wms_inventory_balances, wms_inventory_snapshots
-    - **WMS Documents Architecture**:
-      - **Classificazione per Natura**:
-        - `operational` (Operativo): Ordine, DDT, Ricevuta - gestiscono movimentazione fisica
-        - `fiscal` (Fiscale/Amministrativo): Scontrino, Fattura, Nota Credito - rilevanza fiscale/contabile
-      - **Classificazione per Direzione** (NON usare inbound/outbound):
-        - `active` (Attivo): Documento emesso da noi verso terzi
-        - `passive` (Passivo): Documento ricevuto da terzi
-      - **Chi genera movimento logistico**:
-        - DDT Attivo/Passivo → ✅ Sempre genera movimento
-        - Ricevuta Attiva → ✅ Genera movimento (precede doc fiscale)
-        - Scontrino Attivo → ✅ Genera movimento → stato "venduto"
-        - Fattura Attiva → ✅ Genera movimento → stato "venduto"
-        - Fattura Passiva → ⚠️ Solo se NON esiste DDT collegato (carico diretto da fattura)
-        - Ordine Attivo/Passivo → ❌ Non genera movimento (solo impegno)
-        - Nota Credito → ⚠️ Solo se implica reso fisico
-      - **Flusso documenti**: Ordine → DDT → Fattura (non tutti obbligatori, possono esistere indipendentemente)
-      - **Relazioni N:N**: 1 Ordine → N DDT, 1 Fattura → N DDT + N Ordini, Ricevuta → Scontrino o Fattura
-      - **Destinatari DDT Uscita**: Cliente, Fornitore (reso), Laboratorio/Centro riparazioni, Altro store (trasferimento)
-      - **Legami opzionali tra documenti**: orderId, ddtId, invoiceId, receiptId (tutti nullable)
+    - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. It manages complex relationships between movements and documents, with distinct document classifications (operational/fiscal, active/passive) and rules for generating logistic movements. A comprehensive status history system tracks product and batch status changes, driven by document types and movements.
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
-    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing, using `public` for reference data and `w3suite` for tenant-specific data.
-    - **Entity Architecture**: Differentiates between internal `organization_entities` (company legal entities) and external `legal_entities` (partners like suppliers), with specific propagation rules.
+    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing.
+    - **Entity Architecture**: Differentiates between internal `organization_entities` and external `legal_entities` with specific propagation rules.
     - **Cross-Store Architecture**: Provides default tenant-wide data views with role-based access control, allowing optional filters for drill-down, and explicitly forbidding auto-selection of stores.
-    - **Request Routing**: Implements "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location, with specific rules for operational vs. administrative categories.
+    - **Request Routing**: Implements "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location.
     - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment is managed via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access uses `deploy/keys/vps_key`, and database access to `w3suite_prod` is exclusively via a local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
-    - **Price List Architecture**: Defines a detailed structure for `price_list_items` (for devices), `price_list_items_canvas` (for canvases), and `price_list_item_compositions` (for bundles), with distinct usage rules based on price list type.
+    - **Price List Architecture**: Defines a detailed structure for `price_list_items`, `price_list_items_canvas`, and `price_list_item_compositions` with distinct usage rules.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
