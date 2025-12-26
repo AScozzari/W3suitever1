@@ -394,6 +394,46 @@ Ogni documento che genera movimento applica uno stato logistico ai prodotti coin
 
 **Nota importante:** Se un documento è collegato a un DDT/Ricevuta precedente (es. Fattura dopo DDT), NON genera un nuovo movimento ma PUÒ comunque aggiornare lo stato logistico (es. da `shipping` a `sold`).
 
+### 6.0.3 Sistema Storico Cambiamenti Stato
+
+Ogni cambio di stato logistico viene tracciato nella tabella `product_item_status_history`:
+
+```typescript
+// Struttura record storico
+{
+  productItemId: uuid,           // Prodotto serializzato
+  fromStatus: 'shipping',        // Stato precedente
+  toStatus: 'sold',              // Nuovo stato
+  changedAt: timestamp,          // Quando è avvenuto
+  changedBy: userId,             // Chi ha fatto il cambio
+  
+  // Collegamento al documento che ha causato il cambio
+  movementId: uuid | null,       // Movimento associato (se esiste)
+  movementDocumentId: uuid,      // Documento che ha triggerato il cambio
+  documentType: 'invoice',       // Tipo documento
+  documentDirection: 'active',   // Direzione
+  
+  statusChangeGroupId: uuid      // Per cambio atomico di più item
+}
+```
+
+**Flusso tipico DDT → Fattura:**
+```
+Timestamp T1: DDT Attivo
+  → Crea movimento OUTBOUND
+  → Storico: in_stock → shipping (documentType: 'ddt')
+  
+Timestamp T2: Fattura Attiva (collegata al DDT)
+  → NON crea movimento (DDT già fatto)
+  → Storico: shipping → sold (documentType: 'invoice')
+```
+
+**Ogni prodotto mantiene lo stato FINALE, ma la timeline completa è sempre disponibile.**
+
+**Tabelle di storico:**
+- `product_item_status_history` → Prodotti serializzati (IMEI, SN)
+- `product_batch_status_history` → Prodotti a lotto/quantità (include `quantityAffected` e `targetLogisticStatus`)
+
 **UI Requirement:** Ogni movimento deve mostrare una **timeline dei documenti** allegati.
 
 ### 6.1 Documenti Carico (Acquisti da Fornitore)

@@ -8409,6 +8409,12 @@ export const productItemStatusHistory = w3suiteSchema.table("product_item_status
   // Optional order reference
   referenceOrderId: uuid("reference_order_id"), // FK to orders table (future)
   
+  // Document linkage - ogni cambio stato può essere legato a un documento
+  movementId: uuid("movement_id").references(() => wmsStockMovements.id, { onDelete: 'set null' }),
+  movementDocumentId: uuid("movement_document_id").references(() => wmsMovementDocuments.id, { onDelete: 'set null' }),
+  documentType: wmsMovementDocumentTypeEnum("document_type"), // Tipo documento che ha causato il cambio
+  documentDirection: wmsDocumentDirectionEnum("document_direction"), // active/passive
+  
   // Group ID for atomic bulk status changes (all items changed in same transaction share this ID)
   statusChangeGroupId: uuid("status_change_group_id"),
 }, (table) => [
@@ -8416,6 +8422,8 @@ export const productItemStatusHistory = w3suiteSchema.table("product_item_status
   index("item_history_tenant_item_changed_idx").on(table.tenantId, table.productItemId, table.changedAt.desc()),
   index("item_history_changed_by_idx").on(table.changedBy),
   index("item_history_group_idx").on(table.statusChangeGroupId),
+  index("item_history_movement_idx").on(table.movementId),
+  index("item_history_document_idx").on(table.movementDocumentId),
 ]);
 
 export const insertProductItemStatusHistorySchema = createInsertSchema(productItemStatusHistory).omit({ 
@@ -8423,10 +8431,15 @@ export const insertProductItemStatusHistorySchema = createInsertSchema(productIt
   changedAt: true 
 }).extend({
   toStatus: z.enum([
-    'in_stock', 'reserved', 'preparing', 'shipping', 'delivered',
+    'in_stock', 'reserved', 'preparing', 'shipping', 'delivered', 'sold',
     'customer_return', 'doa_return', 'in_service', 'supplier_return',
     'in_transfer', 'lost', 'damaged', 'internal_use'
   ]),
+  documentType: z.enum([
+    'order', 'ddt', 'receipt', 'invoice', 'fiscal_receipt', 'credit_note', 'debit_note',
+    'movement_specific', 'packing_list', 'customs_declaration', 'quality_certificate', 'other'
+  ]).optional(),
+  documentDirection: z.enum(['active', 'passive']).optional(),
 });
 export type InsertProductItemStatusHistory = z.infer<typeof insertProductItemStatusHistorySchema>;
 export type ProductItemStatusHistory = typeof productItemStatusHistory.$inferSelect;
@@ -8496,6 +8509,65 @@ export const insertProductBatchSchema = createInsertSchema(productBatches).omit(
 });
 export type InsertProductBatch = z.infer<typeof insertProductBatchSchema>;
 export type ProductBatch = typeof productBatches.$inferSelect;
+
+// 5.5) product_batch_status_history - Audit trail for batch logistic status changes
+export const productBatchStatusHistory = w3suiteSchema.table("product_batch_status_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  productBatchId: uuid("product_batch_id").notNull().references(() => productBatches.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Status transition
+  fromStatus: productBatchStatusEnum("from_status"),
+  toStatus: productBatchStatusEnum("to_status").notNull(),
+  
+  // Quantity affected by this status change
+  quantityAffected: integer("quantity_affected").notNull(),
+  
+  // Change metadata
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
+  changedBy: varchar("changed_by").references(() => users.id),
+  changedByName: varchar("changed_by_name", { length: 255 }),
+  notes: text("notes"),
+  
+  // Document linkage - ogni cambio stato può essere legato a un documento
+  movementId: uuid("movement_id").references(() => wmsStockMovements.id, { onDelete: 'set null' }),
+  movementDocumentId: uuid("movement_document_id").references(() => wmsMovementDocuments.id, { onDelete: 'set null' }),
+  documentType: wmsMovementDocumentTypeEnum("document_type"),
+  documentDirection: wmsDocumentDirectionEnum("document_direction"),
+  
+  // Target logistic status (for non-serialized, track the intended product status)
+  targetLogisticStatus: productLogisticStatusEnum("target_logistic_status"),
+  
+  // Group ID for atomic bulk status changes
+  statusChangeGroupId: uuid("status_change_group_id"),
+}, (table) => [
+  index("batch_history_tenant_idx").on(table.tenantId),
+  index("batch_history_tenant_batch_changed_idx").on(table.tenantId, table.productBatchId, table.changedAt.desc()),
+  index("batch_history_changed_by_idx").on(table.changedBy),
+  index("batch_history_group_idx").on(table.statusChangeGroupId),
+  index("batch_history_movement_idx").on(table.movementId),
+  index("batch_history_document_idx").on(table.movementDocumentId),
+]);
+
+export const insertProductBatchStatusHistorySchema = createInsertSchema(productBatchStatusHistory).omit({ 
+  id: true, 
+  changedAt: true 
+}).extend({
+  toStatus: z.enum(['available', 'reserved', 'damaged', 'expired']),
+  quantityAffected: z.number().int().min(1, "Quantità deve essere almeno 1"),
+  documentType: z.enum([
+    'order', 'ddt', 'receipt', 'invoice', 'fiscal_receipt', 'credit_note', 'debit_note',
+    'movement_specific', 'packing_list', 'customs_declaration', 'quality_certificate', 'other'
+  ]).optional(),
+  documentDirection: z.enum(['active', 'passive']).optional(),
+  targetLogisticStatus: z.enum([
+    'in_stock', 'reserved', 'preparing', 'shipping', 'delivered', 'sold',
+    'customer_return', 'doa_return', 'in_service', 'supplier_return',
+    'in_transfer', 'lost', 'damaged', 'internal_use'
+  ]).optional(),
+});
+export type InsertProductBatchStatusHistory = z.infer<typeof insertProductBatchStatusHistorySchema>;
+export type ProductBatchStatusHistory = typeof productBatchStatusHistory.$inferSelect;
 
 // 7) wms_warehouse_locations - Structured warehouse location management
 export const wmsWarehouseLocations = w3suiteSchema.table("wms_warehouse_locations", {
