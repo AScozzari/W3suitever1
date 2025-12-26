@@ -349,7 +349,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] min-h-[70vh] overflow-y-auto flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-orange-500" />
@@ -603,7 +603,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                     />
                     
                     {showSearchResults && searchResults.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto">
                         {searchResults.map(product => (
                           <div
                             key={product.id}
