@@ -5686,6 +5686,52 @@ router.get("/suppliers", rbacMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/wms/stores
+ * 
+ * Get all stores/warehouses for the current tenant that have warehouse capability.
+ * Used for selecting destination warehouse in receiving operations.
+ */
+router.get("/stores", rbacMiddleware, async (req, res) => {
+  try {
+    const sessionTenantId = req.user?.tenantId;
+    
+    if (!sessionTenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const storesList = await db
+      .select({
+        id: stores.id,
+        code: stores.code,
+        name: stores.nome,
+        city: stores.citta,
+        province: stores.provincia,
+        address: stores.address,
+        status: stores.status,
+        category: stores.category,
+        hasWarehouse: stores.hasWarehouse,
+      })
+      .from(stores)
+      .where(
+        and(
+          eq(stores.tenantId, sessionTenantId),
+          eq(stores.status, 'Attivo'),
+          eq(stores.hasWarehouse, true) // Only stores with warehouse capability
+        )
+      )
+      .orderBy(asc(stores.nome));
+
+    res.json(storesList);
+  } catch (error) {
+    console.error("Error fetching stores:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch stores",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== WMS PRODUCT TYPES ENDPOINTS ====================
 
 /**

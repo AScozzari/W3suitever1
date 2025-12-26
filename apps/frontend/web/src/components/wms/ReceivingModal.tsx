@@ -48,6 +48,18 @@ interface SupplierFromAPI {
   origin: string;
 }
 
+interface StoreFromAPI {
+  id: string;
+  code: string;
+  name: string;
+  city?: string;
+  province?: string;
+  address?: string;
+  status: string;
+  category: string;
+  hasWarehouse: boolean;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -135,10 +147,6 @@ const MOCK_PRODUCTS: Product[] = [
   { id: 'p6', name: 'SIM Card Prepagata', sku: 'SIM-PRE-001', supplierSku: 'TEL-SIM-PRE', ean: '5234567890123', description: 'SIM card prepagata attivabile', isSerializable: true, serialType: 'iccid' },
 ];
 
-const MOCK_STORES = [
-  { id: 'store-1', name: 'Store Milano Centro' },
-  { id: 'store-2', name: 'Store Roma EUR' },
-];
 
 export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -165,6 +173,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     enabled: open,
   });
 
+  // Fetch stores/warehouses from API
+  const { data: storesData = [], isLoading: storesLoading } = useQuery<StoreFromAPI[]>({
+    queryKey: ['/api/wms/stores'],
+    enabled: open,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(receivingSchema),
     defaultValues: {
@@ -173,7 +187,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
       documentNumber: '',
       documentDate: new Date().toISOString().split('T')[0],
       notes: '',
-      storeId: MOCK_STORES[0]?.id || '',
+      storeId: '',
     },
   });
 
@@ -514,9 +528,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {MOCK_STORES.map(s => (
+                            {storesData.length === 0 && !storesLoading && (
+                              <SelectItem value="no-stores" disabled>Nessun magazzino disponibile</SelectItem>
+                            )}
+                            {storesData.map(s => (
                               <SelectItem key={s.id} value={s.id}>
-                                {s.name}
+                                {s.name} ({s.code}){s.city ? ` - ${s.city}` : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -917,7 +934,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                       </div>
                       <div>
                         <span className="text-gray-500">Magazzino:</span>
-                        <p className="font-medium">{MOCK_STORES.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
+                        <p className="font-medium">{storesData.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
                       </div>
                     </div>
                     {form.getValues('notes') && (
