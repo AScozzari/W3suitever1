@@ -1,17 +1,25 @@
 /**
  * WMS Document Movement Generation Rules
  * 
- * Logica per determinare se un documento genera un movimento di magazzino.
+ * Logica per determinare se un documento genera un movimento di magazzino
+ * E quale stato logistico applica ai prodotti.
  * 
- * Regole Base:
+ * Regole Generazione Movimento:
  * - DDT: SEMPRE genera movimento (movimentazione fisica)
  * - Ricevuta: SEMPRE genera movimento (conferma ricezione)
  * - Scontrino Fiscale: SEMPRE genera movimento (vendita diretta → OUTBOUND)
- * - Fattura Attiva: SEMPRE genera movimento (vendita → stato "venduto")
- * - Fattura Passiva: SOLO SE non esiste DDT collegato (carico diretto)
+ * - Fattura (Attiva/Passiva): SOLO SE non esiste DDT/Ricevuta collegata
  * - Ordine: MAI genera movimento (solo impegno/prenotazione)
  * - Nota di Credito: SOLO SE implica reso fisico (hasPhysicalReturn = true)
  * - Nota di Debito: MAI genera movimento (solo contabile)
+ * 
+ * Regole Cambio Stato Logistico:
+ * - DDT Attivo → shipping
+ * - DDT Passivo → in_stock
+ * - Ricevuta Passiva → in_stock
+ * - Scontrino/Fattura (vendita completata) → sold
+ * - NDC Attiva con reso → customer_return
+ * - NDC Passiva con reso → supplier_return
  */
 
 export type DocumentType = 
@@ -39,14 +47,60 @@ export interface DocumentMovementContext {
   documentType: DocumentType;
   documentDirection: DocumentDirection;
   linkedDdtId?: string | null;
+  linkedReceiptId?: string | null;
   hasPhysicalReturn?: boolean;
 }
+
+/**
+ * Stati logistici prodotto (da wms_product_logistic_status_enum)
+ */
+export type ProductLogisticStatus = 
+  | 'in_stock'
+  | 'reserved'
+  | 'preparing'
+  | 'shipping'
+  | 'delivered'
+  | 'sold'
+  | 'customer_return'
+  | 'doa_return'
+  | 'in_service'
+  | 'supplier_return'
+  | 'in_transfer'
+  | 'lost'
+  | 'damaged'
+  | 'internal_use';
 
 export interface MovementGenerationResult {
   generatesMovement: boolean;
   movementDirection?: 'inbound' | 'outbound' | 'internal';
+  targetLogisticStatus?: ProductLogisticStatus;
   reason: string;
 }
+
+/**
+ * Mappa documento → stato logistico target
+ * Chiave: `${documentType}_${direction}`
+ */
+export const DOCUMENT_STATUS_MAP: Record<string, ProductLogisticStatus> = {
+  // DDT
+  'ddt_active': 'shipping',
+  'ddt_passive': 'in_stock',
+  
+  // Ricevuta
+  'receipt_active': 'shipping',
+  'receipt_passive': 'in_stock',
+  
+  // Scontrino fiscale (vendita POS)
+  'fiscal_receipt_active': 'sold',
+  
+  // Fattura
+  'invoice_active': 'sold',
+  'invoice_passive': 'in_stock',
+  
+  // Nota di Credito con reso fisico
+  'credit_note_active': 'customer_return',
+  'credit_note_passive': 'supplier_return',
+};
 
 /**
  * Mappa tipo documento → natura (operational/fiscal)
@@ -88,7 +142,7 @@ export const CORE_DOCUMENT_TYPES: DocumentType[] = [
  * e quale direzione di movimento
  */
 export function shouldGenerateMovement(context: DocumentMovementContext): MovementGenerationResult {
-  const { documentType, documentDirection, linkedDdtId, hasPhysicalReturn } = context;
+  const { documentType, documentDirection, linkedDdtId, linkedReceiptId, hasPhysicalReturn } = context;
 
   switch (documentType) {
     // =====================================================
@@ -98,6 +152,7 @@ export function shouldGenerateMovement(context: DocumentMovementContext): Moveme
       return {
         generatesMovement: true,
         movementDirection: documentDirection === 'active' ? 'outbound' : 'inbound',
+        targetLogisticStatus: DOCUMENT_STATUS_MAP[`ddt_${documentDirection}`],
         reason: `DDT ${documentDirection === 'active' ? 'attivo (uscita)' : 'passivo (entrata)'} genera sempre movimento`,
       };
 
@@ -108,6 +163,7 @@ export function shouldGenerateMovement(context: DocumentMovementContext): Moveme
       return {
         generatesMovement: true,
         movementDirection: documentDirection === 'active' ? 'outbound' : 'inbound',
+        targetLogisticStatus: DOCUMENT_STATUS_MAP[`receipt_${documentDirection}`],
         reason: `Ricevuta ${documentDirection === 'active' ? 'attiva' : 'passiva'} conferma movimentazione fisica`,
       };
 
@@ -118,33 +174,35 @@ export function shouldGenerateMovement(context: DocumentMovementContext): Moveme
       return {
         generatesMovement: true,
         movementDirection: 'outbound',
+        targetLogisticStatus: 'sold',
         reason: 'Scontrino fiscale = vendita diretta POS, genera sempre uscita',
       };
 
     // =====================================================
-    // FATTURA - Dipende da direzione e presenza DDT
+    // FATTURA - Dipende da direzione e presenza DDT/Ricevuta
+    // Sia Attiva che Passiva: se esiste DDT/Ricevuta collegata, 
+    // il movimento è già stato generato da quel documento
     // =====================================================
-    case 'invoice':
-      if (documentDirection === 'active') {
+    case 'invoice': {
+      const hasLinkedMovementDoc = linkedDdtId || linkedReceiptId;
+      const statusKey = `invoice_${documentDirection}`;
+      const targetStatus = DOCUMENT_STATUS_MAP[statusKey];
+      
+      if (hasLinkedMovementDoc) {
         return {
-          generatesMovement: true,
-          movementDirection: 'outbound',
-          reason: 'Fattura attiva genera movimento uscita (vendita)',
-        };
-      } else {
-        // Fattura passiva: solo se NON esiste DDT collegato
-        if (linkedDdtId) {
-          return {
-            generatesMovement: false,
-            reason: 'Fattura passiva con DDT collegato: movimento già generato dal DDT',
-          };
-        }
-        return {
-          generatesMovement: true,
-          movementDirection: 'inbound',
-          reason: 'Fattura passiva SENZA DDT: genera movimento entrata (carico diretto)',
+          generatesMovement: false,
+          targetLogisticStatus: targetStatus,
+          reason: `Fattura ${documentDirection === 'active' ? 'attiva' : 'passiva'} con DDT/Ricevuta collegata: movimento già generato, applica solo stato '${targetStatus}'`,
         };
       }
+      
+      return {
+        generatesMovement: true,
+        movementDirection: documentDirection === 'active' ? 'outbound' : 'inbound',
+        targetLogisticStatus: targetStatus,
+        reason: `Fattura ${documentDirection === 'active' ? 'attiva' : 'passiva'} SENZA DDT/Ricevuta: genera movimento ${documentDirection === 'active' ? 'uscita' : 'entrata'}`,
+      };
+    }
 
     // =====================================================
     // ORDINE - MAI genera movimento
@@ -160,10 +218,12 @@ export function shouldGenerateMovement(context: DocumentMovementContext): Moveme
     // =====================================================
     case 'credit_note':
       if (hasPhysicalReturn) {
+        const ndcStatus = DOCUMENT_STATUS_MAP[`credit_note_${documentDirection}`];
         return {
           generatesMovement: true,
           movementDirection: documentDirection === 'active' ? 'inbound' : 'outbound',
-          reason: `NDC con reso fisico: ${documentDirection === 'active' ? 'rientro merce da cliente' : 'reso a fornitore'}`,
+          targetLogisticStatus: ndcStatus,
+          reason: `NDC con reso fisico: ${documentDirection === 'active' ? 'rientro merce da cliente' : 'reso a fornitore'} → stato '${ndcStatus}'`,
         };
       }
       return {
@@ -234,6 +294,17 @@ export function getExpectedMovementDirection(
 
   const key = `${documentType}_${documentDirection}`;
   return directionMap[key] || null;
+}
+
+/**
+ * Ottiene lo stato logistico target per un documento
+ */
+export function getTargetLogisticStatus(
+  documentType: DocumentType,
+  documentDirection: DocumentDirection
+): ProductLogisticStatus | null {
+  const key = `${documentType}_${documentDirection}`;
+  return DOCUMENT_STATUS_MAP[key] || null;
 }
 
 /**

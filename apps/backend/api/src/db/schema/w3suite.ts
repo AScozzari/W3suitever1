@@ -459,6 +459,7 @@ export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
   'preparing',          // In preparazione
   'shipping',           // DDT/In spedizione
   'delivered',          // Consegnato
+  'sold',               // Venduto (scontrino/fattura attiva)
   'customer_return',    // Reso cliente
   'doa_return',         // Reso DOA
   'in_service',         // In assistenza
@@ -9298,6 +9299,7 @@ export const wmsMovementDocuments = w3suiteSchema.table("wms_movement_documents"
   // Movement generation tracking
   generatesMovement: boolean("generates_movement").default(false), // True se questo documento ha generato/deve generare movimento
   hasPhysicalReturn: boolean("has_physical_return").default(false), // Per NDC: true se implica reso fisico merce
+  targetLogisticStatus: productLogisticStatusEnum("target_logistic_status"), // Stato logistico target da applicare ai prodotti
   
   // Metadata
   notes: text("notes"),
@@ -9353,6 +9355,11 @@ export const insertWmsMovementDocumentSchema = createInsertSchema(wmsMovementDoc
   // Movement generation tracking
   generatesMovement: z.boolean().optional().default(false),
   hasPhysicalReturn: z.boolean().optional().default(false),
+  targetLogisticStatus: z.enum([
+    'in_stock', 'reserved', 'preparing', 'shipping', 'delivered', 'sold',
+    'customer_return', 'doa_return', 'in_service', 'supplier_return',
+    'in_transfer', 'lost', 'damaged', 'internal_use'
+  ]).optional(),
   // File storage
   fileName: z.string().max(255).optional(),
   filePath: z.string().max(500).optional(),

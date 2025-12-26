@@ -346,10 +346,11 @@ Ricevuta Passiva → INBOUND
 // 3. Scontrino Fiscale - SEMPRE outbound (vendita POS)
 Scontrino → Movimento OUTBOUND
 
-// 4. Fattura - DIPENDE da direzione e linking
-Fattura Attiva          → OUTBOUND (vendita)
-Fattura Passiva + DDT   → NESSUN movimento (DDT già fatto)
-Fattura Passiva NO DDT  → INBOUND (carico diretto da fattura)
+// 4. Fattura - DIPENDE da presenza DDT/Ricevuta collegata
+Fattura Attiva + DDT    → NESSUN movimento (DDT già fatto), applica stato 'sold'
+Fattura Attiva NO DDT   → OUTBOUND (vendita diretta), stato 'sold'
+Fattura Passiva + DDT   → NESSUN movimento (DDT già fatto), applica stato 'in_stock'
+Fattura Passiva NO DDT  → INBOUND (carico diretto), stato 'in_stock'
 
 // 5. Ordine - MAI genera movimento
 Ordine (qualsiasi) → Nessun movimento (solo impegno)
@@ -374,6 +375,24 @@ Nota Debito → Nessun movimento (solo contabile)
 | Reso a fornitore con spedizione | true | ✅ OUTBOUND |
 | Sconto commerciale su fattura | false | ❌ Nessuno |
 | Merce danneggiata rientrata | true | ✅ INBOUND |
+
+### 6.0.2 Matrice Documento → Stato Logistico
+
+Ogni documento che genera movimento applica uno stato logistico ai prodotti coinvolti:
+
+| Documento | Direzione | Stato Target | Descrizione |
+|-----------|-----------|--------------|-------------|
+| **DDT** | Attivo | `shipping` | Merce in spedizione |
+| **DDT** | Passivo | `in_stock` | Merce ricevuta a magazzino |
+| **Ricevuta** | Attivo | `shipping` | Conferma spedizione |
+| **Ricevuta** | Passivo | `in_stock` | Conferma ricezione |
+| **Scontrino** | Attivo | `sold` | Vendita POS completata |
+| **Fattura** | Attivo | `sold` | Vendita completata |
+| **Fattura** | Passivo | `in_stock` | Carico merce |
+| **NDC** | Attivo (con reso) | `customer_return` | Reso da cliente |
+| **NDC** | Passivo (con reso) | `supplier_return` | Reso a fornitore |
+
+**Nota importante:** Se un documento è collegato a un DDT/Ricevuta precedente (es. Fattura dopo DDT), NON genera un nuovo movimento ma PUÒ comunque aggiornare lo stato logistico (es. da `shipping` a `sold`).
 
 **UI Requirement:** Ogni movimento deve mostrare una **timeline dei documenti** allegati.
 
