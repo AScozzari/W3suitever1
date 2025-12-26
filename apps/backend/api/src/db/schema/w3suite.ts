@@ -9295,6 +9295,10 @@ export const wmsMovementDocuments = w3suiteSchema.table("wms_movement_documents"
   adminDocumentType: varchar("admin_document_type", { length: 50 }), // invoice, credit_note, debit_note, receipt
   adminDocumentId: uuid("admin_document_id"), // Future FK to administrative_documents table
   
+  // Movement generation tracking
+  generatesMovement: boolean("generates_movement").default(false), // True se questo documento ha generato/deve generare movimento
+  hasPhysicalReturn: boolean("has_physical_return").default(false), // Per NDC: true se implica reso fisico merce
+  
   // Metadata
   notes: text("notes"),
   metadata: jsonb("metadata").default({}),
@@ -9346,6 +9350,9 @@ export const insertWmsMovementDocumentSchema = createInsertSchema(wmsMovementDoc
   linkedDdtId: z.string().uuid().optional(),
   linkedInvoiceId: z.string().uuid().optional(),
   linkedReceiptId: z.string().uuid().optional(),
+  // Movement generation tracking
+  generatesMovement: z.boolean().optional().default(false),
+  hasPhysicalReturn: z.boolean().optional().default(false),
   // File storage
   fileName: z.string().max(255).optional(),
   filePath: z.string().max(500).optional(),

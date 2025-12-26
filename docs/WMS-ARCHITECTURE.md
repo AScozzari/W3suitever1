@@ -322,12 +322,58 @@ MOVIMENTO (Carico Merce)
 La tabella `wms_movement_documents` gestisce questa relazione 1:N:
 - `movementId` → FK al movimento
 - `documentType` → tipo documento (order, ddt, receipt, invoice, fiscal_receipt, credit_note, debit_note)
-- `documentNumber` → numero documento
-- `documentDate` → data documento
-- `direction` → `active` | `passive`
-- `nature` → `operational` | `fiscal`
-- File storage opzionale per allegati
-- Legami opzionali: `orderId`, `ddtId`, `invoiceId`, `receiptId`
+- `documentDirection` → active/passive
+- `documentNature` → operational/fiscal
+- `generatesMovement` → boolean, true se documento ha generato movimento
+- `hasPhysicalReturn` → boolean, per NDC se implica reso fisico merce
+- `linkedOrderId`, `linkedDdtId`, `linkedInvoiceId`, `linkedReceiptId` → FK opzionali per linking
+
+### 6.0.1 Logica di Generazione Movimento (Dettaglio)
+
+La funzione `shouldGenerateMovement()` in `wms-document-rules.ts` determina automaticamente se un documento deve generare movimento:
+
+```typescript
+// Casi principali:
+
+// 1. DDT - SEMPRE genera movimento
+DDT Attivo  → Movimento OUTBOUND (spedisco)
+DDT Passivo → Movimento INBOUND (ricevo)
+
+// 2. Ricevuta - SEMPRE genera movimento
+Ricevuta Attiva  → OUTBOUND
+Ricevuta Passiva → INBOUND
+
+// 3. Scontrino Fiscale - SEMPRE outbound (vendita POS)
+Scontrino → Movimento OUTBOUND
+
+// 4. Fattura - DIPENDE da direzione e linking
+Fattura Attiva          → OUTBOUND (vendita)
+Fattura Passiva + DDT   → NESSUN movimento (DDT già fatto)
+Fattura Passiva NO DDT  → INBOUND (carico diretto da fattura)
+
+// 5. Ordine - MAI genera movimento
+Ordine (qualsiasi) → Nessun movimento (solo impegno)
+
+// 6. Nota di Credito - DIPENDE da hasPhysicalReturn
+NDC con reso fisico (hasPhysicalReturn=true):
+  - NDC Attiva  → INBOUND (cliente restituisce)
+  - NDC Passiva → OUTBOUND (restituisco a fornitore)
+NDC senza reso (hasPhysicalReturn=false):
+  → Nessun movimento (solo rettifica contabile)
+
+// 7. Nota di Debito - MAI genera movimento
+Nota Debito → Nessun movimento (solo contabile)
+```
+
+#### Casi d'Uso NDC (Nota di Credito)
+
+| Scenario | hasPhysicalReturn | Movimento |
+|----------|-------------------|-----------|
+| Storno parziale fattura (no merce) | false | ❌ Nessuno |
+| Reso cliente con rientro fisico | true | ✅ INBOUND |
+| Reso a fornitore con spedizione | true | ✅ OUTBOUND |
+| Sconto commerciale su fattura | false | ❌ Nessuno |
+| Merce danneggiata rientrata | true | ✅ INBOUND |
 
 **UI Requirement:** Ogni movimento deve mostrare una **timeline dei documenti** allegati.
 
