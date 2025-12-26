@@ -15,7 +15,9 @@
 
 import crypto from 'crypto';
 import { db } from '../core/db';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, type ExtractTablesWithRelations } from 'drizzle-orm';
+import type { PgTransaction } from 'drizzle-orm/pg-core';
+import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
 import { 
   productItems,
   productItemStatusHistory,
@@ -26,6 +28,8 @@ import {
 } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 import { DOCUMENT_STATUS_MAP, getTargetLogisticStatus } from '../utils/wms-document-rules';
+
+export type DrizzleTransaction = PgTransaction<PostgresJsQueryResultHKT, any, ExtractTablesWithRelations<any>>;
 
 export type ProductLogisticStatus = 
   | 'in_stock' | 'reserved' | 'preparing' | 'shipping' | 'delivered' | 'sold'
@@ -56,6 +60,7 @@ export interface StatusChangeContext {
 export interface ItemStatusChangeParams extends StatusChangeContext {
   productItemId: string;
   toStatus: ProductLogisticStatus;
+  forceInitialEntry?: boolean; // For goods receiving: always write history even if status matches
 }
 
 export interface BatchStatusChangeParams extends StatusChangeContext {
@@ -63,6 +68,7 @@ export interface BatchStatusChangeParams extends StatusChangeContext {
   toStatus: ProductBatchStatus;
   quantityAffected: number;
   targetLogisticStatus?: ProductLogisticStatus;
+  forceInitialEntry?: boolean; // For goods receiving: always write history even if status matches
 }
 
 export interface BulkItemStatusChangeParams extends StatusChangeContext {
@@ -71,6 +77,155 @@ export interface BulkItemStatusChangeParams extends StatusChangeContext {
 }
 
 class WmsStatusHistoryService {
+  
+  /**
+   * 📝 Registra un cambio di stato per un prodotto serializzato (con transazione esterna opzionale)
+   * Se tx è passato, usa la transazione esistente. Altrimenti crea una nuova transazione.
+   */
+  async recordItemStatusChangeWithTx(
+    params: ItemStatusChangeParams,
+    tx?: DrizzleTransaction
+  ): Promise<string> {
+    try {
+      const dbContext = tx || db;
+      
+      const [item] = await dbContext
+        .select({ logisticStatus: productItems.logisticStatus })
+        .from(productItems)
+        .where(eq(productItems.id, params.productItemId))
+        .limit(1);
+      
+      if (!item) {
+        throw new Error(`ProductItem ${params.productItemId} not found`);
+      }
+      
+      const fromStatus = item.logisticStatus as ProductLogisticStatus | null;
+      
+      if (fromStatus === params.toStatus && !params.forceInitialEntry) {
+        logger.debug('📜 [STATUS-HISTORY] No status change needed (same status)', {
+          productItemId: params.productItemId,
+          status: params.toStatus
+        });
+        return 'no_change';
+      }
+      
+      if (fromStatus !== params.toStatus) {
+        await dbContext
+          .update(productItems)
+          .set({ 
+            logisticStatus: params.toStatus,
+            updatedAt: new Date()
+          })
+          .where(eq(productItems.id, params.productItemId));
+      }
+      
+      const [historyRecord] = await dbContext
+        .insert(productItemStatusHistory)
+        .values({
+          productItemId: params.productItemId,
+          tenantId: params.tenantId,
+          fromStatus: fromStatus || 'in_stock',
+          toStatus: params.toStatus,
+          changedBy: params.changedBy,
+          changedByName: params.changedByName,
+          notes: params.notes,
+          movementId: params.movementId,
+          movementDocumentId: params.movementDocumentId,
+          documentType: params.documentType,
+          documentDirection: params.documentDirection,
+          statusChangeGroupId: params.statusChangeGroupId
+        })
+        .returning({ id: productItemStatusHistory.id });
+      
+      logger.info('📜 [STATUS-HISTORY] Item status change recorded', {
+        historyId: historyRecord.id,
+        productItemId: params.productItemId,
+        fromStatus,
+        toStatus: params.toStatus,
+        documentType: params.documentType
+      });
+      
+      return historyRecord.id;
+      
+    } catch (error) {
+      logger.error('❌ [STATUS-HISTORY] Failed to record item status change', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        params
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 📝 Registra un cambio di stato per un batch (con transazione esterna opzionale)
+   */
+  async recordBatchStatusChangeWithTx(
+    params: BatchStatusChangeParams,
+    tx?: DrizzleTransaction
+  ): Promise<string> {
+    try {
+      const dbContext = tx || db;
+      
+      const [batch] = await dbContext
+        .select({ status: productBatches.status })
+        .from(productBatches)
+        .where(eq(productBatches.id, params.productBatchId))
+        .limit(1);
+      
+      if (!batch) {
+        throw new Error(`ProductBatch ${params.productBatchId} not found`);
+      }
+      
+      const fromStatus = batch.status as ProductBatchStatus;
+      
+      if (fromStatus !== params.toStatus) {
+        await dbContext
+          .update(productBatches)
+          .set({ 
+            status: params.toStatus,
+            updatedAt: new Date()
+          })
+          .where(eq(productBatches.id, params.productBatchId));
+      }
+      
+      const [historyRecord] = await dbContext
+        .insert(productBatchStatusHistory)
+        .values({
+          productBatchId: params.productBatchId,
+          tenantId: params.tenantId,
+          fromStatus: fromStatus || 'available',
+          toStatus: params.toStatus,
+          quantityAffected: params.quantityAffected,
+          changedBy: params.changedBy,
+          changedByName: params.changedByName,
+          notes: params.notes,
+          movementId: params.movementId,
+          movementDocumentId: params.movementDocumentId,
+          documentType: params.documentType,
+          documentDirection: params.documentDirection,
+          targetLogisticStatus: params.targetLogisticStatus,
+          statusChangeGroupId: params.statusChangeGroupId
+        })
+        .returning({ id: productBatchStatusHistory.id });
+      
+      logger.info('📜 [STATUS-HISTORY] Batch status change recorded', {
+        historyId: historyRecord.id,
+        productBatchId: params.productBatchId,
+        fromStatus,
+        toStatus: params.toStatus,
+        quantityAffected: params.quantityAffected
+      });
+      
+      return historyRecord.id;
+      
+    } catch (error) {
+      logger.error('❌ [STATUS-HISTORY] Failed to record batch status change', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        params
+      });
+      throw error;
+    }
+  }
   
   /**
    * 📝 Registra un cambio di stato per un prodotto serializzato

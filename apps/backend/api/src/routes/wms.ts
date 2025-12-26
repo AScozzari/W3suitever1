@@ -63,6 +63,7 @@ import { logger } from "../core/logger";
 import { z } from "zod";
 import { wmsWorkflowService } from "../services/wms-workflow.service";
 import { wmsStatusHistoryService } from "../services/wms-status-history.service";
+import { wmsReceivingService, ReceivingRequest, ReceivingItem } from "../services/wms-receiving.service";
 import { analyzeProductChanges, VERSIONING_INFO_TOOLTIP } from "../lib/wms-versioning-config";
 
 // Active product_items logistic statuses (prevent product deletion)
@@ -10956,6 +10957,174 @@ router.get("/product-batches/:id/status-history", rbacMiddleware, requirePermiss
     logger.error('Error fetching batch status history', { error });
     res.status(500).json({ 
       error: "Failed to fetch status history",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// ==================== GOODS RECEIVING API ====================
+
+/**
+ * POST /api/wms/receiving
+ * Process goods receiving (carico merce)
+ * Creates: DDT passivo, inbound movements, serials/batches, inventory updates, status history
+ */
+const receivingItemSchema = z.object({
+  productId: z.string().uuid(),
+  productSku: z.string(),
+  quantity: z.number().int().positive(),
+  serials: z.array(z.string()).optional(),
+  lot: z.string().optional(),
+  unitPrice: z.number().optional(),
+  expectedQuantity: z.number().int().optional()
+});
+
+const receivingRequestSchema = z.object({
+  storeId: z.string().uuid(),
+  supplierId: z.string().uuid(),
+  orderId: z.string().uuid().optional(),
+  documentNumber: z.string().min(1),
+  documentDate: z.string(),
+  notes: z.string().optional(),
+  items: z.array(receivingItemSchema).min(1)
+});
+
+router.post("/receiving", rbacMiddleware, requirePermission('wms.stock.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const userName = req.user?.name || req.user?.email;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Unauthorized", message: "Tenant ID not found" });
+    }
+    
+    const validation = receivingRequestSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({ 
+        error: "Validation failed",
+        details: validation.error.format()
+      });
+    }
+    
+    const requestData = validation.data;
+    
+    // Check for duplicate serials before processing
+    const allSerials: string[] = [];
+    for (const item of requestData.items) {
+      if (item.serials && item.serials.length > 0) {
+        allSerials.push(...item.serials);
+      }
+    }
+    
+    if (allSerials.length > 0) {
+      const duplicates = await wmsReceivingService.checkSerialDuplicates(tenantId, allSerials);
+      if (duplicates.length > 0) {
+        return res.status(400).json({
+          error: "Duplicate serials found",
+          message: `I seguenti seriali esistono già nel sistema: ${duplicates.join(', ')}`,
+          duplicates
+        });
+      }
+    }
+    
+    const receivingRequest: ReceivingRequest = {
+      tenantId,
+      storeId: requestData.storeId,
+      supplierId: requestData.supplierId,
+      orderId: requestData.orderId,
+      documentNumber: requestData.documentNumber,
+      documentDate: requestData.documentDate,
+      notes: requestData.notes,
+      items: requestData.items,
+      createdBy: userId,
+      createdByName: userName
+    };
+    
+    const result = await wmsReceivingService.processReceiving(receivingRequest);
+    
+    logger.info('📦 [API] Goods receiving processed successfully', {
+      tenantId,
+      documentId: result.documentId,
+      documentNumber: result.documentNumber,
+      itemsReceived: result.itemsReceived,
+      serialsCreated: result.serialsCreated,
+      batchesCreated: result.batchesCreated
+    });
+    
+    res.status(201).json({
+      success: true,
+      data: result,
+      message: `Carico merce completato: ${result.itemsReceived} articoli ricevuti`
+    });
+    
+  } catch (error) {
+    logger.error('❌ [API] Failed to process goods receiving', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    res.status(500).json({ 
+      error: "Failed to process goods receiving",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * POST /api/wms/receiving/check-serials
+ * Check if serials already exist in the tenant (pre-validation)
+ */
+router.post("/receiving/check-serials", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    const { serials } = req.body;
+    
+    if (!Array.isArray(serials)) {
+      return res.status(400).json({ error: "serials must be an array of strings" });
+    }
+    
+    const duplicates = await wmsReceivingService.checkSerialDuplicates(tenantId, serials);
+    
+    res.json({
+      success: true,
+      data: {
+        hasDuplicates: duplicates.length > 0,
+        duplicates,
+        validCount: serials.length - duplicates.length
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Error checking serial duplicates', { error });
+    res.status(500).json({ 
+      error: "Failed to check serials",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
+ * GET /api/wms/receiving/generate-lot
+ * Generate an automatic lot number
+ */
+router.get("/receiving/generate-lot", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+  try {
+    const lotNumber = wmsReceivingService.generateLotNumber();
+    
+    res.json({
+      success: true,
+      data: { lotNumber }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ 
+      error: "Failed to generate lot number",
       details: error instanceof Error ? error.message : "Unknown error"
     });
   }
