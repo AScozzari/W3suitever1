@@ -707,39 +707,55 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             </div>
                             
                             <div>
-                              <Label className="flex items-center gap-2">
+                              <Label className="flex items-center gap-2 mb-2">
                                 <ScanLine className="h-4 w-4" />
                                 Spara {getSerialLabel(selectedProduct.serialType)} ({currentSerials.length}/{targetQuantity})
                               </Label>
-                              <Input
-                                ref={serialInputRef}
-                                value={serialInput}
-                                onChange={(e) => setSerialInput(e.target.value)}
-                                onKeyDown={handleSerialScan}
-                                placeholder={`Scansiona o inserisci ${getSerialLabel(selectedProduct.serialType)}...`}
-                                className="mt-1"
-                                autoFocus
-                                data-testid="input-serial-scan"
-                              />
-                            </div>
-
-                            {currentSerials.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {currentSerials.map((serial, idx) => (
-                                  <Badge 
-                                    key={idx} 
-                                    variant="secondary"
-                                    className="flex items-center gap-1"
-                                  >
-                                    {serial}
-                                    <X 
-                                      className="h-3 w-3 cursor-pointer hover:text-red-500" 
-                                      onClick={() => removeSerial(idx)}
-                                    />
-                                  </Badge>
+                              
+                              {/* Visual list of serial input fields */}
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {Array.from({ length: targetQuantity }).map((_, idx) => (
+                                  <div key={idx} className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500 w-6">{idx + 1}.</span>
+                                    {idx < currentSerials.length ? (
+                                      // Already scanned - show as badge with delete
+                                      <div className="flex-1 flex items-center">
+                                        <Badge 
+                                          variant="secondary"
+                                          className="flex items-center gap-2 py-2 px-3 w-full justify-between"
+                                        >
+                                          <span className="font-mono">{currentSerials[idx]}</span>
+                                          <X 
+                                            className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                                            onClick={() => removeSerial(idx)}
+                                          />
+                                        </Badge>
+                                      </div>
+                                    ) : idx === currentSerials.length ? (
+                                      // Current input field - active
+                                      <Input
+                                        ref={serialInputRef}
+                                        value={serialInput}
+                                        onChange={(e) => setSerialInput(e.target.value)}
+                                        onKeyDown={handleSerialScan}
+                                        placeholder={`Scansiona ${getSerialLabel(selectedProduct.serialType)}...`}
+                                        className="flex-1 border-orange-300 focus:border-orange-500"
+                                        autoFocus
+                                        data-testid={`input-serial-${idx}`}
+                                      />
+                                    ) : (
+                                      // Future field - disabled placeholder
+                                      <Input
+                                        disabled
+                                        placeholder="In attesa..."
+                                        className="flex-1 bg-gray-50"
+                                        data-testid={`input-serial-${idx}`}
+                                      />
+                                    )}
+                                  </div>
                                 ))}
                               </div>
-                            )}
+                            </div>
                           </div>
                         ) : selectedProduct.isSerializable && selectedProduct.serialType === 'other' ? (
                           <div className="space-y-3">
