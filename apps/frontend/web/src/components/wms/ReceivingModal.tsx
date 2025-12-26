@@ -80,17 +80,53 @@ interface Product {
   name: string;
   sku: string;
   supplierSku?: string;
-  ean?: string;
+  ean?: string;  // EAN-13 barcode - identifies the MODEL (same for all units of same product)
   description?: string;
   isSerializable: boolean;
-  serialType?: 'imei' | 'iccid' | 'mac_address' | 'other';
+  serialType?: 'imei' | 'iccid' | 'mac_address' | 'other'; // Type of unique serial per UNIT
+  serialCount?: number; // Number of serials per unit (e.g., 2 for dual-SIM phones with IMEI1+IMEI2)
+}
+
+// Helper to determine if a code is likely an EAN (barcode) vs a unique serial
+const isLikelyEAN = (code: string): boolean => {
+  // EAN-13: exactly 13 digits, EAN-8: exactly 8 digits
+  const cleaned = code.replace(/\s/g, '');
+  return /^\d{8}$/.test(cleaned) || /^\d{13}$/.test(cleaned);
+};
+
+// Helper to determine if a code is likely an IMEI
+const isLikelyIMEI = (code: string): boolean => {
+  // IMEI: 15 digits (or 14 + check digit)
+  const cleaned = code.replace(/\s/g, '');
+  return /^\d{15}$/.test(cleaned) || /^\d{14}$/.test(cleaned);
+};
+
+// Helper to determine if a code is likely an ICCID
+const isLikelyICCID = (code: string): boolean => {
+  // ICCID: 19-20 digits, often starts with 89
+  const cleaned = code.replace(/\s/g, '');
+  return /^89\d{17,18}$/.test(cleaned) || /^\d{19,20}$/.test(cleaned);
+};
+
+// Helper to determine if a code is likely a MAC address
+const isLikelyMAC = (code: string): boolean => {
+  // MAC: 12 hex digits, possibly with colons or dashes
+  const cleaned = code.replace(/[\s:-]/g, '').toUpperCase();
+  return /^[0-9A-F]{12}$/.test(cleaned);
+};
+
+// SerialEntry supports multiple serials per unit (e.g., IMEI1 + IMEI2 for dual-SIM)
+interface SerialEntry {
+  serials: string[]; // Array of serials for this unit (length = serialCount)
+  unitIndex: number; // Which unit this is (0, 1, 2...)
 }
 
 interface ReceivingItem {
   id: string;
   product: Product;
   quantity: number;
-  serials: string[];
+  serials: string[]; // Flat list for simple cases
+  serialEntries?: SerialEntry[]; // Structured list for multi-serial products
   lot?: string;
   unitPrice?: number;
   hasDiscrepancy?: boolean;
@@ -139,12 +175,17 @@ const MOCK_ORDERS: Order[] = [
 ];
 
 const MOCK_PRODUCTS: Product[] = [
-  { id: 'p1', name: 'iPhone 16 Pro 256GB Nero', sku: 'IPH16P256-BLK', supplierSku: 'APL-IP16P-256-BK', ean: '1234567890123', description: 'Apple iPhone 16 Pro 256GB colore nero', isSerializable: true, serialType: 'imei' },
-  { id: 'p2', name: 'iPhone 16 Pro 256GB Bianco', sku: 'IPH16P256-WHT', supplierSku: 'APL-IP16P-256-WH', ean: '1234567890124', description: 'Apple iPhone 16 Pro 256GB colore bianco', isSerializable: true, serialType: 'imei' },
+  // Dual-SIM phones: 2 IMEI per unit
+  { id: 'p1', name: 'iPhone 16 Pro 256GB Nero', sku: 'IPH16P256-BLK', supplierSku: 'APL-IP16P-256-BK', ean: '1234567890123', description: 'Apple iPhone 16 Pro 256GB colore nero', isSerializable: true, serialType: 'imei', serialCount: 2 },
+  { id: 'p2', name: 'iPhone 16 Pro 256GB Bianco', sku: 'IPH16P256-WHT', supplierSku: 'APL-IP16P-256-WH', ean: '1234567890124', description: 'Apple iPhone 16 Pro 256GB colore bianco', isSerializable: true, serialType: 'imei', serialCount: 2 },
+  // Non-serializable products
   { id: 'p3', name: 'Cover Silicone iPhone 16', sku: 'CVR16SIL', supplierSku: 'ACC-CVR-16-SIL', ean: '2234567890123', description: 'Cover protettiva in silicone per iPhone 16', isSerializable: false },
   { id: 'p4', name: 'Cavo USB-C 1m', sku: 'CBL-USBC-1M', supplierSku: 'ACC-CBL-C1M', ean: '3234567890123', description: 'Cavo USB Type-C lunghezza 1 metro', isSerializable: false },
-  { id: 'p5', name: 'Router WiFi 6 AX3000', sku: 'RTR-AX3000', supplierSku: 'NET-RTR-AX3K', ean: '4234567890123', description: 'Router wireless WiFi 6 velocità AX3000', isSerializable: true, serialType: 'mac_address' },
-  { id: 'p6', name: 'SIM Card Prepagata', sku: 'SIM-PRE-001', supplierSku: 'TEL-SIM-PRE', ean: '5234567890123', description: 'SIM card prepagata attivabile', isSerializable: true, serialType: 'iccid' },
+  // Single serial products
+  { id: 'p5', name: 'Router WiFi 6 AX3000', sku: 'RTR-AX3000', supplierSku: 'NET-RTR-AX3K', ean: '4234567890123', description: 'Router wireless WiFi 6 velocità AX3000', isSerializable: true, serialType: 'mac_address', serialCount: 1 },
+  { id: 'p6', name: 'SIM Card Prepagata', sku: 'SIM-PRE-001', supplierSku: 'TEL-SIM-PRE', ean: '5234567890123', description: 'SIM card prepagata attivabile', isSerializable: true, serialType: 'iccid', serialCount: 1 },
+  // Dual-SIM Android phone
+  { id: 'p7', name: 'Samsung Galaxy S24 Ultra 512GB', sku: 'SGS24U-512', supplierSku: 'SAM-S24U-512', ean: '6234567890123', description: 'Samsung Galaxy S24 Ultra 512GB', isSerializable: true, serialType: 'imei', serialCount: 2 },
 ];
 
 
@@ -214,9 +255,26 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
 
   const availableOrders = MOCK_ORDERS.filter(o => o.supplierId === selectedSupplierId);
 
+  // Detect the type of code being scanned
+  const detectCodeType = (code: string): 'ean' | 'imei' | 'iccid' | 'mac' | 'sku' | 'unknown' => {
+    if (isLikelyEAN(code)) return 'ean';
+    if (isLikelyIMEI(code)) return 'imei';
+    if (isLikelyICCID(code)) return 'iccid';
+    if (isLikelyMAC(code)) return 'mac';
+    // Assume SKU/supplier code for alphanumeric strings
+    if (/^[A-Za-z0-9-_]+$/.test(code)) return 'sku';
+    return 'unknown';
+  };
+
+  const [detectedCodeType, setDetectedCodeType] = useState<'ean' | 'imei' | 'iccid' | 'mac' | 'sku' | 'unknown' | null>(null);
+
   useEffect(() => {
     if (searchQuery.length >= 3) {
       const query = searchQuery.toLowerCase();
+      const codeType = detectCodeType(searchQuery);
+      setDetectedCodeType(codeType);
+      
+      // Search by EAN, SKU, supplier SKU, or name/description
       const results = MOCK_PRODUCTS.filter(p => 
         p.name.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query) ||
@@ -224,11 +282,32 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
         p.ean?.includes(query) ||
         p.description?.toLowerCase().includes(query)
       );
+      
+      // If scanning what looks like an IMEI/ICCID/MAC but no product found,
+      // it means the user is scanning a serial for an already selected product
+      // In that case, don't show "not found" for products
+      if (results.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
+        // This is likely a serial scan, not a product search
+        // If we have a selected product that matches this serial type, auto-add the serial
+        if (selectedProduct && selectedProduct.isSerializable && 
+            ((codeType === 'imei' && selectedProduct.serialType === 'imei') ||
+             (codeType === 'iccid' && selectedProduct.serialType === 'iccid') ||
+             (codeType === 'mac' && selectedProduct.serialType === 'mac_address'))) {
+          // Auto-add serial to current product
+          if (!currentSerials.includes(searchQuery.trim())) {
+            setCurrentSerials([...currentSerials, searchQuery.trim()]);
+          }
+          setSearchQuery('');
+          setShowSearchResults(false);
+          return;
+        }
+      }
+      
       setSearchResults(results);
       setShowSearchResults(true);
       
       // If no results and query looks like a supplier SKU, show mapping option
-      if (results.length === 0 && query.length >= 5) {
+      if (results.length === 0 && query.length >= 5 && codeType === 'sku') {
         setUnmappedSupplierSku(searchQuery);
       } else {
         setShowSkuMappingForm(false);
@@ -237,8 +316,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
       setSearchResults([]);
       setShowSearchResults(false);
       setShowSkuMappingForm(false);
+      setDetectedCodeType(null);
     }
-  }, [searchQuery]);
+  }, [searchQuery, selectedProduct, currentSerials]);
 
   // Search for internal products when mapping
   useEffect(() => {
@@ -753,10 +833,29 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                       ref={searchInputRef}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Cerca prodotto (SKU, nome, EAN, descrizione) - min 3 caratteri"
-                      className="pl-9"
+                      placeholder="Scansiona EAN/barcode, SKU, o nome prodotto..."
+                      className="pl-9 pr-24"
                       data-testid="input-product-search"
                     />
+                    {/* Code type indicator badge */}
+                    {detectedCodeType && searchQuery.length >= 3 && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Badge 
+                          variant={detectedCodeType === 'ean' ? 'default' : 
+                                   detectedCodeType === 'imei' ? 'destructive' :
+                                   detectedCodeType === 'iccid' ? 'secondary' :
+                                   detectedCodeType === 'mac' ? 'outline' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {detectedCodeType === 'ean' && '📦 EAN'}
+                          {detectedCodeType === 'imei' && '📱 IMEI'}
+                          {detectedCodeType === 'iccid' && '💳 ICCID'}
+                          {detectedCodeType === 'mac' && '🌐 MAC'}
+                          {detectedCodeType === 'sku' && '🏷️ SKU'}
+                          {detectedCodeType === 'unknown' && '❓ Testo'}
+                        </Badge>
+                      </div>
+                    )}
                     
                     {showSearchResults && searchResults.length > 0 && (
                       <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto">
