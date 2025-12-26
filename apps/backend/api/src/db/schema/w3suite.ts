@@ -510,8 +510,16 @@ export const stockMovementDirectionEnum = pgEnum('stock_movement_direction', [
 
 // WMS Movement Documents - Types of documents that can be attached to movements
 export const wmsMovementDocumentTypeEnum = pgEnum('wms_movement_document_type', [
-  // Specific movement documents
-  'ddt',                    // Documento di Trasporto
+  // Core document types (new architecture)
+  'order',                  // Ordine (non genera movimento)
+  'ddt',                    // Documento di Trasporto (genera movimento)
+  'receipt',                // Ricevuta operativa (genera movimento, precede doc fiscale)
+  'invoice',                // Fattura (genera movimento se attiva o se passiva senza DDT)
+  'fiscal_receipt',         // Scontrino fiscale (genera movimento)
+  'credit_note',            // Nota di Credito
+  'debit_note',             // Nota di Debito
+  
+  // Specific movement documents (attachments)
   'photo',                  // Foto
   'loan_contract',          // Contratto Comodato
   'tradein_form',           // Modulo Trade-In
@@ -520,13 +528,19 @@ export const wmsMovementDocumentTypeEnum = pgEnum('wms_movement_document_type', 
   'return_form',            // Modulo Reso
   'transfer_note',          // Nota di Trasferimento
   'adjustment_report',      // Report Rettifica
-  'other',                  // Altro
-  
-  // Administrative documents (reference only - actual docs in future admin_documents table)
-  'invoice',                // Fattura
-  'credit_note',            // Nota di Credito
-  'debit_note',             // Nota di Debito
-  'receipt'                 // Scontrino Fiscale
+  'other'                   // Altro
+]);
+
+// WMS Document Direction - Active (emesso) vs Passive (ricevuto)
+export const wmsDocumentDirectionEnum = pgEnum('wms_document_direction', [
+  'active',                 // Attivo - Documento emesso da noi verso terzi
+  'passive'                 // Passivo - Documento ricevuto da terzi
+]);
+
+// WMS Document Nature - Operational vs Fiscal
+export const wmsDocumentNatureEnum = pgEnum('wms_document_nature', [
+  'operational',            // Operativo - Ordine, DDT, Ricevuta (gestiscono movimentazione fisica)
+  'fiscal'                  // Fiscale/Amministrativo - Scontrino, Fattura, Note Credito/Debito
 ]);
 
 // WMS Movement Document Category
