@@ -240,7 +240,71 @@ wms_inventory_snapshots
 
 ---
 
-## 6. Tabelle Documenti
+## 6. Architettura Documenti WMS
+
+### 6.0 Classificazione Documenti
+
+#### Per Natura
+
+| Natura | Documenti | Descrizione |
+|--------|-----------|-------------|
+| **Operativo** | Ordine, DDT, Ricevuta | Gestiscono movimentazione fisica |
+| **Fiscale/Amministrativo** | Scontrino, Fattura, Nota Credito | Rilevanza fiscale/contabile |
+
+#### Per Direzione (NON usare inbound/outbound per documenti)
+
+| Direzione | Valore DB | Descrizione |
+|-----------|-----------|-------------|
+| **Attivo** | `active` | Documento emesso da noi verso terzi |
+| **Passivo** | `passive` | Documento ricevuto da terzi |
+
+#### Chi Genera Movimento Logistico
+
+| Documento | Direzione | Genera Movimento? | Note |
+|-----------|-----------|-------------------|------|
+| **DDT** | Attivo/Passivo | ✅ Sempre | Attesta movimento fisico merce |
+| **Ricevuta** | Attivo | ✅ Sì | Operativo, precede doc fiscale |
+| **Scontrino** | Attivo | ✅ Sì | Fiscale → stato "venduto" |
+| **Fattura Attiva** | Attivo | ✅ Sì | Fiscale → stato "venduto" |
+| **Fattura Passiva** | Passivo | ⚠️ Condizionale | Solo se NON esiste DDT (carico diretto) |
+| **Ordine** | Attivo/Passivo | ❌ No | Solo impegno/previsione |
+| **Nota Credito** | Attivo/Passivo | ⚠️ Condizionale | Solo se implica reso fisico |
+
+#### Flusso Documenti
+
+```
+Ordine → DDT → Fattura
+   ↓       ↓       ↓
+  (N)     (N)     (N)
+   
+NON tutti obbligatori! Possono esistere indipendentemente.
+```
+
+**Combinazioni valide:**
+- Flusso completo: Ordine → DDT → Fattura (movimento da DDT)
+- Senza ordine: DDT → Fattura (movimento da DDT)
+- Solo fattura: Fattura passiva senza DDT (movimento da Fattura)
+- Senza fattura: Ordine → DDT (raro, movimento da DDT)
+
+#### Relazioni tra Documenti
+
+| Da | A | Cardinalità |
+|----|---|-------------|
+| Ordine | DDT | 1:N |
+| Ordine | Fattura | 1:N |
+| DDT | Fattura | N:N |
+| Ricevuta | Scontrino/Fattura | 1:1 |
+
+#### Destinatari DDT Uscita (Attivo)
+
+```
+DDT USCITA (emesso da noi) →
+├── Cliente (vendita/consegna)
+├── Fornitore (reso merce)
+├── Laboratorio/Centro riparazioni
+├── Altro store (trasferimento interno)
+└── Altro soggetto
+```
 
 ### ⚠️ REGOLA FONDAMENTALE: Relazione 1:N Movimento-Documenti
 
@@ -257,10 +321,13 @@ MOVIMENTO (Carico Merce)
 
 La tabella `wms_movement_documents` gestisce questa relazione 1:N:
 - `movementId` → FK al movimento
-- `documentType` → tipo documento (ddt, invoice, order, etc.)
+- `documentType` → tipo documento (order, ddt, receipt, invoice, fiscal_receipt, credit_note, debit_note)
 - `documentNumber` → numero documento
 - `documentDate` → data documento
+- `direction` → `active` | `passive`
+- `nature` → `operational` | `fiscal`
 - File storage opzionale per allegati
+- Legami opzionali: `orderId`, `ddtId`, `invoiceId`, `receiptId`
 
 **UI Requirement:** Ogni movimento deve mostrare una **timeline dei documenti** allegati.
 
@@ -503,4 +570,5 @@ Le seguenti tabelle sono già presenti nello schema `w3suite`:
 
 | Data | Versione | Modifiche |
 |------|----------|-----------|
+| 2025-12-26 | 1.1.0 | Architettura documenti completa: classificazione Operativo/Fiscale, direzione Attivo/Passivo, regole generazione movimenti, flusso Ordine→DDT→Fattura, relazioni N:N tra documenti |
 | 2025-12-07 | 1.0.0 | Documento iniziale con architettura completa |
