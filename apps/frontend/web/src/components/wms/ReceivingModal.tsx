@@ -171,6 +171,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const [internalProductSearch, setInternalProductSearch] = useState('');
   const [internalProductResults, setInternalProductResults] = useState<Product[]>([]);
   const [showInternalResults, setShowInternalResults] = useState(false);
+  const [showSupplierSkuPrompt, setShowSupplierSkuPrompt] = useState(false);
+  const [pendingSupplierSkuInput, setPendingSupplierSkuInput] = useState('');
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -290,8 +292,43 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
       setSerialScanMode(true);
     }
     
+    // Check if product has supplier SKU mapping for current supplier
+    // If not, show prompt to add supplier SKU
+    if (!product.supplierSku && selectedSupplierId) {
+      setShowSupplierSkuPrompt(true);
+      setPendingSupplierSkuInput('');
+    } else {
+      setShowSupplierSkuPrompt(false);
+    }
+    
     // Always focus on quantity field first
     setTimeout(() => quantityInputRef.current?.focus(), 100);
+  };
+
+  const handleSaveSupplierSku = () => {
+    if (!selectedProduct || !pendingSupplierSkuInput.trim()) return;
+    
+    // Update product with new supplier SKU
+    const updatedProduct: Product = {
+      ...selectedProduct,
+      supplierSku: pendingSupplierSkuInput.trim()
+    };
+    
+    // TODO: Save mapping to backend via POST /api/wms/product-supplier-mappings
+    console.log('Creating reverse SKU mapping:', { 
+      productId: selectedProduct.id, 
+      supplierSku: pendingSupplierSkuInput.trim(),
+      supplierId: selectedSupplierId 
+    });
+    
+    setSelectedProduct(updatedProduct);
+    setShowSupplierSkuPrompt(false);
+    setPendingSupplierSkuInput('');
+  };
+
+  const handleSkipSupplierSku = () => {
+    setShowSupplierSkuPrompt(false);
+    setPendingSupplierSkuInput('');
   };
 
   const isGloballyUnique = (serialType?: string): boolean => {
@@ -834,7 +871,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <p className="font-medium text-gray-900">{selectedProduct.name}</p>
-                            <p className="text-sm text-gray-500">SKU: {selectedProduct.sku}</p>
+                            <p className="text-sm text-gray-500">
+                              SKU: {selectedProduct.sku}
+                              {selectedProduct.supplierSku && (
+                                <span className="ml-2 text-green-600">| SKU Fornitore: {selectedProduct.supplierSku}</span>
+                              )}
+                            </p>
                           </div>
                           <Button
                             type="button"
@@ -845,6 +887,56 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
+
+                        {/* Prompt to add supplier SKU if missing */}
+                        {showSupplierSkuPrompt && (
+                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <div className="flex items-center gap-2 text-blue-700 mb-2">
+                              <Hash className="h-4 w-4" />
+                              <span className="font-medium">Abbina SKU Fornitore</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Questo prodotto non ha uno SKU fornitore associato per questo fornitore. Vuoi aggiungerlo ora?
+                            </p>
+                            <div className="flex gap-2 items-end">
+                              <div className="flex-1">
+                                <Label className="text-xs text-gray-500">SKU Fornitore</Label>
+                                <Input
+                                  value={pendingSupplierSkuInput}
+                                  onChange={(e) => setPendingSupplierSkuInput(e.target.value)}
+                                  placeholder="Inserisci codice fornitore..."
+                                  className="mt-1"
+                                  data-testid="input-pending-supplier-sku"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && pendingSupplierSkuInput.trim()) {
+                                      e.preventDefault();
+                                      handleSaveSupplierSku();
+                                    }
+                                  }}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleSaveSupplierSku}
+                                disabled={!pendingSupplierSkuInput.trim()}
+                                data-testid="button-save-supplier-sku"
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Salva
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleSkipSupplierSku}
+                                data-testid="button-skip-supplier-sku"
+                              >
+                                Salta
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         {selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) ? (
                           <div className="space-y-3">
