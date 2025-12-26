@@ -9272,10 +9272,18 @@ export const wmsMovementDocuments = w3suiteSchema.table("wms_movement_documents"
   // Document classification
   documentCategory: wmsMovementDocumentCategoryEnum("document_category").notNull(),
   documentType: wmsMovementDocumentTypeEnum("document_type").notNull(),
+  documentDirection: wmsDocumentDirectionEnum("document_direction"), // active (emesso) / passive (ricevuto)
+  documentNature: wmsDocumentNatureEnum("document_nature"), // operational / fiscal
   
   // Document identification
   documentNumber: varchar("document_number", { length: 100 }), // e.g., DDT-2024-001234
   documentDate: date("document_date").notNull(), // Date on the document itself
+  
+  // Document linking (optional FK for N:N relationships between documents)
+  linkedOrderId: uuid("linked_order_id"), // FK a documento ordine collegato
+  linkedDdtId: uuid("linked_ddt_id"), // FK a DDT collegato
+  linkedInvoiceId: uuid("linked_invoice_id"), // FK a fattura collegata
+  linkedReceiptId: uuid("linked_receipt_id"), // FK a ricevuta collegata
   
   // File storage (for movement_specific category)
   fileName: varchar("file_name", { length: 255 }),
@@ -9303,8 +9311,15 @@ export const wmsMovementDocuments = w3suiteSchema.table("wms_movement_documents"
   index("wms_mov_docs_tenant_movement_idx").on(table.tenantId, table.movementId),
   index("wms_mov_docs_category_idx").on(table.documentCategory),
   index("wms_mov_docs_type_idx").on(table.documentType),
+  index("wms_mov_docs_direction_idx").on(table.documentDirection),
+  index("wms_mov_docs_nature_idx").on(table.documentNature),
   index("wms_mov_docs_document_date_idx").on(table.documentDate.desc()),
   index("wms_mov_docs_admin_doc_idx").on(table.adminDocumentId),
+  // Document linking indexes
+  index("wms_mov_docs_linked_order_idx").on(table.linkedOrderId),
+  index("wms_mov_docs_linked_ddt_idx").on(table.linkedDdtId),
+  index("wms_mov_docs_linked_invoice_idx").on(table.linkedInvoiceId),
+  index("wms_mov_docs_linked_receipt_idx").on(table.linkedReceiptId),
 ]);
 
 export const insertWmsMovementDocumentSchema = createInsertSchema(wmsMovementDocuments).omit({
@@ -9316,17 +9331,27 @@ export const insertWmsMovementDocumentSchema = createInsertSchema(wmsMovementDoc
 }).extend({
   documentCategory: z.enum(['movement_specific', 'administrative']),
   documentType: z.enum([
-    'ddt', 'photo', 'loan_contract', 'tradein_form', 'warranty_certificate',
-    'doa_report', 'return_form', 'transfer_note', 'adjustment_report', 'other',
-    'invoice', 'credit_note', 'debit_note', 'receipt'
+    // Core document types
+    'order', 'ddt', 'receipt', 'invoice', 'fiscal_receipt', 'credit_note', 'debit_note',
+    // Specific movement documents (attachments)
+    'photo', 'loan_contract', 'tradein_form', 'warranty_certificate',
+    'doa_report', 'return_form', 'transfer_note', 'adjustment_report', 'other'
   ]),
+  documentDirection: z.enum(['active', 'passive']).optional(),
+  documentNature: z.enum(['operational', 'fiscal']).optional(),
   documentNumber: z.string().max(100).optional(),
   documentDate: z.coerce.date(),
+  // Document linking
+  linkedOrderId: z.string().uuid().optional(),
+  linkedDdtId: z.string().uuid().optional(),
+  linkedInvoiceId: z.string().uuid().optional(),
+  linkedReceiptId: z.string().uuid().optional(),
+  // File storage
   fileName: z.string().max(255).optional(),
   filePath: z.string().max(500).optional(),
   fileSize: z.number().int().positive().optional(),
   mimeType: z.string().max(100).optional(),
-  adminDocumentType: z.enum(['invoice', 'credit_note', 'debit_note', 'receipt']).optional(),
+  adminDocumentType: z.enum(['invoice', 'credit_note', 'debit_note', 'receipt', 'fiscal_receipt']).optional(),
   notes: z.string().optional(),
 });
 export type InsertWmsMovementDocument = z.infer<typeof insertWmsMovementDocumentSchema>;
