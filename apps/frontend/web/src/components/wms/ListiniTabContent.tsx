@@ -865,6 +865,20 @@ export default function ListiniTabContent() {
 
   const handleSavePriceList = async () => {
     try {
+      // Validate targeting fields for canvas/promo_canvas types
+      if (priceListHeader.type === 'canvas' || priceListHeader.type === 'promo_canvas') {
+        if (!priceListHeader.operatorId) {
+          alert('Errore: seleziona un operatore per i listini Canvas');
+          return;
+        }
+      }
+      if (priceListHeader.type === 'promo_canvas') {
+        if (!priceListHeader.supplierIds || priceListHeader.supplierIds.length === 0) {
+          alert('Errore: seleziona almeno un fornitore per i listini Device+Canvas');
+          return;
+        }
+      }
+
       // Prepare no_promo items with pricing info
       const noPromoItems = priceListHeader.type === 'no_promo' 
         ? noPromoProducts.map(p => ({
