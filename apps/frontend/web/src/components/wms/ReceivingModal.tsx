@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -306,6 +306,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
             <Package className="h-5 w-5 text-orange-500" />
             Nuovo Carico Merce
           </DialogTitle>
+          <DialogDescription>
+            Registra il ricevimento di nuova merce da fornitore
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -366,7 +369,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Nessun ordine</SelectItem>
+                            <SelectItem value="none">Nessun ordine</SelectItem>
                             {availableOrders.map(o => (
                               <SelectItem key={o.id} value={o.id}>
                                 {o.orderNumber}
