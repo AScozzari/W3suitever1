@@ -8284,6 +8284,57 @@ export const insertInventoryAdjustmentSchema = createInsertSchema(wmsInventoryAd
 export type InsertInventoryAdjustment = z.infer<typeof insertInventoryAdjustmentSchema>;
 export type InventoryAdjustment = typeof wmsInventoryAdjustments.$inferSelect;
 
+// 4.5) wms_receiving_drafts - Suspended receiving sessions (carichi sospesi)
+export const wmsReceivingDraftStatusEnum = pgEnum('wms_receiving_draft_status', ['suspended', 'resumed', 'completed', 'cancelled']);
+
+export const wmsReceivingDrafts = w3suiteSchema.table("wms_receiving_drafts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Document reference (Step 1 data)
+  supplierId: uuid("supplier_id").references(() => suppliers.id, { onDelete: 'set null' }),
+  supplierName: varchar("supplier_name", { length: 255 }), // Cached for display
+  documentNumber: varchar("document_number", { length: 100 }),
+  documentDate: date("document_date"),
+  expectedDeliveryDate: date("expected_delivery_date"),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  storeName: varchar("store_name", { length: 255 }), // Cached for display
+  notes: text("notes"),
+  
+  // Products data (Step 2 data) - JSON array of loaded products
+  productsData: jsonb("products_data").default([]).notNull(),
+  // Structure: [{ productId, productName, sku, ean, quantity, serials: [{ type, value }], ... }]
+  
+  // Summary stats (for DataTable display)
+  totalProducts: integer("total_products").default(0).notNull(),
+  totalQuantity: integer("total_quantity").default(0).notNull(),
+  
+  // Status tracking
+  status: wmsReceivingDraftStatusEnum("status").default('suspended').notNull(),
+  lastStep: integer("last_step").default(1).notNull(), // 1, 2, or 3
+  
+  // Audit
+  createdBy: varchar("created_by").references(() => users.id),
+  createdByName: varchar("created_by_name", { length: 255 }), // Cached for display
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("wms_recv_drafts_tenant_idx").on(table.tenantId),
+  index("wms_recv_drafts_status_idx").on(table.status),
+  index("wms_recv_drafts_supplier_idx").on(table.supplierId),
+  index("wms_recv_drafts_store_idx").on(table.storeId),
+  index("wms_recv_drafts_created_idx").on(table.createdAt),
+]);
+
+export const insertReceivingDraftSchema = createInsertSchema(wmsReceivingDrafts).omit({ 
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertReceivingDraft = z.infer<typeof insertReceivingDraftSchema>;
+export type ReceivingDraft = typeof wmsReceivingDrafts.$inferSelect;
+
 // 5) wms_stock_movements - CQRS Event Log (immutable stock movements)
 export const wmsStockMovements = w3suiteSchema.table("wms_stock_movements", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),

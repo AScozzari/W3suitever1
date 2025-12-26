@@ -55,7 +55,10 @@ import {
   insertPriceListSchema,
   insertPriceListItemSchema,
   insertPriceListItemCanvasSchema,
-  driverCategoryMappings
+  driverCategoryMappings,
+  // Receiving Drafts
+  wmsReceivingDrafts,
+  insertReceivingDraftSchema
 } from "../db/schema/w3suite";
 import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -11223,6 +11226,281 @@ router.get("/receiving/generate-lot", rbacMiddleware, requirePermission('wms.sto
       error: "Failed to generate lot number",
       details: error instanceof Error ? error.message : "Unknown error"
     });
+  }
+});
+
+// ==================== RECEIVING DRAFTS (Carichi Sospesi) ====================
+
+/**
+ * GET /api/wms/receiving/drafts
+ * Get all suspended receiving drafts for current tenant
+ */
+router.get("/receiving/drafts", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const drafts = await db.select()
+      .from(wmsReceivingDrafts)
+      .where(and(
+        eq(wmsReceivingDrafts.tenantId, tenantId),
+        eq(wmsReceivingDrafts.status, 'suspended')
+      ))
+      .orderBy(desc(wmsReceivingDrafts.updatedAt));
+
+    res.json({ success: true, data: drafts });
+  } catch (error) {
+    logger.error('Error fetching receiving drafts', { error });
+    res.status(500).json({ error: "Failed to fetch drafts" });
+  }
+});
+
+/**
+ * GET /api/wms/receiving/drafts/:id
+ * Get a specific draft by ID
+ */
+router.get("/receiving/drafts/:id", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [draft] = await db.select()
+      .from(wmsReceivingDrafts)
+      .where(and(
+        eq(wmsReceivingDrafts.id, id),
+        eq(wmsReceivingDrafts.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!draft) {
+      return res.status(404).json({ error: "Draft not found" });
+    }
+
+    res.json({ success: true, data: draft });
+  } catch (error) {
+    logger.error('Error fetching receiving draft', { error });
+    res.status(500).json({ error: "Failed to fetch draft" });
+  }
+});
+
+/**
+ * POST /api/wms/receiving/drafts
+ * Create a new receiving draft (suspend current work)
+ */
+router.post("/receiving/drafts", rbacMiddleware, requirePermission('wms.stock.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const userName = req.user?.name || req.user?.email;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const {
+      supplierId,
+      supplierName,
+      documentNumber,
+      documentDate,
+      expectedDeliveryDate,
+      storeId,
+      storeName,
+      notes,
+      productsData,
+      lastStep
+    } = req.body;
+
+    const totalProducts = Array.isArray(productsData) ? productsData.length : 0;
+    const totalQuantity = Array.isArray(productsData) 
+      ? productsData.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0) 
+      : 0;
+
+    const [newDraft] = await db.insert(wmsReceivingDrafts)
+      .values({
+        tenantId,
+        supplierId: supplierId || null,
+        supplierName: supplierName || null,
+        documentNumber: documentNumber || null,
+        documentDate: documentDate || null,
+        expectedDeliveryDate: expectedDeliveryDate || null,
+        storeId: storeId || null,
+        storeName: storeName || null,
+        notes: notes || null,
+        productsData: productsData || [],
+        totalProducts,
+        totalQuantity,
+        status: 'suspended',
+        lastStep: lastStep || 1,
+        createdBy: userId || null,
+        createdByName: userName || null,
+      })
+      .returning();
+
+    logger.info('Receiving draft created', { draftId: newDraft.id, tenantId });
+    res.status(201).json({ success: true, data: newDraft });
+  } catch (error) {
+    logger.error('Error creating receiving draft', { error });
+    res.status(500).json({ error: "Failed to create draft" });
+  }
+});
+
+/**
+ * PATCH /api/wms/receiving/drafts/:id
+ * Update an existing draft
+ */
+router.patch("/receiving/drafts/:id", rbacMiddleware, requirePermission('wms.stock.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const { productsData, lastStep, status, ...rest } = req.body;
+
+    const totalProducts = Array.isArray(productsData) ? productsData.length : undefined;
+    const totalQuantity = Array.isArray(productsData) 
+      ? productsData.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0) 
+      : undefined;
+
+    const updateData: any = {
+      ...rest,
+      updatedAt: new Date(),
+    };
+
+    if (productsData !== undefined) {
+      updateData.productsData = productsData;
+      updateData.totalProducts = totalProducts;
+      updateData.totalQuantity = totalQuantity;
+    }
+    if (lastStep !== undefined) updateData.lastStep = lastStep;
+    if (status !== undefined) updateData.status = status;
+
+    const [updated] = await db.update(wmsReceivingDrafts)
+      .set(updateData)
+      .where(and(
+        eq(wmsReceivingDrafts.id, id),
+        eq(wmsReceivingDrafts.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: "Draft not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error('Error updating receiving draft', { error });
+    res.status(500).json({ error: "Failed to update draft" });
+  }
+});
+
+/**
+ * DELETE /api/wms/receiving/drafts/:id
+ * Delete a draft permanently
+ */
+router.delete("/receiving/drafts/:id", rbacMiddleware, requirePermission('wms.stock.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [deleted] = await db.delete(wmsReceivingDrafts)
+      .where(and(
+        eq(wmsReceivingDrafts.id, id),
+        eq(wmsReceivingDrafts.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Draft not found" });
+    }
+
+    logger.info('Receiving draft deleted', { draftId: id, tenantId });
+    res.json({ success: true, message: "Draft deleted successfully" });
+  } catch (error) {
+    logger.error('Error deleting receiving draft', { error });
+    res.status(500).json({ error: "Failed to delete draft" });
+  }
+});
+
+/**
+ * POST /api/wms/receiving/drafts/:id/resume
+ * Mark a draft as resumed (when user reopens it)
+ */
+router.post("/receiving/drafts/:id/resume", rbacMiddleware, requirePermission('wms.stock.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [updated] = await db.update(wmsReceivingDrafts)
+      .set({ 
+        status: 'resumed',
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(wmsReceivingDrafts.id, id),
+        eq(wmsReceivingDrafts.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: "Draft not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error('Error resuming receiving draft', { error });
+    res.status(500).json({ error: "Failed to resume draft" });
+  }
+});
+
+/**
+ * POST /api/wms/receiving/drafts/:id/complete
+ * Mark a draft as completed (after successful receiving)
+ */
+router.post("/receiving/drafts/:id/complete", rbacMiddleware, requirePermission('wms.stock.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [updated] = await db.update(wmsReceivingDrafts)
+      .set({ 
+        status: 'completed',
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(wmsReceivingDrafts.id, id),
+        eq(wmsReceivingDrafts.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: "Draft not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error('Error completing receiving draft', { error });
+    res.status(500).json({ error: "Failed to complete draft" });
   }
 });
 
