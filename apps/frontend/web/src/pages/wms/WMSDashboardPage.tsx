@@ -25,16 +25,16 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Report e statistiche' },
   { id: 'carico', label: 'Carico Merce', icon: PackagePlus, description: 'Ricevimento e controllo merci' },
   { id: 'inventario', label: 'Inventario', icon: Package, description: 'Gestione stock e giacenze' },
   { id: 'movimenti', label: 'Movimenti', icon: ArrowRightLeft, description: 'Storico movimenti magazzino' },
   { id: 'documenti', label: 'Documenti', icon: FileText, description: 'DDT, ordini, bolle' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Report e statistiche' },
   { id: 'impostazioni', label: 'Impostazioni', icon: Settings, description: 'Configurazione WMS' },
 ];
 
 export default function WMSDashboardPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('carico');
+  const [activeTab, setActiveTab] = useState<TabId>('analytics');
 
   return (
     <Layout>
