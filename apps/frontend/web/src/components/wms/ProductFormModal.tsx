@@ -41,7 +41,7 @@ const productSchema = z.object({
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0).optional(),
   channelId: z.string().optional(),
-  customerScope: z.enum(['consumer', 'business', 'mixed']).optional(),
+  customerScope: z.enum(['_all', 'consumer', 'business', 'mixed']).optional(),
   unitOfMeasure: z.string().optional(),
   categoryId: z.string().max(100).optional(),
   typeId: z.string().max(100).optional(),
@@ -147,8 +147,8 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       isSerializable: false,
       serialType: undefined,
       monthlyFee: undefined,
-      channelId: undefined,
-      customerScope: undefined,
+      channelId: '_all',
+      customerScope: '_all',
       unitOfMeasure: 'pz',
       categoryId: undefined,
       typeId: undefined,
@@ -954,6 +954,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="_all">Tutti i target</SelectItem>
                             <SelectItem value="consumer">Consumer (Privati)</SelectItem>
                             <SelectItem value="business">Business (P.IVA)</SelectItem>
                             <SelectItem value="mixed">Misto (Consumer + Business)</SelectItem>
