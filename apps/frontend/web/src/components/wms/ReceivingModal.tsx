@@ -169,6 +169,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
+  const quantityInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch suppliers from API (brand + tenant)
   const { data: suppliersData = [], isLoading: suppliersLoading } = useQuery<SupplierFromAPI[]>({
@@ -235,8 +236,10 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     
     if (product.isSerializable && isGloballyUnique(product.serialType)) {
       setSerialScanMode(true);
-      setTimeout(() => serialInputRef.current?.focus(), 100);
     }
+    
+    // Always focus on quantity field first
+    setTimeout(() => quantityInputRef.current?.focus(), 100);
   };
 
   const isGloballyUnique = (serialType?: string): boolean => {
@@ -718,6 +721,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                               <div className="flex-1">
                                 <Label>Quantità da caricare</Label>
                                 <Input
+                                  ref={quantityInputRef}
                                   type="number"
                                   min={1}
                                   value={targetQuantity || ''}
@@ -879,6 +883,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                               <div>
                                 <Label>Quantità *</Label>
                                 <Input
+                                  ref={quantityInputRef}
                                   type="number"
                                   min={1}
                                   value={targetQuantity || ''}
@@ -960,6 +965,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             <div>
                               <Label>Quantità *</Label>
                               <Input
+                                ref={quantityInputRef}
                                 type="number"
                                 min={1}
                                 value={targetQuantity || ''}
