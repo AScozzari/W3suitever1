@@ -39,6 +39,7 @@ const productSchema = z.object({
   notes: z.string().optional(),
   isSerializable: z.boolean(),
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
+  serialCount: z.coerce.number().min(1).max(4).optional(), // Number of serials per unit (e.g., 2 for dual-SIM)
   monthlyFee: z.coerce.number().min(0).optional(),
   channelId: z.string().optional(),
   customerScope: z.enum(['_all', 'consumer', 'business', 'overall']).optional(),
@@ -146,6 +147,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
       notes: '',
       isSerializable: false,
       serialType: undefined,
+      serialCount: 1,
       monthlyFee: undefined,
       channelId: '_all',
       customerScope: '_all',
@@ -355,6 +357,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         notes: product.notes || '',
         isSerializable: product.isSerializable || false,
         serialType: product.serialType || undefined,
+        serialCount: product.serialCount || 1,
         monthlyFee: product.monthlyFee || undefined,
         unitOfMeasure: product.unitOfMeasure || 'pz',
         categoryId: product.categoryId || undefined,
@@ -383,6 +386,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
         notes: '',
         isSerializable: false,
         serialType: undefined,
+        serialCount: 1,
         monthlyFee: undefined,
         unitOfMeasure: 'pz',
         categoryId: undefined,
@@ -1301,6 +1305,39 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                     </Select>
                     <FormDescription>
                       Specifica il tipo di numero seriale utilizzato
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* CAMPO CONDIZIONALE: Numero Seriali per Unità (solo se serializzabile IMEI e PHYSICAL) */}
+            {watchType === 'PHYSICAL' && watchIsSerializable && form.watch('serialType') === 'imei' && (
+              <FormField
+                control={form.control}
+                name="serialCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Numero IMEI per Unità</FormLabel>
+                    <Select 
+                      onValueChange={(v) => field.onChange(parseInt(v))} 
+                      value={String(field.value || 1)}
+                      data-testid="select-serial-count"
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona numero IMEI" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">1 IMEI (Single SIM)</SelectItem>
+                        <SelectItem value="2">2 IMEI (Dual SIM)</SelectItem>
+                        <SelectItem value="3">3 IMEI (Multi-SIM)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Numero di IMEI da registrare per ogni unità (es. 2 per telefoni Dual SIM)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
