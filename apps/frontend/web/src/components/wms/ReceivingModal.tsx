@@ -775,7 +775,6 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                                     onKeyDown={handleSerialScan}
                                     placeholder={`Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`}
                                     className="pr-20 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
-                                    autoFocus
                                     data-testid="input-serial-scan"
                                   />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
