@@ -5629,7 +5629,10 @@ router.get("/suppliers", rbacMiddleware, async (req, res) => {
       return res.status(401).json({ error: "Tenant ID not found in session" });
     }
 
-    // Get brand-pushed suppliers (origin='brand' with tenantId NULL or matching)
+    // Get brand-pushed suppliers (origin='brand' from brand tenant or tenant-specific)
+    // Brand suppliers have tenantId = '00000000-0000-0000-0000-000000000000' (brand HQ tenant)
+    const BRAND_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+    
     const brandSuppliersList = await db
       .select({
         id: suppliers.id,
@@ -5646,8 +5649,9 @@ router.get("/suppliers", rbacMiddleware, async (req, res) => {
         and(
           eq(suppliers.status, 'active'),
           or(
-            isNull(suppliers.tenantId), // Brand-wide suppliers
-            eq(suppliers.tenantId, sessionTenantId) // Brand-pushed to this tenant
+            isNull(suppliers.tenantId), // Brand-wide suppliers (NULL tenant)
+            eq(suppliers.tenantId, BRAND_TENANT_ID), // Brand HQ suppliers
+            eq(suppliers.tenantId, sessionTenantId) // Tenant-specific suppliers
           )
         )
       );
