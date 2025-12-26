@@ -163,6 +163,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   const [serialScanMode, setSerialScanMode] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastDeletedSerial, setLastDeletedSerial] = useState<{ serial: string; index: number } | null>(null);
+  const [serialFilter, setSerialFilter] = useState('');
+  const [showUndoToast, setShowUndoToast] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -297,7 +300,39 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
   };
 
   const removeSerial = (index: number) => {
+    const serialToRemove = currentSerials[index];
+    setLastDeletedSerial({ serial: serialToRemove, index });
     setCurrentSerials(prev => prev.filter((_, i) => i !== index));
+    setShowUndoToast(true);
+    
+    // Hide toast after 5 seconds
+    setTimeout(() => {
+      setShowUndoToast(false);
+      setLastDeletedSerial(null);
+    }, 5000);
+    
+    // Refocus input
+    setTimeout(() => serialInputRef.current?.focus(), 50);
+  };
+
+  const removeLastSerial = () => {
+    if (currentSerials.length === 0) return;
+    removeSerial(currentSerials.length - 1);
+  };
+
+  const undoLastDelete = () => {
+    if (!lastDeletedSerial) return;
+    
+    // Reinsert at original position
+    setCurrentSerials(prev => {
+      const newSerials = [...prev];
+      newSerials.splice(lastDeletedSerial.index, 0, lastDeletedSerial.serial);
+      return newSerials;
+    });
+    
+    setLastDeletedSerial(null);
+    setShowUndoToast(false);
+    setTimeout(() => serialInputRef.current?.focus(), 50);
   };
 
   const generateLot = (): string => {
@@ -759,25 +794,82 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                                 </div>
                               )}
 
-                              {/* Scrollable list of captured serials */}
+                              {/* Quick actions and list of captured serials */}
                               {currentSerials.length > 0 && (
-                                <div className="border rounded-md p-2 max-h-32 overflow-y-auto bg-gray-50">
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {currentSerials.map((serial, idx) => (
-                                      <Badge 
-                                        key={idx} 
-                                        variant="secondary"
-                                        className="flex items-center gap-1 text-xs py-1 px-2 font-mono"
-                                      >
-                                        <span className="text-gray-400 mr-1">{idx + 1}.</span>
-                                        {serial}
-                                        <X 
-                                          className="h-3 w-3 cursor-pointer hover:text-red-500 ml-1" 
-                                          onClick={() => removeSerial(idx)}
+                                <div className="space-y-2">
+                                  {/* Quick actions row */}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={removeLastSerial}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      data-testid="btn-undo-last"
+                                    >
+                                      <ArrowLeft className="h-3 w-3 mr-1" />
+                                      Annulla ultimo
+                                    </Button>
+                                    
+                                    {/* Filter input for large lists */}
+                                    {currentSerials.length > 10 && (
+                                      <div className="relative flex-1 max-w-48">
+                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                                        <Input
+                                          value={serialFilter}
+                                          onChange={(e) => setSerialFilter(e.target.value)}
+                                          placeholder="Cerca seriale..."
+                                          className="h-7 text-xs pl-7"
+                                          data-testid="input-serial-filter"
                                         />
-                                      </Badge>
-                                    ))}
+                                      </div>
+                                    )}
                                   </div>
+
+                                  {/* Scrollable list */}
+                                  <div className="border rounded-md p-2 max-h-32 overflow-y-auto bg-gray-50">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {currentSerials
+                                        .map((serial, idx) => ({ serial, idx }))
+                                        .filter(({ serial }) => 
+                                          !serialFilter || serial.toLowerCase().includes(serialFilter.toLowerCase())
+                                        )
+                                        .map(({ serial, idx }) => (
+                                          <Badge 
+                                            key={idx} 
+                                            variant="secondary"
+                                            className={`flex items-center gap-1 text-xs py-1 px-2 font-mono ${
+                                              serialFilter && serial.toLowerCase().includes(serialFilter.toLowerCase()) 
+                                                ? 'bg-yellow-100 border-yellow-300' 
+                                                : ''
+                                            }`}
+                                          >
+                                            <span className="text-gray-400 mr-1">{idx + 1}.</span>
+                                            {serial}
+                                            <X 
+                                              className="h-3 w-3 cursor-pointer hover:text-red-500 ml-1" 
+                                              onClick={() => removeSerial(idx)}
+                                            />
+                                          </Badge>
+                                        ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Undo toast */}
+                                  {showUndoToast && lastDeletedSerial && (
+                                    <div className="flex items-center justify-between p-2 bg-gray-800 text-white rounded-md text-sm">
+                                      <span>Eliminato: {lastDeletedSerial.serial}</span>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={undoLastDelete}
+                                        className="text-orange-400 hover:text-orange-300 hover:bg-gray-700 h-6 px-2"
+                                      >
+                                        Ripristina
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
