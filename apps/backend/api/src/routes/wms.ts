@@ -11242,11 +11242,15 @@ router.get("/receiving/drafts", rbacMiddleware, requirePermission('wms.stock.rea
       return res.status(401).json({ error: "Tenant ID not found" });
     }
 
+    // Include both 'suspended' and 'resumed' drafts (exclude only 'completed')
     const drafts = await db.select()
       .from(wmsReceivingDrafts)
       .where(and(
         eq(wmsReceivingDrafts.tenantId, tenantId),
-        eq(wmsReceivingDrafts.status, 'suspended')
+        or(
+          eq(wmsReceivingDrafts.status, 'suspended'),
+          eq(wmsReceivingDrafts.status, 'resumed')
+        )
       ))
       .orderBy(desc(wmsReceivingDrafts.updatedAt));
 
