@@ -386,9 +386,9 @@ export default function ListiniTabContent() {
       
       // Filtro per Target Cliente (se selezionato nel listino e nel prodotto)
       if (priceListHeader.customerScope && p.customerScope) {
-        // 'mixed' è compatibile con tutto, altrimenti deve coincidere
-        if (priceListHeader.customerScope !== 'mixed' && 
-            p.customerScope !== 'mixed' && 
+        // 'overall' è compatibile con tutto, altrimenti deve coincidere
+        if (priceListHeader.customerScope !== 'overall' && 
+            p.customerScope !== 'overall' && 
             p.customerScope !== priceListHeader.customerScope) {
           return false;
         }
@@ -1351,7 +1351,7 @@ export default function ListiniTabContent() {
                   <SelectItem value="_all">Tutti i target</SelectItem>
                   <SelectItem value="consumer">Consumer (Privati)</SelectItem>
                   <SelectItem value="business">Business (P.IVA)</SelectItem>
-                  <SelectItem value="mixed">Misto (Consumer + Business)</SelectItem>
+                  <SelectItem value="overall">Per Tutti (Consumer + Business)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500">Tipologia clienti destinatari del listino</p>

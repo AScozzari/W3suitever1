@@ -469,7 +469,7 @@ export const productLogisticStatusEnum = pgEnum('product_logistic_status', [
   'internal_use'        // AD uso interno
 ]);
 export const serialTypeEnum = pgEnum('serial_type', ['imei', 'iccid', 'mac_address', 'other']);
-export const customerScopeEnum = pgEnum('customer_scope', ['consumer', 'business', 'mixed']);
+export const customerScopeEnum = pgEnum('customer_scope', ['consumer', 'business', 'overall']);
 export const productBatchStatusEnum = pgEnum('product_batch_status', ['available', 'reserved', 'damaged', 'expired']);
 export const pickingStrategyEnum = pgEnum('picking_strategy', ['fifo', 'lifo']);
 export const stockMovementTypeEnum = pgEnum('stock_movement_type', [

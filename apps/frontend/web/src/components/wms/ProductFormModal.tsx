@@ -41,7 +41,7 @@ const productSchema = z.object({
   serialType: z.enum(['imei', 'iccid', 'mac_address', 'other']).optional(),
   monthlyFee: z.coerce.number().min(0).optional(),
   channelId: z.string().optional(),
-  customerScope: z.enum(['_all', 'consumer', 'business', 'mixed']).optional(),
+  customerScope: z.enum(['_all', 'consumer', 'business', 'overall']).optional(),
   unitOfMeasure: z.string().optional(),
   categoryId: z.string().max(100).optional(),
   typeId: z.string().max(100).optional(),
@@ -957,7 +957,7 @@ export function ProductFormModal({ open, onClose, product }: ProductFormModalPro
                             <SelectItem value="_all">Tutti i target</SelectItem>
                             <SelectItem value="consumer">Consumer (Privati)</SelectItem>
                             <SelectItem value="business">Business (P.IVA)</SelectItem>
-                            <SelectItem value="mixed">Misto (Consumer + Business)</SelectItem>
+                            <SelectItem value="overall">Per Tutti (Consumer + Business)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
