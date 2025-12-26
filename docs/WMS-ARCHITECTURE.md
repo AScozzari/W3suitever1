@@ -242,6 +242,28 @@ wms_inventory_snapshots
 
 ## 6. Tabelle Documenti
 
+### ⚠️ REGOLA FONDAMENTALE: Relazione 1:N Movimento-Documenti
+
+**UN movimento può avere MULTIPLI documenti correlati nel suo ciclo di vita!**
+
+```
+MOVIMENTO (Carico Merce)
+├── Ordine d'acquisto (creato inizialmente)
+├── DDT #1 (consegna parziale)
+├── DDT #2 (resto merce)
+├── Fattura #1 (primo periodo)
+└── Fattura #2 (secondo periodo)
+```
+
+La tabella `wms_movement_documents` gestisce questa relazione 1:N:
+- `movementId` → FK al movimento
+- `documentType` → tipo documento (ddt, invoice, order, etc.)
+- `documentNumber` → numero documento
+- `documentDate` → data documento
+- File storage opzionale per allegati
+
+**UI Requirement:** Ogni movimento deve mostrare una **timeline dei documenti** allegati.
+
 ### 6.1 Documenti Carico (Acquisti da Fornitore)
 
 ```sql

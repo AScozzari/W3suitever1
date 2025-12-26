@@ -107,6 +107,13 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
+    - **WMS Movements Architecture**:
+      - **Relazione 1:N Movimento-Documenti**: UN movimento può avere MULTIPLI documenti correlati nel suo ciclo di vita (es. Ordine → DDT 1 → DDT 2 → Fattura 1 → Fattura 2)
+      - **Tabella ponte**: `wms_movement_documents` gestisce la relazione 1:N con movementId FK
+      - **Tipi documento**: ddt, invoice, credit_note, debit_note, receipt, photo, loan_contract, warranty_certificate, doa_report, return_form, transfer_note, adjustment_report
+      - **Categorie documento**: `movement_specific` (file allegati) e `administrative` (FK a documenti contabili)
+      - **UI requirement**: Timeline documenti allegati per ogni movimento
+      - **Schema DB esistente**: wms_stock_movements, wms_movement_documents, wms_movement_type_config, wms_inventory_balances, wms_inventory_snapshots
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
