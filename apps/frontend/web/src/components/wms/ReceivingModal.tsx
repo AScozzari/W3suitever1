@@ -706,55 +706,80 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                               </div>
                             </div>
                             
-                            <div>
-                              <Label className="flex items-center gap-2 mb-2">
-                                <ScanLine className="h-4 w-4" />
-                                Spara {getSerialLabel(selectedProduct.serialType)} ({currentSerials.length}/{targetQuantity})
-                              </Label>
-                              
-                              {/* Visual list of serial input fields */}
-                              <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {Array.from({ length: targetQuantity }).map((_, idx) => (
-                                  <div key={idx} className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500 w-6">{idx + 1}.</span>
-                                    {idx < currentSerials.length ? (
-                                      // Already scanned - show as badge with delete
-                                      <div className="flex-1 flex items-center">
-                                        <Badge 
-                                          variant="secondary"
-                                          className="flex items-center gap-2 py-2 px-3 w-full justify-between"
-                                        >
-                                          <span className="font-mono">{currentSerials[idx]}</span>
-                                          <X 
-                                            className="h-3 w-3 cursor-pointer hover:text-red-500" 
-                                            onClick={() => removeSerial(idx)}
-                                          />
-                                        </Badge>
-                                      </div>
-                                    ) : idx === currentSerials.length ? (
-                                      // Current input field - active
-                                      <Input
-                                        ref={serialInputRef}
-                                        value={serialInput}
-                                        onChange={(e) => setSerialInput(e.target.value)}
-                                        onKeyDown={handleSerialScan}
-                                        placeholder={`Scansiona ${getSerialLabel(selectedProduct.serialType)}...`}
-                                        className="flex-1 border-orange-300 focus:border-orange-500"
-                                        autoFocus
-                                        data-testid={`input-serial-${idx}`}
-                                      />
-                                    ) : (
-                                      // Future field - disabled placeholder
-                                      <Input
-                                        disabled
-                                        placeholder="In attesa..."
-                                        className="flex-1 bg-gray-50"
-                                        data-testid={`input-serial-${idx}`}
-                                      />
-                                    )}
-                                  </div>
-                                ))}
+                            <div className="space-y-3">
+                              {/* Progress bar and counter */}
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="flex items-center gap-2">
+                                  <ScanLine className="h-4 w-4" />
+                                  Spara {getSerialLabel(selectedProduct.serialType)}
+                                </Label>
+                                <span className={`text-sm font-medium ${
+                                  currentSerials.length >= targetQuantity ? 'text-green-600' : 'text-orange-600'
+                                }`}>
+                                  {currentSerials.length} / {targetQuantity} acquisiti
+                                </span>
                               </div>
+                              
+                              {/* Progress bar */}
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full transition-all duration-300 ${
+                                    currentSerials.length >= targetQuantity ? 'bg-green-500' : 'bg-orange-500'
+                                  }`}
+                                  style={{ width: `${Math.min((currentSerials.length / targetQuantity) * 100, 100)}%` }}
+                                />
+                              </div>
+
+                              {/* Single input field - always active until complete */}
+                              {currentSerials.length < targetQuantity && (
+                                <div className="relative">
+                                  <Input
+                                    ref={serialInputRef}
+                                    value={serialInput}
+                                    onChange={(e) => setSerialInput(e.target.value)}
+                                    onKeyDown={handleSerialScan}
+                                    placeholder={`Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`}
+                                    className="pr-20 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                                    autoFocus
+                                    data-testid="input-serial-scan"
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                                    #{currentSerials.length + 1}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Completion message */}
+                              {currentSerials.length >= targetQuantity && (
+                                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  <span className="text-sm text-green-700">
+                                    Tutti i {targetQuantity} {getSerialLabel(selectedProduct.serialType)} acquisiti!
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Scrollable list of captured serials */}
+                              {currentSerials.length > 0 && (
+                                <div className="border rounded-md p-2 max-h-32 overflow-y-auto bg-gray-50">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {currentSerials.map((serial, idx) => (
+                                      <Badge 
+                                        key={idx} 
+                                        variant="secondary"
+                                        className="flex items-center gap-1 text-xs py-1 px-2 font-mono"
+                                      >
+                                        <span className="text-gray-400 mr-1">{idx + 1}.</span>
+                                        {serial}
+                                        <X 
+                                          className="h-3 w-3 cursor-pointer hover:text-red-500 ml-1" 
+                                          onClick={() => removeSerial(idx)}
+                                        />
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ) : selectedProduct.isSerializable && selectedProduct.serialType === 'other' ? (
