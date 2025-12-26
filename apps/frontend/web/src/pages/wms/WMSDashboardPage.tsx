@@ -8,12 +8,14 @@ import {
   Settings,
   Layers,
   FileText,
-  Truck
+  Truck,
+  PackagePlus
 } from 'lucide-react';
 import { InventoryContent } from './InventoryPage';
+import { ReceivingTabContent } from '../../components/wms/ReceivingTabContent';
 
 
-type TabId = 'inventario' | 'movimenti' | 'documenti' | 'analytics' | 'impostazioni';
+type TabId = 'carico' | 'inventario' | 'movimenti' | 'documenti' | 'analytics' | 'impostazioni';
 
 interface Tab {
   id: TabId;
@@ -23,15 +25,16 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Report e statistiche' },
+  { id: 'carico', label: 'Carico Merce', icon: PackagePlus, description: 'Ricevimento e controllo merci' },
   { id: 'inventario', label: 'Inventario', icon: Package, description: 'Gestione stock e giacenze' },
   { id: 'movimenti', label: 'Movimenti', icon: ArrowRightLeft, description: 'Storico movimenti magazzino' },
   { id: 'documenti', label: 'Documenti', icon: FileText, description: 'DDT, ordini, bolle' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Report e statistiche' },
   { id: 'impostazioni', label: 'Impostazioni', icon: Settings, description: 'Configurazione WMS' },
 ];
 
 export default function WMSDashboardPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('analytics');
+  const [activeTab, setActiveTab] = useState<TabId>('carico');
 
   return (
     <Layout>
@@ -75,6 +78,12 @@ export default function WMSDashboardPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {activeTab === 'carico' && (
+            <div className="p-6">
+              <ReceivingTabContent />
+            </div>
+          )}
+          
           {activeTab === 'inventario' && (
             <div className="p-6">
               <InventoryContent showHeader={false} />
