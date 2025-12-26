@@ -521,11 +521,15 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     
     const finalLot = needsLot ? (lotInput || generateLot()) : undefined;
     
+    // For dual-serial products, quantity = number of complete units
+    const serialsPerUnit = selectedProduct.serialCount || 1;
+    const serializedQty = Math.floor(currentSerials.length / serialsPerUnit);
+    
     const newItem: ReceivingItem = {
       id: crypto.randomUUID(),
       product: selectedProduct,
       quantity: selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) 
-        ? currentSerials.length 
+        ? serializedQty 
         : targetQuantity,
       serials: currentSerials,
       lot: finalLot,
@@ -563,10 +567,20 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
     if (!selectedProduct) return false;
     
     if (selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType)) {
-      return currentSerials.length > 0;
+      const serialsPerUnit = selectedProduct.serialCount || 1;
+      // For dual-serial products, need complete sets (e.g., 2 IMEI per unit)
+      // At least one complete unit is required
+      return currentSerials.length >= serialsPerUnit;
     }
     
     return targetQuantity > 0;
+  };
+
+  // Calculate actual quantity from serials for serialized products
+  const getSerializedQuantity = (): number => {
+    if (!selectedProduct) return 0;
+    const serialsPerUnit = selectedProduct.serialCount || 1;
+    return Math.floor(currentSerials.length / serialsPerUnit);
   };
 
   // Validate Step 1 fields before proceeding
@@ -1068,6 +1082,17 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                             </div>
                             
                             <div className="space-y-3">
+                              {/* Dual-serial info banner */}
+                              {(selectedProduct.serialCount || 1) > 1 && (
+                                <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                                  <Hash className="h-4 w-4 text-blue-600" />
+                                  <span className="text-blue-700">
+                                    Prodotto con <strong>{selectedProduct.serialCount} {getSerialLabel(selectedProduct.serialType)}</strong> per unità 
+                                    (es. Dual-SIM). Servono {targetQuantity * (selectedProduct.serialCount || 1)} seriali totali.
+                                  </span>
+                                </div>
+                              )}
+                              
                               {/* Progress bar and counter */}
                               <div className="flex items-center justify-between mb-1">
                                 <Label className="flex items-center gap-2">
@@ -1075,9 +1100,18 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                                   Spara {getSerialLabel(selectedProduct.serialType)}
                                 </Label>
                                 <span className={`text-sm font-medium ${
-                                  currentSerials.length >= targetQuantity ? 'text-green-600' : 'text-orange-600'
+                                  currentSerials.length >= targetQuantity * (selectedProduct.serialCount || 1) ? 'text-green-600' : 'text-orange-600'
                                 }`}>
-                                  {currentSerials.length} / {targetQuantity} acquisiti
+                                  {(selectedProduct.serialCount || 1) > 1 ? (
+                                    <>
+                                      Unità {Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + (currentSerials.length % (selectedProduct.serialCount || 1) > 0 ? 1 : 0)} / {targetQuantity} 
+                                      <span className="text-gray-400 ml-1">
+                                        ({currentSerials.length} / {targetQuantity * (selectedProduct.serialCount || 1)} seriali)
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>{currentSerials.length} / {targetQuantity} acquisiti</>
+                                  )}
                                 </span>
                               </div>
                               
@@ -1085,36 +1119,46 @@ export function ReceivingModal({ open, onOpenChange, onSubmit }: ReceivingModalP
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div 
                                   className={`h-2 rounded-full transition-all duration-300 ${
-                                    currentSerials.length >= targetQuantity ? 'bg-green-500' : 'bg-orange-500'
+                                    currentSerials.length >= targetQuantity * (selectedProduct.serialCount || 1) ? 'bg-green-500' : 'bg-orange-500'
                                   }`}
-                                  style={{ width: `${Math.min((currentSerials.length / targetQuantity) * 100, 100)}%` }}
+                                  style={{ width: `${Math.min((currentSerials.length / (targetQuantity * (selectedProduct.serialCount || 1))) * 100, 100)}%` }}
                                 />
                               </div>
 
                               {/* Single input field - always active until complete */}
-                              {currentSerials.length < targetQuantity && (
+                              {currentSerials.length < targetQuantity * (selectedProduct.serialCount || 1) && (
                                 <div className="relative">
                                   <Input
                                     ref={serialInputRef}
                                     value={serialInput}
                                     onChange={(e) => setSerialInput(e.target.value)}
                                     onKeyDown={handleSerialScan}
-                                    placeholder={`Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`}
+                                    placeholder={
+                                      (selectedProduct.serialCount || 1) > 1
+                                        ? `${getSerialLabel(selectedProduct.serialType)} ${(currentSerials.length % (selectedProduct.serialCount || 1)) + 1} per Unità ${Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + 1}...`
+                                        : `Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`
+                                    }
                                     className="pr-20 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
                                     data-testid="input-serial-scan"
                                   />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                                    #{currentSerials.length + 1}
+                                    {(selectedProduct.serialCount || 1) > 1 
+                                      ? `U${Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + 1}-S${(currentSerials.length % (selectedProduct.serialCount || 1)) + 1}`
+                                      : `#${currentSerials.length + 1}`
+                                    }
                                   </span>
                                 </div>
                               )}
 
                               {/* Completion message */}
-                              {currentSerials.length >= targetQuantity && (
+                              {currentSerials.length >= targetQuantity * (selectedProduct.serialCount || 1) && (
                                 <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
                                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                                   <span className="text-sm text-green-700">
-                                    Tutti i {targetQuantity} {getSerialLabel(selectedProduct.serialType)} acquisiti!
+                                    {(selectedProduct.serialCount || 1) > 1 
+                                      ? `Tutte le ${targetQuantity} unità complete (${currentSerials.length} ${getSerialLabel(selectedProduct.serialType)} totali)!`
+                                      : `Tutti i ${targetQuantity} ${getSerialLabel(selectedProduct.serialType)} acquisiti!`
+                                    }
                                   </span>
                                 </div>
                               )}

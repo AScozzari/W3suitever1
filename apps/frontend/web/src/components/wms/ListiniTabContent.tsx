@@ -413,7 +413,11 @@ export default function ListiniTabContent() {
     return physicalProducts.filter((p: any) => {
       if (physicalSearchTerm.length >= 2) {
         const search = physicalSearchTerm.toLowerCase();
-        if (!p.name?.toLowerCase().includes(search) && !p.sku?.toLowerCase().includes(search)) {
+        // Search by name, SKU, EAN, or supplier SKU
+        if (!p.name?.toLowerCase().includes(search) && 
+            !p.sku?.toLowerCase().includes(search) &&
+            !p.ean?.toLowerCase().includes(search) &&
+            !p.supplierSku?.toLowerCase().includes(search)) {
           return false;
         }
       }
@@ -459,10 +463,12 @@ export default function ListiniTabContent() {
       return [];
     }
     return canvasProducts.filter((p: any) => {
-      // Filtro ricerca
+      // Filtro ricerca - search by name, SKU, or EAN
       if (canvasSearchTerm.length >= 2) {
         const search = canvasSearchTerm.toLowerCase();
-        if (!p.name?.toLowerCase().includes(search) && !p.sku?.toLowerCase().includes(search)) {
+        if (!p.name?.toLowerCase().includes(search) && 
+            !p.sku?.toLowerCase().includes(search) &&
+            !p.ean?.toLowerCase().includes(search)) {
           return false;
         }
       }
@@ -2806,11 +2812,12 @@ export default function ListiniTabContent() {
       if (canvasListFeeFilter !== 'all' && p.monthlyFee !== canvasListFeeFilter) {
         return false;
       }
-      // Filtro ricerca
+      // Filtro ricerca - search by name, SKU, or EAN
       if (canvasListSearchTerm && canvasListSearchTerm.length >= 2) {
         const search = canvasListSearchTerm.toLowerCase();
         return p.name?.toLowerCase().includes(search) || 
-               p.sku?.toLowerCase().includes(search);
+               p.sku?.toLowerCase().includes(search) ||
+               p.ean?.toLowerCase().includes(search);
       }
       return canvasListCategoryFilter !== 'all' || canvasListTypologyFilter !== 'all' || canvasListFeeFilter !== 'all';
     });
