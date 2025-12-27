@@ -1269,25 +1269,80 @@ export default function ListiniTabContent() {
             <Label>
               Fornitore {priceListHeader.type === 'no_promo' && <span className="text-red-500">*</span>}
             </Label>
-            <Select 
-              value={priceListHeader.supplierId || (priceListHeader.type !== 'no_promo' ? 'none' : undefined)} 
-              onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val === 'none' ? '' : val }))}
-            >
-              <SelectTrigger 
-                data-testid="select-supplier"
-                className={priceListHeader.type === 'no_promo' && !priceListHeader.supplierId ? 'border-red-300' : ''}
-              >
-                <SelectValue placeholder={priceListHeader.type === 'no_promo' ? "Seleziona fornitore *" : "Seleziona fornitore (opzionale)"} />
-              </SelectTrigger>
-              <SelectContent>
-                {priceListHeader.type !== 'no_promo' && (
-                  <SelectItem value="none">Nessun fornitore</SelectItem>
-                )}
-                {safeSuppliers.filter((s: any) => s.id).map((s: any) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  role="combobox"
+                  className={`w-full justify-between ${priceListHeader.type === 'no_promo' && !priceListHeader.supplierId ? 'border-red-300' : ''}`}
+                  data-testid="select-supplier"
+                >
+                  {priceListHeader.supplierId 
+                    ? safeSuppliers.find((s: any) => s.id === priceListHeader.supplierId)?.name || 'Seleziona fornitore'
+                    : priceListHeader.type === 'no_promo' ? "Seleziona fornitore *" : "Seleziona fornitore (opzionale)"
+                  }
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0" align="start" sideOffset={4} style={{ zIndex: 9999 }}>
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={step2SupplierSearch}
+                      onChange={(e) => setStep2SupplierSearch(e.target.value)}
+                      placeholder="Cerca fornitore..."
+                      className="pl-8"
+                      data-testid="input-supplier-search"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-60 overflow-y-auto p-1">
+                  {priceListHeader.type !== 'no_promo' && (
+                    <div 
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${!priceListHeader.supplierId ? 'bg-orange-50' : ''}`}
+                      onClick={() => {
+                        setPriceListHeader(prev => ({ ...prev, supplierId: '' }));
+                        setStep2SupplierSearch('');
+                      }}
+                      data-testid="option-no-supplier"
+                    >
+                      {!priceListHeader.supplierId && <Check className="h-4 w-4 text-orange-600" />}
+                      <span className="text-sm text-gray-500 italic">Nessun fornitore</span>
+                    </div>
+                  )}
+                  {safeSuppliers
+                    .filter((s: any) => s.id)
+                    .filter((s: any) => {
+                      if (!step2SupplierSearch.trim()) return true;
+                      const search = step2SupplierSearch.toLowerCase();
+                      return s.name?.toLowerCase().includes(search) || s.code?.toLowerCase().includes(search);
+                    })
+                    .map((s: any) => (
+                      <div 
+                        key={s.id}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${priceListHeader.supplierId === s.id ? 'bg-orange-50' : ''}`}
+                        onClick={() => {
+                          setPriceListHeader(prev => ({ ...prev, supplierId: s.id }));
+                          setStep2SupplierSearch('');
+                        }}
+                        data-testid={`option-supplier-${s.id}`}
+                      >
+                        {priceListHeader.supplierId === s.id && <Check className="h-4 w-4 text-orange-600" />}
+                        <span className="text-sm">{s.name}</span>
+                      </div>
+                    ))
+                  }
+                  {safeSuppliers.filter((s: any) => s.id).filter((s: any) => {
+                    if (!step2SupplierSearch.trim()) return true;
+                    const search = step2SupplierSearch.toLowerCase();
+                    return s.name?.toLowerCase().includes(search) || s.code?.toLowerCase().includes(search);
+                  }).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-3">Nessun fornitore trovato</p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
             {priceListHeader.type === 'no_promo' && (
               <p className="text-xs text-gray-500">Il fornitore è obbligatorio per i listini base</p>
             )}
