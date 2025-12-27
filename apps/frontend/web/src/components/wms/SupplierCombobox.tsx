@@ -29,6 +29,7 @@ interface SupplierComboboxProps {
   clearable?: boolean;
   clearLabel?: string;
   portalContainer?: HTMLElement | null;
+  side?: "top" | "bottom" | "left" | "right";
   "data-testid"?: string;
 }
 
@@ -46,6 +47,7 @@ export function SupplierCombobox({
   clearable = false,
   clearLabel = "Nessun fornitore",
   portalContainer,
+  side = "bottom",
   "data-testid": testId,
 }: SupplierComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -179,6 +181,7 @@ export function SupplierCombobox({
       <PopoverContent 
         className={cn("w-[400px] p-0 z-[9999]", className)} 
         align="start"
+        side={side}
         sideOffset={8}
         container={portalContainer}
         onKeyDown={handleKeyDown}

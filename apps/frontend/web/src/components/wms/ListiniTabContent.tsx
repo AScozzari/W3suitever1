@@ -1280,6 +1280,7 @@ export default function ListiniTabContent() {
               triggerClassName={priceListHeader.type === 'no_promo' && !priceListHeader.supplierId ? 'border-red-300' : ''}
               clearable={priceListHeader.type !== 'no_promo'}
               portalContainer={wizardModalContainer}
+              side="top"
               data-testid="select-supplier"
             />
             {priceListHeader.type === 'no_promo' && (
