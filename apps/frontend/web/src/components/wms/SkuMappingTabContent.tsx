@@ -888,21 +888,10 @@ export default function SkuMappingTabContent() {
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader className="flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-green-500" />
-                Nuovo Mapping SKU
-              </DialogTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCloseCreateModal}
-                className="h-8 w-8 p-0"
-                data-testid="btn-close-modal"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-green-500" />
+              Nuovo Mapping SKU
+            </DialogTitle>
             <DialogDescription>
               Crea associazioni tra SKU interno e SKU fornitore
             </DialogDescription>
