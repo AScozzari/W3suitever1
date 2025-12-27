@@ -2332,17 +2332,20 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
               {currentStep === 2 && (
                 <div className="flex w-full justify-between">
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => {
-                      // Reset product selection state to avoid React DOM errors
-                      setSelectedProduct(null);
-                      setCurrentSerials([]);
-                      setSearchQuery('');
-                      setViewingItemSerials(null);
-                      setCurrentStep(1);
-                    }}>
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Indietro
-                    </Button>
+                    {items.length === 0 && (
+                      <Button type="button" variant="outline" onClick={() => {
+                        // Reset product selection state before changing step
+                        setSelectedProduct(null);
+                        setCurrentSerials([]);
+                        setSearchQuery('');
+                        setViewingItemSerials(null);
+                        // Use setTimeout to avoid React DOM conflicts
+                        setTimeout(() => setCurrentStep(1), 0);
+                      }}>
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Indietro
+                      </Button>
+                    )}
                     <Button 
                       type="button" 
                       variant="outline"
