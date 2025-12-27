@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -175,6 +175,7 @@ const PRICE_LIST_TYPES: { value: PriceListType; label: string; description: stri
 export default function ListiniTabContent() {
   const { toast } = useToast();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const wizardModalRef = useRef<HTMLDivElement>(null);
   const [wizardStep, setWizardStep] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -1278,6 +1279,7 @@ export default function ListiniTabContent() {
               searchPlaceholder="Cerca fornitore..."
               triggerClassName={priceListHeader.type === 'no_promo' && !priceListHeader.supplierId ? 'border-red-300' : ''}
               clearable={priceListHeader.type !== 'no_promo'}
+              portalContainer={wizardModalRef.current}
               data-testid="select-supplier"
             />
             {priceListHeader.type === 'no_promo' && (
@@ -4719,12 +4721,9 @@ export default function ListiniTabContent() {
 
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent 
+          ref={wizardModalRef}
           className={`${wizardStep <= 2 ? 'max-w-3xl' : 'max-w-7xl h-[90vh]'} overflow-hidden flex flex-col`}
-          onPointerDownOutside={(e) => {
-            const target = e.target as HTMLElement;
-            if (target?.closest('[data-radix-popover-content]')) return;
-            e.preventDefault();
-          }}
+          onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>

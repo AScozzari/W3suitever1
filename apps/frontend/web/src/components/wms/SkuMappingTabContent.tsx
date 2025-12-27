@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,6 +106,7 @@ export default function SkuMappingTabContent() {
   
   const [editModal, setEditModal] = useState<{ open: boolean; mapping: SkuMapping | null }>({ open: false, mapping: null });
   const [createModal, setCreateModal] = useState(false);
+  const createModalRef = useRef<HTMLDivElement>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; mapping: SkuMapping | null }>({ open: false, mapping: null });
   
   // New modal state
@@ -881,12 +882,9 @@ export default function SkuMappingTabContent() {
       {/* Create Modal - Refactored */}
       <Dialog open={createModal} onOpenChange={(open) => !open && handleCloseCreateModal()}>
         <DialogContent 
+          ref={createModalRef}
           className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
-          onPointerDownOutside={(e) => {
-            const target = e.target as HTMLElement;
-            if (target?.closest('[data-radix-popover-content]')) return;
-            e.preventDefault();
-          }}
+          onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader className="flex-shrink-0">
@@ -927,6 +925,7 @@ export default function SkuMappingTabContent() {
                     onValueChange={setSelectedSupplierId}
                     placeholder="Seleziona fornitore..."
                     searchPlaceholder="Cerca fornitore..."
+                    portalContainer={createModalRef.current}
                     data-testid="select-supplier-modal"
                   />
                 </div>

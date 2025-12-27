@@ -35,6 +35,7 @@ interface SupplierComboboxProps {
   required?: boolean;
   clearable?: boolean;
   clearLabel?: string;
+  portalContainer?: HTMLElement | null;
   "data-testid"?: string;
 }
 
@@ -51,6 +52,7 @@ export function SupplierCombobox({
   required = false,
   clearable = false,
   clearLabel = "Nessun fornitore",
+  portalContainer,
   "data-testid": testId,
 }: SupplierComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -90,7 +92,11 @@ export function SupplierCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-[400px] p-0", className)} align="start">
+      <PopoverContent 
+        className={cn("w-[400px] p-0", className)} 
+        align="start"
+        container={portalContainer || undefined}
+      >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>

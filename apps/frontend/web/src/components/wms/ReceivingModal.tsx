@@ -278,6 +278,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
 
   // Fetch suppliers from API (brand + tenant)
   const { data: suppliersData = [], isLoading: suppliersLoading } = useQuery<SupplierFromAPI[]>({
@@ -1039,7 +1040,10 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${currentStep === 3 ? 'max-w-6xl w-[95vw]' : 'max-w-4xl'} max-h-[90vh] min-h-[70vh] overflow-hidden flex flex-col`}>
+      <DialogContent 
+        ref={dialogContentRef}
+        className={`${currentStep === 3 ? 'max-w-6xl w-[95vw]' : 'max-w-4xl'} max-h-[90vh] min-h-[70vh] overflow-hidden flex flex-col`}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-orange-500" />
@@ -1111,6 +1115,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                             placeholder={suppliersLoading ? "Caricamento..." : "Seleziona fornitore..."}
                             searchPlaceholder="Cerca fornitore..."
                             disabled={suppliersLoading}
+                            portalContainer={dialogContentRef.current}
                             data-testid="select-supplier"
                           />
                         </FormControl>
