@@ -11132,12 +11132,12 @@ router.get("/receiving/stats", rbacMiddleware, requirePermission('wms.stock.read
     `);
     const productsReceivedToday = Number(receivedTodayResult.rows[0]?.total || 0);
     
-    // 2. In Progress - receiving drafts with 'active' or 'in_progress' status
+    // 2. In Progress - receiving drafts with 'resumed' status (actively being worked on)
     const inProgressResult = await db.execute(sql`
       SELECT COALESCE(SUM(total_quantity), 0) as total
       FROM w3suite.wms_receiving_drafts
       WHERE tenant_id = ${tenantId}
-        AND status IN ('active', 'in_progress')
+        AND status = 'resumed'
     `);
     const inProgress = Number(inProgressResult.rows[0]?.total || 0);
     
