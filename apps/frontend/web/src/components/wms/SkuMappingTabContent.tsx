@@ -192,7 +192,7 @@ export default function SkuMappingTabContent() {
   }, [categories, filterProductType]);
   
   const modalFilteredTypologies = useMemo(() => {
-    if (!filterCategory) return [];
+    if (!filterCategory || filterCategory === 'all') return [];
     return typologies.filter(t => t.categoryId === filterCategory);
   }, [typologies, filterCategory]);
   
@@ -288,11 +288,11 @@ export default function SkuMappingTabContent() {
         results = results.filter(p => p.categoryId && categoryIds.includes(p.categoryId));
       }
       
-      if (filterCategory) {
+      if (filterCategory && filterCategory !== 'all') {
         results = results.filter(p => p.categoryId === filterCategory);
       }
       
-      if (filterTypology) {
+      if (filterTypology && filterTypology !== 'all') {
         results = results.filter(p => p.typologyId === filterTypology);
       }
     }
@@ -987,8 +987,8 @@ export default function SkuMappingTabContent() {
                         value={filterProductType} 
                         onValueChange={(v) => { 
                           setFilterProductType(v); 
-                          setFilterCategory(''); 
-                          setFilterTypology(''); 
+                          setFilterCategory('all'); 
+                          setFilterTypology('all'); 
                         }}
                       >
                         <SelectTrigger data-testid="select-filter-product-type">
@@ -1021,14 +1021,14 @@ export default function SkuMappingTabContent() {
                       <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
                       <Select 
                         value={filterCategory} 
-                        onValueChange={(v) => { setFilterCategory(v); setFilterTypology(''); }}
+                        onValueChange={(v) => { setFilterCategory(v); setFilterTypology('all'); }}
                         disabled={!filterProductType}
                       >
                         <SelectTrigger data-testid="select-filter-category">
                           <SelectValue placeholder={filterProductType ? "Tutte" : "Seleziona tipo"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tutte le categorie</SelectItem>
+                          <SelectItem value="all">Tutte le categorie</SelectItem>
                           {modalFilteredCategories.map(c => (
                             <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                           ))}
@@ -1041,13 +1041,13 @@ export default function SkuMappingTabContent() {
                       <Select 
                         value={filterTypology} 
                         onValueChange={setFilterTypology}
-                        disabled={!filterCategory}
+                        disabled={!filterCategory || filterCategory === 'all'}
                       >
                         <SelectTrigger data-testid="select-filter-typology">
                           <SelectValue placeholder={filterCategory ? "Tutte" : "Seleziona cat."} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Tutte le tipologie</SelectItem>
+                          <SelectItem value="all">Tutte le tipologie</SelectItem>
                           {modalFilteredTypologies.map(t => (
                             <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
                           ))}
