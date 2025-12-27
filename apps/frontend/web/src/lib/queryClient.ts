@@ -379,5 +379,21 @@ export async function apiRequest(
     throw error;
   }
 
-  return res.json();
+  // Handle 204 No Content specifically (empty body by design)
+  if (res.status === 204) {
+    return { success: true };
+  }
+
+  // Try to parse JSON, with fallback for empty bodies
+  const text = await res.text();
+  if (!text || text.trim() === '') {
+    return { success: true };
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    // If JSON parsing fails but response was OK, return success with raw text
+    return { success: true, rawText: text };
+  }
 }

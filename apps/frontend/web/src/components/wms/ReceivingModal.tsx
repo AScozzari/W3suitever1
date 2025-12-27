@@ -601,18 +601,98 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     }
   };
 
+  // Get expected length for serial type validation
+  const getSerialExpectedLength = (serialType?: string): number => {
+    switch (serialType) {
+      case 'imei': return 15;
+      case 'iccid': return 19; // Can be 19-20
+      case 'mac_address': return 12; // Without separators
+      default: return 1; // Any non-empty
+    }
+  };
+
+  // Check if current serial input is valid for adding
+  const isSerialInputValid = (): boolean => {
+    if (!serialInput.trim()) return false;
+    if (!selectedProduct) return false;
+    
+    const cleanedSerial = serialInput.replace(/[^0-9A-Fa-f]/g, '');
+    const expectedLength = getSerialExpectedLength(selectedProduct.serialType);
+    
+    // For IMEI, require exactly 15 digits
+    if (selectedProduct.serialType === 'imei') {
+      return cleanedSerial.length === 15;
+    }
+    // For ICCID, 19-20 digits
+    if (selectedProduct.serialType === 'iccid') {
+      return cleanedSerial.length >= 19 && cleanedSerial.length <= 20;
+    }
+    // For MAC, 12 hex chars
+    if (selectedProduct.serialType === 'mac_address') {
+      return cleanedSerial.length === 12;
+    }
+    // For others, just non-empty
+    return serialInput.trim().length >= expectedLength;
+  };
+
+  // Normalize serial by removing separators for consistent storage
+  const normalizeSerial = (serial: string, serialType?: string): string => {
+    const trimmed = serial.trim();
+    if (serialType === 'mac_address') {
+      // Remove colons, dashes, dots from MAC addresses
+      return trimmed.replace(/[:\-.]/g, '').toUpperCase();
+    }
+    if (serialType === 'imei' || serialType === 'iccid') {
+      // Keep only digits
+      return trimmed.replace(/\D/g, '');
+    }
+    return trimmed;
+  };
+
+  // Add serial manually (called by button click)
+  const addSerialManually = () => {
+    if (!isSerialInputValid()) return;
+    
+    // Normalize the serial before storing
+    const normalizedSerial = normalizeSerial(serialInput, selectedProduct?.serialType);
+    
+    // Check for duplicates using normalized value
+    if (currentSerials.includes(normalizedSerial)) {
+      toast({
+        title: 'Seriale duplicato',
+        description: 'Questo seriale è già stato inserito.',
+        variant: 'destructive',
+      });
+      setSerialInput('');
+      serialInputRef.current?.focus();
+      return;
+    }
+    
+    const newSerials = [...currentSerials, normalizedSerial];
+    setCurrentSerials(newSerials);
+    setSerialInput('');
+    
+    // Keep focus on serial input for rapid entry
+    setTimeout(() => {
+      serialInputRef.current?.focus();
+    }, 50);
+  };
+
   const handleSerialScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && serialInput.trim()) {
       e.preventDefault();
       
-      // Check for duplicates
-      if (currentSerials.includes(serialInput.trim())) {
+      // Normalize the serial before storing
+      const normalizedSerial = normalizeSerial(serialInput, selectedProduct?.serialType);
+      
+      // Check for duplicates using normalized value
+      if (currentSerials.includes(normalizedSerial)) {
         setSerialInput('');
         serialInputRef.current?.focus();
         return;
       }
       
-      const newSerials = [...currentSerials, serialInput.trim()];
+      const newSerials = [...currentSerials, normalizedSerial];
       setCurrentSerials(newSerials);
       setSerialInput('');
       
@@ -1391,26 +1471,42 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
 
                               {/* Single input field - always active until complete */}
                               {currentSerials.length < targetQuantity * (selectedProduct.serialCount || 1) && (
-                                <div className="relative">
-                                  <Input
-                                    ref={serialInputRef}
-                                    value={serialInput}
-                                    onChange={(e) => setSerialInput(e.target.value)}
-                                    onKeyDown={handleSerialScan}
-                                    placeholder={
-                                      (selectedProduct.serialCount || 1) > 1
-                                        ? `${getSerialLabel(selectedProduct.serialType)} ${(currentSerials.length % (selectedProduct.serialCount || 1)) + 1} per Unità ${Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + 1}...`
-                                        : `Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`
-                                    }
-                                    className="pr-20 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
-                                    data-testid="input-serial-scan"
-                                  />
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                                    {(selectedProduct.serialCount || 1) > 1 
-                                      ? `U${Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + 1}-S${(currentSerials.length % (selectedProduct.serialCount || 1)) + 1}`
-                                      : `#${currentSerials.length + 1}`
-                                    }
-                                  </span>
+                                <div className="flex gap-2">
+                                  <div className="relative flex-1">
+                                    <Input
+                                      ref={serialInputRef}
+                                      value={serialInput}
+                                      onChange={(e) => setSerialInput(e.target.value)}
+                                      onKeyDown={handleSerialScan}
+                                      placeholder={
+                                        (selectedProduct.serialCount || 1) > 1
+                                          ? `${getSerialLabel(selectedProduct.serialType)} ${(currentSerials.length % (selectedProduct.serialCount || 1)) + 1} per Unità ${Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + 1}...`
+                                          : `Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`
+                                      }
+                                      className={`pr-12 transition-colors ${
+                                        isSerialInputValid() 
+                                          ? 'border-green-500 focus:border-green-600 focus:ring-green-500' 
+                                          : 'border-orange-300 focus:border-orange-500 focus:ring-orange-500'
+                                      }`}
+                                      data-testid="input-serial-scan"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                                      {serialInput.replace(/[^0-9A-Fa-f]/g, '').length}/{getSerialExpectedLength(selectedProduct.serialType)}
+                                    </span>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    onClick={addSerialManually}
+                                    disabled={!isSerialInputValid()}
+                                    className={`transition-colors ${
+                                      isSerialInputValid() 
+                                        ? 'bg-green-600 hover:bg-green-700' 
+                                        : 'bg-gray-300'
+                                    }`}
+                                    data-testid="btn-add-serial"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               )}
 
@@ -1561,15 +1657,39 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                 <ScanLine className="h-4 w-4" />
                                 Spara Seriali ({currentSerials.length}/{targetQuantity})
                               </Label>
-                              <Input
-                                ref={serialInputRef}
-                                value={serialInput}
-                                onChange={(e) => setSerialInput(e.target.value)}
-                                onKeyDown={handleSerialScan}
-                                placeholder="Scansiona o inserisci seriale..."
-                                className="mt-1"
-                                data-testid="input-serial-scan"
-                              />
+                              <div className="flex gap-2 mt-1">
+                                <div className="relative flex-1">
+                                  <Input
+                                    ref={serialInputRef}
+                                    value={serialInput}
+                                    onChange={(e) => setSerialInput(e.target.value)}
+                                    onKeyDown={handleSerialScan}
+                                    placeholder="Scansiona o inserisci seriale..."
+                                    className={`pr-12 transition-colors ${
+                                      isSerialInputValid() 
+                                        ? 'border-green-500 focus:border-green-600 focus:ring-green-500' 
+                                        : ''
+                                    }`}
+                                    data-testid="input-serial-scan"
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                                    {serialInput.replace(/[^0-9A-Fa-f]/g, '').length}/{getSerialExpectedLength(selectedProduct?.serialType)}
+                                  </span>
+                                </div>
+                                <Button
+                                  type="button"
+                                  onClick={addSerialManually}
+                                  disabled={!isSerialInputValid()}
+                                  className={`transition-colors ${
+                                    isSerialInputValid() 
+                                      ? 'bg-green-600 hover:bg-green-700' 
+                                      : 'bg-gray-300'
+                                  }`}
+                                  data-testid="btn-add-serial"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
 
                             {currentSerials.length > 0 && (
