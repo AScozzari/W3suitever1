@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { 
   Search, Plus, Edit, Trash2, Link2, CalendarIcon, Filter, 
   Package, Building2, CheckCircle2, XCircle, RefreshCw, X,
-  ArrowRightLeft, Hash
+  ArrowRightLeft
 } from 'lucide-react';
 
 interface SkuMapping {
@@ -52,6 +53,7 @@ interface Product {
   categoryName?: string;
   typologyId: string | null;
   typologyName?: string;
+  productType?: string;
   isSerializable: boolean;
   serialType: string | null;
   serialCount: number;
@@ -62,15 +64,17 @@ interface Product {
 
 interface Category {
   id: string;
-  code: string;
-  name: string;
-  typologies?: Typology[];
+  nome: string;
+  productType: string;
+  descrizione?: string;
+  icona?: string;
+  ordine?: number;
 }
 
 interface Typology {
   id: string;
   code: string;
-  name: string;
+  nome: string;
   categoryId: string;
 }
 
@@ -98,6 +102,11 @@ export default function SkuMappingTabContent() {
     isPrimary: false
   });
   
+  const [modalProductSearch, setModalProductSearch] = useState('');
+  const [modalCategoryFilter, setModalCategoryFilter] = useState<string>('all');
+  const [modalTypologyFilter, setModalTypologyFilter] = useState<string>('all');
+  const [modalProductTypeFilter, setModalProductTypeFilter] = useState<string>('all');
+  
   const [editMappingData, setEditMappingData] = useState({
     supplierSku: '',
     useInternalSku: false,
@@ -119,6 +128,10 @@ export default function SkuMappingTabContent() {
   const { data: categoriesResponse } = useQuery({
     queryKey: ['/api/wms/categories'],
   });
+  
+  const { data: typologiesResponse } = useQuery({
+    queryKey: ['/api/wms/product-types'],
+  });
 
   const mappings: SkuMapping[] = useMemo(() => {
     const data = (mappingsResponse as any)?.data;
@@ -132,23 +145,32 @@ export default function SkuMappingTabContent() {
   
   const categories: Category[] = useMemo(() => {
     const data = (categoriesResponse as any)?.data || categoriesResponse;
-    return Array.isArray(data) ? data : [];
+    const cats = Array.isArray(data) ? data : [];
+    return cats.filter((c: Category) => c.productType !== 'CANVAS');
   }, [categoriesResponse]);
+  
+  const typologies: Typology[] = useMemo(() => {
+    const data = (typologiesResponse as any)?.data || typologiesResponse;
+    return Array.isArray(data) ? data : [];
+  }, [typologiesResponse]);
   
   const suppliers: Supplier[] = useMemo(() => {
     return Array.isArray(suppliersData) ? suppliersData : [];
   }, [suppliersData]);
 
-  const typologies: Typology[] = useMemo(() => {
-    if (categoryFilter === 'all') {
-      return categories.flatMap(c => c.typologies || []);
-    }
-    const category = categories.find(c => c.id === categoryFilter);
-    return category?.typologies || [];
-  }, [categories, categoryFilter]);
+  const filteredTypologies = useMemo(() => {
+    if (categoryFilter === 'all') return typologies;
+    return typologies.filter(t => t.categoryId === categoryFilter);
+  }, [typologies, categoryFilter]);
+  
+  const modalFilteredTypologies = useMemo(() => {
+    if (modalCategoryFilter === 'all') return typologies;
+    return typologies.filter(t => t.categoryId === modalCategoryFilter);
+  }, [typologies, modalCategoryFilter]);
 
   const getProductById = (id: string) => products.find(p => p.id === id);
   const getSupplierById = (id: string) => suppliers.find(s => s.id === id);
+  const getCategoryById = (id: string) => categories.find(c => c.id === id);
 
   const enrichedMappings = useMemo(() => {
     return mappings.map(mapping => ({
@@ -198,6 +220,37 @@ export default function SkuMappingTabContent() {
     });
   }, [enrichedMappings, searchTerm, supplierFilter, statusFilter, categoryFilter, typologyFilter, productTypeFilter, validFromDate, validToDate]);
 
+  const modalFilteredProducts = useMemo(() => {
+    let filtered = products.filter(p => p.productType !== 'CANVAS');
+    
+    if (modalProductSearch) {
+      const search = modalProductSearch.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.sku?.toLowerCase().includes(search) ||
+        p.name?.toLowerCase().includes(search) ||
+        p.ean?.toLowerCase().includes(search)
+      );
+    }
+    
+    if (modalCategoryFilter !== 'all') {
+      filtered = filtered.filter(p => p.categoryId === modalCategoryFilter);
+    }
+    
+    if (modalTypologyFilter !== 'all') {
+      filtered = filtered.filter(p => p.typologyId === modalTypologyFilter);
+    }
+    
+    if (modalProductTypeFilter === 'serializable') {
+      filtered = filtered.filter(p => p.isSerializable);
+    } else if (modalProductTypeFilter === 'non-serializable') {
+      filtered = filtered.filter(p => !p.isSerializable);
+    } else if (modalProductTypeFilter === 'dual-serial') {
+      filtered = filtered.filter(p => (p.serialCount || 1) >= 2);
+    }
+    
+    return filtered.slice(0, 100);
+  }, [products, modalProductSearch, modalCategoryFilter, modalTypologyFilter, modalProductTypeFilter]);
+
   const updateMappingMutation = useMutation({
     mutationFn: async (data: { id: string; supplierSku: string; useInternalSku: boolean; isPrimary: boolean }) => {
       return apiRequest('/api/wms/product-supplier-mappings', {
@@ -216,7 +269,7 @@ export default function SkuMappingTabContent() {
       setEditModal({ open: false, mapping: null });
       queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
     },
-    onError: (error) => {
+    onError: () => {
       toast({ title: "Errore", description: "Impossibile salvare le modifiche", variant: "destructive" });
     }
   });
@@ -231,10 +284,10 @@ export default function SkuMappingTabContent() {
     onSuccess: () => {
       toast({ title: "Mapping creato", description: "Il nuovo mapping è stato salvato" });
       setCreateModal(false);
-      setNewMappingData({ productId: '', supplierId: '', supplierSku: '', useInternalSku: false, isPrimary: false });
+      resetModalFilters();
       queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
     },
-    onError: (error) => {
+    onError: () => {
       toast({ title: "Errore", description: "Impossibile creare il mapping", variant: "destructive" });
     }
   });
@@ -260,6 +313,14 @@ export default function SkuMappingTabContent() {
       isPrimary: mapping.isPrimary
     });
     setEditModal({ open: true, mapping });
+  };
+  
+  const resetModalFilters = () => {
+    setNewMappingData({ productId: '', supplierId: '', supplierSku: '', useInternalSku: false, isPrimary: false });
+    setModalProductSearch('');
+    setModalCategoryFilter('all');
+    setModalTypologyFilter('all');
+    setModalProductTypeFilter('all');
   };
 
   const clearFilters = () => {
@@ -405,7 +466,7 @@ export default function SkuMappingTabContent() {
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
                   {categories.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -419,8 +480,8 @@ export default function SkuMappingTabContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le tipologie</SelectItem>
-                  {typologies.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  {filteredTypologies.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -486,7 +547,7 @@ export default function SkuMappingTabContent() {
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Aggiorna
               </Button>
-              <Button size="sm" onClick={() => setCreateModal(true)} data-testid="btn-new-mapping">
+              <Button size="sm" onClick={() => { resetModalFilters(); setCreateModal(true); }} data-testid="btn-new-mapping">
                 <Plus className="h-4 w-4 mr-1" />
                 Nuovo Mapping
               </Button>
@@ -684,8 +745,8 @@ export default function SkuMappingTabContent() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={createModal} onOpenChange={setCreateModal}>
-        <DialogContent className="max-w-md">
+      <Dialog open={createModal} onOpenChange={(open) => { if (!open) { setCreateModal(false); resetModalFilters(); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5 text-green-500" />
@@ -697,47 +758,144 @@ export default function SkuMappingTabContent() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Fornitore <span className="text-red-500">*</span></Label>
+                <Select value={newMappingData.supplierId} onValueChange={(v) => setNewMappingData({ ...newMappingData, supplierId: v })}>
+                  <SelectTrigger data-testid="select-new-supplier">
+                    <SelectValue placeholder="Seleziona fornitore..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>SKU Fornitore</Label>
+                <Input
+                  value={newMappingData.supplierSku}
+                  onChange={(e) => setNewMappingData({ ...newMappingData, supplierSku: e.target.value })}
+                  placeholder="Codice articolo fornitore..."
+                  data-testid="input-new-supplier-sku"
+                />
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <Label className="text-sm font-medium mb-3 block">Filtra Prodotti</Label>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-xs text-gray-500 mb-1 block">Ricerca</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={modalProductSearch}
+                      onChange={(e) => setModalProductSearch(e.target.value)}
+                      placeholder="SKU, nome, EAN..."
+                      className="pl-8"
+                      data-testid="input-modal-search"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
+                  <Select value={modalCategoryFilter} onValueChange={(v) => { setModalCategoryFilter(v); setModalTypologyFilter('all'); }}>
+                    <SelectTrigger data-testid="select-modal-category">
+                      <SelectValue placeholder="Tutte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le categorie</SelectItem>
+                      {categories.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
+                  <Select value={modalTypologyFilter} onValueChange={setModalTypologyFilter} disabled={modalCategoryFilter === 'all'}>
+                    <SelectTrigger data-testid="select-modal-typology">
+                      <SelectValue placeholder={modalCategoryFilter === 'all' ? 'Seleziona cat.' : 'Tutte'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le tipologie</SelectItem>
+                      {modalFilteredTypologies.map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto</Label>
+                  <Select value={modalProductTypeFilter} onValueChange={setModalProductTypeFilter}>
+                    <SelectTrigger data-testid="select-modal-product-type">
+                      <SelectValue placeholder="Tutti" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti i tipi</SelectItem>
+                      <SelectItem value="serializable">Serializzabile</SelectItem>
+                      <SelectItem value="non-serializable">Non Serializzabile</SelectItem>
+                      <SelectItem value="dual-serial">Dual-Serial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            
             <div>
               <Label>Prodotto <span className="text-red-500">*</span></Label>
-              <Select value={newMappingData.productId} onValueChange={(v) => setNewMappingData({ ...newMappingData, productId: v })}>
-                <SelectTrigger data-testid="select-new-product">
-                  <SelectValue placeholder="Seleziona prodotto..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.slice(0, 100).map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.sku} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-xs text-gray-500 mb-2">Seleziona un prodotto dalla lista ({modalFilteredProducts.length} risultati)</p>
+              <ScrollArea className="h-[200px] border rounded-md">
+                {modalFilteredProducts.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    <Package className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">Nessun prodotto trovato</p>
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-1">
+                    {modalFilteredProducts.map(p => (
+                      <div 
+                        key={p.id}
+                        onClick={() => setNewMappingData({ ...newMappingData, productId: p.id })}
+                        className={`p-3 rounded-md cursor-pointer border transition-colors ${
+                          newMappingData.productId === p.id 
+                            ? 'bg-orange-50 border-orange-300' 
+                            : 'hover:bg-gray-50 border-transparent'
+                        }`}
+                        data-testid={`product-option-${p.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{p.name}</p>
+                            <p className="text-xs text-gray-500">
+                              SKU: {p.sku} {p.ean && `| EAN: ${p.ean}`}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            {p.isSerializable && (
+                              <Badge variant="secondary" className="text-xs">
+                                {(p.serialCount || 1) > 1 ? 'Dual' : 'Serial'}
+                              </Badge>
+                            )}
+                            {newMappingData.productId === p.id && (
+                              <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
             
-            <div>
-              <Label>Fornitore <span className="text-red-500">*</span></Label>
-              <Select value={newMappingData.supplierId} onValueChange={(v) => setNewMappingData({ ...newMappingData, supplierId: v })}>
-                <SelectTrigger data-testid="select-new-supplier">
-                  <SelectValue placeholder="Seleziona fornitore..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label>SKU Fornitore</Label>
-              <Input
-                value={newMappingData.supplierSku}
-                onChange={(e) => setNewMappingData({ ...newMappingData, supplierSku: e.target.value })}
-                placeholder="Codice articolo fornitore..."
-                data-testid="input-new-supplier-sku"
-              />
-            </div>
-            
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 pt-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -761,7 +919,7 @@ export default function SkuMappingTabContent() {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateModal(false)}>
+            <Button variant="outline" onClick={() => { setCreateModal(false); resetModalFilters(); }}>
               Annulla
             </Button>
             <Button 
