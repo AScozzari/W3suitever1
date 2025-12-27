@@ -95,7 +95,7 @@ export function SupplierCombobox({
       <PopoverContent 
         className={cn("w-[400px] p-0", className)} 
         align="start"
-        container={portalContainer || undefined}
+        style={{ pointerEvents: 'auto' }}
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
