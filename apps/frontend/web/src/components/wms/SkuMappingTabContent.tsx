@@ -12,6 +12,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { SupplierCombobox } from './SupplierCombobox';
 import { format } from 'date-fns';
@@ -19,7 +21,8 @@ import { it } from 'date-fns/locale';
 import { 
   Search, Plus, Edit, Trash2, Link2, CalendarIcon, Filter, 
   Package, Building2, CheckCircle2, XCircle, RefreshCw, X,
-  ArrowRightLeft, ChevronDown, Smartphone, Monitor, Settings, AlertCircle
+  ArrowRightLeft, ChevronDown, Smartphone, Monitor, Settings, AlertCircle,
+  Lock, Unlock, Save, Check, Square, CheckSquare
 } from 'lucide-react';
 
 interface SkuMapping {
@@ -92,6 +95,11 @@ interface SessionMapping {
   dbId?: string;
 }
 
+interface SelectedProductForMapping {
+  product: Product;
+  supplierSku: string;
+}
+
 export default function SkuMappingTabContent() {
   const { toast } = useToast();
   
@@ -123,13 +131,17 @@ export default function SkuMappingTabContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   
-  // Selection state
+  // Selection state - Multi-product selection
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [composerSupplierSku, setComposerSupplierSku] = useState('');
+  const [selectedProductsForMapping, setSelectedProductsForMapping] = useState<SelectedProductForMapping[]>([]);
+  const [isSupplierLocked, setIsSupplierLocked] = useState(false);
   
   // Session mappings
   const [sessionMappings, setSessionMappings] = useState<SessionMapping[]>([]);
   const [editingSessionMapping, setEditingSessionMapping] = useState<SessionMapping | null>(null);
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
+  const [activeTab, setActiveTab] = useState<'staging' | 'existing'>('staging');
   
   const [editMappingData, setEditMappingData] = useState({
     supplierSku: ''
@@ -419,6 +431,140 @@ export default function SkuMappingTabContent() {
     setComposerSupplierSku('');
     setSessionMappings([]);
     setEditingSessionMapping(null);
+    setSelectedProductsForMapping([]);
+    setIsSupplierLocked(false);
+    setActiveTab('staging');
+  };
+  
+  // Toggle product selection for multi-mapping
+  const toggleProductSelection = (product: Product) => {
+    setSelectedProductsForMapping(prev => {
+      const exists = prev.find(p => p.product.id === product.id);
+      if (exists) {
+        const newList = prev.filter(p => p.product.id !== product.id);
+        // Unlock supplier if no products selected
+        if (newList.length === 0) {
+          setIsSupplierLocked(false);
+        }
+        return newList;
+      } else {
+        // Lock supplier when first product is added
+        if (prev.length === 0) {
+          setIsSupplierLocked(true);
+        }
+        return [...prev, { product, supplierSku: '' }];
+      }
+    });
+  };
+  
+  // Update SKU for a selected product
+  const updateSelectedProductSku = (productId: string, sku: string) => {
+    setSelectedProductsForMapping(prev => 
+      prev.map(p => p.product.id === productId ? { ...p, supplierSku: sku } : p)
+    );
+  };
+  
+  // Remove product from selection
+  const removeSelectedProduct = (productId: string) => {
+    setSelectedProductsForMapping(prev => {
+      const newList = prev.filter(p => p.product.id !== productId);
+      if (newList.length === 0) {
+        setIsSupplierLocked(false);
+      }
+      return newList;
+    });
+  };
+  
+  // Count products with missing SKU
+  const productsWithMissingSku = useMemo(() => {
+    return selectedProductsForMapping.filter(p => !p.supplierSku.trim()).length;
+  }, [selectedProductsForMapping]);
+  
+  // Check if all selected products have SKU
+  const canSaveMapping = useMemo(() => {
+    return selectedProductsForMapping.length > 0 && 
+           selectedProductsForMapping.every(p => p.supplierSku.trim()) &&
+           selectedSupplierId;
+  }, [selectedProductsForMapping, selectedSupplierId]);
+  
+  // Batch save all mappings
+  const handleBatchSave = async () => {
+    if (!canSaveMapping) return;
+    
+    setIsSavingBatch(true);
+    const supplier = getSupplierById(selectedSupplierId);
+    
+    try {
+      const results = await Promise.all(
+        selectedProductsForMapping.map(({ product, supplierSku }) =>
+          apiRequest('/api/wms/product-supplier-mappings', {
+            method: 'POST',
+            body: JSON.stringify({
+              productId: product.id,
+              supplierId: selectedSupplierId,
+              supplierSku: supplierSku.trim()
+            })
+          }).then(response => ({
+            success: true,
+            product,
+            supplierSku,
+            dbId: (response as any)?.data?.id
+          })).catch(() => ({
+            success: false,
+            product,
+            supplierSku,
+            dbId: undefined
+          }))
+        )
+      );
+      
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+      
+      // Add successful mappings to session
+      const newSessionMappings: SessionMapping[] = successful.map(r => ({
+        id: crypto.randomUUID(),
+        productId: r.product.id,
+        productSku: r.product.sku,
+        productName: r.product.name,
+        supplierId: selectedSupplierId,
+        supplierName: supplier?.name || '',
+        supplierSku: r.supplierSku,
+        isSaved: true,
+        dbId: r.dbId
+      }));
+      
+      setSessionMappings(prev => [...prev, ...newSessionMappings]);
+      
+      if (successful.length > 0) {
+        toast({ 
+          title: `${successful.length} mapping salvati`, 
+          description: failed.length > 0 ? `${failed.length} errori` : 'Tutti i mapping sono stati salvati'
+        });
+      }
+      
+      if (failed.length > 0) {
+        toast({ 
+          title: "Alcuni mapping non salvati", 
+          description: `${failed.length} prodotti non sono stati mappati`,
+          variant: "destructive"
+        });
+      }
+      
+      // Clear selection and refresh
+      setSelectedProductsForMapping([]);
+      setSearchResults([]);
+      setHasSearched(false);
+      setUnifiedSearchTerm('');
+      // Unlock supplier after save so user can change it
+      setIsSupplierLocked(false);
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
+    } catch (error) {
+      toast({ title: "Errore", description: "Impossibile salvare i mapping", variant: "destructive" });
+    } finally {
+      setIsSavingBatch(false);
+    }
   };
   
   const handleCloseCreateModal = () => {
@@ -898,94 +1044,120 @@ export default function SkuMappingTabContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Modal - Refactored */}
+      {/* Create Modal - Two Column Layout */}
       <Dialog open={createModal} onOpenChange={(open) => !open && handleCloseCreateModal()}>
         <DialogContent 
           ref={setCreateModalContainer}
-          className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
+          className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-green-500" />
-              Nuovo Mapping SKU
-            </DialogTitle>
-            <DialogDescription>
-              Crea associazioni tra SKU interno e SKU fornitore
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto space-y-6 py-4">
-            {/* SEZIONE 1: Fornitore */}
-            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">1</div>
-                <h3 className="font-semibold">Seleziona Fornitore</h3>
+          {/* Header with Supplier Selection */}
+          <DialogHeader className="flex-shrink-0 pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-green-500" />
+                  Nuovo Mapping SKU
+                </DialogTitle>
+                <DialogDescription>
+                  Seleziona un fornitore e cerca i prodotti da mappare
+                </DialogDescription>
               </div>
               
-              <div>
-                <Label>Fornitore <span className="text-red-500">*</span></Label>
-                <SupplierCombobox
-                  suppliers={suppliers.map(s => ({ id: s.id, name: s.name, code: s.code }))}
-                  value={selectedSupplierId}
-                  onValueChange={setSelectedSupplierId}
-                  placeholder="Seleziona fornitore..."
-                  searchPlaceholder="Cerca fornitore..."
-                  portalContainer={createModalContainer}
-                  data-testid="select-supplier-modal"
-                />
+              {/* Supplier Selection - Sticky Header */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {isSupplierLocked ? (
+                    <Lock className="h-4 w-4 text-amber-500" />
+                  ) : (
+                    <Building2 className="h-4 w-4 text-gray-500" />
+                  )}
+                  <Label className="text-sm font-medium">Fornitore:</Label>
+                </div>
+                <div className="w-64">
+                  <SupplierCombobox
+                    suppliers={suppliers.map(s => ({ id: s.id, name: s.name, code: s.code }))}
+                    value={selectedSupplierId}
+                    onValueChange={(val) => {
+                      if (isSupplierLocked && selectedProductsForMapping.length > 0) {
+                        toast({ 
+                          title: "Fornitore bloccato", 
+                          description: "Rimuovi tutti i prodotti selezionati per cambiare fornitore",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      setSelectedSupplierId(val);
+                    }}
+                    placeholder="Seleziona fornitore..."
+                    searchPlaceholder="Cerca fornitore..."
+                    portalContainer={createModalContainer}
+                    data-testid="select-supplier-modal"
+                  />
+                </div>
+                {isSupplierLocked && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Bloccato
+                  </Badge>
+                )}
               </div>
             </div>
-            
-            {/* SEZIONE 2: Ricerca Prodotto */}
-            <div className={`space-y-4 p-4 border rounded-lg ${!selectedSupplierId ? 'opacity-50 pointer-events-none bg-gray-100' : 'bg-gray-50'}`}>
-              <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full ${selectedSupplierId ? 'bg-orange-500' : 'bg-gray-400'} text-white flex items-center justify-center text-sm font-bold`}>2</div>
-                <h3 className="font-semibold">Cerca Prodotto</h3>
-                {!selectedSupplierId && <span className="text-xs text-gray-500">(seleziona prima un fornitore)</span>}
+          </DialogHeader>
+          
+          {!selectedSupplierId ? (
+            <div className="flex-1 flex items-center justify-center py-16">
+              <div className="text-center">
+                <Building2 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium text-gray-600">Seleziona un fornitore</p>
+                <p className="text-sm text-gray-500">Per iniziare a creare i mapping, seleziona prima un fornitore</p>
               </div>
-              
-              {/* Ricerca Unificata */}
-              <div className="space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input
-                    value={unifiedSearchTerm}
-                    onChange={(e) => {
-                      setUnifiedSearchTerm(e.target.value);
-                      if (showAdvancedFilters) {
-                        setShowAdvancedFilters(false);
+            </div>
+          ) : (
+            <div className="flex-1 overflow-hidden flex gap-4">
+              {/* LEFT COLUMN - Search & Results */}
+              <div className="flex-1 flex flex-col overflow-hidden border rounded-lg">
+                {/* Search Header */}
+                <div className="p-4 border-b bg-gray-50 space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={unifiedSearchTerm}
+                      onChange={(e) => {
+                        setUnifiedSearchTerm(e.target.value);
+                        if (showAdvancedFilters) {
+                          setShowAdvancedFilters(false);
+                        }
+                      }}
+                      placeholder="Cerca per SKU, EAN o nome prodotto... (min 3 caratteri)"
+                      className="pl-9"
+                      data-testid="input-unified-search"
+                    />
+                    {unifiedSearchTerm.length > 0 && unifiedSearchTerm.length < 3 && !showAdvancedFilters && (
+                      <p className="text-xs text-amber-600 mt-1">Inserisci almeno 3 caratteri per cercare</p>
+                    )}
+                  </div>
+                  
+                  {/* Toggle Filtri Avanzati */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowAdvancedFilters(!showAdvancedFilters);
+                      if (!showAdvancedFilters) {
+                        setUnifiedSearchTerm('');
+                        setSearchResults([]);
+                        setHasSearched(false);
                       }
                     }}
-                    placeholder="Cerca per SKU, EAN o nome prodotto... (min 3 caratteri)"
-                    className="pl-9"
-                    data-testid="input-unified-search"
-                  />
-                  {unifiedSearchTerm.length > 0 && unifiedSearchTerm.length < 3 && !showAdvancedFilters && (
-                    <p className="text-xs text-amber-600 mt-1">Inserisci almeno 3 caratteri per cercare</p>
-                  )}
-                </div>
-                
-                {/* Toggle Filtri Avanzati */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowAdvancedFilters(!showAdvancedFilters);
-                    if (!showAdvancedFilters) {
-                      setUnifiedSearchTerm('');
-                      setSearchResults([]);
-                      setHasSearched(false);
-                    }
-                  }}
-                  className="text-gray-600 hover:text-gray-900"
-                  data-testid="btn-toggle-filters"
-                >
-                  <Filter className="h-4 w-4 mr-1" />
-                  {showAdvancedFilters ? 'Nascondi Filtri' : 'Mostra Filtri Avanzati'}
-                  <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-                </Button>
+                    className="text-gray-600 hover:text-gray-900"
+                    data-testid="btn-toggle-filters"
+                  >
+                    <Filter className="h-4 w-4 mr-1" />
+                    {showAdvancedFilters ? 'Nascondi Filtri' : 'Filtri Avanzati'}
+                    <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+                  </Button>
                 
                 {/* Filtri Avanzati Collapsibili */}
                 {showAdvancedFilters && (
@@ -1080,200 +1252,211 @@ export default function SkuMappingTabContent() {
                   </div>
                 )}
               </div>
-            </div>
-            
-            {/* SEZIONE 3: Risultati */}
-            <div className={`space-y-3 p-4 border rounded-lg ${!selectedSupplierId ? 'opacity-50 pointer-events-none bg-gray-100' : 'bg-white'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-6 h-6 rounded-full ${selectedSupplierId ? 'bg-orange-500' : 'bg-gray-400'} text-white flex items-center justify-center text-sm font-bold`}>3</div>
-                  <h3 className="font-semibold">Risultati</h3>
-                </div>
-                {hasSearched && <span className="text-sm text-gray-500">{searchResults.length} prodotti trovati</span>}
-              </div>
-              
-              {!hasSearched ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Search className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-                  <p>Cerca un prodotto per SKU/EAN oppure usa i filtri</p>
-                  <p className="text-xs mt-1">I risultati appariranno qui</p>
-                </div>
-              ) : searchResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <AlertCircle className="h-10 w-10 mx-auto mb-3 text-amber-400" />
-                  <p>Nessun prodotto trovato</p>
-                  <p className="text-xs mt-1">Prova con altri criteri di ricerca</p>
-                </div>
-              ) : (
-                <ScrollArea className="h-[200px] border rounded-md">
-                  <div className="p-2 space-y-1">
-                    {searchResults.map(p => {
-                      const cat = p.categoryId ? getCategoryById(p.categoryId) : null;
-                      return (
-                        <div 
-                          key={p.id}
-                          onClick={() => {
-                            setSelectedProduct(p);
-                            setComposerSupplierSku(supplierSkuInput);
-                          }}
-                          className={`p-3 rounded-md cursor-pointer border transition-colors ${
-                            selectedProduct?.id === p.id 
-                              ? 'bg-orange-50 border-orange-300' 
-                              : 'hover:bg-gray-50 border-transparent'
-                          }`}
-                          data-testid={`product-result-${p.id}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm">{p.name}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <code className="text-xs bg-gray-100 px-1 rounded">{p.sku}</code>
-                                {p.ean && <span className="text-xs text-gray-500">EAN: {p.ean}</span>}
+                
+                {/* Results with Checkbox Multi-Select */}
+                <ScrollArea className="flex-1">
+                  {!hasSearched ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Search className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>Cerca un prodotto per SKU/EAN</p>
+                      <p className="text-xs mt-1">oppure usa i filtri avanzati</p>
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <AlertCircle className="h-12 w-12 mx-auto mb-3 text-amber-400" />
+                      <p>Nessun prodotto trovato</p>
+                      <p className="text-xs mt-1">Prova con altri criteri di ricerca</p>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-1">
+                      <div className="flex items-center justify-between px-2 py-1 text-xs text-gray-500">
+                        <span>{searchResults.length} prodotti trovati</span>
+                        <span>{selectedProductsForMapping.length} selezionati</span>
+                      </div>
+                      {searchResults.map(p => {
+                        const cat = p.categoryId ? getCategoryById(p.categoryId) : null;
+                        const isSelected = selectedProductsForMapping.some(sp => sp.product.id === p.id);
+                        return (
+                          <div 
+                            key={p.id}
+                            onClick={() => toggleProductSelection(p)}
+                            className={`p-3 rounded-md cursor-pointer border transition-colors ${
+                              isSelected 
+                                ? 'bg-green-50 border-green-300' 
+                                : 'hover:bg-gray-50 border-gray-200'
+                            }`}
+                            data-testid={`product-result-${p.id}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox 
+                                checked={isSelected}
+                                onClick={(e) => e.stopPropagation()}
+                                onCheckedChange={() => toggleProductSelection(p)}
+                                data-testid={`checkbox-product-${p.id}`}
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{p.name}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <code className="text-xs bg-gray-100 px-1 rounded">{p.sku}</code>
+                                  {p.ean && <span className="text-xs text-gray-500">EAN: {p.ean}</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {cat && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {getProductTypeIcon(cat.productType)}
+                                  </Badge>
+                                )}
+                                {p.isSerializable && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {(p.serialCount || 1) > 1 ? 'Dual' : 'Serial'}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              {cat && (
-                                <Badge variant="outline" className="text-xs">
-                                  {getProductTypeIcon(cat.productType)}
-                                  <span className="ml-1">{cat.productType === 'PHYSICAL' ? 'Fisico' : cat.productType === 'DIGITAL' ? 'Digitale' : 'Servizio'}</span>
-                                </Badge>
-                              )}
-                              {p.isSerializable && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {(p.serialCount || 1) > 1 ? 'Dual-Serial' : 'Serial'}
-                                </Badge>
-                              )}
-                              {selectedProduct?.id === p.id && (
-                                <CheckCircle2 className="h-5 w-5 text-orange-500" />
-                              )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+              
+              {/* RIGHT COLUMN - Staging & Save */}
+              <div className="w-[420px] flex flex-col overflow-hidden border rounded-lg">
+                {/* Header with Summary */}
+                <div className="p-3 border-b bg-gray-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-green-500" />
+                    <span className="font-semibold">Prodotti Selezionati</span>
+                  </div>
+                  {selectedProductsForMapping.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      {productsWithMissingSku > 0 ? (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          {productsWithMissingSku} senza SKU
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                          <Check className="h-3 w-3 mr-1" />
+                          Pronti
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Selected Products List with SKU Input */}
+                <ScrollArea className="flex-1">
+                  {selectedProductsForMapping.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <CheckSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>Seleziona i prodotti</p>
+                      <p className="text-xs mt-1">Usa i checkbox a sinistra</p>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-2">
+                      {selectedProductsForMapping.map(({ product, supplierSku }) => (
+                        <div 
+                          key={product.id} 
+                          className={`p-3 rounded-lg border ${supplierSku.trim() ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm truncate">{product.name}</p>
+                              <code className="text-xs bg-gray-100 px-1 rounded">{product.sku}</code>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                              onClick={() => removeSelectedProduct(product.id)}
+                              data-testid={`btn-remove-selected-${product.id}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-500">SKU Fornitore <span className="text-red-500">*</span></Label>
+                            <Input
+                              value={supplierSku}
+                              onChange={(e) => updateSelectedProductSku(product.id, e.target.value)}
+                              placeholder="Codice fornitore..."
+                              className={`h-8 text-sm ${supplierSku.trim() ? 'border-green-300' : ''}`}
+                              data-testid={`input-sku-${product.id}`}
+                            />
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </ScrollArea>
-              )}
-            </div>
-            
-            {/* SEZIONE 4: Composer Mapping */}
-            {selectedProduct && (
-              <div className="space-y-3 p-4 border-2 border-green-200 rounded-lg bg-green-50">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">4</div>
-                  <h3 className="font-semibold text-green-800">Crea Mapping</h3>
-                </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-white rounded-lg border">
-                    <p className="text-xs text-gray-500 mb-1">Prodotto Selezionato</p>
-                    <p className="font-medium">{selectedProduct.name}</p>
-                    <code className="text-xs bg-gray-100 px-1 rounded">{selectedProduct.sku}</code>
-                  </div>
-                  
-                  <div>
-                    <Label>SKU Fornitore <span className="text-red-500">*</span></Label>
-                    <Input
-                      value={composerSupplierSku}
-                      onChange={(e) => setComposerSupplierSku(e.target.value)}
-                      placeholder="Codice fornitore..."
-                      data-testid="input-composer-supplier-sku"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-2">
+                {/* Save Button Footer */}
+                <div className="p-3 border-t bg-gray-50">
                   <Button 
-                    variant="ghost" 
-                    onClick={() => { setSelectedProduct(null); setEditingSessionMapping(null); }}
-                    data-testid="btn-cancel-selection"
+                    onClick={handleBatchSave}
+                    disabled={!canSaveMapping || isSavingBatch}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    data-testid="btn-save-mappings"
                   >
-                    Annulla Selezione
-                  </Button>
-                  <Button 
-                    onClick={handleAddMapping}
-                    disabled={!composerSupplierSku.trim() || createMappingMutation.isPending}
-                    className={editingSessionMapping ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}
-                    data-testid="btn-add-mapping"
-                  >
-                    {createMappingMutation.isPending ? 'Salvataggio...' : (
-                      editingSessionMapping ? (
-                        <>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Aggiorna Mapping
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-1" />
-                          Aggiungi Mapping
-                        </>
-                      )
+                    {isSavingBatch ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Salvataggio...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Salva Mapping ({selectedProductsForMapping.length})
+                      </>
                     )}
                   </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* SEZIONE 5: Tabella Sessione */}
-            {sessionMappings.length > 0 && (
-              <div className="space-y-3 p-4 border rounded-lg bg-blue-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Link2 className="h-5 w-5 text-blue-500" />
-                    <h3 className="font-semibold text-blue-800">Mapping Sessione Corrente</h3>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-700">{sessionMappings.length} mapping creati</Badge>
+                  {selectedProductsForMapping.length > 0 && productsWithMissingSku > 0 && (
+                    <p className="text-xs text-amber-600 text-center mt-2">
+                      Compila tutti gli SKU fornitore per salvare
+                    </p>
+                  )}
                 </div>
                 
-                <div className="overflow-x-auto bg-white rounded-lg border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left p-2 text-xs font-medium text-gray-500">SKU Interno</th>
-                        <th className="text-left p-2 text-xs font-medium text-gray-500">Prodotto</th>
-                        <th className="text-left p-2 text-xs font-medium text-gray-500">SKU Fornitore</th>
-                        <th className="text-right p-2 text-xs font-medium text-gray-500">Azioni</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {sessionMappings.map(mapping => (
-                        <tr key={mapping.id} className="hover:bg-gray-50">
-                          <td className="p-2">
-                            <code className="text-xs bg-gray-100 px-1 rounded">{mapping.productSku}</code>
-                          </td>
-                          <td className="p-2">{mapping.productName}</td>
-                          <td className="p-2">
-                            <code className="text-xs bg-blue-50 text-blue-700 px-1 rounded">{mapping.supplierSku}</code>
-                          </td>
-                          <td className="p-2 text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditSessionMapping(mapping)}
-                                data-testid={`btn-edit-session-${mapping.id}`}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteSessionMapping(mapping)}
-                                data-testid={`btn-delete-session-${mapping.id}`}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                {/* Session Mappings - Saved in this session */}
+                {sessionMappings.length > 0 && (
+                  <div className="border-t">
+                    <div className="p-2 bg-blue-50 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Salvati in questa sessione
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700">{sessionMappings.length}</Badge>
+                    </div>
+                    <ScrollArea className="max-h-[150px]">
+                      <div className="p-2 space-y-1">
+                        {sessionMappings.map(mapping => (
+                          <div key={mapping.id} className="flex items-center justify-between p-2 bg-white rounded border text-sm">
+                            <div>
+                              <code className="text-xs bg-gray-100 px-1 rounded">{mapping.productSku}</code>
+                              <span className="mx-2 text-gray-400">→</span>
+                              <code className="text-xs bg-blue-50 text-blue-700 px-1 rounded">{mapping.supplierSku}</code>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                              onClick={() => handleDeleteSessionMapping(mapping)}
+                              data-testid={`btn-delete-session-${mapping.id}`}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
           
         </DialogContent>
       </Dialog>
