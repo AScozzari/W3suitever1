@@ -879,7 +879,7 @@ export default function SkuMappingTabContent() {
       </Dialog>
 
       {/* Create Modal - Refactored */}
-      <Dialog open={createModal} onOpenChange={() => {}}>
+      <Dialog open={createModal} onOpenChange={(open) => !open && handleCloseCreateModal()}>
         <DialogContent 
           className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
           onPointerDownOutside={(e) => e.preventDefault()}
@@ -1265,19 +1265,6 @@ export default function SkuMappingTabContent() {
             )}
           </div>
           
-          <DialogFooter className="flex-shrink-0 border-t pt-4">
-            <div className="flex items-center justify-between w-full">
-              <p className="text-sm text-gray-500">
-                {sessionMappings.length > 0 
-                  ? `${sessionMappings.length} mapping creati in questa sessione`
-                  : 'Nessun mapping creato ancora'
-                }
-              </p>
-              <Button variant="outline" onClick={handleCloseCreateModal} data-testid="btn-close-session">
-                Chiudi
-              </Button>
-            </div>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
