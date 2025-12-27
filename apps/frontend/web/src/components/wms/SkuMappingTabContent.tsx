@@ -924,30 +924,17 @@ export default function SkuMappingTabContent() {
                 <h3 className="font-semibold">Seleziona Fornitore</h3>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Fornitore <span className="text-red-500">*</span></Label>
-                  <SupplierCombobox
-                    suppliers={suppliers.map(s => ({ id: s.id, name: s.name, code: s.code }))}
-                    value={selectedSupplierId}
-                    onValueChange={setSelectedSupplierId}
-                    placeholder="Seleziona fornitore..."
-                    searchPlaceholder="Cerca fornitore..."
-                    portalContainer={createModalContainer}
-                    data-testid="select-supplier-modal"
-                  />
-                </div>
-                
-                <div>
-                  <Label>SKU Fornitore</Label>
-                  <Input
-                    value={supplierSkuInput}
-                    onChange={(e) => setSupplierSkuInput(e.target.value)}
-                    placeholder="Codice articolo fornitore..."
-                    data-testid="input-supplier-sku-modal"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Il codice che il fornitore usa per questo prodotto</p>
-                </div>
+              <div>
+                <Label>Fornitore <span className="text-red-500">*</span></Label>
+                <SupplierCombobox
+                  suppliers={suppliers.map(s => ({ id: s.id, name: s.name, code: s.code }))}
+                  value={selectedSupplierId}
+                  onValueChange={setSelectedSupplierId}
+                  placeholder="Seleziona fornitore..."
+                  searchPlaceholder="Cerca fornitore..."
+                  portalContainer={createModalContainer}
+                  data-testid="select-supplier-modal"
+                />
               </div>
             </div>
             
