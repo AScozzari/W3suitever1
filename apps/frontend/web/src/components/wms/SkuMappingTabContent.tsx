@@ -1048,7 +1048,7 @@ export default function SkuMappingTabContent() {
       <Dialog open={createModal} onOpenChange={(open) => !open && handleCloseCreateModal()}>
         <DialogContent 
           ref={setCreateModalContainer}
-          className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col"
+          className="max-w-6xl max-h-[95vh] flex flex-col"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -1092,7 +1092,7 @@ export default function SkuMappingTabContent() {
                     }}
                     placeholder="Seleziona fornitore..."
                     searchPlaceholder="Cerca fornitore..."
-                    portalContainer={null}
+                    portalContainer={createModalContainer}
                     data-testid="select-supplier-modal"
                   />
                 </div>
@@ -1348,7 +1348,7 @@ export default function SkuMappingTabContent() {
                 </div>
                 
                 {/* Selected Products List with SKU Input */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: 'calc(95vh - 350px)' }}>
                   {selectedProductsForMapping.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <CheckSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
