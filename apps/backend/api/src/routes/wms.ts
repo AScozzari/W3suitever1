@@ -11103,6 +11103,99 @@ router.get("/product-batches/:id/status-history", rbacMiddleware, requirePermiss
 // ==================== GOODS RECEIVING API ====================
 
 /**
+ * GET /api/wms/receiving/stats
+ * Get receiving KPI statistics for dashboard
+ */
+router.get("/receiving/stats", rbacMiddleware, requirePermission('wms.stock.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    
+    // Get today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // 1. Products Received Today - from stock movements with purchase_in/inbound
+    const receivedTodayResult = await db.execute(sql`
+      SELECT COALESCE(SUM(quantity_delta), 0) as total
+      FROM w3suite.wms_stock_movements
+      WHERE tenant_id = ${tenantId}
+        AND movement_type = 'purchase_in'
+        AND movement_direction = 'inbound'
+        AND occurred_at >= ${today.toISOString()}
+        AND occurred_at < ${tomorrow.toISOString()}
+    `);
+    const productsReceivedToday = Number(receivedTodayResult.rows[0]?.total || 0);
+    
+    // 2. In Progress - receiving drafts with 'active' or 'in_progress' status
+    const inProgressResult = await db.execute(sql`
+      SELECT COALESCE(SUM(total_quantity), 0) as total
+      FROM w3suite.wms_receiving_drafts
+      WHERE tenant_id = ${tenantId}
+        AND status IN ('active', 'in_progress')
+    `);
+    const inProgress = Number(inProgressResult.rows[0]?.total || 0);
+    
+    // 3. Suspended - receiving drafts with 'suspended' status
+    const suspendedResult = await db.execute(sql`
+      SELECT COALESCE(SUM(total_quantity), 0) as total
+      FROM w3suite.wms_receiving_drafts
+      WHERE tenant_id = ${tenantId}
+        AND status = 'suspended'
+    `);
+    const suspended = Number(suspendedResult.rows[0]?.total || 0);
+    
+    // 4. With Problems - movements with discrepancies (metadata contains 'discrepancy' flag)
+    const problemsResult = await db.execute(sql`
+      SELECT COUNT(*) as total
+      FROM w3suite.wms_stock_movements
+      WHERE tenant_id = ${tenantId}
+        AND movement_type = 'purchase_in'
+        AND occurred_at >= ${today.toISOString()}
+        AND occurred_at < ${tomorrow.toISOString()}
+        AND (metadata->>'hasDiscrepancy')::boolean = true
+    `);
+    const withProblems = Number(problemsResult.rows[0]?.total || 0);
+    
+    // 5. Value Received Today - sum of value from metadata
+    const valueResult = await db.execute(sql`
+      SELECT COALESCE(SUM((metadata->>'unitPrice')::numeric * quantity_delta), 0) as total
+      FROM w3suite.wms_stock_movements
+      WHERE tenant_id = ${tenantId}
+        AND movement_type = 'purchase_in'
+        AND movement_direction = 'inbound'
+        AND occurred_at >= ${today.toISOString()}
+        AND occurred_at < ${tomorrow.toISOString()}
+    `);
+    const valueReceivedToday = Number(valueResult.rows[0]?.total || 0);
+    
+    res.json({
+      success: true,
+      data: {
+        productsReceivedToday,
+        inProgress,
+        suspended,
+        withProblems,
+        valueReceivedToday,
+        toReceive: null // Placeholder - requires supplier_orders table
+      }
+    });
+    
+  } catch (error) {
+    logger.error('Error fetching receiving stats', { error });
+    res.status(500).json({ 
+      error: "Failed to fetch receiving stats",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+/**
  * POST /api/wms/receiving
  * Process goods receiving (carico merce)
  * Creates: DDT passivo, inbound movements, serials/batches, inventory updates, status history
