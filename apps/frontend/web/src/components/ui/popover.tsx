@@ -28,11 +28,13 @@ const PopoverContent = React.forwardRef<
     />
   );
 
-  if (container === null) {
-    return content;
-  }
-
-  return <PopoverPrimitive.Portal container={container}>{content}</PopoverPrimitive.Portal>;
+  // If container is an HTMLElement, portal to that container
+  // This allows the popover to render inside Dialog without aria-hidden conflicts
+  return (
+    <PopoverPrimitive.Portal container={container || undefined}>
+      {content}
+    </PopoverPrimitive.Portal>
+  );
 })
 PopoverContent.displayName = PopoverPrimitive.Content.displayName
 

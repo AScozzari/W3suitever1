@@ -1,20 +1,14 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown, Building2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Check, ChevronsUpDown, Building2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface Supplier {
   id: string;
@@ -56,8 +50,25 @@ export function SupplierCombobox({
   "data-testid": testId,
 }: SupplierComboboxProps) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const selectedSupplier = suppliers.find((s) => s.id === value);
+
+  const filteredSuppliers = useMemo(() => {
+    if (!search.trim()) return suppliers;
+    const term = search.toLowerCase();
+    return suppliers.filter(
+      (s) =>
+        s.name.toLowerCase().includes(term) ||
+        (s.code && s.code.toLowerCase().includes(term))
+    );
+  }, [suppliers, search]);
+
+  const handleSelect = (supplierId: string) => {
+    onValueChange(supplierId);
+    setOpen(false);
+    setSearch("");
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -95,39 +106,53 @@ export function SupplierCombobox({
       <PopoverContent 
         className={cn("w-[400px] p-0", className)} 
         align="start"
-        container={portalContainer || undefined}
+        container={portalContainer}
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
-            <CommandEmpty>{emptyMessage}</CommandEmpty>
-            <CommandGroup>
-              {clearable && (
-                <CommandItem
-                  value="__clear__"
-                  onSelect={() => {
-                    onValueChange('');
-                    setOpen(false);
-                  }}
-                  data-testid="supplier-option-clear"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      !value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <span className="text-gray-500 italic">{clearLabel}</span>
-                </CommandItem>
-              )}
-              {suppliers.map((supplier) => (
-                <CommandItem
+        <div className="flex items-center border-b px-3 py-2">
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="border-0 p-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+            data-testid="supplier-search-input"
+          />
+        </div>
+        <ScrollArea className="max-h-[300px]">
+          <div className="p-1">
+            {clearable && (
+              <button
+                type="button"
+                onClick={() => handleSelect('')}
+                className={cn(
+                  "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 transition-colors",
+                  !value && "bg-orange-50"
+                )}
+                data-testid="supplier-option-clear"
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    !value ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <span className="text-gray-500 italic">{clearLabel}</span>
+              </button>
+            )}
+            {filteredSuppliers.length === 0 ? (
+              <div className="py-6 text-center text-sm text-gray-500">
+                {emptyMessage}
+              </div>
+            ) : (
+              filteredSuppliers.map((supplier) => (
+                <button
+                  type="button"
                   key={supplier.id}
-                  value={`${supplier.name} ${supplier.code || ""}`}
-                  onSelect={() => {
-                    onValueChange(supplier.id);
-                    setOpen(false);
-                  }}
+                  onClick={() => handleSelect(supplier.id)}
+                  className={cn(
+                    "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 transition-colors",
+                    value === supplier.id && "bg-orange-50"
+                  )}
                   data-testid={`supplier-option-${supplier.id}`}
                 >
                   <Check
@@ -136,17 +161,17 @@ export function SupplierCombobox({
                       value === supplier.id ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <div className="flex flex-col">
+                  <div className="flex flex-col text-left">
                     <span>{supplier.name}</span>
                     {supplier.code && (
                       <span className="text-xs text-gray-500">{supplier.code}</span>
                     )}
                   </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+                </button>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );
