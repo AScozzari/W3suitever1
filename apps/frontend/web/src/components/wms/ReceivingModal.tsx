@@ -556,19 +556,35 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     }
   }, [internalProductSearch]);
 
-  const handleCreateMapping = (product: Product) => {
+  const handleCreateMapping = async (product: Product) => {
     // Create mapping: associate unmappedSupplierSku to this product
     const mappedProduct: Product = {
       ...product,
       supplierSku: unmappedSupplierSku
     };
     
-    // TODO: Save mapping to backend via POST /api/wms/product-supplier-mappings
-    console.log('Creating SKU mapping:', { 
-      productId: product.id, 
-      supplierSku: unmappedSupplierSku,
-      supplierId: selectedSupplierId 
-    });
+    // Save mapping to backend
+    if (selectedSupplierId && unmappedSupplierSku) {
+      try {
+        await apiRequest('/api/wms/product-supplier-mappings', {
+          method: 'POST',
+          body: JSON.stringify({
+            productId: product.id,
+            supplierId: selectedSupplierId,
+            supplierSku: unmappedSupplierSku,
+            useInternalSku: false,
+            isPrimary: false
+          })
+        });
+        toast({
+          title: "Mapping SKU salvato",
+          description: `${product.sku} → ${unmappedSupplierSku}`,
+        });
+      } catch (error) {
+        console.error('Error saving SKU mapping:', error);
+        // Continue anyway - local mapping is sufficient for this session
+      }
+    }
     
     // Select the product and reset mapping form
     setShowSkuMappingForm(false);
@@ -604,21 +620,39 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     setTimeout(() => quantityInputRef.current?.focus(), 100);
   };
 
-  const handleSaveSupplierSku = () => {
+  const handleSaveSupplierSku = async () => {
     if (!selectedProduct || !pendingSupplierSkuInput.trim()) return;
+    
+    const supplierSkuValue = pendingSupplierSkuInput.trim();
     
     // Update product with new supplier SKU
     const updatedProduct: Product = {
       ...selectedProduct,
-      supplierSku: pendingSupplierSkuInput.trim()
+      supplierSku: supplierSkuValue
     };
     
-    // TODO: Save mapping to backend via POST /api/wms/product-supplier-mappings
-    console.log('Creating reverse SKU mapping:', { 
-      productId: selectedProduct.id, 
-      supplierSku: pendingSupplierSkuInput.trim(),
-      supplierId: selectedSupplierId 
-    });
+    // Save mapping to backend
+    if (selectedSupplierId) {
+      try {
+        await apiRequest('/api/wms/product-supplier-mappings', {
+          method: 'POST',
+          body: JSON.stringify({
+            productId: selectedProduct.id,
+            supplierId: selectedSupplierId,
+            supplierSku: supplierSkuValue,
+            useInternalSku: false,
+            isPrimary: false
+          })
+        });
+        toast({
+          title: "Mapping SKU salvato",
+          description: `${selectedProduct.sku} → ${supplierSkuValue}`,
+        });
+      } catch (error) {
+        console.error('Error saving SKU mapping:', error);
+        // Continue anyway - local mapping is sufficient for this session
+      }
+    }
     
     setSelectedProduct(updatedProduct);
     setShowSupplierSkuPrompt(false);
