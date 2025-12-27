@@ -229,6 +229,9 @@ export default function ListiniTabContent() {
   const [canvasListTypologyFilter, setCanvasListTypologyFilter] = useState<string>('all');
   const [canvasListFeeFilter, setCanvasListFeeFilter] = useState<string>('all');
   const [expandedCanvasListRows, setExpandedCanvasListRows] = useState<Set<string>>(new Set());
+  
+  // Step 2 supplier search filter
+  const [step2SupplierSearch, setStep2SupplierSearch] = useState('');
   // Addon selection state
   const [addonTypeFilter, setAddonTypeFilter] = useState<string>('PHYSICAL');
   const [addonCategoryFilter, setAddonCategoryFilter] = useState<string>('all');
@@ -1371,8 +1374,26 @@ export default function ListiniTabContent() {
             <Label>
               Fornitori Device <span className="text-red-500">*</span>
             </Label>
-            <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
-              {safeSuppliers.filter((s: any) => s.id).map((s: any) => (
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <Input
+                value={step2SupplierSearch}
+                onChange={(e) => setStep2SupplierSearch(e.target.value)}
+                placeholder="Cerca fornitore..."
+                className="pl-9"
+                data-testid="input-step2-supplier-search"
+              />
+            </div>
+            <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+              {safeSuppliers
+                .filter((s: any) => s.id)
+                .filter((s: any) => {
+                  if (!step2SupplierSearch.trim()) return true;
+                  const search = step2SupplierSearch.toLowerCase();
+                  return s.name?.toLowerCase().includes(search) || 
+                         s.code?.toLowerCase().includes(search);
+                })
+                .map((s: any) => (
                 <div key={s.id} className="flex items-center gap-2">
                   <Checkbox
                     id={`supplier-${s.id}`}
@@ -1397,6 +1418,13 @@ export default function ListiniTabContent() {
                   </label>
                 </div>
               ))}
+              {safeSuppliers.filter((s: any) => s.id).filter((s: any) => {
+                if (!step2SupplierSearch.trim()) return true;
+                const search = step2SupplierSearch.toLowerCase();
+                return s.name?.toLowerCase().includes(search) || s.code?.toLowerCase().includes(search);
+              }).length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-2">Nessun fornitore trovato</p>
+              )}
             </div>
             <p className="text-xs text-gray-500">
               Seleziona i fornitori per filtrare i prodotti Device disponibili
