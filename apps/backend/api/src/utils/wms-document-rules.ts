@@ -5,18 +5,30 @@
  * E quale stato logistico applica ai prodotti.
  * 
  * Regole Generazione Movimento:
- * - DDT: SEMPRE genera movimento (movimentazione fisica)
- * - Ricevuta: SEMPRE genera movimento (conferma ricezione)
- * - Scontrino Fiscale: SEMPRE genera movimento (vendita diretta → OUTBOUND)
+ * - DDT: SEMPRE genera movimento (movimentazione fisica) - STATO DIPENDE DA CAUSALE
+ * - Ricevuta Attiva: SEMPRE genera movimento → sold (se senza scontrino/fattura)
+ * - Ricevuta Passiva: SEMPRE genera movimento → NESSUN CAMBIO STATO (solo conferma)
+ * - Scontrino Fiscale: SEMPRE genera movimento (vendita diretta → OUTBOUND → sold)
  * - Fattura (Attiva/Passiva): SOLO SE non esiste DDT/Ricevuta collegata
  * - Ordine: MAI genera movimento (solo impegno/prenotazione)
  * - Nota di Credito: SOLO SE implica reso fisico (hasPhysicalReturn = true)
  * - Nota di Debito: MAI genera movimento (solo contabile)
  * 
- * Regole Cambio Stato Logistico:
- * - DDT Attivo → shipping
- * - DDT Passivo → in_stock
- * - Ricevuta Passiva → in_stock
+ * Regole Cambio Stato Logistico DDT per CAUSALE:
+ * - DDT Vendita (sale) → shipping
+ * - DDT Acquisto (purchase) → in_stock
+ * - DDT Invio Assistenza (service_send) → in_service
+ * - DDT Ritorno Assistenza (service_return) → in_stock
+ * - DDT Reso DOA (doa_return) → doa_return
+ * - DDT Trasferimento Interno (internal_transfer) → in_transfer
+ * - DDT Reso Fornitore (supplier_return) → supplier_return
+ * - DDT Reso Cliente (customer_return) → customer_return
+ * - DDT Comodato (loan) → shipping (attivo) / in_stock (passivo)
+ * - DDT Altro (other) → shipping (attivo) / in_stock (passivo)
+ * 
+ * Regole Cambio Stato Logistico Altri Documenti:
+ * - Ricevuta Attiva → sold (se senza scontrino/fattura collegata)
+ * - Ricevuta Passiva → NESSUN CAMBIO (solo conferma ricezione)
  * - Scontrino/Fattura (vendita completata) → sold
  * - NDC Attiva con reso → customer_return
  * - NDC Passiva con reso → supplier_return
@@ -43,12 +55,29 @@ export type DocumentType =
 export type DocumentDirection = 'active' | 'passive';
 export type DocumentNature = 'operational' | 'fiscal';
 
+/**
+ * Causali DDT - Determinano lo stato logistico target
+ */
+export type DdtReason = 
+  | 'sale'              // Vendita → shipping
+  | 'purchase'          // Acquisto → in_stock
+  | 'service_send'      // Invio in assistenza → in_service
+  | 'service_return'    // Ritorno da assistenza → in_stock
+  | 'doa_return'        // Reso DOA → doa_return
+  | 'internal_transfer' // Trasferimento interno → in_transfer
+  | 'supplier_return'   // Reso fornitore → supplier_return
+  | 'customer_return'   // Reso cliente → customer_return
+  | 'loan'              // Comodato d'uso
+  | 'other';            // Altro
+
 export interface DocumentMovementContext {
   documentType: DocumentType;
   documentDirection: DocumentDirection;
   linkedDdtId?: string | null;
   linkedReceiptId?: string | null;
+  linkedInvoiceId?: string | null;  // Per ricevuta: se ha fattura/scontrino collegato
   hasPhysicalReturn?: boolean;
+  ddtReason?: DdtReason;  // Causale DDT che determina lo stato target
 }
 
 /**
@@ -78,17 +107,17 @@ export interface MovementGenerationResult {
 }
 
 /**
- * Mappa documento → stato logistico target
+ * Mappa documento → stato logistico target (FALLBACK - usata se non c'è causale specifica)
  * Chiave: `${documentType}_${direction}`
  */
-export const DOCUMENT_STATUS_MAP: Record<string, ProductLogisticStatus> = {
-  // DDT
+export const DOCUMENT_STATUS_MAP: Record<string, ProductLogisticStatus | null> = {
+  // DDT - fallback (la causale ha priorità)
   'ddt_active': 'shipping',
   'ddt_passive': 'in_stock',
   
-  // Ricevuta
-  'receipt_active': 'shipping',
-  'receipt_passive': 'in_stock',
+  // Ricevuta - NUOVA LOGICA
+  'receipt_active': 'sold',      // Venduto (se senza scontrino/fattura collegata)
+  'receipt_passive': null,       // NESSUN CAMBIO STATO (solo conferma ricezione)
   
   // Scontrino fiscale (vendita POS)
   'fiscal_receipt_active': 'sold',
@@ -101,6 +130,92 @@ export const DOCUMENT_STATUS_MAP: Record<string, ProductLogisticStatus> = {
   'credit_note_active': 'customer_return',
   'credit_note_passive': 'supplier_return',
 };
+
+/**
+ * Mappa causale DDT → stato logistico target
+ * La causale ha PRIORITÀ sul fallback document_direction
+ */
+export const DDT_REASON_STATUS_MAP: Record<DdtReason, { active: ProductLogisticStatus; passive: ProductLogisticStatus }> = {
+  'sale': { 
+    active: 'shipping',           // Vendita attiva → spedisco
+    passive: 'in_stock'           // Non comune, fallback
+  },
+  'purchase': { 
+    active: 'in_stock',           // Non comune, fallback
+    passive: 'in_stock'           // Acquisto passivo → ricevo merce
+  },
+  'service_send': { 
+    active: 'in_service',         // Invio in assistenza → in_service
+    passive: 'in_stock'           // Ritorno da assistenza esterna
+  },
+  'service_return': { 
+    active: 'in_stock',           // Non comune
+    passive: 'in_stock'           // Prodotto torna da assistenza → disponibile
+  },
+  'doa_return': { 
+    active: 'doa_return',         // Mando indietro DOA → stato doa_return
+    passive: 'doa_return'         // Ricevo un DOA
+  },
+  'internal_transfer': { 
+    active: 'in_transfer',        // Trasferisco → in_transfer
+    passive: 'in_stock'           // Ricevo trasferimento → disponibile
+  },
+  'supplier_return': { 
+    active: 'supplier_return',    // Reso a fornitore → supplier_return
+    passive: 'supplier_return'    // Ricevo reso da fornitore (es. rifiutato) → supplier_return
+  },
+  'customer_return': { 
+    active: 'shipping',           // Restituisco al cliente (es. riparato) → shipping
+    passive: 'customer_return'    // Cliente restituisce → customer_return
+  },
+  'loan': { 
+    active: 'shipping',           // Invio in comodato → shipping
+    passive: 'in_stock'           // Ricevo da comodato → in_stock
+  },
+  'other': { 
+    active: 'shipping',           // Fallback
+    passive: 'in_stock'           // Fallback
+  },
+};
+
+/**
+ * Ottiene lo stato logistico target per DDT basandosi su causale e direzione
+ */
+export function getDdtTargetStatus(
+  ddtReason: DdtReason | undefined,
+  direction: DocumentDirection
+): ProductLogisticStatus {
+  if (!ddtReason) {
+    // Fallback se nessuna causale
+    return direction === 'active' ? 'shipping' : 'in_stock';
+  }
+  
+  const reasonConfig = DDT_REASON_STATUS_MAP[ddtReason];
+  return reasonConfig[direction];
+}
+
+/**
+ * Labels italiani per le causali DDT
+ */
+export const DDT_REASON_LABELS: Record<DdtReason, string> = {
+  'sale': 'Vendita',
+  'purchase': 'Acquisto',
+  'service_send': 'Invio in Assistenza',
+  'service_return': 'Ritorno da Assistenza',
+  'doa_return': 'Reso DOA',
+  'internal_transfer': 'Trasferimento Interno',
+  'supplier_return': 'Reso a Fornitore',
+  'customer_return': 'Reso da Cliente',
+  'loan': 'Comodato d\'Uso',
+  'other': 'Altro',
+};
+
+/**
+ * Ottiene il label italiano per una causale DDT
+ */
+export function getDdtReasonLabel(ddtReason: DdtReason): string {
+  return DDT_REASON_LABELS[ddtReason] || ddtReason;
+}
 
 /**
  * Mappa tipo documento → natura (operational/fiscal)
@@ -142,30 +257,55 @@ export const CORE_DOCUMENT_TYPES: DocumentType[] = [
  * e quale direzione di movimento
  */
 export function shouldGenerateMovement(context: DocumentMovementContext): MovementGenerationResult {
-  const { documentType, documentDirection, linkedDdtId, linkedReceiptId, hasPhysicalReturn } = context;
+  const { documentType, documentDirection, linkedDdtId, linkedReceiptId, linkedInvoiceId, hasPhysicalReturn, ddtReason } = context;
 
   switch (documentType) {
     // =====================================================
-    // DDT - SEMPRE genera movimento
+    // DDT - SEMPRE genera movimento, STATO DIPENDE DA CAUSALE
     // =====================================================
-    case 'ddt':
+    case 'ddt': {
+      const targetStatus = getDdtTargetStatus(ddtReason, documentDirection);
+      const reasonLabel = ddtReason ? getDdtReasonLabel(ddtReason) : 'generico';
       return {
         generatesMovement: true,
         movementDirection: documentDirection === 'active' ? 'outbound' : 'inbound',
-        targetLogisticStatus: DOCUMENT_STATUS_MAP[`ddt_${documentDirection}`],
-        reason: `DDT ${documentDirection === 'active' ? 'attivo (uscita)' : 'passivo (entrata)'} genera sempre movimento`,
+        targetLogisticStatus: targetStatus,
+        reason: `DDT ${documentDirection === 'active' ? 'attivo' : 'passivo'} - Causale: ${reasonLabel} → stato '${targetStatus}'`,
       };
+    }
 
     // =====================================================
     // RICEVUTA - SEMPRE genera movimento
+    // Attiva: se senza scontrino/fattura → sold
+    // Passiva: NESSUN cambio stato (solo conferma)
     // =====================================================
-    case 'receipt':
+    case 'receipt': {
+      if (documentDirection === 'active') {
+        // Ricevuta attiva: verifica se ha già scontrino/fattura collegata
+        const hasLinkedFiscalDoc = linkedInvoiceId;
+        if (hasLinkedFiscalDoc) {
+          return {
+            generatesMovement: true,
+            movementDirection: 'outbound',
+            targetLogisticStatus: undefined, // Stato già gestito da fattura/scontrino
+            reason: 'Ricevuta attiva con fattura/scontrino collegata: movimento generato, stato già gestito dal doc fiscale',
+          };
+        }
+        return {
+          generatesMovement: true,
+          movementDirection: 'outbound',
+          targetLogisticStatus: 'sold',
+          reason: 'Ricevuta attiva SENZA fattura/scontrino → venduto direttamente',
+        };
+      }
+      // Ricevuta passiva: solo conferma ricezione, NESSUN cambio stato
       return {
         generatesMovement: true,
-        movementDirection: documentDirection === 'active' ? 'outbound' : 'inbound',
-        targetLogisticStatus: DOCUMENT_STATUS_MAP[`receipt_${documentDirection}`],
-        reason: `Ricevuta ${documentDirection === 'active' ? 'attiva' : 'passiva'} conferma movimentazione fisica`,
+        movementDirection: 'inbound',
+        targetLogisticStatus: undefined, // NESSUN cambio stato
+        reason: 'Ricevuta passiva: conferma ricezione fisica, stato logistico NON modificato',
       };
+    }
 
     // =====================================================
     // SCONTRINO FISCALE - SEMPRE genera movimento (vendita diretta)
@@ -301,8 +441,20 @@ export function getExpectedMovementDirection(
  */
 export function getTargetLogisticStatus(
   documentType: DocumentType,
-  documentDirection: DocumentDirection
+  documentDirection: DocumentDirection,
+  ddtReason?: DdtReason
 ): ProductLogisticStatus | null {
+  // Per DDT: usa la causale per determinare lo stato
+  if (documentType === 'ddt') {
+    return getDdtTargetStatus(ddtReason, documentDirection);
+  }
+  
+  // Per ricevuta passiva: nessun cambio stato
+  if (documentType === 'receipt' && documentDirection === 'passive') {
+    return null;
+  }
+  
+  // Per altri documenti: usa la mappa standard
   const key = `${documentType}_${documentDirection}`;
   return DOCUMENT_STATUS_MAP[key] || null;
 }
