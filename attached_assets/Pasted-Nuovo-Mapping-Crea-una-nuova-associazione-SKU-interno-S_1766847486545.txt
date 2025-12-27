@@ -1,0 +1,278 @@
+Nuovo Mapping
+Crea una nuova associazione SKU interno ↔ SKU fornitore
+
+Fornitore *
+Seleziona fornitore...
+SKU Fornitore
+Codice articolo fornitore...
+Filtra Prodotti
+Ricerca
+SKU, nome, EAN...
+Categoria
+
+Telefonia
+Tipologia
+
+Tutte le tipologie
+Tipo Prodotto
+
+Tutti i tipi
+Prodotto *
+Seleziona un prodotto dalla lista (50 risultati)
+
+Motorola Edge 50 Ultra 1TB
+
+SKU: MOT-E50U-1TB-WOD | EAN: 0840527706868
+
+Serial
+Motorola Edge 50 Pro 512G
+
+SKU: MOT-E50P-512-LUX | EAN: 0840939650304
+
+Serial
+Motorola Edge 50 Pro 256GB
+
+SKU: MOT-E50P-256-BLK | EAN: 0840641270006
+
+Serial
+Motorola Edge 50 Ultra 512GB
+
+SKU: MOT-E50U-512-PCH | EAN: 0840302458206
+
+Serial
+Motorola Razr 2025 256GB
+
+SKU: MOT-RZR25-256-GRN | EAN: 0840246118997
+
+Serial
+Motorola Razr Ultra 2025 1TB
+
+SKU: MOT-RZRU25-1TB-TAN | EAN: 0840656823762
+
+Serial
+Motorola Razr 2025 256GB
+
+SKU: MOT-RZR25-256-BLU | EAN: 0840667400005
+
+Serial
+Motorola Razr Ultra 2025 512GB
+
+SKU: MOT-RZRU25-512-BLK | EAN: 0840564034967
+
+Serial
+Moto G85 256GB
+
+SKU: MOT-G85-256-COB | EAN: 0840428884330
+
+Serial
+Moto G85 256GB
+
+SKU: MOT-G85-256-GRY | EAN: 0840851405990
+
+Serial
+ZTE Blade V80 Design 256GB
+
+SKU: ZTE-BV80D-256-CYN | EAN: 8970988656759
+
+Serial
+ZTE nubia Flip 2 256GB
+
+SKU: ZTE-NF2-256-PPL | EAN: 8970081990557
+
+Serial
+ZTE nubia Z70 Ultra 1TB
+
+SKU: ZTE-Z70U-1TB-GLD | EAN: 8970928579448
+
+Serial
+ZTE nubia Z70 Ultra 512GB
+
+SKU: ZTE-Z70U-512-STR | EAN: 8970578036528
+
+Serial
+ZTE nubia Z70 Ultra 256GB
+
+SKU: ZTE-Z70U-256-ORG | EAN: 8970265017821
+
+Serial
+ZTE nubia Z70S Ultra 512GB
+
+SKU: ZTE-Z70S-512-BLK | EAN: 8970825454019
+
+Serial
+ZTE Blade V80 Design 256GB
+
+SKU: ZTE-BV80D-256-AMB | EAN: 8970108773017
+
+Serial
+ZTE Blade V80 Design 256GB
+
+SKU: ZTE-BV80D-256-BLK | EAN: 8970486126043
+
+Serial
+ZTE Blade V80 Pro 256GB
+
+SKU: ZTE-BV80P-256-BLK | EAN: 8970285885184
+
+Serial
+ZTE nubia Z70 Ultra 512GB
+
+SKU: ZTE-Z70U-512-BLK | EAN: 8970066097130
+
+Serial
+Redmi Note 15 Pro 256GB
+
+SKU: RDM-N15P-256-BLU | EAN: 0859347983414
+
+Serial
+POCO F7 512GB
+
+SKU: POC-F7-512-WHT | EAN: 0764323100833
+
+Serial
+Xiaomi 15 Ultra 512GB
+
+SKU: XMI-15U-512-BLK | EAN: 0662421525237
+
+Serial
+Xiaomi 15 Ultra 512GB
+
+SKU: XMI-15U-512-SLV | EAN: 0700820871361
+
+Serial
+Xiaomi 15 Ultra 1TB
+
+SKU: XMI-15U-1TB-WHT | EAN: 0383566341139
+
+Serial
+Xiaomi 15 Pro 256GB
+
+SKU: XMI-15P-256-BLK | EAN: 0789553880401
+
+Serial
+POCO F7 Ultra 512GB
+
+SKU: POC-F7U-512-BLK | EAN: 0280452058288
+
+Serial
+POCO F7 Ultra 256GB
+
+SKU: POC-F7U-256-YLW | EAN: 0725033898592
+
+Serial
+POCO F7 256GB
+
+SKU: POC-F7-256-BLK | EAN: 0166726974499
+
+Serial
+Redmi Note 15 Pro+ 256GB
+
+SKU: RDM-N15PP-256-BLK | EAN: 0789941579714
+
+Serial
+iPhone 17 Pro Max 1TB
+
+SKU: APL-I17PM-1TB-SLV | EAN: 8800623195800
+
+Serial
+iPhone 17 Pro 256GB
+
+SKU: APL-I17P-256-ORG | EAN: 8800116283339
+
+Serial
+iPhone 17 256GB
+
+SKU: APL-I17-256-LAV | EAN: 8800894874434
+
+Serial
+iPhone 17 Pro Max 256GB
+
+SKU: APL-I17PM-256-ORG | EAN: 8800649908974
+
+Serial
+iPhone 17 256GB
+
+SKU: APL-I17-256-BLK | EAN: 8800254816853
+
+Serial
+iPhone 17 Air 256GB
+
+SKU: APL-I17A-256-WHT | EAN: 8800014107306
+
+Serial
+iPhone 17 Pro 512GB
+
+SKU: APL-I17P-512-BLU | EAN: 8800107412569
+
+Serial
+iPhone 16 Pro 256GB
+
+SKU: APL-I16P-256-TIT | EAN: 8800943349721
+
+Serial
+iPhone 17 Air 512GB
+
+SKU: APL-I17A-512-SGE | EAN: 8800188742364
+
+Serial
+iPhone 17 Pro Max 512GB
+
+SKU: APL-I17PM-512-BLU | EAN: 8800332057218
+
+Serial
+Samsung Galaxy A56 5G 128GB
+
+SKU: SAM-A56-128-BLK | EAN: 8820098117144
+
+Serial
+Samsung Galaxy Z Flip6 256GB
+
+SKU: SAM-ZFL6-256-PNK | EAN: 8820415744873
+
+Serial
+Samsung Galaxy A56 5G 256GB
+
+SKU: SAM-A56-256-BLU | EAN: 8820312294375
+
+Serial
+Samsung Galaxy A36 5G 128GB
+
+SKU: SAM-A36-128-LAV | EAN: 8820691488737
+
+Serial
+Samsung Galaxy S25 Ultra 256GB
+
+SKU: SAM-S25U-256-BLK | EAN: 8820909050592
+
+Serial
+Samsung Galaxy S25+ 512GB
+
+SKU: SAM-S25P-512-WHT | EAN: 8820493970946
+
+Serial
+Samsung Galaxy S25 Ultra 1TB
+
+SKU: SAM-S25U-1TB-GRY | EAN: 8820253013193
+
+Serial
+Samsung Galaxy S25+ 256GB
+
+SKU: SAM-S25P-256-BLK | EAN: 8820370983758
+
+Serial
+Samsung Galaxy S25 Ultra 512GB
+
+SKU: SAM-S25U-512-SBL | EAN: 8820014390374
+
+Serial
+Samsung Galaxy Z Fold6 512GB
+
+SKU: SAM-ZF6-512-BLU | EAN: 8820044324918
+
+Serial
+
+Usa SKU interno
+
+Fornitore primario
+Annulla
+Crea Mapping

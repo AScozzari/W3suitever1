@@ -11,13 +11,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { 
   Search, Plus, Edit, Trash2, Link2, CalendarIcon, Filter, 
   Package, Building2, CheckCircle2, XCircle, RefreshCw, X,
-  ArrowRightLeft
+  ArrowRightLeft, ChevronDown, Smartphone, Monitor, Settings, AlertCircle
 } from 'lucide-react';
 
 interface SkuMapping {
@@ -78,6 +79,18 @@ interface Typology {
   categoryId: string;
 }
 
+interface SessionMapping {
+  id: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  supplierId: string;
+  supplierName: string;
+  supplierSku: string;
+  isSaved: boolean;
+  dbId?: string;
+}
+
 export default function SkuMappingTabContent() {
   const { toast } = useToast();
   
@@ -94,23 +107,30 @@ export default function SkuMappingTabContent() {
   const [createModal, setCreateModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; mapping: SkuMapping | null }>({ open: false, mapping: null });
   
-  const [newMappingData, setNewMappingData] = useState({
-    productId: '',
-    supplierId: '',
-    supplierSku: '',
-    useInternalSku: false,
-    isPrimary: false
-  });
+  // New modal state
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [supplierSkuInput, setSupplierSkuInput] = useState('');
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
   
-  const [modalProductSearch, setModalProductSearch] = useState('');
-  const [modalCategoryFilter, setModalCategoryFilter] = useState<string>('all');
-  const [modalTypologyFilter, setModalTypologyFilter] = useState<string>('all');
-  const [modalProductTypeFilter, setModalProductTypeFilter] = useState<string>('all');
+  // Search state
+  const [productSearchMode, setProductSearchMode] = useState<'sku' | 'filters'>('sku');
+  const [skuSearchTerm, setSkuSearchTerm] = useState('');
+  const [filterProductType, setFilterProductType] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterTypology, setFilterTypology] = useState<string>('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  
+  // Selection state
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [composerSupplierSku, setComposerSupplierSku] = useState('');
+  
+  // Session mappings
+  const [sessionMappings, setSessionMappings] = useState<SessionMapping[]>([]);
+  const [editingSessionMapping, setEditingSessionMapping] = useState<SessionMapping | null>(null);
   
   const [editMappingData, setEditMappingData] = useState({
-    supplierSku: '',
-    useInternalSku: false,
-    isPrimary: false
+    supplierSku: ''
   });
 
   const { data: mappingsResponse, isLoading: mappingsLoading, refetch: refetchMappings } = useQuery({
@@ -163,10 +183,26 @@ export default function SkuMappingTabContent() {
     return typologies.filter(t => t.categoryId === categoryFilter);
   }, [typologies, categoryFilter]);
   
+  // Filter categories by product type for modal
+  const modalFilteredCategories = useMemo(() => {
+    if (!filterProductType) return categories;
+    return categories.filter(c => c.productType === filterProductType);
+  }, [categories, filterProductType]);
+  
   const modalFilteredTypologies = useMemo(() => {
-    if (modalCategoryFilter === 'all') return typologies;
-    return typologies.filter(t => t.categoryId === modalCategoryFilter);
-  }, [typologies, modalCategoryFilter]);
+    if (!filterCategory) return [];
+    return typologies.filter(t => t.categoryId === filterCategory);
+  }, [typologies, filterCategory]);
+  
+  // Filter suppliers by search term
+  const filteredSuppliers = useMemo(() => {
+    if (!supplierSearchTerm.trim()) return suppliers;
+    const search = supplierSearchTerm.toLowerCase();
+    return suppliers.filter(s => 
+      s.name?.toLowerCase().includes(search) || 
+      s.code?.toLowerCase().includes(search)
+    );
+  }, [suppliers, supplierSearchTerm]);
 
   const getProductById = (id: string) => products.find(p => p.id === id);
   const getSupplierById = (id: string) => suppliers.find(s => s.id === id);
@@ -203,9 +239,10 @@ export default function SkuMappingTabContent() {
       if (categoryFilter !== 'all' && product?.categoryId !== categoryFilter) return false;
       if (typologyFilter !== 'all' && product?.typologyId !== typologyFilter) return false;
       
-      if (productTypeFilter === 'serializable' && !product?.isSerializable) return false;
-      if (productTypeFilter === 'non-serializable' && product?.isSerializable) return false;
-      if (productTypeFilter === 'dual-serial' && (product?.serialCount || 1) < 2) return false;
+      if (productTypeFilter !== 'all') {
+        const cat = product?.categoryId ? getCategoryById(product.categoryId) : null;
+        if (cat?.productType !== productTypeFilter) return false;
+      }
       
       if (validFromDate && product?.validFrom) {
         const productValidFrom = new Date(product.validFrom);
@@ -220,47 +257,56 @@ export default function SkuMappingTabContent() {
     });
   }, [enrichedMappings, searchTerm, supplierFilter, statusFilter, categoryFilter, typologyFilter, productTypeFilter, validFromDate, validToDate]);
 
-  const modalFilteredProducts = useMemo(() => {
-    let filtered = products.filter(p => p.productType !== 'CANVAS');
+  // Search products
+  const handleSearch = () => {
+    let results = products.filter(p => p.productType !== 'CANVAS');
     
-    if (modalProductSearch) {
-      const search = modalProductSearch.toLowerCase();
-      filtered = filtered.filter(p => 
+    if (productSearchMode === 'sku') {
+      if (!skuSearchTerm.trim()) {
+        toast({ title: "Inserisci SKU", description: "Inserisci uno SKU o EAN per cercare", variant: "destructive" });
+        return;
+      }
+      const search = skuSearchTerm.toLowerCase().trim();
+      results = results.filter(p => 
+        p.sku?.toLowerCase() === search ||
+        p.ean?.toLowerCase() === search ||
         p.sku?.toLowerCase().includes(search) ||
-        p.name?.toLowerCase().includes(search) ||
         p.ean?.toLowerCase().includes(search)
       );
+    } else {
+      // Filter mode
+      if (!filterProductType) {
+        toast({ title: "Seleziona tipo prodotto", description: "Il tipo prodotto è obbligatorio per la ricerca con filtri", variant: "destructive" });
+        return;
+      }
+      
+      // Filter by product type (via category)
+      if (filterProductType) {
+        const categoryIds = categories.filter(c => c.productType === filterProductType).map(c => c.id);
+        results = results.filter(p => p.categoryId && categoryIds.includes(p.categoryId));
+      }
+      
+      if (filterCategory) {
+        results = results.filter(p => p.categoryId === filterCategory);
+      }
+      
+      if (filterTypology) {
+        results = results.filter(p => p.typologyId === filterTypology);
+      }
     }
     
-    if (modalCategoryFilter !== 'all') {
-      filtered = filtered.filter(p => p.categoryId === modalCategoryFilter);
-    }
-    
-    if (modalTypologyFilter !== 'all') {
-      filtered = filtered.filter(p => p.typologyId === modalTypologyFilter);
-    }
-    
-    if (modalProductTypeFilter === 'serializable') {
-      filtered = filtered.filter(p => p.isSerializable);
-    } else if (modalProductTypeFilter === 'non-serializable') {
-      filtered = filtered.filter(p => !p.isSerializable);
-    } else if (modalProductTypeFilter === 'dual-serial') {
-      filtered = filtered.filter(p => (p.serialCount || 1) >= 2);
-    }
-    
-    return filtered.slice(0, 100);
-  }, [products, modalProductSearch, modalCategoryFilter, modalTypologyFilter, modalProductTypeFilter]);
+    setSearchResults(results.slice(0, 50));
+    setHasSearched(true);
+  };
 
   const updateMappingMutation = useMutation({
-    mutationFn: async (data: { id: string; supplierSku: string; useInternalSku: boolean; isPrimary: boolean }) => {
+    mutationFn: async (data: { id: string; supplierSku: string }) => {
       return apiRequest('/api/wms/product-supplier-mappings', {
         method: 'POST',
         body: JSON.stringify({
           productId: editModal.mapping?.productId,
           supplierId: editModal.mapping?.supplierId,
-          supplierSku: data.supplierSku,
-          useInternalSku: data.useInternalSku,
-          isPrimary: data.isPrimary
+          supplierSku: data.supplierSku
         })
       });
     },
@@ -275,16 +321,40 @@ export default function SkuMappingTabContent() {
   });
 
   const createMappingMutation = useMutation({
-    mutationFn: async (data: typeof newMappingData) => {
+    mutationFn: async (data: { productId: string; supplierId: string; supplierSku: string }) => {
       return apiRequest('/api/wms/product-supplier-mappings', {
         method: 'POST',
         body: JSON.stringify(data)
       });
     },
-    onSuccess: () => {
-      toast({ title: "Mapping creato", description: "Il nuovo mapping è stato salvato" });
-      setCreateModal(false);
-      resetModalFilters();
+    onSuccess: (response, variables) => {
+      const product = getProductById(variables.productId);
+      const supplier = getSupplierById(variables.supplierId);
+      
+      // Add to session mappings
+      const newSessionMapping: SessionMapping = {
+        id: crypto.randomUUID(),
+        productId: variables.productId,
+        productSku: product?.sku || '',
+        productName: product?.name || '',
+        supplierId: variables.supplierId,
+        supplierName: supplier?.name || '',
+        supplierSku: variables.supplierSku,
+        isSaved: true,
+        dbId: (response as any)?.data?.id
+      };
+      
+      setSessionMappings(prev => [...prev, newSessionMapping]);
+      
+      toast({ title: "Mapping creato", description: `${product?.sku} → ${variables.supplierSku}` });
+      
+      // Reset for next mapping
+      setSelectedProduct(null);
+      setComposerSupplierSku('');
+      setSearchResults([]);
+      setHasSearched(false);
+      setSkuSearchTerm('');
+      
       queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
     },
     onError: () => {
@@ -308,19 +378,106 @@ export default function SkuMappingTabContent() {
 
   const handleOpenEdit = (mapping: SkuMapping) => {
     setEditMappingData({
-      supplierSku: mapping.supplierSku || '',
-      useInternalSku: mapping.useInternalSku,
-      isPrimary: mapping.isPrimary
+      supplierSku: mapping.supplierSku || ''
     });
     setEditModal({ open: true, mapping });
   };
   
-  const resetModalFilters = () => {
-    setNewMappingData({ productId: '', supplierId: '', supplierSku: '', useInternalSku: false, isPrimary: false });
-    setModalProductSearch('');
-    setModalCategoryFilter('all');
-    setModalTypologyFilter('all');
-    setModalProductTypeFilter('all');
+  const resetCreateModal = () => {
+    setSelectedSupplierId('');
+    setSupplierSkuInput('');
+    setSupplierSearchTerm('');
+    setProductSearchMode('sku');
+    setSkuSearchTerm('');
+    setFilterProductType('');
+    setFilterCategory('');
+    setFilterTypology('');
+    setHasSearched(false);
+    setSearchResults([]);
+    setSelectedProduct(null);
+    setComposerSupplierSku('');
+    setSessionMappings([]);
+    setEditingSessionMapping(null);
+  };
+  
+  const handleCloseCreateModal = () => {
+    setCreateModal(false);
+    resetCreateModal();
+  };
+  
+  const handleAddMapping = () => {
+    if (!selectedProduct || !selectedSupplierId) return;
+    
+    const skuToUse = composerSupplierSku || supplierSkuInput;
+    if (!skuToUse.trim()) {
+      toast({ title: "SKU Fornitore obbligatorio", description: "Inserisci lo SKU del fornitore", variant: "destructive" });
+      return;
+    }
+    
+    // Check if we're editing an existing session mapping
+    if (editingSessionMapping && editingSessionMapping.dbId) {
+      // Use the supplier from the editing mapping to ensure consistency
+      const editSupplierId = editingSessionMapping.supplierId;
+      const supplier = getSupplierById(editSupplierId);
+      
+      // Update existing mapping via POST (API uses upsert)
+      apiRequest('/api/wms/product-supplier-mappings', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: selectedProduct.id,
+          supplierId: editSupplierId,
+          supplierSku: skuToUse.trim()
+        })
+      }).then(() => {
+        // Update session mapping in local state with complete data
+        setSessionMappings(prev => prev.map(m => 
+          m.id === editingSessionMapping.id 
+            ? { 
+                ...m, 
+                productId: selectedProduct.id,
+                productSku: selectedProduct.sku,
+                productName: selectedProduct.name,
+                supplierId: editSupplierId,
+                supplierName: supplier?.name || m.supplierName,
+                supplierSku: skuToUse.trim() 
+              }
+            : m
+        ));
+        
+        toast({ title: "Mapping aggiornato", description: `${selectedProduct.sku} → ${skuToUse.trim()}` });
+        
+        // Reset editing state
+        setEditingSessionMapping(null);
+        setSelectedProduct(null);
+        setComposerSupplierSku('');
+        
+        queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
+      }).catch(() => {
+        toast({ title: "Errore", description: "Impossibile aggiornare il mapping", variant: "destructive" });
+      });
+    } else {
+      // Create new mapping
+      createMappingMutation.mutate({
+        productId: selectedProduct.id,
+        supplierId: selectedSupplierId,
+        supplierSku: skuToUse.trim()
+      });
+    }
+  };
+  
+  const handleDeleteSessionMapping = (mapping: SessionMapping) => {
+    if (mapping.dbId) {
+      // Delete from DB
+      deleteMappingMutation.mutate(mapping.dbId);
+    }
+    setSessionMappings(prev => prev.filter(m => m.id !== mapping.id));
+  };
+  
+  const handleEditSessionMapping = (mapping: SessionMapping) => {
+    setEditingSessionMapping(mapping);
+    setSelectedSupplierId(mapping.supplierId);
+    setSelectedProduct(getProductById(mapping.productId) || null);
+    setComposerSupplierSku(mapping.supplierSku);
   };
 
   const clearFilters = () => {
@@ -344,6 +501,15 @@ export default function SkuMappingTabContent() {
     const unmapped = total - mapped;
     return { total, mapped, unmapped };
   }, [mappings]);
+
+  const getProductTypeIcon = (type: string) => {
+    switch (type) {
+      case 'PHYSICAL': return <Smartphone className="h-4 w-4" />;
+      case 'DIGITAL': return <Monitor className="h-4 w-4" />;
+      case 'SERVICE': return <Settings className="h-4 w-4" />;
+      default: return <Package className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -458,10 +624,25 @@ export default function SkuMappingTabContent() {
             </div>
             
             <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto</Label>
+              <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
+                <SelectTrigger data-testid="select-product-type">
+                  <SelectValue placeholder="Tutti" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i tipi</SelectItem>
+                  <SelectItem value="PHYSICAL">Fisico</SelectItem>
+                  <SelectItem value="DIGITAL">Digitale</SelectItem>
+                  <SelectItem value="SERVICE">Servizio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
               <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
               <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setTypologyFilter('all'); }}>
                 <SelectTrigger data-testid="select-category">
-                  <SelectValue placeholder="Tutte le categorie" />
+                  <SelectValue placeholder="Tutte" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le categorie</SelectItem>
@@ -476,7 +657,7 @@ export default function SkuMappingTabContent() {
               <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
               <Select value={typologyFilter} onValueChange={setTypologyFilter} disabled={categoryFilter === 'all'}>
                 <SelectTrigger data-testid="select-typology">
-                  <SelectValue placeholder={categoryFilter === 'all' ? 'Seleziona categoria' : 'Tutte le tipologie'} />
+                  <SelectValue placeholder={categoryFilter === 'all' ? 'Seleziona categoria' : 'Tutte'} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le tipologie</SelectItem>
@@ -488,46 +669,41 @@ export default function SkuMappingTabContent() {
             </div>
             
             <div>
-              <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto</Label>
-              <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
-                <SelectTrigger data-testid="select-product-type">
-                  <SelectValue placeholder="Tutti i tipi" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i tipi</SelectItem>
-                  <SelectItem value="serializable">Serializzabile</SelectItem>
-                  <SelectItem value="non-serializable">Non Serializzabile</SelectItem>
-                  <SelectItem value="dual-serial">Dual-Serial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label className="text-xs text-gray-500 mb-1 block">Valido Dal</Label>
+              <Label className="text-xs text-gray-500 mb-1 block">Valido Da</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="btn-valid-from">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-from">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {validFromDate ? format(validFromDate, 'dd/MM/yyyy', { locale: it }) : 'Seleziona data'}
+                    {validFromDate ? format(validFromDate, 'dd/MM/yyyy', { locale: it }) : 'Qualsiasi data'}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={validFromDate} onSelect={setValidFromDate} locale={it} />
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={validFromDate}
+                    onSelect={setValidFromDate}
+                    locale={it}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
             
             <div>
-              <Label className="text-xs text-gray-500 mb-1 block">Valido Al</Label>
+              <Label className="text-xs text-gray-500 mb-1 block">Valido Fino A</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="btn-valid-to">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal" data-testid="button-valid-to">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {validToDate ? format(validToDate, 'dd/MM/yyyy', { locale: it }) : 'Seleziona data'}
+                    {validToDate ? format(validToDate, 'dd/MM/yyyy', { locale: it }) : 'Qualsiasi data'}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={validToDate} onSelect={setValidToDate} locale={it} />
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={validToDate}
+                    onSelect={setValidToDate}
+                    locale={it}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -536,10 +712,10 @@ export default function SkuMappingTabContent() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <ArrowRightLeft className="h-5 w-5 text-orange-500" />
+              <ArrowRightLeft className="h-5 w-5 text-gray-500" />
               Mapping SKU ({filteredMappings.length})
             </CardTitle>
             <div className="flex gap-2">
@@ -547,7 +723,7 @@ export default function SkuMappingTabContent() {
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Aggiorna
               </Button>
-              <Button size="sm" onClick={() => { resetModalFilters(); setCreateModal(true); }} data-testid="btn-new-mapping">
+              <Button onClick={() => setCreateModal(true)} data-testid="btn-new-mapping">
                 <Plus className="h-4 w-4 mr-1" />
                 Nuovo Mapping
               </Button>
@@ -556,16 +732,15 @@ export default function SkuMappingTabContent() {
         </CardHeader>
         <CardContent>
           {mappingsLoading ? (
-            <div className="text-center py-8">
-              <div className="h-8 w-8 rounded-full border-4 border-gray-200 border-t-orange-500 animate-spin mx-auto" />
-              <p className="mt-2 text-gray-500">Caricamento...</p>
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : filteredMappings.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Link2 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p>Nessun mapping trovato</p>
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500">Nessun mapping trovato</p>
               {hasActiveFilters && (
-                <Button variant="link" onClick={clearFilters} className="mt-2">
+                <Button variant="link" onClick={clearFilters}>
                   Pulisci filtri
                 </Button>
               )}
@@ -573,87 +748,65 @@ export default function SkuMappingTabContent() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">SKU Interno</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Prodotto</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">SKU Fornitore</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Fornitore</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Tipo</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Stato</th>
-                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Azioni</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase p-3">Prodotto</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase p-3">SKU Interno</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase p-3">Fornitore</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase p-3">SKU Fornitore</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase p-3">Stato</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase p-3">Azioni</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredMappings.map((mapping) => (
-                    <tr key={mapping.id} className="border-b hover:bg-gray-50" data-testid={`row-mapping-${mapping.id}`}>
-                      <td className="px-4 py-3">
-                        <code className="text-sm bg-gray-100 px-2 py-1 rounded font-mono">
-                          {mapping.product?.sku || mapping.productId}
+                <tbody className="divide-y">
+                  {filteredMappings.map(mapping => (
+                    <tr key={mapping.id} className="hover:bg-gray-50">
+                      <td className="p-3">
+                        <p className="font-medium text-sm">{mapping.product?.name || '-'}</p>
+                        <p className="text-xs text-gray-500">{mapping.product?.ean || '-'}</p>
+                      </td>
+                      <td className="p-3">
+                        <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
+                          {mapping.product?.sku || '-'}
                         </code>
                       </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{mapping.product?.name || '-'}</p>
-                          {mapping.product?.ean && (
-                            <p className="text-xs text-gray-500">EAN: {mapping.product.ean}</p>
-                          )}
-                        </div>
+                      <td className="p-3">
+                        <p className="text-sm">{mapping.supplier?.name || '-'}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="p-3">
                         {mapping.supplierSku ? (
-                          <code className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded font-mono">
+                          <code className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
                             {mapping.supplierSku}
                           </code>
                         ) : (
-                          <Badge variant="outline" className="bg-amber-50 text-amber-700">
-                            Non mappato
-                          </Badge>
+                          <span className="text-xs text-gray-400 italic">Non mappato</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{mapping.supplier?.name || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {mapping.product?.isSerializable ? (
-                          <Badge variant="secondary" className="text-xs">
-                            {(mapping.product?.serialCount || 1) > 1 ? 'Dual-Serial' : 'Serializzabile'}
-                          </Badge>
+                      <td className="p-3">
+                        {mapping.supplierSku ? (
+                          <Badge className="bg-green-100 text-green-700">Mappato</Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs">Non Serial.</Badge>
+                          <Badge variant="secondary">Non Mappato</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        {mapping.isActive ? (
-                          <Badge className="bg-green-100 text-green-700">Attivo</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inattivo</Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="p-3 text-right">
+                        <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
                             onClick={() => handleOpenEdit(mapping)}
-                            title="Modifica"
                             data-testid={`btn-edit-${mapping.id}`}
                           >
-                            <Edit className="h-4 w-4 text-orange-500" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="text-red-600 hover:text-red-700"
                             onClick={() => setDeleteModal({ open: true, mapping })}
-                            title="Elimina"
                             data-testid={`btn-delete-${mapping.id}`}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
@@ -666,11 +819,12 @@ export default function SkuMappingTabContent() {
         </CardContent>
       </Card>
 
+      {/* Edit Modal */}
       <Dialog open={editModal.open} onOpenChange={(open) => !open && setEditModal({ open: false, mapping: null })}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-orange-500" />
+              <Edit className="h-5 w-5 text-blue-500" />
               Modifica Mapping
             </DialogTitle>
             <DialogDescription>
@@ -702,28 +856,6 @@ export default function SkuMappingTabContent() {
                   data-testid="input-edit-supplier-sku"
                 />
               </div>
-              
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editMappingData.useInternalSku}
-                    onChange={(e) => setEditMappingData({ ...editMappingData, useInternalSku: e.target.checked })}
-                    className="rounded"
-                  />
-                  <span className="text-sm">Usa SKU interno</span>
-                </label>
-                
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editMappingData.isPrimary}
-                    onChange={(e) => setEditMappingData({ ...editMappingData, isPrimary: e.target.checked })}
-                    className="rounded"
-                  />
-                  <span className="text-sm">Fornitore primario</span>
-                </label>
-              </div>
             </div>
           )}
           
@@ -745,194 +877,454 @@ export default function SkuMappingTabContent() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={createModal} onOpenChange={(open) => { if (!open) { setCreateModal(false); resetModalFilters(); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-green-500" />
-              Nuovo Mapping
-            </DialogTitle>
+      {/* Create Modal - Refactored */}
+      <Dialog open={createModal} onOpenChange={() => {}}>
+        <DialogContent 
+          className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-green-500" />
+                Nuovo Mapping SKU
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCloseCreateModal}
+                className="h-8 w-8 p-0"
+                data-testid="btn-close-modal"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
             <DialogDescription>
-              Crea una nuova associazione SKU interno ↔ SKU fornitore
+              Crea associazioni tra SKU interno e SKU fornitore
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Fornitore <span className="text-red-500">*</span></Label>
-                <Select value={newMappingData.supplierId} onValueChange={(v) => setNewMappingData({ ...newMappingData, supplierId: v })}>
-                  <SelectTrigger data-testid="select-new-supplier">
-                    <SelectValue placeholder="Seleziona fornitore..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map(s => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <div className="flex-1 overflow-y-auto space-y-6 py-4">
+            {/* SEZIONE 1: Fornitore */}
+            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">1</div>
+                <h3 className="font-semibold">Seleziona Fornitore</h3>
               </div>
               
-              <div>
-                <Label>SKU Fornitore</Label>
-                <Input
-                  value={newMappingData.supplierSku}
-                  onChange={(e) => setNewMappingData({ ...newMappingData, supplierSku: e.target.value })}
-                  placeholder="Codice articolo fornitore..."
-                  data-testid="input-new-supplier-sku"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Fornitore <span className="text-red-500">*</span></Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        role="combobox"
+                        className="w-full justify-between"
+                        data-testid="select-supplier-modal"
+                      >
+                        {selectedSupplierId 
+                          ? suppliers.find(s => s.id === selectedSupplierId)?.name 
+                          : "Seleziona fornitore..."
+                        }
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <div className="p-2 border-b">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                          <Input
+                            value={supplierSearchTerm}
+                            onChange={(e) => setSupplierSearchTerm(e.target.value)}
+                            placeholder="Cerca fornitore..."
+                            className="pl-8"
+                            data-testid="input-supplier-search-modal"
+                          />
+                        </div>
+                      </div>
+                      <ScrollArea className="h-[200px]">
+                        <div className="p-1">
+                          {filteredSuppliers.length === 0 ? (
+                            <p className="text-sm text-gray-500 text-center py-3">Nessun fornitore trovato</p>
+                          ) : (
+                            filteredSuppliers.map(s => (
+                              <div 
+                                key={s.id}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${selectedSupplierId === s.id ? 'bg-orange-50' : ''}`}
+                                onClick={() => {
+                                  setSelectedSupplierId(s.id);
+                                  setSupplierSearchTerm('');
+                                }}
+                                data-testid={`option-supplier-${s.id}`}
+                              >
+                                {selectedSupplierId === s.id && <CheckCircle2 className="h-4 w-4 text-orange-500" />}
+                                <span className="text-sm">{s.name}</span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div>
+                  <Label>SKU Fornitore</Label>
+                  <Input
+                    value={supplierSkuInput}
+                    onChange={(e) => setSupplierSkuInput(e.target.value)}
+                    placeholder="Codice articolo fornitore..."
+                    data-testid="input-supplier-sku-modal"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Il codice che il fornitore usa per questo prodotto</p>
+                </div>
               </div>
             </div>
             
-            <div className="border-t pt-4">
-              <Label className="text-sm font-medium mb-3 block">Filtra Prodotti</Label>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-xs text-gray-500 mb-1 block">Ricerca</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            {/* SEZIONE 2: Ricerca Prodotto */}
+            <div className={`space-y-4 p-4 border rounded-lg ${!selectedSupplierId ? 'opacity-50 pointer-events-none bg-gray-100' : 'bg-gray-50'}`}>
+              <div className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded-full ${selectedSupplierId ? 'bg-orange-500' : 'bg-gray-400'} text-white flex items-center justify-center text-sm font-bold`}>2</div>
+                <h3 className="font-semibold">Cerca Prodotto</h3>
+                {!selectedSupplierId && <span className="text-xs text-gray-500">(seleziona prima un fornitore)</span>}
+              </div>
+              
+              <div className="flex gap-2 mb-3">
+                <Button
+                  variant={productSearchMode === 'sku' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setProductSearchMode('sku')}
+                  data-testid="btn-search-mode-sku"
+                >
+                  <Search className="h-4 w-4 mr-1" />
+                  Cerca per SKU/EAN
+                </Button>
+                <Button
+                  variant={productSearchMode === 'filters' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setProductSearchMode('filters')}
+                  data-testid="btn-search-mode-filters"
+                >
+                  <Filter className="h-4 w-4 mr-1" />
+                  Usa Filtri
+                </Button>
+              </div>
+              
+              {productSearchMode === 'sku' ? (
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
-                      value={modalProductSearch}
-                      onChange={(e) => setModalProductSearch(e.target.value)}
-                      placeholder="SKU, nome, EAN..."
-                      className="pl-8"
-                      data-testid="input-modal-search"
+                      value={skuSearchTerm}
+                      onChange={(e) => setSkuSearchTerm(e.target.value)}
+                      placeholder="Inserisci SKU interno o EAN..."
+                      className="pl-9"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      data-testid="input-sku-search"
+                    />
+                  </div>
+                  <Button onClick={handleSearch} data-testid="btn-search">
+                    Cerca
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto <span className="text-red-500">*</span></Label>
+                      <Select 
+                        value={filterProductType} 
+                        onValueChange={(v) => { 
+                          setFilterProductType(v); 
+                          setFilterCategory(''); 
+                          setFilterTypology(''); 
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-filter-product-type">
+                          <SelectValue placeholder="Seleziona tipo..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PHYSICAL">
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="h-4 w-4" />
+                              Fisico
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="DIGITAL">
+                            <div className="flex items-center gap-2">
+                              <Monitor className="h-4 w-4" />
+                              Digitale
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="SERVICE">
+                            <div className="flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Servizio
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
+                      <Select 
+                        value={filterCategory} 
+                        onValueChange={(v) => { setFilterCategory(v); setFilterTypology(''); }}
+                        disabled={!filterProductType}
+                      >
+                        <SelectTrigger data-testid="select-filter-category">
+                          <SelectValue placeholder={filterProductType ? "Tutte" : "Seleziona tipo"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Tutte le categorie</SelectItem>
+                          {modalFilteredCategories.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
+                      <Select 
+                        value={filterTypology} 
+                        onValueChange={setFilterTypology}
+                        disabled={!filterCategory}
+                      >
+                        <SelectTrigger data-testid="select-filter-typology">
+                          <SelectValue placeholder={filterCategory ? "Tutte" : "Seleziona cat."} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Tutte le tipologie</SelectItem>
+                          {modalFilteredTypologies.map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <Button onClick={handleSearch} className="w-full" data-testid="btn-search-filters">
+                    <Search className="h-4 w-4 mr-2" />
+                    Cerca Prodotti
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {/* SEZIONE 3: Risultati */}
+            <div className={`space-y-3 p-4 border rounded-lg ${!selectedSupplierId ? 'opacity-50 pointer-events-none bg-gray-100' : 'bg-white'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded-full ${selectedSupplierId ? 'bg-orange-500' : 'bg-gray-400'} text-white flex items-center justify-center text-sm font-bold`}>3</div>
+                  <h3 className="font-semibold">Risultati</h3>
+                </div>
+                {hasSearched && <span className="text-sm text-gray-500">{searchResults.length} prodotti trovati</span>}
+              </div>
+              
+              {!hasSearched ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Search className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                  <p>Cerca un prodotto per SKU/EAN oppure usa i filtri</p>
+                  <p className="text-xs mt-1">I risultati appariranno qui</p>
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <AlertCircle className="h-10 w-10 mx-auto mb-3 text-amber-400" />
+                  <p>Nessun prodotto trovato</p>
+                  <p className="text-xs mt-1">Prova con altri criteri di ricerca</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[200px] border rounded-md">
+                  <div className="p-2 space-y-1">
+                    {searchResults.map(p => {
+                      const cat = p.categoryId ? getCategoryById(p.categoryId) : null;
+                      return (
+                        <div 
+                          key={p.id}
+                          onClick={() => {
+                            setSelectedProduct(p);
+                            setComposerSupplierSku(supplierSkuInput);
+                          }}
+                          className={`p-3 rounded-md cursor-pointer border transition-colors ${
+                            selectedProduct?.id === p.id 
+                              ? 'bg-orange-50 border-orange-300' 
+                              : 'hover:bg-gray-50 border-transparent'
+                          }`}
+                          data-testid={`product-result-${p.id}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{p.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <code className="text-xs bg-gray-100 px-1 rounded">{p.sku}</code>
+                                {p.ean && <span className="text-xs text-gray-500">EAN: {p.ean}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {cat && (
+                                <Badge variant="outline" className="text-xs">
+                                  {getProductTypeIcon(cat.productType)}
+                                  <span className="ml-1">{cat.productType === 'PHYSICAL' ? 'Fisico' : cat.productType === 'DIGITAL' ? 'Digitale' : 'Servizio'}</span>
+                                </Badge>
+                              )}
+                              {p.isSerializable && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {(p.serialCount || 1) > 1 ? 'Dual-Serial' : 'Serial'}
+                                </Badge>
+                              )}
+                              {selectedProduct?.id === p.id && (
+                                <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+            
+            {/* SEZIONE 4: Composer Mapping */}
+            {selectedProduct && (
+              <div className="space-y-3 p-4 border-2 border-green-200 rounded-lg bg-green-50">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">4</div>
+                  <h3 className="font-semibold text-green-800">Crea Mapping</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-white rounded-lg border">
+                    <p className="text-xs text-gray-500 mb-1">Prodotto Selezionato</p>
+                    <p className="font-medium">{selectedProduct.name}</p>
+                    <code className="text-xs bg-gray-100 px-1 rounded">{selectedProduct.sku}</code>
+                  </div>
+                  
+                  <div>
+                    <Label>SKU Fornitore <span className="text-red-500">*</span></Label>
+                    <Input
+                      value={composerSupplierSku}
+                      onChange={(e) => setComposerSupplierSku(e.target.value)}
+                      placeholder="Codice fornitore..."
+                      data-testid="input-composer-supplier-sku"
                     />
                   </div>
                 </div>
                 
-                <div>
-                  <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
-                  <Select value={modalCategoryFilter} onValueChange={(v) => { setModalCategoryFilter(v); setModalTypologyFilter('all'); }}>
-                    <SelectTrigger data-testid="select-modal-category">
-                      <SelectValue placeholder="Tutte" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutte le categorie</SelectItem>
-                      {categories.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
-                  <Select value={modalTypologyFilter} onValueChange={setModalTypologyFilter} disabled={modalCategoryFilter === 'all'}>
-                    <SelectTrigger data-testid="select-modal-typology">
-                      <SelectValue placeholder={modalCategoryFilter === 'all' ? 'Seleziona cat.' : 'Tutte'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutte le tipologie</SelectItem>
-                      {modalFilteredTypologies.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto</Label>
-                  <Select value={modalProductTypeFilter} onValueChange={setModalProductTypeFilter}>
-                    <SelectTrigger data-testid="select-modal-product-type">
-                      <SelectValue placeholder="Tutti" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutti i tipi</SelectItem>
-                      <SelectItem value="serializable">Serializzabile</SelectItem>
-                      <SelectItem value="non-serializable">Non Serializzabile</SelectItem>
-                      <SelectItem value="dual-serial">Dual-Serial</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex justify-between items-center pt-2">
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => { setSelectedProduct(null); setEditingSessionMapping(null); }}
+                    data-testid="btn-cancel-selection"
+                  >
+                    Annulla Selezione
+                  </Button>
+                  <Button 
+                    onClick={handleAddMapping}
+                    disabled={!composerSupplierSku.trim() || createMappingMutation.isPending}
+                    className={editingSessionMapping ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}
+                    data-testid="btn-add-mapping"
+                  >
+                    {createMappingMutation.isPending ? 'Salvataggio...' : (
+                      editingSessionMapping ? (
+                        <>
+                          <Edit className="h-4 w-4 mr-1" />
+                          Aggiorna Mapping
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Aggiungi Mapping
+                        </>
+                      )
+                    )}
+                  </Button>
                 </div>
               </div>
-            </div>
+            )}
             
-            <div>
-              <Label>Prodotto <span className="text-red-500">*</span></Label>
-              <p className="text-xs text-gray-500 mb-2">Seleziona un prodotto dalla lista ({modalFilteredProducts.length} risultati)</p>
-              <ScrollArea className="h-[200px] border rounded-md">
-                {modalFilteredProducts.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">
-                    <Package className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">Nessun prodotto trovato</p>
+            {/* SEZIONE 5: Tabella Sessione */}
+            {sessionMappings.length > 0 && (
+              <div className="space-y-3 p-4 border rounded-lg bg-blue-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-5 w-5 text-blue-500" />
+                    <h3 className="font-semibold text-blue-800">Mapping Sessione Corrente</h3>
                   </div>
-                ) : (
-                  <div className="p-2 space-y-1">
-                    {modalFilteredProducts.map(p => (
-                      <div 
-                        key={p.id}
-                        onClick={() => setNewMappingData({ ...newMappingData, productId: p.id })}
-                        className={`p-3 rounded-md cursor-pointer border transition-colors ${
-                          newMappingData.productId === p.id 
-                            ? 'bg-orange-50 border-orange-300' 
-                            : 'hover:bg-gray-50 border-transparent'
-                        }`}
-                        data-testid={`product-option-${p.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-sm">{p.name}</p>
-                            <p className="text-xs text-gray-500">
-                              SKU: {p.sku} {p.ean && `| EAN: ${p.ean}`}
-                            </p>
-                          </div>
-                          <div className="flex gap-1">
-                            {p.isSerializable && (
-                              <Badge variant="secondary" className="text-xs">
-                                {(p.serialCount || 1) > 1 ? 'Dual' : 'Serial'}
-                              </Badge>
-                            )}
-                            {newMappingData.productId === p.id && (
-                              <CheckCircle2 className="h-5 w-5 text-orange-500" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-            
-            <div className="flex items-center gap-4 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={newMappingData.useInternalSku}
-                  onChange={(e) => setNewMappingData({ ...newMappingData, useInternalSku: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Usa SKU interno</span>
-              </label>
-              
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={newMappingData.isPrimary}
-                  onChange={(e) => setNewMappingData({ ...newMappingData, isPrimary: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Fornitore primario</span>
-              </label>
-            </div>
+                  <Badge className="bg-blue-100 text-blue-700">{sessionMappings.length} mapping creati</Badge>
+                </div>
+                
+                <div className="overflow-x-auto bg-white rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left p-2 text-xs font-medium text-gray-500">SKU Interno</th>
+                        <th className="text-left p-2 text-xs font-medium text-gray-500">Prodotto</th>
+                        <th className="text-left p-2 text-xs font-medium text-gray-500">SKU Fornitore</th>
+                        <th className="text-right p-2 text-xs font-medium text-gray-500">Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {sessionMappings.map(mapping => (
+                        <tr key={mapping.id} className="hover:bg-gray-50">
+                          <td className="p-2">
+                            <code className="text-xs bg-gray-100 px-1 rounded">{mapping.productSku}</code>
+                          </td>
+                          <td className="p-2">{mapping.productName}</td>
+                          <td className="p-2">
+                            <code className="text-xs bg-blue-50 text-blue-700 px-1 rounded">{mapping.supplierSku}</code>
+                          </td>
+                          <td className="p-2 text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditSessionMapping(mapping)}
+                                data-testid={`btn-edit-session-${mapping.id}`}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteSessionMapping(mapping)}
+                                data-testid={`btn-delete-session-${mapping.id}`}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setCreateModal(false); resetModalFilters(); }}>
-              Annulla
-            </Button>
-            <Button 
-              onClick={() => createMappingMutation.mutate(newMappingData)}
-              disabled={!newMappingData.productId || !newMappingData.supplierId || createMappingMutation.isPending}
-              data-testid="btn-save-create"
-            >
-              {createMappingMutation.isPending ? 'Creazione...' : 'Crea Mapping'}
-            </Button>
+          <DialogFooter className="flex-shrink-0 border-t pt-4">
+            <div className="flex items-center justify-between w-full">
+              <p className="text-sm text-gray-500">
+                {sessionMappings.length > 0 
+                  ? `${sessionMappings.length} mapping creati in questa sessione`
+                  : 'Nessun mapping creato ancora'
+                }
+              </p>
+              <Button variant="outline" onClick={handleCloseCreateModal} data-testid="btn-close-session">
+                Chiudi
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Modal */}
       <Dialog open={deleteModal.open} onOpenChange={(open) => !open && setDeleteModal({ open: false, mapping: null })}>
         <DialogContent className="max-w-md">
           <DialogHeader>
