@@ -24,7 +24,9 @@ import {
   Pause,
   Play,
   Trash2,
-  Loader2
+  Loader2,
+  Euro,
+  PackageOpen
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ReceivingModal } from './ReceivingModal';
@@ -42,10 +44,12 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface ReceivingStats {
-  todayReceived: number;
+  productsReceivedToday: number;
   inProgress: number;
-  pending: number;
-  discrepancies: number;
+  suspended: number;
+  withProblems: number;
+  valueReceivedToday: number;
+  toReceive: number | null;
 }
 
 interface ReceivingOperation {
@@ -103,6 +107,20 @@ export function ReceivingTabContent() {
   const [deleteConfirmDraft, setDeleteConfirmDraft] = useState<ReceivingDraft | null>(null);
   const { toast } = useToast();
 
+  // Fetch receiving stats KPIs
+  const { data: statsData, isLoading: statsLoading } = useQuery<{ success: boolean; data: ReceivingStats }>({
+    queryKey: ['/api/wms/receiving/stats'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  const stats: ReceivingStats = statsData?.data || {
+    productsReceivedToday: 0,
+    inProgress: 0,
+    suspended: 0,
+    withProblems: 0,
+    valueReceivedToday: 0,
+    toReceive: null
+  };
+
   // Fetch suspended drafts
   const { data: draftsData, isLoading: draftsLoading } = useQuery<{ success: boolean; data: ReceivingDraft[] }>({
     queryKey: ['/api/wms/receiving/drafts'],
@@ -157,18 +175,9 @@ export function ReceivingTabContent() {
     queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
   };
 
-  const stats: ReceivingStats = {
-    todayReceived: 47,
-    inProgress: 3,
-    pending: 5,
-    discrepancies: 2,
-  };
-
-  const processStats = {
-    unloading: 1,
-    checking: 1,
-    storing: 1,
-    completed: 47,
+  // Format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
   };
 
   const operations: ReceivingOperation[] = [
@@ -238,13 +247,15 @@ export function ReceivingTabContent() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card className="border-l-4 border-l-green-500">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Ricevuti Oggi</p>
-                <p className="text-2xl font-bold text-gray-900" data-testid="stat-today-received">{stats.todayReceived}</p>
+                <p className="text-2xl font-bold text-gray-900" data-testid="stat-today-received">
+                  {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.productsReceivedToday}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-green-600" />
@@ -257,8 +268,10 @@ export function ReceivingTabContent() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">In Corso</p>
-                <p className="text-2xl font-bold text-gray-900" data-testid="stat-in-progress">{stats.inProgress}</p>
+                <p className="text-sm font-medium text-gray-500">In Caricamento</p>
+                <p className="text-2xl font-bold text-gray-900" data-testid="stat-in-progress">
+                  {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.inProgress}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <Clock className="h-5 w-5 text-blue-600" />
@@ -271,11 +284,13 @@ export function ReceivingTabContent() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Pendenti</p>
-                <p className="text-2xl font-bold text-gray-900" data-testid="stat-pending">{stats.pending}</p>
+                <p className="text-sm font-medium text-gray-500">Sospesi</p>
+                <p className="text-2xl font-bold text-gray-900" data-testid="stat-suspended">
+                  {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.suspended}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Package className="h-5 w-5 text-yellow-600" />
+                <Pause className="h-5 w-5 text-yellow-600" />
               </div>
             </div>
           </CardContent>
@@ -285,8 +300,10 @@ export function ReceivingTabContent() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Discrepanze</p>
-                <p className="text-2xl font-bold text-gray-900" data-testid="stat-discrepancies">{stats.discrepancies}</p>
+                <p className="text-sm font-medium text-gray-500">Con Problemi</p>
+                <p className="text-2xl font-bold text-gray-900" data-testid="stat-problems">
+                  {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.withProblems}
+                </p>
               </div>
               <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -294,56 +311,39 @@ export function ReceivingTabContent() {
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">Flusso Processo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            {PROCESS_STEPS.map((step, index) => {
-              const Icon = step.icon;
-              const count = processStats[step.id as keyof typeof processStats];
-              const isActive = count > 0 && step.id !== 'completed';
-              
-              return (
-                <div key={step.id} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-1">
-                    <div 
-                      className={`h-12 w-12 rounded-full flex items-center justify-center mb-2 ${
-                        isActive 
-                          ? 'bg-orange-100 ring-2 ring-orange-500' 
-                          : step.id === 'completed' 
-                            ? 'bg-green-100' 
-                            : 'bg-gray-100'
-                      }`}
-                    >
-                      <Icon className={`h-6 w-6 ${
-                        isActive 
-                          ? 'text-orange-600' 
-                          : step.id === 'completed' 
-                            ? 'text-green-600' 
-                            : 'text-gray-400'
-                      }`} />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{step.label}</span>
-                    <Badge 
-                      variant="secondary" 
-                      className={`mt-1 ${isActive ? 'bg-orange-100 text-orange-700' : ''}`}
-                    >
-                      {count}
-                    </Badge>
-                  </div>
-                  {index < PROCESS_STEPS.length - 1 && (
-                    <ChevronRight className="h-5 w-5 text-gray-300 mx-2" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Valore Oggi</p>
+                <p className="text-xl font-bold text-gray-900" data-testid="stat-value">
+                  {statsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatCurrency(stats.valueReceivedToday)}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Euro className="h-5 w-5 text-emerald-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Da Ricevere</p>
+                <p className="text-2xl font-bold text-gray-900" data-testid="stat-to-receive">
+                  {stats.toReceive !== null ? stats.toReceive : <span className="text-gray-400 text-lg">—</span>}
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <PackageOpen className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader className="pb-3">
