@@ -1379,47 +1379,51 @@ export default function ListiniTabContent() {
                 data-testid="input-step2-supplier-search"
               />
             </div>
-            <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-              {safeSuppliers
-                .filter((s: any) => s.id)
-                .filter((s: any) => {
-                  if (!step2SupplierSearch.trim()) return true;
-                  const search = step2SupplierSearch.toLowerCase();
-                  return s.name?.toLowerCase().includes(search) || 
-                         s.code?.toLowerCase().includes(search);
-                })
-                .map((s: any) => (
-                <div key={s.id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`supplier-${s.id}`}
-                    checked={priceListHeader.supplierIds?.includes(s.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setPriceListHeader(prev => ({
-                          ...prev,
-                          supplierIds: [...(prev.supplierIds || []), s.id]
-                        }));
-                      } else {
-                        setPriceListHeader(prev => ({
-                          ...prev,
-                          supplierIds: (prev.supplierIds || []).filter(id => id !== s.id)
-                        }));
-                      }
-                    }}
-                    data-testid={`checkbox-supplier-${s.id}`}
-                  />
-                  <label htmlFor={`supplier-${s.id}`} className="text-sm cursor-pointer">
-                    {s.name}
-                  </label>
+            <div className="border rounded-md">
+              <ScrollArea className="h-48">
+                <div className="p-3 space-y-2">
+                  {safeSuppliers
+                    .filter((s: any) => s.id)
+                    .filter((s: any) => {
+                      if (!step2SupplierSearch.trim()) return true;
+                      const search = step2SupplierSearch.toLowerCase();
+                      return s.name?.toLowerCase().includes(search) || 
+                             s.code?.toLowerCase().includes(search);
+                    })
+                    .map((s: any) => (
+                    <div key={s.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`supplier-${s.id}`}
+                        checked={priceListHeader.supplierIds?.includes(s.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setPriceListHeader(prev => ({
+                              ...prev,
+                              supplierIds: [...(prev.supplierIds || []), s.id]
+                            }));
+                          } else {
+                            setPriceListHeader(prev => ({
+                              ...prev,
+                              supplierIds: (prev.supplierIds || []).filter(id => id !== s.id)
+                            }));
+                          }
+                        }}
+                        data-testid={`checkbox-supplier-${s.id}`}
+                      />
+                      <label htmlFor={`supplier-${s.id}`} className="text-sm cursor-pointer">
+                        {s.name}
+                      </label>
+                    </div>
+                  ))}
+                  {safeSuppliers.filter((s: any) => s.id).filter((s: any) => {
+                    if (!step2SupplierSearch.trim()) return true;
+                    const search = step2SupplierSearch.toLowerCase();
+                    return s.name?.toLowerCase().includes(search) || s.code?.toLowerCase().includes(search);
+                  }).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-2">Nessun fornitore trovato</p>
+                  )}
                 </div>
-              ))}
-              {safeSuppliers.filter((s: any) => s.id).filter((s: any) => {
-                if (!step2SupplierSearch.trim()) return true;
-                const search = step2SupplierSearch.toLowerCase();
-                return s.name?.toLowerCase().includes(search) || s.code?.toLowerCase().includes(search);
-              }).length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-2">Nessun fornitore trovato</p>
-              )}
+              </ScrollArea>
             </div>
             <p className="text-xs text-gray-500">
               Seleziona i fornitori per filtrare i prodotti Device disponibili
