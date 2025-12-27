@@ -46,7 +46,8 @@ import {
   Save,
   Pause,
   RefreshCw,
-  Eye
+  Eye,
+  ChevronDown
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -960,6 +961,10 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const canAddItem = (): boolean => {
     if (!selectedProduct) return false;
     
+    // Price is MANDATORY for all products
+    const hasValidPrice = unitPriceInput.trim().length > 0 && parseFloat(unitPriceInput) >= 0;
+    if (!hasValidPrice) return false;
+    
     if (selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType)) {
       // Bulk load mode: require quantity > 0 and lot number
       if (bulkLoadMode) {
@@ -1476,7 +1481,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                 />
                               </div>
                               <div className="flex-1">
-                                <Label>Prezzo Acquisto (opz.)</Label>
+                                <Label>Prezzo Acquisto <span className="text-red-500">*</span></Label>
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -1758,7 +1763,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                 </div>
                               </div>
                               <div>
-                                <Label>Prezzo (opz.)</Label>
+                                <Label>Prezzo <span className="text-red-500">*</span></Label>
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -1864,7 +1869,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                               </div>
                             </div>
                             <div>
-                              <Label>Prezzo (opz.)</Label>
+                              <Label>Prezzo <span className="text-red-500">*</span></Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -2327,7 +2332,14 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
               {currentStep === 2 && (
                 <div className="flex w-full justify-between">
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
+                    <Button type="button" variant="outline" onClick={() => {
+                      // Reset product selection state to avoid React DOM errors
+                      setSelectedProduct(null);
+                      setCurrentSerials([]);
+                      setSearchQuery('');
+                      setViewingItemSerials(null);
+                      setCurrentStep(1);
+                    }}>
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Indietro
                     </Button>
