@@ -11,13 +11,15 @@ import {
   Building2,
   Plus,
   ShoppingCart,
-  Landmark
+  Landmark,
+  ArrowRightLeft
 } from 'lucide-react';
 import DashboardTabContent from '@/components/wms/DashboardTabContent';
 import ListiniTabContent from '@/components/wms/ListiniTabContent';
 import FornitoriTabContent from '@/components/wms/FornitoriTabContent';
 import CategoriesTypologiesTabContent from '@/components/wms/CategoriesTypologiesTabContent';
 import EntiFinanziariTabContent from '@/components/wms/EntiFinanziariTabContent';
+import SkuMappingTabContent from '@/components/wms/SkuMappingTabContent';
 
 // Lazy load heavy components
 const ProductsPage = lazy(() => import('./ProductsPage'));
@@ -43,7 +45,8 @@ export default function WMSProductsAndListsPage() {
     'categorie',
     'fornitori',
     'enti-finanziari',
-    'listini'
+    'listini',
+    'mapping-sku'
   ], []);
 
   const tabConfigs = useMemo(() => [
@@ -82,6 +85,12 @@ export default function WMSProductsAndListsPage() {
       label: 'Listini',
       icon: FileText,
       testId: 'tab-listini'
+    },
+    {
+      id: 'mapping-sku',
+      label: 'Mapping SKU',
+      icon: ArrowRightLeft,
+      testId: 'tab-mapping-sku'
     }
   ], []);
 
@@ -165,6 +174,10 @@ export default function WMSProductsAndListsPage() {
 
           <TabsContent value="enti-finanziari" className="mt-0">
             {activeTab === 'enti-finanziari' && <EntiFinanziariTabContent />}
+          </TabsContent>
+
+          <TabsContent value="mapping-sku" className="mt-0">
+            {activeTab === 'mapping-sku' && <SkuMappingTabContent />}
           </TabsContent>
 
         </Tabs>

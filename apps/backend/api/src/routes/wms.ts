@@ -11001,6 +11001,45 @@ router.post("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/wms/product-supplier-mappings/:id
+ * Delete a product-supplier mapping
+ */
+router.delete("/product-supplier-mappings/:id", rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found in session" });
+    }
+
+    const [deleted] = await db
+      .delete(productSupplierMappings)
+      .where(
+        and(
+          eq(productSupplierMappings.id, id),
+          eq(productSupplierMappings.tenantId, tenantId)
+        )
+      )
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: "Mapping not found" });
+    }
+
+    res.json({ success: true, message: "Mapping deleted" });
+
+  } catch (error) {
+    console.error("Error deleting product-supplier mapping:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to delete mapping",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // ==================== STATUS HISTORY API ====================
 
 /**
