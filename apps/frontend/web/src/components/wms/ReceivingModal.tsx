@@ -45,7 +45,8 @@ import {
   Warehouse,
   Save,
   Pause,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -267,6 +268,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [showSupplierSkuPrompt, setShowSupplierSkuPrompt] = useState(false);
   const [pendingSupplierSkuInput, setPendingSupplierSkuInput] = useState('');
   const [bulkLoadMode, setBulkLoadMode] = useState(false);
+  const [viewingItemSerials, setViewingItemSerials] = useState<string | null>(null);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -448,6 +450,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
 
   const [detectedCodeType, setDetectedCodeType] = useState<'ean' | 'imei' | 'iccid' | 'mac' | 'sku' | 'unknown' | null>(null);
 
+  const [totalSearchResults, setTotalSearchResults] = useState(0);
+  const MAX_VISIBLE_RESULTS = 10;
+
   useEffect(() => {
     if (searchQuery.length >= 3) {
       const query = searchQuery.toLowerCase();
@@ -455,7 +460,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setDetectedCodeType(codeType);
       
       // Search by EAN, SKU, supplier SKU, or name/description
-      const results = MOCK_PRODUCTS.filter(p => 
+      const allResults = MOCK_PRODUCTS.filter(p => 
         p.name.toLowerCase().includes(query) ||
         p.sku.toLowerCase().includes(query) ||
         p.supplierSku?.toLowerCase().includes(query) ||
@@ -466,7 +471,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       // If scanning what looks like an IMEI/ICCID/MAC but no product found,
       // it means the user is scanning a serial for an already selected product
       // In that case, don't show "not found" for products
-      if (results.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
+      if (allResults.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
         // This is likely a serial scan, not a product search
         // If we have a selected product that matches this serial type, auto-add the serial
         if (selectedProduct && selectedProduct.isSerializable && 
@@ -482,6 +487,33 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
           return;
         }
       }
+      
+      // Rank results by relevance: exact match first, then starts with, then contains
+      const rankedResults = allResults.sort((a, b) => {
+        // Exact SKU/EAN match first
+        const aExactSku = a.sku.toLowerCase() === query || a.ean === searchQuery;
+        const bExactSku = b.sku.toLowerCase() === query || b.ean === searchQuery;
+        if (aExactSku && !bExactSku) return -1;
+        if (!aExactSku && bExactSku) return 1;
+        
+        // SKU/EAN starts with query
+        const aStartsSku = a.sku.toLowerCase().startsWith(query) || a.ean?.startsWith(searchQuery);
+        const bStartsSku = b.sku.toLowerCase().startsWith(query) || b.ean?.startsWith(searchQuery);
+        if (aStartsSku && !bStartsSku) return -1;
+        if (!aStartsSku && bStartsSku) return 1;
+        
+        // Name starts with query
+        const aStartsName = a.name.toLowerCase().startsWith(query);
+        const bStartsName = b.name.toLowerCase().startsWith(query);
+        if (aStartsName && !bStartsName) return -1;
+        if (!aStartsName && bStartsName) return 1;
+        
+        return 0;
+      });
+      
+      // Store total and limit visible results
+      setTotalSearchResults(rankedResults.length);
+      const results = rankedResults.slice(0, MAX_VISIBLE_RESULTS);
       
       setSearchResults(results);
       setShowSearchResults(true);
@@ -1238,6 +1270,14 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                     
                     {showSearchResults && searchResults.length > 0 && (
                       <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto">
+                        {totalSearchResults > MAX_VISIBLE_RESULTS && (
+                          <div className="px-3 py-2 bg-gray-50 border-b text-sm text-gray-600 flex items-center justify-between">
+                            <span>Mostrati {searchResults.length} di {totalSearchResults} risultati</span>
+                            <Badge variant="secondary" className="text-xs">
+                              Altri {totalSearchResults - searchResults.length}
+                            </Badge>
+                          </div>
+                        )}
                         {searchResults.map(product => (
                           <div
                             key={product.id}
@@ -1852,52 +1892,103 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                   )}
 
                   {items.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="rounded-md border">
+                    <div className="mt-4 border-t pt-4">
+                      <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" />
+                        Prodotti Inseriti ({items.length})
+                      </h4>
+                      <div className="rounded-md border max-h-48 overflow-y-auto">
                         <table className="w-full">
-                          <thead>
-                            <tr className="border-b bg-gray-50">
-                              <th className="px-3 py-2 text-left text-sm font-medium text-gray-600">Prodotto</th>
-                              <th className="px-3 py-2 text-left text-sm font-medium text-gray-600">Quantità</th>
-                              <th className="px-3 py-2 text-left text-sm font-medium text-gray-600">Lotto</th>
-                              <th className="px-3 py-2 text-left text-sm font-medium text-gray-600">Seriali</th>
-                              <th className="px-3 py-2 text-right text-sm font-medium text-gray-600"></th>
+                          <thead className="sticky top-0 bg-gray-50">
+                            <tr className="border-b">
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Prodotto</th>
+                              <th className="px-3 py-2 text-center text-xs font-medium text-gray-600">Qtà</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Lotto</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Info</th>
+                              <th className="px-3 py-2 text-right text-xs font-medium text-gray-600">Azioni</th>
                             </tr>
                           </thead>
                           <tbody>
                             {items.map(item => (
-                              <tr key={item.id} className="border-b" data-testid={`item-row-${item.id}`}>
+                              <tr key={item.id} className="border-b hover:bg-gray-50" data-testid={`item-row-${item.id}`}>
                                 <td className="px-3 py-2">
-                                  <p className="font-medium text-sm">{item.product.name}</p>
+                                  <p className="font-medium text-sm truncate max-w-[180px]" title={item.product.name}>{item.product.name}</p>
                                   <p className="text-xs text-gray-500">{item.product.sku}</p>
                                 </td>
-                                <td className="px-3 py-2 text-sm">{item.quantity}</td>
-                                <td className="px-3 py-2 text-sm">{item.lot || '-'}</td>
+                                <td className="px-3 py-2 text-center">
+                                  <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+                                    {item.quantity}
+                                  </Badge>
+                                </td>
+                                <td className="px-3 py-2 text-xs text-gray-600">{item.lot || '-'}</td>
                                 <td className="px-3 py-2">
                                   {item.serials.length > 0 ? (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {item.serials.length} seriali
+                                    <div className="relative">
+                                      <Badge 
+                                        variant="secondary" 
+                                        className="text-xs cursor-pointer hover:bg-gray-200"
+                                        onClick={() => setViewingItemSerials(viewingItemSerials === item.id ? null : item.id)}
+                                      >
+                                        <Barcode className="h-3 w-3 mr-1" />
+                                        {item.serials.length} seriali
+                                      </Badge>
+                                      {viewingItemSerials === item.id && (
+                                        <div className="absolute z-50 top-full left-0 mt-1 p-2 bg-white border rounded-md shadow-lg max-w-xs max-h-32 overflow-y-auto">
+                                          <div className="space-y-1">
+                                            {item.serials.map((serial, idx) => (
+                                              <p key={idx} className="text-xs font-mono text-gray-700">{idx + 1}. {serial}</p>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : item.bulkLoaded ? (
+                                    <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                      <Package className="h-3 w-3 mr-1" />
+                                      Massivo
                                     </Badge>
-                                  ) : '-'}
+                                  ) : (
+                                    <span className="text-xs text-gray-400">-</span>
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 text-right">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeItem(item.id)}
-                                    data-testid={`btn-remove-item-${item.id}`}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
+                                  <div className="flex items-center justify-end gap-1">
+                                    {item.serials.length > 0 && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => setViewingItemSerials(viewingItemSerials === item.id ? null : item.id)}
+                                        title="Vedi seriali"
+                                        data-testid={`btn-view-item-${item.id}`}
+                                      >
+                                        <Eye className="h-3.5 w-3.5 text-blue-500" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => removeItem(item.id)}
+                                      title="Elimina"
+                                      data-testid={`btn-remove-item-${item.id}`}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                    </>
+                      <div className="mt-2 flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Totale unità:</span>
+                        <Badge className="bg-orange-500">{items.reduce((sum, i) => sum + i.quantity, 0)}</Badge>
+                      </div>
+                    </div>
                   )}
                 </div>
               </CardContent>
