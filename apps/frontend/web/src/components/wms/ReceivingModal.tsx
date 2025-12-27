@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -269,6 +269,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [pendingSupplierSkuInput, setPendingSupplierSkuInput] = useState('');
   const [bulkLoadMode, setBulkLoadMode] = useState(false);
   const [viewingItemSerials, setViewingItemSerials] = useState<string | null>(null);
+  const [step3ViewMode, setStep3ViewMode] = useState<'aggregated' | 'serialized'>('aggregated');
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<ReceivingItem | null>(null);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -996,7 +999,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] min-h-[70vh] overflow-y-auto flex flex-col">
+      <DialogContent className={`${currentStep === 3 ? 'max-w-6xl w-[95vw]' : 'max-w-4xl'} max-h-[90vh] min-h-[70vh] overflow-hidden flex flex-col`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5 text-orange-500" />
@@ -1996,180 +1999,293 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
               </>
             )}
 
-            {/* STEP 3: Review Summary */}
+            {/* STEP 3: Review Summary - Enlarged Modal */}
             {currentStep === 3 && (
-              <Card>
-                <CardContent className="pt-4">
-                  {/* Document Summary */}
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Dati Documento
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                {/* Upper Section: Document Summary - Sticky */}
+                <div className="flex-shrink-0 p-4 bg-gray-50 border-b">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-orange-500" />
+                      Riepilogo Documento
                     </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Fornitore:</span>
-                        <p className="font-medium">{suppliersData.find(s => s.id === form.getValues('supplierId'))?.name || '-'}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">DDT/Fattura:</span>
-                        <p className="font-medium">{form.getValues('documentNumber')}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Data:</span>
-                        <p className="font-medium">{form.getValues('documentDate')}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Magazzino:</span>
-                        <p className="font-medium">{storesData.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-orange-100 text-orange-700">
+                        {items.length} prodotti
+                      </Badge>
+                      <Badge className="bg-green-100 text-green-700">
+                        {items.reduce((sum, i) => sum + i.quantity, 0)} unità
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                    <div className="bg-white p-2 rounded border">
+                      <span className="text-gray-500 text-xs">Fornitore</span>
+                      <p className="font-medium truncate">{suppliersData.find(s => s.id === form.getValues('supplierId'))?.name || '-'}</p>
+                    </div>
+                    <div className="bg-white p-2 rounded border">
+                      <span className="text-gray-500 text-xs">DDT/Fattura</span>
+                      <p className="font-medium">{form.getValues('documentNumber')}</p>
+                    </div>
+                    <div className="bg-white p-2 rounded border">
+                      <span className="text-gray-500 text-xs">Data Documento</span>
+                      <p className="font-medium">{form.getValues('documentDate')}</p>
+                    </div>
+                    <div className="bg-white p-2 rounded border">
+                      <span className="text-gray-500 text-xs">Magazzino</span>
+                      <p className="font-medium truncate">{storesData.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
                     </div>
                     {form.getValues('notes') && (
-                      <div className="mt-3 pt-3 border-t">
-                        <span className="text-gray-500 text-sm">Note:</span>
-                        <p className="text-sm">{form.getValues('notes')}</p>
+                      <div className="bg-white p-2 rounded border col-span-2 md:col-span-1">
+                        <span className="text-gray-500 text-xs">Note</span>
+                        <p className="font-medium text-xs truncate" title={form.getValues('notes')}>{form.getValues('notes')}</p>
                       </div>
                     )}
                   </div>
+                </div>
 
-                  <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Riepilogo Prodotti ({items.length} righe)
-                  </h3>
+                {/* Lower Section: Products DataTable */}
+                <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                  {/* Table Header with Switch */}
+                  <div className="flex-shrink-0 px-4 py-3 border-b bg-white flex items-center justify-between">
+                    <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4" />
+                      Dettaglio Prodotti
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className={step3ViewMode === 'aggregated' ? 'text-gray-900 font-medium' : 'text-gray-500'}>
+                          Aggregata
+                        </span>
+                        <Switch
+                          checked={step3ViewMode === 'serialized'}
+                          onCheckedChange={(checked) => setStep3ViewMode(checked ? 'serialized' : 'aggregated')}
+                          data-testid="switch-view-mode"
+                        />
+                        <span className={step3ViewMode === 'serialized' ? 'text-gray-900 font-medium' : 'text-gray-500'}>
+                          Serializzata
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
                   {items.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                      <p>Nessun prodotto aggiunto</p>
-                      <Button 
-                        type="button" 
-                        variant="link" 
-                        onClick={() => setCurrentStep(2)}
-                        className="mt-2"
-                      >
-                        Torna al carico prodotti
-                      </Button>
+                    <div className="flex-1 flex items-center justify-center text-gray-500">
+                      <div className="text-center">
+                        <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                        <p>Nessun prodotto aggiunto</p>
+                        <Button 
+                          type="button" 
+                          variant="link" 
+                          onClick={() => setCurrentStep(2)}
+                          className="mt-2"
+                        >
+                          Torna al carico prodotti
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="flex-1 overflow-y-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-gray-100">
+                        <thead className="sticky top-0 bg-gray-100 z-10">
                           <tr>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700 w-8"></th>
                             <th className="px-4 py-3 text-left font-medium text-gray-700">Prodotto</th>
                             <th className="px-4 py-3 text-left font-medium text-gray-700">SKU</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">EAN</th>
                             <th className="px-4 py-3 text-center font-medium text-gray-700">Qtà</th>
                             <th className="px-4 py-3 text-left font-medium text-gray-700">Lotto</th>
-                            <th className="px-4 py-3 text-left font-medium text-gray-700">Seriali</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">Tipo</th>
+                            <th className="px-4 py-3 text-left font-medium text-gray-700">
+                              {step3ViewMode === 'serialized' ? 'Seriali' : 'Info'}
+                            </th>
                             <th className="px-4 py-3 text-right font-medium text-gray-700">Azioni</th>
                           </tr>
                         </thead>
                         <tbody>
                           {items.map((item) => (
-                            <tr 
-                              key={item.id} 
-                              className={`border-t hover:bg-gray-50 cursor-pointer transition-colors ${
-                                selectedItemId === item.id ? 'bg-orange-50 border-l-4 border-l-orange-500' : ''
-                              }`}
-                              onClick={() => setSelectedItemId(selectedItemId === item.id ? null : item.id)}
-                              data-testid={`review-row-${item.id}`}
-                            >
-                              <td className="px-4 py-3">
-                                <p className="font-medium text-gray-900">{item.product.name}</p>
-                                {item.product.isSerializable && (
-                                  <Badge variant="outline" className="mt-1 text-xs">
-                                    {getSerialLabel(item.product.serialType)}
+                            <Fragment key={item.id}>
+                              <tr 
+                                className={`border-t hover:bg-gray-50 transition-colors ${
+                                  expandedItemId === item.id ? 'bg-orange-50' : ''
+                                }`}
+                                data-testid={`review-row-${item.id}`}
+                              >
+                                <td className="px-4 py-3">
+                                  {item.serials.length > 0 && step3ViewMode === 'serialized' && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+                                      data-testid={`btn-expand-${item.id}`}
+                                    >
+                                      <ChevronDown className={`h-4 w-4 transition-transform ${expandedItemId === item.id ? 'rotate-180' : ''}`} />
+                                    </Button>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <p className="font-medium text-gray-900 truncate max-w-[200px]" title={item.product.name}>
+                                    {item.product.name}
+                                  </p>
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 font-mono text-xs">{item.product.sku}</td>
+                                <td className="px-4 py-3 text-gray-600 font-mono text-xs">{item.product.ean || '-'}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 font-bold">
+                                    {item.quantity}
                                   </Badge>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-gray-600">{item.product.sku}</td>
-                              <td className="px-4 py-3 text-center">
-                                <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-                                  {item.quantity}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-gray-600">{item.lot || '-'}</td>
-                              <td className="px-4 py-3">
-                                {item.serials.length > 0 ? (
-                                  <div className="flex items-center gap-1">
-                                    <Barcode className="h-3 w-3 text-gray-400" />
-                                    <Badge variant="secondary" className="text-xs">
-                                      {item.serials.length} seriali
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 text-xs">{item.lot || '-'}</td>
+                                <td className="px-4 py-3">
+                                  {item.product.isSerializable ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      {getSerialLabel(item.product.serialType)}
                                     </Badge>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">Standard</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {step3ViewMode === 'aggregated' ? (
+                                    item.serials.length > 0 ? (
+                                      <Badge variant="secondary" className="text-xs">
+                                        <Barcode className="h-3 w-3 mr-1" />
+                                        {item.serials.length} seriali
+                                      </Badge>
+                                    ) : item.bulkLoaded ? (
+                                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                        <Package className="h-3 w-3 mr-1" />
+                                        Massivo
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-gray-400 text-xs">-</span>
+                                    )
+                                  ) : (
+                                    item.serials.length > 0 ? (
+                                      <span className="text-xs text-blue-600 cursor-pointer hover:underline" onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}>
+                                        {expandedItemId === item.id ? 'Chiudi lista' : `Espandi ${item.serials.length} seriali`}
+                                      </span>
+                                    ) : item.bulkLoaded ? (
+                                      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                        Massivo (no seriali)
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-gray-400 text-xs">Non serializzabile</span>
+                                    )
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    {item.serials.length > 0 && step3ViewMode === 'aggregated' && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => {
+                                          setStep3ViewMode('serialized');
+                                          setExpandedItemId(item.id);
+                                        }}
+                                        title="Vedi seriali"
+                                        data-testid={`btn-view-serials-${item.id}`}
+                                      >
+                                        <Eye className="h-4 w-4 text-gray-500" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => {
+                                        setSelectedItemId(item.id);
+                                        setCurrentStep(2);
+                                      }}
+                                      title="Modifica"
+                                      data-testid={`btn-edit-item-${item.id}`}
+                                    >
+                                      <Edit className="h-4 w-4 text-blue-500" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => setItemToDelete(item)}
+                                      title="Elimina"
+                                      data-testid={`btn-delete-item-${item.id}`}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
                                   </div>
-                                ) : item.bulkLoaded ? (
-                                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                                    <Package className="h-3 w-3 mr-1" />
-                                    Carico Massivo
-                                  </Badge>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedItemId(item.id);
-                                      // Go back to Step 2 to edit
-                                      setCurrentStep(2);
-                                    }}
-                                    data-testid={`btn-edit-item-${item.id}`}
-                                  >
-                                    <Edit className="h-4 w-4 text-blue-500" />
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeItem(item.id);
-                                    }}
-                                    data-testid={`btn-delete-item-${item.id}`}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
+                                </td>
+                              </tr>
+                              {/* Expanded Serials Row */}
+                              {step3ViewMode === 'serialized' && expandedItemId === item.id && item.serials.length > 0 && (
+                                <tr key={`${item.id}-serials`} className="bg-gray-50">
+                                  <td colSpan={9} className="px-4 py-3">
+                                    <div className="ml-8 p-3 bg-white rounded border">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Barcode className="h-4 w-4 text-orange-500" />
+                                        <span className="font-medium text-sm">Lista Seriali ({item.serials.length})</span>
+                                      </div>
+                                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                        {item.serials.map((serial, idx) => (
+                                          <div 
+                                            key={idx}
+                                            className="px-2 py-1 bg-gray-100 rounded text-xs font-mono flex items-center gap-1"
+                                          >
+                                            <span className="text-gray-400">{idx + 1}.</span>
+                                            <span className="truncate" title={serial}>{serial}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
                           ))}
                         </tbody>
-                        <tfoot className="bg-gray-50">
+                        <tfoot className="sticky bottom-0 bg-gray-100 border-t-2">
                           <tr>
-                            <td colSpan={2} className="px-4 py-3 font-medium text-gray-700">
-                              Totale
+                            <td colSpan={4} className="px-4 py-3 font-medium text-gray-700">
+                              Totale Carico
                             </td>
-                            <td className="px-4 py-3 text-center font-bold text-orange-600">
-                              {items.reduce((sum, i) => sum + i.quantity, 0)}
+                            <td className="px-4 py-3 text-center">
+                              <Badge className="bg-orange-500 text-white font-bold text-sm">
+                                {items.reduce((sum, i) => sum + i.quantity, 0)}
+                              </Badge>
                             </td>
-                            <td colSpan={3}></td>
+                            <td colSpan={4} className="px-4 py-3 text-right text-sm text-gray-600">
+                              {items.filter(i => i.serials.length > 0).length > 0 && (
+                                <span>{items.reduce((sum, i) => sum + i.serials.length, 0)} seriali registrati</span>
+                              )}
+                            </td>
                           </tr>
                         </tfoot>
                       </table>
                     </div>
                   )}
+                </div>
 
-                  {/* Confirmation message */}
-                  {items.length > 0 && (
-                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-green-800">Pronto per il carico</p>
-                          <p className="text-sm text-green-700">
-                            Verifica i dati sopra e clicca "Conferma Carico" per registrare {items.length} prodotti 
-                            ({items.reduce((sum, i) => sum + i.quantity, 0)} unità totali) in magazzino.
-                          </p>
-                        </div>
+                {/* Confirmation Footer */}
+                {items.length > 0 && (
+                  <div className="flex-shrink-0 p-3 bg-green-50 border-t border-green-200">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <div className="flex-1">
+                        <p className="font-medium text-green-800">Pronto per il carico</p>
+                        <p className="text-xs text-green-700">
+                          Clicca "Conferma Carico" per registrare {items.length} prodotti ({items.reduce((sum, i) => sum + i.quantity, 0)} unità) in magazzino.
+                        </p>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                )}
+              </div>
             )}
 
             <DialogFooter className="flex-wrap gap-2 sm:justify-between">
@@ -2323,6 +2439,54 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
             onClick={handleForceSubmit}
           >
             Procedi Comunque
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Delete Item Confirmation Dialog */}
+    <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Trash2 className="h-5 w-5 text-red-500" />
+            Conferma Eliminazione
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {itemToDelete && (
+              <div className="space-y-2">
+                <p>Sei sicuro di voler rimuovere questo prodotto dal carico?</p>
+                <div className="p-3 bg-gray-50 rounded-lg border mt-2">
+                  <p className="font-medium">{itemToDelete.product.name}</p>
+                  <p className="text-sm text-gray-500">SKU: {itemToDelete.product.sku}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge className="bg-orange-100 text-orange-700">{itemToDelete.quantity} unità</Badge>
+                    {itemToDelete.serials.length > 0 && (
+                      <Badge variant="secondary">{itemToDelete.serials.length} seriali</Badge>
+                    )}
+                    {itemToDelete.bulkLoaded && (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700">Massivo</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setItemToDelete(null)}>
+            Annulla
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-red-500 hover:bg-red-600"
+            onClick={() => {
+              if (itemToDelete) {
+                removeItem(itemToDelete.id);
+                setItemToDelete(null);
+              }
+            }}
+          >
+            Elimina
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
