@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Check, ChevronsUpDown, Building2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface Supplier {
@@ -51,24 +50,97 @@ export function SupplierCombobox({
 }: SupplierComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   const selectedSupplier = suppliers.find((s) => s.id === value);
 
-  const filteredSuppliers = useMemo(() => {
-    if (!search.trim()) return suppliers;
-    const term = search.toLowerCase();
-    return suppliers.filter(
-      (s) =>
-        s.name.toLowerCase().includes(term) ||
-        (s.code && s.code.toLowerCase().includes(term))
-    );
-  }, [suppliers, search]);
+  const allOptions = useMemo(() => {
+    const filtered = search.trim()
+      ? suppliers.filter(
+          (s) =>
+            s.name.toLowerCase().includes(search.toLowerCase()) ||
+            (s.code && s.code.toLowerCase().includes(search.toLowerCase()))
+        )
+      : suppliers;
+    
+    if (clearable) {
+      return [{ id: '', name: clearLabel, code: undefined, isClear: true }, ...filtered.map(s => ({ ...s, isClear: false }))];
+    }
+    return filtered.map(s => ({ ...s, isClear: false }));
+  }, [suppliers, search, clearable, clearLabel]);
 
-  const handleSelect = (supplierId: string) => {
+  const handleSelect = useCallback((supplierId: string) => {
     onValueChange(supplierId);
     setOpen(false);
     setSearch("");
-  };
+    setHighlightedIndex(0);
+  }, [onValueChange]);
+
+  const scrollToHighlighted = useCallback((index: number) => {
+    const optionEl = optionRefs.current.get(index);
+    if (optionEl) {
+      optionEl.scrollIntoView({ block: 'nearest' });
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!open) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => {
+          const next = Math.min(prev + 1, allOptions.length - 1);
+          scrollToHighlighted(next);
+          return next;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => {
+          const next = Math.max(prev - 1, 0);
+          scrollToHighlighted(next);
+          return next;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (allOptions[highlightedIndex]) {
+          handleSelect(allOptions[highlightedIndex].id);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setOpen(false);
+        break;
+      case 'Home':
+        e.preventDefault();
+        setHighlightedIndex(0);
+        scrollToHighlighted(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        setHighlightedIndex(allOptions.length - 1);
+        scrollToHighlighted(allOptions.length - 1);
+        break;
+    }
+  }, [open, allOptions, highlightedIndex, handleSelect, scrollToHighlighted]);
+
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+    if (open) {
+      setHighlightedIndex(0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [search]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -77,6 +149,7 @@ export function SupplierCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-haspopup="listbox"
           disabled={disabled}
           className={cn(
             "w-full justify-between font-normal",
@@ -107,68 +180,75 @@ export function SupplierCombobox({
         className={cn("w-[400px] p-0", className)} 
         align="start"
         container={portalContainer}
+        onKeyDown={handleKeyDown}
       >
-        <div className="flex items-center border-b px-3 py-2">
+        <div className="flex items-center border-b px-3" data-cmdk-input-wrapper="">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-          <Input
+          <input
+            ref={searchInputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder}
-            className="border-0 p-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
             data-testid="supplier-search-input"
           />
         </div>
         <ScrollArea className="max-h-[300px]">
-          <div className="p-1">
-            {clearable && (
-              <button
-                type="button"
-                onClick={() => handleSelect('')}
-                className={cn(
-                  "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 transition-colors",
-                  !value && "bg-orange-50"
-                )}
-                data-testid="supplier-option-clear"
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    !value ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <span className="text-gray-500 italic">{clearLabel}</span>
-              </button>
-            )}
-            {filteredSuppliers.length === 0 ? (
+          <div 
+            ref={listRef}
+            role="listbox" 
+            aria-activedescendant={allOptions[highlightedIndex] ? `supplier-option-${highlightedIndex}` : undefined}
+            className="p-1"
+          >
+            {allOptions.length === 0 ? (
               <div className="py-6 text-center text-sm text-gray-500">
                 {emptyMessage}
               </div>
             ) : (
-              filteredSuppliers.map((supplier) => (
-                <button
-                  type="button"
-                  key={supplier.id}
-                  onClick={() => handleSelect(supplier.id)}
-                  className={cn(
-                    "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 transition-colors",
-                    value === supplier.id && "bg-orange-50"
-                  )}
-                  data-testid={`supplier-option-${supplier.id}`}
-                >
-                  <Check
+              allOptions.map((option, index) => {
+                const isSelected = value === option.id;
+                const isHighlighted = index === highlightedIndex;
+                
+                return (
+                  <button
+                    type="button"
+                    key={option.id || '__clear__'}
+                    id={`supplier-option-${index}`}
+                    ref={(el) => {
+                      if (el) optionRefs.current.set(index, el);
+                      else optionRefs.current.delete(index);
+                    }}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(option.id)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      value === supplier.id ? "opacity-100" : "opacity-0"
+                      "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+                      isHighlighted && "bg-gray-100 text-gray-900",
+                      isSelected && "bg-orange-50",
+                      !isHighlighted && !isSelected && "hover:bg-gray-100"
                     )}
-                  />
-                  <div className="flex flex-col text-left">
-                    <span>{supplier.name}</span>
-                    {supplier.code && (
-                      <span className="text-xs text-gray-500">{supplier.code}</span>
+                    data-testid={option.isClear ? "supplier-option-clear" : `supplier-option-${option.id}`}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.isClear ? (
+                      <span className="text-gray-500 italic">{option.name}</span>
+                    ) : (
+                      <div className="flex flex-col text-left">
+                        <span>{option.name}</span>
+                        {option.code && (
+                          <span className="text-xs text-gray-500">{option.code}</span>
+                        )}
+                      </div>
                     )}
-                  </div>
-                </button>
-              ))
+                  </button>
+                );
+              })
             )}
           </div>
         </ScrollArea>
