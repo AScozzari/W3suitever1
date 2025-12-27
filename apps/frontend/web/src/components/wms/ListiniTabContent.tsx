@@ -4723,7 +4723,7 @@ export default function ListiniTabContent() {
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent 
           ref={setWizardModalContainer}
-          className={`${wizardStep <= 2 ? 'max-w-3xl' : 'max-w-7xl h-[90vh]'} flex flex-col`}
+          className={`${wizardStep <= 2 ? 'w-full sm:max-w-2xl lg:max-w-3xl' : 'max-w-7xl'} max-h-[90vh] flex flex-col overflow-hidden`}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -4754,9 +4754,9 @@ export default function ListiniTabContent() {
             </DialogDescription>
           </DialogHeader>
 
-          {wizardStep >= 3 ? (
-            <div className="flex-1 min-h-0 py-2 px-4 overflow-hidden flex flex-col">
-              <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto py-4 px-4">
+            {wizardStep >= 3 ? (
+              <div className="flex flex-col min-h-0">
                 {wizardStep === 3 && (
                   priceListHeader.type === 'promo_canvas' 
                     ? renderStep3PromoCanvas() 
@@ -4770,13 +4770,13 @@ export default function ListiniTabContent() {
                 )}
                 {wizardStep === 4 && renderStep4()}
               </div>
-            </div>
-          ) : (
-            <div className="py-4 px-4">
-              {wizardStep === 1 && renderStep1()}
-              {wizardStep === 2 && renderStep2()}
-            </div>
-          )}
+            ) : (
+              <div>
+                {wizardStep === 1 && renderStep1()}
+                {wizardStep === 2 && renderStep2()}
+              </div>
+            )}
+          </div>
 
           <DialogFooter className="border-t pt-4">
             <div className="flex justify-between w-full">
