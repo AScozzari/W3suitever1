@@ -343,7 +343,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setCurrentStep((resumeDraft.lastStep || 1) as 1 | 2 | 3);
       
       // Mark draft as resumed
-      apiRequest('POST', `/api/wms/receiving/drafts/${resumeDraft.id}/resume`).catch(() => {});
+      apiRequest(`/api/wms/receiving/drafts/${resumeDraft.id}/resume`, { method: 'POST' }).catch(() => {});
     }
   }, [open, resumeDraft]);
 
@@ -373,30 +373,38 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
 
       if (currentDraftId) {
         // Update existing draft
-        await apiRequest('PATCH', `/api/wms/receiving/drafts/${currentDraftId}`, {
-          supplierId: formValues.supplierId || null,
-          supplierName: selectedSupplier?.name || null,
-          documentNumber: formValues.documentNumber || null,
-          documentDate: formValues.documentDate || null,
-          storeId: formValues.storeId || null,
-          storeName: selectedStore?.name || null,
-          notes: formValues.notes || null,
-          productsData,
-          lastStep: currentStep,
-          status: 'suspended',
+        await apiRequest(`/api/wms/receiving/drafts/${currentDraftId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            supplierId: formValues.supplierId || null,
+            supplierName: selectedSupplier?.name || null,
+            documentNumber: formValues.documentNumber || null,
+            documentDate: formValues.documentDate || null,
+            storeId: formValues.storeId || null,
+            storeName: selectedStore?.name || null,
+            notes: formValues.notes || null,
+            productsData,
+            lastStep: currentStep,
+            status: 'suspended',
+          }),
+          headers: { 'Content-Type': 'application/json' }
         });
       } else {
         // Create new draft
-        await apiRequest('POST', '/api/wms/receiving/drafts', {
-          supplierId: formValues.supplierId || null,
-          supplierName: selectedSupplier?.name || null,
-          documentNumber: formValues.documentNumber || null,
-          documentDate: formValues.documentDate || null,
-          storeId: formValues.storeId || null,
-          storeName: selectedStore?.name || null,
-          notes: formValues.notes || null,
-          productsData,
-          lastStep: currentStep,
+        await apiRequest('/api/wms/receiving/drafts', {
+          method: 'POST',
+          body: JSON.stringify({
+            supplierId: formValues.supplierId || null,
+            supplierName: selectedSupplier?.name || null,
+            documentNumber: formValues.documentNumber || null,
+            documentDate: formValues.documentDate || null,
+            storeId: formValues.storeId || null,
+            storeName: selectedStore?.name || null,
+            notes: formValues.notes || null,
+            productsData,
+            lastStep: currentStep,
+          }),
+          headers: { 'Content-Type': 'application/json' }
         });
       }
 
@@ -736,7 +744,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     if (allSerials.length === 0) return [];
     
     try {
-      const response = await apiRequest('POST', '/api/wms/receiving/check-serials', { serials: allSerials });
+      const response = await apiRequest('/api/wms/receiving/check-serials', { 
+        method: 'POST', 
+        body: JSON.stringify({ serials: allSerials }),
+        headers: { 'Content-Type': 'application/json' }
+      });
       const data = response as { success: boolean; data: { hasDuplicates: boolean; duplicates: { serial: string; existingProductName?: string }[] } };
       
       if (data.success && data.data.hasDuplicates) {
@@ -794,7 +806,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       // If resuming a draft, mark it as completed
       if (currentDraftId) {
         try {
-          await apiRequest('POST', `/api/wms/receiving/drafts/${currentDraftId}/complete`);
+          await apiRequest(`/api/wms/receiving/drafts/${currentDraftId}/complete`, { method: 'POST' });
           queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
         } catch (error) {
           console.error('Error marking draft as completed:', error);

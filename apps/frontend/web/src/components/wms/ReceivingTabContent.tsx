@@ -112,7 +112,7 @@ export function ReceivingTabContent() {
   // Delete draft mutation
   const deleteDraftMutation = useMutation({
     mutationFn: async (draftId: string) => {
-      await apiRequest('DELETE', `/api/wms/receiving/drafts/${draftId}`);
+      await apiRequest(`/api/wms/receiving/drafts/${draftId}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/wms/receiving/drafts'] });
@@ -466,19 +466,32 @@ export function ReceivingTabContent() {
         </CardContent>
       </Card>
 
-      {/* Suspended Receiving Sessions (Carichi Sospesi) */}
-      {suspendedDrafts.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Pause className="h-5 w-5 text-yellow-600" />
-              <CardTitle className="text-base font-medium">Carichi Sospesi</CardTitle>
+      {/* Suspended Receiving Sessions (Carichi Sospesi) - Always visible */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Pause className="h-5 w-5 text-yellow-600" />
+            <CardTitle className="text-base font-medium">Carichi Sospesi</CardTitle>
+            {suspendedDrafts.length > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {suspendedDrafts.length}
               </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {draftsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <span className="ml-2 text-gray-500">Caricamento...</span>
             </div>
-          </CardHeader>
-          <CardContent>
+          ) : suspendedDrafts.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Pause className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <p>Nessun carico sospeso</p>
+              <p className="text-sm text-gray-400 mt-1">I carichi sospesi appariranno qui</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -556,9 +569,9 @@ export function ReceivingTabContent() {
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       <ReceivingModal
         open={isModalOpen}
