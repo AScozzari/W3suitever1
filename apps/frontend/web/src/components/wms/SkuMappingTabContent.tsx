@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,12 +114,12 @@ export default function SkuMappingTabContent() {
   const [supplierSkuInput, setSupplierSkuInput] = useState('');
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
   
-  // Search state
-  const [productSearchMode, setProductSearchMode] = useState<'sku' | 'filters'>('sku');
-  const [skuSearchTerm, setSkuSearchTerm] = useState('');
+  // Search state - unified search + advanced filters
+  const [unifiedSearchTerm, setUnifiedSearchTerm] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterProductType, setFilterProductType] = useState<string>('');
-  const [filterCategory, setFilterCategory] = useState<string>('');
-  const [filterTypology, setFilterTypology] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterTypology, setFilterTypology] = useState<string>('all');
   const [hasSearched, setHasSearched] = useState(false);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   
@@ -259,42 +259,61 @@ export default function SkuMappingTabContent() {
     });
   }, [enrichedMappings, searchTerm, supplierFilter, statusFilter, categoryFilter, typologyFilter, productTypeFilter, validFromDate, validToDate]);
 
-  // Search products
-  const handleSearch = () => {
+  // Unified search - searches SKU, EAN, and description
+  const performUnifiedSearch = (searchTerm: string) => {
+    if (searchTerm.length < 3) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+    
+    let results = products.filter(p => p.productType !== 'CANVAS');
+    const search = searchTerm.toLowerCase().trim();
+    
+    results = results.filter(p => 
+      p.sku?.toLowerCase().includes(search) ||
+      p.ean?.toLowerCase().includes(search) ||
+      p.name?.toLowerCase().includes(search)
+    );
+    
+    setSearchResults(results.slice(0, 50));
+    setHasSearched(true);
+  };
+  
+  // Auto-search when unified search term changes (3+ chars)
+  useEffect(() => {
+    if (!showAdvancedFilters && unifiedSearchTerm.length >= 3) {
+      const timer = setTimeout(() => {
+        performUnifiedSearch(unifiedSearchTerm);
+      }, 300); // debounce 300ms
+      return () => clearTimeout(timer);
+    } else if (unifiedSearchTerm.length < 3 && unifiedSearchTerm.length > 0) {
+      // Only clear results when user is actively typing but has < 3 chars
+      // Don't clear when unifiedSearchTerm is empty (preserves filter results)
+      setSearchResults([]);
+      setHasSearched(false);
+    }
+  }, [unifiedSearchTerm, showAdvancedFilters, products]);
+  
+  // Apply advanced filters
+  const handleApplyFilters = () => {
+    if (!filterProductType) {
+      toast({ title: "Seleziona tipo prodotto", description: "Il tipo prodotto è obbligatorio per la ricerca con filtri", variant: "destructive" });
+      return;
+    }
+    
     let results = products.filter(p => p.productType !== 'CANVAS');
     
-    if (productSearchMode === 'sku') {
-      if (!skuSearchTerm.trim()) {
-        toast({ title: "Inserisci SKU", description: "Inserisci uno SKU o EAN per cercare", variant: "destructive" });
-        return;
-      }
-      const search = skuSearchTerm.toLowerCase().trim();
-      results = results.filter(p => 
-        p.sku?.toLowerCase() === search ||
-        p.ean?.toLowerCase() === search ||
-        p.sku?.toLowerCase().includes(search) ||
-        p.ean?.toLowerCase().includes(search)
-      );
-    } else {
-      // Filter mode
-      if (!filterProductType) {
-        toast({ title: "Seleziona tipo prodotto", description: "Il tipo prodotto è obbligatorio per la ricerca con filtri", variant: "destructive" });
-        return;
-      }
-      
-      // Filter by product type (via category)
-      if (filterProductType) {
-        const categoryIds = categories.filter(c => c.productType === filterProductType).map(c => c.id);
-        results = results.filter(p => p.categoryId && categoryIds.includes(p.categoryId));
-      }
-      
-      if (filterCategory && filterCategory !== 'all') {
-        results = results.filter(p => p.categoryId === filterCategory);
-      }
-      
-      if (filterTypology && filterTypology !== 'all') {
-        results = results.filter(p => p.typologyId === filterTypology);
-      }
+    // Filter by product type (via category)
+    const categoryIds = categories.filter(c => c.productType === filterProductType).map(c => c.id);
+    results = results.filter(p => p.categoryId && categoryIds.includes(p.categoryId));
+    
+    if (filterCategory && filterCategory !== 'all') {
+      results = results.filter(p => p.categoryId === filterCategory);
+    }
+    
+    if (filterTypology && filterTypology !== 'all') {
+      results = results.filter(p => p.typologyId === filterTypology);
     }
     
     setSearchResults(results.slice(0, 50));
@@ -355,7 +374,7 @@ export default function SkuMappingTabContent() {
       setComposerSupplierSku('');
       setSearchResults([]);
       setHasSearched(false);
-      setSkuSearchTerm('');
+      setUnifiedSearchTerm('');
       
       queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
     },
@@ -389,11 +408,11 @@ export default function SkuMappingTabContent() {
     setSelectedSupplierId('');
     setSupplierSkuInput('');
     setSupplierSearchTerm('');
-    setProductSearchMode('sku');
-    setSkuSearchTerm('');
+    setUnifiedSearchTerm('');
+    setShowAdvancedFilters(false);
     setFilterProductType('');
-    setFilterCategory('');
-    setFilterTypology('');
+    setFilterCategory('all');
+    setFilterTypology('all');
     setHasSearched(false);
     setSearchResults([]);
     setSelectedProduct(null);
@@ -940,128 +959,140 @@ export default function SkuMappingTabContent() {
                 {!selectedSupplierId && <span className="text-xs text-gray-500">(seleziona prima un fornitore)</span>}
               </div>
               
-              <div className="flex gap-2 mb-3">
+              {/* Ricerca Unificata */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={unifiedSearchTerm}
+                    onChange={(e) => {
+                      setUnifiedSearchTerm(e.target.value);
+                      if (showAdvancedFilters) {
+                        setShowAdvancedFilters(false);
+                      }
+                    }}
+                    placeholder="Cerca per SKU, EAN o nome prodotto... (min 3 caratteri)"
+                    className="pl-9"
+                    data-testid="input-unified-search"
+                  />
+                  {unifiedSearchTerm.length > 0 && unifiedSearchTerm.length < 3 && !showAdvancedFilters && (
+                    <p className="text-xs text-amber-600 mt-1">Inserisci almeno 3 caratteri per cercare</p>
+                  )}
+                </div>
+                
+                {/* Toggle Filtri Avanzati */}
                 <Button
-                  variant={productSearchMode === 'sku' ? 'default' : 'outline'}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setProductSearchMode('sku')}
-                  data-testid="btn-search-mode-sku"
-                >
-                  <Search className="h-4 w-4 mr-1" />
-                  Cerca per SKU/EAN
-                </Button>
-                <Button
-                  variant={productSearchMode === 'filters' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setProductSearchMode('filters')}
-                  data-testid="btn-search-mode-filters"
+                  onClick={() => {
+                    setShowAdvancedFilters(!showAdvancedFilters);
+                    if (!showAdvancedFilters) {
+                      setUnifiedSearchTerm('');
+                      setSearchResults([]);
+                      setHasSearched(false);
+                    }
+                  }}
+                  className="text-gray-600 hover:text-gray-900"
+                  data-testid="btn-toggle-filters"
                 >
                   <Filter className="h-4 w-4 mr-1" />
-                  Usa Filtri
+                  {showAdvancedFilters ? 'Nascondi Filtri' : 'Mostra Filtri Avanzati'}
+                  <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
                 </Button>
+                
+                {/* Filtri Avanzati Collapsibili */}
+                {showAdvancedFilters && (
+                  <div className="border rounded-lg p-3 bg-white space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto <span className="text-red-500">*</span></Label>
+                        <Select 
+                          value={filterProductType} 
+                          onValueChange={(v) => { 
+                            setFilterProductType(v); 
+                            setFilterCategory('all'); 
+                            setFilterTypology('all'); 
+                          }}
+                        >
+                          <SelectTrigger data-testid="select-filter-product-type">
+                            <SelectValue placeholder="Seleziona tipo..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PHYSICAL">
+                              <div className="flex items-center gap-2">
+                                <Smartphone className="h-4 w-4" />
+                                Fisico
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="DIGITAL">
+                              <div className="flex items-center gap-2">
+                                <Monitor className="h-4 w-4" />
+                                Digitale
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="SERVICE">
+                              <div className="flex items-center gap-2">
+                                <Settings className="h-4 w-4" />
+                                Servizio
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
+                        <Select 
+                          value={filterCategory} 
+                          onValueChange={(v) => { setFilterCategory(v); setFilterTypology('all'); }}
+                          disabled={!filterProductType}
+                        >
+                          <SelectTrigger data-testid="select-filter-category">
+                            <SelectValue placeholder={filterProductType ? "Tutte" : "Seleziona tipo"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tutte le categorie</SelectItem>
+                            {modalFilteredCategories.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
+                        <Select 
+                          value={filterTypology} 
+                          onValueChange={setFilterTypology}
+                          disabled={!filterCategory || filterCategory === 'all'}
+                        >
+                          <SelectTrigger data-testid="select-filter-typology">
+                            <SelectValue placeholder={filterCategory && filterCategory !== 'all' ? "Tutte" : "Seleziona cat."} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tutte le tipologie</SelectItem>
+                            {modalFilteredTypologies.map(t => (
+                              <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => {
+                        handleApplyFilters();
+                        setShowAdvancedFilters(false);
+                      }} 
+                      className="w-full" 
+                      data-testid="btn-apply-filters"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Applica Filtri
+                    </Button>
+                  </div>
+                )}
               </div>
-              
-              {productSearchMode === 'sku' ? (
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input
-                      value={skuSearchTerm}
-                      onChange={(e) => setSkuSearchTerm(e.target.value)}
-                      placeholder="Inserisci SKU interno o EAN..."
-                      className="pl-9"
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      data-testid="input-sku-search"
-                    />
-                  </div>
-                  <Button onClick={handleSearch} data-testid="btn-search">
-                    Cerca
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto <span className="text-red-500">*</span></Label>
-                      <Select 
-                        value={filterProductType} 
-                        onValueChange={(v) => { 
-                          setFilterProductType(v); 
-                          setFilterCategory('all'); 
-                          setFilterTypology('all'); 
-                        }}
-                      >
-                        <SelectTrigger data-testid="select-filter-product-type">
-                          <SelectValue placeholder="Seleziona tipo..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PHYSICAL">
-                            <div className="flex items-center gap-2">
-                              <Smartphone className="h-4 w-4" />
-                              Fisico
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="DIGITAL">
-                            <div className="flex items-center gap-2">
-                              <Monitor className="h-4 w-4" />
-                              Digitale
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="SERVICE">
-                            <div className="flex items-center gap-2">
-                              <Settings className="h-4 w-4" />
-                              Servizio
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
-                      <Select 
-                        value={filterCategory} 
-                        onValueChange={(v) => { setFilterCategory(v); setFilterTypology('all'); }}
-                        disabled={!filterProductType}
-                      >
-                        <SelectTrigger data-testid="select-filter-category">
-                          <SelectValue placeholder={filterProductType ? "Tutte" : "Seleziona tipo"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tutte le categorie</SelectItem>
-                          {modalFilteredCategories.map(c => (
-                            <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
-                      <Select 
-                        value={filterTypology} 
-                        onValueChange={setFilterTypology}
-                        disabled={!filterCategory || filterCategory === 'all'}
-                      >
-                        <SelectTrigger data-testid="select-filter-typology">
-                          <SelectValue placeholder={filterCategory ? "Tutte" : "Seleziona cat."} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tutte le tipologie</SelectItem>
-                          {modalFilteredTypologies.map(t => (
-                            <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <Button onClick={handleSearch} className="w-full" data-testid="btn-search-filters">
-                    <Search className="h-4 w-4 mr-2" />
-                    Cerca Prodotti
-                  </Button>
-                </div>
-              )}
             </div>
             
             {/* SEZIONE 3: Risultati */}
