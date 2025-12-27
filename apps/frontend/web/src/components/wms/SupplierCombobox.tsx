@@ -177,8 +177,9 @@ export function SupplierCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className={cn("w-[400px] p-0", className)} 
+        className={cn("w-[400px] p-0 z-[9999]", className)} 
         align="start"
+        sideOffset={8}
         container={portalContainer}
         onKeyDown={handleKeyDown}
       >

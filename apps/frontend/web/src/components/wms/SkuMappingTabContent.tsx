@@ -1075,7 +1075,7 @@ export default function SkuMappingTabContent() {
                   )}
                   <Label className="text-sm font-medium">Fornitore:</Label>
                 </div>
-                <div className="w-64">
+                <div className="w-72">
                   <SupplierCombobox
                     suppliers={suppliers.map(s => ({ id: s.id, name: s.name, code: s.code }))}
                     value={selectedSupplierId}
@@ -1092,7 +1092,7 @@ export default function SkuMappingTabContent() {
                     }}
                     placeholder="Seleziona fornitore..."
                     searchPlaceholder="Cerca fornitore..."
-                    portalContainer={createModalContainer}
+                    portalContainer={null}
                     data-testid="select-supplier-modal"
                   />
                 </div>
@@ -1254,7 +1254,7 @@ export default function SkuMappingTabContent() {
               </div>
                 
                 {/* Results with Checkbox Multi-Select */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: 'calc(95vh - 280px)' }}>
                   {!hasSearched ? (
                     <div className="text-center py-12 text-gray-500">
                       <Search className="h-12 w-12 mx-auto mb-3 text-gray-300" />
