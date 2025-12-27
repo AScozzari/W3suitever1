@@ -4754,29 +4754,31 @@ export default function ListiniTabContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto py-4 px-4">
-            {wizardStep >= 3 ? (
-              <div className="flex flex-col min-h-0">
-                {wizardStep === 3 && (
-                  priceListHeader.type === 'promo_canvas' 
-                    ? renderStep3PromoCanvas() 
-                    : priceListHeader.type === 'no_promo'
-                      ? renderStep3NoPromo()
-                      : priceListHeader.type === 'promo_device'
-                        ? renderStep3PromoDevice()
-                        : priceListHeader.type === 'canvas'
-                          ? renderStep3Canvas()
-                          : renderStep3Simple()
-                )}
-                {wizardStep === 4 && renderStep4()}
-              </div>
-            ) : (
-              <div>
-                {wizardStep === 1 && renderStep1()}
-                {wizardStep === 2 && renderStep2()}
-              </div>
-            )}
-          </div>
+          <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+            <div className="py-4 px-4">
+              {wizardStep >= 3 ? (
+                <div className="flex flex-col min-h-0">
+                  {wizardStep === 3 && (
+                    priceListHeader.type === 'promo_canvas' 
+                      ? renderStep3PromoCanvas() 
+                      : priceListHeader.type === 'no_promo'
+                        ? renderStep3NoPromo()
+                        : priceListHeader.type === 'promo_device'
+                          ? renderStep3PromoDevice()
+                          : priceListHeader.type === 'canvas'
+                            ? renderStep3Canvas()
+                            : renderStep3Simple()
+                  )}
+                  {wizardStep === 4 && renderStep4()}
+                </div>
+              ) : (
+                <div>
+                  {wizardStep === 1 && renderStep1()}
+                  {wizardStep === 2 && renderStep2()}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
 
           <DialogFooter className="border-t pt-4">
             <div className="flex justify-between w-full">
