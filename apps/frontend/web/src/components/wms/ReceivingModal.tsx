@@ -2200,13 +2200,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   )}
                                 </td>
                                 <td className="px-4 py-3 text-right">
-                                  <div className="flex items-center justify-end gap-1">
+                                  <div className="flex items-center justify-end gap-2">
                                     {item.serials.length > 0 && step3ViewMode === 'aggregated' && (
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="h-7 w-7 p-0"
+                                        className="h-10 w-10 p-0"
                                         onClick={() => {
                                           setStep3ViewMode('serialized');
                                           setExpandedItemId(item.id);
@@ -2214,33 +2214,40 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                         title="Vedi seriali"
                                         data-testid={`btn-view-serials-${item.id}`}
                                       >
-                                        <Eye className="h-4 w-4 text-gray-500" />
+                                        <Eye className="h-6 w-6 text-gray-500" />
                                       </Button>
                                     )}
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
-                                      className="h-7 w-7 p-0"
+                                      className="h-10 w-10 p-0"
                                       onClick={() => {
-                                        setSelectedItemId(item.id);
+                                        // Load product into form and go to Step 2
+                                        setSelectedProduct(item.product);
+                                        setCurrentSerials(item.serials);
+                                        setTargetQuantity(item.quantity);
+                                        setLotInput(item.lot || '');
+                                        setUnitPriceInput(item.unitPrice?.toString() || '');
+                                        setBulkLoadMode(item.bulkLoaded || false);
+                                        removeItem(item.id);
                                         setCurrentStep(2);
                                       }}
                                       title="Modifica"
                                       data-testid={`btn-edit-item-${item.id}`}
                                     >
-                                      <Edit className="h-4 w-4 text-blue-500" />
+                                      <Edit className="h-6 w-6 text-orange-500" />
                                     </Button>
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
-                                      className="h-7 w-7 p-0"
+                                      className="h-10 w-10 p-0"
                                       onClick={() => setItemToDelete(item)}
                                       title="Elimina"
                                       data-testid={`btn-delete-item-${item.id}`}
                                     >
-                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                      <Trash2 className="h-6 w-6 text-red-500" />
                                     </Button>
                                   </div>
                                 </td>
@@ -2332,20 +2339,6 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
               {currentStep === 2 && (
                 <div className="flex w-full justify-between">
                   <div className="flex gap-2">
-                    {items.length === 0 && (
-                      <Button type="button" variant="outline" onClick={() => {
-                        // Reset product selection state before changing step
-                        setSelectedProduct(null);
-                        setCurrentSerials([]);
-                        setSearchQuery('');
-                        setViewingItemSerials(null);
-                        // Use setTimeout to avoid React DOM conflicts
-                        setTimeout(() => setCurrentStep(1), 0);
-                      }}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Indietro
-                      </Button>
-                    )}
                     <Button 
                       type="button" 
                       variant="outline"
@@ -2485,25 +2478,27 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
             <Trash2 className="h-5 w-5 text-red-500" />
             Conferma Eliminazione
           </AlertDialogTitle>
-          <AlertDialogDescription>
-            {itemToDelete && (
-              <div className="space-y-2">
-                <p>Sei sicuro di voler rimuovere questo prodotto dal carico?</p>
-                <div className="p-3 bg-gray-50 rounded-lg border mt-2">
-                  <p className="font-medium">{itemToDelete.product.name}</p>
-                  <p className="text-sm text-gray-500">SKU: {itemToDelete.product.sku}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className="bg-orange-100 text-orange-700">{itemToDelete.quantity} unità</Badge>
-                    {itemToDelete.serials.length > 0 && (
-                      <Badge variant="secondary">{itemToDelete.serials.length} seriali</Badge>
-                    )}
-                    {itemToDelete.bulkLoaded && (
-                      <Badge variant="outline" className="bg-amber-50 text-amber-700">Massivo</Badge>
-                    )}
+          <AlertDialogDescription asChild>
+            <div>
+              {itemToDelete && (
+                <div className="space-y-2">
+                  <span>Sei sicuro di voler rimuovere questo prodotto dal carico?</span>
+                  <div className="p-3 bg-gray-50 rounded-lg border mt-2">
+                    <div className="font-medium">{itemToDelete.product.name}</div>
+                    <div className="text-sm text-gray-500">SKU: {itemToDelete.product.sku}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-orange-100 text-orange-700">{itemToDelete.quantity} unità</Badge>
+                      {itemToDelete.serials.length > 0 && (
+                        <Badge variant="secondary">{itemToDelete.serials.length} seriali</Badge>
+                      )}
+                      {itemToDelete.bulkLoaded && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700">Massivo</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

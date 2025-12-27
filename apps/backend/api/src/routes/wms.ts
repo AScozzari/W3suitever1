@@ -11325,10 +11325,37 @@ router.post("/receiving/drafts", rbacMiddleware, requirePermission('wms.stock.wr
       ? productsData.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0) 
       : 0;
 
+    // Verify supplierId exists in suppliers table (it might come from supplierOverrides)
+    // If not found, set to null and rely on supplierName
+    let validSupplierId: string | null = null;
+    if (supplierId) {
+      const BRAND_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+      const supplierExists = await db
+        .select({ id: suppliers.id })
+        .from(suppliers)
+        .where(
+          and(
+            eq(suppliers.id, supplierId),
+            or(
+              isNull(suppliers.tenantId),
+              eq(suppliers.tenantId, BRAND_TENANT_ID),
+              eq(suppliers.tenantId, tenantId)
+            )
+          )
+        )
+        .limit(1);
+      
+      if (supplierExists.length > 0) {
+        validSupplierId = supplierId;
+      } else {
+        logger.warn('Supplier ID not found in suppliers table, using name only', { supplierId, supplierName });
+      }
+    }
+
     const [newDraft] = await db.insert(wmsReceivingDrafts)
       .values({
         tenantId,
-        supplierId: supplierId || null,
+        supplierId: validSupplierId,
         supplierName: supplierName || null,
         documentNumber: documentNumber || null,
         documentDate: documentDate || null,
