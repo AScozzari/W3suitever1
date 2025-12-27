@@ -44,8 +44,10 @@ import {
   Edit,
   Warehouse,
   Save,
-  Pause
+  Pause,
+  RefreshCw
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
@@ -144,6 +146,7 @@ interface ReceivingItem {
   unitPrice?: number;
   hasDiscrepancy?: boolean;
   expectedQuantity?: number;
+  bulkLoaded?: boolean; // True if loaded in bulk mode without individual serials
 }
 
 // Draft data structure for suspended receiving sessions
@@ -263,6 +266,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [showInternalResults, setShowInternalResults] = useState(false);
   const [showSupplierSkuPrompt, setShowSupplierSkuPrompt] = useState(false);
   const [pendingSupplierSkuInput, setPendingSupplierSkuInput] = useState('');
+  const [bulkLoadMode, setBulkLoadMode] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -775,8 +779,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const addItemToList = () => {
     if (!selectedProduct) return;
 
+    // Bulk load mode: serializable products loaded without individual serials
+    const isBulkLoad = bulkLoadMode && selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType);
+    
+    // Determine if lot is needed
     const needsLot = !selectedProduct.isSerializable || 
-      (selectedProduct.isSerializable && selectedProduct.serialType === 'other');
+      (selectedProduct.isSerializable && selectedProduct.serialType === 'other') ||
+      isBulkLoad; // Bulk load always requires lot
     
     const finalLot = needsLot ? (lotInput || generateLot()) : undefined;
     
@@ -787,12 +796,15 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     const newItem: ReceivingItem = {
       id: crypto.randomUUID(),
       product: selectedProduct,
-      quantity: selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) 
-        ? serializedQty 
-        : targetQuantity,
-      serials: currentSerials,
+      quantity: isBulkLoad 
+        ? targetQuantity  // Bulk: use target quantity directly
+        : (selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) 
+            ? serializedQty 
+            : targetQuantity),
+      serials: isBulkLoad ? [] : currentSerials, // Bulk: no individual serials
       lot: finalLot,
       unitPrice: unitPriceInput ? parseFloat(unitPriceInput) : undefined,
+      bulkLoaded: isBulkLoad, // Flag to track bulk-loaded items
     };
 
     setItems(prev => [...prev, newItem]);
@@ -807,6 +819,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     setLotInput('');
     setUnitPriceInput('');
     setSerialScanMode(false);
+    setBulkLoadMode(false);
     setTimeout(() => searchInputRef.current?.focus(), 100);
   };
 
@@ -913,6 +926,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     if (!selectedProduct) return false;
     
     if (selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType)) {
+      // Bulk load mode: require quantity > 0 and lot number
+      if (bulkLoadMode) {
+        return targetQuantity > 0 && lotInput.trim().length > 0;
+      }
+      
       const serialsPerUnit = selectedProduct.serialCount || 1;
       // For dual-serial products, need complete sets (e.g., 2 IMEI per unit)
       // At least one complete unit is required
@@ -1428,6 +1446,60 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                               </div>
                             </div>
                             
+                            {/* Bulk Load Mode Toggle */}
+                            <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md">
+                              <div className="flex items-center gap-2">
+                                <Package className="h-4 w-4 text-amber-600" />
+                                <div>
+                                  <span className="font-medium text-amber-800">Carico Massivo</span>
+                                  <p className="text-xs text-amber-600">
+                                    Carica senza inserire ogni singolo {getSerialLabel(selectedProduct.serialType)}
+                                  </p>
+                                </div>
+                              </div>
+                              <Switch
+                                checked={bulkLoadMode}
+                                onCheckedChange={(checked) => {
+                                  setBulkLoadMode(checked);
+                                  if (checked) {
+                                    setCurrentSerials([]);
+                                  }
+                                }}
+                                data-testid="switch-bulk-load"
+                              />
+                            </div>
+                            
+                            {bulkLoadMode ? (
+                              /* Bulk Load Mode: Show lot input instead of serial scanning */
+                              <div className="space-y-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                <div className="flex items-center gap-2 text-gray-700">
+                                  <Package className="h-4 w-4" />
+                                  <span className="font-medium">Numero Lotto (obbligatorio)</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Input
+                                    value={lotInput}
+                                    onChange={(e) => setLotInput(e.target.value.toUpperCase())}
+                                    placeholder="Es. LOT-2025-00123"
+                                    className="flex-1"
+                                    data-testid="input-bulk-lot"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setLotInput(generateLot())}
+                                    data-testid="button-generate-lot"
+                                  >
+                                    <RefreshCw className="h-4 w-4 mr-1" />
+                                    Auto
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  Verranno caricate {targetQuantity} unità senza tracciamento {getSerialLabel(selectedProduct.serialType)} individuale
+                                </p>
+                              </div>
+                            ) : (
                             <div className="space-y-3">
                               {/* Dual-serial info banner */}
                               {(selectedProduct.serialCount || 1) > 1 && (
@@ -1605,6 +1677,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                 </div>
                               )}
                             </div>
+                            )}
                           </div>
                         ) : selectedProduct.isSerializable && selectedProduct.serialType === 'other' ? (
                           <div className="space-y-3">
@@ -1932,6 +2005,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                       {item.serials.length} seriali
                                     </Badge>
                                   </div>
+                                ) : item.bulkLoaded ? (
+                                  <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                    <Package className="h-3 w-3 mr-1" />
+                                    Carico Massivo
+                                  </Badge>
                                 ) : (
                                   <span className="text-gray-400">-</span>
                                 )}
