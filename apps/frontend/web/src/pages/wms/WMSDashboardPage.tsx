@@ -8,7 +8,6 @@ import {
   Settings,
   Layers,
   FileText,
-  Truck,
   PackagePlus
 } from 'lucide-react';
 import { InventoryContent } from './InventoryPage';
@@ -49,16 +48,6 @@ export default function WMSDashboardPage() {
               <p className="text-gray-600 mt-1">Gestione completa del magazzino e delle giacenze</p>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="outline"
-                className="border-gray-300"
-                data-testid="btn-new-movement"
-              >
-                <Truck className="h-4 w-4 mr-2" />
-                Nuovo Movimento
-              </Button>
-            </div>
           </div>
           
           <div className="flex gap-1 mt-4">
