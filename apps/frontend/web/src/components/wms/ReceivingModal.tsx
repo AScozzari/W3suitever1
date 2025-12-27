@@ -1895,12 +1895,14 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                   )}
 
                   {items.length > 0 && (
-                    <div className="mt-4 border-t pt-4">
-                      <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4" />
-                        Prodotti Inseriti ({items.length})
-                      </h4>
-                      <div className="rounded-md border max-h-48 overflow-y-auto">
+                    <Card className="mt-4 border-orange-200 bg-orange-50/30">
+                      <CardContent className="pt-4">
+                        <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                          <ClipboardList className="h-4 w-4 text-orange-500" />
+                          Prodotti Inseriti ({items.length})
+                          <Badge className="ml-auto bg-orange-500">{items.reduce((sum, i) => sum + i.quantity, 0)} unità</Badge>
+                        </h4>
+                        <div className="rounded-md border bg-white max-h-64 overflow-y-auto">
                         <table className="w-full">
                           <thead className="sticky top-0 bg-gray-50">
                             <tr className="border-b">
@@ -1955,30 +1957,49 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   )}
                                 </td>
                                 <td className="px-3 py-2 text-right">
-                                  <div className="flex items-center justify-end gap-1">
+                                  <div className="flex items-center justify-end gap-2">
                                     {item.serials.length > 0 && (
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="h-7 w-7 p-0"
+                                        className="h-10 w-10 p-0"
                                         onClick={() => setViewingItemSerials(viewingItemSerials === item.id ? null : item.id)}
                                         title="Vedi seriali"
                                         data-testid={`btn-view-item-${item.id}`}
                                       >
-                                        <Eye className="h-3.5 w-3.5 text-blue-500" />
+                                        <Eye className="h-6 w-6 text-blue-500" />
                                       </Button>
                                     )}
                                     <Button
                                       type="button"
                                       variant="ghost"
                                       size="sm"
-                                      className="h-7 w-7 p-0"
+                                      className="h-10 w-10 p-0"
+                                      onClick={() => {
+                                        setSelectedProduct(item.product);
+                                        setCurrentSerials(item.serials);
+                                        setTargetQuantity(item.quantity);
+                                        setLotInput(item.lot || '');
+                                        setUnitPriceInput(item.unitPrice?.toString() || '');
+                                        setBulkLoadMode(item.bulkLoaded || false);
+                                        removeItem(item.id);
+                                      }}
+                                      title="Modifica"
+                                      data-testid={`btn-edit-item-${item.id}`}
+                                    >
+                                      <Edit className="h-6 w-6 text-orange-500" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-10 w-10 p-0"
                                       onClick={() => removeItem(item.id)}
                                       title="Elimina"
                                       data-testid={`btn-remove-item-${item.id}`}
                                     >
-                                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                      <Trash2 className="h-6 w-6 text-red-500" />
                                     </Button>
                                   </div>
                                 </td>
@@ -1987,11 +2008,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                           </tbody>
                         </table>
                       </div>
-                      <div className="mt-2 flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Totale unità:</span>
-                        <Badge className="bg-orange-500">{items.reduce((sum, i) => sum + i.quantity, 0)}</Badge>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
               </CardContent>
