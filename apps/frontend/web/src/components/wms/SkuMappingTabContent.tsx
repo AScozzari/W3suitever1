@@ -882,7 +882,11 @@ export default function SkuMappingTabContent() {
       <Dialog open={createModal} onOpenChange={(open) => !open && handleCloseCreateModal()}>
         <DialogContent 
           className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
-          onPointerDownOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement;
+            if (target?.closest('[data-radix-popover-content]')) return;
+            e.preventDefault();
+          }}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader className="flex-shrink-0">

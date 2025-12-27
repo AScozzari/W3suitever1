@@ -4720,7 +4720,11 @@ export default function ListiniTabContent() {
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent 
           className={`${wizardStep <= 2 ? 'max-w-3xl' : 'max-w-7xl h-[90vh]'} overflow-hidden flex flex-col`}
-          onPointerDownOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement;
+            if (target?.closest('[data-radix-popover-content]')) return;
+            e.preventDefault();
+          }}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
