@@ -93,9 +93,8 @@ export function SupplierCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className={cn("w-[400px] p-0", className)} 
+        className={cn("w-[400px] p-0 z-[60]", className)} 
         align="start"
-        style={{ pointerEvents: 'auto' }}
       >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
