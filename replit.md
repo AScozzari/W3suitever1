@@ -107,6 +107,27 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. It manages complex relationships between movements and documents, with distinct document classifications (operational/fiscal, active/passive) and rules for generating logistic movements. A comprehensive status history system tracks product and batch status changes, driven by document types and movements.
+    - **WMS Document Management Architecture**:
+      - **Documenti Operativi (Tab Documenti in Magazzino)**:
+        - `Ordine` - Ordine a fornitore (pianificazione acquisti, nessun effetto logistico)
+        - `DDT` - Documento di Trasporto con 10 causali che determinano stato logistico target
+        - `Rapporto Rettifica` - Correzioni inventario (documento formale + log interno)
+      - **Documenti Fiscali (Modulo separato, NON in WMS)**:
+        - `Fattura`, `Ricevuta Fiscale/Scontrino`, `Nota di Credito`, `Nota di Debito`
+      - **DDT Causali (enum `wms_ddt_reason`)**:
+        - `sale` (Vendita), `purchase` (Acquisto), `service_send` (Invio Assistenza)
+        - `service_return` (Ritorno Assistenza), `doa_return` (Reso DOA)
+        - `internal_transfer` (Trasferimento Interno), `supplier_return` (Reso a Fornitore)
+        - `customer_return` (Reso da Cliente), `loan` (Comodato d'Uso), `other` (Altro)
+      - **DDT_REASON_STATUS_MAP**: Ogni causale determina stato logistico target per direzione (attivo/passivo)
+      - **Relazione Documento-Movimento**: 1 Documento → N Movimenti (one-to-many), 1 Movimento → 1 solo Documento
+      - **Numerazione Documenti (System Settings → WMS)**:
+        - Configurabile per tipo: Ordine, DDT, Fattura, NDC, NDD, Rapporto Rettifica
+        - Template variables: `{N}` (progressivo), `{YYYY}`/`{YY}` (anno), `{MM}` (mese), `{DD}` (giorno)
+        - Reset annuale: Sì/No configurabile per ogni tipo documento
+        - Formati: numerico, alfanumerico, crescente/decrescente, numero+data
+      - **eDDT/Firma Digitale**: Roadmap futura (non in scope attuale)
+      - **Ricevuta Logica**: Attiva senza fattura → `sold`, Passiva → NESSUN cambio stato (solo conferma)
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
