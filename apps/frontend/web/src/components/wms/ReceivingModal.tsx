@@ -483,10 +483,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setShowSearchResults(true);
       
       // If no results and query looks like a supplier SKU, show mapping option
-      if (results.length === 0 && query.length >= 5 && codeType === 'sku') {
+      // Accept 'sku' or 'unknown' code types for mapping (not IMEI/ICCID/MAC/EAN)
+      if (results.length === 0 && query.length >= 3 && (codeType === 'sku' || codeType === 'unknown')) {
         setUnmappedSupplierSku(searchQuery);
-      } else {
+      } else if (results.length > 0) {
+        // Only hide mapping form if we found results
         setShowSkuMappingForm(false);
+        setUnmappedSupplierSku('');
       }
     } else {
       setSearchResults([]);
