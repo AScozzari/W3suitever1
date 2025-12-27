@@ -544,6 +544,20 @@ export const wmsDocumentNatureEnum = pgEnum('wms_document_nature', [
   'fiscal'                  // Fiscale/Amministrativo - Scontrino, Fattura, Note Credito/Debito
 ]);
 
+// WMS DDT Reason - Causale DDT che determina lo stato logistico target
+export const wmsDdtReasonEnum = pgEnum('wms_ddt_reason', [
+  'sale',                   // Vendita → shipping
+  'purchase',               // Acquisto → in_stock
+  'service_send',           // Invio in assistenza → in_service
+  'service_return',         // Ritorno da assistenza → in_stock
+  'doa_return',             // Reso DOA → doa_return
+  'internal_transfer',      // Trasferimento interno → in_transfer
+  'supplier_return',        // Reso fornitore → supplier_return
+  'customer_return',        // Reso cliente (ricezione) → customer_return
+  'loan',                   // Comodato d'uso → shipping (attivo) / in_stock (passivo)
+  'other'                   // Altro → stato base (shipping/in_stock per direzione)
+]);
+
 // WMS Movement Document Category
 export const wmsMovementDocumentCategoryEnum = pgEnum('wms_movement_document_category', [
   'movement_specific',      // Documento specifico del movimento (allegato file)
