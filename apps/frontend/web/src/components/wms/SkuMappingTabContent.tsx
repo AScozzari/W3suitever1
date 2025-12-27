@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { SupplierCombobox } from './SupplierCombobox';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { 
@@ -916,58 +917,14 @@ export default function SkuMappingTabContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Fornitore <span className="text-red-500">*</span></Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        role="combobox"
-                        className="w-full justify-between"
-                        data-testid="select-supplier-modal"
-                      >
-                        {selectedSupplierId 
-                          ? suppliers.find(s => s.id === selectedSupplierId)?.name 
-                          : "Seleziona fornitore..."
-                        }
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0" align="start">
-                      <div className="p-2 border-b">
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                          <Input
-                            value={supplierSearchTerm}
-                            onChange={(e) => setSupplierSearchTerm(e.target.value)}
-                            placeholder="Cerca fornitore..."
-                            className="pl-8"
-                            data-testid="input-supplier-search-modal"
-                          />
-                        </div>
-                      </div>
-                      <ScrollArea className="h-[200px]">
-                        <div className="p-1">
-                          {filteredSuppliers.length === 0 ? (
-                            <p className="text-sm text-gray-500 text-center py-3">Nessun fornitore trovato</p>
-                          ) : (
-                            filteredSuppliers.map(s => (
-                              <div 
-                                key={s.id}
-                                className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${selectedSupplierId === s.id ? 'bg-orange-50' : ''}`}
-                                onClick={() => {
-                                  setSelectedSupplierId(s.id);
-                                  setSupplierSearchTerm('');
-                                }}
-                                data-testid={`option-supplier-${s.id}`}
-                              >
-                                {selectedSupplierId === s.id && <CheckCircle2 className="h-4 w-4 text-orange-500" />}
-                                <span className="text-sm">{s.name}</span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </PopoverContent>
-                  </Popover>
+                  <SupplierCombobox
+                    suppliers={suppliers.map(s => ({ id: s.id, name: s.name, code: s.code }))}
+                    value={selectedSupplierId}
+                    onValueChange={setSelectedSupplierId}
+                    placeholder="Seleziona fornitore..."
+                    searchPlaceholder="Cerca fornitore..."
+                    data-testid="select-supplier-modal"
+                  />
                 </div>
                 
                 <div>

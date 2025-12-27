@@ -53,6 +53,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
+import { SupplierCombobox } from './SupplierCombobox';
 
 interface SupplierFromAPI {
   id: string;
@@ -1102,23 +1103,17 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Fornitore *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={suppliersLoading}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-supplier">
-                              <SelectValue placeholder={suppliersLoading ? "Caricamento..." : "Seleziona fornitore"} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {suppliersData.length === 0 && !suppliersLoading && (
-                              <SelectItem value="no-suppliers" disabled>Nessun fornitore disponibile</SelectItem>
-                            )}
-                            {suppliersData.map(s => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name} ({s.code})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SupplierCombobox
+                            suppliers={suppliersData.map(s => ({ id: s.id, name: s.name, code: s.code }))}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            placeholder={suppliersLoading ? "Caricamento..." : "Seleziona fornitore..."}
+                            searchPlaceholder="Cerca fornitore..."
+                            disabled={suppliersLoading}
+                            data-testid="select-supplier"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
