@@ -9695,46 +9695,74 @@ export type WmsDocument = typeof wmsDocuments.$inferSelect;
 
 // ==================== WMS DOCUMENT ITEMS ====================
 // Righe documento (prodotti/servizi inclusi nel documento)
+// RISTRUTTURATO 28/12/2025: Allineato con product_items per serializzati e price_list_items per IVA
 export const wmsDocumentItems = w3suiteSchema.table("wms_document_items", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   documentId: uuid("document_id").notNull().references(() => wmsDocuments.id, { onDelete: 'cascade' }),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   
-  // Product reference
+  // ==================== PRODUCT REFERENCE ====================
   productId: varchar("product_id", { length: 100 }).notNull(), // FK logica a products.id
   productVersionId: uuid("product_version_id").references(() => productVersions.id, { onDelete: 'set null' }),
   
-  // For serialized products
-  productItemId: uuid("product_item_id").references(() => productItems.id, { onDelete: 'set null' }),
+  // ==================== SERIALIZED PRODUCTS (allineato a product_items) ====================
+  isSerialized: boolean("is_serialized").default(false).notNull(), // Discriminatore
+  productItemId: uuid("product_item_id").references(() => productItems.id, { onDelete: 'set null' }), // Obbligatorio se isSerialized=true
   batchId: uuid("batch_id").references(() => productBatches.id, { onDelete: 'set null' }),
   
-  // Quantities
-  quantity: integer("quantity").notNull().default(1),
-  receivedQuantity: integer("received_quantity").default(0), // For partial deliveries
+  // Identificatori normalizzati (stessi nomi di product_items)
+  serialNumber: varchar("serial_number", { length: 100 }), // Seriale generico
+  imeiPrimary: varchar("imei_primary", { length: 20 }), // IMEI principale (telefoni)
+  imeiSecondary: varchar("imei_secondary", { length: 20 }), // IMEI secondario (dual SIM)
+  ean: varchar("ean", { length: 20 }), // Codice EAN/barcode
+  iccid: varchar("iccid", { length: 25 }), // Per SIM card
+  macAddress: varchar("mac_address", { length: 20 }), // Per dispositivi di rete
+  lotCode: varchar("lot_code", { length: 50 }), // Codice lotto
   
-  // Pricing (for orders)
-  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }),
+  // Legacy JSON (deprecati - mantieni per migrazione, rimuovi dopo)
+  serialNumbers: jsonb("serial_numbers").default([]), // @deprecated - usa serialNumber
+  imeiNumbers: jsonb("imei_numbers").default([]), // @deprecated - usa imeiPrimary/imeiSecondary
+  
+  // ==================== QUANTITIES ====================
+  quantity: integer("quantity").notNull().default(1), // Per serializzati sempre 1
+  receivedQuantity: integer("received_quantity").default(0), // Per consegne parziali
+  
+  // ==================== PRICING - IVA E REGIME FISCALE (allineato a price_list_items) ====================
+  // FK fiscali (logiche a public schema)
+  vatRateId: uuid("vat_rate_id"), // FK logica a public.vat_rates (aliquota IVA)
+  vatRegimeId: uuid("vat_regime_id"), // FK logica a public.vat_regimes (regime fiscale)
+  
+  // Prezzi unitari
+  costPrice: numeric("cost_price", { precision: 12, scale: 2 }), // Costo unitario
+  unitPriceNet: numeric("unit_price_net", { precision: 12, scale: 2 }), // Prezzo netto (senza IVA)
+  unitPriceGross: numeric("unit_price_gross", { precision: 12, scale: 2 }), // Prezzo lordo (IVA inclusa)
+  vatAmount: numeric("vat_amount", { precision: 12, scale: 2 }), // Importo IVA unitario
+  
+  // Sconto
   discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }),
-  totalPrice: numeric("total_price", { precision: 12, scale: 2 }),
+  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }), // Sconto importo fisso
   
-  // Serials (for serialized products)
-  serialNumbers: jsonb("serial_numbers").default([]), // Array of serial numbers
-  imeiNumbers: jsonb("imei_numbers").default([]), // Array of IMEI for phones
+  // Totali riga
+  totalPriceNet: numeric("total_price_net", { precision: 12, scale: 2 }), // Totale netto riga
+  totalPriceGross: numeric("total_price_gross", { precision: 12, scale: 2 }), // Totale lordo riga
+  totalVatAmount: numeric("total_vat_amount", { precision: 12, scale: 2 }), // Totale IVA riga
   
-  // Location tracking
+  // Legacy (mantieni per compatibilità)
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }), // @deprecated - usa unitPriceNet/unitPriceGross
+  totalPrice: numeric("total_price", { precision: 12, scale: 2 }), // @deprecated - usa totalPriceNet/totalPriceGross
+  
+  // ==================== LOCATION TRACKING ====================
   fromLocationId: uuid("from_location_id"), // FK to warehouse locations (future)
   toLocationId: uuid("to_location_id"),
   
-  // Status
+  // ==================== STATUS ====================
   itemStatus: varchar("item_status", { length: 50 }).default('pending'), // pending, received, rejected
   
-  // Notes
+  // ==================== NOTES & SORTING ====================
   notes: text("notes"),
-  
-  // Sorting
   lineNumber: integer("line_number").default(0).notNull(),
   
-  // Audit
+  // ==================== AUDIT ====================
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -9743,6 +9771,11 @@ export const wmsDocumentItems = w3suiteSchema.table("wms_document_items", {
   index("wms_doc_items_product_idx").on(table.productId),
   index("wms_doc_items_batch_idx").on(table.batchId),
   index("wms_doc_items_item_idx").on(table.productItemId),
+  index("wms_doc_items_serialized_idx").on(table.isSerialized),
+  index("wms_doc_items_serial_number_idx").on(table.serialNumber),
+  index("wms_doc_items_imei_idx").on(table.imeiPrimary),
+  index("wms_doc_items_ean_idx").on(table.ean),
+  index("wms_doc_items_vat_rate_idx").on(table.vatRateId),
 ]);
 
 export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).omit({
@@ -9751,9 +9784,45 @@ export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).
   createdAt: true,
   updatedAt: true,
 }).extend({
+  // Quantities
   quantity: z.number().int().min(1, "Quantità minima 1"),
+  
+  // Serialized product fields
+  isSerialized: z.boolean().optional(),
+  productItemId: z.string().uuid().optional(),
+  serialNumber: z.string().max(100).optional(),
+  imeiPrimary: z.string().max(20).optional(),
+  imeiSecondary: z.string().max(20).optional(),
+  ean: z.string().max(20).optional(),
+  iccid: z.string().max(25).optional(),
+  macAddress: z.string().max(20).optional(),
+  lotCode: z.string().max(50).optional(),
+  
+  // IVA/Pricing fields
+  vatRateId: z.string().uuid().optional(),
+  vatRegimeId: z.string().uuid().optional(),
+  costPrice: z.coerce.number().min(0).optional(),
+  unitPriceNet: z.coerce.number().min(0).optional(),
+  unitPriceGross: z.coerce.number().min(0).optional(),
+  vatAmount: z.coerce.number().min(0).optional(),
+  discountPercent: z.coerce.number().min(0).max(100).optional(),
+  discountAmount: z.coerce.number().min(0).optional(),
+  totalPriceNet: z.coerce.number().min(0).optional(),
+  totalPriceGross: z.coerce.number().min(0).optional(),
+  totalVatAmount: z.coerce.number().min(0).optional(),
+  
+  // Legacy (deprecated)
   serialNumbers: z.array(z.string()).optional(),
   imeiNumbers: z.array(z.string()).optional(),
+}).refine((data) => {
+  // Se serializzato, product_item_id deve essere presente
+  if (data.isSerialized && !data.productItemId) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Per prodotti serializzati, product_item_id è obbligatorio",
+  path: ["productItemId"],
 });
 export type InsertWmsDocumentItem = z.infer<typeof insertWmsDocumentItemSchema>;
 export type WmsDocumentItem = typeof wmsDocumentItems.$inferSelect;
