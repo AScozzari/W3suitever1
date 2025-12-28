@@ -9582,6 +9582,365 @@ export const insertWmsMovementTypeConfigSchema = createInsertSchema(wmsMovementT
 export type InsertWmsMovementTypeConfig = z.infer<typeof insertWmsMovementTypeConfigSchema>;
 export type WmsMovementTypeConfig = typeof wmsMovementTypeConfig.$inferSelect;
 
+// ==================== WMS DOCUMENT STATUS ENUM ====================
+export const wmsDocumentStatusEnum = pgEnum('wms_document_status', [
+  'draft',              // Bozza
+  'pending_approval',   // In attesa approvazione
+  'confirmed',          // Confermato
+  'archived',           // Archiviato
+  'cancelled'           // Annullato
+]);
+
+// ==================== WMS OPERATIONAL DOCUMENT TYPE ENUM ====================
+export const wmsOperationalDocumentTypeEnum = pgEnum('wms_operational_document_type', [
+  'order',              // Ordine a fornitore
+  'ddt',                // Documento di Trasporto
+  'adjustment_report'   // Rapporto Rettifica
+]);
+
+// ==================== WMS DOCUMENTS (Master Operational Documents) ====================
+// Tabella master per documenti operativi (Ordine, DDT, Rettifica)
+// Distinta da wmsMovementDocuments che gestisce allegati ai movimenti
+export const wmsDocuments = w3suiteSchema.table("wms_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").references(() => stores.id, { onDelete: 'set null' }),
+  
+  // Document identification
+  documentType: wmsOperationalDocumentTypeEnum("document_type").notNull(),
+  documentNumber: varchar("document_number", { length: 100 }).notNull(), // Auto-generated from template
+  documentDate: date("document_date").notNull(),
+  documentDirection: wmsDocumentDirectionEnum("document_direction").notNull(), // active/passive
+  
+  // Status tracking
+  status: wmsDocumentStatusEnum("status").default('draft').notNull(),
+  
+  // DDT specific fields
+  ddtReason: wmsDdtReasonEnum("ddt_reason"), // Only for DDT documents
+  
+  // Counterparty (Fornitore/Cliente)
+  counterpartyType: varchar("counterparty_type", { length: 20 }), // 'supplier' | 'customer' | 'store'
+  supplierId: uuid("supplier_id").references(() => suppliers.id, { onDelete: 'set null' }),
+  customerId: uuid("customer_id"), // Future FK to customers
+  targetStoreId: uuid("target_store_id").references(() => stores.id, { onDelete: 'set null' }), // For transfers
+  
+  // Order specific fields
+  expectedDeliveryDate: date("expected_delivery_date"),
+  
+  // Linked documents (for document chain)
+  parentDocumentId: uuid("parent_document_id"), // FK to parent (e.g., DDT from Order)
+  linkedOrderId: uuid("linked_order_id"), // Reference to purchase order
+  linkedDdtId: uuid("linked_ddt_id"), // Reference to DDT
+  
+  // Totals (denormalized for performance)
+  totalItems: integer("total_items").default(0).notNull(),
+  totalQuantity: integer("total_quantity").default(0).notNull(),
+  totalValue: numeric("total_value", { precision: 12, scale: 2 }),
+  
+  // Notes and metadata
+  notes: text("notes"),
+  internalNotes: text("internal_notes"), // Not visible on printed document
+  metadata: jsonb("metadata").default({}),
+  
+  // Approval workflow
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Audit
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  cancelledBy: varchar("cancelled_by").references(() => users.id),
+  cancelledAt: timestamp("cancelled_at"),
+  cancellationReason: text("cancellation_reason"),
+}, (table) => [
+  // Unique document number per tenant/year
+  uniqueIndex("wms_documents_number_unique").on(table.tenantId, table.documentNumber),
+  
+  // Performance indexes
+  index("wms_documents_tenant_idx").on(table.tenantId),
+  index("wms_documents_store_idx").on(table.storeId),
+  index("wms_documents_type_idx").on(table.documentType),
+  index("wms_documents_status_idx").on(table.status),
+  index("wms_documents_direction_idx").on(table.documentDirection),
+  index("wms_documents_date_idx").on(table.documentDate.desc()),
+  index("wms_documents_supplier_idx").on(table.supplierId),
+  index("wms_documents_tenant_type_status_idx").on(table.tenantId, table.documentType, table.status),
+  index("wms_documents_parent_idx").on(table.parentDocumentId),
+  index("wms_documents_created_idx").on(table.createdAt.desc()),
+]);
+
+export const insertWmsDocumentSchema = createInsertSchema(wmsDocuments).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  documentType: z.enum(['order', 'ddt', 'adjustment_report']),
+  documentNumber: z.string().min(1).max(100),
+  documentDate: z.string().or(z.date()),
+  documentDirection: z.enum(['active', 'passive']),
+  status: z.enum(['draft', 'pending_approval', 'confirmed', 'archived', 'cancelled']).optional(),
+  ddtReason: z.enum(['sale', 'purchase', 'service_send', 'service_return', 'doa_return', 'internal_transfer', 'supplier_return', 'customer_return', 'loan', 'other']).optional(),
+  counterpartyType: z.enum(['supplier', 'customer', 'store']).optional(),
+  totalItems: z.number().int().min(0).optional(),
+  totalQuantity: z.number().int().min(0).optional(),
+});
+export type InsertWmsDocument = z.infer<typeof insertWmsDocumentSchema>;
+export type WmsDocument = typeof wmsDocuments.$inferSelect;
+
+// ==================== WMS DOCUMENT ITEMS ====================
+// Righe documento (prodotti/servizi inclusi nel documento)
+export const wmsDocumentItems = w3suiteSchema.table("wms_document_items", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentId: uuid("document_id").notNull().references(() => wmsDocuments.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Product reference
+  productId: varchar("product_id", { length: 100 }).notNull(), // FK logica a products.id
+  productVersionId: uuid("product_version_id").references(() => productVersions.id, { onDelete: 'set null' }),
+  
+  // For serialized products
+  productItemId: uuid("product_item_id").references(() => productItems.id, { onDelete: 'set null' }),
+  batchId: uuid("batch_id").references(() => productBatches.id, { onDelete: 'set null' }),
+  
+  // Quantities
+  quantity: integer("quantity").notNull().default(1),
+  receivedQuantity: integer("received_quantity").default(0), // For partial deliveries
+  
+  // Pricing (for orders)
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }),
+  discountPercent: numeric("discount_percent", { precision: 5, scale: 2 }),
+  totalPrice: numeric("total_price", { precision: 12, scale: 2 }),
+  
+  // Serials (for serialized products)
+  serialNumbers: jsonb("serial_numbers").default([]), // Array of serial numbers
+  imeiNumbers: jsonb("imei_numbers").default([]), // Array of IMEI for phones
+  
+  // Location tracking
+  fromLocationId: uuid("from_location_id"), // FK to warehouse locations (future)
+  toLocationId: uuid("to_location_id"),
+  
+  // Status
+  itemStatus: varchar("item_status", { length: 50 }).default('pending'), // pending, received, rejected
+  
+  // Notes
+  notes: text("notes"),
+  
+  // Sorting
+  lineNumber: integer("line_number").default(0).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("wms_doc_items_document_idx").on(table.documentId),
+  index("wms_doc_items_tenant_idx").on(table.tenantId),
+  index("wms_doc_items_product_idx").on(table.productId),
+  index("wms_doc_items_batch_idx").on(table.batchId),
+  index("wms_doc_items_item_idx").on(table.productItemId),
+]);
+
+export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  quantity: z.number().int().min(1, "Quantità minima 1"),
+  serialNumbers: z.array(z.string()).optional(),
+  imeiNumbers: z.array(z.string()).optional(),
+});
+export type InsertWmsDocumentItem = z.infer<typeof insertWmsDocumentItemSchema>;
+export type WmsDocumentItem = typeof wmsDocumentItems.$inferSelect;
+
+// ==================== WMS DOCUMENT PHASES (Timeline) ====================
+// Fasi/stati del documento per timeline
+export const wmsDocumentPhases = w3suiteSchema.table("wms_document_phases", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentId: uuid("document_id").notNull().references(() => wmsDocuments.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Phase info
+  phaseName: varchar("phase_name", { length: 100 }).notNull(), // creazione, validazione, approvazione, archiviazione
+  phaseStatus: varchar("phase_status", { length: 20 }).notNull().default('pending'), // pending, completed, skipped, failed
+  
+  // Timing
+  completedAt: timestamp("completed_at"),
+  expectedAt: timestamp("expected_at"),
+  
+  // Actor
+  completedBy: varchar("completed_by").references(() => users.id),
+  completedByName: varchar("completed_by_name", { length: 255 }),
+  
+  // Notes
+  notes: text("notes"),
+  
+  // Ordering
+  phaseOrder: integer("phase_order").default(0).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("wms_doc_phases_document_idx").on(table.documentId),
+  index("wms_doc_phases_tenant_idx").on(table.tenantId),
+  index("wms_doc_phases_order_idx").on(table.documentId, table.phaseOrder),
+]);
+
+export const insertWmsDocumentPhaseSchema = createInsertSchema(wmsDocumentPhases).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+}).extend({
+  phaseName: z.string().min(1).max(100),
+  phaseStatus: z.enum(['pending', 'completed', 'skipped', 'failed']).optional(),
+});
+export type InsertWmsDocumentPhase = z.infer<typeof insertWmsDocumentPhaseSchema>;
+export type WmsDocumentPhase = typeof wmsDocumentPhases.$inferSelect;
+
+// ==================== WMS DOCUMENT ATTACHMENTS ====================
+// Allegati ai documenti operativi
+export const wmsDocumentAttachments = w3suiteSchema.table("wms_document_attachments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentId: uuid("document_id").notNull().references(() => wmsDocuments.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // File info
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  filePath: varchar("file_path", { length: 500 }).notNull(), // Object Storage path
+  fileSize: integer("file_size").notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  
+  // Categorization
+  attachmentType: varchar("attachment_type", { length: 50 }), // scan, photo, contract, other
+  description: text("description"),
+  
+  // Audit
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+}, (table) => [
+  index("wms_doc_attachments_document_idx").on(table.documentId),
+  index("wms_doc_attachments_tenant_idx").on(table.tenantId),
+]);
+
+export const insertWmsDocumentAttachmentSchema = createInsertSchema(wmsDocumentAttachments).omit({
+  id: true,
+  tenantId: true,
+  uploadedAt: true,
+}).extend({
+  fileName: z.string().min(1).max(255),
+  filePath: z.string().min(1).max(500),
+  fileSize: z.number().int().positive(),
+  mimeType: z.string().min(1).max(100),
+});
+export type InsertWmsDocumentAttachment = z.infer<typeof insertWmsDocumentAttachmentSchema>;
+export type WmsDocumentAttachment = typeof wmsDocumentAttachments.$inferSelect;
+
+// ==================== WMS DOCUMENT NUMBERING CONFIG ====================
+// Configurazione numerazione documenti per tipo
+export const wmsDocumentNumberingConfig = w3suiteSchema.table("wms_document_numbering_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Document type this config applies to
+  documentType: varchar("document_type", { length: 50 }).notNull(), // order, ddt, adjustment_report, invoice, credit_note, debit_note
+  
+  // Template configuration
+  template: varchar("template", { length: 100 }).notNull().default('{N}'), // e.g., "DDT-{YYYY}-{N}", "ORD/{YY}/{MM}/{N}"
+  paddingLength: integer("padding_length").default(4).notNull(), // Zero padding for {N}
+  
+  // Counter management
+  currentCounter: integer("current_counter").default(0).notNull(),
+  resetAnnually: boolean("reset_annually").default(true).notNull(),
+  lastResetYear: integer("last_reset_year"),
+  
+  // Prefix/Suffix options
+  prefix: varchar("prefix", { length: 50 }),
+  suffix: varchar("suffix", { length: 50 }),
+  
+  // Display
+  description: text("description"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // Unique config per tenant/document type
+  uniqueIndex("wms_doc_numbering_tenant_type_unique").on(table.tenantId, table.documentType),
+  
+  // Performance indexes
+  index("wms_doc_numbering_tenant_idx").on(table.tenantId),
+]);
+
+export const insertWmsDocumentNumberingConfigSchema = createInsertSchema(wmsDocumentNumberingConfig).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+  currentCounter: true,
+  lastResetYear: true,
+}).extend({
+  documentType: z.enum(['order', 'ddt', 'adjustment_report', 'invoice', 'credit_note', 'debit_note']),
+  template: z.string().min(1).max(100),
+  paddingLength: z.number().int().min(1).max(10).optional(),
+  resetAnnually: z.boolean().optional(),
+});
+export type InsertWmsDocumentNumberingConfig = z.infer<typeof insertWmsDocumentNumberingConfigSchema>;
+export type WmsDocumentNumberingConfig = typeof wmsDocumentNumberingConfig.$inferSelect;
+
+// ==================== WMS ORDER APPROVAL CONFIG ====================
+// Configurazione approvazione ordini a fornitore (separata da movimenti)
+export const wmsOrderApprovalConfig = w3suiteSchema.table("wms_order_approval_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Approval settings
+  requiresApproval: boolean("requires_approval").default(false).notNull(),
+  
+  // Threshold-based approval
+  thresholdAmount: numeric("threshold_amount", { precision: 12, scale: 2 }), // Requires approval above this amount
+  thresholdQuantity: integer("threshold_quantity"), // Requires approval above this quantity
+  
+  // Workflow integration
+  workflowTemplateId: uuid("workflow_template_id").references(() => workflowTemplates.id, { onDelete: 'set null' }),
+  
+  // Approvers configuration
+  approverRoles: jsonb("approver_roles").default([]), // Array of role IDs that can approve
+  
+  // Notifications
+  notifyOnCreate: boolean("notify_on_create").default(true).notNull(),
+  notifyOnApproval: boolean("notify_on_approval").default(true).notNull(),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  // One config per tenant
+  uniqueIndex("wms_order_approval_tenant_unique").on(table.tenantId),
+  
+  index("wms_order_approval_tenant_idx").on(table.tenantId),
+]);
+
+export const insertWmsOrderApprovalConfigSchema = createInsertSchema(wmsOrderApprovalConfig).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  requiresApproval: z.boolean().optional(),
+  thresholdAmount: z.string().or(z.number()).optional(),
+  thresholdQuantity: z.number().int().min(1).optional(),
+  approverRoles: z.array(z.string()).optional(),
+});
+export type InsertWmsOrderApprovalConfig = z.infer<typeof insertWmsOrderApprovalConfigSchema>;
+export type WmsOrderApprovalConfig = typeof wmsOrderApprovalConfig.$inferSelect;
+
 // ==================== PRODUCT-SUPPLIER MAPPINGS ====================
 
 // 20) product_supplier_mappings - Mapping SKU interno ↔ SKU fornitore (persistente)
