@@ -376,6 +376,17 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     }
   }, [open]);
 
+  // Reset search results when supplier changes (for supplier SKU search mode)
+  useEffect(() => {
+    if (searchMode === 'supplier_sku') {
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setShowSkuMappingForm(false);
+      setUnmappedSupplierSku('');
+    }
+  }, [selectedSupplierId]);
+
   // Resume draft: populate form and items when resumeDraft is provided
   useEffect(() => {
     if (open && resumeDraft) {
@@ -671,7 +682,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     handleProductSelect(mappedProduct);
   };
 
-  const handleProductSelect = (product: Product) => {
+  const [isCheckingMapping, setIsCheckingMapping] = useState(false);
+
+  const handleProductSelect = async (product: Product) => {
     setSelectedProduct(product);
     setSearchQuery('');
     setShowSearchResults(false);
@@ -684,11 +697,48 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setSerialScanMode(true);
     }
     
-    // Check if product has supplier SKU mapping for current supplier
-    // If not, show prompt to add supplier SKU
-    if (!product.supplierSku && selectedSupplierId) {
-      setShowSupplierSkuPrompt(true);
-      setPendingSupplierSkuInput('');
+    // If product already has supplierSku (from SKU mapping search), skip check
+    if (product.supplierSku) {
+      setShowSupplierSkuPrompt(false);
+      setTimeout(() => quantityInputRef.current?.focus(), 100);
+      return;
+    }
+    
+    // For internal catalog search (Flow 1): verify if mapping exists for this supplier
+    if (selectedSupplierId && searchMode === 'internal') {
+      setIsCheckingMapping(true);
+      try {
+        const response = await fetch(`/api/wms/product-supplier-mappings?productId=${product.id}&supplierId=${selectedSupplierId}`);
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+          // Mapping exists - update product with supplierSku
+          const mapping = data.data[0];
+          setSelectedProduct({
+            ...product,
+            supplierSku: mapping.supplierSku || undefined
+          });
+          setShowSupplierSkuPrompt(false);
+        } else {
+          // No mapping - prompt to add supplier SKU
+          setShowSupplierSkuPrompt(true);
+          setPendingSupplierSkuInput('');
+        }
+      } catch (error) {
+        console.error('Error checking mapping:', error);
+        // On error, prompt anyway
+        setShowSupplierSkuPrompt(true);
+        setPendingSupplierSkuInput('');
+      } finally {
+        setIsCheckingMapping(false);
+      }
+    } else if (searchMode === 'supplier_sku') {
+      // Flow 2: Supplier SKU search - product already has mapping verified
+      // No prompt needed - mapping was found in SKU search
+      setShowSupplierSkuPrompt(false);
+    } else if (!selectedSupplierId) {
+      // No supplier selected - cannot create mapping
+      setShowSupplierSkuPrompt(false);
     } else {
       setShowSupplierSkuPrompt(false);
     }

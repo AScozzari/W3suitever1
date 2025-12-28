@@ -1,0 +1,146 @@
+Allow-Events: talk, hold, conference, presence, as-feature-event, dialog, line-seize, call-info, sla, include-session-description, presence.winfo, message-summary, refer
+Subscription-State: terminated;reason=noresource
+Content-Type: application/simple-message-summary
+Content-Length: 67
+
+Messages-Waiting: no
+Message-Account: sip:2000@demo.edgvoip.it
+
+
+
+sip__js.js?v=fac8f799:6965 Sun Dec 28 2025 09:46:54 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+SIP/2.0 481 Call/Transaction Does Not Exist
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bKg62F39p35yBQQ
+From: <sip:2000@demo.edgvoip.it>;tag=SQXamNKQy7eHK
+To: <sip:2000@demo.edgvoip.it>;tag=383ekrrl5c
+CSeq: 108902014 NOTIFY
+Call-ID: 98fad913-5e6c-123f-2c82-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+ReceivingModal.tsx?t=1766911559277:162 Uncaught ReferenceError: Cannot access 'selectedSupplierId' before initialization
+    at ReceivingModal (ReceivingModal.tsx?t=1766911559277:162:68)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=fac8f799:19137:13)
+ReceivingModal @ ReceivingModal.tsx?t=1766911559277:162
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+ReceivingModal.tsx?t=1766911559277:162 Uncaught ReferenceError: Cannot access 'selectedSupplierId' before initialization
+    at ReceivingModal (ReceivingModal.tsx?t=1766911559277:162:68)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=fac8f799:19137:13)
+ReceivingModal @ ReceivingModal.tsx?t=1766911559277:162
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+installHook.js:1 The above error occurred in the <ReceivingModal> component:
+
+    at ReceivingModal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/wms/ReceivingModal.tsx?t=1766911559277:96:34)
+    at div
+    at ReceivingTabContent (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/wms/ReceivingTabContent.tsx:74:41)
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:207:34)
+    at WMSDashboardPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/wms/WMSDashboardPage.tsx:43:37)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:930:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:262:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:120:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=fac8f799:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=fac8f799:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=fac8f799:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+chunk-ZHRYBLGQ.js?v=fac8f799:9129 Uncaught ReferenceError: Cannot access 'selectedSupplierId' before initialization
+    at ReceivingModal (ReceivingModal.tsx?t=1766911559277:162:68)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=fac8f799:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=fac8f799:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=fac8f799:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=fac8f799:18879:28)
+ReceivingModal @ ReceivingModal.tsx?t=1766911559277:162
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+useSIPRegistration.ts:237 Sun Dec 28 2025 09:46:59 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+useSIPRegistration.ts:237 Sun Dec 28 2025 09:46:59 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
