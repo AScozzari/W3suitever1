@@ -11951,7 +11951,7 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
       .from(wmsDocuments)
       .where(and(...conditions));
 
-    const documents = await db.select({
+    const baseDocuments = await db.select({
       id: wmsDocuments.id,
       documentType: wmsDocuments.documentType,
       documentNumber: wmsDocuments.documentNumber,
@@ -11965,16 +11965,41 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
       notes: wmsDocuments.notes,
       createdAt: wmsDocuments.createdAt,
       createdBy: wmsDocuments.createdBy,
-      supplierName: suppliers.name,
-      storeName: stores.name,
+      supplierId: wmsDocuments.supplierId,
+      storeId: wmsDocuments.storeId,
     })
     .from(wmsDocuments)
-    .leftJoin(suppliers, eq(wmsDocuments.supplierId, suppliers.id))
-    .leftJoin(stores, eq(wmsDocuments.storeId, stores.id))
     .where(and(...conditions))
     .orderBy(desc(wmsDocuments.createdAt))
     .limit(limitNum)
     .offset(offset);
+
+    // Fetch supplier and store names separately to avoid circular dependency issues with Drizzle joins
+    const supplierIds = baseDocuments.map(d => d.supplierId).filter(Boolean) as string[];
+    const storeIds = baseDocuments.map(d => d.storeId).filter(Boolean) as string[];
+    
+    const supplierMap = new Map<string, string>();
+    const storeMap = new Map<string, string>();
+    
+    if (supplierIds.length > 0) {
+      const supplierResults = await db.select({ id: suppliers.id, name: suppliers.name })
+        .from(suppliers)
+        .where(inArray(suppliers.id, supplierIds));
+      supplierResults.forEach(s => supplierMap.set(s.id, s.name));
+    }
+    
+    if (storeIds.length > 0) {
+      const storeResults = await db.select({ id: stores.id, name: stores.name })
+        .from(stores)
+        .where(inArray(stores.id, storeIds));
+      storeResults.forEach(s => storeMap.set(s.id, s.name));
+    }
+    
+    const documents = baseDocuments.map(doc => ({
+      ...doc,
+      supplierName: doc.supplierId ? supplierMap.get(doc.supplierId) || null : null,
+      storeName: doc.storeId ? storeMap.get(doc.storeId) || null : null,
+    }));
 
     res.json({
       data: documents,
@@ -11989,7 +12014,11 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
     if (error?.code === '42P01') {
       return res.json({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } });
     }
-    logger.error('Error listing documents', { error });
+    logger.error('Error listing documents', { 
+      error: error?.message || String(error),
+      code: error?.code,
+      stack: error?.stack?.slice(0, 500)
+    });
     res.status(500).json({ error: "Failed to list documents" });
   }
 });
