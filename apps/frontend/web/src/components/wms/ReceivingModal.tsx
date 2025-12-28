@@ -315,10 +315,19 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [searchMode, setSearchMode] = useState<'internal' | 'supplier_sku'>('internal');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
-  // Filter states for category/type
+  // Filter states for product type/category/typology hierarchy
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedProductType, setSelectedProductType] = useState<string>(''); // PHYSICAL, VIRTUAL, SERVICE, CANVAS
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
+  
+  // Product type options with Italian labels
+  const productTypeOptions = [
+    { value: 'PHYSICAL', label: 'Fisico' },
+    { value: 'SERVICE', label: 'Servizio' },
+    { value: 'VIRTUAL', label: 'Digitale' },
+    { value: 'CANVAS', label: 'Canvas' },
+  ];
   
   // Debounce search query (600ms for better UX when typing SKUs)
   useEffect(() => {
@@ -349,10 +358,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const { data: productsApiData, isLoading: productsLoading } = useQuery<ProductFromAPI[]>({
     queryKey: ['/api/wms/products', { 
       search: debouncedSearchQuery,
+      type: selectedProductType || undefined, // PHYSICAL, VIRTUAL, SERVICE, CANVAS
       category_id: selectedCategoryId || undefined,
       type_id: selectedTypeId || undefined,
     }],
-    enabled: open && currentStep === 2 && searchMode === 'internal' && (debouncedSearchQuery.length >= 2 || !!selectedCategoryId || !!selectedTypeId),
+    enabled: open && currentStep === 2 && searchMode === 'internal' && (debouncedSearchQuery.length >= 2 || !!selectedProductType || !!selectedCategoryId || !!selectedTypeId),
   });
 
   // Fetch SKU mappings for supplier SKU search (Flow 2)
@@ -1556,6 +1566,28 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                   {showFilters && searchMode === 'internal' && (
                     <div className="flex gap-3 mb-3 p-3 bg-gray-50 rounded-lg border">
                       <div className="flex-1">
+                        <Label className="text-xs text-gray-500 mb-1 block">Tipo Prodotto</Label>
+                        <Select 
+                          value={selectedProductType || "__all__"} 
+                          onValueChange={(v) => {
+                            setSelectedProductType(v === "__all__" ? '' : v);
+                            // Reset child filters when parent changes
+                            setSelectedCategoryId('');
+                            setSelectedTypeId('');
+                          }}
+                        >
+                          <SelectTrigger className="h-8" data-testid="select-product-type-filter">
+                            <SelectValue placeholder="Tutti i tipi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__all__">Tutti i tipi</SelectItem>
+                            {productTypeOptions.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
                         <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
                         <Select value={selectedCategoryId || "__all__"} onValueChange={(v) => setSelectedCategoryId(v === "__all__" ? '' : v)}>
                           <SelectTrigger className="h-8" data-testid="select-category-filter">
@@ -1583,12 +1615,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                           </SelectContent>
                         </Select>
                       </div>
-                      {(selectedCategoryId || selectedTypeId) && (
+                      {(selectedProductType || selectedCategoryId || selectedTypeId) && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => {
+                            setSelectedProductType('');
                             setSelectedCategoryId('');
                             setSelectedTypeId('');
                           }}
