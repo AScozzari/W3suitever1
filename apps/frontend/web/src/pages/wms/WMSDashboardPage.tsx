@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { InventoryContent } from './InventoryPage';
 import { ReceivingTabContent } from '../../components/wms/ReceivingTabContent';
+import { DocumentsTabContent } from '../../components/wms/DocumentsTabContent';
 
 
 type TabId = 'carico' | 'inventario' | 'movimenti' | 'documenti' | 'analytics' | 'impostazioni';
@@ -91,11 +92,7 @@ export default function WMSDashboardPage() {
           
           {activeTab === 'documenti' && (
             <div className="p-6">
-              <div className="text-center py-12 text-gray-500">
-                <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p className="font-medium">Documenti</p>
-                <p className="text-sm">Gestione DDT, ordini e bolle (in arrivo)</p>
-              </div>
+              <DocumentsTabContent />
             </div>
           )}
           

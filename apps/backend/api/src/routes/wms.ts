@@ -58,7 +58,20 @@ import {
   driverCategoryMappings,
   // Receiving Drafts
   wmsReceivingDrafts,
-  insertReceivingDraftSchema
+  insertReceivingDraftSchema,
+  // WMS Documents
+  wmsDocuments,
+  wmsDocumentItems,
+  wmsDocumentPhases,
+  wmsDocumentAttachments,
+  wmsDocumentNumberingConfig,
+  wmsOrderApprovalConfig,
+  insertWmsDocumentSchema,
+  insertWmsDocumentItemSchema,
+  insertWmsDocumentPhaseSchema,
+  insertWmsDocumentNumberingConfigSchema,
+  insertWmsOrderApprovalConfigSchema,
+  users
 } from "../db/schema/w3suite";
 import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -11664,6 +11677,712 @@ router.post("/receiving/drafts/:id/complete", rbacMiddleware, requirePermission(
   } catch (error) {
     logger.error('Error completing receiving draft', { error });
     res.status(500).json({ error: "Failed to complete draft" });
+  }
+});
+
+// ==================== WMS DOCUMENTS API ====================
+
+/**
+ * GET /api/wms/documents/stats
+ * Get document statistics for dashboard KPIs
+ */
+router.get("/documents/stats", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    currentMonth.setHours(0, 0, 0, 0);
+
+    const [totalDocs] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.tenantId, tenantId),
+        gte(wmsDocuments.createdAt, currentMonth)
+      ));
+
+    const [passiveDocs] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.tenantId, tenantId),
+        eq(wmsDocuments.documentDirection, 'passive'),
+        gte(wmsDocuments.createdAt, currentMonth)
+      ));
+
+    const [activeDocs] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.tenantId, tenantId),
+        eq(wmsDocuments.documentDirection, 'active'),
+        gte(wmsDocuments.createdAt, currentMonth)
+      ));
+
+    const [pendingApproval] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.tenantId, tenantId),
+        eq(wmsDocuments.status, 'pending_approval')
+      ));
+
+    const [confirmedDocs] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.tenantId, tenantId),
+        eq(wmsDocuments.status, 'confirmed'),
+        gte(wmsDocuments.createdAt, currentMonth)
+      ));
+
+    const successRate = totalDocs.count > 0 
+      ? Math.round((confirmedDocs.count / totalDocs.count) * 100) 
+      : 100;
+
+    res.json({
+      total: totalDocs.count || 0,
+      passive: passiveDocs.count || 0,
+      active: activeDocs.count || 0,
+      pendingApproval: pendingApproval.count || 0,
+      successRate
+    });
+  } catch (error) {
+    logger.error('Error fetching document stats', { error });
+    res.status(500).json({ error: "Failed to fetch document statistics" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/trend
+ * Get 7-day document trend for chart
+ */
+router.get("/documents/trend", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const trendData = await db.select({
+      date: sql<string>`date(${wmsDocuments.createdAt})`,
+      direction: wmsDocuments.documentDirection,
+      count: sql<number>`count(*)::int`
+    })
+    .from(wmsDocuments)
+    .where(and(
+      eq(wmsDocuments.tenantId, tenantId),
+      gte(wmsDocuments.createdAt, sevenDaysAgo)
+    ))
+    .groupBy(sql`date(${wmsDocuments.createdAt})`, wmsDocuments.documentDirection)
+    .orderBy(sql`date(${wmsDocuments.createdAt})`);
+
+    const dateMap = new Map<string, { passive: number; active: number }>();
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      const dateStr = date.toISOString().split('T')[0];
+      dateMap.set(dateStr, { passive: 0, active: 0 });
+    }
+
+    trendData.forEach(row => {
+      const existing = dateMap.get(row.date) || { passive: 0, active: 0 };
+      if (row.direction === 'passive') {
+        existing.passive = row.count;
+      } else {
+        existing.active = row.count;
+      }
+      dateMap.set(row.date, existing);
+    });
+
+    const result = Array.from(dateMap.entries()).map(([date, data]) => ({
+      date,
+      passive: data.passive,
+      active: data.active
+    }));
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Error fetching document trend', { error });
+    res.status(500).json({ error: "Failed to fetch document trend" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/timeline
+ * Get recent document events for timeline
+ */
+router.get("/documents/timeline", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const limit = parseInt(req.query.limit as string) || 5;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const recentDocs = await db.select({
+      id: wmsDocuments.id,
+      documentNumber: wmsDocuments.documentNumber,
+      documentType: wmsDocuments.documentType,
+      status: wmsDocuments.status,
+      createdAt: wmsDocuments.createdAt,
+      approvedAt: wmsDocuments.approvedAt,
+      createdByName: users.firstName,
+    })
+    .from(wmsDocuments)
+    .leftJoin(users, eq(wmsDocuments.createdBy, users.id))
+    .where(eq(wmsDocuments.tenantId, tenantId))
+    .orderBy(desc(wmsDocuments.createdAt))
+    .limit(limit);
+
+    const timeline = recentDocs.map(doc => {
+      let event = 'creato';
+      let eventTime = doc.createdAt;
+      
+      if (doc.status === 'confirmed' && doc.approvedAt) {
+        event = 'approvato';
+        eventTime = doc.approvedAt;
+      } else if (doc.status === 'pending_approval') {
+        event = 'in attesa';
+      }
+
+      return {
+        id: doc.id,
+        documentNumber: doc.documentNumber,
+        documentType: doc.documentType,
+        event,
+        eventTime,
+        createdBy: doc.createdByName
+      };
+    });
+
+    res.json(timeline);
+  } catch (error) {
+    logger.error('Error fetching document timeline', { error });
+    res.status(500).json({ error: "Failed to fetch document timeline" });
+  }
+});
+
+/**
+ * GET /api/wms/documents
+ * List documents with filters and pagination
+ */
+router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const { 
+      direction, 
+      type, 
+      status, 
+      tab,
+      supplierId,
+      dateFrom,
+      dateTo,
+      search,
+      page = '1',
+      limit = '20'
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+
+    const conditions = [eq(wmsDocuments.tenantId, tenantId)];
+
+    if (tab === 'passive') {
+      conditions.push(eq(wmsDocuments.documentDirection, 'passive'));
+      conditions.push(or(eq(wmsDocuments.status, 'confirmed'), eq(wmsDocuments.status, 'pending_approval'))!);
+    } else if (tab === 'active') {
+      conditions.push(eq(wmsDocuments.documentDirection, 'active'));
+      conditions.push(or(eq(wmsDocuments.status, 'confirmed'), eq(wmsDocuments.status, 'pending_approval'))!);
+    } else if (tab === 'archive') {
+      conditions.push(eq(wmsDocuments.status, 'archived'));
+    } else if (tab === 'drafts') {
+      conditions.push(eq(wmsDocuments.status, 'draft'));
+    }
+
+    if (direction && typeof direction === 'string') {
+      conditions.push(eq(wmsDocuments.documentDirection, direction as 'active' | 'passive'));
+    }
+    if (type && typeof type === 'string') {
+      conditions.push(eq(wmsDocuments.documentType, type as any));
+    }
+    if (status && typeof status === 'string') {
+      conditions.push(eq(wmsDocuments.status, status as any));
+    }
+    if (supplierId && typeof supplierId === 'string') {
+      conditions.push(eq(wmsDocuments.supplierId, supplierId));
+    }
+    if (dateFrom && typeof dateFrom === 'string') {
+      conditions.push(gte(wmsDocuments.documentDate, dateFrom));
+    }
+    if (dateTo && typeof dateTo === 'string') {
+      conditions.push(lte(wmsDocuments.documentDate, dateTo));
+    }
+    if (search && typeof search === 'string') {
+      conditions.push(ilike(wmsDocuments.documentNumber, `%${search}%`));
+    }
+
+    const [countResult] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(wmsDocuments)
+      .where(and(...conditions));
+
+    const documents = await db.select({
+      id: wmsDocuments.id,
+      documentType: wmsDocuments.documentType,
+      documentNumber: wmsDocuments.documentNumber,
+      documentDate: wmsDocuments.documentDate,
+      documentDirection: wmsDocuments.documentDirection,
+      status: wmsDocuments.status,
+      ddtReason: wmsDocuments.ddtReason,
+      totalItems: wmsDocuments.totalItems,
+      totalQuantity: wmsDocuments.totalQuantity,
+      totalValue: wmsDocuments.totalValue,
+      notes: wmsDocuments.notes,
+      createdAt: wmsDocuments.createdAt,
+      createdBy: wmsDocuments.createdBy,
+      supplierName: suppliers.businessName,
+      storeName: stores.name,
+    })
+    .from(wmsDocuments)
+    .leftJoin(suppliers, eq(wmsDocuments.supplierId, suppliers.id))
+    .leftJoin(stores, eq(wmsDocuments.storeId, stores.id))
+    .where(and(...conditions))
+    .orderBy(desc(wmsDocuments.createdAt))
+    .limit(limitNum)
+    .offset(offset);
+
+    res.json({
+      data: documents,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: countResult.count,
+        totalPages: Math.ceil(countResult.count / limitNum)
+      }
+    });
+  } catch (error) {
+    logger.error('Error listing documents', { error });
+    res.status(500).json({ error: "Failed to list documents" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/:id
+ * Get document details with items, phases, and attachments
+ */
+router.get("/documents/:id", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [document] = await db.select()
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.id, id),
+        eq(wmsDocuments.tenantId, tenantId)
+      ));
+
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    const items = await db.select({
+      id: wmsDocumentItems.id,
+      productId: wmsDocumentItems.productId,
+      quantity: wmsDocumentItems.quantity,
+      receivedQuantity: wmsDocumentItems.receivedQuantity,
+      unitPrice: wmsDocumentItems.unitPrice,
+      totalPrice: wmsDocumentItems.totalPrice,
+      serialNumbers: wmsDocumentItems.serialNumbers,
+      itemStatus: wmsDocumentItems.itemStatus,
+      lineNumber: wmsDocumentItems.lineNumber,
+      productName: products.name,
+      productSku: products.sku,
+    })
+    .from(wmsDocumentItems)
+    .leftJoin(products, eq(wmsDocumentItems.productId, products.id))
+    .where(eq(wmsDocumentItems.documentId, id))
+    .orderBy(wmsDocumentItems.lineNumber);
+
+    const phases = await db.select()
+      .from(wmsDocumentPhases)
+      .where(eq(wmsDocumentPhases.documentId, id))
+      .orderBy(wmsDocumentPhases.phaseOrder);
+
+    const attachments = await db.select()
+      .from(wmsDocumentAttachments)
+      .where(eq(wmsDocumentAttachments.documentId, id));
+
+    let supplierData = null;
+    if (document.supplierId) {
+      const [supplier] = await db.select()
+        .from(suppliers)
+        .where(eq(suppliers.id, document.supplierId));
+      supplierData = supplier;
+    }
+
+    res.json({
+      ...document,
+      supplier: supplierData,
+      items,
+      phases,
+      attachments
+    });
+  } catch (error) {
+    logger.error('Error fetching document', { error });
+    res.status(500).json({ error: "Failed to fetch document" });
+  }
+});
+
+/**
+ * POST /api/wms/documents
+ * Create a new document
+ */
+router.post("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const validatedData = insertWmsDocumentSchema.parse(req.body);
+
+    let documentNumber = validatedData.documentNumber;
+    if (!documentNumber) {
+      documentNumber = await generateDocumentNumber(tenantId, validatedData.documentType);
+    }
+
+    const [newDocument] = await db.insert(wmsDocuments)
+      .values({
+        ...validatedData,
+        tenantId,
+        documentNumber,
+        createdBy: userId,
+      })
+      .returning();
+
+    await db.insert(wmsDocumentPhases)
+      .values([
+        {
+          documentId: newDocument.id,
+          tenantId,
+          phaseName: 'Creazione',
+          phaseStatus: 'completed',
+          phaseOrder: 1,
+          completedAt: new Date(),
+          completedBy: userId,
+        },
+        {
+          documentId: newDocument.id,
+          tenantId,
+          phaseName: 'Validazione',
+          phaseStatus: 'pending',
+          phaseOrder: 2,
+        },
+        {
+          documentId: newDocument.id,
+          tenantId,
+          phaseName: 'Approvazione',
+          phaseStatus: 'pending',
+          phaseOrder: 3,
+        },
+        {
+          documentId: newDocument.id,
+          tenantId,
+          phaseName: 'Archiviazione',
+          phaseStatus: 'pending',
+          phaseOrder: 4,
+        },
+      ]);
+
+    logger.info('Document created', { documentId: newDocument.id, tenantId });
+    res.status(201).json({ success: true, data: newDocument });
+  } catch (error) {
+    logger.error('Error creating document', { error });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation error", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create document" });
+  }
+});
+
+/**
+ * Helper function to generate document number from template
+ */
+async function generateDocumentNumber(tenantId: string, documentType: string): Promise<string> {
+  const [config] = await db.select()
+    .from(wmsDocumentNumberingConfig)
+    .where(and(
+      eq(wmsDocumentNumberingConfig.tenantId, tenantId),
+      eq(wmsDocumentNumberingConfig.documentType, documentType)
+    ));
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+
+  let template = '{N}';
+  let paddingLength = 4;
+  let currentCounter = 1;
+
+  if (config) {
+    template = config.template;
+    paddingLength = config.paddingLength;
+    
+    if (config.resetAnnually && config.lastResetYear !== year) {
+      currentCounter = 1;
+      await db.update(wmsDocumentNumberingConfig)
+        .set({ currentCounter: 1, lastResetYear: year, updatedAt: new Date() })
+        .where(eq(wmsDocumentNumberingConfig.id, config.id));
+    } else {
+      currentCounter = config.currentCounter + 1;
+      await db.update(wmsDocumentNumberingConfig)
+        .set({ currentCounter, updatedAt: new Date() })
+        .where(eq(wmsDocumentNumberingConfig.id, config.id));
+    }
+  }
+
+  let documentNumber = template
+    .replace('{N}', String(currentCounter).padStart(paddingLength, '0'))
+    .replace('{YYYY}', String(year))
+    .replace('{YY}', String(year).slice(-2))
+    .replace('{MM}', month)
+    .replace('{DD}', day);
+
+  return documentNumber;
+}
+
+/**
+ * PATCH /api/wms/documents/:id/status
+ * Update document status (approve, reject, archive, cancel)
+ */
+router.patch("/documents/:id/status", rbacMiddleware, requirePermission('wms.documents.ddt.edit'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { status, reason } = req.body;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const updateData: any = {
+      status,
+      updatedAt: new Date(),
+      updatedBy: userId,
+    };
+
+    if (status === 'confirmed') {
+      updateData.approvedBy = userId;
+      updateData.approvedAt = new Date();
+      
+      await db.update(wmsDocumentPhases)
+        .set({ phaseStatus: 'completed', completedAt: new Date(), completedBy: userId })
+        .where(and(
+          eq(wmsDocumentPhases.documentId, id),
+          eq(wmsDocumentPhases.phaseName, 'Approvazione')
+        ));
+    } else if (status === 'cancelled') {
+      updateData.cancelledBy = userId;
+      updateData.cancelledAt = new Date();
+      updateData.cancellationReason = reason;
+    } else if (status === 'archived') {
+      await db.update(wmsDocumentPhases)
+        .set({ phaseStatus: 'completed', completedAt: new Date(), completedBy: userId })
+        .where(and(
+          eq(wmsDocumentPhases.documentId, id),
+          eq(wmsDocumentPhases.phaseName, 'Archiviazione')
+        ));
+    }
+
+    const [updated] = await db.update(wmsDocuments)
+      .set(updateData)
+      .where(and(
+        eq(wmsDocuments.id, id),
+        eq(wmsDocuments.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error('Error updating document status', { error });
+    res.status(500).json({ error: "Failed to update document status" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/numbering-config
+ * Get document numbering configurations
+ */
+router.get("/documents/numbering-config", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const configs = await db.select()
+      .from(wmsDocumentNumberingConfig)
+      .where(eq(wmsDocumentNumberingConfig.tenantId, tenantId));
+
+    res.json(configs);
+  } catch (error) {
+    logger.error('Error fetching numbering configs', { error });
+    res.status(500).json({ error: "Failed to fetch numbering configurations" });
+  }
+});
+
+/**
+ * POST /api/wms/documents/numbering-config
+ * Create or update document numbering configuration
+ */
+router.post("/documents/numbering-config", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const validatedData = insertWmsDocumentNumberingConfigSchema.parse(req.body);
+
+    const [existing] = await db.select()
+      .from(wmsDocumentNumberingConfig)
+      .where(and(
+        eq(wmsDocumentNumberingConfig.tenantId, tenantId),
+        eq(wmsDocumentNumberingConfig.documentType, validatedData.documentType)
+      ));
+
+    if (existing) {
+      const [updated] = await db.update(wmsDocumentNumberingConfig)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+          updatedBy: userId,
+        })
+        .where(eq(wmsDocumentNumberingConfig.id, existing.id))
+        .returning();
+      
+      res.json({ success: true, data: updated });
+    } else {
+      const [created] = await db.insert(wmsDocumentNumberingConfig)
+        .values({
+          ...validatedData,
+          tenantId,
+          currentCounter: 0,
+          lastResetYear: new Date().getFullYear(),
+        })
+        .returning();
+
+      res.status(201).json({ success: true, data: created });
+    }
+  } catch (error) {
+    logger.error('Error saving numbering config', { error });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation error", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to save numbering configuration" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/order-approval-config
+ * Get order approval configuration
+ */
+router.get("/documents/order-approval-config", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [config] = await db.select()
+      .from(wmsOrderApprovalConfig)
+      .where(eq(wmsOrderApprovalConfig.tenantId, tenantId));
+
+    res.json(config || { 
+      requiresApproval: false,
+      thresholdAmount: null,
+      thresholdQuantity: null,
+      approverRoles: [],
+      notifyOnCreate: true,
+      notifyOnApproval: true
+    });
+  } catch (error) {
+    logger.error('Error fetching order approval config', { error });
+    res.status(500).json({ error: "Failed to fetch order approval configuration" });
+  }
+});
+
+/**
+ * POST /api/wms/documents/order-approval-config
+ * Create or update order approval configuration
+ */
+router.post("/documents/order-approval-config", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const validatedData = insertWmsOrderApprovalConfigSchema.parse(req.body);
+
+    const [existing] = await db.select()
+      .from(wmsOrderApprovalConfig)
+      .where(eq(wmsOrderApprovalConfig.tenantId, tenantId));
+
+    if (existing) {
+      const [updated] = await db.update(wmsOrderApprovalConfig)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+          updatedBy: userId,
+        })
+        .where(eq(wmsOrderApprovalConfig.id, existing.id))
+        .returning();
+      
+      res.json({ success: true, data: updated });
+    } else {
+      const [created] = await db.insert(wmsOrderApprovalConfig)
+        .values({
+          ...validatedData,
+          tenantId,
+        })
+        .returning();
+
+      res.status(201).json({ success: true, data: created });
+    }
+  } catch (error) {
+    logger.error('Error saving order approval config', { error });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation error", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to save order approval configuration" });
   }
 });
 
