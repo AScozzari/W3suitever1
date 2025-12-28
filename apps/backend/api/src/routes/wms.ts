@@ -12351,6 +12351,9 @@ router.get("/documents/:id", rbacMiddleware, requirePermission('wms.documents.dd
       lotCode: wmsDocumentItems.lotCode,
       vatRateId: wmsDocumentItems.vatRateId,
       vatRegimeId: wmsDocumentItems.vatRegimeId,
+      vatRateCode: vatRates.code,
+      vatRatePercent: vatRates.rate,
+      vatRegimeCode: vatRegimes.code,
       costPrice: wmsDocumentItems.costPrice,
       unitPriceNet: wmsDocumentItems.unitPriceNet,
       unitPriceGross: wmsDocumentItems.unitPriceGross,
@@ -12372,6 +12375,8 @@ router.get("/documents/:id", rbacMiddleware, requirePermission('wms.documents.dd
     })
     .from(wmsDocumentItems)
     .leftJoin(products, eq(wmsDocumentItems.productId, products.id))
+    .leftJoin(vatRates, eq(wmsDocumentItems.vatRateId, vatRates.id))
+    .leftJoin(vatRegimes, eq(wmsDocumentItems.vatRegimeId, vatRegimes.id))
     .where(eq(wmsDocumentItems.documentId, id))
     .orderBy(wmsDocumentItems.lineNumber);
 

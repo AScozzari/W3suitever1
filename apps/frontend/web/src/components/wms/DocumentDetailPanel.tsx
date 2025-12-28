@@ -76,6 +76,17 @@ interface DocumentItem {
   receivedQuantity: number;
   unitPrice: string | null;
   totalPrice: string | null;
+  unitPriceNet: string | null;
+  unitPriceGross: string | null;
+  vatAmount: string | null;
+  totalPriceNet: string | null;
+  totalPriceGross: string | null;
+  totalVatAmount: string | null;
+  vatRateId: string | null;
+  vatRateCode: string | null;
+  vatRatePercent: number | null;
+  vatRegimeId: string | null;
+  vatRegimeCode: string | null;
   itemStatus: string;
   notes: string | null;
 }
@@ -409,7 +420,9 @@ export function DocumentDetailPanel({ documentId, onClose }: DocumentDetailPanel
                           <TableHead>Prodotto</TableHead>
                           <TableHead className="text-center">Qtà</TableHead>
                           <TableHead className="text-center">Ricevuti</TableHead>
-                          <TableHead className="text-right">Prezzo</TableHead>
+                          <TableHead className="text-right">Netto</TableHead>
+                          <TableHead className="text-center">IVA</TableHead>
+                          <TableHead className="text-right">Lordo</TableHead>
                           <TableHead>Stato</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -436,7 +449,15 @@ export function DocumentDetailPanel({ documentId, onClose }: DocumentDetailPanel
                                 </span>
                               </TableCell>
                               <TableCell className="text-right text-sm">
-                                {item.unitPrice ? `€ ${parseFloat(item.unitPrice).toFixed(2)}` : '-'}
+                                {item.unitPriceNet ? `€ ${parseFloat(item.unitPriceNet).toFixed(2)}` : 
+                                 item.unitPrice ? `€ ${parseFloat(item.unitPrice).toFixed(2)}` : '-'}
+                              </TableCell>
+                              <TableCell className="text-center text-sm">
+                                {item.vatRatePercent !== null ? `${item.vatRatePercent}%` : 
+                                 item.vatRateCode || '-'}
+                              </TableCell>
+                              <TableCell className="text-right text-sm font-medium">
+                                {item.unitPriceGross ? `€ ${parseFloat(item.unitPriceGross).toFixed(2)}` : '-'}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
@@ -449,7 +470,7 @@ export function DocumentDetailPanel({ documentId, onClose }: DocumentDetailPanel
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+                            <TableCell colSpan={7} className="text-center py-8 text-gray-400">
                               Nessun prodotto
                             </TableCell>
                           </TableRow>
