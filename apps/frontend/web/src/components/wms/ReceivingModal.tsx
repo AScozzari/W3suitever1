@@ -149,6 +149,10 @@ interface ReceivingItem {
   serialEntries?: SerialEntry[]; // Structured list for multi-serial products
   lot?: string;
   unitPrice?: number;
+  vatRateId?: string;
+  vatRate?: number;
+  vatAmount?: number;
+  unitPriceGross?: number;
   hasDiscrepancy?: boolean;
   expectedQuantity?: number;
   bulkLoaded?: boolean; // True if loaded in bulk mode without individual serials
@@ -175,6 +179,8 @@ interface ReceivingDraft {
     serialEntries?: SerialEntry[];
     lot?: string;
     unitPrice?: number;
+    vatRateId?: string;
+    vatRate?: number;
     isSerializable: boolean;
     serialType?: string;
     serialCount?: number;
@@ -273,6 +279,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [targetQuantity, setTargetQuantity] = useState(1);
   const [lotInput, setLotInput] = useState('');
   const [unitPriceInput, setUnitPriceInput] = useState('');
+  const [vatRateIdInput, setVatRateIdInput] = useState<string>('');
   const [serialScanMode, setSerialScanMode] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -338,6 +345,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   // Fetch organization entities (Ragioni Sociali dell'organizzazione - entità legali emittenti)
   const { data: legalEntitiesData = [], isLoading: legalEntitiesLoading } = useQuery<LegalEntityFromAPI[]>({
     queryKey: ['/api/organization-entities'],
+    enabled: open,
+  });
+
+  // Fetch VAT rates for IVA selection
+  const { data: vatRatesData = [] } = useQuery<{ id: string; code: string; name: string; rate: number }[]>({
+    queryKey: ['/api/wms/vat-rates'],
     enabled: open,
   });
 
@@ -470,23 +483,32 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       
       // Reconstruct items from productsData
       if (resumeDraft.productsData && resumeDraft.productsData.length > 0) {
-        const reconstructedItems: ReceivingItem[] = resumeDraft.productsData.map((p, idx) => ({
-          id: `resumed-${idx}-${Date.now()}`,
-          product: {
-            id: p.productId,
-            name: p.productName,
-            sku: p.sku,
-            ean: p.ean,
-            isSerializable: p.isSerializable,
-            serialType: p.serialType as any,
-            serialCount: p.serialCount,
-          },
-          quantity: p.quantity,
-          serials: p.serials || [],
-          serialEntries: p.serialEntries,
-          lot: p.lot,
-          unitPrice: p.unitPrice,
-        }));
+        const reconstructedItems: ReceivingItem[] = resumeDraft.productsData.map((p, idx) => {
+          const vatPercent = p.vatRate || 0;
+          const vatAmount = (p.unitPrice || 0) * (vatPercent / 100);
+          const unitPriceGross = (p.unitPrice || 0) + vatAmount;
+          return {
+            id: `resumed-${idx}-${Date.now()}`,
+            product: {
+              id: p.productId,
+              name: p.productName,
+              sku: p.sku,
+              ean: p.ean,
+              isSerializable: p.isSerializable,
+              serialType: p.serialType as any,
+              serialCount: p.serialCount,
+            },
+            quantity: p.quantity,
+            serials: p.serials || [],
+            serialEntries: p.serialEntries,
+            lot: p.lot,
+            unitPrice: p.unitPrice,
+            vatRateId: p.vatRateId,
+            vatRate: p.vatRate,
+            vatAmount,
+            unitPriceGross,
+          };
+        });
         setItems(reconstructedItems);
       }
       
@@ -517,6 +539,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         serialEntries: item.serialEntries,
         lot: item.lot,
         unitPrice: item.unitPrice,
+        vatRateId: item.vatRateId,
+        vatRate: item.vatRate,
         isSerializable: item.product.isSerializable,
         serialType: item.product.serialType,
         serialCount: item.product.serialCount,
@@ -1100,6 +1124,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     const serialsPerUnit = selectedProduct.serialCount || 1;
     const serializedQty = Math.floor(currentSerials.length / serialsPerUnit);
     
+    const unitPrice = unitPriceInput ? parseFloat(unitPriceInput) : undefined;
+    const selectedVatRate = vatRatesData.find(r => r.id === vatRateIdInput);
+    const vatPercent = selectedVatRate?.rate || 0;
+    const vatAmount = (unitPrice || 0) * (vatPercent / 100);
+    const unitPriceGross = (unitPrice || 0) + vatAmount;
+    
     const newItem: ReceivingItem = {
       id: crypto.randomUUID(),
       product: selectedProduct,
@@ -1110,7 +1140,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
             : targetQuantity),
       serials: isBulkLoad ? [] : currentSerials, // Bulk: no individual serials
       lot: finalLot,
-      unitPrice: unitPriceInput ? parseFloat(unitPriceInput) : undefined,
+      unitPrice,
+      vatRateId: vatRateIdInput || undefined,
+      vatRate: vatPercent,
+      vatAmount,
+      unitPriceGross,
       bulkLoaded: isBulkLoad, // Flag to track bulk-loaded items
     };
 
@@ -1125,6 +1159,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     setTargetQuantity(1);
     setLotInput('');
     setUnitPriceInput('');
+    setVatRateIdInput('');
     setSerialScanMode(false);
     setBulkLoadMode(false);
     setTimeout(() => searchInputRef.current?.focus(), 100);
@@ -1937,6 +1972,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   data-testid="input-unit-price"
                                 />
                               </div>
+                              <div className="w-24">
+                                <Label>IVA</Label>
+                                <Select value={vatRateIdInput} onValueChange={setVatRateIdInput}>
+                                  <SelectTrigger className="mt-1" data-testid="select-vat-rate">
+                                    <SelectValue placeholder="IVA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vatRatesData.map((rate) => (
+                                      <SelectItem key={rate.id} value={rate.id}>
+                                        {rate.rate}%
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                             
                             {/* Bulk Load Mode Toggle */}
@@ -2219,6 +2269,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   data-testid="input-unit-price"
                                 />
                               </div>
+                              <div>
+                                <Label>IVA</Label>
+                                <Select value={vatRateIdInput} onValueChange={setVatRateIdInput}>
+                                  <SelectTrigger className="mt-1" data-testid="select-vat-rate">
+                                    <SelectValue placeholder="IVA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vatRatesData.map((rate) => (
+                                      <SelectItem key={rate.id} value={rate.id}>
+                                        {rate.rate}%
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                             
                             <div>
@@ -2324,6 +2389,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                 className="mt-1"
                                 data-testid="input-unit-price"
                               />
+                            </div>
+                            <div>
+                              <Label>IVA</Label>
+                              <Select value={vatRateIdInput} onValueChange={setVatRateIdInput}>
+                                <SelectTrigger className="mt-1" data-testid="select-vat-rate">
+                                  <SelectValue placeholder="IVA" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {vatRatesData.map((rate) => (
+                                    <SelectItem key={rate.id} value={rate.id}>
+                                      {rate.rate}%
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
                         )}
