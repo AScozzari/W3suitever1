@@ -196,6 +196,9 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   const [editQuantity, setEditQuantity] = useState<string>('');
   const [editUnitCost, setEditUnitCost] = useState<string>('');
 
+  // Dialog container for portal (fixes popover closing issue inside Dialog)
+  const [dialogContainer, setDialogContainer] = useState<HTMLDivElement | null>(null);
+
   const form = useForm<OrderFormData>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
@@ -562,6 +565,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
+          ref={setDialogContainer}
           className="max-w-4xl max-h-[90vh] overflow-y-auto"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
@@ -644,12 +648,13 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                             <FormControl>
                               <Input 
                                 {...field} 
-                                placeholder="Auto-generato" 
-                                disabled
-                                className="bg-gray-50"
+                                placeholder="Lascia vuoto per auto-generazione" 
                                 data-testid="input-order-number"
                               />
                             </FormControl>
+                            <p className="text-xs text-gray-500">
+                              Se vuoto, verrà generato automaticamente
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -709,6 +714,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               onValueChange={field.onChange}
                               suppliers={suppliersData}
                               placeholder="Seleziona fornitore..."
+                              portalContainer={dialogContainer}
                               data-testid="select-supplier"
                             />
                           </FormControl>
