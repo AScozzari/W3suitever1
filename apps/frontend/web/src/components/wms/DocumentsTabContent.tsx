@@ -62,13 +62,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -81,6 +74,8 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { CreateDocumentWizard } from './CreateDocumentWizard';
+import { DocumentDetailPanel } from './DocumentDetailPanel';
 
 interface DocumentStats {
   total: number;
@@ -231,7 +226,10 @@ function DocumentRow({ document, onExpand, isExpanded, onViewDetails }: {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ status, reason }: { status: string; reason?: string }) => {
-      return apiRequest('PATCH', `/api/wms/documents/${document.id}/status`, { status, reason });
+      return apiRequest(`/api/wms/documents/${document.id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, reason }),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/wms/documents'] });
@@ -771,61 +769,18 @@ export function DocumentsTabContent() {
         </CardContent>
       </Card>
 
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Nuovo Documento</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-gray-500 mb-4">
-              Seleziona il tipo di documento da creare:
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                className="h-auto py-6 flex-col gap-2 hover:border-orange-500 hover:bg-orange-50"
-                onClick={() => {
-                  toast({ title: 'Wizard Ordine', description: 'In arrivo...' });
-                  setIsCreateModalOpen(false);
-                }}
-              >
-                <ClipboardList className="h-8 w-8 text-blue-500" />
-                <span className="font-medium">Ordine</span>
-                <span className="text-xs text-gray-400">A fornitore</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto py-6 flex-col gap-2 hover:border-orange-500 hover:bg-orange-50"
-                onClick={() => {
-                  toast({ title: 'Wizard DDT', description: 'In arrivo...' });
-                  setIsCreateModalOpen(false);
-                }}
-              >
-                <Truck className="h-8 w-8 text-green-500" />
-                <span className="font-medium">DDT</span>
-                <span className="text-xs text-gray-400">Trasporto</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-auto py-6 flex-col gap-2 hover:border-orange-500 hover:bg-orange-50"
-                onClick={() => {
-                  toast({ title: 'Wizard Rettifica', description: 'In arrivo...' });
-                  setIsCreateModalOpen(false);
-                }}
-              >
-                <FileEdit className="h-8 w-8 text-purple-500" />
-                <span className="font-medium">Rettifica</span>
-                <span className="text-xs text-gray-400">Inventario</span>
-              </Button>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-              Annulla
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateDocumentWizard
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSuccess={(docId) => {
+          toast({ title: 'Documento creato', description: `ID: ${docId}` });
+        }}
+      />
+
+      <DocumentDetailPanel
+        documentId={selectedDocument}
+        onClose={() => setSelectedDocument(null)}
+      />
     </div>
   );
 }
