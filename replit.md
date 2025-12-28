@@ -128,6 +128,20 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
         - Formati: numerico, alfanumerico, crescente/decrescente, numero+data
       - **eDDT/Firma Digitale**: Roadmap futura (non in scope attuale)
       - **Ricevuta Logica**: Attiva senza fattura → `sold`, Passiva → NESSUN cambio stato (solo conferma)
+      - **Tab UI Documenti (Magazzino)**:
+        - Layout: `[📥 Passivi] [📤 Attivi] [📁 Archivio] [⏳ Bozze]`
+        - Dashboard: 5 KPI Cards + Area Chart trend 7gg + Timeline eventi recenti
+        - DataTable: filtri per tipo/stato/data/fornitore, row dropdown con fasi documento
+        - `[+ Nuovo]`: Solo documenti ATTIVI (wizard 3 step: Tipo → Direzione/Causale → Dati)
+        - Passivi: entrano automaticamente da operazioni (Carico Merce, Ordini Cliente)
+      - **Approvazione Documenti**:
+        - DDT/Rettifiche: via sistema movimenti esistente (`wms_movement_type_config.requires_approval`)
+        - Ordini a Fornitore: configurazione dedicata (`wms_order_approval_config`)
+      - **RBAC per tipo documento**:
+        - `wms.documents.order.create/view/edit/cancel`
+        - `wms.documents.ddt.create/view/edit/cancel`
+        - `wms.documents.adjustment.create/view/edit/cancel`
+      - **Stati documento**: `draft` → `pending_approval` → `confirmed` → `archived` (+ `cancelled`)
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
