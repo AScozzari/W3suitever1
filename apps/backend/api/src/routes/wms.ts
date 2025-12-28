@@ -12337,12 +12337,35 @@ router.get("/documents/:id", rbacMiddleware, requirePermission('wms.documents.dd
     const items = await db.select({
       id: wmsDocumentItems.id,
       productId: wmsDocumentItems.productId,
+      productItemId: wmsDocumentItems.productItemId,
+      batchId: wmsDocumentItems.batchId,
       quantity: wmsDocumentItems.quantity,
       receivedQuantity: wmsDocumentItems.receivedQuantity,
+      isSerialized: wmsDocumentItems.isSerialized,
+      serialNumber: wmsDocumentItems.serialNumber,
+      imeiPrimary: wmsDocumentItems.imeiPrimary,
+      imeiSecondary: wmsDocumentItems.imeiSecondary,
+      ean: wmsDocumentItems.ean,
+      iccid: wmsDocumentItems.iccid,
+      macAddress: wmsDocumentItems.macAddress,
+      lotCode: wmsDocumentItems.lotCode,
+      vatRateId: wmsDocumentItems.vatRateId,
+      vatRegimeId: wmsDocumentItems.vatRegimeId,
+      costPrice: wmsDocumentItems.costPrice,
+      unitPriceNet: wmsDocumentItems.unitPriceNet,
+      unitPriceGross: wmsDocumentItems.unitPriceGross,
+      vatAmount: wmsDocumentItems.vatAmount,
+      discountPercent: wmsDocumentItems.discountPercent,
+      discountAmount: wmsDocumentItems.discountAmount,
+      totalPriceNet: wmsDocumentItems.totalPriceNet,
+      totalPriceGross: wmsDocumentItems.totalPriceGross,
+      totalVatAmount: wmsDocumentItems.totalVatAmount,
       unitPrice: wmsDocumentItems.unitPrice,
       totalPrice: wmsDocumentItems.totalPrice,
       serialNumbers: wmsDocumentItems.serialNumbers,
+      imeiNumbers: wmsDocumentItems.imeiNumbers,
       itemStatus: wmsDocumentItems.itemStatus,
+      notes: wmsDocumentItems.notes,
       lineNumber: wmsDocumentItems.lineNumber,
       productName: products.name,
       productSku: products.sku,
@@ -12608,6 +12631,231 @@ router.patch("/documents/:id/status", rbacMiddleware, requirePermission('wms.doc
   } catch (error) {
     logger.error('Error updating document status', { error });
     res.status(500).json({ error: "Failed to update document status" });
+  }
+});
+
+/**
+ * POST /api/wms/documents/:id/items
+ * Add items to a document (supports both serialized and non-serialized products)
+ */
+router.post("/documents/:id/items", rbacMiddleware, requirePermission('wms.documents.ddt.edit'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { id: documentId } = req.params;
+    const { items } = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Verify document exists and belongs to tenant
+    const [document] = await db.select()
+      .from(wmsDocuments)
+      .where(and(
+        eq(wmsDocuments.id, documentId),
+        eq(wmsDocuments.tenantId, tenantId)
+      ));
+
+    if (!document) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Items array required" });
+    }
+
+    // Get current max line number
+    const [maxLineResult] = await db.select({ 
+      maxLine: sql<number>`COALESCE(MAX(${wmsDocumentItems.lineNumber}), 0)` 
+    })
+    .from(wmsDocumentItems)
+    .where(eq(wmsDocumentItems.documentId, documentId));
+
+    let lineNumber = (maxLineResult?.maxLine || 0) + 1;
+
+    const insertedItems: any[] = [];
+
+    for (const item of items) {
+      // Validate serialized products
+      if (item.isSerialized && !item.productItemId) {
+        return res.status(400).json({ 
+          error: "Per prodotti serializzati, productItemId è obbligatorio",
+          productId: item.productId
+        });
+      }
+
+      // For serialized products, quantity must be 1
+      if (item.isSerialized && item.quantity !== 1) {
+        return res.status(400).json({ 
+          error: "Per prodotti serializzati, la quantità deve essere 1",
+          productId: item.productId
+        });
+      }
+
+      // Calculate totals if unit prices provided
+      const quantity = item.quantity || 1;
+      let totalPriceNet = item.totalPriceNet;
+      let totalPriceGross = item.totalPriceGross;
+      let totalVatAmount = item.totalVatAmount;
+
+      if (item.unitPriceNet && !totalPriceNet) {
+        const discountMultiplier = item.discountPercent ? (1 - item.discountPercent / 100) : 1;
+        totalPriceNet = Number(item.unitPriceNet) * quantity * discountMultiplier;
+      }
+      if (item.vatAmount && !totalVatAmount) {
+        totalVatAmount = Number(item.vatAmount) * quantity;
+      }
+      if (totalPriceNet && totalVatAmount && !totalPriceGross) {
+        totalPriceGross = totalPriceNet + totalVatAmount;
+      }
+
+      const [inserted] = await db.insert(wmsDocumentItems)
+        .values({
+          documentId,
+          tenantId,
+          productId: item.productId,
+          productVersionId: item.productVersionId || null,
+          productItemId: item.productItemId || null,
+          batchId: item.batchId || null,
+          isSerialized: item.isSerialized || false,
+          serialNumber: item.serialNumber || null,
+          imeiPrimary: item.imeiPrimary || null,
+          imeiSecondary: item.imeiSecondary || null,
+          ean: item.ean || null,
+          iccid: item.iccid || null,
+          macAddress: item.macAddress || null,
+          lotCode: item.lotCode || null,
+          quantity,
+          receivedQuantity: item.receivedQuantity || 0,
+          vatRateId: item.vatRateId || null,
+          vatRegimeId: item.vatRegimeId || null,
+          costPrice: item.costPrice?.toString() || null,
+          unitPriceNet: item.unitPriceNet?.toString() || null,
+          unitPriceGross: item.unitPriceGross?.toString() || null,
+          vatAmount: item.vatAmount?.toString() || null,
+          discountPercent: item.discountPercent?.toString() || null,
+          discountAmount: item.discountAmount?.toString() || null,
+          totalPriceNet: totalPriceNet?.toString() || null,
+          totalPriceGross: totalPriceGross?.toString() || null,
+          totalVatAmount: totalVatAmount?.toString() || null,
+          unitPrice: item.unitPrice?.toString() || null, // legacy
+          totalPrice: item.totalPrice?.toString() || null, // legacy
+          notes: item.notes || null,
+          lineNumber: lineNumber++,
+          itemStatus: 'pending',
+        })
+        .returning();
+
+      insertedItems.push(inserted);
+    }
+
+    // Update document totals
+    const [totals] = await db.select({
+      totalItems: sql<number>`COUNT(*)`,
+      totalQuantity: sql<number>`SUM(${wmsDocumentItems.quantity})`,
+    })
+    .from(wmsDocumentItems)
+    .where(eq(wmsDocumentItems.documentId, documentId));
+
+    await db.update(wmsDocuments)
+      .set({
+        totalItems: totals?.totalItems || 0,
+        totalQuantity: totals?.totalQuantity || 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(wmsDocuments.id, documentId));
+
+    logger.info('Document items added', { documentId, itemCount: insertedItems.length, tenantId });
+    res.status(201).json({ success: true, data: insertedItems });
+  } catch (error) {
+    logger.error('Error adding document items', { error });
+    res.status(500).json({ error: "Failed to add document items" });
+  }
+});
+
+/**
+ * DELETE /api/wms/documents/:documentId/items/:itemId
+ * Remove an item from a document
+ */
+router.delete("/documents/:documentId/items/:itemId", rbacMiddleware, requirePermission('wms.documents.ddt.edit'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { documentId, itemId } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const [deleted] = await db.delete(wmsDocumentItems)
+      .where(and(
+        eq(wmsDocumentItems.id, itemId),
+        eq(wmsDocumentItems.documentId, documentId),
+        eq(wmsDocumentItems.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    // Update document totals
+    const [totals] = await db.select({
+      totalItems: sql<number>`COUNT(*)`,
+      totalQuantity: sql<number>`SUM(${wmsDocumentItems.quantity})`,
+    })
+    .from(wmsDocumentItems)
+    .where(eq(wmsDocumentItems.documentId, documentId));
+
+    await db.update(wmsDocuments)
+      .set({
+        totalItems: totals?.totalItems || 0,
+        totalQuantity: totals?.totalQuantity || 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(wmsDocuments.id, documentId));
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting document item', { error });
+    res.status(500).json({ error: "Failed to delete document item" });
+  }
+});
+
+/**
+ * GET /api/wms/vat-rates
+ * Fetch all VAT rates from public schema
+ */
+router.get("/vat-rates", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const rates = await db.execute(sql`
+      SELECT id, code, name, rate, description, is_active
+      FROM public.vat_rates
+      WHERE is_active = true
+      ORDER BY rate ASC
+    `);
+    res.json(rates.rows || []);
+  } catch (error) {
+    logger.error('Error fetching VAT rates', { error });
+    res.status(500).json({ error: "Failed to fetch VAT rates" });
+  }
+});
+
+/**
+ * GET /api/wms/vat-regimes
+ * Fetch all VAT regimes from public schema
+ */
+router.get("/vat-regimes", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const regimes = await db.execute(sql`
+      SELECT id, code, name, description, is_active
+      FROM public.vat_regimes
+      WHERE is_active = true
+      ORDER BY name ASC
+    `);
+    res.json(regimes.rows || []);
+  } catch (error) {
+    logger.error('Error fetching VAT regimes', { error });
+    res.status(500).json({ error: "Failed to fetch VAT regimes" });
   }
 });
 
