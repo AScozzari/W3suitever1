@@ -210,32 +210,33 @@ const receivingSchema = z.object({
 type FormValues = z.infer<typeof receivingSchema>;
 
 // MOCK_SUPPLIERS removed - now using real API endpoint
+// MOCK_PRODUCTS removed - now using real API endpoint
 
-const MOCK_ORDERS: Order[] = [
-  { 
-    id: 'ord-1', 
-    orderNumber: 'ORD-2024-0045', 
-    supplierId: '1',
-    items: [
-      { productId: 'p1', productName: 'iPhone 16 Pro 256GB', sku: 'IPH16P256', quantityOrdered: 10, quantityReceived: 0 },
-      { productId: 'p2', productName: 'Cover Silicone iPhone 16', sku: 'CVR16SIL', quantityOrdered: 50, quantityReceived: 0 },
-    ]
-  },
-];
+// Interface for product from API
+interface ProductFromAPI {
+  id: string;
+  name: string;
+  sku: string;
+  ean?: string;
+  description?: string;
+  isSerializable: boolean;
+  serialType?: 'imei' | 'iccid' | 'mac_address' | 'other';
+  serialCount?: number;
+}
 
-const MOCK_PRODUCTS: Product[] = [
-  // Dual-SIM phones: 2 IMEI per unit
-  { id: 'p1', name: 'iPhone 16 Pro 256GB Nero', sku: 'IPH16P256-BLK', supplierSku: 'APL-IP16P-256-BK', ean: '1234567890123', description: 'Apple iPhone 16 Pro 256GB colore nero', isSerializable: true, serialType: 'imei', serialCount: 2 },
-  { id: 'p2', name: 'iPhone 16 Pro 256GB Bianco', sku: 'IPH16P256-WHT', supplierSku: 'APL-IP16P-256-WH', ean: '1234567890124', description: 'Apple iPhone 16 Pro 256GB colore bianco', isSerializable: true, serialType: 'imei', serialCount: 2 },
-  // Non-serializable products
-  { id: 'p3', name: 'Cover Silicone iPhone 16', sku: 'CVR16SIL', supplierSku: 'ACC-CVR-16-SIL', ean: '2234567890123', description: 'Cover protettiva in silicone per iPhone 16', isSerializable: false },
-  { id: 'p4', name: 'Cavo USB-C 1m', sku: 'CBL-USBC-1M', supplierSku: 'ACC-CBL-C1M', ean: '3234567890123', description: 'Cavo USB Type-C lunghezza 1 metro', isSerializable: false },
-  // Single serial products
-  { id: 'p5', name: 'Router WiFi 6 AX3000', sku: 'RTR-AX3000', supplierSku: 'NET-RTR-AX3K', ean: '4234567890123', description: 'Router wireless WiFi 6 velocità AX3000', isSerializable: true, serialType: 'mac_address', serialCount: 1 },
-  { id: 'p6', name: 'SIM Card Prepagata', sku: 'SIM-PRE-001', supplierSku: 'TEL-SIM-PRE', ean: '5234567890123', description: 'SIM card prepagata attivabile', isSerializable: true, serialType: 'iccid', serialCount: 1 },
-  // Dual-SIM Android phone
-  { id: 'p7', name: 'Samsung Galaxy S24 Ultra 512GB', sku: 'SGS24U-512', supplierSku: 'SAM-S24U-512', ean: '6234567890123', description: 'Samsung Galaxy S24 Ultra 512GB', isSerializable: true, serialType: 'imei', serialCount: 2 },
-];
+// Interface for SKU mapping from API
+interface SkuMappingFromAPI {
+  id: string;
+  productId: string;
+  supplierId: string;
+  supplierSku: string | null;
+  supplierSkuNormalized: string | null;
+  productName: string | null;
+  productSku: string | null;
+  productEan: string | null;
+  isSerializable: boolean | null;
+  serialType: string | null;
+}
 
 
 export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDraftSaved }: ReceivingModalProps) {
@@ -291,6 +292,64 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     queryKey: ['/api/wms/stores'],
     enabled: open,
   });
+
+  // State for search mode: 'internal' (catalog) or 'supplier_sku'
+  const [searchMode, setSearchMode] = useState<'internal' | 'supplier_sku'>('internal');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        setDebouncedSearchQuery(searchQuery);
+      } else {
+        setDebouncedSearchQuery('');
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch products from API for internal search (Flow 1)
+  const { data: productsApiData, isLoading: productsLoading } = useQuery<{ success: boolean; data: ProductFromAPI[] }>({
+    queryKey: ['/api/wms/products', { search: debouncedSearchQuery }],
+    enabled: open && currentStep === 2 && searchMode === 'internal' && debouncedSearchQuery.length >= 2,
+  });
+
+  // Fetch SKU mappings for supplier SKU search (Flow 2)
+  const { data: skuMappingsData, isLoading: mappingsLoading } = useQuery<{ success: boolean; data: SkuMappingFromAPI[] }>({
+    queryKey: ['/api/wms/product-supplier-mappings', { supplierId: selectedSupplierId, supplierSku: debouncedSearchQuery }],
+    enabled: open && currentStep === 2 && searchMode === 'supplier_sku' && !!selectedSupplierId && debouncedSearchQuery.length >= 2,
+  });
+
+  // Convert API products to local Product interface
+  const convertApiProduct = useCallback((p: ProductFromAPI | SkuMappingFromAPI, supplierSku?: string): Product => {
+    if ('productId' in p) {
+      // It's a SkuMappingFromAPI
+      return {
+        id: p.productId,
+        name: p.productName || '',
+        sku: p.productSku || '',
+        supplierSku: p.supplierSku || supplierSku,
+        ean: p.productEan || undefined,
+        isSerializable: p.isSerializable || false,
+        serialType: p.serialType as any,
+        serialCount: 1,
+      };
+    } else {
+      // It's a ProductFromAPI
+      return {
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+        supplierSku: supplierSku,
+        ean: p.ean,
+        description: p.description,
+        isSerializable: p.isSerializable,
+        serialType: p.serialType,
+        serialCount: p.serialCount || 1,
+      };
+    }
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(receivingSchema),
@@ -441,7 +500,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     }
   };
 
-  const availableOrders = MOCK_ORDERS.filter(o => o.supplierId === selectedSupplierId);
+  // Orders - TODO: implement orders API when ready
+  const availableOrders: Order[] = [];
 
   // Detect the type of code being scanned
   const detectCodeType = (code: string): 'ean' | 'imei' | 'iccid' | 'mac' | 'sku' | 'unknown' => {
@@ -459,32 +519,19 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [totalSearchResults, setTotalSearchResults] = useState(0);
   const MAX_VISIBLE_RESULTS = 10;
 
+  // Process search results from API (Flow 1: Internal catalog search)
   useEffect(() => {
-    if (searchQuery.length >= 3) {
-      const query = searchQuery.toLowerCase();
-      const codeType = detectCodeType(searchQuery);
+    if (searchMode === 'internal' && productsApiData?.success && productsApiData.data) {
+      const query = debouncedSearchQuery.toLowerCase();
+      const codeType = detectCodeType(debouncedSearchQuery);
       setDetectedCodeType(codeType);
       
-      // Search by EAN, SKU, supplier SKU, or name/description
-      const allResults = MOCK_PRODUCTS.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query) ||
-        p.supplierSku?.toLowerCase().includes(query) ||
-        p.ean?.includes(query) ||
-        p.description?.toLowerCase().includes(query)
-      );
-      
-      // If scanning what looks like an IMEI/ICCID/MAC but no product found,
-      // it means the user is scanning a serial for an already selected product
-      // In that case, don't show "not found" for products
-      if (allResults.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
-        // This is likely a serial scan, not a product search
-        // If we have a selected product that matches this serial type, auto-add the serial
+      // Handle serial auto-add for selected product
+      if (productsApiData.data.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
         if (selectedProduct && selectedProduct.isSerializable && 
             ((codeType === 'imei' && selectedProduct.serialType === 'imei') ||
              (codeType === 'iccid' && selectedProduct.serialType === 'iccid') ||
              (codeType === 'mac' && selectedProduct.serialType === 'mac_address'))) {
-          // Auto-add serial to current product
           if (!currentSerials.includes(searchQuery.trim())) {
             setCurrentSerials([...currentSerials, searchQuery.trim()]);
           }
@@ -494,21 +541,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         }
       }
       
-      // Rank results by relevance: exact match first, then starts with, then contains
+      // Convert API products to local format
+      const allResults = productsApiData.data.map(p => convertApiProduct(p));
+      
+      // Rank results by relevance
       const rankedResults = allResults.sort((a, b) => {
-        // Exact SKU/EAN match first
-        const aExactSku = a.sku.toLowerCase() === query || a.ean === searchQuery;
-        const bExactSku = b.sku.toLowerCase() === query || b.ean === searchQuery;
+        const aExactSku = a.sku.toLowerCase() === query || a.ean === debouncedSearchQuery;
+        const bExactSku = b.sku.toLowerCase() === query || b.ean === debouncedSearchQuery;
         if (aExactSku && !bExactSku) return -1;
         if (!aExactSku && bExactSku) return 1;
         
-        // SKU/EAN starts with query
-        const aStartsSku = a.sku.toLowerCase().startsWith(query) || a.ean?.startsWith(searchQuery);
-        const bStartsSku = b.sku.toLowerCase().startsWith(query) || b.ean?.startsWith(searchQuery);
+        const aStartsSku = a.sku.toLowerCase().startsWith(query) || a.ean?.startsWith(debouncedSearchQuery);
+        const bStartsSku = b.sku.toLowerCase().startsWith(query) || b.ean?.startsWith(debouncedSearchQuery);
         if (aStartsSku && !bStartsSku) return -1;
         if (!aStartsSku && bStartsSku) return 1;
         
-        // Name starts with query
         const aStartsName = a.name.toLowerCase().startsWith(query);
         const bStartsName = b.name.toLowerCase().startsWith(query);
         if (aStartsName && !bStartsName) return -1;
@@ -517,7 +564,6 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         return 0;
       });
       
-      // Store total and limit visible results
       setTotalSearchResults(rankedResults.length);
       const results = rankedResults.slice(0, MAX_VISIBLE_RESULTS);
       
@@ -525,38 +571,67 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setShowSearchResults(true);
       
       // If no results and query looks like a supplier SKU, show mapping option
-      // Accept 'sku' or 'unknown' code types for mapping (not IMEI/ICCID/MAC/EAN)
-      if (results.length === 0 && query.length >= 3 && (codeType === 'sku' || codeType === 'unknown')) {
+      if (results.length === 0 && query.length >= 2 && (codeType === 'sku' || codeType === 'unknown')) {
         setUnmappedSupplierSku(searchQuery);
       } else if (results.length > 0) {
-        // Only hide mapping form if we found results
         setShowSkuMappingForm(false);
         setUnmappedSupplierSku('');
       }
-    } else {
+    } else if (searchMode === 'internal' && debouncedSearchQuery.length < 2) {
       setSearchResults([]);
       setShowSearchResults(false);
       setShowSkuMappingForm(false);
       setDetectedCodeType(null);
     }
-  }, [searchQuery, selectedProduct, currentSerials]);
+  }, [searchMode, productsApiData, debouncedSearchQuery, selectedProduct, currentSerials, convertApiProduct]);
 
-  // Search for internal products when mapping
+  // Process search results from SKU mappings API (Flow 2: Supplier SKU search)
   useEffect(() => {
-    if (internalProductSearch.length >= 2) {
-      const query = internalProductSearch.toLowerCase();
-      const results = MOCK_PRODUCTS.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query) ||
-        p.ean?.includes(query)
-      );
+    if (searchMode === 'supplier_sku' && skuMappingsData?.success && skuMappingsData.data) {
+      const codeType = detectCodeType(debouncedSearchQuery);
+      setDetectedCodeType(codeType);
+      
+      if (skuMappingsData.data.length > 0) {
+        // Found mappings - convert to products
+        const results = skuMappingsData.data.map(m => convertApiProduct(m));
+        
+        setTotalSearchResults(results.length);
+        setSearchResults(results.slice(0, MAX_VISIBLE_RESULTS));
+        setShowSearchResults(true);
+        setShowSkuMappingForm(false);
+        setUnmappedSupplierSku('');
+      } else {
+        // No mapping found - show option to create mapping
+        setSearchResults([]);
+        setShowSearchResults(false);
+        setUnmappedSupplierSku(debouncedSearchQuery);
+        setShowSkuMappingForm(true);
+      }
+    } else if (searchMode === 'supplier_sku' && debouncedSearchQuery.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setShowSkuMappingForm(false);
+      setDetectedCodeType(null);
+    }
+  }, [searchMode, skuMappingsData, debouncedSearchQuery, convertApiProduct]);
+
+  // Search for internal products when mapping unmapped supplier SKU (uses same API)
+  const { data: internalSearchData, isLoading: internalSearchLoading } = useQuery<{ success: boolean; data: ProductFromAPI[] }>({
+    queryKey: ['/api/wms/products', { search: internalProductSearch }],
+    enabled: showSkuMappingForm && internalProductSearch.length >= 2,
+  });
+
+  // Process internal product search results for mapping
+  useEffect(() => {
+    if (internalSearchData?.success && internalSearchData.data) {
+      const results = internalSearchData.data.map(p => convertApiProduct(p));
       setInternalProductResults(results);
       setShowInternalResults(true);
-    } else {
+    } else if (internalProductSearch.length < 2) {
       setInternalProductResults([]);
       setShowInternalResults(false);
     }
-  }, [internalProductSearch]);
+  }, [internalSearchData, internalProductSearch, convertApiProduct]);
 
   const handleCreateMapping = async (product: Product) => {
     // Create mapping: associate unmappedSupplierSku to this product
@@ -1258,16 +1333,15 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
             {/* STEP 2: Products */}
             {currentStep === 2 && (
               <>
-            {selectedOrderId && selectedOrderId !== '' && selectedOrderId !== 'none' && (
+            {selectedOrderId && selectedOrderId !== '' && selectedOrderId !== 'none' && availableOrders.length > 0 && (
               <OrderMatchSection 
-                order={MOCK_ORDERS.find(o => o.id === selectedOrderId)}
+                order={availableOrders.find(o => o.id === selectedOrderId)}
                 receivedItems={items}
                 onAddFromOrder={(orderItem) => {
-                  const product = MOCK_PRODUCTS.find(p => p.sku.includes(orderItem.sku));
-                  if (product) {
-                    handleProductSelect(product);
-                    setTargetQuantity(orderItem.quantityOrdered - orderItem.quantityReceived);
-                  }
+                  toast({
+                    title: 'Funzionalità in sviluppo',
+                    description: 'Aggiungi i prodotti manualmente dalla ricerca.',
+                  });
                 }}
               />
             )}
@@ -1280,16 +1354,60 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                 </h3>
 
                 <div className="space-y-4">
+                  {/* Search mode toggle */}
+                  <div className="flex gap-2 mb-2">
+                    <Button
+                      type="button"
+                      variant={searchMode === 'internal' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setSearchMode('internal');
+                        setSearchQuery('');
+                        setSearchResults([]);
+                        setShowSearchResults(false);
+                      }}
+                      className="flex items-center gap-2"
+                      data-testid="btn-search-mode-internal"
+                    >
+                      <Package className="h-4 w-4" />
+                      Catalogo Interno
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={searchMode === 'supplier_sku' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setSearchMode('supplier_sku');
+                        setSearchQuery('');
+                        setSearchResults([]);
+                        setShowSearchResults(false);
+                      }}
+                      className="flex items-center gap-2"
+                      data-testid="btn-search-mode-supplier"
+                    >
+                      <Barcode className="h-4 w-4" />
+                      SKU Fornitore
+                    </Button>
+                  </div>
+
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       ref={searchInputRef}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Scansiona EAN/barcode, SKU, o nome prodotto..."
+                      placeholder={searchMode === 'internal' 
+                        ? "Scansiona EAN/barcode, SKU interno, o nome prodotto..." 
+                        : "Inserisci SKU fornitore dal documento di trasporto..."}
                       className="pl-9 pr-24"
                       data-testid="input-product-search"
                     />
+                    {/* Loading indicator */}
+                    {(productsLoading || mappingsLoading) && (
+                      <div className="absolute right-20 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      </div>
+                    )}
                     {/* Code type indicator badge */}
                     {detectedCodeType && searchQuery.length >= 3 && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">

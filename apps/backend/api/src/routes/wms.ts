@@ -10905,11 +10905,27 @@ router.get("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
       return res.status(401).json({ error: "Tenant ID not found in session" });
     }
 
-    const { productId, supplierId } = req.query;
+    const { productId, supplierId, supplierSku } = req.query;
 
     let query = db
-      .select()
+      .select({
+        id: productSupplierMappings.id,
+        tenantId: productSupplierMappings.tenantId,
+        productId: productSupplierMappings.productId,
+        supplierId: productSupplierMappings.supplierId,
+        supplierSku: productSupplierMappings.supplierSku,
+        supplierSkuNormalized: productSupplierMappings.supplierSkuNormalized,
+        useInternalSku: productSupplierMappings.useInternalSku,
+        isPrimary: productSupplierMappings.isPrimary,
+        createdAt: productSupplierMappings.createdAt,
+        productName: products.name,
+        productSku: products.sku,
+        productEan: products.ean,
+        isSerializable: products.isSerializable,
+        serialType: products.serialType,
+      })
       .from(productSupplierMappings)
+      .leftJoin(products, eq(productSupplierMappings.productId, products.id))
       .where(eq(productSupplierMappings.tenantId, tenantId));
 
     const results = await query;
@@ -10921,6 +10937,14 @@ router.get("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
     }
     if (supplierId) {
       filtered = filtered.filter(m => m.supplierId === supplierId);
+    }
+    // Search by supplierSku (exact or partial match, case-insensitive)
+    if (supplierSku && typeof supplierSku === 'string') {
+      const searchSku = supplierSku.toUpperCase().trim();
+      filtered = filtered.filter(m => 
+        m.supplierSkuNormalized === searchSku || 
+        m.supplierSku?.toUpperCase().includes(searchSku)
+      );
     }
 
     res.json({ success: true, data: filtered });
