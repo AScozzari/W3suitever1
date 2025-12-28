@@ -75,10 +75,11 @@ interface StoreFromAPI {
 
 interface LegalEntityFromAPI {
   id: string;
-  ragioneSociale: string;
-  partitaIva?: string;
+  nome: string;
+  codice: string;
+  pIva?: string;
   codiceFiscale?: string;
-  status: string;
+  stato: string;
 }
 
 interface ProductFromAPI {
@@ -210,9 +211,9 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
 
   const selectedSupplierId = form.watch('supplierId');
 
-  // Fetch legal entities
+  // Fetch organization entities (Ragioni Sociali dell'organizzazione - entità legali emittenti)
   const { data: legalEntitiesData = [], isLoading: legalEntitiesLoading } = useQuery<LegalEntityFromAPI[]>({
-    queryKey: ['/api/legal-entities'],
+    queryKey: ['/api/organization-entities'],
     enabled: open,
   });
 
@@ -494,7 +495,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       totalValue: totalValue.toFixed(2),
       metadata: {
         legalEntityId: formData.legalEntityId,
-        legalEntityName: legalEntity?.ragioneSociale,
+        legalEntityName: legalEntity?.nome,
       },
       items: items.map(i => ({
         productId: i.productId,
@@ -517,7 +518,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     const draft: OrderDraft = {
       id: currentDraftId || crypto.randomUUID(),
       legalEntityId: formData.legalEntityId,
-      legalEntityName: legalEntity?.ragioneSociale,
+      legalEntityName: legalEntity?.nome,
       supplierId: formData.supplierId,
       supplierName: supplier?.name,
       documentNumber: formData.documentNumber,
@@ -622,8 +623,8 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               <SelectContent>
                                 {legalEntitiesData.map(entity => (
                                   <SelectItem key={entity.id} value={entity.id}>
-                                    {entity.ragioneSociale}
-                                    {entity.partitaIva && ` (P.IVA: ${entity.partitaIva})`}
+                                    {entity.nome}
+                                    {entity.pIva && ` (P.IVA: ${entity.pIva})`}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1203,7 +1204,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                       <div>
                         <p className="text-gray-500">Entità Legale</p>
                         <p className="font-medium">
-                          {legalEntitiesData.find(e => e.id === form.getValues('legalEntityId'))?.ragioneSociale || '-'}
+                          {legalEntitiesData.find(e => e.id === form.getValues('legalEntityId'))?.nome || '-'}
                         </p>
                       </div>
                       <div>
