@@ -235,6 +235,9 @@ function DocumentRow({ document, onExpand, isExpanded, onViewDetails }: {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/wms/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/documents/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/documents/trend'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/documents/timeline'] });
       toast({ title: 'Stato documento aggiornato' });
     },
     onError: () => {
