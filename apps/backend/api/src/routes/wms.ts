@@ -11995,6 +11995,161 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
 });
 
 /**
+ * GET /api/wms/documents/numbering-config
+ * Get document numbering configurations
+ * NOTE: Must be defined BEFORE /documents/:id to avoid route collision
+ */
+router.get("/documents/numbering-config", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const configs = await db.select()
+      .from(wmsDocumentNumberingConfig)
+      .where(eq(wmsDocumentNumberingConfig.tenantId, tenantId));
+
+    res.json(configs);
+  } catch (error) {
+    logger.error('Error fetching numbering configs', { error });
+    res.status(500).json({ error: "Failed to fetch numbering configurations" });
+  }
+});
+
+/**
+ * POST /api/wms/documents/numbering-config
+ * Create or update document numbering configuration
+ */
+router.post("/documents/numbering-config", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const validatedData = insertWmsDocumentNumberingConfigSchema.parse(req.body);
+
+    const [existing] = await db.select()
+      .from(wmsDocumentNumberingConfig)
+      .where(and(
+        eq(wmsDocumentNumberingConfig.tenantId, tenantId),
+        eq(wmsDocumentNumberingConfig.documentType, validatedData.documentType)
+      ));
+
+    if (existing) {
+      const [updated] = await db.update(wmsDocumentNumberingConfig)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+          updatedBy: userId,
+        })
+        .where(eq(wmsDocumentNumberingConfig.id, existing.id))
+        .returning();
+      
+      res.json({ success: true, data: updated });
+    } else {
+      const [created] = await db.insert(wmsDocumentNumberingConfig)
+        .values({
+          ...validatedData,
+          tenantId,
+          currentCounter: 0,
+          lastResetYear: new Date().getFullYear(),
+        })
+        .returning();
+
+      res.status(201).json({ success: true, data: created });
+    }
+  } catch (error) {
+    logger.error('Error saving numbering config', { error });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation error", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to save numbering configuration" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/order-approval-config
+ * Get order approval configuration
+ */
+router.get("/documents/order-approval-config", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const [config] = await db.select()
+      .from(wmsOrderApprovalConfig)
+      .where(eq(wmsOrderApprovalConfig.tenantId, tenantId));
+
+    res.json(config || { 
+      requiresApproval: false,
+      thresholdAmount: null,
+      thresholdQuantity: null,
+      approverRoles: [],
+      notifyOnCreate: true,
+      notifyOnApproval: true
+    });
+  } catch (error) {
+    logger.error('Error fetching order approval config', { error });
+    res.status(500).json({ error: "Failed to fetch order approval configuration" });
+  }
+});
+
+/**
+ * POST /api/wms/documents/order-approval-config
+ * Create or update order approval configuration
+ */
+router.post("/documents/order-approval-config", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const validatedData = insertWmsOrderApprovalConfigSchema.parse(req.body);
+
+    const [existing] = await db.select()
+      .from(wmsOrderApprovalConfig)
+      .where(eq(wmsOrderApprovalConfig.tenantId, tenantId));
+
+    if (existing) {
+      const [updated] = await db.update(wmsOrderApprovalConfig)
+        .set({
+          ...validatedData,
+          updatedAt: new Date(),
+          updatedBy: userId,
+        })
+        .where(eq(wmsOrderApprovalConfig.id, existing.id))
+        .returning();
+      
+      res.json({ success: true, data: updated });
+    } else {
+      const [created] = await db.insert(wmsOrderApprovalConfig)
+        .values({
+          ...validatedData,
+          tenantId,
+        })
+        .returning();
+
+      res.status(201).json({ success: true, data: created });
+    }
+  } catch (error) {
+    logger.error('Error saving order approval config', { error });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation error", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to save order approval configuration" });
+  }
+});
+
+/**
  * GET /api/wms/documents/:id
  * Get document details with items, phases, and attachments
  */
@@ -12292,160 +12447,6 @@ router.patch("/documents/:id/status", rbacMiddleware, requirePermission('wms.doc
   } catch (error) {
     logger.error('Error updating document status', { error });
     res.status(500).json({ error: "Failed to update document status" });
-  }
-});
-
-/**
- * GET /api/wms/documents/numbering-config
- * Get document numbering configurations
- */
-router.get("/documents/numbering-config", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.user?.tenantId;
-    if (!tenantId) {
-      return res.status(401).json({ error: "Tenant ID not found" });
-    }
-
-    const configs = await db.select()
-      .from(wmsDocumentNumberingConfig)
-      .where(eq(wmsDocumentNumberingConfig.tenantId, tenantId));
-
-    res.json(configs);
-  } catch (error) {
-    logger.error('Error fetching numbering configs', { error });
-    res.status(500).json({ error: "Failed to fetch numbering configurations" });
-  }
-});
-
-/**
- * POST /api/wms/documents/numbering-config
- * Create or update document numbering configuration
- */
-router.post("/documents/numbering-config", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.id;
-    
-    if (!tenantId) {
-      return res.status(401).json({ error: "Tenant ID not found" });
-    }
-
-    const validatedData = insertWmsDocumentNumberingConfigSchema.parse(req.body);
-
-    const [existing] = await db.select()
-      .from(wmsDocumentNumberingConfig)
-      .where(and(
-        eq(wmsDocumentNumberingConfig.tenantId, tenantId),
-        eq(wmsDocumentNumberingConfig.documentType, validatedData.documentType)
-      ));
-
-    if (existing) {
-      const [updated] = await db.update(wmsDocumentNumberingConfig)
-        .set({
-          ...validatedData,
-          updatedAt: new Date(),
-          updatedBy: userId,
-        })
-        .where(eq(wmsDocumentNumberingConfig.id, existing.id))
-        .returning();
-      
-      res.json({ success: true, data: updated });
-    } else {
-      const [created] = await db.insert(wmsDocumentNumberingConfig)
-        .values({
-          ...validatedData,
-          tenantId,
-          currentCounter: 0,
-          lastResetYear: new Date().getFullYear(),
-        })
-        .returning();
-
-      res.status(201).json({ success: true, data: created });
-    }
-  } catch (error) {
-    logger.error('Error saving numbering config', { error });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Validation error", details: error.errors });
-    }
-    res.status(500).json({ error: "Failed to save numbering configuration" });
-  }
-});
-
-/**
- * GET /api/wms/documents/order-approval-config
- * Get order approval configuration
- */
-router.get("/documents/order-approval-config", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.user?.tenantId;
-    if (!tenantId) {
-      return res.status(401).json({ error: "Tenant ID not found" });
-    }
-
-    const [config] = await db.select()
-      .from(wmsOrderApprovalConfig)
-      .where(eq(wmsOrderApprovalConfig.tenantId, tenantId));
-
-    res.json(config || { 
-      requiresApproval: false,
-      thresholdAmount: null,
-      thresholdQuantity: null,
-      approverRoles: [],
-      notifyOnCreate: true,
-      notifyOnApproval: true
-    });
-  } catch (error) {
-    logger.error('Error fetching order approval config', { error });
-    res.status(500).json({ error: "Failed to fetch order approval configuration" });
-  }
-});
-
-/**
- * POST /api/wms/documents/order-approval-config
- * Create or update order approval configuration
- */
-router.post("/documents/order-approval-config", rbacMiddleware, requirePermission('wms.settings.write'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.id;
-    
-    if (!tenantId) {
-      return res.status(401).json({ error: "Tenant ID not found" });
-    }
-
-    const validatedData = insertWmsOrderApprovalConfigSchema.parse(req.body);
-
-    const [existing] = await db.select()
-      .from(wmsOrderApprovalConfig)
-      .where(eq(wmsOrderApprovalConfig.tenantId, tenantId));
-
-    if (existing) {
-      const [updated] = await db.update(wmsOrderApprovalConfig)
-        .set({
-          ...validatedData,
-          updatedAt: new Date(),
-          updatedBy: userId,
-        })
-        .where(eq(wmsOrderApprovalConfig.id, existing.id))
-        .returning();
-      
-      res.json({ success: true, data: updated });
-    } else {
-      const [created] = await db.insert(wmsOrderApprovalConfig)
-        .values({
-          ...validatedData,
-          tenantId,
-        })
-        .returning();
-
-      res.status(201).json({ success: true, data: created });
-    }
-  } catch (error) {
-    logger.error('Error saving order approval config', { error });
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: "Validation error", details: error.errors });
-    }
-    res.status(500).json({ error: "Failed to save order approval configuration" });
   }
 });
 
