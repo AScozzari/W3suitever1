@@ -567,6 +567,16 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     }
   }, [draftToResume, open]);
 
+  // Auto-populate document number when available (only if empty and not resuming draft)
+  useEffect(() => {
+    if (open && nextNumberData?.nextNumber && !draftToResume) {
+      const currentValue = form.getValues('documentNumber');
+      if (!currentValue) {
+        form.setValue('documentNumber', nextNumberData.nextNumber);
+      }
+    }
+  }, [open, nextNumberData, draftToResume]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -654,14 +664,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                             <FormControl>
                               <Input 
                                 {...field} 
-                                placeholder={nextNumberData?.nextNumber ? `Auto: ${nextNumberData.nextNumber}` : "Auto-generazione..."} 
                                 data-testid="input-order-number"
                               />
                             </FormControl>
                             <p className="text-xs text-gray-500">
-                              {nextNumberData?.nextNumber 
-                                ? `Prossimo numero: ${nextNumberData.nextNumber} (modificabile)`
-                                : "Se vuoto, verrà generato automaticamente"}
+                              Numero auto-generato (modificabile se necessario)
                             </p>
                             <FormMessage />
                           </FormItem>
