@@ -12141,8 +12141,8 @@ router.post("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.c
 });
 
 /**
- * Helper function to generate document number using clean format columns
- * No template parsing needed - uses direct column values
+ * Helper function to generate document number
+ * Uses clean format columns if available, falls back to legacy template for compatibility
  */
 async function generateDocumentNumber(tenantId: string, documentType: string): Promise<string> {
   const [config] = await db.select()
@@ -12157,29 +12157,11 @@ async function generateDocumentNumber(tenantId: string, documentType: string): P
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
 
-  // Default configuration
-  let numberFormat: 'numeric' | 'alphanumeric' = 'numeric';
-  let includeYear = true;
-  let includeMonth = false;
-  let includeDay = false;
-  let yearFormat: 'short' | 'full' = 'full';
-  let separator = '/';
   let paddingLength = 4;
-  let prefix = '';
-  let suffix = '';
   let currentCounter = 1;
 
   if (config) {
-    // Use new clean format columns
-    numberFormat = (config.numberFormat as 'numeric' | 'alphanumeric') || 'numeric';
-    includeYear = config.includeYear ?? true;
-    includeMonth = config.includeMonth ?? false;
-    includeDay = config.includeDay ?? false;
-    yearFormat = (config.yearFormat as 'short' | 'full') || 'full';
-    separator = config.separator || '/';
     paddingLength = config.paddingLength || 4;
-    prefix = config.prefix || '';
-    suffix = config.suffix || '';
     
     // Handle counter reset
     if (config.resetAnnually && config.lastResetYear !== year) {
@@ -12193,39 +12175,61 @@ async function generateDocumentNumber(tenantId: string, documentType: string): P
         .set({ currentCounter, updatedAt: new Date() })
         .where(eq(wmsDocumentNumberingConfig.id, config.id));
     }
+
+    // Check if using legacy template (contains {N}, {YYYY}, etc.)
+    const useLegacyTemplate = config.template && 
+      config.template !== '{N}' && 
+      (config.template.includes('{N}') || config.template.includes('{YYYY}') || config.template.includes('{YY}'));
+
+    if (useLegacyTemplate) {
+      // LEGACY MODE: Use template with variable substitution
+      return config.template!
+        .replace('{N}', String(currentCounter).padStart(paddingLength, '0'))
+        .replace('{YYYY}', String(year))
+        .replace('{YY}', String(year).slice(-2))
+        .replace('{MM}', month)
+        .replace('{DD}', day);
+    }
+
+    // NEW CLEAN FORMAT: Use dedicated columns
+    const numberFormat = (config.numberFormat as 'numeric' | 'alphanumeric') || 'numeric';
+    const includeYear = config.includeYear ?? true;
+    const includeMonth = config.includeMonth ?? false;
+    const includeDay = config.includeDay ?? false;
+    const yearFormat = (config.yearFormat as 'short' | 'full') || 'full';
+    const separator = config.separator || '/';
+    const prefix = config.prefix || '';
+    const suffix = config.suffix || '';
+
+    const parts: string[] = [];
+    
+    if (prefix) parts.push(prefix);
+    
+    if (includeYear) {
+      parts.push(yearFormat === 'short' ? String(year).slice(-2) : String(year));
+    }
+    if (includeMonth) {
+      parts.push(month);
+    }
+    if (includeDay) {
+      parts.push(day);
+    }
+    
+    let counterStr: string;
+    if (numberFormat === 'alphanumeric') {
+      counterStr = currentCounter.toString(36).toUpperCase().padStart(paddingLength, '0');
+    } else {
+      counterStr = String(currentCounter).padStart(paddingLength, '0');
+    }
+    parts.push(counterStr);
+    
+    if (suffix) parts.push(suffix);
+    
+    return parts.join(separator);
   }
 
-  // Build document number using clean format
-  const parts: string[] = [];
-  
-  // Add prefix
-  if (prefix) parts.push(prefix);
-  
-  // Add date components in order: year, month, day
-  if (includeYear) {
-    parts.push(yearFormat === 'short' ? String(year).slice(-2) : String(year));
-  }
-  if (includeMonth) {
-    parts.push(month);
-  }
-  if (includeDay) {
-    parts.push(day);
-  }
-  
-  // Add counter (numeric or alphanumeric)
-  let counterStr: string;
-  if (numberFormat === 'alphanumeric') {
-    counterStr = currentCounter.toString(36).toUpperCase().padStart(paddingLength, '0');
-  } else {
-    counterStr = String(currentCounter).padStart(paddingLength, '0');
-  }
-  parts.push(counterStr);
-  
-  // Add suffix
-  if (suffix) parts.push(suffix);
-  
-  // Join with separator
-  return parts.join(separator);
+  // No config found, use simple default: YYYY/0001
+  return `${year}/${String(currentCounter).padStart(paddingLength, '0')}`;
 }
 
 /**
