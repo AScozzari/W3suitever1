@@ -9719,10 +9719,6 @@ export const wmsDocumentItems = w3suiteSchema.table("wms_document_items", {
   macAddress: varchar("mac_address", { length: 20 }), // Per dispositivi di rete
   lotCode: varchar("lot_code", { length: 50 }), // Codice lotto
   
-  // Legacy JSON (deprecati - mantieni per migrazione, rimuovi dopo)
-  serialNumbers: jsonb("serial_numbers").default([]), // @deprecated - usa serialNumber
-  imeiNumbers: jsonb("imei_numbers").default([]), // @deprecated - usa imeiPrimary/imeiSecondary
-  
   // ==================== QUANTITIES ====================
   quantity: integer("quantity").notNull().default(1), // Per serializzati sempre 1
   receivedQuantity: integer("received_quantity").default(0), // Per consegne parziali
@@ -9811,10 +9807,7 @@ export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).
   totalPriceGross: z.coerce.number().min(0).optional(),
   totalVatAmount: z.coerce.number().min(0).optional(),
   
-  // Legacy (deprecated)
-  serialNumbers: z.array(z.string()).optional(),
-  imeiNumbers: z.array(z.string()).optional(),
-}).superRefine((data, ctx) => {
+  }).superRefine((data, ctx) => {
   // Validazione 1: Se serializzato, product_item_id deve essere presente
   if (data.isSerialized && !data.productItemId) {
     ctx.addIssue({
