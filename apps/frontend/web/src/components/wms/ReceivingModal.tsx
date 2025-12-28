@@ -313,7 +313,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [searchMode, setSearchMode] = useState<'internal' | 'supplier_sku'>('internal');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
-  // Debounce search query
+  // Debounce search query (600ms for better UX when typing SKUs)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.length >= 2) {
@@ -321,7 +321,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       } else {
         setDebouncedSearchQuery('');
       }
-    }, 300);
+    }, 600);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -615,11 +615,16 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         setShowSkuMappingForm(false);
         setUnmappedSupplierSku('');
       } else {
-        // No mapping found - show option to create mapping
-        setSearchResults([]);
-        setShowSearchResults(false);
+        // No mapping found - auto-switch to internal search mode
+        // Keep the SKU as unmapped for later mapping creation
         setUnmappedSupplierSku(debouncedSearchQuery);
-        setShowSkuMappingForm(true);
+        setSearchMode('internal');
+        // Search will auto-trigger with same debouncedSearchQuery in internal mode
+        toast({
+          title: "SKU fornitore non trovato",
+          description: "Ricerca nel catalogo interno...",
+          duration: 2000,
+        });
       }
     } else if (searchMode === 'supplier_sku' && debouncedSearchQuery.length < 2) {
       setSearchResults([]);
@@ -627,7 +632,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setShowSkuMappingForm(false);
       setDetectedCodeType(null);
     }
-  }, [searchMode, skuMappingsData, debouncedSearchQuery, convertApiProduct]);
+  }, [searchMode, skuMappingsData, debouncedSearchQuery, convertApiProduct, toast]);
 
   // Search for internal products when mapping unmapped supplier SKU (uses same API)
   // Note: queryClient auto-extracts .data field from { success, data } responses
@@ -710,30 +715,71 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     
     // For internal catalog search (Flow 1): verify if mapping exists for this supplier
     if (selectedSupplierId && searchMode === 'internal') {
-      setIsCheckingMapping(true);
-      try {
-        const data = await apiRequest(`/api/wms/product-supplier-mappings?productId=${product.id}&supplierId=${selectedSupplierId}`);
-        
-        if (data && Array.isArray(data) && data.length > 0) {
-          // Mapping exists - update product with supplierSku
-          const mapping = data[0];
+      // Check if we came from auto-switch (unmappedSupplierSku is set)
+      if (unmappedSupplierSku) {
+        // Auto-create mapping with the supplier SKU that wasn't found
+        setIsCheckingMapping(true);
+        try {
+          await apiRequest('/api/wms/product-supplier-mappings', {
+            method: 'POST',
+            body: JSON.stringify({
+              productId: product.id,
+              supplierId: selectedSupplierId,
+              supplierSku: unmappedSupplierSku,
+              useInternalSku: false,
+              isPrimary: false
+            })
+          });
+          toast({
+            title: "Mapping SKU creato",
+            description: `${product.sku} → ${unmappedSupplierSku}`,
+          });
+          // Update product with the new supplier SKU
           setSelectedProduct({
             ...product,
-            supplierSku: mapping.supplierSku || undefined
+            supplierSku: unmappedSupplierSku
           });
           setShowSupplierSkuPrompt(false);
-        } else {
-          // No mapping - prompt to add supplier SKU
+          setUnmappedSupplierSku('');
+        } catch (error) {
+          console.error('Error creating SKU mapping:', error);
+          // On error, still update locally for this session
+          setSelectedProduct({
+            ...product,
+            supplierSku: unmappedSupplierSku
+          });
+          setShowSupplierSkuPrompt(false);
+          setUnmappedSupplierSku('');
+        } finally {
+          setIsCheckingMapping(false);
+        }
+      } else {
+        // Normal Flow 1: check if mapping exists
+        setIsCheckingMapping(true);
+        try {
+          const data = await apiRequest(`/api/wms/product-supplier-mappings?productId=${product.id}&supplierId=${selectedSupplierId}`);
+          
+          if (data && Array.isArray(data) && data.length > 0) {
+            // Mapping exists - update product with supplierSku
+            const mapping = data[0];
+            setSelectedProduct({
+              ...product,
+              supplierSku: mapping.supplierSku || undefined
+            });
+            setShowSupplierSkuPrompt(false);
+          } else {
+            // No mapping - prompt to add supplier SKU
+            setShowSupplierSkuPrompt(true);
+            setPendingSupplierSkuInput('');
+          }
+        } catch (error) {
+          console.error('Error checking mapping:', error);
+          // On error, prompt anyway
           setShowSupplierSkuPrompt(true);
           setPendingSupplierSkuInput('');
+        } finally {
+          setIsCheckingMapping(false);
         }
-      } catch (error) {
-        console.error('Error checking mapping:', error);
-        // On error, prompt anyway
-        setShowSupplierSkuPrompt(true);
-        setPendingSupplierSkuInput('');
-      } finally {
-        setIsCheckingMapping(false);
       }
     } else if (searchMode === 'supplier_sku') {
       // Flow 2: Supplier SKU search - product already has mapping verified
