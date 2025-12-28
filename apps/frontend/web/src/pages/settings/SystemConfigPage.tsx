@@ -435,15 +435,114 @@ function WMSMovementsTab() {
   );
 }
 
-interface DocumentNumberingConfig {
-  id: string;
-  tenantId: string;
+interface DocumentNumberingConfigLegacy {
+  id?: string;
+  tenantId?: string;
   documentType: string;
-  template: string;
+  template?: string;
+  paddingLength?: number;
+  resetAnnually?: boolean;
+  currentCounter?: number;
+  lastResetYear?: number;
+}
+
+interface DocumentNumberingConfig {
+  id?: string;
+  tenantId?: string;
+  documentType: string;
+  numberingMode: 'numeric' | 'alphanumeric';
+  startNumber: number;
+  startLetter: string;
+  currentNumber: number;
+  currentLetter: string;
   paddingLength: number;
+  dateFormat: 'none' | 'day' | 'day_month' | 'day_month_year';
+  prefix: string;
+  separator: string;
   resetAnnually: boolean;
-  currentCounter: number;
-  lastResetYear: number;
+}
+
+function parseLegacyConfig(legacy: DocumentNumberingConfigLegacy, defaultPrefix: string): DocumentNumberingConfig {
+  const template = legacy.template || '';
+  let prefix = defaultPrefix;
+  let dateFormat: DocumentNumberingConfig['dateFormat'] = 'none';
+  let separator = '-';
+  let numberingMode: 'numeric' | 'alphanumeric' = 'numeric';
+  let startLetter = 'A';
+  
+  const hasDay = template.includes('{DD}');
+  const hasMonth = template.includes('{MM}');
+  const hasYear = template.includes('{YYYY}') || template.includes('{YY}');
+  
+  if (hasDay && hasMonth && hasYear) {
+    dateFormat = 'day_month_year';
+  } else if (hasDay && hasMonth) {
+    dateFormat = 'day_month';
+  } else if (hasDay) {
+    dateFormat = 'day';
+  } else if (hasYear) {
+    dateFormat = 'day_month_year';
+  }
+  
+  const prefixMatch = template.match(/^([A-Z]+)/);
+  if (prefixMatch) {
+    prefix = prefixMatch[1];
+  }
+  
+  if (template.includes('/')) separator = '/';
+  else if (template.includes('-')) separator = '-';
+  else if (template.includes('.')) separator = '.';
+  else if (template.includes('_')) separator = '_';
+  
+  const letterMatch = template.match(/\{N\}([A-Z])/);
+  if (letterMatch) {
+    numberingMode = 'alphanumeric';
+    startLetter = letterMatch[1];
+  }
+  
+  return {
+    id: legacy.id,
+    tenantId: legacy.tenantId,
+    documentType: legacy.documentType,
+    numberingMode,
+    startNumber: legacy.currentCounter || 1,
+    startLetter,
+    currentNumber: legacy.currentCounter || 1,
+    currentLetter: startLetter,
+    paddingLength: legacy.paddingLength || 4,
+    dateFormat,
+    prefix,
+    separator,
+    resetAnnually: legacy.resetAnnually ?? true
+  };
+}
+
+function configToLegacy(config: DocumentNumberingConfig): DocumentNumberingConfigLegacy {
+  const parts: string[] = [];
+  
+  if (config.prefix) {
+    parts.push(config.prefix);
+  }
+  
+  if (config.dateFormat === 'day_month_year') {
+    parts.push('{YYYY}');
+  }
+  
+  if (config.numberingMode === 'alphanumeric') {
+    parts.push(`{N}${config.startLetter}`);
+  } else {
+    parts.push('{N}');
+  }
+  
+  return {
+    id: config.id,
+    tenantId: config.tenantId,
+    documentType: config.documentType,
+    template: parts.join(config.separator),
+    paddingLength: config.paddingLength,
+    resetAnnually: config.resetAnnually,
+    currentCounter: config.currentNumber
+  };
 }
 
 interface OrderApprovalConfig {
@@ -457,26 +556,20 @@ interface OrderApprovalConfig {
 }
 
 const DOCUMENT_TYPE_OPTIONS = [
-  { value: 'order', label: 'Ordine a Fornitore', icon: ClipboardCheck },
-  { value: 'ddt', label: 'DDT', icon: Truck },
-  { value: 'adjustment_report', label: 'Rapporto Rettifica', icon: FileCheck },
-  { value: 'invoice', label: 'Fattura', icon: FileText },
-  { value: 'credit_note', label: 'Nota di Credito', icon: FileText },
-  { value: 'debit_note', label: 'Nota di Debito', icon: FileText },
+  { value: 'order', label: 'Ordine a Fornitore', icon: ClipboardCheck, defaultPrefix: 'ORD' },
+  { value: 'ddt', label: 'DDT', icon: Truck, defaultPrefix: 'DDT' },
+  { value: 'adjustment_report', label: 'Rapporto Rettifica', icon: FileCheck, defaultPrefix: 'RET' },
+  { value: 'invoice', label: 'Fattura', icon: FileText, defaultPrefix: 'FT' },
+  { value: 'credit_note', label: 'Nota di Credito', icon: FileText, defaultPrefix: 'NC' },
+  { value: 'debit_note', label: 'Nota di Debito', icon: FileText, defaultPrefix: 'ND' },
 ];
 
-const TEMPLATE_VARIABLES = [
-  { var: '{N}', desc: 'Numero progressivo' },
-  { var: '{YYYY}', desc: 'Anno (4 cifre)' },
-  { var: '{YY}', desc: 'Anno (2 cifre)' },
-  { var: '{MM}', desc: 'Mese (01-12)' },
-  { var: '{DD}', desc: 'Giorno (01-31)' },
-];
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 function WMSDocumentNumberingSection() {
   const { toast } = useToast();
   const [editingType, setEditingType] = useState<string | null>(null);
-  const [localConfigs, setLocalConfigs] = useState<Record<string, Partial<DocumentNumberingConfig>>>({});
+  const [localConfigs, setLocalConfigs] = useState<Record<string, DocumentNumberingConfig>>({});
   const [orderApprovalConfig, setOrderApprovalConfig] = useState<OrderApprovalConfig>({
     requiresApproval: false,
     thresholdAmount: null,
@@ -486,7 +579,7 @@ function WMSDocumentNumberingSection() {
     notifyOnApproval: true
   });
 
-  const { data: numberingConfigs, isLoading: numberingLoading } = useQuery<DocumentNumberingConfig[]>({
+  const { data: numberingConfigsLegacy, isLoading: numberingLoading } = useQuery<DocumentNumberingConfigLegacy[]>({
     queryKey: ['/api/wms/documents/numbering-config'],
   });
 
@@ -501,31 +594,42 @@ function WMSDocumentNumberingSection() {
   }, [approvalConfig]);
 
   useEffect(() => {
-    if (numberingConfigs) {
-      const configMap: Record<string, Partial<DocumentNumberingConfig>> = {};
-      numberingConfigs.forEach(c => {
-        configMap[c.documentType] = c;
+    const configMap: Record<string, DocumentNumberingConfig> = {};
+    
+    if (numberingConfigsLegacy && numberingConfigsLegacy.length > 0) {
+      numberingConfigsLegacy.forEach(legacy => {
+        const docOpt = DOCUMENT_TYPE_OPTIONS.find(o => o.value === legacy.documentType);
+        configMap[legacy.documentType] = parseLegacyConfig(legacy, docOpt?.defaultPrefix || legacy.documentType.toUpperCase());
       });
-      DOCUMENT_TYPE_OPTIONS.forEach(opt => {
-        if (!configMap[opt.value]) {
-          configMap[opt.value] = {
-            documentType: opt.value,
-            template: `${opt.value.toUpperCase()}/{YYYY}/{N}`,
-            paddingLength: 4,
-            resetAnnually: true,
-            currentCounter: 0
-          };
-        }
-      });
-      setLocalConfigs(configMap);
     }
-  }, [numberingConfigs]);
+    
+    DOCUMENT_TYPE_OPTIONS.forEach(opt => {
+      if (!configMap[opt.value]) {
+        configMap[opt.value] = {
+          documentType: opt.value,
+          numberingMode: 'numeric',
+          startNumber: 1,
+          startLetter: 'A',
+          currentNumber: 1,
+          currentLetter: 'A',
+          paddingLength: 4,
+          dateFormat: 'none',
+          prefix: opt.defaultPrefix,
+          separator: '-',
+          resetAnnually: true
+        };
+      }
+    });
+    
+    setLocalConfigs(configMap);
+  }, [numberingConfigsLegacy]);
 
   const saveNumberingMutation = useMutation({
-    mutationFn: async (config: Partial<DocumentNumberingConfig>) => {
+    mutationFn: async (config: DocumentNumberingConfig) => {
+      const legacyPayload = configToLegacy(config);
       return apiRequest('/api/wms/documents/numbering-config', {
         method: 'POST',
-        body: JSON.stringify(config),
+        body: JSON.stringify(legacyPayload),
       });
     },
     onSuccess: () => {
@@ -554,7 +658,7 @@ function WMSDocumentNumberingSection() {
     }
   });
 
-  const handleConfigChange = (docType: string, field: string, value: any) => {
+  const handleConfigChange = (docType: string, field: keyof DocumentNumberingConfig, value: any) => {
     setLocalConfigs(prev => ({
       ...prev,
       [docType]: {
@@ -564,14 +668,36 @@ function WMSDocumentNumberingSection() {
     }));
   };
 
-  const generatePreview = (template: string, padding: number) => {
+  const generatePreview = (config: DocumentNumberingConfig) => {
     const now = new Date();
-    return template
-      .replace('{N}', String(1).padStart(padding, '0'))
-      .replace('{YYYY}', String(now.getFullYear()))
-      .replace('{YY}', String(now.getFullYear()).slice(-2))
-      .replace('{MM}', String(now.getMonth() + 1).padStart(2, '0'))
-      .replace('{DD}', String(now.getDate()).padStart(2, '0'));
+    const parts: string[] = [];
+    
+    if (config.prefix) {
+      parts.push(config.prefix);
+    }
+    
+    if (config.dateFormat !== 'none') {
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = String(now.getFullYear());
+      
+      if (config.dateFormat === 'day') {
+        parts.push(day);
+      } else if (config.dateFormat === 'day_month') {
+        parts.push(`${day}/${month}`);
+      } else if (config.dateFormat === 'day_month_year') {
+        parts.push(`${day}/${month}/${year}`);
+      }
+    }
+    
+    const num = String(config.startNumber).padStart(config.paddingLength, '0');
+    if (config.numberingMode === 'alphanumeric') {
+      parts.push(`${num}${config.startLetter}`);
+    } else {
+      parts.push(num);
+    }
+    
+    return parts.join(config.separator);
   };
 
   if (numberingLoading || approvalLoading) {
@@ -592,20 +718,21 @@ function WMSDocumentNumberingSection() {
             Numerazione Documenti
           </CardTitle>
           <CardDescription>
-            Configura i template di numerazione per ogni tipo di documento operativo
+            Configura il formato di numerazione per ogni tipo di documento
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3">
             {DOCUMENT_TYPE_OPTIONS.map((docType) => {
-              const config = localConfigs[docType.value] || {};
+              const config = localConfigs[docType.value];
+              if (!config) return null;
               const isEditing = editingType === docType.value;
               const Icon = docType.icon;
 
               return (
                 <div 
                   key={docType.value}
-                  className={`p-4 rounded-lg border ${isEditing ? 'border-blue-300 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 dark:border-gray-700'}`}
+                  className={`p-4 rounded-lg border transition-all ${isEditing ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 shadow-sm' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -614,76 +741,191 @@ function WMSDocumentNumberingSection() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">{docType.label}</p>
-                        <p className="text-xs text-gray-500 font-mono">
-                          Anteprima: {generatePreview(config.template || '', config.paddingLength || 4)}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="font-mono text-xs bg-white dark:bg-gray-800">
+                            {generatePreview(config)}
+                          </Badge>
+                          <span className="text-[10px] text-gray-400">
+                            {config.numberingMode === 'alphanumeric' ? 'Alfanumerico' : 'Numerico'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <Button
                       variant={isEditing ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setEditingType(isEditing ? null : docType.value)}
+                      data-testid={`btn-edit-numbering-${docType.value}`}
                     >
                       {isEditing ? 'Chiudi' : 'Modifica'}
                     </Button>
                   </div>
 
                   {isEditing && (
-                    <div className="mt-4 space-y-4 pt-4 border-t">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-xs">Template Numerazione</Label>
-                          <Input
-                            value={config.template || ''}
-                            onChange={(e) => handleConfigChange(docType.value, 'template', e.target.value)}
-                            placeholder="DDT/{YYYY}/{N}"
-                            className="font-mono text-sm mt-1"
-                            data-testid={`input-template-${docType.value}`}
-                          />
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {TEMPLATE_VARIABLES.map(v => (
-                              <Badge 
-                                key={v.var} 
-                                variant="secondary" 
-                                className="text-[10px] cursor-pointer hover:bg-gray-300"
-                                onClick={() => handleConfigChange(docType.value, 'template', (config.template || '') + v.var)}
+                    <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800 space-y-5">
+                      <div className="p-3 rounded-lg bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Anteprima</p>
+                        <p className="text-xl font-mono font-bold text-blue-700 dark:text-blue-300">
+                          {generatePreview(config)}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">1</div>
+                            <Label className="text-xs font-semibold">Tipo Numerazione</Label>
+                          </div>
+                          <div className="space-y-2">
+                            <div 
+                              className={`p-2 rounded border cursor-pointer transition-all ${config.numberingMode === 'numeric' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}
+                              onClick={() => handleConfigChange(docType.value, 'numberingMode', 'numeric')}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full border-2 ${config.numberingMode === 'numeric' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`} />
+                                <span className="text-xs font-medium">Solo numeri</span>
+                              </div>
+                              <p className="text-[10px] text-gray-400 mt-1 ml-5">Es: 001, 002, 003...</p>
+                            </div>
+                            <div 
+                              className={`p-2 rounded border cursor-pointer transition-all ${config.numberingMode === 'alphanumeric' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}
+                              onClick={() => handleConfigChange(docType.value, 'numberingMode', 'alphanumeric')}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full border-2 ${config.numberingMode === 'alphanumeric' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`} />
+                                <span className="text-xs font-medium">Numeri + Lettere</span>
+                              </div>
+                              <p className="text-[10px] text-gray-400 mt-1 ml-5">Es: 001A, 001B... 002A</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">2</div>
+                            <Label className="text-xs font-semibold">Valori Iniziali</Label>
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-[10px] text-gray-500">Inizia dal numero</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                value={config.startNumber}
+                                onChange={(e) => handleConfigChange(docType.value, 'startNumber', parseInt(e.target.value) || 1)}
+                                className="h-8 text-sm mt-1"
+                                data-testid={`input-start-number-${docType.value}`}
+                              />
+                            </div>
+                            {config.numberingMode === 'alphanumeric' && (
+                              <div>
+                                <Label className="text-[10px] text-gray-500">Inizia dalla lettera</Label>
+                                <Select
+                                  value={config.startLetter}
+                                  onValueChange={(val) => handleConfigChange(docType.value, 'startLetter', val)}
+                                >
+                                  <SelectTrigger className="h-8 text-sm mt-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {LETTERS.map(letter => (
+                                      <SelectItem key={letter} value={letter}>{letter}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            <div>
+                              <Label className="text-[10px] text-gray-500">Cifre (padding)</Label>
+                              <Select
+                                value={String(config.paddingLength)}
+                                onValueChange={(val) => handleConfigChange(docType.value, 'paddingLength', parseInt(val))}
                               >
-                                {v.var} <span className="text-gray-400 ml-1">{v.desc}</span>
-                              </Badge>
+                                <SelectTrigger className="h-8 text-sm mt-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="2">2 cifre (01)</SelectItem>
+                                  <SelectItem value="3">3 cifre (001)</SelectItem>
+                                  <SelectItem value="4">4 cifre (0001)</SelectItem>
+                                  <SelectItem value="5">5 cifre (00001)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-bold">3</div>
+                            <Label className="text-xs font-semibold">Data Automatica</Label>
+                          </div>
+                          <div className="space-y-2">
+                            {[
+                              { value: 'none', label: 'Nessuna data', example: '' },
+                              { value: 'day', label: 'Solo giorno', example: '28' },
+                              { value: 'day_month', label: 'Giorno/Mese', example: '28/12' },
+                              { value: 'day_month_year', label: 'Giorno/Mese/Anno', example: '28/12/2025' },
+                            ].map(opt => (
+                              <div 
+                                key={opt.value}
+                                className={`p-2 rounded border cursor-pointer transition-all ${config.dateFormat === opt.value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}
+                                onClick={() => handleConfigChange(docType.value, 'dateFormat', opt.value)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full border-2 ${config.dateFormat === opt.value ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`} />
+                                    <span className="text-xs">{opt.label}</span>
+                                  </div>
+                                  {opt.example && <span className="text-[10px] text-gray-400 font-mono">{opt.example}</span>}
+                                </div>
+                              </div>
                             ))}
                           </div>
                         </div>
-                        <div className="space-y-3">
-                          <div>
-                            <Label className="text-xs">Cifre Progressivo</Label>
-                            <Select
-                              value={String(config.paddingLength || 4)}
-                              onValueChange={(val) => handleConfigChange(docType.value, 'paddingLength', parseInt(val))}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="3">3 cifre (001)</SelectItem>
-                                <SelectItem value="4">4 cifre (0001)</SelectItem>
-                                <SelectItem value="5">5 cifre (00001)</SelectItem>
-                                <SelectItem value="6">6 cifre (000001)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <Label className="text-xs">Reset Annuale</Label>
-                              <p className="text-[10px] text-gray-400">Azzera contatore ogni anno</p>
-                            </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label className="text-[10px] text-gray-500">Prefisso</Label>
+                          <Input
+                            value={config.prefix}
+                            onChange={(e) => handleConfigChange(docType.value, 'prefix', e.target.value.toUpperCase())}
+                            placeholder="DDT"
+                            className="h-8 text-sm mt-1 font-mono"
+                            maxLength={10}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-gray-500">Separatore</Label>
+                          <Select
+                            value={config.separator}
+                            onValueChange={(val) => handleConfigChange(docType.value, 'separator', val)}
+                          >
+                            <SelectTrigger className="h-8 text-sm mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="-">Trattino (-)</SelectItem>
+                              <SelectItem value="/">Barra (/)</SelectItem>
+                              <SelectItem value=".">Punto (.)</SelectItem>
+                              <SelectItem value="_">Underscore (_)</SelectItem>
+                              <SelectItem value="">Nessuno</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-end">
+                          <div className="flex items-center gap-2 h-8">
                             <Switch
-                              checked={config.resetAnnually ?? true}
+                              checked={config.resetAnnually}
                               onCheckedChange={(checked) => handleConfigChange(docType.value, 'resetAnnually', checked)}
                             />
+                            <Label className="text-xs">Reset annuale</Label>
                           </div>
                         </div>
                       </div>
-                      <div className="flex justify-end gap-2">
+
+                      <div className="flex justify-end gap-2 pt-2">
                         <Button variant="outline" size="sm" onClick={() => setEditingType(null)}>
                           Annulla
                         </Button>
@@ -691,6 +933,7 @@ function WMSDocumentNumberingSection() {
                           size="sm" 
                           onClick={() => saveNumberingMutation.mutate(config)}
                           disabled={saveNumberingMutation.isPending}
+                          data-testid={`btn-save-numbering-${docType.value}`}
                         >
                           <Save className="w-4 h-4 mr-1" />
                           Salva
