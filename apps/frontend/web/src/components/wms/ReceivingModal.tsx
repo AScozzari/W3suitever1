@@ -1557,12 +1557,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                     <div className="flex gap-3 mb-3 p-3 bg-gray-50 rounded-lg border">
                       <div className="flex-1">
                         <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
-                        <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                        <Select value={selectedCategoryId || "__all__"} onValueChange={(v) => setSelectedCategoryId(v === "__all__" ? '' : v)}>
                           <SelectTrigger className="h-8" data-testid="select-category-filter">
                             <SelectValue placeholder="Tutte le categorie" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Tutte le categorie</SelectItem>
+                            <SelectItem value="__all__">Tutte le categorie</SelectItem>
                             {categoriesData.map(cat => (
                               <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
                             ))}
@@ -1571,12 +1571,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                       </div>
                       <div className="flex-1">
                         <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
-                        <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
+                        <Select value={selectedTypeId || "__all__"} onValueChange={(v) => setSelectedTypeId(v === "__all__" ? '' : v)}>
                           <SelectTrigger className="h-8" data-testid="select-type-filter">
                             <SelectValue placeholder="Tutte le tipologie" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Tutte le tipologie</SelectItem>
+                            <SelectItem value="__all__">Tutte le tipologie</SelectItem>
                             {typesData.map(type => (
                               <SelectItem key={type.id} value={type.id}>{type.nome}</SelectItem>
                             ))}
