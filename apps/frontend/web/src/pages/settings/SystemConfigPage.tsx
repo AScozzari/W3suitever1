@@ -493,6 +493,7 @@ function parseLegacyConfig(legacy: DocumentNumberingConfigLegacy, defaultPrefix:
   else if (template.includes('-')) separator = '-';
   else if (template.includes('.')) separator = '.';
   else if (template.includes('_')) separator = '_';
+  else separator = 'none';
   
   const letterMatch = template.match(/\{N\}([A-Z])/);
   if (letterMatch) {
@@ -534,11 +535,12 @@ function configToLegacy(config: DocumentNumberingConfig): DocumentNumberingConfi
     parts.push('{N}');
   }
   
+  const actualSeparator = config.separator === 'none' ? '' : config.separator;
   return {
     id: config.id,
     tenantId: config.tenantId,
     documentType: config.documentType,
-    template: parts.join(config.separator),
+    template: parts.join(actualSeparator),
     paddingLength: config.paddingLength,
     resetAnnually: config.resetAnnually,
     currentCounter: config.currentNumber
@@ -697,7 +699,8 @@ function WMSDocumentNumberingSection() {
       parts.push(num);
     }
     
-    return parts.join(config.separator);
+    const actualSeparator = config.separator === 'none' ? '' : config.separator;
+    return parts.join(actualSeparator);
   };
 
   if (numberingLoading || approvalLoading) {
@@ -910,7 +913,7 @@ function WMSDocumentNumberingSection() {
                               <SelectItem value="/">Barra (/)</SelectItem>
                               <SelectItem value=".">Punto (.)</SelectItem>
                               <SelectItem value="_">Underscore (_)</SelectItem>
-                              <SelectItem value="">Nessuno</SelectItem>
+                              <SelectItem value="none">Nessuno</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
