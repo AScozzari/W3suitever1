@@ -1002,58 +1002,58 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                     {pendingItem && (
                       <Card className="border-green-200 bg-green-50/50">
                         <CardContent className="pt-4">
-                          <div className="flex items-center gap-4">
-                            <div className="flex-1">
+                          <div className="grid grid-cols-[1fr_100px_120px_auto_auto] gap-3 items-center">
+                            <div>
                               <p className="font-medium">{pendingItem.productName}</p>
                               <p className="text-sm text-gray-500">SKU: {pendingItem.productSku}</p>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div>
-                                <Label className="text-xs">Quantità</Label>
-                                <Input
-                                  ref={quantityInputRef}
-                                  type="number"
-                                  min="1"
-                                  value={pendingQuantity}
-                                  onChange={(e) => setPendingQuantity(e.target.value)}
-                                  onKeyDown={handlePendingKeyDown}
-                                  className="w-20 h-8"
-                                  data-testid="input-pending-qty"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs">Costo €</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={pendingUnitCost}
-                                  onChange={(e) => setPendingUnitCost(e.target.value)}
-                                  onKeyDown={handlePendingKeyDown}
-                                  className="w-24 h-8"
-                                  placeholder="0.00"
-                                  data-testid="input-pending-cost"
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={addPendingItem}
-                                className="h-8"
-                                data-testid="btn-add-item"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setPendingItem(null)}
-                                className="h-8"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Input
+                              ref={quantityInputRef}
+                              type="number"
+                              min="1"
+                              value={pendingQuantity}
+                              onChange={(e) => setPendingQuantity(e.target.value)}
+                              onKeyDown={handlePendingKeyDown}
+                              className="h-9"
+                              placeholder="Qtà"
+                              data-testid="input-pending-qty"
+                            />
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={pendingUnitCost}
+                              onChange={(e) => setPendingUnitCost(e.target.value)}
+                              onKeyDown={handlePendingKeyDown}
+                              className="h-9"
+                              placeholder="Costo €"
+                              data-testid="input-pending-cost"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              onClick={addPendingItem}
+                              className="h-9 w-9 bg-green-600 hover:bg-green-700"
+                              data-testid="btn-add-item"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setPendingItem(null)}
+                              className="h-9 w-9 text-gray-500 hover:text-red-500"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-[1fr_100px_120px_auto_auto] gap-3 mt-1 text-xs text-gray-500">
+                            <span></span>
+                            <span className="text-center">Quantità</span>
+                            <span className="text-center">Costo Unit.</span>
+                            <span></span>
+                            <span></span>
                           </div>
                         </CardContent>
                       </Card>
