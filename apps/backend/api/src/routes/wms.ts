@@ -11746,7 +11746,10 @@ router.get("/documents/stats", rbacMiddleware, requirePermission('wms.documents.
       pendingApproval: pendingApproval.count || 0,
       successRate
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      return res.json({ total: 0, passive: 0, active: 0, pendingApproval: 0, successRate: 100 });
+    }
     logger.error('Error fetching document stats', { error });
     res.status(500).json({ error: "Failed to fetch document statistics" });
   }
@@ -11806,7 +11809,16 @@ router.get("/documents/trend", rbacMiddleware, requirePermission('wms.documents.
     }));
 
     res.json(result);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      const emptyTrend = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - i));
+        emptyTrend.push({ date: date.toISOString().split('T')[0], passive: 0, active: 0 });
+      }
+      return res.json(emptyTrend);
+    }
     logger.error('Error fetching document trend', { error });
     res.status(500).json({ error: "Failed to fetch document trend" });
   }
@@ -11862,7 +11874,10 @@ router.get("/documents/timeline", rbacMiddleware, requirePermission('wms.documen
     });
 
     res.json(timeline);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      return res.json([]);
+    }
     logger.error('Error fetching document timeline', { error });
     res.status(500).json({ error: "Failed to fetch document timeline" });
   }
@@ -11970,7 +11985,10 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
         totalPages: Math.ceil(countResult.count / limitNum)
       }
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '42P01') {
+      return res.json({ data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } });
+    }
     logger.error('Error listing documents', { error });
     res.status(500).json({ error: "Failed to list documents" });
   }
