@@ -117,6 +117,7 @@ interface OrderItem {
   vatRate?: number; // percentuale (es: 22)
   vatAmount?: number; // IVA unitaria
   unitPriceGross?: number; // prezzo lordo (con IVA)
+  vatRegimeId?: string; // Regime fiscale
 }
 
 interface OrderDraft {
@@ -190,6 +191,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   const [pendingQuantity, setPendingQuantity] = useState<string>('1');
   const [pendingUnitCost, setPendingUnitCost] = useState<string>('');
   const [pendingVatRateId, setPendingVatRateId] = useState<string>('');
+  const [pendingVatRegimeId, setPendingVatRegimeId] = useState<string>('');
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -423,6 +425,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       vatRate: vatPercent,
       vatAmount,
       unitPriceGross,
+      vatRegimeId: pendingVatRegimeId || undefined,
     };
 
     setItems(prev => [...prev, newItem]);
@@ -430,6 +433,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     setPendingQuantity('1');
     setPendingUnitCost('');
     setPendingVatRateId('');
+    setPendingVatRegimeId('');
 
     // Focus back on search
     setTimeout(() => {
@@ -542,6 +546,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
         quantity: i.quantity,
         unitPriceNet: i.unitCost,
         vatRateId: i.vatRateId,
+        vatRegimeId: i.vatRegimeId,
         vatAmount: i.vatAmount,
         unitPriceGross: i.unitPriceGross,
         lineNumber: idx + 1,
@@ -1090,6 +1095,21 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                 {vatRatesData.map((rate) => (
                                   <SelectItem key={rate.id} value={rate.id}>
                                     {rate.rate}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Select 
+                              value={pendingVatRegimeId} 
+                              onValueChange={setPendingVatRegimeId}
+                            >
+                              <SelectTrigger className="h-9 w-24" data-testid="select-pending-regime">
+                                <SelectValue placeholder="Regime" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {vatRegimesData.map((regime) => (
+                                  <SelectItem key={regime.id} value={regime.id}>
+                                    {regime.code}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

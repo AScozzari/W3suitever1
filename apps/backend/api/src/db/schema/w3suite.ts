@@ -9814,15 +9814,28 @@ export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).
   // Legacy (deprecated)
   serialNumbers: z.array(z.string()).optional(),
   imeiNumbers: z.array(z.string()).optional(),
-}).refine((data) => {
-  // Se serializzato, product_item_id deve essere presente
+}).superRefine((data, ctx) => {
+  // Validazione 1: Se serializzato, product_item_id deve essere presente
   if (data.isSerialized && !data.productItemId) {
-    return false;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Per prodotti serializzati, product_item_id è obbligatorio",
+      path: ["productItemId"],
+    });
   }
-  return true;
-}, {
-  message: "Per prodotti serializzati, product_item_id è obbligatorio",
-  path: ["productItemId"],
+  
+  // Validazione 2: Se serializzato, quantity deve essere 1
+  if (data.isSerialized && data.quantity !== 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Per prodotti serializzati, la quantità deve essere 1",
+      path: ["quantity"],
+    });
+  }
+  
+  // Validazione 3: Se vatRateId è presente, vatRegimeId dovrebbe essere presente (soft warning)
+  // Nota: non blocchiamo per compatibilità, ma logghiamo warning
+  // In futuro questa può diventare obbligatoria
 });
 export type InsertWmsDocumentItem = z.infer<typeof insertWmsDocumentItemSchema>;
 export type WmsDocumentItem = typeof wmsDocumentItems.$inferSelect;

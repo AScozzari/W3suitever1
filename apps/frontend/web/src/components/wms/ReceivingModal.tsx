@@ -153,6 +153,7 @@ interface ReceivingItem {
   vatRate?: number;
   vatAmount?: number;
   unitPriceGross?: number;
+  vatRegimeId?: string; // Regime fiscale
   hasDiscrepancy?: boolean;
   expectedQuantity?: number;
   bulkLoaded?: boolean; // True if loaded in bulk mode without individual serials
@@ -181,6 +182,7 @@ interface ReceivingDraft {
     unitPrice?: number;
     vatRateId?: string;
     vatRate?: number;
+    vatRegimeId?: string;
     isSerializable: boolean;
     serialType?: string;
     serialCount?: number;
@@ -280,6 +282,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [lotInput, setLotInput] = useState('');
   const [unitPriceInput, setUnitPriceInput] = useState('');
   const [vatRateIdInput, setVatRateIdInput] = useState<string>('');
+  const [vatRegimeIdInput, setVatRegimeIdInput] = useState<string>('');
   const [serialScanMode, setSerialScanMode] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -351,6 +354,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   // Fetch VAT rates for IVA selection
   const { data: vatRatesData = [] } = useQuery<{ id: string; code: string; name: string; rate: number }[]>({
     queryKey: ['/api/wms/vat-rates'],
+    enabled: open,
+  });
+
+  // Fetch VAT regimes for fiscal regime selection
+  const { data: vatRegimesData = [] } = useQuery<{ id: string; code: string; name: string }[]>({
+    queryKey: ['/api/wms/vat-regimes'],
     enabled: open,
   });
 
@@ -541,6 +550,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         unitPrice: item.unitPrice,
         vatRateId: item.vatRateId,
         vatRate: item.vatRate,
+        vatRegimeId: item.vatRegimeId,
         isSerializable: item.product.isSerializable,
         serialType: item.product.serialType,
         serialCount: item.product.serialCount,
@@ -1145,6 +1155,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       vatRate: vatPercent,
       vatAmount,
       unitPriceGross,
+      vatRegimeId: vatRegimeIdInput || undefined,
       bulkLoaded: isBulkLoad, // Flag to track bulk-loaded items
     };
 
@@ -1160,6 +1171,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     setLotInput('');
     setUnitPriceInput('');
     setVatRateIdInput('');
+    setVatRegimeIdInput('');
     setSerialScanMode(false);
     setBulkLoadMode(false);
     setTimeout(() => searchInputRef.current?.focus(), 100);
@@ -1987,6 +1999,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   </SelectContent>
                                 </Select>
                               </div>
+                              <div className="w-28">
+                                <Label>Regime</Label>
+                                <Select value={vatRegimeIdInput} onValueChange={setVatRegimeIdInput}>
+                                  <SelectTrigger className="mt-1" data-testid="select-vat-regime">
+                                    <SelectValue placeholder="Regime" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vatRegimesData.map((regime) => (
+                                      <SelectItem key={regime.id} value={regime.id}>
+                                        {regime.code}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                             
                             {/* Bulk Load Mode Toggle */}
@@ -2284,6 +2311,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   </SelectContent>
                                 </Select>
                               </div>
+                              <div>
+                                <Label>Regime</Label>
+                                <Select value={vatRegimeIdInput} onValueChange={setVatRegimeIdInput}>
+                                  <SelectTrigger className="mt-1" data-testid="select-vat-regime">
+                                    <SelectValue placeholder="Regime" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vatRegimesData.map((regime) => (
+                                      <SelectItem key={regime.id} value={regime.id}>
+                                        {regime.code}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                             
                             <div>
@@ -2400,6 +2442,21 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                                   {vatRatesData.map((rate) => (
                                     <SelectItem key={rate.id} value={rate.id}>
                                       {rate.rate}%
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>Regime</Label>
+                              <Select value={vatRegimeIdInput} onValueChange={setVatRegimeIdInput}>
+                                <SelectTrigger className="mt-1" data-testid="select-vat-regime">
+                                  <SelectValue placeholder="Regime" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {vatRegimesData.map((regime) => (
+                                    <SelectItem key={regime.id} value={regime.id}>
+                                      {regime.code}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
