@@ -47,7 +47,9 @@ import {
   Pause,
   RefreshCw,
   Eye,
-  ChevronDown
+  ChevronDown,
+  Filter,
+  Link
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -313,6 +315,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [searchMode, setSearchMode] = useState<'internal' | 'supplier_sku'>('internal');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
+  // Filter states for category/type
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedTypeId, setSelectedTypeId] = useState<string>('');
+  
   // Debounce search query (600ms for better UX when typing SKUs)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -325,11 +332,27 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Fetch categories for filter dropdown
+  const { data: categoriesData = [] } = useQuery<{ id: string; nome: string }[]>({
+    queryKey: ['/api/wms/categories'],
+    enabled: open && currentStep === 2,
+  });
+
+  // Fetch product types for filter dropdown
+  const { data: typesData = [] } = useQuery<{ id: string; nome: string }[]>({
+    queryKey: ['/api/wms/product-types'],
+    enabled: open && currentStep === 2,
+  });
+
   // Fetch products from API for internal search (Flow 1)
   // Note: queryClient auto-extracts .data field from { success, data } responses
   const { data: productsApiData, isLoading: productsLoading } = useQuery<ProductFromAPI[]>({
-    queryKey: ['/api/wms/products', { search: debouncedSearchQuery }],
-    enabled: open && currentStep === 2 && searchMode === 'internal' && debouncedSearchQuery.length >= 2,
+    queryKey: ['/api/wms/products', { 
+      search: debouncedSearchQuery,
+      category_id: selectedCategoryId || undefined,
+      type_id: selectedTypeId || undefined,
+    }],
+    enabled: open && currentStep === 2 && searchMode === 'internal' && (debouncedSearchQuery.length >= 2 || !!selectedCategoryId || !!selectedTypeId),
   });
 
   // Fetch SKU mappings for supplier SKU search (Flow 2)
@@ -615,16 +638,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         setShowSkuMappingForm(false);
         setUnmappedSupplierSku('');
       } else {
-        // No mapping found - auto-switch to internal search mode
-        // Keep the SKU as unmapped for later mapping creation
+        // No mapping found - show message and option to create mapping
+        // Do NOT auto-switch - let user click "Crea Abbinamento" button
+        setSearchResults([]);
+        setShowSearchResults(true); // Show the "not found" panel
         setUnmappedSupplierSku(debouncedSearchQuery);
-        setSearchMode('internal');
-        // Search will auto-trigger with same debouncedSearchQuery in internal mode
-        toast({
-          title: "SKU fornitore non trovato",
-          description: "Ricerca nel catalogo interno...",
-          duration: 2000,
-        });
       }
     } else if (searchMode === 'supplier_sku' && debouncedSearchQuery.length < 2) {
       setSearchResults([]);
@@ -632,7 +650,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setShowSkuMappingForm(false);
       setDetectedCodeType(null);
     }
-  }, [searchMode, skuMappingsData, debouncedSearchQuery, convertApiProduct, toast]);
+  }, [searchMode, skuMappingsData, debouncedSearchQuery, convertApiProduct]);
 
   // Search for internal products when mapping unmapped supplier SKU (uses same API)
   // Note: queryClient auto-extracts .data field from { success, data } responses
@@ -1455,8 +1473,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                 </h3>
 
                 <div className="space-y-4">
-                  {/* Search mode toggle */}
-                  <div className="flex gap-2 mb-2">
+                  {/* Search mode toggle + filters */}
+                  <div className="flex items-center gap-2 mb-2">
                     <Button
                       type="button"
                       variant={searchMode === 'internal' ? 'default' : 'outline'}
@@ -1482,6 +1500,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                         setSearchQuery('');
                         setSearchResults([]);
                         setShowSearchResults(false);
+                        setShowFilters(false);
                       }}
                       className="flex items-center gap-2"
                       data-testid="btn-search-mode-supplier"
@@ -1489,7 +1508,99 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                       <Barcode className="h-4 w-4" />
                       SKU Fornitore
                     </Button>
+                    
+                    {/* Filter button - only visible in internal mode */}
+                    {searchMode === 'internal' && (
+                      <Button
+                        type="button"
+                        variant={showFilters ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="ml-auto flex items-center gap-1"
+                        data-testid="btn-toggle-filters"
+                      >
+                        <Filter className="h-4 w-4" />
+                        Filtri
+                        {(selectedCategoryId || selectedTypeId) && (
+                          <Badge variant="default" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                            {(selectedCategoryId ? 1 : 0) + (selectedTypeId ? 1 : 0)}
+                          </Badge>
+                        )}
+                      </Button>
+                    )}
                   </div>
+                  
+                  {/* Mapping mode indicator */}
+                  {unmappedSupplierSku && searchMode === 'internal' && (
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-md mb-2">
+                      <Link className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm text-blue-700">
+                        Seleziona un prodotto da abbinare a: <span className="font-mono font-semibold">{unmappedSupplierSku}</span>
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto h-6 text-xs text-blue-600 hover:text-blue-800"
+                        onClick={() => {
+                          setUnmappedSupplierSku('');
+                        }}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Annulla
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Filters panel */}
+                  {showFilters && searchMode === 'internal' && (
+                    <div className="flex gap-3 mb-3 p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex-1">
+                        <Label className="text-xs text-gray-500 mb-1 block">Categoria</Label>
+                        <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                          <SelectTrigger className="h-8" data-testid="select-category-filter">
+                            <SelectValue placeholder="Tutte le categorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Tutte le categorie</SelectItem>
+                            {categoriesData.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-xs text-gray-500 mb-1 block">Tipologia</Label>
+                        <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
+                          <SelectTrigger className="h-8" data-testid="select-type-filter">
+                            <SelectValue placeholder="Tutte le tipologie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Tutte le tipologie</SelectItem>
+                            {typesData.map(type => (
+                              <SelectItem key={type.id} value={type.id}>{type.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {(selectedCategoryId || selectedTypeId) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCategoryId('');
+                            setSelectedTypeId('');
+                          }}
+                          className="self-end h-8 text-xs"
+                          data-testid="btn-clear-filters"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1575,70 +1686,30 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                           <p className="text-sm text-gray-600">
                             Il codice "<span className="font-mono font-medium">{unmappedSupplierSku}</span>" non è mappato a nessun prodotto interno.
                           </p>
-                          {!showSkuMappingForm ? (
-                            <Button 
+                          <Button 
                               type="button"
-                              variant="outline"
+                              variant="default"
                               size="sm"
                               className="mt-3"
-                              onClick={() => setShowSkuMappingForm(true)}
+                              onClick={() => {
+                                // Switch to Flow 1 with filters open, keeping the supplier SKU for mapping
+                                setSearchMode('internal');
+                                setShowFilters(true);
+                                setSearchQuery('');
+                                setSearchResults([]);
+                                setShowSearchResults(false);
+                                // unmappedSupplierSku is already set, will be used when selecting a product
+                                toast({
+                                  title: "Cerca prodotto interno",
+                                  description: `SKU fornitore "${unmappedSupplierSku}" sarà abbinato al prodotto selezionato`,
+                                  duration: 3000,
+                                });
+                              }}
                               data-testid="button-create-mapping"
                             >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Crea Abbinamento SKU
+                              <Link className="h-4 w-4 mr-1" />
+                              Crea Abbinamento
                             </Button>
-                          ) : (
-                            <div className="mt-3 space-y-3">
-                              <div className="relative">
-                                <Label className="text-xs text-gray-500 mb-1 block">Cerca prodotto interno (SKU, nome, EAN)</Label>
-                                <Search className="absolute left-3 top-8 h-4 w-4 text-gray-400" />
-                                <Input
-                                  value={internalProductSearch}
-                                  onChange={(e) => setInternalProductSearch(e.target.value)}
-                                  placeholder="Cerca prodotto da collegare..."
-                                  className="pl-9"
-                                  data-testid="input-internal-product-search"
-                                />
-                              </div>
-                              
-                              {showInternalResults && internalProductResults.length > 0 && (
-                                <div className="border rounded-md bg-white max-h-48 overflow-y-auto">
-                                  {internalProductResults.map(product => (
-                                    <div
-                                      key={product.id}
-                                      className="p-2 hover:bg-green-50 cursor-pointer border-b last:border-b-0 flex items-center justify-between"
-                                      onClick={() => handleCreateMapping(product)}
-                                      data-testid={`mapping-result-${product.id}`}
-                                    >
-                                      <div>
-                                        <p className="font-medium text-sm text-gray-900">{product.name}</p>
-                                        <p className="text-xs text-gray-500">SKU: {product.sku}</p>
-                                      </div>
-                                      <Button type="button" size="sm" variant="ghost" className="text-green-600">
-                                        <Plus className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              
-                              {showInternalResults && internalProductResults.length === 0 && (
-                                <p className="text-sm text-gray-500">Nessun prodotto trovato. Verifica l'anagrafica.</p>
-                              )}
-                              
-                              <Button 
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setShowSkuMappingForm(false);
-                                  setInternalProductSearch('');
-                                }}
-                              >
-                                Annulla
-                              </Button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
