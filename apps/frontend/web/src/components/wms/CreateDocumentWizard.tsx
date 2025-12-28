@@ -142,7 +142,7 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
   const [productSearch, setProductSearch] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
 
-  const { data: suppliersData } = useQuery<{ data: Supplier[] }>({
+  const { data: suppliersData } = useQuery<Supplier[]>({
     queryKey: ['/api/wms/suppliers'],
     enabled: open && (documentType === 'order' || (documentType === 'ddt' && direction === 'passive')),
   });
@@ -192,7 +192,7 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
     setProductSearch('');
   };
 
-  const suppliers = suppliersData?.data || [];
+  const suppliers = suppliersData || [];
 
   const filteredDdtReasons = useMemo(() => {
     return DDT_REASONS.filter(r => r.direction === 'both' || r.direction === direction);
