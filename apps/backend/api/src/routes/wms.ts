@@ -71,7 +71,8 @@ import {
   insertWmsDocumentPhaseSchema,
   insertWmsDocumentNumberingConfigSchema,
   insertWmsOrderApprovalConfigSchema,
-  users
+  users,
+  legalEntities
 } from "../db/schema/w3suite";
 import { vatRegimes } from "../db/schema/public";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -5731,8 +5732,11 @@ router.get("/stores", rbacMiddleware, async (req, res) => {
         status: stores.status,
         category: stores.category,
         hasWarehouse: stores.hasWarehouse,
+        legalEntityId: stores.legalEntityId,
+        legalEntityName: legalEntities.nome,
       })
       .from(stores)
+      .leftJoin(legalEntities, eq(stores.legalEntityId, legalEntities.id))
       .where(
         and(
           eq(stores.tenantId, sessionTenantId),
@@ -12833,10 +12837,10 @@ router.delete("/documents/:documentId/items/:itemId", rbacMiddleware, requirePer
 router.get("/vat-rates", rbacMiddleware, async (req: Request, res: Response) => {
   try {
     const rates = await db.execute(sql`
-      SELECT id, code, name, rate, description, is_active
+      SELECT id, code, name, rate_percent as rate, description, is_active
       FROM public.vat_rates
       WHERE is_active = true
-      ORDER BY rate ASC
+      ORDER BY rate_percent ASC
     `);
     res.json(rates.rows || []);
   } catch (error) {

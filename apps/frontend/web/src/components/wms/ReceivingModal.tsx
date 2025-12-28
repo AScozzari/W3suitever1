@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -78,6 +79,8 @@ interface StoreFromAPI {
   status: string;
   category: string;
   hasWarehouse: boolean;
+  legalEntityId?: string;
+  legalEntityName?: string;
 }
 
 interface Order {
@@ -366,6 +369,23 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   // Watch selected store and legal entity for mismatch validation
   const selectedStoreId = form.watch('storeId');
   const selectedLegalEntityId = form.watch('legalEntityId');
+
+  // Filter stores by selected legal entity
+  const filteredStores = useMemo(() => {
+    if (!selectedLegalEntityId) return storesData;
+    return storesData.filter(s => s.legalEntityId === selectedLegalEntityId);
+  }, [storesData, selectedLegalEntityId]);
+
+  // Reset store selection when legal entity changes
+  useEffect(() => {
+    const currentStoreId = form.getValues('storeId');
+    if (currentStoreId && selectedLegalEntityId) {
+      const storeStillValid = filteredStores.some(s => s.id === currentStoreId);
+      if (!storeStillValid) {
+        form.setValue('storeId', '');
+      }
+    }
+  }, [selectedLegalEntityId, filteredStores, form]);
 
   // State for search mode: 'internal' (catalog) or 'supplier_sku'
   const [searchMode, setSearchMode] = useState<'internal' | 'supplier_sku'>('internal');
@@ -1399,7 +1419,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-6 pb-4">
             
             {/* STEP 1: Document Data */}
             {currentStep === 1 && (
@@ -1516,34 +1538,6 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
 
                   <FormField
                     control={form.control}
-                    name="storeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Magazzino di Destinazione *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-warehouse">
-                              <SelectValue placeholder="Seleziona magazzino" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {storesData.length === 0 && !storesLoading && (
-                              <SelectItem value="no-stores" disabled>Nessun magazzino disponibile</SelectItem>
-                            )}
-                            {storesData.map(s => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.name} ({s.code}){s.city ? ` - ${s.city}` : ''}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="legalEntityId"
                     render={({ field }) => (
                       <FormItem>
@@ -1562,6 +1556,38 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                               <SelectItem key={e.id} value={e.id}>
                                 {e.nome}
                                 {e.pIva && ` (P.IVA: ${e.pIva})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="storeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Magazzino di Destinazione *</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={!selectedLegalEntityId}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-warehouse">
+                              <SelectValue placeholder={selectedLegalEntityId ? "Seleziona magazzino" : "Seleziona prima entità legale"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {filteredStores.length === 0 && !storesLoading && selectedLegalEntityId && (
+                              <SelectItem value="no-stores" disabled>Nessun magazzino per questa entità</SelectItem>
+                            )}
+                            {filteredStores.map(s => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name} ({s.code}){s.city ? ` - ${s.city}` : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -2899,8 +2925,10 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                 )}
               </div>
             )}
+              </div>
+            </ScrollArea>
 
-            <DialogFooter className="flex-wrap gap-2 sm:justify-between">
+            <DialogFooter className="flex-wrap gap-2 sm:justify-between mt-4">
               {currentStep === 1 && (
                 <>
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
