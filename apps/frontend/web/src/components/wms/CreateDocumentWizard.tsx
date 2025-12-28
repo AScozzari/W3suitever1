@@ -61,6 +61,9 @@ interface DocumentItem {
   productSku: string;
   quantity: number;
   unitPrice?: number;
+  vatRateId?: string;
+  vatRate?: number;
+  vatRegimeId?: string;
 }
 
 interface Product {
@@ -153,6 +156,21 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
     enabled: showProductSearch && productSearch.length >= 2,
   });
 
+  const { data: vatRatesData } = useQuery<{ id: string; code: string; rate: number }[]>({
+    queryKey: ['/api/wms/vat-rates'],
+    enabled: open,
+  });
+
+  const { data: vatRegimesData } = useQuery<{ id: string; code: string; name: string }[]>({
+    queryKey: ['/api/wms/vat-regimes'],
+    enabled: open,
+  });
+
+  const vatRates = vatRatesData || [];
+  const vatRegimes = vatRegimesData || [];
+  const defaultVatRate = vatRates.find(r => r.rate === 22);
+  const defaultVatRegime = vatRegimes.find(r => r.code === 'ORD');
+
   const createDocumentMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest('/api/wms/documents', {
@@ -235,11 +253,26 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
       documentDirection: direction,
       documentDate: format(documentDate, 'yyyy-MM-dd'),
       notes: notes || undefined,
-      items: items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      })),
+      items: items.map(item => {
+        const unitPriceNet = item.unitPrice || 0;
+        const vatRateValue = item.vatRate || 22;
+        const vatAmount = unitPriceNet * (vatRateValue / 100);
+        const unitPriceGross = unitPriceNet + vatAmount;
+        
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          vatRateId: item.vatRateId,
+          vatRegimeId: item.vatRegimeId,
+          unitPriceNet,
+          unitPriceGross,
+          vatAmount,
+          totalPriceNet: unitPriceNet * item.quantity,
+          totalPriceGross: unitPriceGross * item.quantity,
+          totalVatAmount: vatAmount * item.quantity,
+        };
+      }),
     };
 
     if (documentType === 'ddt') {
@@ -274,10 +307,32 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
         productName: product.name,
         productSku: product.sku,
         quantity: 1,
+        vatRateId: defaultVatRate?.id,
+        vatRate: defaultVatRate?.rate || 22,
+        vatRegimeId: defaultVatRegime?.id,
       }]);
     }
     setProductSearch('');
     setShowProductSearch(false);
+  };
+
+  const updateItemPrice = (productId: string, unitPrice: number) => {
+    setItems(items.map(i => 
+      i.productId === productId ? { ...i, unitPrice } : i
+    ));
+  };
+
+  const updateItemVat = (productId: string, vatRateId: string) => {
+    const vatRate = vatRates.find(r => r.id === vatRateId);
+    setItems(items.map(i => 
+      i.productId === productId ? { ...i, vatRateId, vatRate: vatRate?.rate || 22 } : i
+    ));
+  };
+
+  const updateItemRegime = (productId: string, vatRegimeId: string) => {
+    setItems(items.map(i => 
+      i.productId === productId ? { ...i, vatRegimeId } : i
+    ));
   };
 
   const updateItemQuantity = (productId: string, quantity: number) => {
@@ -598,30 +653,13 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
                 {items.length > 0 ? (
                   <div className="border rounded-lg divide-y">
                     {items.map((item) => (
-                      <div key={item.productId} className="p-3 flex items-center gap-3">
-                        <Package className="h-5 w-5 text-gray-400" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{item.productName}</p>
-                          <p className="text-xs text-gray-500">{item.productSku}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => updateItemQuantity(item.productId, item.quantity - 1)}
-                          >
-                            -
-                          </Button>
-                          <span className="w-8 text-center font-medium">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => updateItemQuantity(item.productId, item.quantity + 1)}
-                          >
-                            +
-                          </Button>
+                      <div key={item.productId} className="p-3 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Package className="h-5 w-5 text-gray-400" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.productName}</p>
+                            <p className="text-xs text-gray-500">{item.productSku}</p>
+                          </div>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -630,6 +668,67 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                        </div>
+                        <div className="flex items-center gap-2 pl-8">
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => updateItemQuantity(item.productId, item.quantity - 1)}
+                            >
+                              -
+                            </Button>
+                            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              onClick={() => updateItemQuantity(item.productId, item.quantity + 1)}
+                            >
+                              +
+                            </Button>
+                          </div>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Prezzo"
+                            value={item.unitPrice || ''}
+                            onChange={(e) => updateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
+                            className="w-24 h-7 text-sm"
+                            data-testid={`input-price-${item.productId}`}
+                          />
+                          <Select 
+                            value={item.vatRateId || ''} 
+                            onValueChange={(v) => updateItemVat(item.productId, v)}
+                          >
+                            <SelectTrigger className="w-20 h-7 text-sm" data-testid={`select-vat-${item.productId}`}>
+                              <SelectValue placeholder="IVA" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {vatRates.map((rate) => (
+                                <SelectItem key={rate.id} value={rate.id}>
+                                  {rate.rate}%
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select 
+                            value={item.vatRegimeId || ''} 
+                            onValueChange={(v) => updateItemRegime(item.productId, v)}
+                          >
+                            <SelectTrigger className="w-24 h-7 text-sm" data-testid={`select-regime-${item.productId}`}>
+                              <SelectValue placeholder="Regime" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {vatRegimes.map((regime) => (
+                                <SelectItem key={regime.id} value={regime.id}>
+                                  {regime.code}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     ))}
