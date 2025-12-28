@@ -1,0 +1,113 @@
+er-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+queryClient.ts:195  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/documents?tab=passive&type=all&status=all&search=&page=1 500 (Internal Server Error)
+queryFn @ queryClient.ts:195
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+queryClient.ts:195  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/wms/documents?tab=passive&type=all&status=all&search=&page=1 500 (Internal Server Error)
+queryFn @ queryClient.ts:195
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+(anonime) @ @tanstack_react-query.js?v=fac8f799:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=fac8f799:816
+Promise.catch
+run @ @tanstack_react-query.js?v=fac8f799:799
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-EV34TC36.js?v=fac8f799:335:29)
+    at chunk-EV34TC36.js?v=fac8f799:239:13
+    at chunk-EV34TC36.js?v=fac8f799:162:58
+    at Presence (chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at chunk-EV34TC36.js?v=fac8f799:153:64
+    at chunk-TCRT5IO7.js?v=fac8f799:43:13
+    at chunk-TCRT5IO7.js?v=fac8f799:20:13
+    at chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at chunk-R54IPKTL.js?v=fac8f799:244:22
+    at Presence (chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at DialogPortal (chunk-EV34TC36.js?v=fac8f799:115:11)
+    at _c3 (dialog.tsx:30:6)
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at Dialog (chunk-EV34TC36.js?v=fac8f799:56:5)
+    at CreateDocumentWizard (CreateDocumentWizard.tsx:127:40)
+    at div (<anonymous>)
+    at DocumentsTabContent (DocumentsTabContent.tsx:438:21)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WMSDashboardPage (WMSDashboardPage.tsx:37:37)
+    at AuthenticatedRoute (TenantShell.tsx:568:72)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:237:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:92:59)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-EV34TC36.js?v=fac8f799:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'avviso
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

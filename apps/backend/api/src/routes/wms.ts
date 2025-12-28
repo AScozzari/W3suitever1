@@ -11965,7 +11965,7 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
       notes: wmsDocuments.notes,
       createdAt: wmsDocuments.createdAt,
       createdBy: wmsDocuments.createdBy,
-      supplierName: suppliers.businessName,
+      supplierName: suppliers.name,
       storeName: stores.name,
     })
     .from(wmsDocuments)
