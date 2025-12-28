@@ -11925,13 +11925,13 @@ router.get("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.vi
       conditions.push(eq(wmsDocuments.status, 'draft'));
     }
 
-    if (direction && typeof direction === 'string') {
+    if (direction && typeof direction === 'string' && direction !== 'all') {
       conditions.push(eq(wmsDocuments.documentDirection, direction as 'active' | 'passive'));
     }
-    if (type && typeof type === 'string') {
+    if (type && typeof type === 'string' && type !== 'all') {
       conditions.push(eq(wmsDocuments.documentType, type as any));
     }
-    if (status && typeof status === 'string') {
+    if (status && typeof status === 'string' && status !== 'all') {
       conditions.push(eq(wmsDocuments.status, status as any));
     }
     if (supplierId && typeof supplierId === 'string') {
