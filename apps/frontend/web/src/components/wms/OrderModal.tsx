@@ -112,7 +112,11 @@ interface OrderItem {
   productSku: string;
   productEan?: string;
   quantity: number;
-  unitCost: number;
+  unitCost: number; // Prezzo NETTO (senza IVA)
+  vatRateId?: string;
+  vatRate?: number; // percentuale (es: 22)
+  vatAmount?: number; // IVA unitaria
+  unitPriceGross?: number; // prezzo lordo (con IVA)
 }
 
 interface OrderDraft {
@@ -185,6 +189,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   } | null>(null);
   const [pendingQuantity, setPendingQuantity] = useState<string>('1');
   const [pendingUnitCost, setPendingUnitCost] = useState<string>('');
+  const [pendingVatRateId, setPendingVatRateId] = useState<string>('');
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -259,6 +264,18 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   // Fetch product types for filter
   const { data: typesData = [] } = useQuery<{ id: string; nome: string }[]>({
     queryKey: ['/api/wms/product-types'],
+    enabled: open && currentStep === 2,
+  });
+
+  // Fetch VAT rates for IVA selection
+  const { data: vatRatesData = [] } = useQuery<{ id: string; code: string; name: string; rate: number }[]>({
+    queryKey: ['/api/wms/vat-rates'],
+    enabled: open && currentStep === 2,
+  });
+
+  // Fetch VAT regimes
+  const { data: vatRegimesData = [] } = useQuery<{ id: string; code: string; name: string }[]>({
+    queryKey: ['/api/wms/vat-regimes'],
     enabled: open && currentStep === 2,
   });
 
@@ -389,6 +406,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
+    const selectedVatRate = vatRatesData.find(r => r.id === pendingVatRateId);
+    const vatPercent = selectedVatRate?.rate || 0;
+    const vatAmount = cost * (vatPercent / 100);
+    const unitPriceGross = cost + vatAmount;
+
     const newItem: OrderItem = {
       id: crypto.randomUUID(),
       productId: pendingItem.productId,
@@ -397,12 +419,17 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       productEan: pendingItem.productEan,
       quantity: qty,
       unitCost: cost,
+      vatRateId: pendingVatRateId || undefined,
+      vatRate: vatPercent,
+      vatAmount,
+      unitPriceGross,
     };
 
     setItems(prev => [...prev, newItem]);
     setPendingItem(null);
     setPendingQuantity('1');
     setPendingUnitCost('');
+    setPendingVatRateId('');
 
     // Focus back on search
     setTimeout(() => {
@@ -454,7 +481,9 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
 
   // Calculate totals
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.unitCost), 0);
+  const totalValueNet = items.reduce((sum, i) => sum + (i.quantity * i.unitCost), 0);
+  const totalVat = items.reduce((sum, i) => sum + (i.quantity * (i.vatAmount || 0)), 0);
+  const totalValueGross = totalValueNet + totalVat;
 
   // Save order mutation
   const saveOrderMutation = useMutation({
@@ -501,15 +530,21 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       counterpartyType: 'supplier',
       totalItems: items.length,
       totalQuantity: totalItems,
-      totalValue: totalValue.toFixed(2),
+      totalValue: totalValueGross.toFixed(2),
+      totalValueNet: totalValueNet.toFixed(2),
+      totalVat: totalVat.toFixed(2),
       metadata: {
         legalEntityId: formData.legalEntityId,
         legalEntityName: legalEntity?.nome,
       },
-      items: items.map(i => ({
+      items: items.map((i, idx) => ({
         productId: i.productId,
         quantity: i.quantity,
-        unitPrice: i.unitCost,
+        unitPriceNet: i.unitCost,
+        vatRateId: i.vatRateId,
+        vatAmount: i.vatAmount,
+        unitPriceGross: i.unitPriceGross,
+        lineNumber: idx + 1,
       })),
       status: 'draft',
     };
@@ -1017,7 +1052,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                     {pendingItem && (
                       <Card className="border-green-200 bg-green-50/50">
                         <CardContent className="pt-4">
-                          <div className="grid grid-cols-[1fr_100px_120px_auto_auto] gap-3 items-center">
+                          <div className="grid grid-cols-[1fr_100px_120px_80px_auto_auto] gap-3 items-center">
                             <div>
                               <p className="font-medium">{pendingItem.productName}</p>
                               <p className="text-sm text-gray-500">SKU: {pendingItem.productSku}</p>
@@ -1044,6 +1079,21 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               placeholder="Costo €"
                               data-testid="input-pending-cost"
                             />
+                            <Select 
+                              value={pendingVatRateId} 
+                              onValueChange={setPendingVatRateId}
+                            >
+                              <SelectTrigger className="h-9 w-20" data-testid="select-pending-vat">
+                                <SelectValue placeholder="IVA" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {vatRatesData.map((rate) => (
+                                  <SelectItem key={rate.id} value={rate.id}>
+                                    {rate.rate}%
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <Button
                               type="button"
                               size="icon"
@@ -1063,10 +1113,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="grid grid-cols-[1fr_100px_120px_auto_auto] gap-3 mt-1 text-xs text-gray-500">
+                          <div className="grid grid-cols-[1fr_100px_120px_80px_auto_auto] gap-3 mt-1 text-xs text-gray-500">
                             <span></span>
                             <span className="text-center">Quantità</span>
                             <span className="text-center">Costo Unit.</span>
+                            <span className="text-center">IVA</span>
                             <span></span>
                             <span></span>
                           </div>
@@ -1083,6 +1134,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               <TableHead>Prodotto</TableHead>
                               <TableHead className="w-24 text-right">Quantità</TableHead>
                               <TableHead className="w-28 text-right">Costo Unit.</TableHead>
+                              <TableHead className="w-16 text-right">IVA</TableHead>
                               <TableHead className="w-28 text-right">Totale</TableHead>
                               <TableHead className="w-20"></TableHead>
                             </TableRow>
@@ -1121,8 +1173,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                     `€ ${item.unitCost.toFixed(2)}`
                                   )}
                                 </TableCell>
+                                <TableCell className="text-right text-gray-600">
+                                  {item.vatRate ? `${item.vatRate}%` : '-'}
+                                </TableCell>
                                 <TableCell className="text-right font-medium">
-                                  € {(item.quantity * item.unitCost).toFixed(2)}
+                                  € {(item.quantity * (item.unitPriceGross || item.unitCost)).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex justify-end gap-1">
@@ -1179,9 +1234,17 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                             <span>Articoli:</span>
                             <span className="font-medium">{totalItems}</span>
                           </div>
-                          <div className="flex justify-between gap-8 text-lg font-bold mt-2">
+                          <div className="flex justify-between gap-8 text-sm mt-1">
+                            <span>Imponibile:</span>
+                            <span className="font-medium">€ {totalValueNet.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between gap-8 text-sm mt-1">
+                            <span>IVA:</span>
+                            <span className="font-medium">€ {totalVat.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between gap-8 text-lg font-bold mt-2 pt-2 border-t">
                             <span>Totale Ordine:</span>
-                            <span>€ {totalValue.toFixed(2)}</span>
+                            <span>€ {totalValueGross.toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -1252,6 +1315,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                             <TableHead>Prodotto</TableHead>
                             <TableHead className="text-right">Quantità</TableHead>
                             <TableHead className="text-right">Costo Unit.</TableHead>
+                            <TableHead className="text-right">IVA</TableHead>
                             <TableHead className="text-right">Totale</TableHead>
                             <TableHead className="w-20"></TableHead>
                           </TableRow>
@@ -1265,8 +1329,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               </TableCell>
                               <TableCell className="text-right">{item.quantity}</TableCell>
                               <TableCell className="text-right">€ {item.unitCost.toFixed(2)}</TableCell>
+                              <TableCell className="text-right text-gray-600">
+                                {item.vatRate ? `${item.vatRate}%` : '-'}
+                              </TableCell>
                               <TableCell className="text-right font-medium">
-                                € {(item.quantity * item.unitCost).toFixed(2)}
+                                € {(item.quantity * (item.unitPriceGross || item.unitCost)).toFixed(2)}
                               </TableCell>
                               <TableCell>
                                 <div className="flex justify-end gap-1">
@@ -1306,9 +1373,17 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                           <span>Totale Articoli:</span>
                           <span className="font-medium">{totalItems}</span>
                         </div>
-                        <div className="flex justify-between gap-8 text-xl font-bold mt-2 text-blue-700">
+                        <div className="flex justify-between gap-8 text-sm mt-1">
+                          <span>Imponibile:</span>
+                          <span className="font-medium">€ {totalValueNet.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between gap-8 text-sm mt-1">
+                          <span>IVA:</span>
+                          <span className="font-medium">€ {totalVat.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between gap-8 text-xl font-bold mt-2 pt-2 border-t text-blue-700">
                           <span>Totale Ordine:</span>
-                          <span>€ {totalValue.toFixed(2)}</span>
+                          <span>€ {totalValueGross.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
