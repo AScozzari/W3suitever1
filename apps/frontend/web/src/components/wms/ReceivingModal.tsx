@@ -207,9 +207,27 @@ const receivingSchema = z.object({
   documentDate: z.string().min(1, 'Seleziona la data'),
   notes: z.string().optional(),
   storeId: z.string().min(1, 'Seleziona lo store'),
+  legalEntityId: z.string().min(1, 'Seleziona l\'entità legale'),
 });
 
 type FormValues = z.infer<typeof receivingSchema>;
+
+interface LegalEntityFromAPI {
+  id: string;
+  ragioneSociale: string;
+  partitaIva?: string;
+  codiceFiscale?: string;
+  status: string;
+}
+
+interface StoreWithLegalEntity {
+  id: string;
+  name: string;
+  city?: string;
+  province?: string;
+  legalEntityId?: string;
+  legalEntityName?: string;
+}
 
 // MOCK_SUPPLIERS removed - now using real API endpoint
 // MOCK_PRODUCTS removed - now using real API endpoint
@@ -283,6 +301,10 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const [dialogContainer, setDialogContainer] = useState<HTMLDivElement | null>(null);
 
+  // State for legal entity mismatch warning
+  const [showLegalEntityMismatch, setShowLegalEntityMismatch] = useState(false);
+  const [pendingSubmitValues, setPendingSubmitValues] = useState<FormValues | null>(null);
+
   // Form declaration - MUST be before queries that use selectedSupplierId
   const form = useForm<FormValues>({
     resolver: zodResolver(receivingSchema),
@@ -293,6 +315,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       documentDate: new Date().toISOString().split('T')[0],
       notes: '',
       storeId: '',
+      legalEntityId: '',
     },
   });
 
@@ -310,6 +333,16 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     queryKey: ['/api/wms/stores'],
     enabled: open,
   });
+
+  // Fetch legal entities
+  const { data: legalEntitiesData = [], isLoading: legalEntitiesLoading } = useQuery<LegalEntityFromAPI[]>({
+    queryKey: ['/api/legal-entities'],
+    enabled: open,
+  });
+
+  // Watch selected store and legal entity for mismatch validation
+  const selectedStoreId = form.watch('storeId');
+  const selectedLegalEntityId = form.watch('legalEntityId');
 
   // State for search mode: 'internal' (catalog) or 'supplier_sku'
   const [searchMode, setSearchMode] = useState<'internal' | 'supplier_sku'>('internal');
@@ -1140,6 +1173,16 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     setIsCheckingSerials(true);
     
     try {
+      // Check legal entity mismatch with warehouse
+      const selectedStore = storesData.find(s => s.id === values.storeId) as any;
+      if (selectedStore?.legalEntityId && values.legalEntityId && selectedStore.legalEntityId !== values.legalEntityId) {
+        // Legal entity mismatch - show warning dialog
+        setPendingSubmitValues(values);
+        setShowLegalEntityMismatch(true);
+        setIsCheckingSerials(false);
+        return;
+      }
+
       // Check for duplicate serials before submitting
       const duplicates = await checkSerialDuplicates();
       
@@ -1162,6 +1205,22 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     } finally {
       setIsCheckingSerials(false);
     }
+  };
+
+  // Handle user confirming to proceed despite legal entity mismatch
+  const handleProceedDespiteMismatch = async () => {
+    setShowLegalEntityMismatch(false);
+    if (pendingSubmitValues) {
+      // Check serials and then submit
+      const duplicates = await checkSerialDuplicates();
+      if (duplicates.length > 0) {
+        setSerialConflicts(duplicates);
+        setShowConflictDialog(true);
+        return;
+      }
+      await submitReceiving(pendingSubmitValues);
+    }
+    setPendingSubmitValues(null);
   };
 
   const submitReceiving = async (values: FormValues) => {
@@ -1227,12 +1286,12 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   // Validate Step 1 fields before proceeding
   const canProceedToStep2 = (): boolean => {
     const values = form.getValues();
-    return !!(values.supplierId && values.documentNumber && values.documentDate && values.storeId);
+    return !!(values.supplierId && values.documentNumber && values.documentDate && values.storeId && values.legalEntityId);
   };
 
   const handleProceedToStep2 = async () => {
     // Trigger validation for Step 1 fields
-    const isValid = await form.trigger(['supplierId', 'documentNumber', 'documentDate', 'storeId']);
+    const isValid = await form.trigger(['supplierId', 'documentNumber', 'documentDate', 'storeId', 'legalEntityId']);
     if (isValid) {
       setCurrentStep(2);
     }
@@ -1426,6 +1485,35 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                             {storesData.map(s => (
                               <SelectItem key={s.id} value={s.id}>
                                 {s.name} ({s.code}){s.city ? ` - ${s.city}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="legalEntityId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Entità Legale DDT *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-legal-entity">
+                              <SelectValue placeholder="Seleziona entità legale" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {legalEntitiesData.length === 0 && !legalEntitiesLoading && (
+                              <SelectItem value="no-entities" disabled>Nessuna entità disponibile</SelectItem>
+                            )}
+                            {legalEntitiesData.map(e => (
+                              <SelectItem key={e.id} value={e.id}>
+                                {e.ragioneSociale}
+                                {e.partitaIva && ` (P.IVA: ${e.partitaIva})`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -2819,6 +2907,55 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
           <AlertDialogAction
             className="bg-orange-500 hover:bg-orange-600"
             onClick={handleForceSubmit}
+          >
+            Procedi Comunque
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Legal Entity Mismatch Warning Dialog */}
+    <AlertDialog open={showLegalEntityMismatch} onOpenChange={setShowLegalEntityMismatch}>
+      <AlertDialogContent className="max-w-lg">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+            <AlertTriangle className="h-5 w-5" />
+            Attenzione: Entità Legale Diversa
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-3">
+            <p>
+              L'entità legale selezionata nel DDT è diversa da quella associata al magazzino di destinazione.
+            </p>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Entità DDT:</span>
+                <span className="font-medium">
+                  {legalEntitiesData.find(e => e.id === pendingSubmitValues?.legalEntityId)?.ragioneSociale || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Entità Magazzino:</span>
+                <span className="font-medium">
+                  {(storesData.find(s => s.id === pendingSubmitValues?.storeId) as any)?.legalEntityName || 'Non specificata'}
+                </span>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              Questa operazione potrebbe generare discrepanze contabili. 
+              Vuoi procedere comunque?
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => {
+            setShowLegalEntityMismatch(false);
+            setPendingSubmitValues(null);
+          }}>
+            Annulla
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-amber-500 hover:bg-amber-600"
+            onClick={handleProceedDespiteMismatch}
           >
             Procedi Comunque
           </AlertDialogAction>

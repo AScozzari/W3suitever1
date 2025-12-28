@@ -76,6 +76,32 @@ import {
 } from 'recharts';
 import { CreateDocumentWizard } from './CreateDocumentWizard';
 import { DocumentDetailPanel } from './DocumentDetailPanel';
+import { OrderModal } from './OrderModal';
+import { SuspendedOrdersDrafts } from './SuspendedOrdersDrafts';
+
+interface OrderDraft {
+  id: string;
+  legalEntityId?: string;
+  legalEntityName?: string;
+  supplierId?: string;
+  supplierName?: string;
+  documentNumber?: string;
+  documentDate?: string;
+  expectedDeliveryDate?: string;
+  storeId?: string;
+  storeName?: string;
+  notes?: string;
+  items: Array<{
+    id: string;
+    productId: string;
+    productName: string;
+    productSku: string;
+    productEan?: string;
+    quantity: number;
+    unitCost: number;
+  }>;
+  lastModified: string;
+}
 
 interface DocumentStats {
   total: number;
@@ -443,6 +469,9 @@ export function DocumentsTabContent() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [draftToResume, setDraftToResume] = useState<OrderDraft | undefined>(undefined);
+  const [draftsRefresh, setDraftsRefresh] = useState(0);
   const [page, setPage] = useState(1);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DocumentStats>({
@@ -484,10 +513,29 @@ export function DocumentsTabContent() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Aggiorna
           </Button>
-          <Button onClick={() => setIsCreateModalOpen(true)} className="bg-orange-500 hover:bg-orange-600" data-testid="btn-new-document">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Documento
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-orange-500 hover:bg-orange-600" data-testid="btn-new-document">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Documento
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsOrderModalOpen(true)} data-testid="menu-new-order">
+                <ClipboardList className="h-4 w-4 mr-2 text-blue-500" />
+                Ordine a Fornitore
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsCreateModalOpen(true)} data-testid="menu-new-ddt">
+                <Truck className="h-4 w-4 mr-2 text-green-500" />
+                DDT
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsCreateModalOpen(true)} data-testid="menu-new-adjustment">
+                <FileEdit className="h-4 w-4 mr-2 text-purple-500" />
+                Rapporto Rettifica
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -692,6 +740,17 @@ export function DocumentsTabContent() {
             </div>
 
             <TabsContent value={activeSubTab} className="m-0">
+              {activeSubTab === 'drafts' && (
+                <div className="p-4 pb-0">
+                  <SuspendedOrdersDrafts 
+                    onResume={(draft) => {
+                      setDraftToResume(draft);
+                      setIsOrderModalOpen(true);
+                    }}
+                    refreshTrigger={draftsRefresh}
+                  />
+                </div>
+              )}
               {documentsLoading ? (
                 <div className="p-4 space-y-2">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -775,6 +834,23 @@ export function DocumentsTabContent() {
         onSuccess={(docId) => {
           toast({ title: 'Documento creato', description: `ID: ${docId}` });
         }}
+      />
+
+      <OrderModal
+        open={isOrderModalOpen}
+        onOpenChange={(open) => {
+          setIsOrderModalOpen(open);
+          if (!open) {
+            setDraftToResume(undefined);
+            setDraftsRefresh(p => p + 1);
+          }
+        }}
+        onSuccess={(docId) => {
+          toast({ title: 'Ordine creato', description: `Ordine salvato con successo` });
+          refetch();
+          setDraftsRefresh(p => p + 1);
+        }}
+        draftToResume={draftToResume}
       />
 
       <DocumentDetailPanel
