@@ -12125,6 +12125,114 @@ router.post("/documents/numbering-config", rbacMiddleware, requirePermission('wm
 });
 
 /**
+ * GET /api/wms/documents/next-number/:documentType
+ * Get next document number preview (without consuming it)
+ * Returns what the next number will be when document is created
+ */
+router.get("/documents/next-number/:documentType", rbacMiddleware, requirePermission('wms.settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    const { documentType } = req.params;
+    
+    if (!tenantId) {
+      return res.status(401).json({ error: "Tenant ID not found" });
+    }
+
+    const validTypes = ['order', 'ddt', 'adjustment', 'invoice', 'credit_note', 'debit_note'];
+    if (!validTypes.includes(documentType)) {
+      return res.status(400).json({ error: "Invalid document type" });
+    }
+
+    const [config] = await db.select()
+      .from(wmsDocumentNumberingConfig)
+      .where(and(
+        eq(wmsDocumentNumberingConfig.tenantId, tenantId),
+        eq(wmsDocumentNumberingConfig.documentType, documentType)
+      ));
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    let paddingLength = 4;
+    let nextCounter = 1;
+
+    if (config) {
+      paddingLength = config.paddingLength || 4;
+      
+      // Check if counter should reset
+      if (config.resetAnnually && config.lastResetYear !== year) {
+        nextCounter = 1;
+      } else {
+        nextCounter = config.currentCounter + 1;
+      }
+
+      // Check if using legacy template
+      const useLegacyTemplate = config.template && 
+        config.template !== '{N}' && 
+        (config.template.includes('{N}') || config.template.includes('{YYYY}') || config.template.includes('{YY}'));
+
+      if (useLegacyTemplate) {
+        const nextNumber = config.template!
+          .replace('{N}', String(nextCounter).padStart(paddingLength, '0'))
+          .replace('{YYYY}', String(year))
+          .replace('{YY}', String(year).slice(-2))
+          .replace('{MM}', month)
+          .replace('{DD}', day);
+        
+        return res.json({ nextNumber, hasConfig: true });
+      }
+
+      // NEW CLEAN FORMAT
+      const numberFormat = (config.numberFormat as 'numeric' | 'alphanumeric') || 'numeric';
+      const includeYear = config.includeYear ?? true;
+      const includeMonth = config.includeMonth ?? false;
+      const includeDay = config.includeDay ?? false;
+      const yearFormat = (config.yearFormat as 'short' | 'full') || 'full';
+      const separator = config.separator || '/';
+      const prefix = config.prefix || '';
+      const suffix = config.suffix || '';
+
+      const parts: string[] = [];
+      
+      if (prefix) parts.push(prefix);
+      
+      if (includeYear) {
+        parts.push(yearFormat === 'short' ? String(year).slice(-2) : String(year));
+      }
+      if (includeMonth) {
+        parts.push(month);
+      }
+      if (includeDay) {
+        parts.push(day);
+      }
+      
+      let counterStr: string;
+      if (numberFormat === 'alphanumeric') {
+        counterStr = nextCounter.toString(36).toUpperCase().padStart(paddingLength, '0');
+      } else {
+        counterStr = String(nextCounter).padStart(paddingLength, '0');
+      }
+      parts.push(counterStr);
+      
+      if (suffix) parts.push(suffix);
+      
+      return res.json({ nextNumber: parts.join(separator), hasConfig: true });
+    }
+
+    // No config found, use default format
+    res.json({ 
+      nextNumber: `${year}/${String(nextCounter).padStart(paddingLength, '0')}`,
+      hasConfig: false 
+    });
+  } catch (error) {
+    logger.error('Error getting next document number', { error });
+    res.status(500).json({ error: "Failed to get next document number" });
+  }
+});
+
+/**
  * GET /api/wms/documents/order-approval-config
  * Get order approval configuration
  */

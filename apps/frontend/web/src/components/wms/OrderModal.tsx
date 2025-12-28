@@ -232,6 +232,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     enabled: open,
   });
 
+  // Fetch next document number preview
+  const { data: nextNumberData } = useQuery<{ nextNumber: string; hasConfig: boolean }>({
+    queryKey: ['/api/wms/documents/next-number/order'],
+    enabled: open && currentStep === 1,
+  });
+
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -648,12 +654,14 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                             <FormControl>
                               <Input 
                                 {...field} 
-                                placeholder="Lascia vuoto per auto-generazione" 
+                                placeholder={nextNumberData?.nextNumber ? `Auto: ${nextNumberData.nextNumber}` : "Auto-generazione..."} 
                                 data-testid="input-order-number"
                               />
                             </FormControl>
                             <p className="text-xs text-gray-500">
-                              Se vuoto, verrà generato automaticamente
+                              {nextNumberData?.nextNumber 
+                                ? `Prossimo numero: ${nextNumberData.nextNumber} (modificabile)`
+                                : "Se vuoto, verrà generato automaticamente"}
                             </p>
                             <FormMessage />
                           </FormItem>
