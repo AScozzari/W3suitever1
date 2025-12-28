@@ -31,6 +31,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -311,6 +312,9 @@ export function CreateDocumentWizard({ open, onOpenChange, onSuccess }: CreateDo
             <FileText className="h-5 w-5 text-orange-500" />
             Nuovo Documento
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Wizard per la creazione di un nuovo documento WMS
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center justify-center gap-2 py-4 border-b">
