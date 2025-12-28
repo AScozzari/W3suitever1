@@ -326,13 +326,15 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   }, [searchQuery]);
 
   // Fetch products from API for internal search (Flow 1)
-  const { data: productsApiData, isLoading: productsLoading } = useQuery<{ success: boolean; data: ProductFromAPI[] }>({
+  // Note: queryClient auto-extracts .data field from { success, data } responses
+  const { data: productsApiData, isLoading: productsLoading } = useQuery<ProductFromAPI[]>({
     queryKey: ['/api/wms/products', { search: debouncedSearchQuery }],
     enabled: open && currentStep === 2 && searchMode === 'internal' && debouncedSearchQuery.length >= 2,
   });
 
   // Fetch SKU mappings for supplier SKU search (Flow 2)
-  const { data: skuMappingsData, isLoading: mappingsLoading } = useQuery<{ success: boolean; data: SkuMappingFromAPI[] }>({
+  // Note: queryClient auto-extracts .data field from { success, data } responses
+  const { data: skuMappingsData, isLoading: mappingsLoading } = useQuery<SkuMappingFromAPI[]>({
     queryKey: ['/api/wms/product-supplier-mappings', { supplierId: selectedSupplierId, supplierSku: debouncedSearchQuery }],
     enabled: open && currentStep === 2 && searchMode === 'supplier_sku' && !!selectedSupplierId && debouncedSearchQuery.length >= 2,
   });
@@ -533,13 +535,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
 
   // Process search results from API (Flow 1: Internal catalog search)
   useEffect(() => {
-    if (searchMode === 'internal' && productsApiData?.success && productsApiData.data) {
+    if (searchMode === 'internal' && productsApiData && Array.isArray(productsApiData)) {
       const query = debouncedSearchQuery.toLowerCase();
       const codeType = detectCodeType(debouncedSearchQuery);
       setDetectedCodeType(codeType);
       
       // Handle serial auto-add for selected product
-      if (productsApiData.data.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
+      if (productsApiData.length === 0 && (codeType === 'imei' || codeType === 'iccid' || codeType === 'mac')) {
         if (selectedProduct && selectedProduct.isSerializable && 
             ((codeType === 'imei' && selectedProduct.serialType === 'imei') ||
              (codeType === 'iccid' && selectedProduct.serialType === 'iccid') ||
@@ -554,7 +556,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       }
       
       // Convert API products to local format
-      const allResults = productsApiData.data.map(p => convertApiProduct(p));
+      const allResults = productsApiData.map(p => convertApiProduct(p));
       
       // Rank results by relevance
       const rankedResults = allResults.sort((a, b) => {
@@ -599,13 +601,13 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
 
   // Process search results from SKU mappings API (Flow 2: Supplier SKU search)
   useEffect(() => {
-    if (searchMode === 'supplier_sku' && skuMappingsData?.success && skuMappingsData.data) {
+    if (searchMode === 'supplier_sku' && skuMappingsData && Array.isArray(skuMappingsData)) {
       const codeType = detectCodeType(debouncedSearchQuery);
       setDetectedCodeType(codeType);
       
-      if (skuMappingsData.data.length > 0) {
+      if (skuMappingsData.length > 0) {
         // Found mappings - convert to products
-        const results = skuMappingsData.data.map(m => convertApiProduct(m));
+        const results = skuMappingsData.map(m => convertApiProduct(m));
         
         setTotalSearchResults(results.length);
         setSearchResults(results.slice(0, MAX_VISIBLE_RESULTS));
@@ -628,15 +630,16 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   }, [searchMode, skuMappingsData, debouncedSearchQuery, convertApiProduct]);
 
   // Search for internal products when mapping unmapped supplier SKU (uses same API)
-  const { data: internalSearchData, isLoading: internalSearchLoading } = useQuery<{ success: boolean; data: ProductFromAPI[] }>({
+  // Note: queryClient auto-extracts .data field from { success, data } responses
+  const { data: internalSearchData, isLoading: internalSearchLoading } = useQuery<ProductFromAPI[]>({
     queryKey: ['/api/wms/products', { search: internalProductSearch }],
     enabled: showSkuMappingForm && internalProductSearch.length >= 2,
   });
 
   // Process internal product search results for mapping
   useEffect(() => {
-    if (internalSearchData?.success && internalSearchData.data) {
-      const results = internalSearchData.data.map(p => convertApiProduct(p));
+    if (internalSearchData && Array.isArray(internalSearchData)) {
+      const results = internalSearchData.map(p => convertApiProduct(p));
       setInternalProductResults(results);
       setShowInternalResults(true);
     } else if (internalProductSearch.length < 2) {
@@ -1169,6 +1172,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       <DialogContent 
         ref={setDialogContainer}
         className={`${currentStep === 3 ? 'max-w-6xl w-[95vw]' : 'max-w-4xl'} max-h-[90vh] min-h-[70vh] overflow-hidden flex flex-col`}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
