@@ -824,6 +824,8 @@ export type LegalEntity = typeof legalEntities.$inferSelect;
 export const stores = w3suiteSchema.table("stores", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  // FK to legal_entities (Entità Legale associata alla sede)
+  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id),
   // FK to organization_entities (RS dell'organizzazione - Ragioni Sociali interne)
   organizationEntityId: uuid("organization_entity_id").references(() => organizationEntities.id),
   code: varchar("code", { length: 50 }).notNull(),
@@ -2677,6 +2679,7 @@ export const legalEntitiesRelations = relations(legalEntities, ({ one, many }) =
 // Stores Relations
 export const storesRelations = relations(stores, ({ one, many }) => ({
   tenant: one(tenants, { fields: [stores.tenantId], references: [tenants.id] }),
+  legalEntity: one(legalEntities, { fields: [stores.legalEntityId], references: [legalEntities.id] }),
   organizationEntity: one(organizationEntities, { fields: [stores.organizationEntityId], references: [organizationEntities.id] }),
   channel: one(channels, { fields: [stores.channelId], references: [channels.id] }),
   commercialArea: one(commercialAreas, { fields: [stores.commercialAreaId], references: [commercialAreas.id] }),
