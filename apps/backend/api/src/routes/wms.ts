@@ -12141,7 +12141,8 @@ router.post("/documents", rbacMiddleware, requirePermission('wms.documents.ddt.c
 });
 
 /**
- * Helper function to generate document number from template
+ * Helper function to generate document number using clean format columns
+ * No template parsing needed - uses direct column values
  */
 async function generateDocumentNumber(tenantId: string, documentType: string): Promise<string> {
   const [config] = await db.select()
@@ -12156,14 +12157,31 @@ async function generateDocumentNumber(tenantId: string, documentType: string): P
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
 
-  let template = '{N}';
+  // Default configuration
+  let numberFormat: 'numeric' | 'alphanumeric' = 'numeric';
+  let includeYear = true;
+  let includeMonth = false;
+  let includeDay = false;
+  let yearFormat: 'short' | 'full' = 'full';
+  let separator = '/';
   let paddingLength = 4;
+  let prefix = '';
+  let suffix = '';
   let currentCounter = 1;
 
   if (config) {
-    template = config.template;
-    paddingLength = config.paddingLength;
+    // Use new clean format columns
+    numberFormat = (config.numberFormat as 'numeric' | 'alphanumeric') || 'numeric';
+    includeYear = config.includeYear ?? true;
+    includeMonth = config.includeMonth ?? false;
+    includeDay = config.includeDay ?? false;
+    yearFormat = (config.yearFormat as 'short' | 'full') || 'full';
+    separator = config.separator || '/';
+    paddingLength = config.paddingLength || 4;
+    prefix = config.prefix || '';
+    suffix = config.suffix || '';
     
+    // Handle counter reset
     if (config.resetAnnually && config.lastResetYear !== year) {
       currentCounter = 1;
       await db.update(wmsDocumentNumberingConfig)
@@ -12177,14 +12195,37 @@ async function generateDocumentNumber(tenantId: string, documentType: string): P
     }
   }
 
-  let documentNumber = template
-    .replace('{N}', String(currentCounter).padStart(paddingLength, '0'))
-    .replace('{YYYY}', String(year))
-    .replace('{YY}', String(year).slice(-2))
-    .replace('{MM}', month)
-    .replace('{DD}', day);
-
-  return documentNumber;
+  // Build document number using clean format
+  const parts: string[] = [];
+  
+  // Add prefix
+  if (prefix) parts.push(prefix);
+  
+  // Add date components in order: year, month, day
+  if (includeYear) {
+    parts.push(yearFormat === 'short' ? String(year).slice(-2) : String(year));
+  }
+  if (includeMonth) {
+    parts.push(month);
+  }
+  if (includeDay) {
+    parts.push(day);
+  }
+  
+  // Add counter (numeric or alphanumeric)
+  let counterStr: string;
+  if (numberFormat === 'alphanumeric') {
+    counterStr = currentCounter.toString(36).toUpperCase().padStart(paddingLength, '0');
+  } else {
+    counterStr = String(currentCounter).padStart(paddingLength, '0');
+  }
+  parts.push(counterStr);
+  
+  // Add suffix
+  if (suffix) parts.push(suffix);
+  
+  // Join with separator
+  return parts.join(separator);
 }
 
 /**

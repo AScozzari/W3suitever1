@@ -9849,11 +9849,16 @@ export const wmsDocumentNumberingConfig = w3suiteSchema.table("wms_document_numb
   // Document type this config applies to
   documentType: varchar("document_type", { length: 50 }).notNull(), // order, ddt, adjustment_report, invoice, credit_note, debit_note
   
-  // Template configuration
-  template: varchar("template", { length: 100 }).notNull().default('{N}'), // e.g., "DDT-{YYYY}-{N}", "ORD/{YY}/{MM}/{N}"
-  paddingLength: integer("padding_length").default(4).notNull(), // Zero padding for {N}
+  // NEW: Clean format configuration (no template parsing needed)
+  numberFormat: varchar("number_format", { length: 20 }).default('numeric').notNull(), // 'numeric' | 'alphanumeric'
+  includeDay: boolean("include_day").default(false).notNull(),
+  includeMonth: boolean("include_month").default(false).notNull(),
+  includeYear: boolean("include_year").default(true).notNull(),
+  yearFormat: varchar("year_format", { length: 10 }).default('full').notNull(), // 'short' (YY) | 'full' (YYYY)
+  separator: varchar("separator", { length: 5 }).default('/').notNull(), // e.g., '/', '-', '.'
   
-  // Counter management
+  // Counter configuration
+  paddingLength: integer("padding_length").default(4).notNull(), // Zero padding for number
   currentCounter: integer("current_counter").default(0).notNull(),
   resetAnnually: boolean("reset_annually").default(true).notNull(),
   lastResetYear: integer("last_reset_year"),
@@ -9861,6 +9866,9 @@ export const wmsDocumentNumberingConfig = w3suiteSchema.table("wms_document_numb
   // Prefix/Suffix options
   prefix: varchar("prefix", { length: 50 }),
   suffix: varchar("suffix", { length: 50 }),
+  
+  // DEPRECATED: Legacy template field (kept for migration compatibility)
+  template: varchar("template", { length: 100 }).default('{N}'),
   
   // Display
   description: text("description"),
@@ -9884,11 +9892,19 @@ export const insertWmsDocumentNumberingConfigSchema = createInsertSchema(wmsDocu
   updatedAt: true,
   currentCounter: true,
   lastResetYear: true,
+  template: true, // Deprecated
 }).extend({
   documentType: z.enum(['order', 'ddt', 'adjustment_report', 'invoice', 'credit_note', 'debit_note']),
-  template: z.string().min(1).max(100),
+  numberFormat: z.enum(['numeric', 'alphanumeric']).optional(),
+  includeDay: z.boolean().optional(),
+  includeMonth: z.boolean().optional(),
+  includeYear: z.boolean().optional(),
+  yearFormat: z.enum(['short', 'full']).optional(),
+  separator: z.string().max(5).optional(),
   paddingLength: z.number().int().min(1).max(10).optional(),
   resetAnnually: z.boolean().optional(),
+  prefix: z.string().max(50).optional().nullable(),
+  suffix: z.string().max(50).optional().nullable(),
 });
 export type InsertWmsDocumentNumberingConfig = z.infer<typeof insertWmsDocumentNumberingConfigSchema>;
 export type WmsDocumentNumberingConfig = typeof wmsDocumentNumberingConfig.$inferSelect;
