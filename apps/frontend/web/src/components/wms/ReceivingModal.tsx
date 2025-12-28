@@ -214,10 +214,11 @@ type FormValues = z.infer<typeof receivingSchema>;
 
 interface LegalEntityFromAPI {
   id: string;
-  ragioneSociale: string;
-  partitaIva?: string;
+  nome: string;
+  codice: string;
+  pIva?: string;
   codiceFiscale?: string;
-  status: string;
+  stato: string;
 }
 
 interface StoreWithLegalEntity {
@@ -334,9 +335,9 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     enabled: open,
   });
 
-  // Fetch legal entities
+  // Fetch organization entities (Ragioni Sociali dell'organizzazione - entità legali emittenti)
   const { data: legalEntitiesData = [], isLoading: legalEntitiesLoading } = useQuery<LegalEntityFromAPI[]>({
-    queryKey: ['/api/legal-entities'],
+    queryKey: ['/api/organization-entities'],
     enabled: open,
   });
 
@@ -1499,11 +1500,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                     name="legalEntityId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Entità Legale DDT *</FormLabel>
+                        <FormLabel>Entità Legale Emittente *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-legal-entity">
-                              <SelectValue placeholder="Seleziona entità legale" />
+                              <SelectValue placeholder="Seleziona entità legale..." />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -1512,8 +1513,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                             )}
                             {legalEntitiesData.map(e => (
                               <SelectItem key={e.id} value={e.id}>
-                                {e.ragioneSociale}
-                                {e.partitaIva && ` (P.IVA: ${e.partitaIva})`}
+                                {e.nome}
+                                {e.pIva && ` (P.IVA: ${e.pIva})`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -2930,7 +2931,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Entità DDT:</span>
                 <span className="font-medium">
-                  {legalEntitiesData.find(e => e.id === pendingSubmitValues?.legalEntityId)?.ragioneSociale || '-'}
+                  {legalEntitiesData.find(e => e.id === pendingSubmitValues?.legalEntityId)?.nome || '-'}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
