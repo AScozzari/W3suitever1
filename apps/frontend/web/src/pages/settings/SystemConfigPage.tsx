@@ -38,7 +38,11 @@ import {
   ChevronDown,
   ChevronUp,
   Workflow,
-  Info
+  Info,
+  FileText,
+  Hash,
+  Calendar,
+  RotateCw
 } from 'lucide-react';
 import {
   Tooltip,
@@ -420,6 +424,368 @@ function WMSMovementsTab() {
             <div className="text-sm">
               <span className="font-medium">RBAC:</span> Solo gli utenti con ruolo <Badge variant="secondary">Amministratore</Badge> possono modificare queste impostazioni.
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator className="my-6" />
+
+      <WMSDocumentNumberingSection />
+    </div>
+  );
+}
+
+interface DocumentNumberingConfig {
+  id: string;
+  tenantId: string;
+  documentType: string;
+  template: string;
+  paddingLength: number;
+  resetAnnually: boolean;
+  currentCounter: number;
+  lastResetYear: number;
+}
+
+interface OrderApprovalConfig {
+  id?: string;
+  requiresApproval: boolean;
+  thresholdAmount: number | null;
+  thresholdQuantity: number | null;
+  approverRoles: string[];
+  notifyOnCreate: boolean;
+  notifyOnApproval: boolean;
+}
+
+const DOCUMENT_TYPE_OPTIONS = [
+  { value: 'order', label: 'Ordine a Fornitore', icon: ClipboardCheck },
+  { value: 'ddt', label: 'DDT', icon: Truck },
+  { value: 'adjustment_report', label: 'Rapporto Rettifica', icon: FileCheck },
+  { value: 'invoice', label: 'Fattura', icon: FileText },
+  { value: 'credit_note', label: 'Nota di Credito', icon: FileText },
+  { value: 'debit_note', label: 'Nota di Debito', icon: FileText },
+];
+
+const TEMPLATE_VARIABLES = [
+  { var: '{N}', desc: 'Numero progressivo' },
+  { var: '{YYYY}', desc: 'Anno (4 cifre)' },
+  { var: '{YY}', desc: 'Anno (2 cifre)' },
+  { var: '{MM}', desc: 'Mese (01-12)' },
+  { var: '{DD}', desc: 'Giorno (01-31)' },
+];
+
+function WMSDocumentNumberingSection() {
+  const { toast } = useToast();
+  const [editingType, setEditingType] = useState<string | null>(null);
+  const [localConfigs, setLocalConfigs] = useState<Record<string, Partial<DocumentNumberingConfig>>>({});
+  const [orderApprovalConfig, setOrderApprovalConfig] = useState<OrderApprovalConfig>({
+    requiresApproval: false,
+    thresholdAmount: null,
+    thresholdQuantity: null,
+    approverRoles: [],
+    notifyOnCreate: true,
+    notifyOnApproval: true
+  });
+
+  const { data: numberingConfigs, isLoading: numberingLoading } = useQuery<DocumentNumberingConfig[]>({
+    queryKey: ['/api/wms/documents/numbering-config'],
+  });
+
+  const { data: approvalConfig, isLoading: approvalLoading } = useQuery<OrderApprovalConfig>({
+    queryKey: ['/api/wms/documents/order-approval-config'],
+  });
+
+  useEffect(() => {
+    if (approvalConfig) {
+      setOrderApprovalConfig(approvalConfig);
+    }
+  }, [approvalConfig]);
+
+  useEffect(() => {
+    if (numberingConfigs) {
+      const configMap: Record<string, Partial<DocumentNumberingConfig>> = {};
+      numberingConfigs.forEach(c => {
+        configMap[c.documentType] = c;
+      });
+      DOCUMENT_TYPE_OPTIONS.forEach(opt => {
+        if (!configMap[opt.value]) {
+          configMap[opt.value] = {
+            documentType: opt.value,
+            template: `${opt.value.toUpperCase()}/{YYYY}/{N}`,
+            paddingLength: 4,
+            resetAnnually: true,
+            currentCounter: 0
+          };
+        }
+      });
+      setLocalConfigs(configMap);
+    }
+  }, [numberingConfigs]);
+
+  const saveNumberingMutation = useMutation({
+    mutationFn: async (config: Partial<DocumentNumberingConfig>) => {
+      return apiRequest('/api/wms/documents/numbering-config', {
+        method: 'POST',
+        body: JSON.stringify(config),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Configurazione salvata', description: 'Numerazione documento aggiornata.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/documents/numbering-config'] });
+      setEditingType(null);
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile salvare la configurazione.', variant: 'destructive' });
+    }
+  });
+
+  const saveApprovalMutation = useMutation({
+    mutationFn: async (config: OrderApprovalConfig) => {
+      return apiRequest('/api/wms/documents/order-approval-config', {
+        method: 'POST',
+        body: JSON.stringify(config),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Configurazione salvata', description: 'Approvazione ordini aggiornata.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/wms/documents/order-approval-config'] });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile salvare la configurazione.', variant: 'destructive' });
+    }
+  });
+
+  const handleConfigChange = (docType: string, field: string, value: any) => {
+    setLocalConfigs(prev => ({
+      ...prev,
+      [docType]: {
+        ...prev[docType],
+        [field]: value
+      }
+    }));
+  };
+
+  const generatePreview = (template: string, padding: number) => {
+    const now = new Date();
+    return template
+      .replace('{N}', String(1).padStart(padding, '0'))
+      .replace('{YYYY}', String(now.getFullYear()))
+      .replace('{YY}', String(now.getFullYear()).slice(-2))
+      .replace('{MM}', String(now.getMonth() + 1).padStart(2, '0'))
+      .replace('{DD}', String(now.getDate()).padStart(2, '0'));
+  };
+
+  if (numberingLoading || approvalLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Hash className="w-5 h-5 text-blue-600" />
+            Numerazione Documenti
+          </CardTitle>
+          <CardDescription>
+            Configura i template di numerazione per ogni tipo di documento operativo
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3">
+            {DOCUMENT_TYPE_OPTIONS.map((docType) => {
+              const config = localConfigs[docType.value] || {};
+              const isEditing = editingType === docType.value;
+              const Icon = docType.icon;
+
+              return (
+                <div 
+                  key={docType.value}
+                  className={`p-4 rounded-lg border ${isEditing ? 'border-blue-300 bg-blue-50 dark:bg-blue-950' : 'border-gray-200 dark:border-gray-700'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                        <Icon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{docType.label}</p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          Anteprima: {generatePreview(config.template || '', config.paddingLength || 4)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant={isEditing ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setEditingType(isEditing ? null : docType.value)}
+                    >
+                      {isEditing ? 'Chiudi' : 'Modifica'}
+                    </Button>
+                  </div>
+
+                  {isEditing && (
+                    <div className="mt-4 space-y-4 pt-4 border-t">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-xs">Template Numerazione</Label>
+                          <Input
+                            value={config.template || ''}
+                            onChange={(e) => handleConfigChange(docType.value, 'template', e.target.value)}
+                            placeholder="DDT/{YYYY}/{N}"
+                            className="font-mono text-sm mt-1"
+                            data-testid={`input-template-${docType.value}`}
+                          />
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {TEMPLATE_VARIABLES.map(v => (
+                              <Badge 
+                                key={v.var} 
+                                variant="secondary" 
+                                className="text-[10px] cursor-pointer hover:bg-gray-300"
+                                onClick={() => handleConfigChange(docType.value, 'template', (config.template || '') + v.var)}
+                              >
+                                {v.var} <span className="text-gray-400 ml-1">{v.desc}</span>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-xs">Cifre Progressivo</Label>
+                            <Select
+                              value={String(config.paddingLength || 4)}
+                              onValueChange={(val) => handleConfigChange(docType.value, 'paddingLength', parseInt(val))}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="3">3 cifre (001)</SelectItem>
+                                <SelectItem value="4">4 cifre (0001)</SelectItem>
+                                <SelectItem value="5">5 cifre (00001)</SelectItem>
+                                <SelectItem value="6">6 cifre (000001)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-xs">Reset Annuale</Label>
+                              <p className="text-[10px] text-gray-400">Azzera contatore ogni anno</p>
+                            </div>
+                            <Switch
+                              checked={config.resetAnnually ?? true}
+                              onCheckedChange={(checked) => handleConfigChange(docType.value, 'resetAnnually', checked)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditingType(null)}>
+                          Annulla
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => saveNumberingMutation.mutate(config)}
+                          disabled={saveNumberingMutation.isPending}
+                        >
+                          <Save className="w-4 h-4 mr-1" />
+                          Salva
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-amber-600" />
+            Approvazione Ordini a Fornitore
+          </CardTitle>
+          <CardDescription>
+            Configura regole di approvazione per gli ordini di acquisto
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <div>
+              <p className="font-medium">Richiedi Approvazione</p>
+              <p className="text-sm text-gray-500">Abilita il workflow di approvazione per gli ordini</p>
+            </div>
+            <Switch
+              checked={orderApprovalConfig.requiresApproval}
+              onCheckedChange={(checked) => setOrderApprovalConfig(prev => ({ ...prev, requiresApproval: checked }))}
+              data-testid="switch-order-approval"
+            />
+          </div>
+
+          {orderApprovalConfig.requiresApproval && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Soglia Importo (€)</Label>
+                <Input
+                  type="number"
+                  value={orderApprovalConfig.thresholdAmount || ''}
+                  onChange={(e) => setOrderApprovalConfig(prev => ({ 
+                    ...prev, 
+                    thresholdAmount: e.target.value ? parseFloat(e.target.value) : null 
+                  }))}
+                  placeholder="Nessun limite"
+                  className="mt-1"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Approvazione solo sopra questa soglia</p>
+              </div>
+              <div>
+                <Label className="text-xs">Soglia Quantità</Label>
+                <Input
+                  type="number"
+                  value={orderApprovalConfig.thresholdQuantity || ''}
+                  onChange={(e) => setOrderApprovalConfig(prev => ({ 
+                    ...prev, 
+                    thresholdQuantity: e.target.value ? parseInt(e.target.value) : null 
+                  }))}
+                  placeholder="Nessun limite"
+                  className="mt-1"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Approvazione sopra N pezzi totali</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={orderApprovalConfig.notifyOnCreate}
+                onCheckedChange={(checked) => setOrderApprovalConfig(prev => ({ ...prev, notifyOnCreate: checked }))}
+              />
+              <Label className="text-sm">Notifica alla creazione</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={orderApprovalConfig.notifyOnApproval}
+                onCheckedChange={(checked) => setOrderApprovalConfig(prev => ({ ...prev, notifyOnApproval: checked }))}
+              />
+              <Label className="text-sm">Notifica all'approvazione</Label>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => saveApprovalMutation.mutate(orderApprovalConfig)}
+              disabled={saveApprovalMutation.isPending}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Salva Configurazione
+            </Button>
           </div>
         </CardContent>
       </Card>
