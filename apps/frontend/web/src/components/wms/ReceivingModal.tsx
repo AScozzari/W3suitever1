@@ -712,12 +712,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     if (selectedSupplierId && searchMode === 'internal') {
       setIsCheckingMapping(true);
       try {
-        const response = await fetch(`/api/wms/product-supplier-mappings?productId=${product.id}&supplierId=${selectedSupplierId}`);
-        const data = await response.json();
+        const data = await apiRequest(`/api/wms/product-supplier-mappings?productId=${product.id}&supplierId=${selectedSupplierId}`);
         
-        if (data.success && data.data && data.data.length > 0) {
+        if (data && Array.isArray(data) && data.length > 0) {
           // Mapping exists - update product with supplierSku
-          const mapping = data.data[0];
+          const mapping = data[0];
           setSelectedProduct({
             ...product,
             supplierSku: mapping.supplierSku || undefined
