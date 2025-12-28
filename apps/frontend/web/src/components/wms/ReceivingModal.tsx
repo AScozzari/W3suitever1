@@ -281,6 +281,22 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const [dialogContainer, setDialogContainer] = useState<HTMLDivElement | null>(null);
 
+  // Form declaration - MUST be before queries that use selectedSupplierId
+  const form = useForm<FormValues>({
+    resolver: zodResolver(receivingSchema),
+    defaultValues: {
+      supplierId: '',
+      orderId: '',
+      documentNumber: '',
+      documentDate: new Date().toISOString().split('T')[0],
+      notes: '',
+      storeId: '',
+    },
+  });
+
+  const selectedSupplierId = form.watch('supplierId');
+  const selectedOrderId = form.watch('orderId');
+
   // Fetch suppliers from API (brand + tenant)
   const { data: suppliersData = [], isLoading: suppliersLoading } = useQuery<SupplierFromAPI[]>({
     queryKey: ['/api/wms/suppliers'],
@@ -350,21 +366,6 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       };
     }
   }, []);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(receivingSchema),
-    defaultValues: {
-      supplierId: '',
-      orderId: '',
-      documentNumber: '',
-      documentDate: new Date().toISOString().split('T')[0],
-      notes: '',
-      storeId: '',
-    },
-  });
-
-  const selectedSupplierId = form.watch('supplierId');
-  const selectedOrderId = form.watch('orderId');
   
   // Reset state when modal closes
   useEffect(() => {
