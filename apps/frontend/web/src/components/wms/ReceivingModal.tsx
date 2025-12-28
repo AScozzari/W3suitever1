@@ -321,12 +321,11 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedTypeId, setSelectedTypeId] = useState<string>('');
   
-  // Product type options with Italian labels
+  // Product type options with Italian labels (only types relevant for warehouse receiving)
   const productTypeOptions = [
     { value: 'PHYSICAL', label: 'Fisico' },
     { value: 'SERVICE', label: 'Servizio' },
     { value: 'VIRTUAL', label: 'Digitale' },
-    { value: 'CANVAS', label: 'Canvas' },
   ];
   
   // Debounce search query (600ms for better UX when typing SKUs)
