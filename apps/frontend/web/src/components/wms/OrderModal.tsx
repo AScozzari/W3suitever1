@@ -314,10 +314,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   });
 
   // Fetch SKU mappings for supplier SKU search
-  const { data: skuMappingsData, isLoading: mappingsLoading } = useQuery<SkuMappingFromAPI[]>({
+  const { data: skuMappingsResponse, isLoading: mappingsLoading } = useQuery<{ success: boolean; data: SkuMappingFromAPI[] }>({
     queryKey: ['/api/wms/product-supplier-mappings', { supplierId: selectedSupplierId, supplierSku: debouncedSearchQuery }],
     enabled: open && currentStep === 2 && searchMode === 'supplier_sku' && !!selectedSupplierId && debouncedSearchQuery.length >= 2,
   });
+  const skuMappingsData = skuMappingsResponse?.data || [];
 
   // Search results
   const searchResults = searchMode === 'internal' 
@@ -643,7 +644,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
           ref={setDialogContainer}
-          className="max-w-4xl max-h-[90vh] overflow-y-auto"
+          className="max-w-6xl max-h-[90vh] overflow-y-auto"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -1088,89 +1089,95 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                     {pendingItem && (
                       <Card className="border-green-200 bg-green-50/50">
                         <CardContent className="pt-4">
-                          <div className="grid grid-cols-[1fr_100px_120px_80px_auto_auto] gap-3 items-center">
-                            <div>
-                              <p className="font-medium">{pendingItem.productName}</p>
-                              <p className="text-sm text-gray-500">SKU: {pendingItem.productSku}</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{pendingItem.productName}</p>
+                              <p className="text-xs text-gray-500">SKU: {pendingItem.productSku}</p>
                             </div>
-                            <Input
-                              ref={quantityInputRef}
-                              type="number"
-                              min="1"
-                              value={pendingQuantity}
-                              onChange={(e) => setPendingQuantity(e.target.value)}
-                              onKeyDown={handlePendingKeyDown}
-                              className="h-9"
-                              placeholder="Qtà"
-                              data-testid="input-pending-qty"
-                            />
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={pendingUnitCost}
-                              onChange={(e) => setPendingUnitCost(e.target.value)}
-                              onKeyDown={handlePendingKeyDown}
-                              className="h-9"
-                              placeholder="Costo €"
-                              data-testid="input-pending-cost"
-                            />
-                            <Select 
-                              value={pendingVatRateId} 
-                              onValueChange={setPendingVatRateId}
-                            >
-                              <SelectTrigger className="h-9 w-20" data-testid="select-pending-vat">
-                                <SelectValue placeholder="IVA" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {vatRatesData.map((rate) => (
-                                  <SelectItem key={rate.id} value={rate.id}>
-                                    {rate.rate}%
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Select 
-                              value={pendingVatRegimeId} 
-                              onValueChange={setPendingVatRegimeId}
-                            >
-                              <SelectTrigger className="h-9 w-24" data-testid="select-pending-regime">
-                                <SelectValue placeholder="Regime" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {vatRegimesData.map((regime) => (
-                                  <SelectItem key={regime.id} value={regime.id}>
-                                    {regime.code}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              type="button"
-                              size="icon"
-                              onClick={addPendingItem}
-                              className="h-9 w-9 bg-green-600 hover:bg-green-700"
-                              data-testid="btn-add-item"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setPendingItem(null)}
-                              className="h-9 w-9 text-gray-500 hover:text-red-500"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-[1fr_100px_120px_80px_auto_auto] gap-3 mt-1 text-xs text-gray-500">
-                            <span></span>
-                            <span className="text-center">Quantità</span>
-                            <span className="text-center">Costo Unit.</span>
-                            <span className="text-center">IVA</span>
-                            <span></span>
-                            <span></span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="text-center">
+                                <Input
+                                  ref={quantityInputRef}
+                                  type="number"
+                                  min="1"
+                                  value={pendingQuantity}
+                                  onChange={(e) => setPendingQuantity(e.target.value)}
+                                  onKeyDown={handlePendingKeyDown}
+                                  className="h-8 w-16 text-center text-sm"
+                                  placeholder="Qtà"
+                                  data-testid="input-pending-qty"
+                                />
+                                <span className="text-[10px] text-gray-400">Qtà</span>
+                              </div>
+                              <div className="text-center">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={pendingUnitCost}
+                                  onChange={(e) => setPendingUnitCost(e.target.value)}
+                                  onKeyDown={handlePendingKeyDown}
+                                  className="h-8 w-24 text-right text-sm"
+                                  placeholder="€ 0.00"
+                                  data-testid="input-pending-cost"
+                                />
+                                <span className="text-[10px] text-gray-400">Costo</span>
+                              </div>
+                              <div className="text-center">
+                                <Select 
+                                  value={pendingVatRateId} 
+                                  onValueChange={setPendingVatRateId}
+                                >
+                                  <SelectTrigger className="h-8 w-16 text-sm" data-testid="select-pending-vat">
+                                    <SelectValue placeholder="%" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vatRatesData.map((rate) => (
+                                      <SelectItem key={rate.id} value={rate.id}>
+                                        {rate.rate}%
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <span className="text-[10px] text-gray-400">IVA</span>
+                              </div>
+                              <div className="text-center">
+                                <Select 
+                                  value={pendingVatRegimeId} 
+                                  onValueChange={setPendingVatRegimeId}
+                                >
+                                  <SelectTrigger className="h-8 w-20 text-sm" data-testid="select-pending-regime">
+                                    <SelectValue placeholder="Reg." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vatRegimesData.map((regime) => (
+                                      <SelectItem key={regime.id} value={regime.id}>
+                                        {regime.code}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <span className="text-[10px] text-gray-400">Regime</span>
+                              </div>
+                              <Button
+                                type="button"
+                                size="icon"
+                                onClick={addPendingItem}
+                                className="h-8 w-8 bg-green-600 hover:bg-green-700"
+                                data-testid="btn-add-item"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setPendingItem(null)}
+                                className="h-8 w-8 text-gray-500 hover:text-red-500"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
