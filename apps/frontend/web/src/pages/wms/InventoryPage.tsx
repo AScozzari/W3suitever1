@@ -45,7 +45,8 @@ import {
   Cpu,
   Palette,
   HardDrive,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -189,6 +190,7 @@ type InventoryViewData = InventoryViewDataSerialized | InventoryViewDataAggregat
 
 interface DocumentReference {
   id: string;
+  documentId?: string;
   documentType: 'ddt' | 'fattura' | 'ordine' | 'reso' | 'altro';
   documentNumber: string;
   documentDate: string;
@@ -220,6 +222,14 @@ interface SerialDetail {
   memory?: string;
   supplierName?: string;
   unitCost?: number | string;
+  // Extended fields for detailed view
+  itemId?: string;
+  storeName?: string;
+  supplierSku?: string;
+  purchaseCost?: number | string;
+  purchaseDate?: string;
+  batchNumber?: string;
+  batchExpiryDate?: string;
 }
 
 interface ProductSerials {

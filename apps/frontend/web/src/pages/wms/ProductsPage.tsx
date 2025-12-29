@@ -1461,7 +1461,7 @@ export default function ProductsPage({
 
       <DeleteConfirmationDialog
         open={!!deleteProduct}
-        onClose={() => setDeleteProduct(null)}
+        onOpenChange={(open) => !open && setDeleteProduct(null)}
         onConfirm={() => {
           if (deleteProduct) {
             deleteProductMutation.mutate(deleteProduct.id);
@@ -1469,7 +1469,7 @@ export default function ProductsPage({
         }}
         title="Elimina Prodotto"
         description={`Sei sicuro di voler eliminare il prodotto "${deleteProduct?.name}"? Questa azione non può essere annullata.`}
-        isLoading={deleteProductMutation.isPending}
+        isPending={deleteProductMutation.isPending}
       />
     </>
   );

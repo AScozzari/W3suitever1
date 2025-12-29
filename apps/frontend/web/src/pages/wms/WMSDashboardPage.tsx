@@ -35,9 +35,10 @@ const TABS: Tab[] = [
 
 export default function WMSDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabId>('analytics');
+  const [currentModule, setCurrentModule] = useState('wms');
 
   return (
-    <Layout>
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="flex flex-col h-full bg-white">
         <div className="border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center justify-between">
