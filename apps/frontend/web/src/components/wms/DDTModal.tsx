@@ -477,8 +477,13 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     }
   }, [open]);
 
-  // Update recipient type when causale changes
+  // Update recipient type when causale changes (use ref to prevent infinite loop)
+  const prevCausale = useRef<string | null>(null);
   useEffect(() => {
+    // Only run if causale actually changed
+    if (selectedCausale === prevCausale.current) return;
+    prevCausale.current = selectedCausale;
+    
     if (selectedCausale && causaleConfig) {
       const recipientTypes = Array.isArray(causaleConfig.recipientType) 
         ? causaleConfig.recipientType 
@@ -497,7 +502,7 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
       form.setValue('destinationStoreId', '');
       form.setValue('orderId', '');
     }
-  }, [selectedCausale]);
+  }, [selectedCausale, causaleConfig, form]);
 
   // Debounce search query
   useEffect(() => {
@@ -519,8 +524,13 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     }
   }, [productsApiData, searchMode]);
 
-  // Load order items when order is selected
+  // Load order items when order is selected (use ref to prevent infinite loop)
+  const prevOrderId = useRef<string | null>(null);
   useEffect(() => {
+    // Only run if orderId actually changed
+    if (selectedOrderId === prevOrderId.current) return;
+    prevOrderId.current = selectedOrderId;
+    
     if (selectedOrderId && selectedOrderId !== 'none') {
       const order = ordersData.find(o => o.id === selectedOrderId);
       if (order) {
