@@ -451,6 +451,9 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     enabled: open && currentStep === 2 && searchMode === 'internal' && debouncedSearchQuery.length >= 2,
   });
 
+  // Watch issuing store for destination filtering
+  const issuingStoreId = form.watch('issuingStoreId');
+
   // Filter stores by selected legal entity
   const filteredStores = useMemo(() => {
     if (!selectedLegalEntityId) return storesData;
@@ -459,9 +462,8 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
 
   // Destination stores for internal transfer (exclude issuing store)
   const destinationStores = useMemo(() => {
-    const issuingStoreId = form.watch('issuingStoreId');
     return storesData.filter(s => s.id !== issuingStoreId && s.hasWarehouse);
-  }, [storesData, form.watch('issuingStoreId')]);
+  }, [storesData, issuingStoreId]);
 
   // ==================== EFFECTS ====================
 
