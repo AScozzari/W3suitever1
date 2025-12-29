@@ -2,30 +2,41 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient, getCurrentTenantId } from '@/lib/queryClient';
 import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import { oauth2Client } from '../services/OAuth2Client';
 
-// Helper per fetch autenticate con token Bearer
+// Auth mode from environment
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE || 'development';
+
+// Helper per fetch autenticate - rispetta AUTH_MODE
 const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
   try {
-    const token = await oauth2Client.getAccessToken();
-    console.log('[AUTH-FETCH] Token obtained:', token ? `${token.substring(0, 20)}...` : 'NULL');
+    const tenantId = getCurrentTenantId();
+    let headers: HeadersInit = {
+      ...(options.headers || {}),
+      'X-Tenant-ID': tenantId,
+    };
     
-    if (!token) {
-      console.error('[AUTH-FETCH] No token available, redirecting to login');
-      window.location.href = '/oauth2/authorize';
-      throw new Error('No authentication token');
+    if (AUTH_MODE === 'development') {
+      headers['X-Auth-Session'] = 'authenticated';
+      const demoUserId = localStorage.getItem('demo_user_id') || 'admin-user';
+      headers['X-Demo-User'] = demoUserId;
+    } else {
+      const token = await oauth2Client.getAccessToken();
+      
+      if (!token) {
+        console.error('[AUTH-FETCH] No token available, redirecting to login');
+        window.location.href = '/oauth2/authorize';
+        throw new Error('No authentication token');
+      }
+      
+      headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const headers: HeadersInit = {
-      ...(options.headers || {}),
-      'Authorization': `Bearer ${token}`
-    };
-    console.log('[AUTH-FETCH] Making request to:', url);
     return fetch(url, { ...options, headers, credentials: 'include' });
   } catch (error) {
-    console.error('[AUTH-FETCH] Error getting token:', error);
+    console.error('[AUTH-FETCH] Error:', error);
     throw error;
   }
 };

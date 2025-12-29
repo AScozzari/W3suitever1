@@ -114,11 +114,11 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     enabled: open && !!storeId,
   });
 
-  // Fetch GTM snippet
+  // Fetch GTM snippet (via CRM routes where GTMSnippetGeneratorService is available)
   const { data: gtmSnippet, isLoading: isLoadingSnippet } = useQuery({
-    queryKey: ['/api/stores', storeId, 'gtm-snippet'],
+    queryKey: ['/api/crm/stores', storeId, 'gtm-snippet'],
     queryFn: async () => {
-      const response = await fetch(`/api/stores/${storeId}/gtm-snippet`, {
+      const response = await fetch(`/api/crm/stores/${storeId}/gtm-snippet`, {
         headers: {
           'X-Tenant-ID': tenantId,
           'X-Auth-Session': 'authenticated',
@@ -127,6 +127,7 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
         }
       });
       if (!response.ok) {
+        if (response.status === 404) return null; // No config yet
         throw new Error('Failed to fetch GTM snippet');
       }
       const json = await response.json();
