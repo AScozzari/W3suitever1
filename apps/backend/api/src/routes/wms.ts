@@ -12979,15 +12979,16 @@ router.get("/orders", rbacMiddleware, async (req: Request, res: Response) => {
       eq(wmsDocuments.documentType, 'order')
     ];
 
-    if (status && typeof status === 'string') {
+    // Filter out empty strings to avoid PostgreSQL enum parse errors
+    if (status && typeof status === 'string' && status.trim() !== '') {
       conditions.push(eq(wmsDocuments.status, status as any));
     }
 
-    if (supplierId && typeof supplierId === 'string') {
+    if (supplierId && typeof supplierId === 'string' && supplierId.trim() !== '') {
       conditions.push(eq(wmsDocuments.supplierId, supplierId));
     }
 
-    if (customerId && typeof customerId === 'string') {
+    if (customerId && typeof customerId === 'string' && customerId.trim() !== '') {
       conditions.push(eq(wmsDocuments.customerId, customerId));
     }
 
