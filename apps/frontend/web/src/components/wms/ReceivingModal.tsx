@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, TooltipPortal } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -105,6 +106,10 @@ interface Product {
   supplierSku?: string;
   ean?: string;  // EAN-13 barcode - identifies the MODEL (same for all units of same product)
   description?: string;
+  brand?: string;
+  model?: string;
+  color?: string;
+  memory?: string;
   isSerializable: boolean;
   serialType?: 'imei' | 'iccid' | 'mac_address' | 'other'; // Type of unique serial per UNIT
   serialCount?: number; // Number of serials per unit (e.g., 2 for dual-SIM phones with IMEI1+IMEI2)
@@ -1197,6 +1202,33 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
     setTimeout(() => searchInputRef.current?.focus(), 100);
   };
 
+  // Auto-add item when all serials are acquired (serialized flow optimization)
+  useEffect(() => {
+    if (!selectedProduct) return;
+    if (!selectedProduct.isSerializable || !isGloballyUnique(selectedProduct.serialType)) return;
+    if (bulkLoadMode) return; // Skip for bulk mode
+    
+    const serialsPerUnit = selectedProduct.serialCount || 1;
+    const requiredSerials = targetQuantity * serialsPerUnit;
+    
+    // Check if all required serials are acquired
+    if (currentSerials.length >= requiredSerials && requiredSerials > 0) {
+      // Check if we can add the item (price and other requirements met)
+      const hasValidPrice = unitPriceInput.trim().length > 0 && parseFloat(unitPriceInput) >= 0;
+      if (hasValidPrice) {
+        // Auto-add after a short delay to allow state to settle
+        const timer = setTimeout(() => {
+          addItemToList();
+          toast({
+            title: 'Prodotto aggiunto',
+            description: `${selectedProduct.name} aggiunto automaticamente alla lista`,
+          });
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentSerials.length, selectedProduct, targetQuantity, unitPriceInput, bulkLoadMode]);
+
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
   };
@@ -1835,38 +1867,75 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                     )}
                     
                     {showSearchResults && searchResults.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto">
-                        {totalSearchResults > MAX_VISIBLE_RESULTS && (
-                          <div className="px-3 py-2 bg-gray-50 border-b text-sm text-gray-600 flex items-center justify-between">
-                            <span>Mostrati {searchResults.length} di {totalSearchResults} risultati</span>
-                            <Badge variant="secondary" className="text-xs">
-                              Altri {totalSearchResults - searchResults.length}
-                            </Badge>
-                          </div>
-                        )}
-                        {searchResults.map(product => (
-                          <div
-                            key={product.id}
-                            className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                            onClick={() => handleProductSelect(product)}
-                            data-testid={`search-result-${product.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-gray-900">{product.name}</p>
-                                <p className="text-sm text-gray-500">
-                                  SKU: {product.sku} | EAN: {product.ean || '-'}
-                                </p>
-                              </div>
-                              {product.isSerializable && (
-                                <Badge variant="outline" className="ml-2">
-                                  {getSerialLabel(product.serialType)}
-                                </Badge>
-                              )}
+                      <TooltipProvider delayDuration={300}>
+                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-80 overflow-y-auto">
+                          {totalSearchResults > MAX_VISIBLE_RESULTS && (
+                            <div className="px-3 py-2 bg-gray-50 border-b text-sm text-gray-600 flex items-center justify-between">
+                              <span>Mostrati {searchResults.length} di {totalSearchResults} risultati</span>
+                              <Badge variant="secondary" className="text-xs">
+                                Altri {totalSearchResults - searchResults.length}
+                              </Badge>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          )}
+                          {searchResults.map(product => (
+                            <Tooltip key={product.id}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                                  onClick={() => handleProductSelect(product)}
+                                  data-testid={`search-result-${product.id}`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-medium text-gray-900">{product.name}</p>
+                                      <p className="text-sm text-gray-500">
+                                        SKU: {product.sku} | EAN: {product.ean || '-'}
+                                      </p>
+                                    </div>
+                                    {product.isSerializable && (
+                                      <Badge variant="outline" className="ml-2">
+                                        {getSerialLabel(product.serialType)}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipPortal container={dialogContainer}>
+                                <TooltipContent 
+                                  side="bottom" 
+                                  align="start"
+                                  sideOffset={5} 
+                                  collisionPadding={10}
+                                  className="bg-gray-900 text-white p-3 max-w-xs z-[9999]"
+                                >
+                                  <div className="text-xs space-y-1">
+                                    <div className="font-semibold text-sm border-b border-gray-700 pb-1 mb-1">{product.name}</div>
+                                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                                      <span className="text-gray-400">SKU:</span><span className="font-mono">{product.sku || '-'}</span>
+                                      <span className="text-gray-400">EAN:</span><span className="font-mono">{product.ean || '-'}</span>
+                                      {product.brand && <><span className="text-gray-400">Brand:</span><span>{product.brand}</span></>}
+                                      {product.model && <><span className="text-gray-400">Modello:</span><span>{product.model}</span></>}
+                                      {product.color && <><span className="text-gray-400">Colore:</span><span>{product.color}</span></>}
+                                      {product.memory && <><span className="text-gray-400">Memoria:</span><span>{product.memory}</span></>}
+                                    </div>
+                                    {product.description && (
+                                      <div className="pt-1 border-t border-gray-700 mt-1">
+                                        <span className="text-gray-400">Descrizione:</span>
+                                        <p className="text-gray-300 mt-0.5">{product.description}</p>
+                                      </div>
+                                    )}
+                                    {product.isSerializable && (
+                                      <div className="pt-1 mt-1 text-orange-400 font-medium">
+                                        📱 Prodotto serializzato ({getSerialLabel(product.serialType)})
+                                      </div>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </TooltipPortal>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TooltipProvider>
                     )}
                     
                     {/* No results - show mapping option */}
