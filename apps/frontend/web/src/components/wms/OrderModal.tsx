@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -71,6 +71,8 @@ interface StoreFromAPI {
   status: string;
   category: string;
   hasWarehouse: boolean;
+  legalEntityId?: string;
+  legalEntityName?: string;
 }
 
 interface LegalEntityFromAPI {
@@ -220,6 +222,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   });
 
   const selectedSupplierId = form.watch('supplierId');
+  const selectedLegalEntityId = form.watch('legalEntityId');
 
   // Fetch organization entities (Ragioni Sociali dell'organizzazione - entità legali emittenti)
   const { data: legalEntitiesData = [], isLoading: legalEntitiesLoading } = useQuery<LegalEntityFromAPI[]>({
@@ -238,6 +241,23 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     queryKey: ['/api/wms/stores'],
     enabled: open,
   });
+
+  // Filter stores by selected legal entity
+  const filteredStores = useMemo(() => {
+    if (!selectedLegalEntityId) return [];
+    return storesData.filter(s => s.hasWarehouse && s.legalEntityId === selectedLegalEntityId);
+  }, [storesData, selectedLegalEntityId]);
+
+  // Reset storeId when legalEntityId changes
+  useEffect(() => {
+    const currentStoreId = form.getValues('storeId');
+    if (currentStoreId && selectedLegalEntityId) {
+      const storeStillValid = filteredStores.some(s => s.id === currentStoreId);
+      if (!storeStillValid) {
+        form.setValue('storeId', '');
+      }
+    }
+  }, [selectedLegalEntityId, filteredStores]);
 
   // Fetch next document number preview
   const { data: nextNumberData } = useQuery<{ nextNumber: string; hasConfig: boolean }>({
@@ -570,7 +590,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       legalEntityName: legalEntity?.nome,
       supplierId: formData.supplierId,
       supplierName: supplier?.name,
-      documentNumber: formData.documentNumber,
+      documentNumber: '', // Number is released on suspend - will be regenerated on resume
       documentDate: formData.documentDate,
       expectedDeliveryDate: formData.expectedDeliveryDate,
       storeId: formData.storeId,
@@ -597,7 +617,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       setCurrentDraftId(draftToResume.id);
       form.setValue('legalEntityId', draftToResume.legalEntityId || '');
       form.setValue('supplierId', draftToResume.supplierId || '');
-      form.setValue('documentNumber', draftToResume.documentNumber || '');
+      form.setValue('documentNumber', ''); // Always regenerate number on resume
       form.setValue('documentDate', draftToResume.documentDate || new Date().toISOString().split('T')[0]);
       form.setValue('expectedDeliveryDate', draftToResume.expectedDeliveryDate || '');
       form.setValue('storeId', draftToResume.storeId || '');
@@ -607,15 +627,15 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     }
   }, [draftToResume, open]);
 
-  // Auto-populate document number when available (only if empty and not resuming draft)
+  // Auto-populate document number when available (always if empty, including resumed drafts)
   useEffect(() => {
-    if (open && nextNumberData?.nextNumber && !draftToResume) {
+    if (open && nextNumberData?.nextNumber) {
       const currentValue = form.getValues('documentNumber');
       if (!currentValue) {
         form.setValue('documentNumber', nextNumberData.nextNumber);
       }
     }
-  }, [open, nextNumberData, draftToResume]);
+  }, [open, nextNumberData]);
 
   return (
     <>
@@ -680,7 +700,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                   <SelectValue placeholder="Seleziona entità legale..." />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent side="top" className="max-h-60 overflow-y-auto">
                                 {legalEntitiesData.map(entity => (
                                   <SelectItem key={entity.id} value={entity.id}>
                                     {entity.nome}
@@ -770,6 +790,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               suppliers={suppliersData}
                               placeholder="Seleziona fornitore..."
                               portalContainer={dialogContainer}
+                              side="top"
                               data-testid="select-supplier"
                             />
                           </FormControl>
@@ -785,15 +806,24 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Magazzino Destinazione (opzionale)</FormLabel>
-                          <Select value={field.value || "__none__"} onValueChange={(v) => field.onChange(v === "__none__" ? '' : v)}>
+                          <Select 
+                            value={field.value || "__none__"} 
+                            onValueChange={(v) => field.onChange(v === "__none__" ? '' : v)}
+                            disabled={!selectedLegalEntityId}
+                          >
                             <FormControl>
                               <SelectTrigger data-testid="select-store">
-                                <SelectValue placeholder="Seleziona magazzino..." />
+                                <SelectValue placeholder={selectedLegalEntityId ? "Seleziona magazzino..." : "Seleziona prima l'entità legale"} />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent side="top" className="max-h-60 overflow-y-auto">
                               <SelectItem value="__none__">Nessun magazzino specificato</SelectItem>
-                              {storesData.filter(s => s.hasWarehouse).map(store => (
+                              {filteredStores.length === 0 && selectedLegalEntityId && (
+                                <div className="px-2 py-1.5 text-sm text-gray-500 italic">
+                                  Nessun magazzino per questa entità
+                                </div>
+                              )}
+                              {filteredStores.map(store => (
                                 <SelectItem key={store.id} value={store.id}>
                                   {store.name} {store.city && `- ${store.city}`}
                                 </SelectItem>
