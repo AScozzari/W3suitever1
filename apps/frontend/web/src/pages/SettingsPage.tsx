@@ -674,6 +674,13 @@ export default function SettingsPage() {
   // Note: queryClient now auto-unwraps {data: ...} responses, so we receive the array directly
   const voipExtensions = Array.isArray(voipExtensionsResponse) ? voipExtensionsResponse : [];
   
+  // Operators (Brands) Query - Load from public.operators for Brand Gestiti field
+  const { data: operatorsData = [] } = useQuery<any[]>({
+    queryKey: ['/api/operators'],
+    enabled: storeModal.open,
+    staleTime: 5 * 60 * 1000
+  });
+  
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
   const [puntiVenditaList, setPuntiVenditaList] = useState<any[]>([]);
@@ -8041,17 +8048,6 @@ export default function SettingsPage() {
                   }}>
                     Canale {newStore.category === 'sales_point' && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
-                  <p style={{
-                    fontSize: '12px',
-                    color: newStore.category === 'sales_point' ? '#ef4444' : '#6b7280',
-                    margin: '0 0 8px 0',
-                    fontStyle: 'italic'
-                  }}>
-                    {newStore.category === 'sales_point' 
-                      ? '⚠️ Obbligatorio per i punti vendita'
-                      : 'ℹ️ Opzionale per uffici e magazzini'
-                    }
-                  </p>
                   <select
                     value={newStore.channel_id || ''}
                     onChange={(e) => setNewStore({ ...newStore, channel_id: e.target.value || null })}
@@ -8175,7 +8171,7 @@ export default function SettingsPage() {
                   </select>
                 </div>
 
-                {/* Brand - Multi-select */}
+                {/* Brand - Multi-select - Dynamic from public.operators */}
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
@@ -8198,80 +8194,61 @@ export default function SettingsPage() {
                       : 'ℹ️ Opzionale per uffici e magazzini'
                     }
                   </p>
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
-                      borderRadius: '8px',
-                      border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={newStore.brands.includes('WindTre')}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
-                          } else {
-                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
-                          }
-                        }}
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
-                          cursor: 'pointer',
-                          accentColor: '#FF6900'
-                        }}
-                      />
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    {operatorsData.length === 0 ? (
                       <span style={{ 
                         fontSize: '14px', 
-                        color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
-                        fontWeight: '600'
+                        color: '#9ca3af',
+                        fontStyle: 'italic',
+                        padding: '8px 12px',
+                        background: '#f3f4f6',
+                        borderRadius: '8px'
                       }}>
-                        WindTre
+                        Nessun brand disponibile
                       </span>
-                    </label>
-                    
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
-                      borderRadius: '8px',
-                      border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={newStore.brands.includes('Very Mobile')}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
-                          } else {
-                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
-                          }
-                        }}
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
+                    ) : operatorsData.map((operator: { id: string; name: string; brandColor?: string }) => {
+                      const rawColor = operator.brandColor || '#6366f1';
+                      const brandColor = rawColor.startsWith('#') ? rawColor : '#6366f1';
+                      const isSelected = newStore.brands.includes(operator.name);
+                      return (
+                        <label key={operator.id} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '12px', 
                           cursor: 'pointer',
-                          accentColor: '#10b981'
-                        }}
-                      />
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
-                        fontWeight: '600'
-                      }}>
-                        Very Mobile
-                      </span>
-                    </label>
+                          padding: '6px 10px',
+                          background: isSelected ? `${brandColor}15` : '#f8fafc',
+                          borderRadius: '8px',
+                          border: `2px solid ${isSelected ? brandColor : 'transparent'}`,
+                          transition: 'all 0.2s ease'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewStore({ ...newStore, brands: [...newStore.brands, operator.name] });
+                              } else {
+                                setNewStore({ ...newStore, brands: newStore.brands.filter((b: string) => b !== operator.name) });
+                              }
+                            }}
+                            style={{ 
+                              width: '20px', 
+                              height: '20px', 
+                              cursor: 'pointer',
+                              accentColor: brandColor
+                            }}
+                          />
+                          <span style={{ 
+                            fontSize: '14px', 
+                            color: isSelected ? brandColor : '#374151',
+                            fontWeight: '600'
+                          }}>
+                            {operator.name}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
