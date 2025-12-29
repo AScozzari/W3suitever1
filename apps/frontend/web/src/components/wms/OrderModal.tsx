@@ -195,6 +195,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   const [pendingVatRateId, setPendingVatRateId] = useState<string>('');
   const [pendingVatRegimeId, setPendingVatRegimeId] = useState<string>('');
   const [pendingSupplierSku, setPendingSupplierSku] = useState<string>('');
+  const [productRequiresMapping, setProductRequiresMapping] = useState<boolean>(false);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -321,6 +322,13 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   });
   const skuMappingsData = skuMappingsResponse?.data || [];
 
+  // Fetch ALL mappings for current supplier (to check if product has existing mapping)
+  const { data: allSupplierMappingsResponse, isLoading: mappingsAllLoading, isFetched: mappingsAllFetched } = useQuery<{ success: boolean; data: SkuMappingFromAPI[] }>({
+    queryKey: ['/api/wms/product-supplier-mappings', { supplierId: selectedSupplierId }],
+    enabled: open && currentStep === 2 && !!selectedSupplierId,
+  });
+  const allSupplierMappings = allSupplierMappingsResponse?.data || [];
+
   // Search results
   const searchResults = searchMode === 'internal' 
     ? (productsApiData || [])
@@ -357,11 +365,20 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       setPendingItem(null);
       setPendingSupplierSku('');
       setUnmappedSupplierSku('');
+      setProductRequiresMapping(false);
       setSearchQuery('');
       setShowSearchResults(false);
       form.reset();
     }
   }, [open]);
+
+  // Re-evaluate mapping requirement when mappings load (handles async timing)
+  useEffect(() => {
+    if (pendingItem && mappingsAllFetched && searchMode === 'internal' && !unmappedSupplierSku) {
+      const hasExistingMapping = allSupplierMappings.some(m => m.productId === pendingItem.productId);
+      setProductRequiresMapping(!hasExistingMapping);
+    }
+  }, [pendingItem, mappingsAllFetched, allSupplierMappings, searchMode, unmappedSupplierSku]);
 
   // Handle product selection
   const handleProductSelect = (product: any) => {
@@ -376,7 +393,14 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
-    // Note: Mapping is now created in addPendingItem to support both flows
+    // Check if product has existing mapping with current supplier (only for Flow 1 - internal search)
+    // Flow 2 (supplier SKU) already has unmappedSupplierSku set
+    // Only check mapping requirement if mappings have been fetched to avoid false positives
+    const hasExistingMapping = mappingsAllFetched 
+      ? allSupplierMappings.some(m => m.productId === product.id)
+      : true; // Assume mapping exists if not yet loaded (avoid false requirement)
+    const requiresMapping = searchMode === 'internal' && !hasExistingMapping && !unmappedSupplierSku;
+    setProductRequiresMapping(requiresMapping);
 
     // Set pending item for inline quantity/cost entry
     setPendingItem({
@@ -391,10 +415,14 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     setShowSearchResults(false);
     // Note: Do NOT reset unmappedSupplierSku here - it's needed for addPendingItem to create the mapping
 
-    // Focus quantity input
+    // Focus quantity input (or SKU input if mapping required)
     setTimeout(() => {
-      quantityInputRef.current?.focus();
-      quantityInputRef.current?.select();
+      if (requiresMapping) {
+        // Focus will be on SKU field first
+      } else {
+        quantityInputRef.current?.focus();
+        quantityInputRef.current?.select();
+      }
     }, 100);
   };
 
@@ -427,8 +455,32 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
-    // Create mapping if pendingSupplierSku is set (Flow 1 - Catalogo Interno with SKU mapping)
+    // Block if mappings not yet loaded (Flow 1 only) - must wait to verify mapping exists
     const skuToMap = pendingSupplierSku || unmappedSupplierSku;
+    if (searchMode === 'internal' && !mappingsAllFetched && !skuToMap) {
+      toast({ 
+        title: 'Caricamento in corso', 
+        description: 'Attendi il caricamento dei mapping o inserisci lo SKU fornitore',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    // Re-check mapping requirement at submission time (handles async timing)
+    const requiresMappingNow = searchMode === 'internal' && mappingsAllFetched && !unmappedSupplierSku 
+      ? !allSupplierMappings.some(m => m.productId === pendingItem.productId)
+      : productRequiresMapping;
+    
+    if (requiresMappingNow && !skuToMap) {
+      toast({ 
+        title: 'SKU Fornitore obbligatorio', 
+        description: 'Inserisci lo SKU del fornitore per questo prodotto',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    // Create mapping if we have an SKU to map
     if (skuToMap && selectedSupplierId) {
       createMappingMutation.mutate({
         supplierId: selectedSupplierId,
@@ -465,6 +517,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     setPendingVatRegimeId('');
     setPendingSupplierSku('');
     setUnmappedSupplierSku('');
+    setProductRequiresMapping(false);
 
     // Focus back on search
     setTimeout(() => {
@@ -653,7 +706,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
           ref={setDialogContainer}
-          className="max-w-6xl max-h-[90vh] overflow-y-auto"
+          className={`${currentStep === 1 ? 'max-w-2xl' : 'max-w-6xl'} max-h-[90vh] overflow-y-auto`}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -697,6 +750,30 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
               <form onSubmit={form.handleSubmit(handleStep1Submit)} className="space-y-4">
                 <Card>
                   <CardContent className="pt-4 space-y-4">
+                    {/* Supplier - First field, dropdown opens downward */}
+                    <FormField
+                      control={form.control}
+                      name="supplierId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fornitore *</FormLabel>
+                          <FormControl>
+                            <SupplierCombobox
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              suppliers={suppliersData}
+                              placeholder="Seleziona fornitore..."
+                              portalContainer={dialogContainer}
+                              side="bottom"
+                              data-testid="select-supplier"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Legal Entity + Warehouse on same row */}
                     <div className="grid grid-cols-2 gap-4">
                       {/* Legal Entity */}
                       <FormField
@@ -711,7 +788,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                   <SelectValue placeholder="Seleziona entità legale..." />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent side="top" className="max-h-60 overflow-y-auto">
+                              <SelectContent className="max-h-60 overflow-y-auto">
                                 {legalEntitiesData.map(entity => (
                                   <SelectItem key={entity.id} value={entity.id}>
                                     {entity.nome}
@@ -725,7 +802,45 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                         )}
                       />
 
-                      {/* Document Number */}
+                      {/* Warehouse (optional) */}
+                      <FormField
+                        control={form.control}
+                        name="storeId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Magazzino Destinazione</FormLabel>
+                            <Select 
+                              value={field.value || "__none__"} 
+                              onValueChange={(v) => field.onChange(v === "__none__" ? '' : v)}
+                              disabled={!selectedLegalEntityId}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-store">
+                                  <SelectValue placeholder={selectedLegalEntityId ? "Seleziona magazzino..." : "Seleziona prima l'entità legale"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-60 overflow-y-auto">
+                                <SelectItem value="__none__">Nessun magazzino specificato</SelectItem>
+                                {filteredStores.length === 0 && selectedLegalEntityId && (
+                                  <div className="px-2 py-1.5 text-sm text-gray-500 italic">
+                                    Nessun magazzino per questa entità
+                                  </div>
+                                )}
+                                {filteredStores.map(store => (
+                                  <SelectItem key={store.id} value={store.id}>
+                                    {store.name} {store.city && `- ${store.city}`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Document Number + Document Date */}
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="documentNumber"
@@ -739,16 +854,13 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               />
                             </FormControl>
                             <p className="text-xs text-gray-500">
-                              Numero auto-generato (modificabile se necessario)
+                              Numero auto-generato (modificabile)
                             </p>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Document Date */}
                       <FormField
                         control={form.control}
                         name="documentDate"
@@ -766,8 +878,10 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                           </FormItem>
                         )}
                       />
+                    </div>
 
-                      {/* Expected Delivery Date */}
+                    {/* Expected Delivery Date + Notes */}
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="expectedDeliveryDate"
@@ -785,86 +899,25 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                           </FormItem>
                         )}
                       />
-                    </div>
 
-                    {/* Supplier */}
-                    <FormField
-                      control={form.control}
-                      name="supplierId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fornitore *</FormLabel>
-                          <FormControl>
-                            <SupplierCombobox
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              suppliers={suppliersData}
-                              placeholder="Seleziona fornitore..."
-                              portalContainer={dialogContainer}
-                              side="top"
-                              data-testid="select-supplier"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Warehouse (optional) */}
-                    <FormField
-                      control={form.control}
-                      name="storeId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Magazzino Destinazione (opzionale)</FormLabel>
-                          <Select 
-                            value={field.value || "__none__"} 
-                            onValueChange={(v) => field.onChange(v === "__none__" ? '' : v)}
-                            disabled={!selectedLegalEntityId}
-                          >
+                      <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Note</FormLabel>
                             <FormControl>
-                              <SelectTrigger data-testid="select-store">
-                                <SelectValue placeholder={selectedLegalEntityId ? "Seleziona magazzino..." : "Seleziona prima l'entità legale"} />
-                              </SelectTrigger>
+                              <Input 
+                                {...field} 
+                                placeholder="Note aggiuntive..."
+                                data-testid="input-notes"
+                              />
                             </FormControl>
-                            <SelectContent side="top" className="max-h-60 overflow-y-auto">
-                              <SelectItem value="__none__">Nessun magazzino specificato</SelectItem>
-                              {filteredStores.length === 0 && selectedLegalEntityId && (
-                                <div className="px-2 py-1.5 text-sm text-gray-500 italic">
-                                  Nessun magazzino per questa entità
-                                </div>
-                              )}
-                              {filteredStores.map(store => (
-                                <SelectItem key={store.id} value={store.id}>
-                                  {store.name} {store.city && `- ${store.city}`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Notes */}
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Note</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Note aggiuntive (opzionale)..."
-                              rows={3}
-                              data-testid="input-notes"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1104,18 +1157,26 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               <p className="text-xs text-gray-500">SKU: {pendingItem.productSku}</p>
                             </div>
                             <div className="flex items-end gap-2 flex-shrink-0">
-                              {/* SKU Fornitore - optional field for mapping */}
+                              {/* SKU Fornitore - required if no existing mapping, optional otherwise */}
                               {searchMode === 'internal' && selectedSupplierId && !unmappedSupplierSku && (
                                 <div className="text-center">
                                   <Input
                                     type="text"
                                     value={pendingSupplierSku}
                                     onChange={(e) => setPendingSupplierSku(e.target.value.toUpperCase())}
-                                    className="h-8 w-28 text-center text-sm"
-                                    placeholder="SKU Forn."
+                                    className={`h-8 w-28 text-center text-sm ${
+                                      productRequiresMapping 
+                                        ? pendingSupplierSku 
+                                          ? 'border-green-500 focus:border-green-500' 
+                                          : 'border-red-500 focus:border-red-500 bg-red-50'
+                                        : ''
+                                    }`}
+                                    placeholder={productRequiresMapping ? "Obbligatorio *" : "SKU Forn."}
                                     data-testid="input-pending-supplier-sku"
                                   />
-                                  <span className="text-[10px] text-gray-400">SKU Forn.</span>
+                                  <span className={`text-[10px] ${productRequiresMapping ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                                    SKU Forn. {productRequiresMapping && '*'}
+                                  </span>
                                 </div>
                               )}
                               <div className="text-center">
