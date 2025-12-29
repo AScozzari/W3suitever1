@@ -1,0 +1,280 @@
+ject
+SettingsPage.tsx:729 📝 Setting state with data: Object
+SettingsPage.tsx:3639 [LEGAL-ENTITY] Query state: Object
+installHook.js:1 [LEGAL-ENTITY] Query state: Object
+SettingsPage.tsx:701 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage.tsx:1492 [RBAC-DEBUG] Role Permissions Query State: Object
+SettingsPage.tsx:13 [AUTH-FETCH] Token obtained: demo-access-token...
+SettingsPage.tsx:25 [AUTH-FETCH] Making request to: /api/legal-entities?roleFilter=true
+/api/legal-entities?roleFilter=true:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Comprendi l'errore
+SettingsPage.tsx:13 [AUTH-FETCH] Token obtained: demo-access-token...
+SettingsPage.tsx:25 [AUTH-FETCH] Making request to: /api/legal-entities?roleFilter=true
+/api/legal-entities?roleFilter=true:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)Comprendi l'errore
+SettingsPage.tsx:3639 [LEGAL-ENTITY] Query state: Object
+installHook.js:1 [LEGAL-ENTITY] Query state: Object
+SettingsPage.tsx:707 ✅ SettingsPage: Data already loaded, skipping
+SettingsPage.tsx:1492 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+installHook.js:1 Mon Dec 29 2025 15:50:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onWebSocketClose @ sip__js.js?v=fac8f799:12413
+(anonime) @ sip__js.js?v=fac8f799:12292Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:50:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:50:55 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnected
+installHook.js:1 Mon Dec 29 2025 15:51:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onWebSocketClose @ sip__js.js?v=fac8f799:12413
+(anonime) @ sip__js.js?v=fac8f799:12292Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:51:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:51:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnected
+installHook.js:1 Mon Dec 29 2025 15:51:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onWebSocketClose @ sip__js.js?v=fac8f799:12413
+(anonime) @ sip__js.js?v=fac8f799:12292Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:51:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:51:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnected
+StoreConfigurationDialog.tsx:99  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores/50000000-0000-0000-0000-000000000010/tracking-config 401 (Unauthorized)
+queryFn @ StoreConfigurationDialog.tsx:99
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+StoreConfigurationDialog.tsx:121  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores/50000000-0000-0000-0000-000000000010/gtm-snippet 404 (Not Found)
+queryFn @ StoreConfigurationDialog.tsx:121
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+StoreConfigurationDialog.tsx:121  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/stores/50000000-0000-0000-0000-000000000010/gtm-snippet 404 (Not Found)
+queryFn @ StoreConfigurationDialog.tsx:121
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+(anonime) @ @tanstack_react-query.js?v=fac8f799:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=fac8f799:816
+Promise.catch
+run @ @tanstack_react-query.js?v=fac8f799:799
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS 3qp1vln9uujc.invalid;branch=z9hG4bK6679638
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=qup1phju6s
+CSeq: 4 REGISTER
+Call-ID: 3q2cd3he63ev66oha73t
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="0f6d0d76-0836-456c-87f4-5a24f344f84b", uri="sip:demo.edgvoip.it", response="2b05d257a9daeb6a3a2c535365b9a5f5", qop=auth, cnonce="5go128q4di88", nc=00000001
+Contact: <sip:qtj2m6mi@3qp1vln9uujc.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+installHook.js:1 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | Not connected.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+onTransportError @ sip__js.js?v=fac8f799:8717
+onTransportError @ sip__js.js?v=fac8f799:8778
+onTransportError @ sip__js.js?v=fac8f799:7824
+(anonime) @ sip__js.js?v=fac8f799:7337
+Promise.catch
+send @ sip__js.js?v=fac8f799:7326
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request transport error. Generating internal 503 Service Unavailable.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+onTransportError @ sip__js.js?v=fac8f799:8718
+onTransportError @ sip__js.js?v=fac8f799:8778
+onTransportError @ sip__js.js?v=fac8f799:7824
+(anonime) @ sip__js.js?v=fac8f799:7337
+Promise.catch
+send @ sip__js.js?v=fac8f799:7326
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 503
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onReject @ sip__js.js?v=fac8f799:5694
+receiveResponse @ sip__js.js?v=fac8f799:8759
+onTransportError @ sip__js.js?v=fac8f799:8722
+onTransportError @ sip__js.js?v=fac8f799:8778
+onTransportError @ sip__js.js?v=fac8f799:7824
+(anonime) @ sip__js.js?v=fac8f799:7337
+Promise.catch
+send @ sip__js.js?v=fac8f799:7326
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+useSIPRegistration.ts:204 📡 Registration state: Unregistered
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+installHook.js:1 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK6679638 | Not connected.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+logTransportError @ sip__js.js?v=fac8f799:7315
+(anonime) @ sip__js.js?v=fac8f799:7735
+Promise.catch
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK6679638 | Transport error occurred in non-INVITE client transaction with id z9hG4bK6679638.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+logTransportError @ sip__js.js?v=fac8f799:7316
+(anonime) @ sip__js.js?v=fac8f799:7735
+Promise.catch
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 15:56:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK6679638 | Failed to send initial outgoing request.
