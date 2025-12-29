@@ -12837,7 +12837,7 @@ router.delete("/documents/:documentId/items/:itemId", rbacMiddleware, requirePer
 router.get("/vat-rates", rbacMiddleware, async (req: Request, res: Response) => {
   try {
     const rates = await db.execute(sql`
-      SELECT id, code, name, rate_percent as rate, description, is_active
+      SELECT id, code, name, rate_percent::float as rate, description, is_active
       FROM public.vat_rates
       WHERE is_active = true
       ORDER BY rate_percent ASC
