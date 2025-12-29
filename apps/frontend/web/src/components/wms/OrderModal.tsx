@@ -259,10 +259,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     }
   }, [selectedLegalEntityId, filteredStores]);
 
-  // Fetch next document number preview
+  // Fetch next document number preview (enabled on step 1 OR when document number is empty on step 2 for resumed drafts)
+  const currentDocNumber = form.watch('documentNumber');
   const { data: nextNumberData } = useQuery<{ nextNumber: string; hasConfig: boolean }>({
     queryKey: ['/api/wms/documents/next-number/order'],
-    enabled: open && currentStep === 1,
+    enabled: open && (currentStep === 1 || (currentStep === 2 && !currentDocNumber)),
   });
 
   // Debounce search query
