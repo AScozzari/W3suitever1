@@ -459,6 +459,21 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
+    if (cost <= 0) {
+      toast({ title: 'Costo unitario obbligatorio', description: 'Inserisci un costo maggiore di zero', variant: 'destructive' });
+      return;
+    }
+
+    if (!pendingVatRateId) {
+      toast({ title: 'Aliquota IVA obbligatoria', description: 'Seleziona un\'aliquota IVA', variant: 'destructive' });
+      return;
+    }
+
+    if (!pendingVatRegimeId) {
+      toast({ title: 'Regime fiscale obbligatorio', description: 'Seleziona un regime fiscale', variant: 'destructive' });
+      return;
+    }
+
     // Block if mappings not yet loaded (Flow 1 only) - must wait to verify mapping exists
     const skuToMap = pendingSupplierSku || unmappedSupplierSku;
     if (searchMode === 'internal' && !mappingsAllFetched && !skuToMap) {
@@ -1288,12 +1303,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                           <TableHeader>
                             <TableRow>
                               <TableHead>Prodotto</TableHead>
-                              <TableHead className="w-32">SKU Forn.</TableHead>
+                              <TableHead className="w-32 text-center">SKU Forn.</TableHead>
                               <TableHead className="w-24 text-right">Quantità</TableHead>
                               <TableHead className="w-28 text-right">Costo Unit.</TableHead>
                               <TableHead className="w-16 text-right">IVA</TableHead>
                               <TableHead className="w-28 text-right">Totale</TableHead>
-                              <TableHead className="w-28"></TableHead>
+                              <TableHead className="w-28 text-center">Azioni</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1306,7 +1321,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                     <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.productDescription}</p>
                                   )}
                                 </TableCell>
-                                <TableCell className="text-sm font-mono">
+                                <TableCell className="text-sm font-mono text-center">
                                   {item.supplierSku || '-'}
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -1479,12 +1494,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                         <TableHeader>
                           <TableRow>
                             <TableHead>Prodotto</TableHead>
-                            <TableHead className="w-32">SKU Forn.</TableHead>
+                            <TableHead className="w-32 text-center">SKU Forn.</TableHead>
                             <TableHead className="text-right">Quantità</TableHead>
                             <TableHead className="text-right">Costo Unit.</TableHead>
                             <TableHead className="text-right">IVA</TableHead>
                             <TableHead className="text-right">Totale</TableHead>
-                            <TableHead className="w-28"></TableHead>
+                            <TableHead className="w-28 text-center">Azioni</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1497,7 +1512,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                   <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.productDescription}</p>
                                 )}
                               </TableCell>
-                              <TableCell className="text-sm font-mono">
+                              <TableCell className="text-sm font-mono text-center">
                                 {item.supplierSku || '-'}
                               </TableCell>
                               <TableCell className="text-right">{item.quantity}</TableCell>
