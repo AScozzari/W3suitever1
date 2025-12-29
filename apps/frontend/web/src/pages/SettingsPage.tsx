@@ -8028,7 +8028,7 @@ export default function SettingsPage() {
                     }}
                   >
                     <option value="">Seleziona ragione sociale...</option>
-                    {ragioneSocialiList.filter(rs => rs.stato === 'Attiva').map(rs => (
+                    {ragioneSocialiList.filter(rs => rs.stato?.toLowerCase().startsWith('attiv')).map(rs => (
                       <option key={rs.id} value={rs.id}>
                         {rs.nome} ({rs.codice})
                       </option>
@@ -9257,7 +9257,7 @@ export default function SettingsPage() {
                       background: '#ffffff'
                     }}>
                       {ragioneSocialiList
-                        .filter(rs => rs.stato === 'Attiva')
+                        .filter(rs => rs.stato?.toLowerCase().startsWith('attiv'))
                         .filter(rs => {
                           if (newUser.selectedAreas.length === 0) return true;
                           const rsStores = puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id);
