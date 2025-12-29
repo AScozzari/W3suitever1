@@ -335,8 +335,9 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   useEffect(() => {
     if (searchMode === 'internal' && productsApiData && productsApiData.length > 0) {
       setShowSearchResults(true);
-    } else if (searchMode === 'supplier_sku' && skuMappingsData) {
-      if (skuMappingsData.length > 0) {
+    } else if (searchMode === 'supplier_sku' && skuMappingsResponse) {
+      const mappings = skuMappingsResponse.data || [];
+      if (mappings.length > 0) {
         setShowSearchResults(true);
         setUnmappedSupplierSku('');
       } else if (debouncedSearchQuery.length >= 2) {
@@ -344,7 +345,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
         setUnmappedSupplierSku(debouncedSearchQuery);
       }
     }
-  }, [productsApiData, skuMappingsData, searchMode, debouncedSearchQuery]);
+  }, [productsApiData, skuMappingsResponse, searchMode, debouncedSearchQuery]);
 
   // Reset state when modal closes
   useEffect(() => {
