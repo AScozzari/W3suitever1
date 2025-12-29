@@ -12979,9 +12979,17 @@ router.get("/orders", rbacMiddleware, async (req: Request, res: Response) => {
       eq(wmsDocuments.documentType, 'order')
     ];
 
-    // Filter out empty strings to avoid PostgreSQL enum parse errors
+    // Filter out empty strings and map "open" to draft for backward compatibility
+    // Valid enum values: draft, pending_approval, confirmed, in_progress, shipped, delivered, closed, cancelled
     if (status && typeof status === 'string' && status.trim() !== '') {
-      conditions.push(eq(wmsDocuments.status, status as any));
+      const statusValue = status.trim().toLowerCase();
+      // Map "open" to draft (for DDT reconciliation - orders that can be fulfilled)
+      if (statusValue === 'open') {
+        conditions.push(eq(wmsDocuments.status, 'draft' as any));
+      } else if (['draft', 'pending_approval', 'confirmed', 'in_progress', 'shipped', 'delivered', 'closed', 'cancelled'].includes(statusValue)) {
+        conditions.push(eq(wmsDocuments.status, statusValue as any));
+      }
+      // Invalid status values are silently ignored to prevent enum parse errors
     }
 
     if (supplierId && typeof supplierId === 'string' && supplierId.trim() !== '') {
