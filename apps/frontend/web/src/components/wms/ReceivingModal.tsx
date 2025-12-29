@@ -1203,8 +1203,10 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   };
 
   // Auto-add item when all serials are acquired (serialized flow optimization)
+  // Only for NEW items - skip when editing existing items (selectedItemId is set)
   useEffect(() => {
     if (!selectedProduct) return;
+    if (selectedItemId) return; // Skip for edit mode - don't auto-close when editing
     if (!selectedProduct.isSerializable || !isGloballyUnique(selectedProduct.serialType)) return;
     if (bulkLoadMode) return; // Skip for bulk mode
     
@@ -1227,7 +1229,7 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
         return () => clearTimeout(timer);
       }
     }
-  }, [currentSerials.length, selectedProduct, targetQuantity, unitPriceInput, bulkLoadMode]);
+  }, [currentSerials.length, selectedProduct, targetQuantity, unitPriceInput, bulkLoadMode, selectedItemId]);
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
