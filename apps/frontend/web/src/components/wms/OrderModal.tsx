@@ -706,7 +706,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
           ref={setDialogContainer}
-          className={`${currentStep === 1 ? 'max-w-2xl' : 'max-w-6xl'} max-h-[90vh] overflow-y-auto`}
+          className={`${currentStep === 1 ? 'max-w-3xl' : 'max-w-6xl'} max-h-[90vh] overflow-y-auto`}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -880,44 +880,44 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                       />
                     </div>
 
-                    {/* Expected Delivery Date + Notes */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="expectedDeliveryDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Data Consegna Prevista</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="date" 
-                                {...field} 
-                                data-testid="input-delivery-date"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    {/* Expected Delivery Date */}
+                    <FormField
+                      control={form.control}
+                      name="expectedDeliveryDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data Consegna Prevista</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date" 
+                              {...field} 
+                              data-testid="input-delivery-date"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Note</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="Note aggiuntive..."
-                                data-testid="input-notes"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    {/* Notes - full width */}
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Note</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Note aggiuntive..."
+                              className="min-h-[80px] resize-none"
+                              data-testid="input-notes"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </CardContent>
                 </Card>
 
