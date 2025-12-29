@@ -320,6 +320,16 @@ const normalizeSerial = (serial: string, serialType?: string): string => {
   return trimmed;
 };
 
+// Get expected length for serial type validation (aligned with ReceivingModal)
+const getSerialExpectedLength = (serialType?: string): number => {
+  switch (serialType) {
+    case 'imei': return 15;
+    case 'iccid': return 19; // Can be 19-20
+    case 'mac_address': return 12; // Without separators
+    default: return 1; // Any non-empty
+  }
+};
+
 const MAX_VISIBLE_RESULTS = 10;
 
 // ==================== COMPONENT ====================
@@ -627,6 +637,57 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     return `LOT-${year}-${random}`;
   };
 
+  // Check if current serial input is valid for adding (aligned with ReceivingModal)
+  const isSerialInputValid = (): boolean => {
+    if (!serialInput.trim()) return false;
+    if (!selectedProduct) return false;
+    
+    const cleanedSerial = serialInput.replace(/[^0-9A-Fa-f]/g, '');
+    const expectedLength = getSerialExpectedLength(selectedProduct.serialType);
+    
+    // For IMEI, require exactly 15 digits
+    if (selectedProduct.serialType === 'imei') {
+      return cleanedSerial.length === 15;
+    }
+    // For ICCID, 19-20 digits
+    if (selectedProduct.serialType === 'iccid') {
+      return cleanedSerial.length >= 19 && cleanedSerial.length <= 20;
+    }
+    // For MAC, 12 hex chars
+    if (selectedProduct.serialType === 'mac_address') {
+      return cleanedSerial.length === 12;
+    }
+    // For others, just non-empty
+    return serialInput.trim().length >= expectedLength;
+  };
+
+  // Add serial manually (called by button click)
+  const addSerialManually = () => {
+    if (!isSerialInputValid()) return;
+    
+    const normalizedSerial = normalizeSerial(serialInput, selectedProduct?.serialType);
+    
+    // Check for duplicates
+    if (currentSerials.includes(normalizedSerial)) {
+      toast({
+        title: 'Seriale duplicato',
+        description: 'Questo seriale è già stato inserito.',
+        variant: 'destructive',
+      });
+      setSerialInput('');
+      serialInputRef.current?.focus();
+      return;
+    }
+    
+    const newSerials = [...currentSerials, normalizedSerial];
+    setCurrentSerials(newSerials);
+    setSerialInput('');
+    
+    setTimeout(() => {
+      serialInputRef.current?.focus();
+    }, 50);
+  };
+
   const removeSerial = (index: number) => {
     setCurrentSerials(prev => prev.filter((_, i) => i !== index));
     setTimeout(() => serialInputRef.current?.focus(), 50);
@@ -646,8 +707,23 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
   const addItemToList = () => {
     if (!selectedProduct || !canAddItem()) return;
 
-    const isBulkLoad = bulkLoadMode && selectedProduct.isSerializable;
-    const serializedQty = Math.floor(currentSerials.length / (selectedProduct.serialCount || 1));
+    // Bulk load mode: serializable products loaded without individual serials
+    const isBulkLoad = bulkLoadMode && selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType);
+    
+    // Determine if lot is needed (aligned with ReceivingModal logic):
+    // - Non-serializable products always need lot
+    // - Serializable products with type 'other' need lot
+    // - Bulk load always requires lot
+    // - Globally unique serials (IMEI, ICCID, MAC) do NOT need lot
+    const needsLot = !selectedProduct.isSerializable || 
+      (selectedProduct.isSerializable && selectedProduct.serialType === 'other') ||
+      isBulkLoad;
+    
+    const finalLot = needsLot ? (lotInput || generateLot()) : undefined;
+    
+    // For dual-serial products, quantity = number of complete units
+    const serialsPerUnit = selectedProduct.serialCount || 1;
+    const serializedQty = Math.floor(currentSerials.length / serialsPerUnit);
 
     // Calculate pricing if provided
     const unitPrice = unitPriceInput ? parseFloat(unitPriceInput) : undefined;
@@ -691,7 +767,7 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
             ? serializedQty 
             : targetQuantity),
       serials: isBulkLoad ? [] : currentSerials,
-      lot: lotInput || undefined,
+      lot: finalLot,
       unitPrice,
       vatRateId: vatRateIdInput || undefined,
       vatRate: vatPercent,
@@ -1717,54 +1793,87 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                 </Button>
                               </div>
 
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <Label className="text-xs">Quantità <span className="text-red-500">*</span></Label>
-                                  <Input
-                                    ref={quantityInputRef}
-                                    type="number"
-                                    min="1"
-                                    value={targetQuantity}
-                                    onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
-                                    className="h-9"
-                                    data-testid="input-quantity"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs">Lotto</Label>
-                                  <div className="flex gap-2">
+                              {/* Fields layout depends on product type */}
+                              {/* For serialized products (IMEI, ICCID, MAC): Quantity + Price (no Lot) */}
+                              {/* For non-serialized products: Quantity + Lot + Price */}
+                              {selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <Label className="text-xs">Quantità <span className="text-red-500">*</span></Label>
                                     <Input
-                                      value={lotInput}
-                                      onChange={(e) => setLotInput(e.target.value)}
-                                      placeholder="Es. LOT-2024-00001"
+                                      ref={quantityInputRef}
+                                      type="number"
+                                      min="1"
+                                      value={targetQuantity}
+                                      onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
                                       className="h-9"
-                                      data-testid="input-lot"
+                                      data-testid="input-quantity"
                                     />
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-9 px-2"
-                                      onClick={() => setLotInput(generateLot())}
-                                    >
-                                      Auto
-                                    </Button>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Prezzo</Label>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={unitPriceInput}
+                                      onChange={(e) => setUnitPriceInput(e.target.value)}
+                                      placeholder="€"
+                                      className="h-9"
+                                      data-testid="input-price"
+                                    />
                                   </div>
                                 </div>
-                                <div>
-                                  <Label className="text-xs">Prezzo</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={unitPriceInput}
-                                    onChange={(e) => setUnitPriceInput(e.target.value)}
-                                    placeholder="€"
-                                    className="h-9"
-                                    data-testid="input-price"
-                                  />
+                              ) : (
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <Label className="text-xs">Quantità <span className="text-red-500">*</span></Label>
+                                    <Input
+                                      ref={quantityInputRef}
+                                      type="number"
+                                      min="1"
+                                      value={targetQuantity}
+                                      onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
+                                      className="h-9"
+                                      data-testid="input-quantity"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Lotto</Label>
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={lotInput}
+                                        onChange={(e) => setLotInput(e.target.value)}
+                                        placeholder="Es. LOT-2024-00001"
+                                        className="h-9"
+                                        data-testid="input-lot"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 px-2"
+                                        onClick={() => setLotInput(generateLot())}
+                                      >
+                                        Auto
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Prezzo</Label>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={unitPriceInput}
+                                      onChange={(e) => setUnitPriceInput(e.target.value)}
+                                      placeholder="€"
+                                      className="h-9"
+                                      data-testid="input-price"
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              )}
 
                               {/* VAT fields - aligned with ReceivingModal */}
                               <div className="grid grid-cols-2 gap-3">
@@ -1821,17 +1930,40 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
 
                                   {!bulkLoadMode && (
                                     <>
-                                      <div className="relative">
-                                        <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <Input
-                                          ref={serialInputRef}
-                                          value={serialInput}
-                                          onChange={(e) => setSerialInput(e.target.value)}
-                                          onKeyDown={handleSerialScan}
-                                          placeholder={`Scansiona ${getSerialLabel(selectedProduct.serialType)}...`}
-                                          className="pl-9"
-                                          data-testid="input-serial"
-                                        />
+                                      <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                          <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                          <Input
+                                            ref={serialInputRef}
+                                            value={serialInput}
+                                            onChange={(e) => setSerialInput(e.target.value)}
+                                            onKeyDown={handleSerialScan}
+                                            placeholder={`Scansiona ${getSerialLabel(selectedProduct.serialType)}...`}
+                                            className={`pl-9 pr-16 transition-colors ${
+                                              isSerialInputValid() 
+                                                ? 'border-green-500 focus:border-green-600 focus:ring-green-500' 
+                                                : ''
+                                            }`}
+                                            data-testid="input-serial"
+                                          />
+                                          {/* Countdown display */}
+                                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                                            {serialInput.replace(/[^0-9A-Fa-f]/g, '').length}/{getSerialExpectedLength(selectedProduct?.serialType)}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          onClick={addSerialManually}
+                                          disabled={!isSerialInputValid()}
+                                          className={`transition-colors ${
+                                            isSerialInputValid() 
+                                              ? 'bg-green-600 hover:bg-green-700' 
+                                              : 'bg-gray-300'
+                                          }`}
+                                          data-testid="btn-add-serial"
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
                                       </div>
 
                                       {currentSerials.length > 0 && (
