@@ -113,6 +113,8 @@ interface OrderItem {
   productName: string;
   productSku: string;
   productEan?: string;
+  productDescription?: string;
+  supplierSku?: string;
   quantity: number;
   unitCost: number; // Prezzo NETTO (senza IVA)
   vatRateId?: string;
@@ -189,6 +191,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     productName: string;
     productSku: string;
     productEan?: string;
+    productDescription?: string;
   } | null>(null);
   const [pendingQuantity, setPendingQuantity] = useState<string>('1');
   const [pendingUnitCost, setPendingUnitCost] = useState<string>('');
@@ -408,6 +411,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       productName: product.name,
       productSku: product.sku,
       productEan: product.ean,
+      productDescription: product.description,
     });
     setPendingQuantity('1');
     setPendingUnitCost('');
@@ -500,6 +504,8 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       productName: pendingItem.productName,
       productSku: pendingItem.productSku,
       productEan: pendingItem.productEan,
+      productDescription: pendingItem.productDescription,
+      supplierSku: skuToMap || undefined,
       quantity: qty,
       unitCost: cost,
       vatRateId: pendingVatRateId || undefined,
@@ -1282,11 +1288,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                           <TableHeader>
                             <TableRow>
                               <TableHead>Prodotto</TableHead>
+                              <TableHead className="w-32">SKU Forn.</TableHead>
                               <TableHead className="w-24 text-right">Quantità</TableHead>
                               <TableHead className="w-28 text-right">Costo Unit.</TableHead>
                               <TableHead className="w-16 text-right">IVA</TableHead>
                               <TableHead className="w-28 text-right">Totale</TableHead>
-                              <TableHead className="w-20"></TableHead>
+                              <TableHead className="w-28"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1295,6 +1302,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                 <TableCell>
                                   <p className="font-medium">{item.productName}</p>
                                   <p className="text-xs text-gray-500">SKU: {item.productSku}</p>
+                                  {item.productDescription && (
+                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.productDescription}</p>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm font-mono">
+                                  {item.supplierSku || '-'}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {editingItemId === item.id ? (
@@ -1330,16 +1343,17 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                   € {(item.quantity * (item.unitPriceGross || item.unitCost)).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex justify-end gap-1">
+                                  <div className="flex justify-end gap-2">
                                     {editingItemId === item.id ? (
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
                                         onClick={saveEdit}
-                                        className="h-7 w-7 p-0"
+                                        className="h-10 w-10 p-0"
+                                        title="Salva modifiche"
                                       >
-                                        <Save className="h-4 w-4 text-green-600" />
+                                        <Save className="h-6 w-6 text-green-600" />
                                       </Button>
                                     ) : (
                                       <Button
@@ -1347,9 +1361,10 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => startEditing(item)}
-                                        className="h-7 w-7 p-0"
+                                        className="h-10 w-10 p-0"
+                                        title="Modifica"
                                       >
-                                        <Edit className="h-4 w-4" />
+                                        <Edit className="h-6 w-6 text-blue-600" />
                                       </Button>
                                     )}
                                     <Button
@@ -1357,9 +1372,10 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => setItemToDelete(item.id)}
-                                      className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                      className="h-10 w-10 p-0 text-red-600 hover:text-red-700"
+                                      title="Elimina"
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 className="h-6 w-6" />
                                     </Button>
                                   </div>
                                 </TableCell>
@@ -1463,11 +1479,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                         <TableHeader>
                           <TableRow>
                             <TableHead>Prodotto</TableHead>
+                            <TableHead className="w-32">SKU Forn.</TableHead>
                             <TableHead className="text-right">Quantità</TableHead>
                             <TableHead className="text-right">Costo Unit.</TableHead>
                             <TableHead className="text-right">IVA</TableHead>
                             <TableHead className="text-right">Totale</TableHead>
-                            <TableHead className="w-20"></TableHead>
+                            <TableHead className="w-28"></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1476,6 +1493,12 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               <TableCell>
                                 <p className="font-medium">{item.productName}</p>
                                 <p className="text-xs text-gray-500">SKU: {item.productSku}</p>
+                                {item.productDescription && (
+                                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.productDescription}</p>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm font-mono">
+                                {item.supplierSku || '-'}
                               </TableCell>
                               <TableCell className="text-right">{item.quantity}</TableCell>
                               <TableCell className="text-right">€ {item.unitCost.toFixed(2)}</TableCell>
@@ -1486,7 +1509,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                 € {(item.quantity * (item.unitPriceGross || item.unitCost)).toFixed(2)}
                               </TableCell>
                               <TableCell>
-                                <div className="flex justify-end gap-1">
+                                <div className="flex justify-end gap-2">
                                   <Button
                                     type="button"
                                     variant="ghost"
@@ -1495,18 +1518,20 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                       setCurrentStep(2);
                                       startEditing(item);
                                     }}
-                                    className="h-7 w-7 p-0"
+                                    className="h-10 w-10 p-0"
+                                    title="Modifica"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-6 w-6 text-blue-600" />
                                   </Button>
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setItemToDelete(item.id)}
-                                    className="h-7 w-7 p-0 text-red-600"
+                                    className="h-10 w-10 p-0 text-red-600"
+                                    title="Elimina"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-6 w-6" />
                                   </Button>
                                 </div>
                               </TableCell>
