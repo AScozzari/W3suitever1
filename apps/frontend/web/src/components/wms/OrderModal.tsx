@@ -22,7 +22,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, TooltipPortal } from '@/components/ui/tooltip';
 import { 
   Building2, 
   FileText, 
@@ -1165,30 +1165,38 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                       </div>
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="left" sideOffset={10} collisionPadding={20} className="bg-gray-900 text-white p-3 max-w-sm z-[9999]">
-                                    <div className="text-xs space-y-1">
-                                      <div className="font-semibold text-sm border-b border-gray-700 pb-1 mb-1">{product.name}</div>
-                                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                                        <span className="text-gray-400">SKU:</span><span className="font-mono">{product.sku || '-'}</span>
-                                        <span className="text-gray-400">EAN:</span><span className="font-mono">{product.ean || '-'}</span>
-                                        {product.brand && <><span className="text-gray-400">Brand:</span><span>{product.brand}</span></>}
-                                        {product.model && <><span className="text-gray-400">Modello:</span><span>{product.model}</span></>}
-                                        {product.color && <><span className="text-gray-400">Colore:</span><span>{product.color}</span></>}
-                                        {product.memory && <><span className="text-gray-400">Memoria:</span><span>{product.memory}</span></>}
+                                  <TooltipPortal container={dialogContainer}>
+                                    <TooltipContent 
+                                      side="bottom" 
+                                      align="start"
+                                      sideOffset={5} 
+                                      collisionPadding={10}
+                                      className="bg-gray-900 text-white p-3 max-w-xs z-[9999]"
+                                    >
+                                      <div className="text-xs space-y-1">
+                                        <div className="font-semibold text-sm border-b border-gray-700 pb-1 mb-1">{product.name}</div>
+                                        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                                          <span className="text-gray-400">SKU:</span><span className="font-mono">{product.sku || '-'}</span>
+                                          <span className="text-gray-400">EAN:</span><span className="font-mono">{product.ean || '-'}</span>
+                                          {product.brand && <><span className="text-gray-400">Brand:</span><span>{product.brand}</span></>}
+                                          {product.model && <><span className="text-gray-400">Modello:</span><span>{product.model}</span></>}
+                                          {product.color && <><span className="text-gray-400">Colore:</span><span>{product.color}</span></>}
+                                          {product.memory && <><span className="text-gray-400">Memoria:</span><span>{product.memory}</span></>}
+                                        </div>
+                                        {product.description && (
+                                          <div className="pt-1 border-t border-gray-700 mt-1">
+                                            <span className="text-gray-400">Descrizione:</span>
+                                            <p className="text-gray-300 mt-0.5">{product.description}</p>
+                                          </div>
+                                        )}
+                                        {isAlreadyInList && (
+                                          <div className="pt-1 mt-1 text-amber-400 font-medium">
+                                            ⚠️ Prodotto già presente nella lista
+                                          </div>
+                                        )}
                                       </div>
-                                      {product.description && (
-                                        <div className="pt-1 border-t border-gray-700 mt-1">
-                                          <span className="text-gray-400">Descrizione:</span>
-                                          <p className="text-gray-300 mt-0.5">{product.description}</p>
-                                        </div>
-                                      )}
-                                      {isAlreadyInList && (
-                                        <div className="pt-1 mt-1 text-amber-400 font-medium">
-                                          ⚠️ Prodotto già presente nella lista
-                                        </div>
-                                      )}
-                                    </div>
-                                  </TooltipContent>
+                                    </TooltipContent>
+                                  </TooltipPortal>
                                 </Tooltip>
                               );
                             })}
