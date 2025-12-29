@@ -1147,7 +1147,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                       </div>
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="right" className="bg-gray-900 text-white p-3 max-w-sm">
+                                  <TooltipContent side="right" sideOffset={10} collisionPadding={20} className="bg-gray-900 text-white p-3 max-w-sm z-[9999]">
                                     <div className="text-xs space-y-1">
                                       <div className="font-semibold text-sm border-b border-gray-700 pb-1 mb-1">{product.name}</div>
                                       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
@@ -1285,7 +1285,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                 value={pendingVatRegimeId} 
                                 onValueChange={setPendingVatRegimeId}
                               >
-                                <SelectTrigger className="h-8 w-20 text-sm" title="Regime IVA" data-testid="select-pending-regime">
+                                <SelectTrigger className="h-8 w-40 text-sm" title="Regime IVA" data-testid="select-pending-regime">
                                   <SelectValue placeholder="Reg." />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-48 overflow-y-auto">
@@ -1381,7 +1381,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                   )}
                                 </TableCell>
                                 <TableCell className="text-right text-gray-600">
-                                  {item.vatRate ? `${item.vatRate}%` : '-'}
+                                  {item.vatRate !== undefined ? `${item.vatRate}%` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
                                   € {(item.quantity * (item.unitPriceGross || item.unitCost)).toFixed(2)}
@@ -1547,7 +1547,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               <TableCell className="text-right">{item.quantity}</TableCell>
                               <TableCell className="text-right">€ {item.unitCost.toFixed(2)}</TableCell>
                               <TableCell className="text-right text-gray-600">
-                                {item.vatRate ? `${item.vatRate}%` : '-'}
+                                {item.vatRate !== undefined ? `${item.vatRate}%` : '-'}
                               </TableCell>
                               <TableCell className="text-right font-medium">
                                 € {(item.quantity * (item.unitPriceGross || item.unitCost)).toFixed(2)}

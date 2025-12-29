@@ -127,12 +127,12 @@ export function SuspendedOrdersDrafts({ onResume, refreshTrigger }: SuspendedOrd
           <Table>
             <TableHeader>
               <TableRow className="bg-blue-100/50">
-                <TableHead>Fornitore</TableHead>
-                <TableHead>Entità Legale</TableHead>
-                <TableHead className="text-center">Prodotti</TableHead>
-                <TableHead className="text-right">Valore</TableHead>
-                <TableHead>Ultima Modifica</TableHead>
-                <TableHead className="w-24"></TableHead>
+                <TableHead className="w-[25%]">Fornitore</TableHead>
+                <TableHead className="w-[20%]">Entità Legale</TableHead>
+                <TableHead className="w-[12%] text-center">Prodotti</TableHead>
+                <TableHead className="w-[12%] text-right">Valore</TableHead>
+                <TableHead className="w-[15%]">Ultima Modifica</TableHead>
+                <TableHead className="w-[16%] text-center">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -170,7 +170,7 @@ export function SuspendedOrdersDrafts({ onResume, refreshTrigger }: SuspendedOrd
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-center gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
