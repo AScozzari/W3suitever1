@@ -1180,7 +1180,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                   type="text"
                                   value={pendingSupplierSku}
                                   onChange={(e) => setPendingSupplierSku(e.target.value.toUpperCase())}
-                                  className={`h-8 w-28 text-center text-sm ${
+                                  className={`h-8 w-36 text-center text-sm ${
                                     productRequiresMapping 
                                       ? pendingSupplierSku 
                                         ? 'border-green-500 focus:border-green-500' 
