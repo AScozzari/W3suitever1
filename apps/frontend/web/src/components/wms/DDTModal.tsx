@@ -54,6 +54,7 @@ import {
   Link,
   Truck,
   Users,
+  User,
   Store,
   Send
 } from 'lucide-react';
@@ -62,6 +63,9 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
 import { SupplierCombobox } from './SupplierCombobox';
+import { CustomerCombobox } from './CustomerCombobox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 // ==================== INTERFACES ====================
 
@@ -354,6 +358,12 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
   
   // Order reconciliation state
   const [orderItems, setOrderItems] = useState<OrderItemFromAPI[]>([]);
+  
+  // Customer type filter (B2C/B2B)
+  const [customerTypeFilter, setCustomerTypeFilter] = useState<'all' | 'B2C' | 'B2B'>('all');
+  
+  // Notes section collapsed state
+  const [notesOpen, setNotesOpen] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
@@ -848,33 +858,113 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
 
                 {/* ==================== STEP 1: Document Data ==================== */}
                 {currentStep === 1 && (
-                  <>
-                    {/* Emittente Section */}
+                  <div className="space-y-4">
+                    {/* SEZIONE A - Header Documento (inline compatto) */}
+                    <Card className="border-blue-200 bg-blue-50/30">
+                      <CardContent className="pt-4 pb-4">
+                        <div className="grid grid-cols-3 gap-3">
+                          <FormField
+                            control={form.control}
+                            name="causale"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-medium text-gray-600">Causale DDT *</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-causale" className="h-9">
+                                      <SelectValue placeholder="Seleziona..." />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Object.entries(CAUSALE_CONFIG).map(([key, config]) => (
+                                      <SelectItem key={key} value={key}>
+                                        <div className="flex items-center gap-2">
+                                          <span>{config.label}</span>
+                                          <Badge variant="outline" className={`text-[10px] ${config.direction === 'active' ? 'border-green-300 text-green-700' : 'border-orange-300 text-orange-700'}`}>
+                                            {config.direction === 'active' ? 'Attivo' : 'Passivo'}
+                                          </Badge>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="documentNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-medium text-gray-600">Numero DDT *</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                                    <Input 
+                                      {...field} 
+                                      placeholder="DDT-2024-001234"
+                                      className="pl-8 h-9"
+                                      data-testid="input-document-number"
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="documentDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-medium text-gray-600">Data DDT *</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                                    <Input 
+                                      {...field} 
+                                      type="date"
+                                      className="pl-8 h-9"
+                                      data-testid="input-document-date"
+                                    />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* SEZIONE B - Emittente (compatta, 1 riga) */}
                     <Card>
-                      <CardContent className="pt-4">
-                        <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          Emittente
-                        </h3>
-                        
-                        <div className="grid grid-cols-2 gap-4">
+                      <CardContent className="pt-3 pb-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Building2 className="h-4 w-4 text-gray-500" />
+                          <h3 className="font-medium text-gray-900 text-sm">Emittente</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
                           <FormField
                             control={form.control}
                             name="legalEntityId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Ragione Sociale *</FormLabel>
+                                <FormLabel className="text-xs">Ragione Sociale *</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                   <FormControl>
-                                    <SelectTrigger data-testid="select-legal-entity">
-                                      <SelectValue placeholder="Seleziona ragione sociale..." />
+                                    <SelectTrigger data-testid="select-legal-entity" className="h-9">
+                                      <SelectValue placeholder="Seleziona..." />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
                                     {legalEntitiesData.map(e => (
                                       <SelectItem key={e.id} value={e.id}>
                                         {e.nome}
-                                        {e.pIva && ` (P.IVA: ${e.pIva})`}
+                                        {e.pIva && <span className="text-xs text-gray-500 ml-1">(P.IVA: {e.pIva})</span>}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -889,15 +979,15 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                             name="issuingStoreId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Sede Operativa di Emissione</FormLabel>
+                                <FormLabel className="text-xs">Sede Operativa</FormLabel>
                                 <Select 
                                   onValueChange={field.onChange} 
                                   value={field.value}
                                   disabled={!selectedLegalEntityId}
                                 >
                                   <FormControl>
-                                    <SelectTrigger data-testid="select-issuing-store">
-                                      <SelectValue placeholder={selectedLegalEntityId ? "Sede operativa (opzionale)" : "Seleziona prima ragione sociale"} />
+                                    <SelectTrigger data-testid="select-issuing-store" className="h-9">
+                                      <SelectValue placeholder={selectedLegalEntityId ? "Opzionale" : "Prima seleziona ragione sociale"} />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
@@ -917,103 +1007,123 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                       </CardContent>
                     </Card>
 
-                    {/* Causale & Destinatario Section */}
+                    {/* SEZIONE C - Destinatario (dinamica) */}
                     <Card>
-                      <CardContent className="pt-4">
-                        <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <Send className="h-4 w-4" />
-                          Causale e Destinatario
-                        </h3>
+                      <CardContent className="pt-3 pb-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Send className="h-4 w-4 text-gray-500" />
+                          <h3 className="font-medium text-gray-900 text-sm">Destinatario</h3>
+                          {causaleConfig && (
+                            <Badge variant="outline" className="text-xs">
+                              {Array.isArray(causaleConfig.recipientType) 
+                                ? causaleConfig.recipientType.map(t => t === 'customer' ? 'Cliente' : t === 'supplier' ? 'Fornitore' : 'Magazzino').join(' / ')
+                                : causaleConfig.recipientType === 'customer' ? 'Cliente' 
+                                : causaleConfig.recipientType === 'supplier' ? 'Fornitore' 
+                                : 'Magazzino'}
+                            </Badge>
+                          )}
+                        </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="causale"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Causale DDT *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger data-testid="select-causale">
-                                      <SelectValue placeholder="Seleziona causale..." />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {Object.entries(CAUSALE_CONFIG).map(([key, config]) => (
-                                      <SelectItem key={key} value={key}>
-                                        {config.label}
-                                        <span className="ml-2 text-xs text-gray-500">
-                                          ({config.direction === 'active' ? 'Attivo' : 'Passivo'})
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Recipient Type (if multiple options) */}
+                        <div className="space-y-3">
+                          {/* Recipient Type selector (if multiple options) */}
                           {causaleConfig && Array.isArray(causaleConfig.recipientType) && causaleConfig.recipientType.length > 1 && (
                             <FormField
                               control={form.control}
                               name="recipientType"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Tipo Destinatario *</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger data-testid="select-recipient-type">
-                                        <SelectValue placeholder="Seleziona tipo..." />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
+                                  <FormLabel className="text-xs">Tipo Destinatario *</FormLabel>
+                                  <FormControl>
+                                    <RadioGroup
+                                      onValueChange={field.onChange}
+                                      value={field.value}
+                                      className="flex gap-4"
+                                    >
                                       {getRecipientOptions().map(opt => (
-                                        <SelectItem key={opt.value} value={opt.value}>
-                                          {opt.label}
-                                        </SelectItem>
+                                        <div key={opt.value} className="flex items-center space-x-2">
+                                          <RadioGroupItem value={opt.value} id={`recipient-${opt.value}`} />
+                                          <Label htmlFor={`recipient-${opt.value}`} className="text-sm cursor-pointer">
+                                            {opt.value === 'customer' && <Users className="inline h-3.5 w-3.5 mr-1" />}
+                                            {opt.value === 'supplier' && <Truck className="inline h-3.5 w-3.5 mr-1" />}
+                                            {opt.value === 'store' && <Warehouse className="inline h-3.5 w-3.5 mr-1" />}
+                                            {opt.label}
+                                          </Label>
+                                        </div>
                                       ))}
-                                    </SelectContent>
-                                  </Select>
+                                    </RadioGroup>
+                                  </FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
                           )}
 
-                          {/* Customer selector */}
+                          {/* Customer selector with B2C/B2B filter */}
                           {selectedRecipientType === 'customer' && (
-                            <FormField
-                              control={form.control}
-                              name="customerId"
-                              render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                  <FormLabel>Cliente *</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-4">
+                                <Label className="text-xs font-medium text-gray-600">Tipo Cliente:</Label>
+                                <RadioGroup
+                                  value={customerTypeFilter}
+                                  onValueChange={(v) => setCustomerTypeFilter(v as 'all' | 'B2C' | 'B2B')}
+                                  className="flex gap-3"
+                                >
+                                  <div className="flex items-center space-x-1.5">
+                                    <RadioGroupItem value="all" id="customer-all" className="h-3.5 w-3.5" />
+                                    <Label htmlFor="customer-all" className="text-xs cursor-pointer">Tutti</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-1.5">
+                                    <RadioGroupItem value="B2C" id="customer-b2c" className="h-3.5 w-3.5" />
+                                    <Label htmlFor="customer-b2c" className="text-xs cursor-pointer flex items-center gap-1">
+                                      <User className="h-3 w-3 text-green-500" />
+                                      Privato
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-1.5">
+                                    <RadioGroupItem value="B2B" id="customer-b2b" className="h-3.5 w-3.5" />
+                                    <Label htmlFor="customer-b2b" className="text-xs cursor-pointer flex items-center gap-1">
+                                      <Building2 className="h-3 w-3 text-blue-500" />
+                                      Business
+                                    </Label>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                              
+                              <FormField
+                                control={form.control}
+                                name="customerId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">Cliente *</FormLabel>
                                     <FormControl>
-                                      <SelectTrigger data-testid="select-customer">
-                                        <SelectValue placeholder={customersLoading ? "Caricamento..." : "Seleziona cliente..."} />
-                                      </SelectTrigger>
+                                      <CustomerCombobox
+                                        customers={customersData.map(c => ({
+                                          id: c.id,
+                                          code: c.code,
+                                          name: c.name,
+                                          legalName: c.legalName,
+                                          vatNumber: c.vatNumber,
+                                          fiscalCode: c.fiscalCode,
+                                          customerType: c.customerType as 'B2C' | 'B2B',
+                                          address: c.address,
+                                          city: c.city,
+                                          province: c.province,
+                                          cap: c.cap,
+                                        }))}
+                                        value={field.value || ''}
+                                        onValueChange={field.onChange}
+                                        customerTypeFilter={customerTypeFilter}
+                                        placeholder={customersLoading ? "Caricamento..." : "Cerca cliente..."}
+                                        disabled={customersLoading}
+                                        portalContainer={dialogContainer}
+                                        data-testid="select-customer"
+                                      />
                                     </FormControl>
-                                    <SelectContent>
-                                      {customersData.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>
-                                          <div className="flex flex-col">
-                                            <span>{c.name}</span>
-                                            <span className="text-xs text-gray-500">
-                                              {c.vatNumber && `P.IVA: ${c.vatNumber}`}
-                                              {c.fiscalCode && ` | CF: ${c.fiscalCode}`}
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
                           )}
 
                           {/* Supplier selector */}
@@ -1022,15 +1132,15 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                               control={form.control}
                               name="supplierId"
                               render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                  <FormLabel>Fornitore *</FormLabel>
+                                <FormItem>
+                                  <FormLabel className="text-xs">Fornitore *</FormLabel>
                                   <FormControl>
                                     <SupplierCombobox
                                       suppliers={suppliersData.map(s => ({ id: s.id, name: s.name, code: s.code }))}
                                       value={field.value || ''}
                                       onValueChange={field.onChange}
-                                      placeholder={suppliersLoading ? "Caricamento..." : "Seleziona fornitore..."}
-                                      searchPlaceholder="Cerca fornitore..."
+                                      placeholder={suppliersLoading ? "Caricamento..." : "Cerca fornitore..."}
+                                      searchPlaceholder="Nome, codice, P.IVA..."
                                       disabled={suppliersLoading}
                                       portalContainer={dialogContainer}
                                       data-testid="select-supplier"
@@ -1048,11 +1158,11 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                               control={form.control}
                               name="destinationStoreId"
                               render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                  <FormLabel>Magazzino Destinazione *</FormLabel>
+                                <FormItem>
+                                  <FormLabel className="text-xs">Magazzino Destinazione *</FormLabel>
                                   <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
-                                      <SelectTrigger data-testid="select-destination-store">
+                                      <SelectTrigger data-testid="select-destination-store" className="h-9">
                                         <SelectValue placeholder="Seleziona magazzino..." />
                                       </SelectTrigger>
                                     </FormControl>
@@ -1069,102 +1179,87 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                               )}
                             />
                           )}
-                        </div>
 
-                        {/* Recipient details card */}
-                        {(selectedCustomerId || selectedSupplierId || form.watch('destinationStoreId')) && (
-                          <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Dettagli Destinatario</h4>
-                            {selectedRecipientType === 'customer' && selectedCustomerId && (
-                              <>
-                                {(() => {
-                                  const customer = customersData.find(c => c.id === selectedCustomerId);
-                                  if (!customer) return null;
-                                  return (
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                      <div><span className="text-gray-500">Nome:</span> {customer.name}</div>
-                                      {customer.vatNumber && <div><span className="text-gray-500">P.IVA:</span> {customer.vatNumber}</div>}
-                                      {customer.fiscalCode && <div><span className="text-gray-500">CF:</span> {customer.fiscalCode}</div>}
-                                      {customer.address && <div><span className="text-gray-500">Indirizzo:</span> {customer.address}</div>}
-                                      {customer.city && <div><span className="text-gray-500">Città:</span> {customer.city} ({customer.province})</div>}
-                                      {customer.pec && <div><span className="text-gray-500">PEC:</span> {customer.pec}</div>}
-                                      {customer.sdiCode && <div><span className="text-gray-500">SDI:</span> {customer.sdiCode}</div>}
-                                    </div>
-                                  );
-                                })()}
-                              </>
-                            )}
-                            {selectedRecipientType === 'supplier' && selectedSupplierId && (
-                              <>
-                                {(() => {
-                                  const supplier = suppliersData.find(s => s.id === selectedSupplierId);
-                                  if (!supplier) return null;
-                                  return (
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                      <div><span className="text-gray-500">Nome:</span> {supplier.name}</div>
-                                      {supplier.vatNumber && <div><span className="text-gray-500">P.IVA:</span> {supplier.vatNumber}</div>}
-                                      {supplier.address && <div><span className="text-gray-500">Indirizzo:</span> {supplier.address}</div>}
-                                      {supplier.city && <div><span className="text-gray-500">Città:</span> {supplier.city} ({supplier.province})</div>}
-                                      {supplier.pec && <div><span className="text-gray-500">PEC:</span> {supplier.pec}</div>}
-                                    </div>
-                                  );
-                                })()}
-                              </>
-                            )}
-                            {selectedRecipientType === 'store' && form.watch('destinationStoreId') && (
-                              <>
-                                {(() => {
-                                  const store = storesData.find(s => s.id === form.watch('destinationStoreId'));
-                                  if (!store) return null;
-                                  return (
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                      <div><span className="text-gray-500">Nome:</span> {store.name}</div>
-                                      <div><span className="text-gray-500">Codice:</span> {store.code}</div>
-                                      {store.address && <div><span className="text-gray-500">Indirizzo:</span> {store.address}</div>}
-                                      {store.city && <div><span className="text-gray-500">Città:</span> {store.city} ({store.province})</div>}
-                                    </div>
-                                  );
-                                })()}
-                              </>
-                            )}
-                          </div>
-                        )}
+                          {/* Recipient details preview (compact) */}
+                          {(selectedCustomerId || selectedSupplierId || form.watch('destinationStoreId')) && (
+                            <div className="p-2 bg-gray-50 rounded border text-xs">
+                              {selectedRecipientType === 'customer' && selectedCustomerId && (() => {
+                                const customer = customersData.find(c => c.id === selectedCustomerId);
+                                if (!customer) return null;
+                                return (
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
+                                    <span><strong>{customer.name}</strong></span>
+                                    {customer.vatNumber && <span>P.IVA: {customer.vatNumber}</span>}
+                                    {customer.fiscalCode && <span>CF: {customer.fiscalCode}</span>}
+                                    {customer.city && <span>{customer.city} ({customer.province})</span>}
+                                  </div>
+                                );
+                              })()}
+                              {selectedRecipientType === 'supplier' && selectedSupplierId && (() => {
+                                const supplier = suppliersData.find(s => s.id === selectedSupplierId);
+                                if (!supplier) return null;
+                                return (
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
+                                    <span><strong>{supplier.name}</strong></span>
+                                    {supplier.vatNumber && <span>P.IVA: {supplier.vatNumber}</span>}
+                                    {supplier.city && <span>{supplier.city} ({supplier.province})</span>}
+                                  </div>
+                                );
+                              })()}
+                              {selectedRecipientType === 'store' && form.watch('destinationStoreId') && (() => {
+                                const store = storesData.find(s => s.id === form.watch('destinationStoreId'));
+                                if (!store) return null;
+                                return (
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
+                                    <span><strong>{store.name}</strong> ({store.code})</span>
+                                    {store.city && <span>{store.city} ({store.province})</span>}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
 
-                    {/* Document Details Section */}
-                    <Card>
-                      <CardContent className="pt-4">
-                        <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Dati Documento
-                        </h3>
-                        
-                        <div className="grid grid-cols-2 gap-4">
+                    {/* SEZIONE D - Ordine Riferimento (solo per acquisti/vendite) */}
+                    {(selectedCausale === 'purchase' || selectedCausale === 'sale') && (
+                      <Card className="border-dashed">
+                        <CardContent className="pt-3 pb-3">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Link className="h-4 w-4 text-gray-500" />
+                            <h3 className="font-medium text-gray-900 text-sm">Ordine di Riferimento</h3>
+                            <Badge variant="outline" className="text-[10px]">Opzionale</Badge>
+                          </div>
                           <FormField
                             control={form.control}
                             name="orderId"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Ordine di Riferimento</FormLabel>
                                 <Select 
                                   onValueChange={field.onChange} 
                                   value={field.value}
                                   disabled={ordersData.length === 0}
                                 >
                                   <FormControl>
-                                    <SelectTrigger data-testid="select-order">
-                                      <SelectValue placeholder={ordersData.length === 0 ? "Nessun ordine aperto" : "Seleziona ordine (opzionale)"} />
+                                    <SelectTrigger data-testid="select-order" className="h-9">
+                                      <SelectValue placeholder={
+                                        ordersData.length === 0 
+                                          ? (selectedCausale === 'purchase' ? "Nessun ordine fornitore aperto" : "Nessun ordine cliente aperto")
+                                          : "Collega a un ordine esistente..."
+                                      } />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
                                     <SelectItem value="none">Nessun ordine</SelectItem>
                                     {ordersData.map(o => (
                                       <SelectItem key={o.id} value={o.id}>
-                                        {o.orderNumber}
-                                        <span className="ml-2 text-xs text-gray-500">
-                                          ({o.receivedQuantity}/{o.totalQuantity} ricevuti)
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">{o.orderNumber}</span>
+                                          <Badge variant="secondary" className="text-[10px]">
+                                            {o.receivedQuantity}/{o.totalQuantity} ricevuti
+                                          </Badge>
+                                        </div>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1173,75 +1268,50 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                               </FormItem>
                             )}
                           />
+                        </CardContent>
+                      </Card>
+                    )}
 
-                          <div /> {/* Spacer */}
-
-                          <FormField
-                            control={form.control}
-                            name="documentNumber"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Numero DDT *</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <Input 
-                                      {...field} 
-                                      placeholder="Es. DDT-2024-001234"
-                                      className="pl-9"
-                                      data-testid="input-document-number"
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="documentDate"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Data DDT *</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <Input 
-                                      {...field} 
-                                      type="date"
-                                      className="pl-9"
-                                      data-testid="input-document-date"
-                                    />
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="notes"
-                            render={({ field }) => (
-                              <FormItem className="col-span-2">
-                                <FormLabel>Note</FormLabel>
-                                <FormControl>
-                                  <Textarea 
-                                    {...field} 
-                                    placeholder="Note aggiuntive sul DDT..."
-                                    rows={2}
-                                    data-testid="input-notes"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </>
+                    {/* SEZIONE E - Note (collapsible) */}
+                    <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
+                      <Card className="border-dashed">
+                        <CardContent className="pt-3 pb-3">
+                          <CollapsibleTrigger asChild>
+                            <button 
+                              type="button"
+                              className="flex items-center gap-2 w-full text-left hover:bg-gray-50 -mx-2 px-2 py-1 rounded transition-colors"
+                            >
+                              <FileText className="h-4 w-4 text-gray-500" />
+                              <h3 className="font-medium text-gray-900 text-sm flex-1">Note</h3>
+                              <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${notesOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="pt-3">
+                              <FormField
+                                control={form.control}
+                                name="notes"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Textarea 
+                                        {...field} 
+                                        placeholder="Note aggiuntive sul DDT..."
+                                        rows={2}
+                                        className="text-sm"
+                                        data-testid="input-notes"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </CardContent>
+                      </Card>
+                    </Collapsible>
+                  </div>
                 )}
 
                 {/* ==================== STEP 2: Products ==================== */}
