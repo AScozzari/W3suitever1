@@ -22,6 +22,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Building2, 
   FileText, 
@@ -1115,38 +1116,66 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
 
                       {/* Search results dropdown */}
                       {showSearchResults && searchResults.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                          {searchResults.map((product: any) => {
-                            const isAlreadyInList = items.some(i => i.productId === product.id);
-                            return (
-                              <div
-                                key={product.id}
-                                className={`p-3 cursor-pointer border-b last:border-b-0 ${
-                                  isAlreadyInList 
-                                    ? 'bg-amber-50 hover:bg-amber-100' 
-                                    : 'hover:bg-gray-50'
-                                }`}
-                                onClick={() => handleProductSelect(product)}
-                                data-testid={`search-result-${product.id}`}
-                                title={isAlreadyInList ? 'Prodotto già presente nella lista' : ''}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <p className="font-medium text-gray-900">{product.name}</p>
-                                    <p className="text-sm text-gray-500">
-                                      SKU: {product.sku} {product.ean && `| EAN: ${product.ean}`}
-                                    </p>
-                                  </div>
-                                  {isAlreadyInList && (
-                                    <span className="ml-2 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-200 rounded">
-                                      Già in lista
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <TooltipProvider delayDuration={300}>
+                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {searchResults.map((product: any) => {
+                              const isAlreadyInList = items.some(i => i.productId === product.id);
+                              return (
+                                <Tooltip key={product.id}>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`p-3 cursor-pointer border-b last:border-b-0 ${
+                                        isAlreadyInList 
+                                          ? 'bg-amber-50 hover:bg-amber-100' 
+                                          : 'hover:bg-gray-50'
+                                      }`}
+                                      onClick={() => handleProductSelect(product)}
+                                      data-testid={`search-result-${product.id}`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                          <p className="font-medium text-gray-900">{product.name}</p>
+                                          <p className="text-sm text-gray-500">
+                                            SKU: {product.sku} {product.ean && `| EAN: ${product.ean}`}
+                                          </p>
+                                        </div>
+                                        {isAlreadyInList && (
+                                          <span className="ml-2 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-200 rounded">
+                                            Già in lista
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="bg-gray-900 text-white p-3 max-w-sm">
+                                    <div className="text-xs space-y-1">
+                                      <div className="font-semibold text-sm border-b border-gray-700 pb-1 mb-1">{product.name}</div>
+                                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                                        <span className="text-gray-400">SKU:</span><span className="font-mono">{product.sku || '-'}</span>
+                                        <span className="text-gray-400">EAN:</span><span className="font-mono">{product.ean || '-'}</span>
+                                        {product.brand && <><span className="text-gray-400">Brand:</span><span>{product.brand}</span></>}
+                                        {product.model && <><span className="text-gray-400">Modello:</span><span>{product.model}</span></>}
+                                        {product.color && <><span className="text-gray-400">Colore:</span><span>{product.color}</span></>}
+                                        {product.memory && <><span className="text-gray-400">Memoria:</span><span>{product.memory}</span></>}
+                                      </div>
+                                      {product.description && (
+                                        <div className="pt-1 border-t border-gray-700 mt-1">
+                                          <span className="text-gray-400">Descrizione:</span>
+                                          <p className="text-gray-300 mt-0.5">{product.description}</p>
+                                        </div>
+                                      )}
+                                      {isAlreadyInList && (
+                                        <div className="pt-1 mt-1 text-amber-400 font-medium">
+                                          ⚠️ Prodotto già presente nella lista
+                                        </div>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                          </div>
+                        </TooltipProvider>
                       )}
 
                       {/* No results - show mapping option (Flow 2) */}
