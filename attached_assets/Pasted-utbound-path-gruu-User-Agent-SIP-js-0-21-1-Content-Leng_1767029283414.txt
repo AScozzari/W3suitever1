@@ -1,0 +1,161 @@
+utbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+installHook.js:1 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | Not connected.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+onTransportError @ sip__js.js?v=fac8f799:8717
+onTransportError @ sip__js.js?v=fac8f799:8778
+onTransportError @ sip__js.js?v=fac8f799:7824
+(anonime) @ sip__js.js?v=fac8f799:7337
+Promise.catch
+send @ sip__js.js?v=fac8f799:7326
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832
+setTimeout
+registered @ sip__js.js?v=fac8f799:5830
+onAccept @ sip__js.js?v=fac8f799:5662
+receiveResponse @ sip__js.js?v=fac8f799:8749
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request transport error. Generating internal 503 Service Unavailable.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+onTransportError @ sip__js.js?v=fac8f799:8718
+onTransportError @ sip__js.js?v=fac8f799:8778
+onTransportError @ sip__js.js?v=fac8f799:7824
+(anonime) @ sip__js.js?v=fac8f799:7337
+Promise.catch
+send @ sip__js.js?v=fac8f799:7326
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832
+setTimeout
+registered @ sip__js.js?v=fac8f799:5830
+onAccept @ sip__js.js?v=fac8f799:5662
+receiveResponse @ sip__js.js?v=fac8f799:8749
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 503
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onReject @ sip__js.js?v=fac8f799:5694
+receiveResponse @ sip__js.js?v=fac8f799:8759
+onTransportError @ sip__js.js?v=fac8f799:8722
+onTransportError @ sip__js.js?v=fac8f799:8778
+onTransportError @ sip__js.js?v=fac8f799:7824
+(anonime) @ sip__js.js?v=fac8f799:7337
+Promise.catch
+send @ sip__js.js?v=fac8f799:7326
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832
+setTimeout
+registered @ sip__js.js?v=fac8f799:5830
+onAccept @ sip__js.js?v=fac8f799:5662
+receiveResponse @ sip__js.js?v=fac8f799:8749
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+useSIPRegistration.ts:204 📡 Registration state: Unregistered
+sip__js.js?v=fac8f799:6965 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+installHook.js:1 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK2567131 | Not connected.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+logTransportError @ sip__js.js?v=fac8f799:7315
+(anonime) @ sip__js.js?v=fac8f799:7735
+Promise.catch
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832
+setTimeout
+registered @ sip__js.js?v=fac8f799:5830
+onAccept @ sip__js.js?v=fac8f799:5662
+receiveResponse @ sip__js.js?v=fac8f799:8749
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK2567131 | Transport error occurred in non-INVITE client transaction with id z9hG4bK2567131.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6959
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+error @ sip__js.js?v=fac8f799:6869
+logTransportError @ sip__js.js?v=fac8f799:7316
+(anonime) @ sip__js.js?v=fac8f799:7735
+Promise.catch
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7734
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+(anonime) @ sip__js.js?v=fac8f799:5832
+setTimeout
+registered @ sip__js.js?v=fac8f799:5830
+onAccept @ sip__js.js?v=fac8f799:5662
+receiveResponse @ sip__js.js?v=fac8f799:8749
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'errore
+installHook.js:1 Mon Dec 29 2025 18:27:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK2567131 | Failed to send initial outgoing request.
