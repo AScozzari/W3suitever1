@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -975,8 +975,15 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
 
             {/* Step 2: Products */}
             {currentStep === 2 && (
-              <div className="space-y-4">
-                <Card>
+              <div className="space-y-4 min-h-[450px]">
+                {/* Card 1: Add Products */}
+                <Card className="border-blue-200">
+                  <CardHeader className="pb-3 bg-blue-50/50 border-b border-blue-100">
+                    <CardTitle className="text-base font-medium flex items-center gap-2 text-blue-800">
+                      <Plus className="h-4 w-4" />
+                      Aggiungi Prodotti
+                    </CardTitle>
+                  </CardHeader>
                   <CardContent className="pt-4 space-y-4">
                     {/* Search mode toggle */}
                     <div className="flex items-center gap-2">
@@ -1370,7 +1377,21 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                         </CardContent>
                       </Card>
                     )}
+                  </CardContent>
+                </Card>
 
+                {/* Card 2: Products in Order */}
+                <Card className="border-gray-200">
+                  <CardHeader className="pb-3 bg-gray-50 border-b">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <Package className="h-4 w-4 text-gray-600" />
+                      Prodotti nell'Ordine
+                      {items.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">{items.length}</Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
                     {/* Items list */}
                     {items.length > 0 ? (
                       <div className="border rounded-md">
