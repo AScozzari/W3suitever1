@@ -194,6 +194,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   const [pendingUnitCost, setPendingUnitCost] = useState<string>('');
   const [pendingVatRateId, setPendingVatRateId] = useState<string>('');
   const [pendingVatRegimeId, setPendingVatRegimeId] = useState<string>('');
+  const [pendingSupplierSku, setPendingSupplierSku] = useState<string>('');
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -354,6 +355,8 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       setItems([]);
       setCurrentDraftId(null);
       setPendingItem(null);
+      setPendingSupplierSku('');
+      setUnmappedSupplierSku('');
       setSearchQuery('');
       setShowSearchResults(false);
       form.reset();
@@ -373,14 +376,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
-    // If we have unmappedSupplierSku, create mapping first
-    if (unmappedSupplierSku && selectedSupplierId) {
-      createMappingMutation.mutate({
-        supplierId: selectedSupplierId,
-        supplierSku: unmappedSupplierSku,
-        productId: product.id,
-      });
-    }
+    // Note: Mapping is now created in addPendingItem to support both flows
 
     // Set pending item for inline quantity/cost entry
     setPendingItem({
@@ -393,7 +389,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     setPendingUnitCost('');
     setSearchQuery('');
     setShowSearchResults(false);
-    setUnmappedSupplierSku('');
+    // Note: Do NOT reset unmappedSupplierSku here - it's needed for addPendingItem to create the mapping
 
     // Focus quantity input
     setTimeout(() => {
@@ -431,6 +427,16 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
+    // Create mapping if pendingSupplierSku is set (Flow 1 - Catalogo Interno with SKU mapping)
+    const skuToMap = pendingSupplierSku || unmappedSupplierSku;
+    if (skuToMap && selectedSupplierId) {
+      createMappingMutation.mutate({
+        supplierId: selectedSupplierId,
+        supplierSku: skuToMap,
+        productId: pendingItem.productId,
+      });
+    }
+
     const selectedVatRate = vatRatesData.find(r => r.id === pendingVatRateId);
     const vatPercent = selectedVatRate?.rate || 0;
     const vatAmount = cost * (vatPercent / 100);
@@ -457,6 +463,8 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     setPendingUnitCost('');
     setPendingVatRateId('');
     setPendingVatRegimeId('');
+    setPendingSupplierSku('');
+    setUnmappedSupplierSku('');
 
     // Focus back on search
     setTimeout(() => {
@@ -1090,12 +1098,26 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                     {pendingItem && (
                       <Card className="border-green-200 bg-green-50/50">
                         <CardContent className="pt-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 min-w-0">
+                          <div className="flex items-end gap-2">
+                            <div className="flex-1 min-w-0 pb-4">
                               <p className="font-medium truncate">{pendingItem.productName}</p>
                               <p className="text-xs text-gray-500">SKU: {pendingItem.productSku}</p>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-end gap-2 flex-shrink-0">
+                              {/* SKU Fornitore - optional field for mapping */}
+                              {searchMode === 'internal' && selectedSupplierId && !unmappedSupplierSku && (
+                                <div className="text-center">
+                                  <Input
+                                    type="text"
+                                    value={pendingSupplierSku}
+                                    onChange={(e) => setPendingSupplierSku(e.target.value.toUpperCase())}
+                                    className="h-8 w-28 text-center text-sm"
+                                    placeholder="SKU Forn."
+                                    data-testid="input-pending-supplier-sku"
+                                  />
+                                  <span className="text-[10px] text-gray-400">SKU Forn.</span>
+                                </div>
+                              )}
                               <div className="text-center">
                                 <Input
                                   ref={quantityInputRef}
@@ -1160,24 +1182,33 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                 </Select>
                                 <span className="text-[10px] text-gray-400">Regime</span>
                               </div>
-                              <Button
-                                type="button"
-                                size="icon"
-                                onClick={addPendingItem}
-                                className="h-8 w-8 bg-green-600 hover:bg-green-700"
-                                data-testid="btn-add-item"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setPendingItem(null)}
-                                className="h-8 w-8 text-gray-500 hover:text-red-500"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                              <div className="text-center">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  onClick={addPendingItem}
+                                  className="h-8 w-8 bg-green-600 hover:bg-green-700"
+                                  data-testid="btn-add-item"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                                <span className="text-[10px] text-transparent">.</span>
+                              </div>
+                              <div className="text-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setPendingItem(null);
+                                    setPendingSupplierSku('');
+                                  }}
+                                  className="h-8 w-8 text-gray-500 hover:text-red-500"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                                <span className="text-[10px] text-transparent">.</span>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
