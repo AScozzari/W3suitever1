@@ -193,6 +193,10 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     productSku: string;
     productEan?: string;
     productDescription?: string;
+    productBrand?: string;
+    productModel?: string;
+    productColor?: string;
+    productMemory?: string;
   } | null>(null);
   const [pendingQuantity, setPendingQuantity] = useState<string>('1');
   const [pendingUnitCost, setPendingUnitCost] = useState<string>('');
@@ -413,6 +417,10 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       productSku: product.sku,
       productEan: product.ean,
       productDescription: product.description,
+      productBrand: product.brand,
+      productModel: product.model,
+      productColor: product.color,
+      productMemory: product.memory,
     });
     setPendingQuantity('1');
     setPendingUnitCost('');
@@ -688,9 +696,19 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
 
     // Save to localStorage
     const existingDrafts = JSON.parse(localStorage.getItem('wms_order_drafts') || '[]');
-    const updatedDrafts = currentDraftId 
-      ? existingDrafts.map((d: OrderDraft) => d.id === currentDraftId ? draft : d)
-      : [...existingDrafts, draft];
+    let updatedDrafts;
+    if (currentDraftId) {
+      // Check if draft still exists (it may have been removed on resume)
+      const draftExists = existingDrafts.some((d: OrderDraft) => d.id === currentDraftId);
+      if (draftExists) {
+        updatedDrafts = existingDrafts.map((d: OrderDraft) => d.id === currentDraftId ? draft : d);
+      } else {
+        // Draft was removed on resume, add it back
+        updatedDrafts = [...existingDrafts, draft];
+      }
+    } else {
+      updatedDrafts = [...existingDrafts, draft];
+    }
     localStorage.setItem('wms_order_drafts', JSON.stringify(updatedDrafts));
 
     toast({ title: 'Ordine sospeso', description: 'Potrai riprenderlo in seguito' });
@@ -1147,7 +1165,7 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                                       </div>
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="right" sideOffset={10} collisionPadding={20} className="bg-gray-900 text-white p-3 max-w-sm z-[9999]">
+                                  <TooltipContent side="left" sideOffset={10} collisionPadding={20} className="bg-gray-900 text-white p-3 max-w-sm z-[9999]">
                                     <div className="text-xs space-y-1">
                                       <div className="font-semibold text-sm border-b border-gray-700 pb-1 mb-1">{product.name}</div>
                                       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
@@ -1218,10 +1236,30 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                     {pendingItem && (
                       <Card className="border-green-200 bg-green-50/50">
                         <CardContent className="pt-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-start gap-4">
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{pendingItem.productName}</p>
-                              <p className="text-xs text-gray-500">SKU: {pendingItem.productSku}</p>
+                              <p className="font-medium text-base">{pendingItem.productName}</p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-gray-600">
+                                <span><span className="text-gray-400">SKU:</span> <span className="font-mono">{pendingItem.productSku}</span></span>
+                                {pendingItem.productEan && (
+                                  <span><span className="text-gray-400">EAN:</span> <span className="font-mono">{pendingItem.productEan}</span></span>
+                                )}
+                                {pendingItem.productBrand && (
+                                  <span><span className="text-gray-400">Brand:</span> {pendingItem.productBrand}</span>
+                                )}
+                                {pendingItem.productModel && (
+                                  <span><span className="text-gray-400">Modello:</span> {pendingItem.productModel}</span>
+                                )}
+                                {pendingItem.productColor && (
+                                  <span><span className="text-gray-400">Colore:</span> {pendingItem.productColor}</span>
+                                )}
+                                {pendingItem.productMemory && (
+                                  <span><span className="text-gray-400">Memoria:</span> {pendingItem.productMemory}</span>
+                                )}
+                              </div>
+                              {pendingItem.productDescription && (
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-1">{pendingItem.productDescription}</p>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {/* SKU Fornitore - required if no existing mapping, optional otherwise */}
