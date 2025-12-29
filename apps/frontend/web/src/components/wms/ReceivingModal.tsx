@@ -2720,27 +2720,27 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
                       </Badge>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                    <div className="bg-white p-2 rounded border">
-                      <span className="text-gray-500 text-xs">Fornitore</span>
-                      <p className="font-medium truncate">{suppliersData.find(s => s.id === form.getValues('supplierId'))?.name || '-'}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div className="bg-white p-3 rounded border">
+                      <span className="text-gray-500 text-xs block mb-1">Fornitore</span>
+                      <p className="font-medium text-sm leading-tight">{suppliersData.find(s => s.id === form.getValues('supplierId'))?.name || '-'}</p>
                     </div>
-                    <div className="bg-white p-2 rounded border">
-                      <span className="text-gray-500 text-xs">DDT/Fattura</span>
-                      <p className="font-medium">{form.getValues('documentNumber')}</p>
+                    <div className="bg-white p-3 rounded border">
+                      <span className="text-gray-500 text-xs block mb-1">DDT/Fattura</span>
+                      <p className="font-medium text-sm">{form.getValues('documentNumber')}</p>
                     </div>
-                    <div className="bg-white p-2 rounded border">
-                      <span className="text-gray-500 text-xs">Data Documento</span>
-                      <p className="font-medium">{form.getValues('documentDate')}</p>
+                    <div className="bg-white p-3 rounded border">
+                      <span className="text-gray-500 text-xs block mb-1">Data Documento</span>
+                      <p className="font-medium text-sm">{form.getValues('documentDate')}</p>
                     </div>
-                    <div className="bg-white p-2 rounded border">
-                      <span className="text-gray-500 text-xs">Magazzino</span>
-                      <p className="font-medium truncate">{storesData.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
+                    <div className="bg-white p-3 rounded border">
+                      <span className="text-gray-500 text-xs block mb-1">Magazzino</span>
+                      <p className="font-medium text-sm leading-tight">{storesData.find(s => s.id === form.getValues('storeId'))?.name || '-'}</p>
                     </div>
                     {form.getValues('notes') && (
-                      <div className="bg-white p-2 rounded border col-span-2 md:col-span-1">
-                        <span className="text-gray-500 text-xs">Note</span>
-                        <p className="font-medium text-xs truncate" title={form.getValues('notes')}>{form.getValues('notes')}</p>
+                      <div className="bg-white p-3 rounded border col-span-2 md:col-span-4">
+                        <span className="text-gray-500 text-xs block mb-1">Note</span>
+                        <p className="font-medium text-sm">{form.getValues('notes')}</p>
                       </div>
                     )}
                   </div>
