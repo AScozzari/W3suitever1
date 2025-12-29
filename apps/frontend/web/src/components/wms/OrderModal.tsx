@@ -1095,19 +1095,36 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                       {/* Search results dropdown */}
                       {showSearchResults && searchResults.length > 0 && (
                         <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                          {searchResults.map((product: any) => (
-                            <div
-                              key={product.id}
-                              className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                              onClick={() => handleProductSelect(product)}
-                              data-testid={`search-result-${product.id}`}
-                            >
-                              <p className="font-medium text-gray-900">{product.name}</p>
-                              <p className="text-sm text-gray-500">
-                                SKU: {product.sku} {product.ean && `| EAN: ${product.ean}`}
-                              </p>
-                            </div>
-                          ))}
+                          {searchResults.map((product: any) => {
+                            const isAlreadyInList = items.some(i => i.productId === product.id);
+                            return (
+                              <div
+                                key={product.id}
+                                className={`p-3 cursor-pointer border-b last:border-b-0 ${
+                                  isAlreadyInList 
+                                    ? 'bg-amber-50 hover:bg-amber-100' 
+                                    : 'hover:bg-gray-50'
+                                }`}
+                                onClick={() => handleProductSelect(product)}
+                                data-testid={`search-result-${product.id}`}
+                                title={isAlreadyInList ? 'Prodotto già presente nella lista' : ''}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <p className="font-medium text-gray-900">{product.name}</p>
+                                    <p className="text-sm text-gray-500">
+                                      SKU: {product.sku} {product.ean && `| EAN: ${product.ean}`}
+                                    </p>
+                                  </div>
+                                  {isAlreadyInList && (
+                                    <span className="ml-2 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-200 rounded">
+                                      Già in lista
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
