@@ -688,6 +688,51 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     }, 50);
   };
 
+  // Handle supplier SKU mapping - aligned with ReceivingModal
+  const handleSaveSupplierSku = async () => {
+    if (!selectedProduct || !pendingSupplierSkuInput.trim()) return;
+    
+    const supplierSkuValue = pendingSupplierSkuInput.trim();
+    
+    // Update product with new supplier SKU
+    const updatedProduct: Product = {
+      ...selectedProduct,
+      supplierSku: supplierSkuValue
+    };
+    
+    // Save mapping to backend (if we have a supplier selected)
+    if (selectedSupplierId) {
+      try {
+        await apiRequest('/api/wms/product-supplier-mappings', {
+          method: 'POST',
+          body: JSON.stringify({
+            productId: selectedProduct.id,
+            supplierId: selectedSupplierId,
+            supplierSku: supplierSkuValue,
+            useInternalSku: false,
+            isPrimary: false
+          })
+        });
+        toast({
+          title: "Mapping SKU salvato",
+          description: `${selectedProduct.sku} → ${supplierSkuValue}`,
+        });
+      } catch (error) {
+        console.error('Error saving SKU mapping:', error);
+        // Continue anyway - local mapping is sufficient for this session
+      }
+    }
+    
+    setSelectedProduct(updatedProduct);
+    setShowSupplierSkuPrompt(false);
+    setPendingSupplierSkuInput('');
+  };
+
+  const handleSkipSupplierSku = () => {
+    setShowSupplierSkuPrompt(false);
+    setPendingSupplierSkuInput('');
+  };
+
   const removeSerial = (index: number) => {
     setCurrentSerials(prev => prev.filter((_, i) => i !== index));
     setTimeout(() => serialInputRef.current?.focus(), 50);
@@ -1775,196 +1820,279 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                             )}
                           </div>
 
-                          {/* Selected product form */}
+                          {/* Selected product form - ALIGNED WITH ReceivingModal */}
                           {selectedProduct && (
-                            <div className="p-4 border rounded-lg bg-white space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium">{selectedProduct.name}</p>
-                                  <p className="text-sm text-gray-500">SKU: {selectedProduct.sku}</p>
+                            <Card className="border-orange-200 bg-orange-50/50">
+                              <CardContent className="pt-4">
+                                <div className="flex items-start justify-between mb-4">
+                                  <div>
+                                    <p className="font-medium text-gray-900">{selectedProduct.name}</p>
+                                    <p className="text-sm text-gray-500">
+                                      SKU: {selectedProduct.sku}
+                                      {selectedProduct.supplierSku && (
+                                        <span className="ml-2 text-green-600">| SKU Fornitore: {selectedProduct.supplierSku}</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={resetProductInput}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={resetProductInput}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
 
-                              {/* Fields layout depends on product type */}
-                              {/* For serialized products (IMEI, ICCID, MAC): Quantity + Price (no Lot) */}
-                              {/* For non-serialized products: Quantity + Lot + Price */}
-                              {selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) ? (
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <Label className="text-xs">Quantità <span className="text-red-500">*</span></Label>
-                                    <Input
-                                      ref={quantityInputRef}
-                                      type="number"
-                                      min="1"
-                                      value={targetQuantity}
-                                      onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
-                                      className="h-9"
-                                      data-testid="input-quantity"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">Prezzo</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={unitPriceInput}
-                                      onChange={(e) => setUnitPriceInput(e.target.value)}
-                                      placeholder="€"
-                                      className="h-9"
-                                      data-testid="input-price"
-                                    />
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="grid grid-cols-3 gap-3">
-                                  <div>
-                                    <Label className="text-xs">Quantità <span className="text-red-500">*</span></Label>
-                                    <Input
-                                      ref={quantityInputRef}
-                                      type="number"
-                                      min="1"
-                                      value={targetQuantity}
-                                      onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
-                                      className="h-9"
-                                      data-testid="input-quantity"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">Lotto</Label>
-                                    <div className="flex gap-2">
-                                      <Input
-                                        value={lotInput}
-                                        onChange={(e) => setLotInput(e.target.value)}
-                                        placeholder="Es. LOT-2024-00001"
-                                        className="h-9"
-                                        data-testid="input-lot"
-                                      />
+                                {/* Prompt to add supplier SKU if missing - LIKE ReceivingModal */}
+                                {showSupplierSkuPrompt && (
+                                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                    <div className="flex items-center gap-2 text-blue-700 mb-2">
+                                      <Hash className="h-4 w-4" />
+                                      <span className="font-medium">Abbina SKU Fornitore</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-2">
+                                      Questo prodotto non ha uno SKU fornitore associato per questo fornitore. Vuoi aggiungerlo ora?
+                                    </p>
+                                    <div className="flex gap-2 items-end">
+                                      <div className="flex-1">
+                                        <Label className="text-xs text-gray-500">SKU Fornitore</Label>
+                                        <Input
+                                          value={pendingSupplierSkuInput}
+                                          onChange={(e) => setPendingSupplierSkuInput(e.target.value)}
+                                          placeholder="Inserisci codice fornitore..."
+                                          className="mt-1"
+                                          data-testid="input-pending-supplier-sku"
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && pendingSupplierSkuInput.trim()) {
+                                              e.preventDefault();
+                                              handleSaveSupplierSku();
+                                            }
+                                          }}
+                                        />
+                                      </div>
                                       <Button
                                         type="button"
-                                        variant="outline"
                                         size="sm"
-                                        className="h-9 px-2"
-                                        onClick={() => setLotInput(generateLot())}
+                                        onClick={handleSaveSupplierSku}
+                                        disabled={!pendingSupplierSkuInput.trim()}
+                                        data-testid="button-save-supplier-sku"
                                       >
-                                        Auto
+                                        <Save className="h-4 w-4 mr-1" />
+                                        Salva
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={handleSkipSupplierSku}
+                                        data-testid="button-skip-supplier-sku"
+                                      >
+                                        Salta
                                       </Button>
                                     </div>
                                   </div>
-                                  <div>
-                                    <Label className="text-xs">Prezzo</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={unitPriceInput}
-                                      onChange={(e) => setUnitPriceInput(e.target.value)}
-                                      placeholder="€"
-                                      className="h-9"
-                                      data-testid="input-price"
-                                    />
-                                  </div>
-                                </div>
-                              )}
+                                )}
 
-                              {/* VAT fields - aligned with ReceivingModal */}
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <Label className="text-xs">IVA</Label>
-                                  <Select value={vatRateIdInput || "__none__"} onValueChange={(v) => setVatRateIdInput(v === "__none__" ? '' : v)}>
-                                    <SelectTrigger className="h-9" data-testid="select-vat-rate">
-                                      <SelectValue placeholder="IVA" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="__none__">-</SelectItem>
-                                      {vatRatesData.map(v => (
-                                        <SelectItem key={v.id} value={v.id}>
-                                          {v.rate}%
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label className="text-xs">Regime</Label>
-                                  <Select value={vatRegimeIdInput || "__none__"} onValueChange={(v) => setVatRegimeIdInput(v === "__none__" ? '' : v)}>
-                                    <SelectTrigger className="h-9 w-full" data-testid="select-vat-regime">
-                                      <SelectValue placeholder="Regime" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="__none__">-</SelectItem>
-                                      {vatRegimesData.map(r => (
-                                        <SelectItem key={r.id} value={r.id}>
-                                          {r.code}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              {/* Serial acquisition for serializable products */}
-                              {selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) && (
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium">
-                                      {getSerialLabel(selectedProduct.serialType)} ({currentSerials.length}/{targetQuantity * (selectedProduct.serialCount || 1)})
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                      <Label className="text-xs text-gray-500">Bulk Mode</Label>
+                                {/* SERIALIZABLE PRODUCTS - Identical layout to ReceivingModal */}
+                                {selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) ? (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1">
+                                        <Label>Quantità da caricare</Label>
+                                        <Input
+                                          ref={quantityInputRef}
+                                          type="number"
+                                          min={1}
+                                          value={targetQuantity}
+                                          onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
+                                          className="mt-1"
+                                          data-testid="input-quantity"
+                                        />
+                                      </div>
+                                      <div className="flex-1">
+                                        <Label>Prezzo Acquisto <span className="text-red-500">*</span></Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={unitPriceInput}
+                                          onChange={(e) => setUnitPriceInput(e.target.value)}
+                                          placeholder="€"
+                                          className="mt-1"
+                                          data-testid="input-unit-price"
+                                        />
+                                      </div>
+                                      <div className="w-24">
+                                        <Label>IVA</Label>
+                                        <Select value={vatRateIdInput} onValueChange={setVatRateIdInput}>
+                                          <SelectTrigger className="mt-1" data-testid="select-vat-rate">
+                                            <SelectValue placeholder="IVA" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {vatRatesData.map((rate) => (
+                                              <SelectItem key={rate.id} value={rate.id}>
+                                                {rate.rate}%
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="w-28">
+                                        <Label>Regime</Label>
+                                        <Select value={vatRegimeIdInput} onValueChange={setVatRegimeIdInput}>
+                                          <SelectTrigger className="mt-1" data-testid="select-vat-regime">
+                                            <SelectValue placeholder="Regime" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {vatRegimesData.map((regime) => (
+                                              <SelectItem key={regime.id} value={regime.id}>
+                                                {regime.code}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Bulk Load Mode Toggle - IDENTICAL TO ReceivingModal */}
+                                    <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-md">
+                                      <div className="flex items-center gap-2">
+                                        <Package className="h-4 w-4 text-amber-600" />
+                                        <div>
+                                          <span className="font-medium text-amber-800">Carico Massivo</span>
+                                          <p className="text-xs text-amber-600">
+                                            Carica senza inserire ogni singolo {getSerialLabel(selectedProduct.serialType)}
+                                          </p>
+                                        </div>
+                                      </div>
                                       <Switch
                                         checked={bulkLoadMode}
-                                        onCheckedChange={setBulkLoadMode}
-                                        data-testid="switch-bulk-mode"
+                                        onCheckedChange={(checked) => {
+                                          setBulkLoadMode(checked);
+                                          if (checked) {
+                                            setCurrentSerials([]);
+                                          }
+                                        }}
+                                        data-testid="switch-bulk-load"
                                       />
                                     </div>
-                                  </div>
-
-                                  {!bulkLoadMode && (
-                                    <>
-                                      <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                          <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    
+                                    {bulkLoadMode ? (
+                                      /* Bulk Load Mode: Show lot input instead of serial scanning */
+                                      <div className="space-y-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                        <div className="flex items-center gap-2 text-gray-700">
+                                          <Package className="h-4 w-4" />
+                                          <span className="font-medium">Numero Lotto (obbligatorio)</span>
+                                        </div>
+                                        <div className="flex gap-2">
                                           <Input
-                                            ref={serialInputRef}
-                                            value={serialInput}
-                                            onChange={(e) => setSerialInput(e.target.value)}
-                                            onKeyDown={handleSerialScan}
-                                            placeholder={`Scansiona ${getSerialLabel(selectedProduct.serialType)}...`}
-                                            className={`pl-9 pr-16 transition-colors ${
-                                              isSerialInputValid() 
-                                                ? 'border-green-500 focus:border-green-600 focus:ring-green-500' 
-                                                : ''
-                                            }`}
-                                            data-testid="input-serial"
+                                            value={lotInput}
+                                            onChange={(e) => setLotInput(e.target.value.toUpperCase())}
+                                            placeholder="Es. LOT-2025-00123"
+                                            className="flex-1"
+                                            data-testid="input-bulk-lot"
                                           />
-                                          {/* Countdown display */}
-                                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                                            {serialInput.replace(/[^0-9A-Fa-f]/g, '').length}/{getSerialExpectedLength(selectedProduct?.serialType)}
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setLotInput(generateLot())}
+                                            data-testid="button-generate-lot"
+                                          >
+                                            <RefreshCw className="h-4 w-4 mr-1" />
+                                            Auto
+                                          </Button>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                          Verranno caricate {targetQuantity} unità senza tracciamento {getSerialLabel(selectedProduct.serialType)} individuale
+                                        </p>
+                                      </div>
+                                    ) : (
+                                    <div className="space-y-3">
+                                      {/* Dual-serial info banner */}
+                                      {(selectedProduct.serialCount || 1) > 1 && (
+                                        <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                                          <Hash className="h-4 w-4 text-blue-600" />
+                                          <span className="text-blue-700">
+                                            Prodotto con <strong>{selectedProduct.serialCount} {getSerialLabel(selectedProduct.serialType)}</strong> per unità 
+                                            (es. Dual-SIM). Servono {targetQuantity * (selectedProduct.serialCount || 1)} seriali totali.
                                           </span>
                                         </div>
-                                        <Button
-                                          type="button"
-                                          onClick={addSerialManually}
-                                          disabled={!isSerialInputValid()}
-                                          className={`transition-colors ${
-                                            isSerialInputValid() 
-                                              ? 'bg-green-600 hover:bg-green-700' 
-                                              : 'bg-gray-300'
-                                          }`}
-                                          data-testid="btn-add-serial"
-                                        >
-                                          <Plus className="h-4 w-4" />
-                                        </Button>
+                                      )}
+                                      
+                                      {/* Progress bar and counter - IDENTICAL TO ReceivingModal */}
+                                      <div className="flex items-center justify-between mb-1">
+                                        <Label className="flex items-center gap-2">
+                                          <ScanLine className="h-4 w-4" />
+                                          Spara {getSerialLabel(selectedProduct.serialType)}
+                                        </Label>
+                                        <span className={`text-sm font-medium ${
+                                          currentSerials.length >= targetQuantity * (selectedProduct.serialCount || 1) ? 'text-green-600' : 'text-orange-600'
+                                        }`}>
+                                          {(selectedProduct.serialCount || 1) > 1 ? (
+                                            <>
+                                              Unità {Math.floor(currentSerials.length / (selectedProduct.serialCount || 1)) + (currentSerials.length % (selectedProduct.serialCount || 1) > 0 ? 1 : 0)} / {targetQuantity} 
+                                              <span className="text-gray-400 ml-1">
+                                                ({currentSerials.length} / {targetQuantity * (selectedProduct.serialCount || 1)} seriali)
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <>{currentSerials.length} / {targetQuantity} acquisiti</>
+                                          )}
+                                        </span>
                                       </div>
+                                      
+                                      {/* Progress bar */}
+                                      <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                          className={`h-2 rounded-full transition-all duration-300 ${
+                                            currentSerials.length >= targetQuantity * (selectedProduct.serialCount || 1) ? 'bg-green-500' : 'bg-orange-500'
+                                          }`}
+                                          style={{ width: `${Math.min((currentSerials.length / (targetQuantity * (selectedProduct.serialCount || 1))) * 100, 100)}%` }}
+                                        />
+                                      </div>
+
+                                      {/* Single input field - always active until complete */}
+                                      {currentSerials.length < targetQuantity * (selectedProduct.serialCount || 1) && (
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <Input
+                                              ref={serialInputRef}
+                                              value={serialInput}
+                                              onChange={(e) => setSerialInput(e.target.value)}
+                                              onKeyDown={handleSerialScan}
+                                              placeholder={
+                                                (selectedProduct.serialCount || 1) > 1
+                                                  ? `Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${(currentSerials.length % (selectedProduct.serialCount || 1)) + 1}...`
+                                                  : `Scansiona o digita ${getSerialLabel(selectedProduct.serialType)} #${currentSerials.length + 1}...`
+                                              }
+                                              className={`pr-16 transition-colors ${
+                                                isSerialInputValid() 
+                                                  ? 'border-green-500 focus:border-green-600 focus:ring-green-500' 
+                                                  : ''
+                                              }`}
+                                              data-testid="input-serial"
+                                            />
+                                            {/* Countdown display */}
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                                              {serialInput.replace(/[^0-9A-Fa-f]/g, '').length}/{getSerialExpectedLength(selectedProduct?.serialType)}
+                                            </span>
+                                          </div>
+                                          <Button
+                                            type="button"
+                                            onClick={addSerialManually}
+                                            disabled={!isSerialInputValid()}
+                                            className={`transition-colors ${
+                                              isSerialInputValid() 
+                                                ? 'bg-green-600 hover:bg-green-700' 
+                                                : 'bg-gray-300'
+                                            }`}
+                                            data-testid="btn-add-serial"
+                                          >
+                                            <Plus className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      )}
 
                                       {currentSerials.length > 0 && (
                                         <div className="max-h-32 overflow-y-auto border rounded p-2 space-y-1">
@@ -1984,22 +2112,105 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                           ))}
                                         </div>
                                       )}
-                                    </>
-                                  )}
-                                </div>
-                              )}
+                                    </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* NON-SERIALIZABLE PRODUCTS - with Lot field */
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1">
+                                        <Label>Quantità da caricare</Label>
+                                        <Input
+                                          ref={quantityInputRef}
+                                          type="number"
+                                          min={1}
+                                          value={targetQuantity}
+                                          onChange={(e) => setTargetQuantity(parseInt(e.target.value) || 1)}
+                                          className="mt-1"
+                                          data-testid="input-quantity"
+                                        />
+                                      </div>
+                                      <div className="flex-1">
+                                        <Label>Lotto</Label>
+                                        <div className="flex gap-2 mt-1">
+                                          <Input
+                                            value={lotInput}
+                                            onChange={(e) => setLotInput(e.target.value.toUpperCase())}
+                                            placeholder="Es. LOT-2025-00123"
+                                            data-testid="input-lot"
+                                          />
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setLotInput(generateLot())}
+                                            data-testid="button-generate-lot"
+                                          >
+                                            Auto
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="flex-1">
+                                        <Label>Prezzo Acquisto <span className="text-red-500">*</span></Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          value={unitPriceInput}
+                                          onChange={(e) => setUnitPriceInput(e.target.value)}
+                                          placeholder="€"
+                                          className="mt-1"
+                                          data-testid="input-unit-price"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-24">
+                                        <Label>IVA</Label>
+                                        <Select value={vatRateIdInput} onValueChange={setVatRateIdInput}>
+                                          <SelectTrigger className="mt-1" data-testid="select-vat-rate">
+                                            <SelectValue placeholder="IVA" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {vatRatesData.map((rate) => (
+                                              <SelectItem key={rate.id} value={rate.id}>
+                                                {rate.rate}%
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="w-28">
+                                        <Label>Regime</Label>
+                                        <Select value={vatRegimeIdInput} onValueChange={setVatRegimeIdInput}>
+                                          <SelectTrigger className="mt-1" data-testid="select-vat-regime">
+                                            <SelectValue placeholder="Regime" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {vatRegimesData.map((regime) => (
+                                              <SelectItem key={regime.id} value={regime.id}>
+                                                {regime.code}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
 
-                              <Button
-                                type="button"
-                                onClick={addItemToList}
-                                disabled={!canAddItem()}
-                                className="w-full"
-                                data-testid="btn-add-item"
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Aggiungi alla Lista
-                              </Button>
-                            </div>
+                                <Button
+                                  type="button"
+                                  onClick={addItemToList}
+                                  disabled={!canAddItem()}
+                                  className="w-full mt-3"
+                                  data-testid="btn-add-item"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Aggiungi alla Lista
+                                </Button>
+                              </CardContent>
+                            </Card>
                           )}
                         </div>
                       </CardContent>
