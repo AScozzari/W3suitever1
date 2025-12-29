@@ -114,19 +114,28 @@ interface SupplierFromAPI {
 
 interface CustomerFromAPI {
   id: string;
-  code: string;
-  name: string;
-  legalName?: string;
-  vatNumber?: string;
+  code?: string;
+  // B2C fields
+  firstName?: string;
+  lastName?: string;
   fiscalCode?: string;
+  email?: string;
+  phone?: string;
+  birthDate?: string;
+  addresses?: { type: string; street: string; city: string; zip: string; province: string; country?: string }[];
+  // B2B fields
+  companyName?: string;
+  vatNumber?: string;
+  pecEmail?: string;
+  sdiCode?: string;
+  atecoCode?: string;
+  primaryContactName?: string;
+  sedi?: { type: string; address: string; city: string; zip: string; province: string }[];
+  legalForm?: string;
+  industry?: string;
+  // Common
   status: string;
   customerType: string;
-  address?: string;
-  city?: string;
-  province?: string;
-  cap?: string;
-  pec?: string;
-  sdiCode?: string;
 }
 
 interface OrderFromAPI {
@@ -430,6 +439,12 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     enabled: open,
   });
 
+  // Auto-generate next DDT number
+  const { data: nextDdtNumberData } = useQuery<{ nextNumber: string; hasConfig: boolean }>({
+    queryKey: ['/api/wms/documents/next-number/ddt'],
+    enabled: open,
+  });
+
   const { data: categoriesData = [] } = useQuery<{ id: string; nome: string }[]>({
     queryKey: ['/api/wms/categories'],
     enabled: open && currentStep === 2,
@@ -486,6 +501,13 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
       form.reset();
     }
   }, [open]);
+
+  // Auto-set DDT number when data is loaded
+  useEffect(() => {
+    if (open && nextDdtNumberData?.nextNumber && !form.getValues('documentNumber')) {
+      form.setValue('documentNumber', nextDdtNumberData.nextNumber);
+    }
+  }, [open, nextDdtNumberData, form]);
 
   // Update recipient type when causale changes (use ref to prevent infinite loop)
   const prevCausale = useRef<string | null>(null);
@@ -596,6 +618,13 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
         setSerialScanMode(false);
       }
     }
+  };
+
+  // Generate lot number (aligned with ReceivingModal)
+  const generateLot = (): string => {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 99999).toString().padStart(5, '0');
+    return `LOT-${year}-${random}`;
   };
 
   const removeSerial = (index: number) => {
@@ -1097,19 +1126,30 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                     <FormLabel className="text-xs">Cliente *</FormLabel>
                                     <FormControl>
                                       <CustomerCombobox
-                                        customers={customersData.map(c => ({
-                                          id: c.id,
-                                          code: c.code,
-                                          name: c.name,
-                                          legalName: c.legalName,
-                                          vatNumber: c.vatNumber,
-                                          fiscalCode: c.fiscalCode,
-                                          customerType: c.customerType as 'B2C' | 'B2B',
-                                          address: c.address,
-                                          city: c.city,
-                                          province: c.province,
-                                          cap: c.cap,
-                                        }))}
+                                        customers={customersData.map(c => {
+                                          // Extract primary address from addresses array
+                                          const primaryAddress = c.addresses?.[0];
+                                          const primarySede = c.sedi?.[0];
+                                          return {
+                                            id: c.id,
+                                            code: c.code,
+                                            // B2C: firstName + lastName, B2B: companyName
+                                            name: c.customerType?.toUpperCase() === 'B2B' 
+                                              ? (c.companyName || c.primaryContactName || '-') 
+                                              : (c.firstName || '-'),
+                                            surname: c.customerType?.toUpperCase() === 'B2C' ? c.lastName : undefined,
+                                            legalName: c.customerType?.toUpperCase() === 'B2B' ? c.companyName : undefined,
+                                            vatNumber: c.vatNumber,
+                                            fiscalCode: c.fiscalCode,
+                                            phone: c.phone,
+                                            email: c.email || c.pecEmail,
+                                            customerType: c.customerType as 'B2C' | 'B2B',
+                                            address: primaryAddress?.street || primarySede?.address,
+                                            city: primaryAddress?.city || primarySede?.city,
+                                            province: primaryAddress?.province || primarySede?.province,
+                                            cap: primaryAddress?.zip || primarySede?.zip,
+                                          };
+                                        })}
                                         value={field.value || ''}
                                         onValueChange={field.onChange}
                                         customerTypeFilter={customerTypeFilter}
@@ -1180,39 +1220,125 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                             />
                           )}
 
-                          {/* Recipient details preview (compact) */}
+                          {/* ANAGRAFICA COMPLETA DESTINATARIO */}
                           {(selectedCustomerId || selectedSupplierId || form.watch('destinationStoreId')) && (
-                            <div className="p-2 bg-gray-50 rounded border text-xs">
+                            <div className="p-3 bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 shadow-sm">
+                              {/* Customer full details */}
                               {selectedRecipientType === 'customer' && selectedCustomerId && (() => {
                                 const customer = customersData.find(c => c.id === selectedCustomerId);
                                 if (!customer) return null;
+                                const isB2B = customer.customerType?.toUpperCase() === 'B2B';
+                                const primaryAddress = customer.addresses?.[0];
+                                const primarySede = customer.sedi?.[0];
+                                const displayName = isB2B 
+                                  ? customer.companyName 
+                                  : `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+                                
                                 return (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
-                                    <span><strong>{customer.name}</strong></span>
-                                    {customer.vatNumber && <span>P.IVA: {customer.vatNumber}</span>}
-                                    {customer.fiscalCode && <span>CF: {customer.fiscalCode}</span>}
-                                    {customer.city && <span>{customer.city} ({customer.province})</span>}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 border-b pb-2">
+                                      {isB2B ? (
+                                        <Building2 className="h-5 w-5 text-blue-500" />
+                                      ) : (
+                                        <User className="h-5 w-5 text-green-500" />
+                                      )}
+                                      <span className="font-semibold text-gray-900">{displayName || '-'}</span>
+                                      <Badge variant={isB2B ? "default" : "secondary"} className="text-[10px] ml-auto">
+                                        {isB2B ? 'Business' : 'Privato'}
+                                      </Badge>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                      {isB2B && customer.vatNumber && (
+                                        <div><span className="text-gray-500">P.IVA:</span> <span className="font-medium">{customer.vatNumber}</span></div>
+                                      )}
+                                      {customer.fiscalCode && (
+                                        <div><span className="text-gray-500">C.F.:</span> <span className="font-medium">{customer.fiscalCode}</span></div>
+                                      )}
+                                      {(customer.email || customer.pecEmail) && (
+                                        <div><span className="text-gray-500">Email:</span> <span className="font-medium">{customer.email || customer.pecEmail}</span></div>
+                                      )}
+                                      {customer.phone && (
+                                        <div><span className="text-gray-500">Tel:</span> <span className="font-medium">{customer.phone}</span></div>
+                                      )}
+                                      {isB2B && customer.sdiCode && (
+                                        <div><span className="text-gray-500">SDI:</span> <span className="font-medium">{customer.sdiCode}</span></div>
+                                      )}
+                                      {isB2B && customer.pecEmail && (
+                                        <div><span className="text-gray-500">PEC:</span> <span className="font-medium">{customer.pecEmail}</span></div>
+                                      )}
+                                    </div>
+                                    {/* Address */}
+                                    {(primaryAddress || primarySede) && (
+                                      <div className="pt-1 border-t text-xs">
+                                        <span className="text-gray-500">Indirizzo:</span>{' '}
+                                        <span className="font-medium">
+                                          {primaryAddress?.street || primarySede?.address}
+                                          {(primaryAddress?.zip || primarySede?.zip) && `, ${primaryAddress?.zip || primarySede?.zip}`}
+                                          {(primaryAddress?.city || primarySede?.city) && ` ${primaryAddress?.city || primarySede?.city}`}
+                                          {(primaryAddress?.province || primarySede?.province) && ` (${primaryAddress?.province || primarySede?.province})`}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })()}
+                              {/* Supplier full details */}
                               {selectedRecipientType === 'supplier' && selectedSupplierId && (() => {
                                 const supplier = suppliersData.find(s => s.id === selectedSupplierId);
                                 if (!supplier) return null;
                                 return (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
-                                    <span><strong>{supplier.name}</strong></span>
-                                    {supplier.vatNumber && <span>P.IVA: {supplier.vatNumber}</span>}
-                                    {supplier.city && <span>{supplier.city} ({supplier.province})</span>}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 border-b pb-2">
+                                      <Truck className="h-5 w-5 text-purple-500" />
+                                      <span className="font-semibold text-gray-900">{supplier.legalName || supplier.name}</span>
+                                      <Badge variant="outline" className="text-[10px] ml-auto">{supplier.code}</Badge>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                      {supplier.vatNumber && (
+                                        <div><span className="text-gray-500">P.IVA:</span> <span className="font-medium">{supplier.vatNumber}</span></div>
+                                      )}
+                                      {supplier.pec && (
+                                        <div><span className="text-gray-500">PEC:</span> <span className="font-medium">{supplier.pec}</span></div>
+                                      )}
+                                      {supplier.city && (
+                                        <div className="col-span-2">
+                                          <span className="text-gray-500">Sede:</span>{' '}
+                                          <span className="font-medium">
+                                            {supplier.address && `${supplier.address}, `}
+                                            {supplier.cap && `${supplier.cap} `}
+                                            {supplier.city}
+                                            {supplier.province && ` (${supplier.province})`}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })()}
+                              {/* Store full details */}
                               {selectedRecipientType === 'store' && form.watch('destinationStoreId') && (() => {
                                 const store = storesData.find(s => s.id === form.watch('destinationStoreId'));
                                 if (!store) return null;
                                 return (
-                                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
-                                    <span><strong>{store.name}</strong> ({store.code})</span>
-                                    {store.city && <span>{store.city} ({store.province})</span>}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 border-b pb-2">
+                                      <Warehouse className="h-5 w-5 text-amber-500" />
+                                      <span className="font-semibold text-gray-900">{store.name}</span>
+                                      <Badge variant="outline" className="text-[10px] ml-auto">{store.code}</Badge>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                      {store.city && (
+                                        <div className="col-span-2">
+                                          <span className="text-gray-500">Indirizzo:</span>{' '}
+                                          <span className="font-medium">
+                                            {store.address && `${store.address}, `}
+                                            {store.cap && `${store.cap} `}
+                                            {store.city}
+                                            {store.province && ` (${store.province})`}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })()}
@@ -1593,7 +1719,7 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
 
                               <div className="grid grid-cols-3 gap-3">
                                 <div>
-                                  <Label className="text-xs">Quantità</Label>
+                                  <Label className="text-xs">Quantità <span className="text-red-500">*</span></Label>
                                   <Input
                                     ref={quantityInputRef}
                                     type="number"
@@ -1605,59 +1731,70 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                   />
                                 </div>
                                 <div>
-                                  <Label className="text-xs">Prezzo Netto (opz.)</Label>
+                                  <Label className="text-xs">Lotto</Label>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      value={lotInput}
+                                      onChange={(e) => setLotInput(e.target.value)}
+                                      placeholder="Es. LOT-2024-00001"
+                                      className="h-9"
+                                      data-testid="input-lot"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-9 px-2"
+                                      onClick={() => setLotInput(generateLot())}
+                                    >
+                                      Auto
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Prezzo</Label>
                                   <Input
                                     type="number"
                                     step="0.01"
                                     min="0"
                                     value={unitPriceInput}
                                     onChange={(e) => setUnitPriceInput(e.target.value)}
-                                    placeholder="0.00"
+                                    placeholder="€"
                                     className="h-9"
                                     data-testid="input-price"
                                   />
                                 </div>
-                                <div>
-                                  <Label className="text-xs">Lotto (opz.)</Label>
-                                  <Input
-                                    value={lotInput}
-                                    onChange={(e) => setLotInput(e.target.value)}
-                                    placeholder="Lotto"
-                                    className="h-9"
-                                    data-testid="input-lot"
-                                  />
-                                </div>
                               </div>
 
-                              {/* VAT fields */}
+                              {/* VAT fields - aligned with ReceivingModal */}
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <Label className="text-xs">Aliquota IVA (opz.)</Label>
+                                  <Label className="text-xs">IVA</Label>
                                   <Select value={vatRateIdInput || "__none__"} onValueChange={(v) => setVatRateIdInput(v === "__none__" ? '' : v)}>
-                                    <SelectTrigger className="h-9">
-                                      <SelectValue placeholder="Seleziona..." />
+                                    <SelectTrigger className="h-9" data-testid="select-vat-rate">
+                                      <SelectValue placeholder="IVA" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="__none__">Non specificata</SelectItem>
+                                      <SelectItem value="__none__">-</SelectItem>
                                       {vatRatesData.map(v => (
                                         <SelectItem key={v.id} value={v.id}>
-                                          {v.name} ({v.rate}%)
+                                          {v.rate}%
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
                                   </Select>
                                 </div>
                                 <div>
-                                  <Label className="text-xs">Regime Fiscale (opz.)</Label>
+                                  <Label className="text-xs">Regime</Label>
                                   <Select value={vatRegimeIdInput || "__none__"} onValueChange={(v) => setVatRegimeIdInput(v === "__none__" ? '' : v)}>
-                                    <SelectTrigger className="h-9 w-full">
-                                      <SelectValue placeholder="Seleziona..." />
+                                    <SelectTrigger className="h-9 w-full" data-testid="select-vat-regime">
+                                      <SelectValue placeholder="Regime" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="__none__">Non specificato</SelectItem>
+                                      <SelectItem value="__none__">-</SelectItem>
                                       {vatRegimesData.map(r => (
                                         <SelectItem key={r.id} value={r.id}>
-                                          {r.name}
+                                          {r.code}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
