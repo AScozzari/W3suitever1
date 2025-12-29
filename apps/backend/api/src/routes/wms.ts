@@ -59,6 +59,8 @@ import {
   // Receiving Drafts
   wmsReceivingDrafts,
   insertReceivingDraftSchema,
+  // CRM Customers
+  crmCustomers,
   // WMS Documents
   wmsDocuments,
   wmsDocumentItems,
@@ -12865,6 +12867,308 @@ router.get("/vat-regimes", rbacMiddleware, async (req: Request, res: Response) =
   } catch (error) {
     logger.error('Error fetching VAT regimes', { error });
     res.status(500).json({ error: "Failed to fetch VAT regimes" });
+  }
+});
+
+// ==================== CRM CUSTOMERS API ====================
+
+/**
+ * GET /api/crm/customers
+ * Fetch customers for DDT and other documents
+ */
+router.get("/crm/customers", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { search, type, status, limit = '50' } = req.query;
+    const limitNum = Math.min(parseInt(limit as string) || 50, 200);
+
+    let query = db.select({
+      id: crmCustomers.id,
+      code: sql<string>`COALESCE(${crmCustomers.id}::text, '')`,
+      name: sql<string>`CASE 
+        WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName})
+        ELSE COALESCE(${crmCustomers.companyName}, CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName}))
+      END`,
+      legalName: crmCustomers.companyName,
+      vatNumber: crmCustomers.vatNumber,
+      fiscalCode: crmCustomers.fiscalCode,
+      status: crmCustomers.status,
+      customerType: crmCustomers.customerType,
+      email: crmCustomers.email,
+      phone: crmCustomers.phone,
+      pecEmail: crmCustomers.pecEmail,
+      sdiCode: crmCustomers.sdiCode,
+      addresses: crmCustomers.addresses,
+    })
+    .from(crmCustomers)
+    .where(eq(crmCustomers.tenantId, tenantId))
+    .$dynamic();
+
+    const conditions: any[] = [eq(crmCustomers.tenantId, tenantId)];
+
+    if (search && typeof search === 'string' && search.length >= 2) {
+      conditions.push(
+        or(
+          ilike(crmCustomers.companyName, `%${search}%`),
+          ilike(crmCustomers.firstName, `%${search}%`),
+          ilike(crmCustomers.lastName, `%${search}%`),
+          ilike(crmCustomers.email, `%${search}%`),
+          ilike(crmCustomers.vatNumber, `%${search}%`),
+          ilike(crmCustomers.fiscalCode, `%${search}%`)
+        )
+      );
+    }
+
+    if (type && typeof type === 'string') {
+      conditions.push(eq(crmCustomers.customerType, type as any));
+    }
+
+    if (status && typeof status === 'string') {
+      conditions.push(eq(crmCustomers.status, status));
+    }
+
+    const customers = await db.select({
+      id: crmCustomers.id,
+      code: sql<string>`${crmCustomers.id}::text`,
+      name: sql<string>`CASE 
+        WHEN ${crmCustomers.customerType} = 'b2c' THEN CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName})
+        ELSE COALESCE(${crmCustomers.companyName}, CONCAT(${crmCustomers.firstName}, ' ', ${crmCustomers.lastName}))
+      END`,
+      legalName: crmCustomers.companyName,
+      vatNumber: crmCustomers.vatNumber,
+      fiscalCode: crmCustomers.fiscalCode,
+      status: crmCustomers.status,
+      customerType: crmCustomers.customerType,
+      email: crmCustomers.email,
+      phone: crmCustomers.phone,
+      pecEmail: crmCustomers.pecEmail,
+      sdiCode: crmCustomers.sdiCode,
+    })
+    .from(crmCustomers)
+    .where(and(...conditions))
+    .orderBy(desc(crmCustomers.createdAt))
+    .limit(limitNum);
+
+    res.json(customers);
+  } catch (error) {
+    logger.error('Error fetching customers', { error });
+    res.status(500).json({ error: "Failed to fetch customers" });
+  }
+});
+
+/**
+ * GET /api/wms/orders
+ * Fetch orders for DDT reconciliation (open orders for supplier/customer)
+ * Used by DDTModal to load order items for reconciliation
+ */
+router.get("/orders", rbacMiddleware, async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { supplierId, customerId, status = 'draft' } = req.query;
+
+    const conditions: any[] = [
+      eq(wmsDocuments.tenantId, tenantId),
+      eq(wmsDocuments.documentType, 'order')
+    ];
+
+    if (status && typeof status === 'string') {
+      conditions.push(eq(wmsDocuments.status, status as any));
+    }
+
+    if (supplierId && typeof supplierId === 'string') {
+      conditions.push(eq(wmsDocuments.supplierId, supplierId));
+    }
+
+    if (customerId && typeof customerId === 'string') {
+      conditions.push(eq(wmsDocuments.customerId, customerId));
+    }
+
+    const orders = await db.select({
+      id: wmsDocuments.id,
+      orderNumber: wmsDocuments.documentNumber,
+      supplierId: wmsDocuments.supplierId,
+      customerId: wmsDocuments.customerId,
+      status: wmsDocuments.status,
+      totalItems: wmsDocuments.totalItems,
+      totalQuantity: wmsDocuments.totalQuantity,
+      documentDate: wmsDocuments.documentDate,
+      expectedDeliveryDate: wmsDocuments.expectedDeliveryDate,
+    })
+    .from(wmsDocuments)
+    .where(and(...conditions))
+    .orderBy(desc(wmsDocuments.createdAt))
+    .limit(50);
+
+    // For each order, fetch items with residual quantities
+    const ordersWithItems = await Promise.all(orders.map(async (order) => {
+      const items = await db.select({
+        id: wmsDocumentItems.id,
+        productId: wmsDocumentItems.productId,
+        productName: sql<string>`''`, // Will be filled from products table
+        sku: sql<string>`''`,
+        supplierSku: sql<string>`''`,
+        ean: wmsDocumentItems.ean,
+        quantityOrdered: wmsDocumentItems.quantity,
+        quantityReceived: wmsDocumentItems.receivedQuantity,
+        quantityResidual: sql<number>`${wmsDocumentItems.quantity} - COALESCE(${wmsDocumentItems.receivedQuantity}, 0)`,
+      })
+      .from(wmsDocumentItems)
+      .where(eq(wmsDocumentItems.documentId, order.id))
+      .orderBy(wmsDocumentItems.lineNumber);
+
+      // Calculate total received quantity
+      const totalReceived = items.reduce((sum, item) => sum + (item.quantityReceived || 0), 0);
+
+      return {
+        ...order,
+        items,
+        receivedQuantity: totalReceived,
+      };
+    }));
+
+    res.json(ordersWithItems);
+  } catch (error) {
+    logger.error('Error fetching orders', { error });
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/variance-summary
+ * Aggregation query for Backorder/Overage dashboard
+ * Returns counts of items with variance (partial or extra)
+ */
+router.get("/documents/variance-summary", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { dateFrom, dateTo, documentType } = req.query;
+
+    // Validate and sanitize date inputs (ISO date format only)
+    const dateFromValue = dateFrom && typeof dateFrom === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom) ? dateFrom : null;
+    const dateToValue = dateTo && typeof dateTo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateTo) ? dateTo : null;
+    
+    // Validate documentType against allowed values
+    const allowedDocTypes = ['order', 'ddt', 'adjustment_report'];
+    const docTypeValue = documentType && typeof documentType === 'string' && allowedDocTypes.includes(documentType) ? documentType : null;
+
+    // Build parameterized query conditions
+    const dateFromCondition = dateFromValue ? sql`AND d.document_date >= ${dateFromValue}` : sql``;
+    const dateToCondition = dateToValue ? sql`AND d.document_date <= ${dateToValue}` : sql``;
+    const docTypeCondition = docTypeValue ? sql`AND d.document_type = ${docTypeValue}` : sql``;
+
+    const result = await db.execute(sql`
+      SELECT 
+        COUNT(*) FILTER (WHERE di.variance_type = 'match') AS match_count,
+        COUNT(*) FILTER (WHERE di.variance_type = 'partial') AS backorder_count,
+        COUNT(*) FILTER (WHERE di.variance_type = 'extra') AS overage_count,
+        SUM(CASE WHEN di.variance_type = 'partial' THEN ABS(di.variance_quantity) ELSE 0 END) AS total_backorder_qty,
+        SUM(CASE WHEN di.variance_type = 'extra' THEN ABS(di.variance_quantity) ELSE 0 END) AS total_overage_qty
+      FROM w3suite.wms_document_items di
+      JOIN w3suite.wms_documents d ON di.document_id = d.id
+      WHERE d.tenant_id = ${tenantId}
+        AND di.linked_order_item_id IS NOT NULL
+        ${dateFromCondition}
+        ${dateToCondition}
+        ${docTypeCondition}
+    `);
+
+    const summary = result.rows?.[0] || {
+      match_count: 0,
+      backorder_count: 0,
+      overage_count: 0,
+      total_backorder_qty: 0,
+      total_overage_qty: 0
+    };
+
+    res.json({
+      success: true,
+      data: {
+        matchCount: parseInt(summary.match_count as string) || 0,
+        backorderCount: parseInt(summary.backorder_count as string) || 0,
+        overageCount: parseInt(summary.overage_count as string) || 0,
+        totalBackorderQty: parseInt(summary.total_backorder_qty as string) || 0,
+        totalOverageQty: parseInt(summary.total_overage_qty as string) || 0,
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching variance summary', { error });
+    res.status(500).json({ error: "Failed to fetch variance summary" });
+  }
+});
+
+/**
+ * GET /api/wms/documents/variance-items
+ * List items with variance (backorder or overage) for dashboard
+ */
+router.get("/documents/variance-items", rbacMiddleware, requirePermission('wms.documents.ddt.view'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { varianceType, dateFrom, dateTo, limit = '50' } = req.query;
+    const limitNum = Math.min(parseInt(limit as string) || 50, 200);
+
+    // Validate and sanitize date inputs (ISO date format only)
+    const dateFromValue = dateFrom && typeof dateFrom === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom) ? dateFrom : null;
+    const dateToValue = dateTo && typeof dateTo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateTo) ? dateTo : null;
+    
+    // Validate varianceType against allowed values
+    const allowedVarianceTypes = ['partial', 'extra'];
+    const varianceTypeValue = varianceType && typeof varianceType === 'string' && allowedVarianceTypes.includes(varianceType) ? varianceType : null;
+
+    // Build parameterized query conditions
+    const varianceCondition = varianceTypeValue 
+      ? sql`AND di.variance_type = ${varianceTypeValue}` 
+      : sql`AND di.variance_type IN ('partial', 'extra')`;
+    const dateFromCondition = dateFromValue ? sql`AND d.document_date >= ${dateFromValue}` : sql``;
+    const dateToCondition = dateToValue ? sql`AND d.document_date <= ${dateToValue}` : sql``;
+
+    const result = await db.execute(sql`
+      SELECT 
+        di.id,
+        di.product_id,
+        di.quantity,
+        di.ordered_quantity,
+        di.variance_type,
+        di.variance_quantity,
+        d.id AS document_id,
+        d.document_number,
+        d.document_type,
+        d.document_date,
+        d.supplier_id,
+        d.customer_id
+      FROM w3suite.wms_document_items di
+      JOIN w3suite.wms_documents d ON di.document_id = d.id
+      WHERE d.tenant_id = ${tenantId}
+        AND di.linked_order_item_id IS NOT NULL
+        ${varianceCondition}
+        ${dateFromCondition}
+        ${dateToCondition}
+      ORDER BY d.document_date DESC
+      LIMIT ${limitNum}
+    `);
+
+    res.json({
+      success: true,
+      data: result.rows || []
+    });
+  } catch (error) {
+    logger.error('Error fetching variance items', { error });
+    res.status(500).json({ error: "Failed to fetch variance items" });
   }
 });
 

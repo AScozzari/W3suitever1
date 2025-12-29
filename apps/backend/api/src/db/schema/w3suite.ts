@@ -9750,6 +9750,12 @@ export const wmsDocumentItems = w3suiteSchema.table("wms_document_items", {
   unitPrice: numeric("unit_price", { precision: 12, scale: 2 }), // @deprecated - usa unitPriceNet/unitPriceGross
   totalPrice: numeric("total_price", { precision: 12, scale: 2 }), // @deprecated - usa totalPriceNet/totalPriceGross
   
+  // ==================== ORDER RECONCILIATION (Backorder/Overage tracking) ====================
+  linkedOrderItemId: uuid("linked_order_item_id"), // FK to original order item (per riconciliazione)
+  orderedQuantity: integer("ordered_quantity"), // Quantità ordinata originale
+  varianceType: varchar("variance_type", { length: 20 }), // 'match' | 'partial' (backorder) | 'extra' (overage) | null
+  varianceQuantity: integer("variance_quantity"), // Differenza qty (positivo = extra, negativo = backorder)
+  
   // ==================== LOCATION TRACKING ====================
   fromLocationId: uuid("from_location_id"), // FK to warehouse locations (future)
   toLocationId: uuid("to_location_id"),
@@ -9775,6 +9781,8 @@ export const wmsDocumentItems = w3suiteSchema.table("wms_document_items", {
   index("wms_doc_items_imei_idx").on(table.imeiPrimary),
   index("wms_doc_items_ean_idx").on(table.ean),
   index("wms_doc_items_vat_rate_idx").on(table.vatRateId),
+  index("wms_doc_items_linked_order_idx").on(table.linkedOrderItemId),
+  index("wms_doc_items_variance_idx").on(table.varianceType),
 ]);
 
 export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).omit({
@@ -9809,6 +9817,12 @@ export const insertWmsDocumentItemSchema = createInsertSchema(wmsDocumentItems).
   totalPriceNet: z.coerce.number().min(0).optional(),
   totalPriceGross: z.coerce.number().min(0).optional(),
   totalVatAmount: z.coerce.number().min(0).optional(),
+  
+  // Order reconciliation fields (Backorder/Overage tracking)
+  linkedOrderItemId: z.string().uuid().optional(),
+  orderedQuantity: z.number().int().min(0).optional(),
+  varianceType: z.enum(['match', 'partial', 'extra']).optional(),
+  varianceQuantity: z.number().int().optional(),
   
   }).superRefine((data, ctx) => {
   // Validazione 1: Se serializzato, product_item_id deve essere presente

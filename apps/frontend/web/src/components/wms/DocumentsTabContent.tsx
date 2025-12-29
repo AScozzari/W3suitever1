@@ -77,6 +77,7 @@ import {
 import { CreateDocumentWizard } from './CreateDocumentWizard';
 import { DocumentDetailPanel } from './DocumentDetailPanel';
 import { OrderModal } from './OrderModal';
+import { DDTModal } from './DDTModal';
 import { SuspendedOrdersDrafts } from './SuspendedOrdersDrafts';
 
 interface OrderDraft {
@@ -470,6 +471,7 @@ export function DocumentsTabContent() {
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isDDTModalOpen, setIsDDTModalOpen] = useState(false);
   const [draftToResume, setDraftToResume] = useState<OrderDraft | undefined>(undefined);
   const [draftsRefresh, setDraftsRefresh] = useState(0);
   const [page, setPage] = useState(1);
@@ -526,7 +528,7 @@ export function DocumentsTabContent() {
                 <ClipboardList className="h-4 w-4 mr-2 text-blue-500" />
                 Ordine a Fornitore
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsCreateModalOpen(true)} data-testid="menu-new-ddt">
+              <DropdownMenuItem onClick={() => setIsDDTModalOpen(true)} data-testid="menu-new-ddt">
                 <Truck className="h-4 w-4 mr-2 text-green-500" />
                 DDT
               </DropdownMenuItem>
@@ -851,6 +853,40 @@ export function DocumentsTabContent() {
           setDraftsRefresh(p => p + 1);
         }}
         draftToResume={draftToResume}
+      />
+
+      <DDTModal
+        open={isDDTModalOpen}
+        onOpenChange={setIsDDTModalOpen}
+        onSubmit={async (data) => {
+          try {
+            await apiRequest('/api/wms/documents', {
+              method: 'POST',
+              body: JSON.stringify({
+                documentType: 'ddt',
+                documentNumber: data.documentNumber,
+                documentDate: data.documentDate,
+                documentDirection: data.direction,
+                ddtReason: data.causale,
+                counterpartyType: data.recipientType,
+                supplierId: data.supplierId,
+                customerId: data.customerId,
+                targetStoreId: data.destinationStoreId,
+                storeId: data.issuingStoreId,
+                linkedOrderId: data.orderId,
+                notes: data.notes,
+                totalItems: data.items.length,
+                totalQuantity: data.items.reduce((sum, i) => sum + i.quantity, 0),
+                createdBy: 'current-user',
+              }),
+            });
+            toast({ title: 'DDT creato', description: `DDT ${data.documentNumber} salvato con successo` });
+            refetch();
+          } catch (error) {
+            console.error('Error creating DDT:', error);
+            toast({ title: 'Errore', description: 'Impossibile creare il DDT', variant: 'destructive' });
+          }
+        }}
       />
 
       <DocumentDetailPanel
