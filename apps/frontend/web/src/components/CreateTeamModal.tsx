@@ -457,7 +457,11 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-modal max-w-4xl max-h-[95vh] h-[85vh]">
+      <DialogContent className={`glass-modal max-w-4xl transition-all duration-300 ${
+        currentStep <= 2 
+          ? 'max-h-[60vh] h-auto' 
+          : 'max-h-[95vh] h-[85vh]'
+      }`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-windtre-orange" />
