@@ -7903,6 +7903,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortOrder: req.query.sortOrder as string || 'desc',
       };
       
+      // ✅ Debug: Log received filters
+      console.log('[AUDIT-FILTERS] Received query params:', req.query);
+      console.log('[AUDIT-FILTERS] Parsed filters:', { service: filters.service, level: filters.level, search: filters.search });
+      
       // ✅ Build query conditions for activity_logs
       let conditions = [sql`tenant_id = ${tenantId}`];
       
