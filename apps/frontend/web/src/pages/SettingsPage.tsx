@@ -760,7 +760,13 @@ export default function SettingsPage() {
           });
           setRagioneSocialiList(result.data.organizationEntities || []);
           setUtentiList(result.data.users || []);
-          setPuntiVenditaList(result.data.stores || []);
+          // Normalize store data to ensure consistent field names
+          const normalizedStores = (result.data.stores || []).map((store: any) => ({
+            ...store,
+            organizationEntityId: store.organizationEntityId || store.organization_entity_id,
+            commercialAreaId: store.commercialAreaId || store.commercial_area_id
+          }));
+          setPuntiVenditaList(normalizedStores);
         }
 
         // Carica anche i ruoli
@@ -1630,7 +1636,13 @@ export default function SettingsPage() {
     try {
       const result = await apiService.getStores();
       if (result.success && result.data) {
-        setPuntiVenditaList(result.data);
+        // Normalize store data to ensure consistent field names
+        const normalizedStores = result.data.map((store: any) => ({
+          ...store,
+          organizationEntityId: store.organizationEntityId || store.organization_entity_id,
+          commercialAreaId: store.commercialAreaId || store.commercial_area_id
+        }));
+        setPuntiVenditaList(normalizedStores);
       }
     } catch (error) {
       console.error('Error reloading stores:', error);
@@ -9341,7 +9353,7 @@ export default function SettingsPage() {
                         color: '#6b7280',
                         marginLeft: '8px'
                       }}>
-                        (Opzionale - filtra ragioni sociali e sedi)
+                        (Opzionale - filtra i punti vendita per area)
                       </span>
                     </label>
                     <div style={{
@@ -9413,7 +9425,7 @@ export default function SettingsPage() {
                         gap: '4px'
                       }}>
                         <Filter size={12} />
-                        {newUser.selectedAreas.length} area/e selezionate - le ragioni sociali saranno filtrate
+                        {newUser.selectedAreas.length} area/e selezionate - i punti vendita saranno filtrati
                       </div>
                     )}
                   </div>
@@ -9449,11 +9461,6 @@ export default function SettingsPage() {
                     }}>
                       {ragioneSocialiList
                         .filter(rs => rs.stato?.toLowerCase().startsWith('attiv'))
-                        .filter(rs => {
-                          if (newUser.selectedAreas.length === 0) return true;
-                          const rsStores = puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id);
-                          return rsStores.some(store => newUser.selectedAreas.includes(store.commercial_area_id));
-                        })
                         .map(rs => (
                         <label key={rs.id} style={{
                           display: 'flex',
@@ -9483,7 +9490,7 @@ export default function SettingsPage() {
                                   selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
                                   selectedStores: newUser.selectedStores.filter(storeId => {
                                     const store = puntiVenditaList.find(pv => pv.id === storeId);
-                                    return store && store.ragioneSociale_id !== rs.id;
+                                    return store && store.organizationEntityId !== rs.id;
                                   })
                                 });
                               }
@@ -9531,7 +9538,7 @@ export default function SettingsPage() {
                             borderRadius: '12px',
                             fontWeight: '500'
                           }}>
-                            {puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id && (pv.status === 'active' || pv.status === 'Attivo')).length} negozi
+                            {puntiVenditaList.filter(pv => pv.organizationEntityId === rs.id && (pv.status === 'active' || pv.status === 'Attivo')).length} negozi
                           </div>
                         </label>
                       ))}
@@ -9556,7 +9563,7 @@ export default function SettingsPage() {
                         color: '#6b7280',
                         marginLeft: '8px'
                       }}>
-                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id) && (pv.status === 'active' || pv.status === 'Attivo')).length} disponibili dalle ragioni sociali selezionate)
+                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && (pv.status === 'active' || pv.status === 'Attivo')).length} disponibili dalle ragioni sociali selezionate)
                       </span>
                     </label>
                     <div style={{
@@ -9568,7 +9575,8 @@ export default function SettingsPage() {
                       background: '#ffffff'
                     }}>
                       {puntiVenditaList
-                        .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id) && (pv.status === 'active' || pv.status === 'Attivo'))
+                        .filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && (pv.status === 'active' || pv.status === 'Attivo'))
+                        .filter(pv => newUser.selectedAreas.length === 0 || newUser.selectedAreas.includes(pv.commercialAreaId))
                         .map(pv => (
                         <label key={pv.id} style={{
                           display: 'flex',
