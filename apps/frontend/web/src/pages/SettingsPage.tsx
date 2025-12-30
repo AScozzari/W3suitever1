@@ -1019,7 +1019,7 @@ export default function SettingsPage() {
     // ✅ PROFESSIONAL: Enhanced loading state with enterprise analytics
     if (auditLoading) {
       return (
-        <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ padding: '24px 32px', width: '100%', boxSizing: 'border-box' }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
             backdropFilter: 'blur(15px)',
@@ -1120,7 +1120,7 @@ export default function SettingsPage() {
     const periodLabel = statsTimeRange === 24 ? 'ultime 24h' : statsTimeRange === 168 ? 'ultimi 7gg' : 'ultimi 30gg';
 
     return (
-      <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ padding: '24px 32px', width: '100%', boxSizing: 'border-box' }}>
         
         {/* ✅ ENTERPRISE HEADER */}
         <div style={{
