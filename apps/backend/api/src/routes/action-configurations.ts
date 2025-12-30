@@ -68,19 +68,28 @@ router.get('/', async (req, res) => {
       ? actions.filter(a => a.department === department)
       : actions;
 
+    // Extract assignments from metadata and add as top-level field
+    const actionsWithAssignments = filteredActions.map(action => {
+      const metadata = action.metadata as Record<string, any> || {};
+      return {
+        ...action,
+        assignments: metadata.assignments || []
+      };
+    });
+
     // Raggruppa per department
-    const grouped = filteredActions.reduce((acc, action) => {
+    const grouped = actionsWithAssignments.reduce((acc, action) => {
       if (!acc[action.department]) {
         acc[action.department] = [];
       }
       acc[action.department].push(action);
       return acc;
-    }, {} as Record<string, typeof filteredActions>);
+    }, {} as Record<string, typeof actionsWithAssignments>);
 
     res.json({
-      actions: filteredActions,
+      actions: actionsWithAssignments,
       grouped,
-      total: filteredActions.length
+      total: actionsWithAssignments.length
     });
 
   } catch (error) {
@@ -166,16 +175,28 @@ router.get('/:id', async (req, res) => {
 
 // ==================== CREATE ACTION CONFIGURATION ====================
 
+// Schema for individual assignment (workflow + teams pair)
+const assignmentSchema = z.object({
+  id: z.string().uuid(),
+  flowType: z.enum(['default', 'workflow']),
+  workflowTemplateId: z.string().uuid().optional().or(z.literal('')),
+  teamScope: z.enum(['all', 'specific']),
+  teamIds: z.array(z.string().uuid()).optional().default([])
+});
+
 const createActionSchema = z.object({
   department: z.enum(['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing', 'wms']),
   actionId: z.string().min(1).max(100),
   actionName: z.string().min(1).max(200),
   description: z.string().optional(),
   requiresApproval: z.boolean().default(false),
-  flowType: z.enum(['none', 'default', 'workflow']).default('none'),
+  // Legacy single assignment fields (for backward compatibility)
+  flowType: z.enum(['none', 'default', 'workflow']).optional().default('none'),
   workflowTemplateId: z.string().uuid().optional().nullable(),
-  teamScope: z.enum(['all', 'specific']).default('all'),
+  teamScope: z.enum(['all', 'specific']).optional().default('all'),
   specificTeamIds: z.array(z.string().uuid()).optional().default([]),
+  // NEW: Multiple assignments per action
+  assignments: z.array(assignmentSchema).optional().default([]),
   slaHours: z.number().int().positive().optional().default(24),
   escalationEnabled: z.boolean().optional().default(true),
   priority: z.number().int().optional().default(100),
@@ -242,6 +263,27 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Build metadata with assignments
+    const metadataWithAssignments = {
+      ...data.metadata,
+      assignments: data.assignments || []
+    };
+
+    // Determine flowType from first assignment if using new format
+    let effectiveFlowType = data.flowType || 'none';
+    let effectiveWorkflowId = data.workflowTemplateId;
+    let effectiveTeamScope = data.teamScope || 'all';
+    let effectiveTeamIds = data.specificTeamIds || [];
+
+    if (data.assignments && data.assignments.length > 0) {
+      // Use first assignment for legacy columns (backward compatibility)
+      const firstAssignment = data.assignments[0];
+      effectiveFlowType = firstAssignment.flowType;
+      effectiveWorkflowId = firstAssignment.workflowTemplateId || null;
+      effectiveTeamScope = firstAssignment.teamScope;
+      effectiveTeamIds = firstAssignment.teamIds || [];
+    }
+
     const [newAction] = await db
       .insert(actionConfigurations)
       .values({
@@ -251,14 +293,14 @@ router.post('/', async (req, res) => {
         actionName: data.actionName,
         description: data.description,
         requiresApproval: data.requiresApproval,
-        flowType: data.flowType as any,
-        workflowTemplateId: data.workflowTemplateId,
-        teamScope: data.teamScope as any,
-        specificTeamIds: data.specificTeamIds,
+        flowType: effectiveFlowType as any,
+        workflowTemplateId: effectiveWorkflowId,
+        teamScope: effectiveTeamScope as any,
+        specificTeamIds: effectiveTeamIds,
         slaHours: data.slaHours,
         escalationEnabled: data.escalationEnabled,
         priority: data.priority,
-        metadata: data.metadata,
+        metadata: metadataWithAssignments,
         createdBy: userId,
         updatedBy: userId
       })
@@ -344,13 +386,45 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    // Build metadata with assignments
+    const existingMetadata = (existing.metadata as Record<string, any>) || {};
+    const metadataWithAssignments = {
+      ...existingMetadata,
+      ...data.metadata,
+      assignments: data.assignments || existingMetadata.assignments || []
+    };
+
+    // Determine effective values from assignments if present
+    let effectiveFlowType = data.flowType || existing.flowType;
+    let effectiveWorkflowId = data.workflowTemplateId ?? existing.workflowTemplateId;
+    let effectiveTeamScope = data.teamScope || existing.teamScope;
+    let effectiveTeamIds = data.specificTeamIds || existing.specificTeamIds;
+
+    if (data.assignments && data.assignments.length > 0) {
+      // Use first assignment for legacy columns (backward compatibility)
+      const firstAssignment = data.assignments[0];
+      effectiveFlowType = firstAssignment.flowType;
+      effectiveWorkflowId = firstAssignment.workflowTemplateId || null;
+      effectiveTeamScope = firstAssignment.teamScope;
+      effectiveTeamIds = firstAssignment.teamIds || [];
+    }
+
     const [updated] = await db
       .update(actionConfigurations)
       .set({
-        ...data,
-        department: data.department as any,
-        flowType: data.flowType as any,
-        teamScope: data.teamScope as any,
+        department: data.department as any ?? existing.department,
+        actionId: data.actionId ?? existing.actionId,
+        actionName: data.actionName ?? existing.actionName,
+        description: data.description ?? existing.description,
+        requiresApproval: data.requiresApproval ?? existing.requiresApproval,
+        flowType: effectiveFlowType as any,
+        workflowTemplateId: effectiveWorkflowId,
+        teamScope: effectiveTeamScope as any,
+        specificTeamIds: effectiveTeamIds,
+        slaHours: data.slaHours ?? existing.slaHours,
+        escalationEnabled: data.escalationEnabled ?? existing.escalationEnabled,
+        priority: data.priority ?? existing.priority,
+        metadata: metadataWithAssignments,
         updatedAt: new Date(),
         updatedBy: userId
       })

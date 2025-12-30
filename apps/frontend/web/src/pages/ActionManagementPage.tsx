@@ -98,10 +98,19 @@ interface ActionConfiguration {
   actionName: string;
   description?: string;
   requiresApproval: boolean;
-  flowType: 'none' | 'default' | 'workflow';
+  // Legacy fields (for backward compatibility)
+  flowType?: 'none' | 'default' | 'workflow';
   workflowTemplateId?: string;
-  teamScope: 'all' | 'specific';
+  teamScope?: 'all' | 'specific';
   specificTeamIds?: string[];
+  // New: Multiple assignments per action
+  assignments?: Array<{
+    id: string;
+    flowType: 'default' | 'workflow';
+    workflowTemplateId: string;
+    teamScope: 'all' | 'specific';
+    teamIds: string[];
+  }>;
   slaHours: number;
   escalationEnabled: boolean;
   priority: number;
@@ -550,6 +559,15 @@ export function ActionManagementContent() {
   );
 }
 
+// 🎯 Assignment structure: each action can have multiple workflow-team pairs
+interface ActionAssignment {
+  id: string;
+  flowType: 'default' | 'workflow';
+  workflowTemplateId: string;
+  teamScope: 'all' | 'specific';
+  teamIds: string[];
+}
+
 interface ActionFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -561,22 +579,22 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
   const { toast } = useToast();
   const isEditing = !!action;
   
+  // Base action data (name, description, etc.)
   const [formData, setFormData] = useState({
     department: action?.department || 'hr',
     actionId: action?.actionId || '',
     actionName: action?.actionName || '',
     description: action?.description || '',
     requiresApproval: action?.requiresApproval ?? false,
-    flowType: action?.flowType || 'none',
-    workflowTemplateId: action?.workflowTemplateId || '',
-    teamScope: action?.teamScope || 'all',
-    specificTeamIds: action?.specificTeamIds || [],
     slaHours: action?.slaHours || 24,
     escalationEnabled: action?.escalationEnabled ?? true,
     priority: action?.priority || 100
   });
 
-  // Update formData when action changes (e.g., opening modal with different action)
+  // Multiple assignments for this action
+  const [assignments, setAssignments] = useState<ActionAssignment[]>([]);
+
+  // Update formData when action changes
   useEffect(() => {
     if (action) {
       setFormData({
@@ -585,56 +603,85 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
         actionName: action.actionName || '',
         description: action.description || '',
         requiresApproval: action.requiresApproval ?? false,
-        flowType: action.flowType || 'none',
-        workflowTemplateId: action.workflowTemplateId || '',
-        teamScope: action.teamScope || 'all',
-        specificTeamIds: action.specificTeamIds || [],
         slaHours: action.slaHours || 24,
         escalationEnabled: action.escalationEnabled ?? true,
         priority: action.priority || 100
       });
+      // Load existing assignments or convert legacy format
+      if (action.assignments && action.assignments.length > 0) {
+        setAssignments(action.assignments);
+      } else if (action.flowType && action.flowType !== 'none') {
+        // Convert legacy single assignment to array
+        setAssignments([{
+          id: crypto.randomUUID(),
+          flowType: action.flowType as 'default' | 'workflow',
+          workflowTemplateId: action.workflowTemplateId || '',
+          teamScope: action.teamScope || 'all',
+          teamIds: action.specificTeamIds || []
+        }]);
+      } else {
+        setAssignments([]);
+      }
     } else {
-      // Reset to defaults for new action
       setFormData({
         department: 'hr',
         actionId: '',
         actionName: '',
         description: '',
         requiresApproval: false,
-        flowType: 'none',
-        workflowTemplateId: '',
-        teamScope: 'all',
-        specificTeamIds: [],
         slaHours: 24,
         escalationEnabled: true,
         priority: 100
       });
+      setAssignments([]);
     }
   }, [action, open]);
 
-  const { data: workflowsData } = useQuery({
+  // Always fetch workflows for the selected department
+  const { data: workflowsData, isLoading: workflowsLoading } = useQuery({
     queryKey: ['/api/action-configurations/meta/workflows', formData.department],
     queryFn: async () => {
       return await apiRequest(`/api/action-configurations/meta/workflows/${formData.department}`);
     },
-    enabled: open && formData.flowType === 'workflow'
+    enabled: open && formData.requiresApproval
   });
 
-  const { data: teamsData } = useQuery({
+  // Always fetch teams for the selected department
+  const { data: teamsData, isLoading: teamsLoading } = useQuery({
     queryKey: ['/api/action-configurations/meta/teams', formData.department],
     queryFn: async () => {
       return await apiRequest(`/api/action-configurations/meta/teams/${formData.department}`);
     },
-    enabled: open && formData.teamScope === 'specific'
+    enabled: open && formData.requiresApproval
   });
 
+  // Add a new assignment
+  const addAssignment = () => {
+    setAssignments([...assignments, {
+      id: crypto.randomUUID(),
+      flowType: 'default',
+      workflowTemplateId: '',
+      teamScope: 'all',
+      teamIds: []
+    }]);
+  };
+
+  // Update an assignment
+  const updateAssignment = (id: string, updates: Partial<ActionAssignment>) => {
+    setAssignments(assignments.map(a => a.id === id ? { ...a, ...updates } : a));
+  };
+
+  // Remove an assignment
+  const removeAssignment = (id: string) => {
+    setAssignments(assignments.filter(a => a.id !== id));
+  };
+
   const saveMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: typeof formData & { assignments: ActionAssignment[] }) => {
       const url = isEditing 
         ? `/api/action-configurations/${action.id}` 
         : '/api/action-configurations';
       const method = isEditing ? 'PUT' : 'POST';
-      // apiRequest already returns parsed JSON and throws on error
       return await apiRequest(url, { method, body: data });
     },
     onSuccess: () => {
@@ -648,7 +695,12 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate(formData);
+    // Combine formData with assignments
+    saveMutation.mutate({
+      ...formData,
+      // If requiresApproval is off, clear assignments
+      assignments: formData.requiresApproval ? assignments : []
+    });
   };
 
   return (
@@ -734,73 +786,212 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
 
           {formData.requiresApproval && (
             <>
-              <div className="space-y-2">
-                <Label>Tipo Flusso</Label>
-                <Select 
-                  value={formData.flowType} 
-                  onValueChange={(v) => setFormData({...formData, flowType: v as any})}
-                >
-                  <SelectTrigger data-testid="select-form-flowType">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="z-[9999]">
-                    <SelectItem value="default">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Flusso Default (Notifica Supervisori)
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="workflow">
-                      <div className="flex items-center gap-2">
-                        <Workflow className="h-4 w-4" />
-                        Workflow Personalizzato
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {formData.flowType === 'default' && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Notifica primary + secondary supervisor e observers. Prima approvazione chiude la richiesta.
-                  </p>
+              {/* 🎯 ASSIGNMENTS SECTION - Multiple workflow-team pairs */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-semibold">Configurazioni Workflow</Label>
+                    <p className="text-xs text-gray-500">
+                      Puoi assegnare workflow diversi a team diversi
+                    </p>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={addAssignment}
+                    data-testid="button-add-assignment"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Aggiungi Configurazione
+                  </Button>
+                </div>
+
+                {assignments.length === 0 && (
+                  <div className="p-6 border-2 border-dashed border-gray-200 rounded-lg text-center">
+                    <Workflow className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500 mb-2">
+                      Nessuna configurazione workflow definita
+                    </p>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={addAssignment}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Aggiungi prima configurazione
+                    </Button>
+                  </div>
                 )}
+
+                {/* Render each assignment */}
+                {assignments.map((assignment, index) => (
+                  <Card key={assignment.id} className="border-l-4 border-l-windtre-orange">
+                    <CardHeader className="py-3 px-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">
+                          Configurazione #{index + 1}
+                        </CardTitle>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAssignment(assignment.id)}
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                          data-testid={`button-remove-assignment-${index}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="py-3 px-4 space-y-4">
+                      {/* Row 1: Flow Type + Workflow */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Tipo Flusso</Label>
+                          <Select 
+                            value={assignment.flowType} 
+                            onValueChange={(v) => updateAssignment(assignment.id, { 
+                              flowType: v as 'default' | 'workflow',
+                              workflowTemplateId: v === 'default' ? '' : assignment.workflowTemplateId
+                            })}
+                          >
+                            <SelectTrigger className="h-9" data-testid={`select-flowType-${index}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent position="popper" className="z-[9999]">
+                              <SelectItem value="default">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-3 w-3" />
+                                  Default (Supervisori)
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="workflow">
+                                <div className="flex items-center gap-2">
+                                  <Workflow className="h-3 w-3" />
+                                  Workflow Personalizzato
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {assignment.flowType === 'workflow' && (
+                          <div className="space-y-1">
+                            <Label className="text-xs">Workflow Template</Label>
+                            <Select 
+                              value={assignment.workflowTemplateId} 
+                              onValueChange={(v) => updateAssignment(assignment.id, { workflowTemplateId: v })}
+                            >
+                              <SelectTrigger className="h-9" data-testid={`select-workflow-${index}`}>
+                                <SelectValue placeholder="Seleziona..." />
+                              </SelectTrigger>
+                              <SelectContent position="popper" className="z-[9999]">
+                                {workflowsLoading ? (
+                                  <SelectItem value="" disabled>Caricamento...</SelectItem>
+                                ) : workflowsData?.templates?.length > 0 ? (
+                                  workflowsData.templates.map((wf: any) => (
+                                    <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="" disabled>Nessun workflow disponibile</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Row 2: Team Scope + Team Selection */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Scope Team</Label>
+                          <Select 
+                            value={assignment.teamScope} 
+                            onValueChange={(v) => updateAssignment(assignment.id, { 
+                              teamScope: v as 'all' | 'specific',
+                              teamIds: v === 'all' ? [] : assignment.teamIds
+                            })}
+                          >
+                            <SelectTrigger className="h-9" data-testid={`select-teamScope-${index}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent position="popper" className="z-[9999]">
+                              <SelectItem value="all">Tutti i Team</SelectItem>
+                              <SelectItem value="specific">Team Specifici</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {assignment.teamScope === 'specific' && (
+                          <div className="space-y-1">
+                            <Label className="text-xs">Team Selezionati ({assignment.teamIds.length})</Label>
+                            <Select 
+                              value={assignment.teamIds[0] || ''} 
+                              onValueChange={(v) => {
+                                // Toggle team selection (multi-select emulation)
+                                const newTeamIds = assignment.teamIds.includes(v)
+                                  ? assignment.teamIds.filter(t => t !== v)
+                                  : [...assignment.teamIds, v];
+                                updateAssignment(assignment.id, { teamIds: newTeamIds });
+                              }}
+                            >
+                              <SelectTrigger className="h-9" data-testid={`select-teams-${index}`}>
+                                <SelectValue placeholder={`${assignment.teamIds.length} team selezionati`} />
+                              </SelectTrigger>
+                              <SelectContent position="popper" className="z-[9999]">
+                                {teamsLoading ? (
+                                  <SelectItem value="" disabled>Caricamento...</SelectItem>
+                                ) : teamsData?.teams?.length > 0 ? (
+                                  teamsData.teams.map((team: any) => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                      <div className="flex items-center gap-2">
+                                        {assignment.teamIds.includes(team.id) && (
+                                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                        )}
+                                        {team.name}
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="" disabled>Nessun team disponibile</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Show selected teams as badges */}
+                      {assignment.teamScope === 'specific' && assignment.teamIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {assignment.teamIds.map(teamId => {
+                            const team = teamsData?.teams?.find((t: any) => t.id === teamId);
+                            return team ? (
+                              <Badge key={teamId} variant="secondary" className="text-xs">
+                                {team.name}
+                                <button
+                                  type="button"
+                                  onClick={() => updateAssignment(assignment.id, { 
+                                    teamIds: assignment.teamIds.filter(t => t !== teamId) 
+                                  })}
+                                  className="ml-1 hover:text-red-500"
+                                >
+                                  ×
+                                </button>
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
-              {formData.flowType === 'workflow' && (
-                <div className="space-y-2">
-                  <Label>Workflow Template</Label>
-                  <Select 
-                    value={formData.workflowTemplateId} 
-                    onValueChange={(v) => setFormData({...formData, workflowTemplateId: v})}
-                  >
-                    <SelectTrigger data-testid="select-form-workflow">
-                      <SelectValue placeholder="Seleziona workflow..." />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="z-[9999]">
-                      {workflowsData?.templates?.map((wf: any) => (
-                        <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Scope Team</Label>
-                  <Select 
-                    value={formData.teamScope} 
-                    onValueChange={(v) => setFormData({...formData, teamScope: v as any})}
-                  >
-                    <SelectTrigger data-testid="select-form-teamScope">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="z-[9999]">
-                      <SelectItem value="all">Tutti i Team</SelectItem>
-                      <SelectItem value="specific">Team Specifici</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              {/* SLA and Escalation settings */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div className="space-y-2">
                   <Label>SLA (ore)</Label>
                   <Input 
@@ -812,23 +1003,23 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                     data-testid="input-form-slaHours"
                   />
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <div>
-                  <Label className="font-medium flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    Escalation Automatica
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Dopo {formData.slaHours}h, gli observers possono approvare
-                  </p>
+                <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div>
+                    <Label className="font-medium flex items-center gap-2 text-sm">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      Escalation
+                    </Label>
+                    <p className="text-xs text-gray-500">
+                      Dopo {formData.slaHours}h, observers approvano
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={formData.escalationEnabled}
+                    onCheckedChange={(checked) => setFormData({...formData, escalationEnabled: checked})}
+                    data-testid="switch-escalation"
+                  />
                 </div>
-                <Switch 
-                  checked={formData.escalationEnabled}
-                  onCheckedChange={(checked) => setFormData({...formData, escalationEnabled: checked})}
-                  data-testid="switch-escalation"
-                />
               </div>
             </>
           )}
