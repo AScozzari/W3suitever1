@@ -16,6 +16,8 @@ import {
   actionConfigurations,
   workflowTemplates,
   teams,
+  teamDepartments,
+  departments,
   insertActionConfigurationSchema
 } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
@@ -139,7 +141,7 @@ router.get('/:id', async (req, res) => {
           .select({
             id: teams.id,
             name: teams.name,
-            departmentId: teams.departmentId
+            teamType: teams.teamType
           })
           .from(teams)
           .where(eq(teams.id, teamId))
@@ -530,25 +532,29 @@ router.get('/meta/workflows/:department', async (req, res) => {
 router.get('/meta/teams/:department', async (req, res) => {
   try {
     const tenantId = req.tenant?.id;
-    const { department } = req.params;
+    const { department } = req.params; // department code like 'hr', 'wms', etc.
 
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID required' });
     }
 
+    // Teams are linked to departments via teamDepartments junction table
+    // department param is a code (e.g., 'hr'), not a UUID
+    // We need: teams → teamDepartments → departments (filter by code)
     const teamList = await db
-      .select({
+      .selectDistinct({
         id: teams.id,
         name: teams.name,
-        departmentId: teams.departmentId,
         teamType: teams.teamType,
-        primarySupervisorId: teams.primarySupervisorId
+        primarySupervisorUser: teams.primarySupervisorUser
       })
       .from(teams)
+      .innerJoin(teamDepartments, eq(teams.id, teamDepartments.teamId))
+      .innerJoin(departments, eq(teamDepartments.departmentId, departments.id))
       .where(
         and(
           eq(teams.tenantId, tenantId),
-          eq(teams.departmentId, department),
+          eq(departments.code, department), // Filter by department code
           eq(teams.isActive, true)
         )
       );
