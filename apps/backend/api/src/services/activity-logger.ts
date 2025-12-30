@@ -1,7 +1,7 @@
-import { enqueueActivityLog, isActivityLogQueueAvailable, ActivityLogJobData } from '../queue/activity-log-queue.js';
-import { getLogContext } from '../core/logger.js';
-import { db } from '../db/index.js';
-import { activityLogs } from '../db/schema/w3suite.js';
+import { enqueueActivityLog, isActivityLogQueueAvailable, ActivityLogJobData } from '../queue/activity-log-queue';
+import { getLogContext } from '../core/logger';
+import { db } from '../core/db';
+import { activityLogs } from '../db/schema/w3suite';
 
 export type ActivityService = 'SYSTEM' | 'AUTH' | 'WMS' | 'CRM' | 'HR' | 'POS' | 'ANALYTICS' | 'VOIP' | 'WORKFLOW' | 'SETTINGS' | 'AI';
 export type ActivityLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';

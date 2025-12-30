@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
-import { ACTIVITY_LOG_QUEUE_NAME, ActivityLogJobData } from './activity-log-queue.js';
-import { db } from '../db/index.js';
-import { activityLogs } from '../db/schema/w3suite.js';
+import { ACTIVITY_LOG_QUEUE_NAME, ActivityLogJobData } from './activity-log-queue';
+import { db } from '../core/db';
+import { activityLogs } from '../db/schema/w3suite';
 
 const REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
 

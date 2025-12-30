@@ -32,6 +32,7 @@ const CustomerDetailPage = lazy(() => import('../pages/crm/CustomerDetailPage'))
 const ChannelSettingsPage = lazy(() => import('../pages/settings/ChannelSettingsPage'));
 const MCPSettingsDashboard = lazy(() => import('../pages/settings/MCPSettingsDashboard'));
 const SystemConfigPage = lazy(() => import('../pages/settings/SystemConfigPage'));
+const ActivityLogsPage = lazy(() => import('../pages/settings/ActivityLogsPage'));
 const QRCheckinPage = lazy(() => import('../pages/QRCheckinPage'));
 const AIVoiceTest = lazy(() => import('../pages/AIVoiceTest'));
 const TestDatabaseOperation = lazy(() => import('../pages/TestDatabaseOperation'));
@@ -311,6 +312,13 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/settings/system`}>
         <AuthenticatedRoute>
           <SystemConfigPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 📋 ACTIVITY LOGS - Centralized audit trail */}
+      <Route path={`/${tenantSlug}/settings/logs`}>
+        <AuthenticatedRoute>
+          <ActivityLogsPage />
         </AuthenticatedRoute>
       </Route>
       
