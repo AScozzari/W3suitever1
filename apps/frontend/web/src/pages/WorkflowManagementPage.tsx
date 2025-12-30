@@ -1720,10 +1720,12 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Badge className={`${TEAM_TYPES[team.teamType]?.color} cursor-help`}>
-                                      <span className="mr-1">{TEAM_TYPES[team.teamType]?.icon}</span>
-                                      {TEAM_TYPES[team.teamType]?.label}
-                                    </Badge>
+                                    <span className="inline-flex">
+                                      <Badge className={`${TEAM_TYPES[team.teamType]?.color} cursor-help`}>
+                                        <span className="mr-1">{TEAM_TYPES[team.teamType]?.icon}</span>
+                                        {TEAM_TYPES[team.teamType]?.label}
+                                      </Badge>
+                                    </span>
                                   </TooltipTrigger>
                                   <TooltipContent side="right" className="max-w-xs">
                                     <div className="text-sm">
@@ -2408,17 +2410,19 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                                           <TooltipProvider key={tagValue}>
                                                             <Tooltip>
                                                               <TooltipTrigger asChild>
-                                                                <Badge 
-                                                                  variant="secondary"
-                                                                  className={`text-xs ${
-                                                                    isConflicting 
-                                                                      ? 'bg-yellow-200 text-yellow-900 border border-yellow-400' 
-                                                                      : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                                                                  }`}
-                                                                >
-                                                                  {isConflicting && <AlertTriangle className="w-3 h-3 mr-1" />}
-                                                                  {getActionTagLabel(tagValue, department)}
-                                                                </Badge>
+                                                                <span className="inline-flex">
+                                                                  <Badge 
+                                                                    variant="secondary"
+                                                                    className={`text-xs ${
+                                                                      isConflicting 
+                                                                        ? 'bg-yellow-200 text-yellow-900 border border-yellow-400' 
+                                                                        : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                                                    }`}
+                                                                  >
+                                                                    {isConflicting && <AlertTriangle className="w-3 h-3 mr-1" />}
+                                                                    {getActionTagLabel(tagValue, department)}
+                                                                  </Badge>
+                                                                </span>
                                                               </TooltipTrigger>
                                                               <TooltipContent>
                                                                 {isConflicting ? (
@@ -2437,12 +2441,14 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                                         <TooltipProvider>
                                                           <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                              <Badge 
-                                                                variant="outline"
-                                                                className="text-xs bg-purple-50 text-purple-700 border-purple-200"
-                                                              >
-                                                                {template.customAction}
-                                                              </Badge>
+                                                              <span className="inline-flex">
+                                                                <Badge 
+                                                                  variant="outline"
+                                                                  className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                                                                >
+                                                                  {template.customAction}
+                                                                </Badge>
+                                                              </span>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
                                                               <p>Azione personalizzata: {template.customAction}</p>
