@@ -7906,9 +7906,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ✅ Build query conditions for activity_logs
       let conditions = [sql`tenant_id = ${tenantId}`];
       
-      // Date filter
+      // Date filter (activity_logs uses executed_at)
       const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
-      conditions.push(sql`created_at >= ${hoursAgo}`);
+      conditions.push(sql`executed_at >= ${hoursAgo}`);
       
       // Optional filters
       if (filters.service && filters.service !== 'ALL') {
@@ -7960,20 +7960,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message,
           metadata,
           latency_ms,
-          created_at
+          executed_at as created_at
         FROM w3suite.activity_logs 
         WHERE ${sql.join(conditions, sql` AND `)}
-        ORDER BY ${sql.identifier(sortColumn)} ${sortDirection}
+        ORDER BY executed_at ${sortDirection}
         LIMIT ${filters.limit} OFFSET ${offset}
       `;
       
       const logsResult = await db.execute(logsQuery);
       const logs = logsResult.rows || [];
 
-      // ✅ Get total count
+      // ✅ Get total count (use base conditions to avoid duplicate executed_at)
+      const countConditions = [sql`tenant_id = ${tenantId}`, sql`executed_at >= ${hoursAgo}`];
+      if (filters.service && filters.service !== 'ALL') countConditions.push(sql`service = ${filters.service}`);
+      if (filters.level && filters.level !== 'ALL') countConditions.push(sql`level = ${filters.level}`);
+      if (filters.search) countConditions.push(sql`(message ILIKE ${'%' + filters.search + '%'} OR action ILIKE ${'%' + filters.search + '%'} OR actor_email ILIKE ${'%' + filters.search + '%'})`);
+      
       const totalCountQuery = await db.execute(sql`
         SELECT COUNT(*) as count FROM w3suite.activity_logs 
-        WHERE ${sql.join(conditions, sql` AND `)}
+        WHERE ${sql.join(countConditions, sql` AND `)}
       `);
       
       const totalCountRows = totalCountQuery.rows as any[];
