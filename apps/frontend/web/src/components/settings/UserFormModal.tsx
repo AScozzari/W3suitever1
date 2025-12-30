@@ -104,13 +104,21 @@ export default function UserFormModal({
 
   useEffect(() => {
     if (isOpen && data && (mode === 'edit' || mode === 'view')) {
+      // Extract organization entities and stores from data
+      const orgEntities = data.selectedOrganizationEntities || [];
+      const storeEntities = data.selectedStores || [];
+      
       // Determine scope level from existing data
       let scopeLevel: 'tenant' | 'organization_entity' | 'store' = 'tenant';
-      if (data.scopeLevel === 'store' || data.scopeLevel === 'negozio' || (data.selectedStores && data.selectedStores.length > 0)) {
+      if (data.scopeLevel === 'store' || data.scopeLevel === 'negozio' || storeEntities.length > 0) {
         scopeLevel = 'store';
-      } else if (data.scopeLevel === 'organization_entity' || data.scopeLevel === 'organizzazione' || (data.selectedOrganizationEntities && data.selectedOrganizationEntities.length > 0)) {
+      } else if (data.scopeLevel === 'organization_entity' || data.scopeLevel === 'organizzazione' || orgEntities.length > 0) {
         scopeLevel = 'organization_entity';
       }
+      
+      // Default primary to first selection if not set (API requires primaryId when selections exist)
+      const primaryOrgId = data.primaryOrganizationEntityId || (orgEntities.length > 0 ? orgEntities[0] : null);
+      const primaryStoreId = data.primaryStoreId || (storeEntities.length > 0 ? storeEntities[0] : null);
 
       setFormData({
         username: data.username || '',
@@ -139,10 +147,10 @@ export default function UserFormModal({
         provincia: data.provincia || data.address?.province || '',
         paese: data.paese || data.address?.country || 'Italia',
         scopeLevel,
-        selectedOrganizationEntities: data.selectedOrganizationEntities || [],
-        primaryOrganizationEntityId: data.primaryOrganizationEntityId || null,
-        selectedStores: data.selectedStores || [],
-        primaryStoreId: data.primaryStoreId || null,
+        selectedOrganizationEntities: orgEntities,
+        primaryOrganizationEntityId: primaryOrgId,
+        selectedStores: storeEntities,
+        primaryStoreId: primaryStoreId,
         tipoDocumento: data.tipoDocumento || data.documentType || 'Carta Identità',
         numeroDocumento: data.numeroDocumento || data.documentNumber || '',
         dataScadenzaDocumento: data.dataScadenzaDocumento || data.documentExpiry || '',

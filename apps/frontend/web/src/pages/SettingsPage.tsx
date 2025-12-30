@@ -5931,17 +5931,22 @@ export default function SettingsPage() {
     ruolo: '',
     cambioPasswordObbligatorio: true,
     
-    // Relazioni obbligatorie
-    ragioneSociale_id: null as number | null,  // Obbligatorio
-    puntiVendita_ids: [] as number[],  // Almeno uno obbligatorio
-    puntoVenditaPreferito_id: null as number | null,  // Obbligatorio se più PdV
+    // Relazioni obbligatorie (legacy - keeping for backward compatibility)
+    ragioneSociale_id: null as string | null,
+    puntiVendita_ids: [] as string[],
+    puntoVenditaPreferito_id: null as string | null,
     
-    // ✅ SCOPE PIRAMIDALE NUOVO SISTEMA  
-    scopeLevel: 'organizzazione',          // Mantento per compatibilità
-    selectAllLegalEntities: false,         // "Seleziona tutto" ragioni sociali = accesso completo organizzazione
-    selectedAreas: [] as string[],         // 🆕 Aree commerciali selezionate (PRIMO livello - filtra RS)
-    selectedLegalEntities: [] as number[], // Ragioni sociali selezionate (secondo livello)
-    selectedStores: [] as number[],        // Punti vendita filtrati (terzo livello)
+    // ✅ NEW SCOPE SYSTEM (uses UUID strings and relational tables)
+    scopeLevel: 'tenant' as 'tenant' | 'organization_entity' | 'store',
+    selectedOrganizationEntities: [] as string[],  // UUID strings
+    primaryOrganizationEntityId: null as string | null,
+    selectedStores: [] as string[],  // UUID strings
+    primaryStoreId: null as string | null,
+    
+    // Legacy scope fields (for backward compatibility during transition)
+    selectAllLegalEntities: false,
+    selectedAreas: [] as string[],
+    selectedLegalEntities: [] as string[],
     
     // Informazioni personali
     nome: '',
@@ -9852,6 +9857,77 @@ export default function SettingsPage() {
 
                         const result = await response.json();
                         console.log('✅ User created successfully:', result);
+                        
+                        const createdUserId = result.data?.id || result.id;
+                        
+                        // ✅ Set user scope via new relational APIs
+                        // Map legacy selectedLegalEntities to organization entity UUIDs
+                        if (createdUserId) {
+                          const tenantId = getCurrentTenantId();
+                          
+                          // Determine scope type: tenant (selectAll), organization_entity, or store
+                          const isTenantScope = newUser.selectAllLegalEntities;
+                          const hasOrgSelections = !isTenantScope && (newUser.selectedLegalEntities || []).length > 0;
+                          const hasStoreSelections = (newUser.selectedStores || []).length > 0;
+                          
+                          // Get organization entity UUIDs from legacy selectedLegalEntities
+                          // Only include valid UUIDs (from organization_entity_id field)
+                          const selectedOrgEntityIds = hasOrgSelections 
+                            ? (newUser.selectedLegalEntities || [])
+                                .map(legacyId => {
+                                  const rs = ragioniSocialiList.find((r: any) => r.id === legacyId);
+                                  return rs?.organization_entity_id; // Only return actual UUIDs
+                                })
+                                .filter((id): id is string => !!id && id.includes('-')) // Validate UUID format
+                            : [];
+                          
+                          // Get store UUIDs - only include valid UUIDs
+                          const selectedStoreIds = hasStoreSelections
+                            ? (newUser.selectedStores || [])
+                                .map((id: any) => String(id))
+                                .filter((id: string) => id.includes('-')) // Validate UUID format
+                            : [];
+                          
+                          // Always sync organization entities (empty array for tenant scope clears assignments)
+                          try {
+                            const orgPayload = {
+                              organizationEntityIds: selectedOrgEntityIds,
+                              ...(selectedOrgEntityIds.length > 0 ? { primaryId: selectedOrgEntityIds[0] } : {})
+                            };
+                            const response = await fetch(`/api/users/${createdUserId}/organization-entities`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenantId },
+                              body: JSON.stringify(orgPayload)
+                            });
+                            if (response.ok) {
+                              console.log('✅ Organization entities scope set:', selectedOrgEntityIds.length);
+                            } else {
+                              console.error('❌ Organization entities scope failed:', await response.text());
+                            }
+                          } catch (err) {
+                            console.error('❌ Failed to set organization entities scope:', err);
+                          }
+                          
+                          // Always sync stores (empty array for tenant/org-only scope clears assignments)
+                          try {
+                            const storePayload = {
+                              storeIds: selectedStoreIds,
+                              ...(selectedStoreIds.length > 0 ? { primaryId: selectedStoreIds[0] } : {})
+                            };
+                            const response = await fetch(`/api/users/${createdUserId}/stores`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenantId },
+                              body: JSON.stringify(storePayload)
+                            });
+                            if (response.ok) {
+                              console.log('✅ Store scope set:', selectedStoreIds.length);
+                            } else {
+                              console.error('❌ Store scope failed:', await response.text());
+                            }
+                          } catch (err) {
+                            console.error('❌ Failed to set store scope:', err);
+                          }
+                        }
 
                         // Refresh user list from API
                         await refetchUserData();
@@ -9868,11 +9944,14 @@ export default function SettingsPage() {
                           telefono: '',
                           ruolo: '',
                           stato: 'attivo',
-                          scopeLevel: 'organizzazione',
-                          selectAllLegalEntities: true,
+                          scopeLevel: 'tenant',
+                          selectedOrganizationEntities: [],
+                          primaryOrganizationEntityId: null,
+                          selectedStores: [],
+                          primaryStoreId: null,
+                          selectAllLegalEntities: false,
                           selectedAreas: [],
                           selectedLegalEntities: [],
-                          selectedStores: [],
                           avatar: null,
                           extension: {
                             enabled: false,
@@ -9882,7 +9961,7 @@ export default function SettingsPage() {
                             voicemailEnabled: true,
                             storeId: null
                           }
-                        });
+                        } as any);
 
                       } catch (error) {
                         console.error('❌ Error creating user:', error);
