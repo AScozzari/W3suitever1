@@ -655,6 +655,15 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
       }
     }
     
+    // Show supplier SKU prompt if supplier is selected but product doesn't have supplierSku
+    // SKU Fornitore is MANDATORY for purchase/receiving flows
+    if (selectedSupplierId && !product.supplierSku) {
+      setShowSupplierSkuPrompt(true);
+      setPendingSupplierSkuInput(unmappedSupplierSku || '');
+    } else {
+      setShowSupplierSkuPrompt(false);
+    }
+    
     setTimeout(() => quantityInputRef.current?.focus(), 100);
   };
 
@@ -782,10 +791,6 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     setPendingSupplierSkuInput('');
   };
 
-  const handleSkipSupplierSku = () => {
-    setShowSupplierSkuPrompt(false);
-    setPendingSupplierSkuInput('');
-  };
 
   const removeSerial = (index: number) => {
     setCurrentSerials(prev => prev.filter((_, i) => i !== index));
@@ -794,6 +799,11 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
 
   const canAddItem = (): boolean => {
     if (!selectedProduct) return false;
+    
+    // SKU Fornitore is MANDATORY when supplier is selected
+    if (selectedSupplierId && !selectedProduct.supplierSku) {
+      return false;
+    }
     
     if (selectedProduct.isSerializable && isGloballyUnique(selectedProduct.serialType) && !bulkLoadMode) {
       const serialsPerUnit = selectedProduct.serialCount || 1;
@@ -1898,24 +1908,24 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                   </Button>
                                 </div>
 
-                                {/* Prompt to add supplier SKU if missing - LIKE ReceivingModal */}
+                                {/* Prompt to add supplier SKU if missing - MANDATORY */}
                                 {showSupplierSkuPrompt && (
-                                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                                    <div className="flex items-center gap-2 text-blue-700 mb-2">
+                                  <div className="mb-4 p-3 bg-orange-50 border border-orange-300 rounded-md">
+                                    <div className="flex items-center gap-2 text-orange-700 mb-2">
                                       <Hash className="h-4 w-4" />
-                                      <span className="font-medium">Abbina SKU Fornitore</span>
+                                      <span className="font-medium">SKU Fornitore Obbligatorio <span className="text-red-500">*</span></span>
                                     </div>
                                     <p className="text-sm text-gray-600 mb-2">
-                                      Questo prodotto non ha uno SKU fornitore associato per questo fornitore. Vuoi aggiungerlo ora?
+                                      Inserisci il codice articolo del fornitore per poter aggiungere questo prodotto al DDT.
                                     </p>
                                     <div className="flex gap-2 items-end">
                                       <div className="flex-1">
-                                        <Label className="text-xs text-gray-500">SKU Fornitore</Label>
+                                        <Label className="text-xs text-gray-500">SKU Fornitore <span className="text-red-500">*</span></Label>
                                         <Input
                                           value={pendingSupplierSkuInput}
                                           onChange={(e) => setPendingSupplierSkuInput(e.target.value)}
                                           placeholder="Inserisci codice fornitore..."
-                                          className="mt-1"
+                                          className="mt-1 border-orange-300 focus:border-orange-500"
                                           data-testid="input-pending-supplier-sku"
                                           onKeyDown={(e) => {
                                             if (e.key === 'Enter' && pendingSupplierSkuInput.trim()) {
@@ -1923,6 +1933,7 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                               handleSaveSupplierSku();
                                             }
                                           }}
+                                          autoFocus
                                         />
                                       </div>
                                       <Button
@@ -1931,20 +1942,15 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                         onClick={handleSaveSupplierSku}
                                         disabled={!pendingSupplierSkuInput.trim()}
                                         data-testid="button-save-supplier-sku"
+                                        className="bg-orange-500 hover:bg-orange-600"
                                       >
                                         <Save className="h-4 w-4 mr-1" />
-                                        Salva
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={handleSkipSupplierSku}
-                                        data-testid="button-skip-supplier-sku"
-                                      >
-                                        Salta
+                                        Conferma
                                       </Button>
                                     </div>
+                                    <p className="text-xs text-orange-600 mt-2">
+                                      Il pulsante "Aggiungi articolo" sarà attivo dopo aver inserito lo SKU Fornitore.
+                                    </p>
                                   </div>
                                 )}
 
@@ -2316,7 +2322,11 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                     )}
                                   </div>
                                   <p className="text-sm text-gray-500">
-                                    SKU: {item.product.sku} | Qtà: {item.quantity}
+                                    SKU: {item.product.sku}
+                                    {item.product.supplierSku && (
+                                      <span className="text-green-600"> | SKU Forn: {item.product.supplierSku}</span>
+                                    )}
+                                    {' '}| Qtà: {item.quantity}
                                     {item.serials.length > 0 && ` | ${item.serials.length} seriali`}
                                     {item.unitPrice !== undefined && ` | €${item.unitPrice.toFixed(2)}`}
                                   </p>
@@ -2445,7 +2455,12 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                                 <tr key={item.id} className="border-t">
                                   <td className="p-3">
                                     <p className="font-medium">{item.product.name}</p>
-                                    <p className="text-xs text-gray-500">SKU: {item.product.sku}</p>
+                                    <p className="text-xs text-gray-500">
+                                      SKU: {item.product.sku}
+                                      {item.product.supplierSku && (
+                                        <span className="text-green-600"> | SKU Forn: {item.product.supplierSku}</span>
+                                      )}
+                                    </p>
                                   </td>
                                   <td className="text-center p-3">{item.quantity}</td>
                                   <td className="text-center p-3">
