@@ -31,6 +31,7 @@ import CreateTeamModal from '../components/CreateTeamModal';
 import { WorkflowTestResultDialog } from '../components/WorkflowTestResultDialog';
 import { getActionTagLabel } from '@/lib/action-tags';
 import '../styles/workflow-builder.css';
+import { ActionManagementContent } from './ActionManagementPage';
 import { 
   Play, 
   Plus, 
@@ -178,7 +179,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const [selectedInstanceName, setSelectedInstanceName] = useState<string>('');
   
   // 🎯 Teams state management  
-  const [teamsSubView, setTeamsSubView] = useState<'list' | 'coverage'>('list');
+  const [teamsSubView, setTeamsSubView] = useState<'list' | 'coverage' | 'actions'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeamDepartment, setSelectedTeamDepartment] = useState<string>('all');
   const [selectedTeamType, setSelectedTeamType] = useState<string>('all');
@@ -1544,9 +1545,11 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                   )}
                 </Button>
                 <Button
-                  variant="outline"
-                  onClick={() => navigateTo('/settings/actions')}
-                  className="hover:bg-gray-100"
+                  variant={teamsSubView === 'actions' ? 'default' : 'outline'}
+                  onClick={() => setTeamsSubView('actions')}
+                  className={teamsSubView === 'actions' 
+                    ? 'bg-windtre-orange hover:bg-windtre-orange-dark text-white' 
+                    : 'hover:bg-gray-100'}
                   data-testid="tab-action-management"
                 >
                   <Settings className="h-4 w-4 mr-2" />
@@ -2261,6 +2264,11 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                     </CardContent>
                   </Card>
                 </div>
+              )}
+
+              {/* 🎯 Action Management View */}
+              {teamsSubView === 'actions' && (
+                <ActionManagementContent />
               )}
 
               {/* 🎯 Create/Edit Team Modal */}

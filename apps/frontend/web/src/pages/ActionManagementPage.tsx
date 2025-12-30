@@ -132,7 +132,7 @@ interface CoverageStats {
   totalWithDefaultFlow: number;
 }
 
-export default function ActionManagementPage() {
+export function ActionManagementContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -827,4 +827,8 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
       </DialogContent>
     </Dialog>
   );
+}
+
+export default function ActionManagementPage() {
+  return <ActionManagementContent />;
 }
