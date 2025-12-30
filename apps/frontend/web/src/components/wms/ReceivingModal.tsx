@@ -318,6 +318,8 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
+  const serialAutoAddTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const addItemToListRef = useRef<() => void>(() => {});
   const [dialogContainer, setDialogContainer] = useState<HTMLDivElement | null>(null);
 
   // State for legal entity mismatch warning
@@ -772,6 +774,82 @@ export function ReceivingModal({ open, onOpenChange, onSubmit, resumeDraft, onDr
       setShowInternalResults(false);
     }
   }, [internalSearchData, internalProductSearch, convertApiProduct]);
+
+  // Keep addItemToList ref updated for auto-add callback
+  useEffect(() => {
+    addItemToListRef.current = addItemToList;
+  });
+
+  // Auto-add serial after 500ms when it reaches expected length (like DDTModal)
+  useEffect(() => {
+    // Clear previous timer
+    if (serialAutoAddTimerRef.current) {
+      clearTimeout(serialAutoAddTimerRef.current);
+      serialAutoAddTimerRef.current = null;
+    }
+    
+    if (!selectedProduct || !serialInput.trim()) return;
+    if (!selectedProduct.isSerializable || !isGloballyUnique(selectedProduct.serialType)) return;
+    
+    const cleanedSerial = serialInput.replace(/[^0-9A-Fa-f]/g, '');
+    const expectedLength = getSerialExpectedLength(selectedProduct.serialType);
+    
+    // Check if serial has reached expected length
+    let isComplete = false;
+    if (selectedProduct.serialType === 'imei') {
+      isComplete = cleanedSerial.length === 15;
+    } else if (selectedProduct.serialType === 'iccid') {
+      isComplete = cleanedSerial.length >= 19 && cleanedSerial.length <= 20;
+    } else if (selectedProduct.serialType === 'mac_address') {
+      isComplete = cleanedSerial.length === 12;
+    } else {
+      isComplete = serialInput.trim().length >= expectedLength;
+    }
+    
+    if (isComplete) {
+      // Set timer to auto-add after 500ms of no input
+      serialAutoAddTimerRef.current = setTimeout(() => {
+        const normalizedSerial = normalizeSerial(serialInput, selectedProduct.serialType);
+        
+        // Check for duplicates
+        if (currentSerials.includes(normalizedSerial)) {
+          setSerialInput('');
+          serialInputRef.current?.focus();
+          return;
+        }
+        
+        const newSerials = [...currentSerials, normalizedSerial];
+        setCurrentSerials(newSerials);
+        setSerialInput('');
+        
+        // Calculate if this is the last serial needed
+        const serialsPerUnit = selectedProduct.serialCount || 1;
+        const neededSerials = targetQuantity * serialsPerUnit;
+        
+        if (newSerials.length >= neededSerials) {
+          // Last serial - check if we can auto-add to list (needs valid price)
+          setSerialScanMode(false);
+          const hasValidPrice = unitPriceInput.trim().length > 0 && parseFloat(unitPriceInput) >= 0;
+          if (hasValidPrice) {
+            setTimeout(() => {
+              addItemToListRef.current();
+            }, 100);
+          }
+        } else {
+          // Not the last - refocus input
+          setTimeout(() => {
+            serialInputRef.current?.focus();
+          }, 50);
+        }
+      }, 500);
+    }
+    
+    return () => {
+      if (serialAutoAddTimerRef.current) {
+        clearTimeout(serialAutoAddTimerRef.current);
+      }
+    };
+  }, [serialInput, selectedProduct, currentSerials, targetQuantity, unitPriceInput]);
 
   const handleCreateMapping = async (product: Product) => {
     // Create mapping: associate unmappedSupplierSku to this product
