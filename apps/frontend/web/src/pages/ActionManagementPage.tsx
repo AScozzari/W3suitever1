@@ -11,7 +11,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { useTenant } from '@/contexts/TenantContext';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -135,7 +134,6 @@ interface CoverageStats {
 }
 
 export default function ActionManagementPage() {
-  const { tenantSlug } = useTenant();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
