@@ -1141,6 +1141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath === '/tenants/resolve' ||
         apiPath === '/utm-sources' || // UTM parameters are public reference data
         apiPath === '/utm-mediums' || // UTM parameters are public reference data
+        apiPath.startsWith('/action-definitions') || // Action definitions are global evergreen data
         apiPath === '/' // Skip auth for /api/ root endpoint
       ) {
         const reason = isBrowserRequest ? 'browser page request' : 'static/public asset';
@@ -1261,7 +1262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath === '/health' ||
         apiPath === '/tenants/resolve' ||
         apiPath === '/utm-sources' ||
-        apiPath === '/utm-mediums'
+        apiPath === '/utm-mediums' ||
+        apiPath.startsWith('/action-definitions') // Action definitions are global evergreen data
       ) {
         console.log(`[OAUTH2-AUTH] ⏭️  Skipping auth for public endpoint: ${apiPath}`);
         return next();
@@ -1350,7 +1352,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||
         req.path === '/utm-sources' || // UTM parameters are public reference data
-        req.path === '/utm-mediums') {  // UTM parameters are public reference data
+        req.path === '/utm-mediums' || // UTM parameters are public reference data
+        req.path.startsWith('/action-definitions')) {  // Action definitions are global evergreen data
       console.log(`[TENANT-SKIP] Bypassing tenant middleware for public endpoint: ${req.path}`);
       return next();
     }
