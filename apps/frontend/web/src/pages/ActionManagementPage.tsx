@@ -8,7 +8,7 @@
  * - Visualizza coverage delle azioni per dipartimento
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -576,11 +576,46 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
     priority: action?.priority || 100
   });
 
+  // Update formData when action changes (e.g., opening modal with different action)
+  useEffect(() => {
+    if (action) {
+      setFormData({
+        department: action.department || 'hr',
+        actionId: action.actionId || '',
+        actionName: action.actionName || '',
+        description: action.description || '',
+        requiresApproval: action.requiresApproval ?? false,
+        flowType: action.flowType || 'none',
+        workflowTemplateId: action.workflowTemplateId || '',
+        teamScope: action.teamScope || 'all',
+        specificTeamIds: action.specificTeamIds || [],
+        slaHours: action.slaHours || 24,
+        escalationEnabled: action.escalationEnabled ?? true,
+        priority: action.priority || 100
+      });
+    } else {
+      // Reset to defaults for new action
+      setFormData({
+        department: 'hr',
+        actionId: '',
+        actionName: '',
+        description: '',
+        requiresApproval: false,
+        flowType: 'none',
+        workflowTemplateId: '',
+        teamScope: 'all',
+        specificTeamIds: [],
+        slaHours: 24,
+        escalationEnabled: true,
+        priority: 100
+      });
+    }
+  }, [action, open]);
+
   const { data: workflowsData } = useQuery({
     queryKey: ['/api/action-configurations/meta/workflows', formData.department],
     queryFn: async () => {
-      const res = await apiRequest(`/api/action-configurations/meta/workflows/${formData.department}`);
-      return res.json();
+      return await apiRequest(`/api/action-configurations/meta/workflows/${formData.department}`);
     },
     enabled: open && formData.flowType === 'workflow'
   });
@@ -588,8 +623,7 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
   const { data: teamsData } = useQuery({
     queryKey: ['/api/action-configurations/meta/teams', formData.department],
     queryFn: async () => {
-      const res = await apiRequest(`/api/action-configurations/meta/teams/${formData.department}`);
-      return res.json();
+      return await apiRequest(`/api/action-configurations/meta/teams/${formData.department}`);
     },
     enabled: open && formData.teamScope === 'specific'
   });
@@ -600,12 +634,8 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
         ? `/api/action-configurations/${action.id}` 
         : '/api/action-configurations';
       const method = isEditing ? 'PUT' : 'POST';
-      const res = await apiRequest(url, { method, body: JSON.stringify(data) });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Errore durante il salvataggio');
-      }
-      return res.json();
+      // apiRequest already returns parsed JSON and throws on error
+      return await apiRequest(url, { method, body: data });
     },
     onSuccess: () => {
       toast({ title: isEditing ? 'Azione aggiornata' : 'Azione creata con successo' });
