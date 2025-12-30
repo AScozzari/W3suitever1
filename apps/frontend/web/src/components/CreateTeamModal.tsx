@@ -753,7 +753,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         <SelectTrigger className="w-[180px]" data-testid="member-role-filter">
                           <SelectValue placeholder="Filtra per ruolo" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="z-[9999]">
                           <SelectItem value="all">Tutti i ruoli</SelectItem>
                           {roles.map((role: any) => (
                             <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
@@ -848,7 +848,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         <SelectTrigger className="w-[180px]" data-testid="primary-sup-role-filter">
                           <SelectValue placeholder="Filtra per ruolo" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="z-[9999]">
                           <SelectItem value="all">Tutti i ruoli</SelectItem>
                           {roles.map((role: any) => (
                             <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
@@ -996,7 +996,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         <SelectTrigger className="w-[180px]" data-testid="secondary-sup-role-filter">
                           <SelectValue placeholder="Filtra per ruolo" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="z-[9999]">
                           <SelectItem value="all">Tutti i ruoli</SelectItem>
                           {roles.map((role: any) => (
                             <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
