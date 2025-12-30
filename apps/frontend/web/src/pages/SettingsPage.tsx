@@ -1671,6 +1671,7 @@ export default function SettingsPage() {
   
   // ✅ ENTERPRISE AUDIT: Load real data from unified audit trail API (for datatable)
   const enterpriseQueryParams = buildEnterpriseAuditQueryParams();
+  console.log('[DATATABLE-FILTERS] Query params:', enterpriseQueryParams);
   const { data: enterpriseAuditData, isLoading: auditLoading, error: auditError, refetch: refetchAudit } = useQuery<EnterpriseAuditResponse>({
     queryKey: ['/api/audit/enterprise', enterpriseQueryParams],
     enabled: activeTab === 'Logs', // Only fetch when Logs tab is active
