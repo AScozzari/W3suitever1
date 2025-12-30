@@ -15343,39 +15343,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await setTenantContext(tenantId);
       
-      const whereConditions = [eq(workflowInstances.tenantId, tenantId)];
+      const statusFilter = status !== 'all' ? `AND current_status = '${status}'` : '';
+      const rawInstances = await db.execute(sql`
+        SELECT 
+          wi.id, wi.tenant_id, wi.current_status as status, wi.instance_name, 
+          wi.instance_type, wi.category, wi.created_by, wi.context, 
+          wi.workflow_data, wi.template_id, wi.created_at, wi.updated_at,
+          wt.name as template_name,
+          COALESCE(u.first_name || ' ' || u.last_name, u.email, 'Utente') as created_by_name
+        FROM w3suite.workflow_instances wi
+        LEFT JOIN w3suite.workflow_templates wt ON wi.template_id = wt.id
+        LEFT JOIN w3suite.users u ON wi.created_by = u.id
+        WHERE wi.tenant_id = ${tenantId}::uuid ${sql.raw(statusFilter)}
+        ORDER BY wi.created_at DESC
+        LIMIT 100
+      `);
       
-      if (status !== 'all') {
-        whereConditions.push(eq(workflowInstances.status, status as string));
-      }
-      
-      const instances = await db
-        .select({
-          id: workflowInstances.id,
-          tenantId: workflowInstances.tenantId,
-          status: workflowInstances.status,
-          createdAt: workflowInstances.createdAt,
-          updatedAt: workflowInstances.updatedAt,
-          entityType: workflowInstances.entityType,
-          entityId: workflowInstances.entityId,
-          triggeredBy: workflowInstances.triggeredBy,
-          currentStepData: workflowInstances.currentStepData,
-          workflowTemplateId: workflowInstances.templateId,
-          workflowTemplateName: workflowTemplates.name
-        })
-        .from(workflowInstances)
-        .leftJoin(workflowTemplates, eq(workflowInstances.templateId, workflowTemplates.id))
-        .where(and(...whereConditions))
-        .orderBy(desc(workflowInstances.createdAt))
-        .limit(100);
-
-      const enrichedInstances = await Promise.all(instances.map(async (inst) => {
-        let triggeredByName = 'Utente';
-        if (inst.triggeredBy) {
-          const [user] = await db.select({ name: users.name }).from(users).where(eq(users.id, inst.triggeredBy)).limit(1);
-          if (user) triggeredByName = user.name || 'Utente';
-        }
-        return { ...inst, triggeredByName };
+      const enrichedInstances = (rawInstances.rows || []).map((inst: any) => ({
+        id: inst.id,
+        tenantId: inst.tenant_id,
+        status: inst.status,
+        createdAt: inst.created_at,
+        updatedAt: inst.updated_at,
+        instanceType: inst.instance_type,
+        instanceName: inst.instance_name,
+        category: inst.category,
+        createdBy: inst.created_by,
+        context: inst.context,
+        workflowData: inst.workflow_data,
+        workflowTemplateId: inst.template_id,
+        workflowTemplateName: inst.template_name || '',
+        triggeredByName: inst.created_by_name || 'Utente'
       }));
       
       console.log(`[WORKFLOW-APPROVALS] ✅ Found ${enrichedInstances.length} approval requests`);
@@ -15409,18 +15407,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Richiesta non trovata' });
       }
       
-      if (instance.status !== 'pending') {
+      if (instance.currentStatus !== 'pending') {
         return res.status(400).json({ error: 'Richiesta già processata' });
       }
       
-      const currentStepData = (instance.currentStepData || {}) as any;
+      const currentContext = (instance.context || {}) as any;
       
       await db.update(workflowInstances).set({
-        status: 'approved',
+        currentStatus: 'approved',
         completedAt: new Date(),
         updatedAt: new Date(),
-        currentStepData: {
-          ...currentStepData,
+        context: {
+          ...currentContext,
           approvedBy: approverId,
           approvedAt: new Date().toISOString(),
           approvalNotes: notes
@@ -15461,18 +15459,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Richiesta non trovata' });
       }
       
-      if (instance.status !== 'pending') {
+      if (instance.currentStatus !== 'pending') {
         return res.status(400).json({ error: 'Richiesta già processata' });
       }
       
-      const currentStepData = (instance.currentStepData || {}) as any;
+      const currentContext = (instance.context || {}) as any;
       
       await db.update(workflowInstances).set({
-        status: 'rejected',
+        currentStatus: 'rejected',
         completedAt: new Date(),
         updatedAt: new Date(),
-        currentStepData: {
-          ...currentStepData,
+        context: {
+          ...currentContext,
           rejectedBy: rejecterId,
           rejectedAt: new Date().toISOString(),
           rejectionReason: reason
