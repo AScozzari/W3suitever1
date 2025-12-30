@@ -10464,3 +10464,78 @@ export const insertPriceListItemCompositionSchema = createInsertSchema(priceList
 });
 export type InsertPriceListItemComposition = z.infer<typeof insertPriceListItemCompositionSchema>;
 export type PriceListItemComposition = typeof priceListItemCompositions.$inferSelect;
+
+// ==================== ACTIVITY LOGS ====================
+// Centralized audit trail for all platform activities across services
+
+export const activityLogLevelEnum = pgEnum("activity_log_level", ["DEBUG", "INFO", "WARN", "ERROR"]);
+export const activityLogServiceEnum = pgEnum("activity_log_service", [
+  "SYSTEM", "AUTH", "WMS", "CRM", "HR", "POS", "ANALYTICS", "VOIP", "WORKFLOW", "SETTINGS", "AI"
+]);
+
+export const activityLogs = w3suiteSchema.table("activity_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Service & Module categorization
+  service: activityLogServiceEnum("service").notNull(),
+  module: varchar("module", { length: 50 }),
+  
+  // Action details
+  action: varchar("action", { length: 100 }).notNull(),
+  actionCategory: varchar("action_category", { length: 50 }),
+  
+  // Entity being acted upon
+  entityType: varchar("entity_type", { length: 50 }),
+  entityId: varchar("entity_id", { length: 100 }),
+  entityName: varchar("entity_name", { length: 255 }),
+  
+  // Actor information
+  actorId: varchar("actor_id", { length: 100 }),
+  actorEmail: varchar("actor_email", { length: 255 }),
+  actorRole: varchar("actor_role", { length: 50 }),
+  actorType: varchar("actor_type", { length: 20 }).default('user'),
+  
+  // Request context
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  sessionId: varchar("session_id", { length: 100 }),
+  correlationId: varchar("correlation_id", { length: 100 }),
+  
+  // Log details
+  level: activityLogLevelEnum("level").default('INFO').notNull(),
+  status: varchar("status", { length: 20 }).default('success'),
+  message: text("message"),
+  
+  // Data snapshots (for audit trail)
+  payloadBefore: jsonb("payload_before"),
+  payloadAfter: jsonb("payload_after"),
+  diff: jsonb("diff"),
+  metadata: jsonb("metadata"),
+  
+  // Performance
+  latencyMs: integer("latency_ms"),
+  
+  // Source tracking
+  source: varchar("source", { length: 50 }),
+  platform: varchar("platform", { length: 20 }),
+  
+  // Timestamps
+  executedAt: timestamp("executed_at").defaultNow().notNull(),
+  ingestedAt: timestamp("ingested_at").defaultNow().notNull(),
+}, (table) => [
+  index("activity_logs_tenant_service_time_idx").on(table.tenantId, table.service, table.executedAt),
+  index("activity_logs_tenant_action_time_idx").on(table.tenantId, table.action, table.executedAt),
+  index("activity_logs_tenant_actor_time_idx").on(table.tenantId, table.actorId, table.executedAt),
+  index("activity_logs_tenant_entity_idx").on(table.tenantId, table.entityType, table.entityId),
+  index("activity_logs_correlation_idx").on(table.correlationId),
+  index("activity_logs_level_idx").on(table.level),
+  index("activity_logs_executed_at_idx").on(table.executedAt),
+]);
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  ingestedAt: true,
+});
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type ActivityLog = typeof activityLogs.$inferSelect;
