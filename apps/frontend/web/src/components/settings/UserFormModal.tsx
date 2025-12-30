@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   User, Lock, UserCircle, Phone, MapPin, FileText, 
-  Settings, Briefcase, Headphones, CheckCircle, Eye, EyeOff
+  Settings, Briefcase, Headphones, CheckCircle, Eye, EyeOff,
+  Building2, Store, Globe
 } from 'lucide-react';
 import TabbedFormModal, { formStyles, TabSection } from '../ui/TabbedFormModal';
 import AvatarSelector from '../AvatarSelector';
@@ -22,6 +23,7 @@ interface UserFormModalProps {
   roles: any[];
   commercialAreas: any[];
   voipExtensions: any[];
+  organizationEntities?: any[];
 }
 
 const initialUserData = {
@@ -91,7 +93,8 @@ export default function UserFormModal({
   stores,
   roles,
   commercialAreas,
-  voipExtensions
+  voipExtensions,
+  organizationEntities = []
 }: UserFormModalProps) {
   const [formData, setFormData] = useState(initialUserData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -714,6 +717,195 @@ export default function UserFormModal({
               />
             </div>
           </div>
+        </div>
+      )
+    },
+    {
+      id: 'scope',
+      label: 'Scope di Azione',
+      icon: Globe,
+      content: (
+        <div>
+          <h4 style={formStyles.sectionTitle}><Globe size={16} /> Livello di Accesso</h4>
+          <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>
+            Definisci su quali entità l'utente può operare. Lo scope determina la visibilità e le azioni disponibili.
+          </p>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <label style={formStyles.label}>Livello Scope</label>
+            <select
+              value={formData.scopeLevel}
+              onChange={(e) => {
+                const newLevel = e.target.value;
+                setFormData({ 
+                  ...formData, 
+                  scopeLevel: newLevel,
+                  selectedLegalEntities: newLevel === 'organizzazione' ? [] : formData.selectedLegalEntities,
+                  selectedStores: newLevel !== 'negozio' ? [] : formData.selectedStores
+                });
+              }}
+              disabled={isReadOnly}
+              style={selectStyle}
+              data-testid="select-user-scope-level"
+            >
+              <option value="tenant">Tutto il Tenant (Accesso Completo)</option>
+              <option value="organizzazione">Ragioni Sociali Specifiche</option>
+              <option value="negozio">Punti Vendita Specifici</option>
+            </select>
+          </div>
+
+          {formData.scopeLevel === 'organizzazione' && (
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={formStyles.sectionTitle}><Building2 size={16} /> Ragioni Sociali Assegnate</h4>
+              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>
+                Seleziona le ragioni sociali su cui l'utente può operare.
+              </p>
+              <div style={{ 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px', 
+                maxHeight: '200px', 
+                overflowY: 'auto',
+                padding: '8px'
+              }}>
+                {organizationEntities.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: '13px', padding: '8px' }}>
+                    Nessuna ragione sociale disponibile
+                  </p>
+                ) : (
+                  organizationEntities.map((org: any) => (
+                    <label 
+                      key={org.id} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        padding: '8px',
+                        borderRadius: '4px',
+                        cursor: isReadOnly ? 'default' : 'pointer',
+                        backgroundColor: formData.selectedLegalEntities.includes(org.id) ? '#fff7ed' : 'transparent'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedLegalEntities.includes(org.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ 
+                              ...formData, 
+                              selectedLegalEntities: [...formData.selectedLegalEntities, org.id]
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              selectedLegalEntities: formData.selectedLegalEntities.filter((id: number) => id !== org.id)
+                            });
+                          }
+                        }}
+                        disabled={isReadOnly}
+                        style={{ width: '16px', height: '16px' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 500 }}>{org.nome || org.name}</div>
+                        <div style={{ fontSize: '11px', color: '#888' }}>
+                          {org.codice || org.code} • P.IVA: {org.piva || org.pIva || '-'}
+                        </div>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+              {formData.selectedLegalEntities.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                  {formData.selectedLegalEntities.length} ragione/i sociale/i selezionata/e
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.scopeLevel === 'negozio' && (
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={formStyles.sectionTitle}><Store size={16} /> Punti Vendita Assegnati</h4>
+              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>
+                Seleziona i punti vendita su cui l'utente può operare.
+              </p>
+              <div style={{ 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px', 
+                maxHeight: '250px', 
+                overflowY: 'auto',
+                padding: '8px'
+              }}>
+                {stores.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: '13px', padding: '8px' }}>
+                    Nessun punto vendita disponibile
+                  </p>
+                ) : (
+                  stores.map((store: any) => (
+                    <label 
+                      key={store.id} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        padding: '8px',
+                        borderRadius: '4px',
+                        cursor: isReadOnly ? 'default' : 'pointer',
+                        backgroundColor: formData.selectedStores.includes(store.id) ? '#fff7ed' : 'transparent'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedStores.includes(store.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ 
+                              ...formData, 
+                              selectedStores: [...formData.selectedStores, store.id]
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              selectedStores: formData.selectedStores.filter((id: number) => id !== store.id)
+                            });
+                          }
+                        }}
+                        disabled={isReadOnly}
+                        style={{ width: '16px', height: '16px' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 500 }}>{store.nome || store.name}</div>
+                        <div style={{ fontSize: '11px', color: '#888' }}>
+                          {store.code || store.codice} • {store.citta || store.city || '-'}
+                        </div>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+              {formData.selectedStores.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                  {formData.selectedStores.length} punto/i vendita selezionato/i
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.scopeLevel === 'tenant' && (
+            <div style={{ 
+              padding: '16px', 
+              backgroundColor: '#f0fdf4', 
+              borderRadius: '8px',
+              border: '1px solid #bbf7d0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#166534' }}>
+                <CheckCircle size={18} />
+                <strong>Accesso Completo</strong>
+              </div>
+              <p style={{ fontSize: '13px', color: '#15803d', marginTop: '8px' }}>
+                L'utente avrà visibilità su tutte le ragioni sociali e tutti i punti vendita del tenant.
+              </p>
+            </div>
+          )}
         </div>
       )
     },

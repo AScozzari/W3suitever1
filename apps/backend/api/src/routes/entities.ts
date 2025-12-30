@@ -12,7 +12,7 @@ import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { legalEntities, organizationEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers, insertOrganizationEntitySchema } from '../db/schema/w3suite';
+import { legalEntities, organizationEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers, insertOrganizationEntitySchema, userOrganizationEntities, userTeams, userStores } from '../db/schema/w3suite';
 import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
@@ -2062,6 +2062,13 @@ router.get('/users/:id/assignments', requirePermission('users:read'), async (req
             .where(eq(stores.id, assignment.scopeId))
             .limit(1);
           scopeDetails = store;
+        } else if (assignment.scopeType === 'organization_entity') {
+          const [orgEntity] = await db
+            .select({ id: organizationEntities.id, name: organizationEntities.nome, code: organizationEntities.codice })
+            .from(organizationEntities)
+            .where(eq(organizationEntities.id, assignment.scopeId))
+            .limit(1);
+          scopeDetails = orgEntity;
         } else if (assignment.scopeType === 'tenant') {
           const [tenant] = await db
             .select({ id: tenants.id, name: tenants.name })
@@ -2248,6 +2255,305 @@ router.get('/users/:id/permissions', requirePermission('users:read'), async (req
       success: false,
       error: 'Internal server error',
       message: error?.message || 'Failed to calculate user permissions',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== USER ORGANIZATION ENTITIES (Scope Interno) ====================
+
+/**
+ * GET /api/users/:id/organization-entities
+ * Get organization entities assigned to a user
+ */
+router.get('/users/:id/organization-entities', requirePermission('users:read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const userOrgEntities = await db
+      .select({
+        userId: userOrganizationEntities.userId,
+        organizationEntityId: userOrganizationEntities.organizationEntityId,
+        isPrimary: userOrganizationEntities.isPrimary,
+        createdAt: userOrganizationEntities.createdAt,
+        orgName: organizationEntities.nome,
+        orgCode: organizationEntities.codice,
+        orgPiva: organizationEntities.pIva
+      })
+      .from(userOrganizationEntities)
+      .innerJoin(organizationEntities, eq(userOrganizationEntities.organizationEntityId, organizationEntities.id))
+      .where(
+        and(
+          eq(userOrganizationEntities.userId, userId),
+          eq(userOrganizationEntities.tenantId, tenantId)
+        )
+      );
+
+    res.status(200).json({
+      success: true,
+      data: userOrgEntities,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving user organization entities', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/users/:id/organization-entities
+ * Set organization entities for a user (replaces existing)
+ */
+router.put('/users/:id/organization-entities', requirePermission('users:write'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+    const { organizationEntityIds, primaryId } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Delete existing assignments
+    await db
+      .delete(userOrganizationEntities)
+      .where(
+        and(
+          eq(userOrganizationEntities.userId, userId),
+          eq(userOrganizationEntities.tenantId, tenantId)
+        )
+      );
+
+    // Insert new assignments
+    if (organizationEntityIds && organizationEntityIds.length > 0) {
+      const newAssignments = organizationEntityIds.map((orgId: string) => ({
+        userId,
+        organizationEntityId: orgId,
+        tenantId,
+        isPrimary: orgId === primaryId
+      }));
+
+      await db.insert(userOrganizationEntities).values(newAssignments);
+    }
+
+    logger.info('User organization entities updated', { userId, count: organizationEntityIds?.length || 0 });
+
+    res.status(200).json({
+      success: true,
+      message: 'User organization entities updated',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating user organization entities', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== USER TEAMS (Normalized) ====================
+
+/**
+ * GET /api/users/:id/teams
+ * Get teams assigned to a user
+ */
+router.get('/users/:id/teams', requirePermission('users:read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Import teams table dynamically to avoid circular dependency
+    const { teams } = await import('../db/schema/w3suite');
+
+    const userTeamsList = await db
+      .select({
+        userId: userTeams.userId,
+        teamId: userTeams.teamId,
+        isPrimary: userTeams.isPrimary,
+        assignedAt: userTeams.assignedAt,
+        teamName: teams.name,
+        teamType: teams.teamType
+      })
+      .from(userTeams)
+      .innerJoin(teams, eq(userTeams.teamId, teams.id))
+      .where(
+        and(
+          eq(userTeams.userId, userId),
+          eq(userTeams.tenantId, tenantId)
+        )
+      );
+
+    res.status(200).json({
+      success: true,
+      data: userTeamsList,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving user teams', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/users/:id/teams
+ * Set teams for a user (replaces existing)
+ */
+router.put('/users/:id/teams', requirePermission('users:write'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+    const { teamIds, primaryId } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Delete existing assignments
+    await db
+      .delete(userTeams)
+      .where(
+        and(
+          eq(userTeams.userId, userId),
+          eq(userTeams.tenantId, tenantId)
+        )
+      );
+
+    // Insert new assignments
+    if (teamIds && teamIds.length > 0) {
+      const newAssignments = teamIds.map((teamId: string) => ({
+        userId,
+        teamId,
+        tenantId,
+        isPrimary: teamId === primaryId
+      }));
+
+      await db.insert(userTeams).values(newAssignments);
+    }
+
+    logger.info('User teams updated', { userId, count: teamIds?.length || 0 });
+
+    res.status(200).json({
+      success: true,
+      message: 'User teams updated',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating user teams', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * PUT /api/users/:id/stores
+ * Set stores for a user (replaces existing)
+ */
+router.put('/users/:id/stores', requirePermission('users:write'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+    const { storeIds, primaryId } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // Delete existing assignments
+    await db
+      .delete(userStores)
+      .where(
+        and(
+          eq(userStores.userId, userId),
+          eq(userStores.tenantId, tenantId)
+        )
+      );
+
+    // Insert new assignments
+    if (storeIds && storeIds.length > 0) {
+      const newAssignments = storeIds.map((storeId: string) => ({
+        userId,
+        storeId,
+        tenantId,
+        isPrimary: storeId === primaryId
+      }));
+
+      await db.insert(userStores).values(newAssignments);
+    }
+
+    logger.info('User stores updated', { userId, count: storeIds?.length || 0 });
+
+    res.status(200).json({
+      success: true,
+      message: 'User stores updated',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error updating user stores', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
