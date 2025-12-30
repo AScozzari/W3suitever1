@@ -136,6 +136,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [memberRoleFilter, setMemberRoleFilter] = useState<string | null>(null);
 
   // 🎯 Fixed form setup - prevent re-initialization issues
   const defaultValues: CreateTeamData = {
@@ -444,7 +446,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-modal max-w-4xl max-h-[90vh]">
+      <DialogContent className="glass-modal max-w-4xl max-h-[95vh] h-[85vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-windtre-orange" />
@@ -706,37 +708,76 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
                   {/* User Members */}
                   <div>
-                    <h4 className="text-md font-medium mb-1">Individual Users</h4>
+                    <h4 className="text-md font-medium mb-1">Seleziona Utenti</h4>
                     <p className="text-sm text-gray-600 mb-3">
-                      Add specific users to the team. These users will always be team members regardless of role changes.
+                      Aggiungi utenti specifici al team. Usa i filtri per trovare rapidamente gli utenti.
                     </p>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {users.map((user: any) => {
-                        const isSelected = selectedUserMembers.includes(user.id);
-                        return (
-                          <div
-                            key={user.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
-                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            onClick={() => toggleUserMember(user.id)}
-                            data-testid={`user-member-${user.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
-                                {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                    
+                    {/* Filtri: Ricerca + Ruolo */}
+                    <div className="flex gap-3 mb-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Cerca per nome o cognome..."
+                          value={memberSearchQuery}
+                          onChange={(e) => setMemberSearchQuery(e.target.value)}
+                          className="w-full"
+                          data-testid="member-search-input"
+                        />
+                      </div>
+                      <Select
+                        value={memberRoleFilter || 'all'}
+                        onValueChange={(value) => setMemberRoleFilter(value === 'all' ? null : value)}
+                      >
+                        <SelectTrigger className="w-[180px]" data-testid="member-role-filter">
+                          <SelectValue placeholder="Filtra per ruolo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti i ruoli</SelectItem>
+                          {roles.map((role: any) => (
+                            <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                      {users
+                        .filter((user: any) => {
+                          const searchLower = memberSearchQuery.toLowerCase();
+                          const matchesSearch = !memberSearchQuery || 
+                            user.name?.toLowerCase().includes(searchLower) ||
+                            user.email?.toLowerCase().includes(searchLower);
+                          const matchesRole = !memberRoleFilter || user.roleId === memberRoleFilter;
+                          return matchesSearch && matchesRole;
+                        })
+                        .map((user: any) => {
+                          const isSelected = selectedUserMembers.includes(user.id);
+                          const userRole = roles.find((r: any) => r.id === user.roleId);
+                          return (
+                            <div
+                              key={user.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              }`}
+                              onClick={() => toggleUserMember(user.id)}
+                              data-testid={`user-member-${user.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">{user.name}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
+                                  <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
+                                  {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </div>
 
