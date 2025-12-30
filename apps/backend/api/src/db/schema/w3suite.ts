@@ -3079,7 +3079,7 @@ export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
 // ✅ ENTERPRISE CENTRALIZZAZIONE: Tabella unica per tutte le richieste aziendali
 
 // Department Enum - Categorizzazione per dipartimenti aziendali
-// ✅ SOURCE OF TRUTH: public.department (7 values including marketing)
+// ✅ SOURCE OF TRUTH: public.department (8 values including wms)
 export const departmentEnum = pgEnum('department', [
   'hr',           // Human Resources (ferie, permessi, congedi)
   'operations',   // Operazioni (manutenzione, logistics, inventory)
@@ -3087,7 +3087,8 @@ export const departmentEnum = pgEnum('department', [
   'finance',      // Finanza (expenses, budgets, payments)
   'crm',          // Customer Relations (complaints, escalations)
   'sales',        // Vendite (discount approvals, contract changes)
-  'marketing'     // Marketing (campaigns, content, branding)
+  'marketing',    // Marketing (campaigns, content, branding)
+  'wms'           // Warehouse Management System (movements, approvals, inventory)
 ]);
 
 // Universal Request Status - Stati unificati per tutte le categorie
@@ -3823,6 +3824,79 @@ export const userWorkflowAssignments = w3suiteSchema.table("user_workflow_assign
   // 🎯 UNIQUE PER DIPARTIMENTO: Stesso utente può avere stesso workflow per dipartimenti diversi
   uniqueIndex("user_workflow_assignments_unique").on(table.userId, table.templateId, table.forDepartment),
 ]);
+
+// ==================== ACTION CONFIGURATIONS ====================
+// 🎯 CENTRALIZED ACTION MANAGEMENT: Configura azioni per dipartimento con flusso approvazione
+
+// Flow Type Enum - Tipo di flusso per un'azione
+export const actionFlowTypeEnum = pgEnum('action_flow_type', [
+  'none',      // Nessun flusso - azione diretta senza approvazione
+  'default',   // Flusso default - notifica supervisori team, First Wins
+  'workflow'   // Flusso workflow - segue workflow template specifico
+]);
+
+// Team Scope Enum - Scope applicazione team
+export const teamScopeEnum = pgEnum('team_scope', [
+  'all',       // Applicabile a tutti i team
+  'specific'   // Applicabile solo a team specifici
+]);
+
+// Action Configurations - Master list azioni per dipartimento con configurazione flusso
+export const actionConfigurations = w3suiteSchema.table("action_configurations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // 🎯 IDENTIFICAZIONE AZIONE
+  department: departmentEnum("department").notNull(), // hr, wms, finance, crm, etc.
+  actionId: varchar("action_id", { length: 100 }).notNull(), // 'richiesta_ferie', 'reso_merce', 'rimborso_spese'
+  actionName: varchar("action_name", { length: 200 }).notNull(), // Nome leggibile: 'Richiesta Ferie'
+  description: text("description"), // Descrizione dettagliata dell'azione
+  
+  // 🎯 CONFIGURAZIONE FLUSSO APPROVAZIONE
+  requiresApproval: boolean("requires_approval").default(false).notNull(), // Richiede approvazione?
+  flowType: actionFlowTypeEnum("flow_type").default('none').notNull(), // none | default | workflow
+  
+  // 🎯 WORKFLOW ABBINATO (solo se flowType = 'workflow')
+  workflowTemplateId: uuid("workflow_template_id").references(() => workflowTemplates.id, { onDelete: 'set null' }),
+  
+  // 🎯 SCOPE TEAM (per quali team vale questa configurazione)
+  teamScope: teamScopeEnum("team_scope").default('all').notNull(), // all | specific
+  specificTeamIds: uuid("specific_team_ids").array().default([]), // Team specifici se teamScope = 'specific'
+  
+  // 🎯 SLA E ESCALATION
+  slaHours: integer("sla_hours").default(24), // Ore per escalation (default 24h)
+  escalationEnabled: boolean("escalation_enabled").default(true), // Abilita escalation automatica
+  
+  // 🎯 PRIORITÀ E STATO
+  priority: integer("priority").default(100), // Priorità in caso di conflitti
+  isActive: boolean("is_active").default(true),
+  
+  // 🎯 METADATA
+  metadata: jsonb("metadata").default({}), // Metadati aggiuntivi configurabili
+  
+  // 🎯 AUDIT
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("action_configurations_tenant_idx").on(table.tenantId),
+  index("action_configurations_department_idx").on(table.department),
+  index("action_configurations_active_idx").on(table.isActive),
+  index("action_configurations_flow_type_idx").on(table.flowType),
+  // 🎯 UNIQUE: Una sola configurazione per azione per dipartimento per tenant
+  uniqueIndex("action_configurations_unique").on(table.tenantId, table.department, table.actionId),
+]);
+
+export const insertActionConfigurationSchema = createInsertSchema(actionConfigurations).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertActionConfiguration = z.infer<typeof insertActionConfigurationSchema>;
+export type ActionConfiguration = typeof actionConfigurations.$inferSelect;
+
+// ==================== WORKFLOW INSTANCES ====================
 
 // Workflow Instances - Istanze runtime di workflow in esecuzione
 export const workflowInstances = w3suiteSchema.table("workflow_instances", {
