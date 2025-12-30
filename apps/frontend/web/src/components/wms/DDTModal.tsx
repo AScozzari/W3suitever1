@@ -626,6 +626,81 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     }
   }, [searchMode, skuMappingsData, debouncedSearchQuery, convertMappingToProduct]);
 
+  // Auto-add serial after 500ms when it reaches expected length (like Carico Merce)
+  const serialAutoAddTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const addItemToListRef = useRef<() => void>(() => {});
+  
+  // Keep addItemToList ref updated
+  useEffect(() => {
+    addItemToListRef.current = addItemToList;
+  });
+
+  useEffect(() => {
+    // Clear previous timer
+    if (serialAutoAddTimerRef.current) {
+      clearTimeout(serialAutoAddTimerRef.current);
+      serialAutoAddTimerRef.current = null;
+    }
+    
+    if (!selectedProduct || !serialInput.trim()) return;
+    
+    const cleanedSerial = serialInput.replace(/[^0-9A-Fa-f]/g, '');
+    const expectedLength = getSerialExpectedLength(selectedProduct.serialType);
+    
+    // Check if serial has reached expected length
+    let isComplete = false;
+    if (selectedProduct.serialType === 'imei') {
+      isComplete = cleanedSerial.length === 15;
+    } else if (selectedProduct.serialType === 'iccid') {
+      isComplete = cleanedSerial.length >= 19 && cleanedSerial.length <= 20;
+    } else if (selectedProduct.serialType === 'mac_address') {
+      isComplete = cleanedSerial.length === 12;
+    } else {
+      isComplete = serialInput.trim().length >= expectedLength;
+    }
+    
+    if (isComplete) {
+      // Set timer to auto-add after 500ms of no input
+      serialAutoAddTimerRef.current = setTimeout(() => {
+        const normalizedSerial = normalizeSerial(serialInput, selectedProduct.serialType);
+        
+        // Check for duplicates
+        if (currentSerials.includes(normalizedSerial)) {
+          setSerialInput('');
+          serialInputRef.current?.focus();
+          return;
+        }
+        
+        const newSerials = [...currentSerials, normalizedSerial];
+        setCurrentSerials(newSerials);
+        setSerialInput('');
+        
+        // Calculate if this is the last serial needed
+        const serialsPerUnit = selectedProduct.serialCount || 1;
+        const neededSerials = targetQuantity * serialsPerUnit;
+        
+        if (newSerials.length >= neededSerials) {
+          // Last serial - auto-add to list after short delay
+          setSerialScanMode(false);
+          setTimeout(() => {
+            addItemToListRef.current();
+          }, 100);
+        } else {
+          // Not the last - refocus input
+          setTimeout(() => {
+            serialInputRef.current?.focus();
+          }, 50);
+        }
+      }, 500);
+    }
+    
+    return () => {
+      if (serialAutoAddTimerRef.current) {
+        clearTimeout(serialAutoAddTimerRef.current);
+      }
+    };
+  }, [serialInput, selectedProduct, currentSerials, targetQuantity]);
+
   // Load order items when order is selected (use ref to prevent infinite loop)
   const prevOrderId = useRef<string | null>(null);
   useEffect(() => {
