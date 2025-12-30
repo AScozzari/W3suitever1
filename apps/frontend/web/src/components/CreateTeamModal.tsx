@@ -194,6 +194,13 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
   
+  // Helper function per ottenere il display name dell'utente
+  const getUserDisplayName = (user: any) => {
+    if (!user) return '';
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    return fullName || user.email || '';
+  };
+  
   const { data: roles = [], isLoading: rolesLoading } = useQuery<any[]>({ 
     queryKey: ['/api/roles'],
     staleTime: 5 * 60 * 1000 // Cache for 5 minutes
@@ -696,13 +703,13 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       </div>
                       <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
                         {selectedUserMembers.map(userId => {
-                          const user = users.find(u => u.id === userId);
+                          const user = users.find((u: any) => u.id === userId);
                           return user ? (
                             <Badge 
                               key={userId} 
                               className="bg-windtre-purple/20 text-windtre-purple hover:bg-windtre-purple/30 cursor-pointer flex items-center gap-1 pr-1"
                             >
-                              {user.name}
+                              {getUserDisplayName(user)}
                               <X 
                                 className="w-3 h-3 ml-1 hover:text-red-600" 
                                 onClick={(e) => {
@@ -755,8 +762,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       {users
                         .filter((user: any) => {
                           const searchLower = memberSearchQuery.toLowerCase();
+                          const fullName = getUserDisplayName(user).toLowerCase();
                           const matchesSearch = !memberSearchQuery || 
-                            user.name?.toLowerCase().includes(searchLower) ||
+                            fullName.includes(searchLower) ||
                             user.email?.toLowerCase().includes(searchLower);
                           const matchesRole = !memberRoleFilter || user.roleId === memberRoleFilter;
                           return matchesSearch && matchesRole;
@@ -777,7 +785,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             >
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <div className="font-medium">{user.name}</div>
+                                  <div className="font-medium">{getUserDisplayName(user)}</div>
                                   <div className="text-sm text-gray-500">{user.email}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -849,8 +857,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       {users
                         .filter((user: any) => {
                           const searchLower = primarySupSearchQuery.toLowerCase();
+                          const fullName = getUserDisplayName(user).toLowerCase();
                           const matchesSearch = !primarySupSearchQuery || 
-                            user.name?.toLowerCase().includes(searchLower) ||
+                            fullName.includes(searchLower) ||
                             user.email?.toLowerCase().includes(searchLower);
                           const matchesRole = !primarySupRoleFilter || user.roleId === primarySupRoleFilter;
                           return matchesSearch && matchesRole;
@@ -879,7 +888,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 } else if (isMember) {
                                   toast({
                                     title: 'Conflitto Rilevato',
-                                    description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                    description: `${getUserDisplayName(user)} è già un membro del team e non può essere supervisore dello stesso team.`,
                                     variant: 'destructive'
                                   });
                                 }
@@ -888,7 +897,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             >
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <div className="font-medium">{user.name}</div>
+                                  <div className="font-medium">{getUserDisplayName(user)}</div>
                                   <div className="text-sm text-gray-500">{user.email}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -923,7 +932,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                   Attenzione: Mismatch Area Territoriale
                                 </div>
                                 <p className="text-yellow-700 mt-1">
-                                  Il supervisore <strong>{supervisor?.name || supervisor?.email}</strong> ({mismatchInfo.mismatchDetails[0]?.supervisorArea}) 
+                                  Il supervisore <strong>{getUserDisplayName(supervisor) || supervisor?.email}</strong> ({mismatchInfo.mismatchDetails[0]?.supervisorArea}) 
                                   appartiene a un'area diversa rispetto ad alcuni membri del team:
                                 </p>
                                 <ul className="mt-2 text-xs text-yellow-600 list-disc list-inside">
@@ -996,8 +1005,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       {users
                         .filter((user: any) => {
                           const searchLower = secondarySupSearchQuery.toLowerCase();
+                          const fullName = getUserDisplayName(user).toLowerCase();
                           const matchesSearch = !secondarySupSearchQuery || 
-                            user.name?.toLowerCase().includes(searchLower) ||
+                            fullName.includes(searchLower) ||
                             user.email?.toLowerCase().includes(searchLower);
                           const matchesRole = !secondarySupRoleFilter || user.roleId === secondarySupRoleFilter;
                           return matchesSearch && matchesRole;
@@ -1027,7 +1037,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 } else if (isMember) {
                                   toast({
                                     title: 'Conflitto Rilevato',
-                                    description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                    description: `${getUserDisplayName(user)} è già un membro del team e non può essere supervisore dello stesso team.`,
                                     variant: 'destructive'
                                   });
                                 }
@@ -1036,7 +1046,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             >
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <div className="font-medium">{user.name}</div>
+                                  <div className="font-medium">{getUserDisplayName(user)}</div>
                                   <div className="text-sm text-gray-500">{user.email}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1072,7 +1082,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                   Attenzione: Mismatch Area (Secondo Supervisore)
                                 </div>
                                 <p className="text-yellow-700 mt-1">
-                                  Il secondo supervisore <strong>{supervisor?.name || supervisor?.email}</strong> ({mismatchInfo.mismatchDetails[0]?.supervisorArea}) 
+                                  Il secondo supervisore <strong>{getUserDisplayName(supervisor) || supervisor?.email}</strong> ({mismatchInfo.mismatchDetails[0]?.supervisorArea}) 
                                   appartiene a un'area diversa rispetto ad alcuni membri del team.
                                 </p>
                                 <ul className="mt-2 text-xs text-yellow-600 list-disc list-inside">
