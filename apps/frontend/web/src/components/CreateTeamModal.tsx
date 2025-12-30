@@ -138,6 +138,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   const [currentStep, setCurrentStep] = useState(1);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [memberRoleFilter, setMemberRoleFilter] = useState<string | null>(null);
+  const [primarySupSearchQuery, setPrimarySupSearchQuery] = useState('');
+  const [primarySupRoleFilter, setPrimarySupRoleFilter] = useState<string | null>(null);
+  const [secondarySupSearchQuery, setSecondarySupSearchQuery] = useState('');
+  const [secondarySupRoleFilter, setSecondarySupRoleFilter] = useState<string | null>(null);
 
   // 🎯 Fixed form setup - prevent re-initialization issues
   const defaultValues: CreateTeamData = {
@@ -813,56 +817,94 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <p className="text-sm text-gray-600 mb-3">
                       Seleziona un utente specifico come supervisore principale
                     </p>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {users.map((user: any) => {
-                        const primaryUser = form.watch('primarySupervisorUser');
-                        const membersList = form.watch('selectedMembers');
-                        const isSelected = primaryUser === user.id;
-                        const isMember = membersList.includes(user.id);
-                        const isDisabled = isMember; // Disabled if user is a member
-                        
-                        return (
-                          <div
-                            key={user.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isDisabled
-                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                                : isSelected
-                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
-                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            onClick={() => {
-                              if (!isDisabled) {
-                                form.setValue('primarySupervisorUser', isSelected ? null : user.id);
-                              } else if (isMember) {
-                                // Show conflict warning for members
-                                toast({
-                                  title: 'Conflitto Rilevato',
-                                  description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
-                            data-testid={`primary-supervisor-user-${user.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">
-                                  {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
-                                    ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
-                                    : 'No Dept'}
-                                </Badge>
-                                {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
-                                {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                    
+                    {/* Filtri: Ricerca + Ruolo */}
+                    <div className="flex gap-3 mb-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Cerca per nome o cognome..."
+                          value={primarySupSearchQuery}
+                          onChange={(e) => setPrimarySupSearchQuery(e.target.value)}
+                          className="w-full"
+                          data-testid="primary-sup-search-input"
+                        />
+                      </div>
+                      <Select
+                        value={primarySupRoleFilter || 'all'}
+                        onValueChange={(value) => setPrimarySupRoleFilter(value === 'all' ? null : value)}
+                      >
+                        <SelectTrigger className="w-[180px]" data-testid="primary-sup-role-filter">
+                          <SelectValue placeholder="Filtra per ruolo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti i ruoli</SelectItem>
+                          {roles.map((role: any) => (
+                            <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                      {users
+                        .filter((user: any) => {
+                          const searchLower = primarySupSearchQuery.toLowerCase();
+                          const matchesSearch = !primarySupSearchQuery || 
+                            user.name?.toLowerCase().includes(searchLower) ||
+                            user.email?.toLowerCase().includes(searchLower);
+                          const matchesRole = !primarySupRoleFilter || user.roleId === primarySupRoleFilter;
+                          return matchesSearch && matchesRole;
+                        })
+                        .map((user: any) => {
+                          const primaryUser = form.watch('primarySupervisorUser');
+                          const membersList = form.watch('selectedMembers');
+                          const isSelected = primaryUser === user.id;
+                          const isMember = membersList.includes(user.id);
+                          const isDisabled = isMember;
+                          const userRole = roles.find((r: any) => r.id === user.roleId);
+                          
+                          return (
+                            <div
+                              key={user.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                isDisabled
+                                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                  : isSelected
+                                    ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              }`}
+                              onClick={() => {
+                                if (!isDisabled) {
+                                  form.setValue('primarySupervisorUser', isSelected ? null : user.id);
+                                } else if (isMember) {
+                                  toast({
+                                    title: 'Conflitto Rilevato',
+                                    description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                    variant: 'destructive'
+                                  });
+                                }
+                              }}
+                              data-testid={`primary-supervisor-user-${user.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">{user.name}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
+                                  <Badge variant="outline">
+                                    {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
+                                      ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                      : 'No Dept'}
+                                  </Badge>
+                                  {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
+                                  {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                     
                     {/* 🚨 AREA MISMATCH WARNING - Primary Supervisor */}
@@ -918,62 +960,100 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
                   {/* Secondary Supervisor - Single User */}
                   <div>
-                    <h4 className="text-md font-medium mb-1">Secondo Supervisore Utente</h4>
+                    <h4 className="text-md font-medium mb-1">Secondo Supervisore</h4>
                     <p className="text-sm text-gray-600 mb-3">
                       Seleziona un utente specifico come secondo supervisore (opzionale)
                     </p>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {users.map((user: any) => {
-                        const secondaryUser = form.watch('secondarySupervisorUser');
-                        const primaryUser = form.watch('primarySupervisorUser');
-                        const membersList = form.watch('selectedMembers');
-                        const isSelected = secondaryUser === user.id;
-                        const isPrimary = primaryUser === user.id;
-                        const isMember = membersList.includes(user.id);
-                        
-                        return (
-                          <div
-                            key={user.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              (isPrimary || isMember)
-                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                                : isSelected
-                                  ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
-                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            onClick={() => {
-                              if (!isPrimary && !isMember) {
-                                form.setValue('secondarySupervisorUser', isSelected ? null : user.id);
-                              } else if (isMember) {
-                                // Show conflict warning
-                                toast({
-                                  title: '⚠️ Conflitto Rilevato',
-                                  description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
-                                  variant: 'destructive'
-                                });
-                              }
-                            }}
-                            data-testid={`secondary-supervisor-user-${user.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">
-                                  {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
-                                    ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
-                                    : 'No Dept'}
-                                </Badge>
-                                {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
-                                {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
-                                {isSelected && !isPrimary && !isMember && <UserCheck className="w-4 h-4 text-green-600" />}
+                    
+                    {/* Filtri: Ricerca + Ruolo */}
+                    <div className="flex gap-3 mb-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Cerca per nome o cognome..."
+                          value={secondarySupSearchQuery}
+                          onChange={(e) => setSecondarySupSearchQuery(e.target.value)}
+                          className="w-full"
+                          data-testid="secondary-sup-search-input"
+                        />
+                      </div>
+                      <Select
+                        value={secondarySupRoleFilter || 'all'}
+                        onValueChange={(value) => setSecondarySupRoleFilter(value === 'all' ? null : value)}
+                      >
+                        <SelectTrigger className="w-[180px]" data-testid="secondary-sup-role-filter">
+                          <SelectValue placeholder="Filtra per ruolo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tutti i ruoli</SelectItem>
+                          {roles.map((role: any) => (
+                            <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                      {users
+                        .filter((user: any) => {
+                          const searchLower = secondarySupSearchQuery.toLowerCase();
+                          const matchesSearch = !secondarySupSearchQuery || 
+                            user.name?.toLowerCase().includes(searchLower) ||
+                            user.email?.toLowerCase().includes(searchLower);
+                          const matchesRole = !secondarySupRoleFilter || user.roleId === secondarySupRoleFilter;
+                          return matchesSearch && matchesRole;
+                        })
+                        .map((user: any) => {
+                          const secondaryUser = form.watch('secondarySupervisorUser');
+                          const primaryUser = form.watch('primarySupervisorUser');
+                          const membersList = form.watch('selectedMembers');
+                          const isSelected = secondaryUser === user.id;
+                          const isPrimary = primaryUser === user.id;
+                          const isMember = membersList.includes(user.id);
+                          const userRole = roles.find((r: any) => r.id === user.roleId);
+                          
+                          return (
+                            <div
+                              key={user.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                (isPrimary || isMember)
+                                  ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                  : isSelected
+                                    ? 'bg-windtre-purple/10 border-windtre-purple text-windtre-purple'
+                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              }`}
+                              onClick={() => {
+                                if (!isPrimary && !isMember) {
+                                  form.setValue('secondarySupervisorUser', isSelected ? null : user.id);
+                                } else if (isMember) {
+                                  toast({
+                                    title: 'Conflitto Rilevato',
+                                    description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
+                                    variant: 'destructive'
+                                  });
+                                }
+                              }}
+                              data-testid={`secondary-supervisor-user-${user.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">{user.name}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
+                                  <Badge variant="outline">
+                                    {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
+                                      ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                      : 'No Dept'}
+                                  </Badge>
+                                  {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primario</Badge>}
+                                  {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
+                                  {isSelected && !isPrimary && !isMember && <UserCheck className="w-4 h-4 text-green-600" />}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                     
                     {/* 🚨 AREA MISMATCH WARNING - Secondary Supervisor */}
