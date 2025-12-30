@@ -60,7 +60,8 @@ import {
   Megaphone,
   AlertTriangle,
   Tags,
-  Info
+  Info,
+  Eye
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -133,6 +134,11 @@ interface Team {
   updatedAt?: string;
   createdBy?: string;
   updatedBy?: string;
+  // Enriched fields from API
+  memberCount?: number;
+  primarySupervisorName?: string;
+  secondarySupervisorName?: string;
+  departments?: Array<{ id: string; name: string; code: string }>;
 }
 
 // 🎯 Sample workflow actions for Action Library
@@ -489,7 +495,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   };
 
   const formatTeamMembersCount = (team: Team) => {
-    return (team.userMembers || []).length + (team.roleMembers || []).length;
+    // Use memberCount from API, fallback to legacy calculation
+    return team.memberCount ?? ((team.userMembers || []).length + (team.roleMembers || []).length);
   };
 
   // 🎯 Create new template with department selection
@@ -1782,11 +1789,11 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               </div>
                             </TableCell>
                             <TableCell>
-                              {team.primarySupervisor ? (
+                              {team.primarySupervisorName ? (
                                 <div className="flex items-center gap-2">
                                   <Shield className="h-4 w-4 text-windtre-purple" />
                                   <span className="text-sm text-gray-600">
-                                    {team.primarySupervisor}
+                                    {team.primarySupervisorName}
                                   </span>
                                 </div>
                               ) : (
@@ -1805,10 +1812,10 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                   size="sm"
                                   onClick={() => handleManageWorkflows(team)}
                                   className="text-windtre-orange hover:bg-windtre-orange/10"
-                                  title="Manage Workflow Assignments"
+                                  title="View Workflow Assignments"
                                   data-testid={`button-workflows-team-${team.id}`}
                                 >
-                                  <Settings className="h-4 w-4" />
+                                  <Eye className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"

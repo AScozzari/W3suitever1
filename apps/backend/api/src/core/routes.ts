@@ -62,6 +62,8 @@ import {
   // Team member/observer tables (normalized)
   userTeams,
   teamObservers,
+  teamDepartments,
+  departments,
   insertUserTeamSchema,
   insertTeamObserverSchema,
   // ✅ FASE 1.1: Add enums for calendar consistency
@@ -4197,28 +4199,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(teams.isActive, true)
         ));
       
-      // Map database fields to frontend camelCase format
-      // Note: userMembers/roleMembers arrays removed - use user_teams table now
-      const mappedTeams = teamsData.map(team => ({
-        ...team,
-        // Map snake_case DB fields to camelCase for frontend
-        teamType: team.teamType || 'functional',
-        // Parse assignedDepartments - can be string, array or null
-        assignedDepartments: Array.isArray(team.assignedDepartments) 
-          ? team.assignedDepartments 
-          : (team.assignedDepartments && typeof team.assignedDepartments === 'string' && team.assignedDepartments !== '' 
-            ? (team.assignedDepartments as string).split(',').map((d: string) => d.trim())
-            : []),
-        primarySupervisorUser: team.primarySupervisorUser || null,
-        secondarySupervisorUser: team.secondarySupervisorUser || null,
-        // workflowAssignments doesn't exist in DB yet - always return empty array
-        workflowAssignments: [],
-        // Legacy compatibility fields (deprecated - will be removed)
-        primarySupervisor: team.primarySupervisorUser || null,
-        secondarySupervisorUsers: team.secondarySupervisorUser ? [team.secondarySupervisorUser] : []
+      // Enrich teams with member count, supervisor names, and departments
+      const enrichedTeams = await Promise.all(teamsData.map(async (team) => {
+        // Get member count
+        const memberCountResult = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(userTeams)
+          .where(eq(userTeams.teamId, team.id));
+        const memberCount = Number(memberCountResult[0]?.count || 0);
+        
+        // Get primary supervisor name
+        let primarySupervisorName = null;
+        if (team.primarySupervisorUser) {
+          const [supervisor] = await db
+            .select({ firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(eq(users.id, team.primarySupervisorUser))
+            .limit(1);
+          if (supervisor) {
+            primarySupervisorName = `${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim();
+          }
+        }
+        
+        // Get secondary supervisor name
+        let secondarySupervisorName = null;
+        if (team.secondarySupervisorUser) {
+          const [supervisor] = await db
+            .select({ firstName: users.firstName, lastName: users.lastName })
+            .from(users)
+            .where(eq(users.id, team.secondarySupervisorUser))
+            .limit(1);
+          if (supervisor) {
+            secondarySupervisorName = `${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim();
+          }
+        }
+        
+        // Get departments from junction table
+        const teamDepts = await db
+          .select({ 
+            departmentId: teamDepartments.departmentId,
+            code: departments.code,
+            name: departments.name
+          })
+          .from(teamDepartments)
+          .innerJoin(departments, eq(teamDepartments.departmentId, departments.id))
+          .where(eq(teamDepartments.teamId, team.id));
+        
+        return {
+          ...team,
+          teamType: team.teamType || 'functional',
+          memberCount,
+          primarySupervisorUser: team.primarySupervisorUser || null,
+          primarySupervisorName,
+          secondarySupervisorUser: team.secondarySupervisorUser || null,
+          secondarySupervisorName,
+          departments: teamDepts,
+          assignedDepartments: teamDepts.map(d => d.code),
+          workflowAssignments: [],
+          // Legacy compatibility
+          primarySupervisor: team.primarySupervisorUser || null,
+          secondarySupervisorUsers: team.secondarySupervisorUser ? [team.secondarySupervisorUser] : []
+        };
       }));
       
-      res.json(mappedTeams);
+      res.json(enrichedTeams);
     } catch (error) {
       handleApiError(error, res, 'recupero teams');
     }
