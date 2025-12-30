@@ -74,6 +74,24 @@ const FLOW_TYPES = {
   'workflow': { label: 'Workflow', color: 'bg-purple-100 text-purple-700', icon: Workflow }
 };
 
+interface ActionDefinition {
+  id: string;
+  department: string;
+  actionId: string;
+  name: string;
+  nameEn: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  direction?: 'inbound' | 'outbound' | 'internal';
+  isEvergreen: boolean;
+  requiresImplementation: boolean;
+  defaultRequiresApproval: boolean;
+  defaultFlowType: 'none' | 'default' | 'workflow';
+  displayOrder: number;
+  isActive: boolean;
+}
+
 interface ActionConfiguration {
   id: string;
   tenantId: string;
@@ -95,6 +113,12 @@ interface ActionConfiguration {
     name: string;
     category: string;
   };
+}
+
+interface MergedAction {
+  definition: ActionDefinition;
+  configuration?: ActionConfiguration;
+  isConfigured: boolean;
 }
 
 interface CoverageStats {
@@ -120,6 +144,15 @@ export default function ActionManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAction, setEditingAction] = useState<ActionConfiguration | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  const { data: definitionsData, isLoading: definitionsLoading } = useQuery({
+    queryKey: ['/api/action-definitions', selectedDepartment],
+    queryFn: async () => {
+      const params = selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : '';
+      const res = await apiRequest(`/api/action-definitions${params}`);
+      return res.json();
+    }
+  });
 
   const { data: actionsData, isLoading: actionsLoading } = useQuery({
     queryKey: ['/api/action-configurations', selectedDepartment],
@@ -161,11 +194,26 @@ export default function ActionManagementPage() {
     }
   });
 
-  const actions: ActionConfiguration[] = actionsData?.actions || [];
-  const filteredActions = actions.filter(action => 
-    action.actionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    action.actionId.toLowerCase().includes(searchQuery.toLowerCase())
+  const definitions: ActionDefinition[] = definitionsData?.actions || [];
+  const configurations: ActionConfiguration[] = actionsData?.actions || [];
+  
+  const mergedActions: MergedAction[] = definitions.map(def => {
+    const config = configurations.find(c => 
+      c.department === def.department && c.actionId === def.actionId
+    );
+    return {
+      definition: def,
+      configuration: config,
+      isConfigured: !!config
+    };
+  }).sort((a, b) => a.definition.displayOrder - b.definition.displayOrder);
+
+  const filteredActions = mergedActions.filter(action => 
+    action.definition.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    action.definition.actionId.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const isLoading = definitionsLoading || actionsLoading;
 
   const getFlowTypeBadge = (action: ActionConfiguration) => {
     const flowConfig = FLOW_TYPES[action.flowType];
@@ -189,14 +237,14 @@ export default function ActionManagementPage() {
                 Configura le azioni per dipartimento e i flussi di approvazione
               </p>
             </div>
-            <Button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-windtre-orange hover:bg-windtre-orange/90"
-              data-testid="button-create-action"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova Azione
-            </Button>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="px-3 py-1">
+                {definitions.length} azioni globali
+              </Badge>
+              <Badge variant="secondary" className="px-3 py-1 bg-green-100 text-green-700">
+                {configurations.length} configurate
+              </Badge>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -326,22 +374,14 @@ export default function ActionManagementPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {actionsLoading ? (
+              {isLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <div className="animate-spin h-8 w-8 border-4 border-windtre-orange border-t-transparent rounded-full" />
                 </div>
               ) : filteredActions.length === 0 ? (
                 <div className="text-center py-10 text-gray-500">
                   <Settings className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p>Nessuna azione configurata</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => setShowCreateModal(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crea prima azione
-                  </Button>
+                  <p>Nessuna azione disponibile per questo dipartimento</p>
                 </div>
               ) : (
                 <Table>
@@ -349,88 +389,121 @@ export default function ActionManagementPage() {
                     <TableRow>
                       <TableHead>Dipartimento</TableHead>
                       <TableHead>Azione</TableHead>
+                      <TableHead>Direzione</TableHead>
                       <TableHead>Flusso</TableHead>
                       <TableHead>Workflow</TableHead>
-                      <TableHead>Team Scope</TableHead>
                       <TableHead>SLA</TableHead>
                       <TableHead>Stato</TableHead>
                       <TableHead className="text-right">Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredActions.map((action) => {
-                      const dept = DEPARTMENTS[action.department];
+                    {filteredActions.map((merged) => {
+                      const { definition, configuration, isConfigured } = merged;
+                      const dept = DEPARTMENTS[definition.department as keyof typeof DEPARTMENTS];
                       const Icon = dept?.icon || Settings;
+                      const flowType = configuration?.flowType || definition.defaultFlowType;
+                      const flowConfig = FLOW_TYPES[flowType];
+                      const FlowIcon = flowConfig.icon;
+                      
                       return (
-                        <TableRow key={action.id} data-testid={`row-action-${action.id}`}>
+                        <TableRow 
+                          key={definition.id} 
+                          data-testid={`row-action-${definition.actionId}`}
+                          className={!isConfigured ? 'bg-gray-50/50' : ''}
+                        >
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className={`p-1.5 ${dept?.color || 'bg-gray-500'} rounded`}>
                                 <Icon className="h-4 w-4 text-white" />
                               </div>
-                              <span className="font-medium">{dept?.label || action.department}</span>
+                              <span className="font-medium">{dept?.label || definition.department}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{action.actionName}</p>
-                              <p className="text-xs text-gray-500">{action.actionId}</p>
+                              <p className="font-medium">{definition.name}</p>
+                              <p className="text-xs text-gray-500">{definition.actionId}</p>
                             </div>
                           </TableCell>
-                          <TableCell>{getFlowTypeBadge(action)}</TableCell>
                           <TableCell>
-                            {action.workflowTemplate ? (
+                            {definition.direction && (
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  definition.direction === 'inbound' ? 'border-green-300 text-green-700' :
+                                  definition.direction === 'outbound' ? 'border-red-300 text-red-700' :
+                                  'border-gray-300 text-gray-700'
+                                }
+                              >
+                                {definition.direction === 'inbound' ? '↓ Entrata' :
+                                 definition.direction === 'outbound' ? '↑ Uscita' :
+                                 '⟳ Interno'}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${flowConfig.color} gap-1`} variant="secondary">
+                              <FlowIcon className="h-3 w-3" />
+                              {flowConfig.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {configuration?.workflowTemplate ? (
                               <Badge variant="outline" className="gap-1">
                                 <Workflow className="h-3 w-3" />
-                                {action.workflowTemplate.name}
+                                {configuration.workflowTemplate.name}
                               </Badge>
                             ) : (
                               <span className="text-gray-400 text-sm">-</span>
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">
-                              {action.teamScope === 'all' ? 'Tutti i Team' : `${action.specificTeamIds?.length || 0} Team`}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
                             <div className="flex items-center gap-1 text-sm">
                               <Clock className="h-3 w-3 text-gray-400" />
-                              {action.slaHours}h
-                              {action.escalationEnabled && (
+                              {configuration?.slaHours || 24}h
+                              {configuration?.escalationEnabled && (
                                 <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" title="Escalation attiva" />
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            {action.isActive ? (
-                              <Badge className="bg-green-100 text-green-700">Attivo</Badge>
+                            {isConfigured ? (
+                              <Badge className="bg-green-100 text-green-700">Configurato</Badge>
                             ) : (
-                              <Badge variant="secondary">Disattivo</Badge>
+                              <Badge variant="outline" className="text-gray-500">Default</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" data-testid={`button-action-menu-${action.id}`}>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setEditingAction(action)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Modifica
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-red-600"
-                                  onClick={() => setShowDeleteConfirm(action.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Elimina
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                if (configuration) {
+                                  setEditingAction(configuration);
+                                } else {
+                                  setEditingAction({
+                                    id: '',
+                                    tenantId: '',
+                                    department: definition.department as keyof typeof DEPARTMENTS,
+                                    actionId: definition.actionId,
+                                    actionName: definition.name,
+                                    description: definition.description || '',
+                                    requiresApproval: definition.defaultRequiresApproval,
+                                    flowType: definition.defaultFlowType,
+                                    teamScope: 'all',
+                                    slaHours: 24,
+                                    escalationEnabled: true,
+                                    priority: definition.displayOrder,
+                                    isActive: true
+                                  });
+                                }
+                              }}
+                              data-testid={`button-configure-${definition.actionId}`}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              {isConfigured ? 'Modifica' : 'Configura'}
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
