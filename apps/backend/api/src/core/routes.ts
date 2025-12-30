@@ -57,6 +57,11 @@ import {
   teamWorkflowAssignments,
   workflowInstances,
   workflowExecutions,
+  // Team member/observer tables (normalized)
+  userTeams,
+  teamObservers,
+  insertUserTeamSchema,
+  insertTeamObserverSchema,
   // ✅ FASE 1.1: Add enums for calendar consistency
   calendarEventTypeEnum,
   calendarEventVisibilityEnum,
@@ -4308,6 +4313,260 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result[0]);
     } catch (error) {
       handleApiError(error, res, 'aggiornamento team');
+    }
+  });
+
+  // ==================== TEAM MEMBERS API (user_teams) ====================
+
+  // Get team members
+  app.get('/api/teams/:id/members', tenantMiddleware, async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'Team ID', res)) return;
+      const teamId = req.params.id;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      const members = await db
+        .select({
+          userId: userTeams.userId,
+          teamId: userTeams.teamId,
+          isPrimaryTeam: userTeams.isPrimaryTeam,
+          assignedAt: userTeams.assignedAt,
+          assignedBy: userTeams.assignedBy,
+          // Include user info
+          user: {
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            avatarUrl: users.avatarUrl
+          }
+        })
+        .from(userTeams)
+        .innerJoin(users, eq(users.id, userTeams.userId))
+        .where(and(
+          eq(userTeams.teamId, teamId),
+          eq(userTeams.tenantId, tenantId)
+        ));
+      
+      res.json(members);
+    } catch (error) {
+      handleApiError(error, res, 'recupero membri team');
+    }
+  });
+
+  // Add team member
+  app.post('/api/teams/:id/members', tenantMiddleware, async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'Team ID', res)) return;
+      const teamId = req.params.id;
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { userIds, isPrimaryTeam = false } = req.body;
+      
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'userIds array required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      // Verify team exists
+      const [team] = await db.select().from(teams).where(and(
+        eq(teams.id, teamId),
+        eq(teams.tenantId, tenantId)
+      )).limit(1);
+      
+      if (!team) {
+        return res.status(404).json({ error: 'Team non trovato' });
+      }
+
+      // Add members (ignore duplicates)
+      const insertData = userIds.map((uid: string) => ({
+        userId: uid,
+        teamId,
+        tenantId,
+        isPrimaryTeam,
+        assignedBy: userId
+      }));
+
+      const result = await db
+        .insert(userTeams)
+        .values(insertData)
+        .onConflictDoNothing()
+        .returning();
+      
+      res.status(201).json({ added: result.length, members: result });
+    } catch (error) {
+      handleApiError(error, res, 'aggiunta membri team');
+    }
+  });
+
+  // Remove team member
+  app.delete('/api/teams/:teamId/members/:userId', tenantMiddleware, async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.teamId, 'Team ID', res)) return;
+      const { teamId, userId: memberUserId } = req.params;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      const result = await db
+        .delete(userTeams)
+        .where(and(
+          eq(userTeams.teamId, teamId),
+          eq(userTeams.userId, memberUserId),
+          eq(userTeams.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Membro non trovato nel team' });
+      }
+      
+      res.json({ removed: true });
+    } catch (error) {
+      handleApiError(error, res, 'rimozione membro team');
+    }
+  });
+
+  // ==================== TEAM OBSERVERS API (team_observers) ====================
+
+  // Get team observers
+  app.get('/api/teams/:id/observers', tenantMiddleware, async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'Team ID', res)) return;
+      const teamId = req.params.id;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      const observers = await db
+        .select({
+          userId: teamObservers.userId,
+          teamId: teamObservers.teamId,
+          canApprove: teamObservers.canApprove,
+          assignedAt: teamObservers.assignedAt,
+          assignedBy: teamObservers.assignedBy,
+          // Include user info
+          user: {
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            avatarUrl: users.avatarUrl
+          }
+        })
+        .from(teamObservers)
+        .innerJoin(users, eq(users.id, teamObservers.userId))
+        .where(and(
+          eq(teamObservers.teamId, teamId),
+          eq(teamObservers.tenantId, tenantId)
+        ));
+      
+      res.json(observers);
+    } catch (error) {
+      handleApiError(error, res, 'recupero osservatori team');
+    }
+  });
+
+  // Add team observer
+  app.post('/api/teams/:id/observers', tenantMiddleware, async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'Team ID', res)) return;
+      const teamId = req.params.id;
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { userIds, canApprove = true } = req.body;
+      
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: 'userIds array required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      // Verify team exists
+      const [team] = await db.select().from(teams).where(and(
+        eq(teams.id, teamId),
+        eq(teams.tenantId, tenantId)
+      )).limit(1);
+      
+      if (!team) {
+        return res.status(404).json({ error: 'Team non trovato' });
+      }
+
+      // Add observers (ignore duplicates)
+      const insertData = userIds.map((uid: string) => ({
+        userId: uid,
+        teamId,
+        tenantId,
+        canApprove,
+        assignedBy: userId
+      }));
+
+      const result = await db
+        .insert(teamObservers)
+        .values(insertData)
+        .onConflictDoNothing()
+        .returning();
+      
+      res.status(201).json({ added: result.length, observers: result });
+    } catch (error) {
+      handleApiError(error, res, 'aggiunta osservatori team');
+    }
+  });
+
+  // Remove team observer
+  app.delete('/api/teams/:teamId/observers/:userId', tenantMiddleware, async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.teamId, 'Team ID', res)) return;
+      const { teamId, userId: observerUserId } = req.params;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      const result = await db
+        .delete(teamObservers)
+        .where(and(
+          eq(teamObservers.teamId, teamId),
+          eq(teamObservers.userId, observerUserId),
+          eq(teamObservers.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Osservatore non trovato nel team' });
+      }
+      
+      res.json({ removed: true });
+    } catch (error) {
+      handleApiError(error, res, 'rimozione osservatore team');
     }
   });
 
