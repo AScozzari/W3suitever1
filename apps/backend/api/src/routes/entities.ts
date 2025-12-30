@@ -11,7 +11,7 @@ import { createHash } from 'crypto';
 import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { legalEntities, organizationEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers, insertOrganizationEntitySchema, userOrganizationEntities, userTeams, userStores } from '../db/schema/w3suite';
 import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
@@ -2320,6 +2320,7 @@ router.get('/users/:id/organization-entities', requirePermission('users:read'), 
 /**
  * PUT /api/users/:id/organization-entities
  * Set organization entities for a user (replaces existing)
+ * Uses transaction for atomicity and validates IDs before mutation
  */
 router.put('/users/:id/organization-entities', requirePermission('users:write'), async (req, res) => {
   try {
@@ -2335,29 +2336,86 @@ router.put('/users/:id/organization-entities', requirePermission('users:write'),
       } as ApiErrorResponse);
     }
 
+    // Validate request body
+    if (organizationEntityIds !== undefined && !Array.isArray(organizationEntityIds)) {
+      return res.status(400).json({
+        success: false,
+        error: 'organizationEntityIds must be an array',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (primaryId && organizationEntityIds && !organizationEntityIds.includes(primaryId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'primaryId must be included in organizationEntityIds',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     await setTenantContext(tenantId);
 
-    // Delete existing assignments
-    await db
-      .delete(userOrganizationEntities)
-      .where(
-        and(
-          eq(userOrganizationEntities.userId, userId),
-          eq(userOrganizationEntities.tenantId, tenantId)
-        )
-      );
+    // Validate user exists
+    const [userExists] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
+      .limit(1);
 
-    // Insert new assignments
-    if (organizationEntityIds && organizationEntityIds.length > 0) {
-      const newAssignments = organizationEntityIds.map((orgId: string) => ({
-        userId,
-        organizationEntityId: orgId,
-        tenantId,
-        isPrimary: orgId === primaryId
-      }));
-
-      await db.insert(userOrganizationEntities).values(newAssignments);
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
     }
+
+    // Validate all organization entities exist and belong to tenant
+    if (organizationEntityIds && organizationEntityIds.length > 0) {
+      const validOrgs = await db
+        .select({ id: organizationEntities.id })
+        .from(organizationEntities)
+        .where(
+          and(
+            inArray(organizationEntities.id, organizationEntityIds),
+            eq(organizationEntities.tenantId, tenantId)
+          )
+        );
+
+      if (validOrgs.length !== organizationEntityIds.length) {
+        const validIds = validOrgs.map(o => o.id);
+        const invalidIds = organizationEntityIds.filter((id: string) => !validIds.includes(id));
+        return res.status(400).json({
+          success: false,
+          error: 'Some organization entity IDs are invalid or not accessible',
+          invalidIds,
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+    }
+
+    // Use transaction for atomic delete+insert
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(userOrganizationEntities)
+        .where(
+          and(
+            eq(userOrganizationEntities.userId, userId),
+            eq(userOrganizationEntities.tenantId, tenantId)
+          )
+        );
+
+      if (organizationEntityIds && organizationEntityIds.length > 0) {
+        const newAssignments = organizationEntityIds.map((orgId: string) => ({
+          userId,
+          organizationEntityId: orgId,
+          tenantId,
+          isPrimary: orgId === primaryId
+        }));
+
+        await tx.insert(userOrganizationEntities).values(newAssignments);
+      }
+    });
 
     logger.info('User organization entities updated', { userId, count: organizationEntityIds?.length || 0 });
 
@@ -2440,6 +2498,7 @@ router.get('/users/:id/teams', requirePermission('users:read'), async (req, res)
 /**
  * PUT /api/users/:id/teams
  * Set teams for a user (replaces existing)
+ * Uses transaction for atomicity and validates IDs before mutation
  */
 router.put('/users/:id/teams', requirePermission('users:write'), async (req, res) => {
   try {
@@ -2455,29 +2514,89 @@ router.put('/users/:id/teams', requirePermission('users:write'), async (req, res
       } as ApiErrorResponse);
     }
 
+    // Validate request body
+    if (teamIds !== undefined && !Array.isArray(teamIds)) {
+      return res.status(400).json({
+        success: false,
+        error: 'teamIds must be an array',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (primaryId && teamIds && !teamIds.includes(primaryId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'primaryId must be included in teamIds',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     await setTenantContext(tenantId);
 
-    // Delete existing assignments
-    await db
-      .delete(userTeams)
-      .where(
-        and(
-          eq(userTeams.userId, userId),
-          eq(userTeams.tenantId, tenantId)
-        )
-      );
+    // Import teams table
+    const { teams } = await import('../db/schema/w3suite');
 
-    // Insert new assignments
-    if (teamIds && teamIds.length > 0) {
-      const newAssignments = teamIds.map((teamId: string) => ({
-        userId,
-        teamId,
-        tenantId,
-        isPrimary: teamId === primaryId
-      }));
+    // Validate user exists
+    const [userExists] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
+      .limit(1);
 
-      await db.insert(userTeams).values(newAssignments);
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
     }
+
+    // Validate all teams exist and belong to tenant
+    if (teamIds && teamIds.length > 0) {
+      const validTeams = await db
+        .select({ id: teams.id })
+        .from(teams)
+        .where(
+          and(
+            inArray(teams.id, teamIds),
+            eq(teams.tenantId, tenantId)
+          )
+        );
+
+      if (validTeams.length !== teamIds.length) {
+        const validIds = validTeams.map(t => t.id);
+        const invalidIds = teamIds.filter((id: string) => !validIds.includes(id));
+        return res.status(400).json({
+          success: false,
+          error: 'Some team IDs are invalid or not accessible',
+          invalidIds,
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+    }
+
+    // Use transaction for atomic delete+insert
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(userTeams)
+        .where(
+          and(
+            eq(userTeams.userId, userId),
+            eq(userTeams.tenantId, tenantId)
+          )
+        );
+
+      if (teamIds && teamIds.length > 0) {
+        const newAssignments = teamIds.map((teamId: string) => ({
+          userId,
+          teamId,
+          tenantId,
+          isPrimary: teamId === primaryId
+        }));
+
+        await tx.insert(userTeams).values(newAssignments);
+      }
+    });
 
     logger.info('User teams updated', { userId, count: teamIds?.length || 0 });
 
@@ -2501,6 +2620,7 @@ router.put('/users/:id/teams', requirePermission('users:write'), async (req, res
 /**
  * PUT /api/users/:id/stores
  * Set stores for a user (replaces existing)
+ * Uses transaction for atomicity and validates IDs before mutation
  */
 router.put('/users/:id/stores', requirePermission('users:write'), async (req, res) => {
   try {
@@ -2516,29 +2636,86 @@ router.put('/users/:id/stores', requirePermission('users:write'), async (req, re
       } as ApiErrorResponse);
     }
 
+    // Validate request body
+    if (storeIds !== undefined && !Array.isArray(storeIds)) {
+      return res.status(400).json({
+        success: false,
+        error: 'storeIds must be an array',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (primaryId && storeIds && !storeIds.includes(primaryId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'primaryId must be included in storeIds',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     await setTenantContext(tenantId);
 
-    // Delete existing assignments
-    await db
-      .delete(userStores)
-      .where(
-        and(
-          eq(userStores.userId, userId),
-          eq(userStores.tenantId, tenantId)
-        )
-      );
+    // Validate user exists
+    const [userExists] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
+      .limit(1);
 
-    // Insert new assignments
-    if (storeIds && storeIds.length > 0) {
-      const newAssignments = storeIds.map((storeId: string) => ({
-        userId,
-        storeId,
-        tenantId,
-        isPrimary: storeId === primaryId
-      }));
-
-      await db.insert(userStores).values(newAssignments);
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
     }
+
+    // Validate all stores exist and belong to tenant
+    if (storeIds && storeIds.length > 0) {
+      const validStores = await db
+        .select({ id: stores.id })
+        .from(stores)
+        .where(
+          and(
+            inArray(stores.id, storeIds),
+            eq(stores.tenantId, tenantId)
+          )
+        );
+
+      if (validStores.length !== storeIds.length) {
+        const validIds = validStores.map(s => s.id);
+        const invalidIds = storeIds.filter((id: string) => !validIds.includes(id));
+        return res.status(400).json({
+          success: false,
+          error: 'Some store IDs are invalid or not accessible',
+          invalidIds,
+          timestamp: new Date().toISOString()
+        } as ApiErrorResponse);
+      }
+    }
+
+    // Use transaction for atomic delete+insert
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(userStores)
+        .where(
+          and(
+            eq(userStores.userId, userId),
+            eq(userStores.tenantId, tenantId)
+          )
+        );
+
+      if (storeIds && storeIds.length > 0) {
+        const newAssignments = storeIds.map((storeId: string) => ({
+          userId,
+          storeId,
+          tenantId,
+          isPrimary: storeId === primaryId
+        }));
+
+        await tx.insert(userStores).values(newAssignments);
+      }
+    });
 
     logger.info('User stores updated', { userId, count: storeIds?.length || 0 });
 
