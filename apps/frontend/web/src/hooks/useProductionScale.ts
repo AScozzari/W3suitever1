@@ -26,8 +26,10 @@ export function useProductionScale() {
       const scaleValue = parseInt(scale, 10);
       
       if (!isNaN(scaleValue) && scaleValue > 0 && scaleValue <= 200) {
-        document.documentElement.style.fontSize = `${scaleValue}%`;
-        console.log(`[PRODUCTION-SCALE] 📐 Applied font-size: ${scaleValue}%`);
+        // Use CSS variable to override the default in index.css
+        // This ensures the scale is applied consistently regardless of CSS load order
+        document.documentElement.style.setProperty('--font-scale', `${scaleValue}%`);
+        console.log(`[PRODUCTION-SCALE] 📐 Applied --font-scale: ${scaleValue}%`);
       } else {
         console.warn(`[PRODUCTION-SCALE] ⚠️ Invalid VITE_FONT_SCALE value: ${scale}`);
       }
@@ -35,7 +37,7 @@ export function useProductionScale() {
     
     return () => {
       if (scale) {
-        document.documentElement.style.fontSize = '';
+        document.documentElement.style.removeProperty('--font-scale');
       }
     };
   }, []);

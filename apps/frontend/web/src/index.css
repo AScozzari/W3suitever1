@@ -44,8 +44,9 @@
 @tailwind utilities;
 
 /* ===== FONT SIZE NORMALIZATION ===== */
+/* Uses CSS variable set by useProductionScale hook for consistent scaling */
 html {
-  font-size: 16px;
+  font-size: var(--font-scale, 100%);
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
