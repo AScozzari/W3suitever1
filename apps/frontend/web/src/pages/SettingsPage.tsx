@@ -607,6 +607,8 @@ export default function SettingsPage() {
   const [enterpriseAuditLevel, setEnterpriseAuditLevel] = useState('ALL');
   const [enterpriseAuditComponent, setEnterpriseAuditComponent] = useState('ALL');
   const [enterpriseAuditSearch, setEnterpriseAuditSearch] = useState('');
+  const [enterpriseAuditDateFrom, setEnterpriseAuditDateFrom] = useState('');
+  const [enterpriseAuditDateTo, setEnterpriseAuditDateTo] = useState('');
   
   // Legacy logs state (for backward compatibility)
   const [logsSearchTerm, setLogsSearchTerm] = useState('');
@@ -868,14 +870,21 @@ export default function SettingsPage() {
       limit: auditPageSize,
       sortBy: auditSortBy,
       sortOrder: auditSortOrder,
-      logType: auditLogTypeFilter,
-      lastHours: 168 // Default to 7 days
+      logType: auditLogTypeFilter
     };
     
     // ✅ Connect UI filters to query params
     if (enterpriseAuditSearch) params.search = enterpriseAuditSearch;
     if (enterpriseAuditLevel && enterpriseAuditLevel !== 'ALL') params.level = enterpriseAuditLevel;
     if (enterpriseAuditComponent && enterpriseAuditComponent !== 'ALL') params.service = enterpriseAuditComponent;
+    
+    // ✅ Date range filters (Dal/Al) - if set, use dates instead of lastHours
+    if (enterpriseAuditDateFrom || enterpriseAuditDateTo) {
+      if (enterpriseAuditDateFrom) params.dateFrom = enterpriseAuditDateFrom;
+      if (enterpriseAuditDateTo) params.dateTo = enterpriseAuditDateTo;
+    } else {
+      params.lastHours = 168; // Default to 7 days if no date range set
+    }
     
     // Additional advanced filters (for future use)
     if (auditActionFilter) params.action = auditActionFilter;
@@ -1268,8 +1277,26 @@ export default function SettingsPage() {
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', minWidth: '200px' }}
             data-testid="input-audit-search"
           />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280' }}>Dal:</span>
+            <input
+              type="date"
+              value={enterpriseAuditDateFrom}
+              onChange={(e) => setEnterpriseAuditDateFrom(e.target.value)}
+              style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px', background: 'white' }}
+              data-testid="input-audit-date-from"
+            />
+            <span style={{ fontSize: '12px', color: '#6b7280' }}>Al:</span>
+            <input
+              type="date"
+              value={enterpriseAuditDateTo}
+              onChange={(e) => setEnterpriseAuditDateTo(e.target.value)}
+              style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px', background: 'white' }}
+              data-testid="input-audit-date-to"
+            />
+          </div>
           <button
-            onClick={() => { setEnterpriseAuditLevel('ALL'); setEnterpriseAuditComponent('ALL'); setEnterpriseAuditSearch(''); }}
+            onClick={() => { setEnterpriseAuditLevel('ALL'); setEnterpriseAuditComponent('ALL'); setEnterpriseAuditSearch(''); setEnterpriseAuditDateFrom(''); setEnterpriseAuditDateTo(''); }}
             style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             data-testid="button-reset-audit-filters"
           >

@@ -7892,7 +7892,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filters = {
         page: Math.max(1, parseInt(req.query.page as string) || 1),
         limit: Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50)),
-        lastHours: parseInt(req.query.lastHours as string) || 168, // Default 7 days
+        lastHours: parseInt(req.query.lastHours as string) || null,
+        dateFrom: req.query.dateFrom as string || null,
+        dateTo: req.query.dateTo as string || null,
         service: req.query.service as string || null,
         level: req.query.level as string || null,
         action: req.query.action as string || null,
@@ -7904,15 +7906,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // ✅ Debug: Log received filters
-      console.log('[AUDIT-FILTERS] Received query params:', req.query);
-      console.log('[AUDIT-FILTERS] Parsed filters:', { service: filters.service, level: filters.level, search: filters.search });
+      console.log('[AUDIT-FILTERS] Received:', { service: filters.service, level: filters.level, dateFrom: filters.dateFrom, dateTo: filters.dateTo });
       
       // ✅ Build query conditions for activity_logs
       let conditions = [sql`tenant_id = ${tenantId}`];
       
-      // Date filter (activity_logs uses executed_at)
-      const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
-      conditions.push(sql`executed_at >= ${hoursAgo}`);
+      // Date filter (activity_logs uses executed_at) - supports date range OR lastHours
+      if (filters.dateFrom || filters.dateTo) {
+        // Use date range if provided (Dal/Al)
+        if (filters.dateFrom) {
+          const fromDate = new Date(filters.dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          conditions.push(sql`executed_at >= ${fromDate}`);
+        }
+        if (filters.dateTo) {
+          const toDate = new Date(filters.dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          conditions.push(sql`executed_at <= ${toDate}`);
+        }
+      } else if (filters.lastHours) {
+        // Use lastHours if no date range
+        const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
+        conditions.push(sql`executed_at >= ${hoursAgo}`);
+      } else {
+        // Default to 7 days if no date filter
+        const defaultHoursAgo = new Date(Date.now() - 168 * 60 * 60 * 1000);
+        conditions.push(sql`executed_at >= ${defaultHoursAgo}`);
+      }
       
       // Optional filters
       if (filters.service && filters.service !== 'ALL') {
@@ -7974,15 +7994,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logsResult = await db.execute(logsQuery);
       const logs = logsResult.rows || [];
 
-      // ✅ Get total count (use base conditions to avoid duplicate executed_at)
-      const countConditions = [sql`tenant_id = ${tenantId}`, sql`executed_at >= ${hoursAgo}`];
-      if (filters.service && filters.service !== 'ALL') countConditions.push(sql`service = ${filters.service}`);
-      if (filters.level && filters.level !== 'ALL') countConditions.push(sql`level = ${filters.level}`);
-      if (filters.search) countConditions.push(sql`(message ILIKE ${'%' + filters.search + '%'} OR action ILIKE ${'%' + filters.search + '%'} OR actor_email ILIKE ${'%' + filters.search + '%'})`);
-      
+      // ✅ Get total count (reuse same conditions array)
       const totalCountQuery = await db.execute(sql`
         SELECT COUNT(*) as count FROM w3suite.activity_logs 
-        WHERE ${sql.join(countConditions, sql` AND `)}
+        WHERE ${sql.join(conditions, sql` AND `)}
       `);
       
       const totalCountRows = totalCountQuery.rows as any[];
