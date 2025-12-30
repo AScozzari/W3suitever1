@@ -72,9 +72,12 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **❌ NEVER use full bundle upload** (85MB) - usa sempre deploy incrementale
   - **VPS Symlink**: `/var/w3suite/current/server.cjs`
   - **PM2 Process**: `w3-api` (porta 3004)
-  - **FRONTEND DEPLOY**:
-    - Build on VPS con `VITE_FONT_SCALE=80`
-    - Output: `/var/w3suite/apps/frontend/web/dist/`
+  - **FRONTEND DEPLOY (VARIABILI OBBLIGATORIE)**:
+    - **🔐 VITE_AUTH_MODE=oauth2** - OBBLIGATORIO per produzione (default è 'development'!)
+    - **📏 VITE_FONT_SCALE=80** - UI zoom al 80%
+    - **Build Command**: `VITE_AUTH_MODE=oauth2 VITE_FONT_SCALE=80 npx vite build`
+    - Output: `/var/www/w3suite/apps/frontend/web/dist/`
+    - **❌ NEVER**: Buildare senza VITE_AUTH_MODE=oauth2 (causa 404 su tutte le API!)
 - **VPS DIRECTORY STRUCTURE (UGUALE A REPLIT)**:
   - **📁 Root**: `/var/www/w3suite/` (come root Replit)
   - **📁 Apps**: `/var/w3suite/apps/` (backend, frontend, voice-gateway)
