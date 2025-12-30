@@ -398,6 +398,12 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
   // Notes section collapsed state
   const [notesOpen, setNotesOpen] = useState(false);
   
+  // Items list UI state
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editQuantity, setEditQuantity] = useState<number>(1);
+  const [editPrice, setEditPrice] = useState<string>('');
+  
   const searchInputRef = useRef<HTMLInputElement>(null);
   const serialInputRef = useRef<HTMLInputElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
@@ -909,6 +915,40 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const startEditItem = (item: DDTItem) => {
+    setEditingItemId(item.id);
+    setEditQuantity(item.quantity);
+    setEditPrice(item.unitPrice?.toString() || '');
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemId(null);
+    setEditQuantity(1);
+    setEditPrice('');
+  };
+
+  const saveEditItem = (itemId: string) => {
+    setItems(prev => prev.map(item => {
+      if (item.id !== itemId) return item;
+      const newPrice = editPrice ? parseFloat(editPrice) : undefined;
+      const vatPercent = item.vatRate || 0;
+      const vatAmount = newPrice ? newPrice * (vatPercent / 100) : undefined;
+      const unitPriceGross = newPrice ? newPrice + (vatAmount || 0) : undefined;
+      return {
+        ...item,
+        quantity: editQuantity,
+        unitPrice: newPrice,
+        vatAmount,
+        unitPriceGross,
+      };
+    }));
+    cancelEditItem();
+  };
+
+  const toggleExpandItem = (itemId: string) => {
+    setExpandedItemId(prev => prev === itemId ? null : itemId);
   };
 
   const canProceedToStep2 = (): boolean => {
@@ -2298,51 +2338,207 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
                         ) : (
                           <div className="space-y-2">
                             {items.map(item => (
-                              <div 
+                              <Collapsible
                                 key={item.id}
-                                className={`flex items-center justify-between p-3 border rounded-lg ${
-                                  item.matchStatus === 'match' ? 'bg-green-50 border-green-200' :
-                                  item.matchStatus === 'partial' ? 'bg-yellow-50 border-yellow-200' :
-                                  item.matchStatus === 'extra' ? 'bg-red-50 border-red-200' :
-                                  'bg-white'
-                                }`}
+                                open={expandedItemId === item.id}
+                                onOpenChange={() => toggleExpandItem(item.id)}
                               >
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <p className="font-medium">{item.product.name}</p>
-                                    {item.matchStatus && (
-                                      <Badge 
-                                        variant={item.matchStatus === 'match' ? 'default' : item.matchStatus === 'partial' ? 'secondary' : 'destructive'}
-                                        className="text-xs"
-                                      >
-                                        {item.matchStatus === 'match' ? '✓ Match' : 
-                                         item.matchStatus === 'partial' ? 'Parziale' : 
-                                         'Extra'}
-                                      </Badge>
-                                    )}
+                                <div 
+                                  className={`border rounded-lg overflow-hidden ${
+                                    item.matchStatus === 'match' ? 'bg-green-50 border-green-200' :
+                                    item.matchStatus === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                    item.matchStatus === 'extra' ? 'bg-red-50 border-red-200' :
+                                    'bg-white border-gray-200'
+                                  }`}
+                                >
+                                  {/* Main row - always visible */}
+                                  <div className="flex items-center justify-between p-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="font-medium text-gray-900 truncate">{item.product.name}</p>
+                                        {item.product.brand && (
+                                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                            {item.product.brand}
+                                          </Badge>
+                                        )}
+                                        {item.matchStatus && (
+                                          <Badge 
+                                            variant={item.matchStatus === 'match' ? 'default' : item.matchStatus === 'partial' ? 'secondary' : 'destructive'}
+                                            className="text-xs"
+                                          >
+                                            {item.matchStatus === 'match' ? '✓ Match' : 
+                                             item.matchStatus === 'partial' ? 'Parziale' : 
+                                             'Extra'}
+                                          </Badge>
+                                        )}
+                                        {item.bulkLoaded && (
+                                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">Bulk</Badge>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-600 mt-1">
+                                        <span>SKU: <strong>{item.product.sku}</strong></span>
+                                        {item.product.supplierSku && (
+                                          <span className="text-green-600">SKU Forn: <strong>{item.product.supplierSku}</strong></span>
+                                        )}
+                                        {item.product.ean && (
+                                          <span className="text-gray-500">EAN: {item.product.ean}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm mt-1">
+                                        {item.product.model && <span className="text-gray-500">Modello: {item.product.model}</span>}
+                                        {item.product.color && <span className="text-gray-500">Colore: {item.product.color}</span>}
+                                        {item.product.memory && <span className="text-gray-500">Memoria: {item.product.memory}</span>}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 ml-3">
+                                      {/* Quantity and price summary */}
+                                      <div className="text-right text-sm">
+                                        <div className="font-semibold text-gray-900">Qtà: {item.quantity}</div>
+                                        {item.unitPrice !== undefined && (
+                                          <div className="text-green-600 font-medium">€{item.unitPrice.toFixed(2)}</div>
+                                        )}
+                                      </div>
+                                      {/* Action buttons */}
+                                      <div className="flex items-center gap-1">
+                                        <CollapsibleTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            data-testid={`btn-expand-item-${item.id}`}
+                                          >
+                                            <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${expandedItemId === item.id ? 'rotate-180' : ''}`} />
+                                          </Button>
+                                        </CollapsibleTrigger>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          onClick={(e) => { e.stopPropagation(); startEditItem(item); }}
+                                          data-testid={`btn-edit-item-${item.id}`}
+                                        >
+                                          <Edit className="h-4 w-4 text-blue-500" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                                          data-testid={`btn-remove-item-${item.id}`}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-red-500" />
+                                        </Button>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <p className="text-sm text-gray-500">
-                                    SKU: {item.product.sku}
-                                    {item.product.supplierSku && (
-                                      <span className="text-green-600"> | SKU Forn: {item.product.supplierSku}</span>
-                                    )}
-                                    {' '}| Qtà: {item.quantity}
-                                    {item.serials.length > 0 && ` | ${item.serials.length} seriali`}
-                                    {item.unitPrice !== undefined && ` | €${item.unitPrice.toFixed(2)}`}
-                                  </p>
+
+                                  {/* Collapsible content - details */}
+                                  <CollapsibleContent>
+                                    <div className="border-t px-3 py-3 bg-gray-50/50 space-y-3">
+                                      {/* Edit mode */}
+                                      {editingItemId === item.id ? (
+                                        <div className="bg-white p-3 rounded-lg border border-blue-200">
+                                          <p className="text-sm font-medium text-blue-700 mb-2">Modifica articolo</p>
+                                          <div className="flex gap-3 items-end">
+                                            <div className="flex-1">
+                                              <Label className="text-xs">Quantità</Label>
+                                              <Input
+                                                type="number"
+                                                min={1}
+                                                value={editQuantity}
+                                                onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                                                className="mt-1"
+                                                data-testid={`input-edit-quantity-${item.id}`}
+                                              />
+                                            </div>
+                                            <div className="flex-1">
+                                              <Label className="text-xs">Prezzo Unitario (€)</Label>
+                                              <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={editPrice}
+                                                onChange={(e) => setEditPrice(e.target.value)}
+                                                placeholder="0.00"
+                                                className="mt-1"
+                                                data-testid={`input-edit-price-${item.id}`}
+                                              />
+                                            </div>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              onClick={() => saveEditItem(item.id)}
+                                              data-testid={`btn-save-edit-${item.id}`}
+                                            >
+                                              <Save className="h-4 w-4 mr-1" />
+                                              Salva
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={cancelEditItem}
+                                              data-testid={`btn-cancel-edit-${item.id}`}
+                                            >
+                                              Annulla
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          {/* Product details grid */}
+                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                            <div className="bg-white p-2 rounded border">
+                                              <span className="text-gray-500 text-xs block">Quantità</span>
+                                              <span className="font-medium">{item.quantity} unità</span>
+                                            </div>
+                                            {item.unitPrice !== undefined && (
+                                              <>
+                                                <div className="bg-white p-2 rounded border">
+                                                  <span className="text-gray-500 text-xs block">Prezzo Unitario</span>
+                                                  <span className="font-medium text-green-600">€{item.unitPrice.toFixed(2)}</span>
+                                                </div>
+                                                <div className="bg-white p-2 rounded border">
+                                                  <span className="text-gray-500 text-xs block">Totale Riga</span>
+                                                  <span className="font-medium text-green-700">€{(item.unitPrice * item.quantity).toFixed(2)}</span>
+                                                </div>
+                                                {item.vatRate !== undefined && item.vatRate > 0 && (
+                                                  <div className="bg-white p-2 rounded border">
+                                                    <span className="text-gray-500 text-xs block">IVA</span>
+                                                    <span className="font-medium">{item.vatRate}%</span>
+                                                  </div>
+                                                )}
+                                              </>
+                                            )}
+                                            {item.lot && (
+                                              <div className="bg-white p-2 rounded border">
+                                                <span className="text-gray-500 text-xs block">Lotto</span>
+                                                <span className="font-medium">{item.lot}</span>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Serials list */}
+                                          {item.serials.length > 0 && (
+                                            <div className="bg-white p-3 rounded border">
+                                              <p className="text-xs text-gray-500 mb-2 font-medium">Seriali ({item.serials.length})</p>
+                                              <div className="flex flex-wrap gap-1">
+                                                {item.serials.map((serial, idx) => (
+                                                  <Badge key={idx} variant="outline" className="font-mono text-xs">
+                                                    {serial}
+                                                  </Badge>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </CollapsibleContent>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeItem(item.id)}
-                                    data-testid={`btn-remove-item-${item.id}`}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                              </div>
+                              </Collapsible>
                             ))}
                           </div>
                         )}
