@@ -1,0 +1,88 @@
+08:27:10, Token expires: 08:35:58
+index-CtS_xcpw.js:21 [APP-ROUTER] 🚀 Router component rendered
+index-CtS_xcpw.js:21 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 ReferenceError: Wrench is not defined
+    at ys (SettingsPage-CNkvmdL2.js:10:3599)
+    at ao (SettingsPage-CNkvmdL2.js:15:66672)
+    at Di (SettingsPage-CNkvmdL2.js:15:155059)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+overrideMethod @ installHook.js:1
+Po @ react-core-DamieDW-.js:32
+Da.t.callback @ react-core-DamieDW-.js:32
+Ci @ react-core-DamieDW-.js:30
+$i @ react-core-DamieDW-.js:32
+Ga @ react-core-DamieDW-.js:32
+Pd @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-CnrE4C-h.js:1
+u @ query-CnrE4C-h.js:1
+batch @ query-CnrE4C-h.js:1
+W @ query-CnrE4C-h.js:1
+setData @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+await in fetch
+Lt @ query-CnrE4C-h.js:1
+setOptions @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+react-core-DamieDW-.js:30 Uncaught ReferenceError: Wrench is not defined
+    at ys (SettingsPage-CNkvmdL2.js:10:3599)
+    at ao (SettingsPage-CNkvmdL2.js:15:66672)
+    at Di (SettingsPage-CNkvmdL2.js:15:155059)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+ys @ SettingsPage-CNkvmdL2.js:10
+ao @ SettingsPage-CNkvmdL2.js:15
+Di @ SettingsPage-CNkvmdL2.js:15
+gu @ react-core-DamieDW-.js:30
+No @ react-core-DamieDW-.js:32
+tc @ react-core-DamieDW-.js:32
+ba @ react-core-DamieDW-.js:32
+Ld @ react-core-DamieDW-.js:32
+el @ react-core-DamieDW-.js:32
+Uo @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-CnrE4C-h.js:1
+u @ query-CnrE4C-h.js:1
+batch @ query-CnrE4C-h.js:1
+W @ query-CnrE4C-h.js:1
+setData @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+await in fetch
+Lt @ query-CnrE4C-h.js:1
+setOptions @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CtS_xcpw.js:15 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+Layout-BUUlOKQU.js:58 Tue Dec 30 2025 08:27:11 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
