@@ -13,7 +13,8 @@ async function processActivityLog(job: Job<ActivityLogJobData>): Promise<void> {
   try {
     await db.insert(activityLogs).values({
       ...logData,
-      executedAt: logData.executedAt ? new Date(logData.executedAt) : new Date(),
+      executedAt: logData.executedAt instanceof Date ? logData.executedAt : 
+                  typeof logData.executedAt === 'string' ? new Date(logData.executedAt) : new Date(),
     });
   } catch (error) {
     console.error(`[ActivityLogWorker] Failed to persist log:`, error);

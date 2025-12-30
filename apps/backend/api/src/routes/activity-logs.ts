@@ -16,9 +16,11 @@ router.get('/', async (req: Request, res: Response) => {
       service,
       level,
       action,
+      module,
       actorId,
       entityType,
       entityId,
+      entityName,
       status,
       search,
       from,
@@ -44,6 +46,9 @@ router.get('/', async (req: Request, res: Response) => {
     if (action) {
       conditions.push(ilike(activityLogs.action, `%${action}%`));
     }
+    if (module) {
+      conditions.push(eq(activityLogs.module, module));
+    }
     if (actorId) {
       conditions.push(eq(activityLogs.actorId, actorId));
     }
@@ -52,6 +57,9 @@ router.get('/', async (req: Request, res: Response) => {
     }
     if (entityId) {
       conditions.push(eq(activityLogs.entityId, entityId));
+    }
+    if (entityName) {
+      conditions.push(ilike(activityLogs.entityName, `%${entityName}%`));
     }
     if (status) {
       conditions.push(eq(activityLogs.status, status));
