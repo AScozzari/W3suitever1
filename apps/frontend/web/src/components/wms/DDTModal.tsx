@@ -177,6 +177,20 @@ interface Product {
   serialCount?: number;
 }
 
+// Interface for SKU mapping from API (same as ReceivingModal)
+interface SkuMappingFromAPI {
+  id: string;
+  productId: string;
+  supplierId: string;
+  supplierSku: string | null;
+  supplierSkuNormalized: string | null;
+  productName: string | null;
+  productSku: string | null;
+  productEan: string | null;
+  isSerializable: boolean | null;
+  serialType: string | null;
+}
+
 interface DDTItem {
   id: string;
   product: Product;
@@ -475,7 +489,7 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     enabled: open && currentStep === 1 && (!!selectedSupplierId || !!selectedCustomerId),
   });
 
-  // Product search
+  // Product search (internal mode)
   const { data: productsApiData, isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ['/api/wms/products', { 
       search: debouncedSearchQuery,
@@ -485,6 +499,25 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     }],
     enabled: open && currentStep === 2 && searchMode === 'internal' && debouncedSearchQuery.length >= 2,
   });
+
+  // SKU Mapping search (supplier_sku mode) - same as ReceivingModal
+  const { data: skuMappingsData, isLoading: mappingsLoading } = useQuery<SkuMappingFromAPI[]>({
+    queryKey: ['/api/wms/product-supplier-mappings', { supplierId: selectedSupplierId, supplierSku: debouncedSearchQuery }],
+    enabled: open && currentStep === 2 && searchMode === 'supplier_sku' && !!selectedSupplierId && debouncedSearchQuery.length >= 2,
+  });
+
+  // Convert SKU mapping to Product format
+  const convertMappingToProduct = useCallback((m: SkuMappingFromAPI): Product => {
+    return {
+      id: m.productId,
+      name: m.productName || '',
+      sku: m.productSku || '',
+      supplierSku: m.supplierSku || undefined,
+      ean: m.productEan || undefined,
+      isSerializable: m.isSerializable || false,
+      serialType: m.serialType as 'imei' | 'iccid' | 'mac_address' | 'other' | undefined,
+    };
+  }, []);
 
   // Watch issuing store for destination filtering
   const issuingStoreId = form.watch('issuingStoreId');
@@ -558,13 +591,34 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Update search results from API
+  // Update search results from API (internal mode)
   useEffect(() => {
     if (productsApiData && searchMode === 'internal') {
       setSearchResults(productsApiData.slice(0, MAX_VISIBLE_RESULTS));
       setShowSearchResults(productsApiData.length > 0);
     }
   }, [productsApiData, searchMode]);
+
+  // Process SKU mapping search results (supplier_sku mode) - same as ReceivingModal
+  useEffect(() => {
+    if (searchMode === 'supplier_sku' && skuMappingsData && Array.isArray(skuMappingsData)) {
+      if (skuMappingsData.length > 0) {
+        // Found mappings - convert to products
+        const results = skuMappingsData.map(m => convertMappingToProduct(m));
+        setSearchResults(results.slice(0, MAX_VISIBLE_RESULTS));
+        setShowSearchResults(true);
+        setUnmappedSupplierSku('');
+      } else {
+        // No mapping found - capture the unmapped SKU for later mapping
+        setSearchResults([]);
+        setShowSearchResults(true);
+        setUnmappedSupplierSku(debouncedSearchQuery);
+      }
+    } else if (searchMode === 'supplier_sku' && !skuMappingsData) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [searchMode, skuMappingsData, debouncedSearchQuery, convertMappingToProduct]);
 
   // Load order items when order is selected (use ref to prevent infinite loop)
   const prevOrderId = useRef<string | null>(null);
