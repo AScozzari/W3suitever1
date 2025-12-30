@@ -868,27 +868,20 @@ export default function SettingsPage() {
       limit: auditPageSize,
       sortBy: auditSortBy,
       sortOrder: auditSortOrder,
-      logType: auditLogTypeFilter
+      logType: auditLogTypeFilter,
+      lastHours: 168 // Default to 7 days
     };
     
-    // Advanced search and filters
-    if (auditSearchTerm) params.search = auditSearchTerm;
-    if (auditLevelFilter) params.level = auditLevelFilter;
-    if (auditComponentFilter) params.component = auditComponentFilter;
+    // ✅ Connect UI filters to query params
+    if (enterpriseAuditSearch) params.search = enterpriseAuditSearch;
+    if (enterpriseAuditLevel && enterpriseAuditLevel !== 'ALL') params.level = enterpriseAuditLevel;
+    if (enterpriseAuditComponent && enterpriseAuditComponent !== 'ALL') params.service = enterpriseAuditComponent;
+    
+    // Additional advanced filters (for future use)
     if (auditActionFilter) params.action = auditActionFilter;
     if (auditEntityTypeFilter) params.entityType = auditEntityTypeFilter;
-    if (auditCategoryFilter) params.category = auditCategoryFilter;
     if (auditStatusFilter) params.status = auditStatusFilter;
-    if (auditUserFilter) params.userEmail = auditUserFilter;
-    if (auditCorrelationIdFilter) params.correlationId = auditCorrelationIdFilter;
-    
-    // Smart date handling - either lastHours OR date range
-    if (auditLastHours && auditLastHours !== '0') {
-      params.lastHours = auditLastHours;
-    } else {
-      if (auditFromDate) params.dateFrom = auditFromDate;
-      if (auditToDate) params.dateTo = auditToDate;
-    }
+    if (auditUserFilter) params.actorEmail = auditUserFilter;
     
     return params;
   };
