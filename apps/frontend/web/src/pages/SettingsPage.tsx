@@ -1241,73 +1241,111 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Professional "In Development" Message */}
+        {/* ✅ ENTERPRISE LOGS TABLE - Real Data */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(255, 165, 0, 0.1), rgba(255, 165, 0, 0.05))',
-          backdropFilter: 'blur(10px)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+          backdropFilter: 'blur(15px)',
           borderRadius: '16px',
-          padding: '40px',
-          border: '1px solid rgba(255, 165, 0, 0.2)',
-          textAlign: 'center'
+          padding: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
         }}>
-          <Wrench size={48} style={{ color: '#f59e0b', marginBottom: '20px' }} />
-          <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '0 0 12px 0' }}>
-            Dashboard Enterprise in Sviluppo
-          </h3>
-          <p style={{ fontSize: '16px', color: '#6b7280', maxWidth: '600px', margin: '0 auto 24px auto', lineHeight: '1.6' }}>
-            Il backend enterprise è <strong>operativo</strong> e l'API <code>/api/audit/enterprise</code> funziona correttamente. 
-            La dashboard professionale con filtri avanzati è in fase di completamento finale.
-          </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '16px',
-            marginTop: '24px',
-            textAlign: 'left'
-          }}>
-            <div style={{
-              background: 'rgba(34, 197, 94, 0.1)',
-              padding: '16px',
-              borderRadius: '12px',
-              border: '1px solid rgba(34, 197, 94, 0.2)'
-            }}>
-              <CheckCircle size={20} style={{ color: '#22c55e', marginBottom: '8px' }} />
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#059669', marginBottom: '4px' }}>
-                Backend Completato
-              </div>
-              <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                Endpoint unificato con 15+ filtri avanzati
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(34, 197, 94, 0.1)',
-              padding: '16px',
-              borderRadius: '12px',
-              border: '1px solid rgba(34, 197, 94, 0.2)'
-            }}>
-              <CheckCircle size={20} style={{ color: '#22c55e', marginBottom: '8px' }} />
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#059669', marginBottom: '4px' }}>
-                Logging Automatico
-              </div>
-              <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                Audit trail completo per universalRequests
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              padding: '16px',
-              borderRadius: '12px',
-              border: '1px solid rgba(59, 130, 246, 0.2)'
-            }}>
-              <Clock size={20} style={{ color: '#3b82f6', marginBottom: '8px' }} />
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#2563eb', marginBottom: '4px' }}>
-                UI Professionale
-              </div>
-              <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                Dashboard con glassmorphism WindTre
-              </div>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>
+              Log Attività Recenti ({logs.length} di {metadata.total})
+            </h2>
+            <button
+              onClick={() => refetchAudit()}
+              style={{
+                background: 'linear-gradient(135deg, #ff6900, #ff8533)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              data-testid="button-refresh-logs"
+            >
+              <RefreshCw size={16} />
+              Aggiorna
+            </button>
           </div>
+          
+          {logs.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280' }}>
+              <Database size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+              <p style={{ fontSize: '16px', margin: 0 }}>Nessun log trovato nelle ultime 24 ore</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Timestamp</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Level</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Componente</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Azione</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Messaggio</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Utente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log: any, index: number) => (
+                    <tr 
+                      key={log.id || index}
+                      style={{ 
+                        borderBottom: '1px solid rgba(0,0,0,0.05)',
+                        background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)'
+                      }}
+                    >
+                      <td style={{ padding: '10px 8px', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        {formatLogTimestamp(log.created_at)}
+                      </td>
+                      <td style={{ padding: '10px 8px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          color: 'white',
+                          background: getLevelColor(log.level)
+                        }}>
+                          {log.level}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 8px', color: '#374151', fontWeight: '500' }}>
+                        {log.component || '-'}
+                      </td>
+                      <td style={{ padding: '10px 8px', color: '#6b7280' }}>
+                        {log.action || '-'}
+                      </td>
+                      <td style={{ padding: '10px 8px', color: '#374151', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {log.message}
+                      </td>
+                      <td style={{ padding: '10px 8px', color: '#6b7280' }}>
+                        {log.user_email || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {metadata.totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '20px' }}>
+              <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                Pagina {metadata.page} di {metadata.totalPages}
+              </span>
+            </div>
+          )}
         </div>
 
         <style>{`
