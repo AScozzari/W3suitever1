@@ -1723,7 +1723,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                           <TableHead className="font-semibold text-gray-900">Type</TableHead>
                           <TableHead className="font-semibold text-gray-900">Departments</TableHead>
                           <TableHead className="font-semibold text-gray-900">Members</TableHead>
-                          <TableHead className="font-semibold text-gray-900">Supervisor</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Supervisors</TableHead>
                           <TableHead className="font-semibold text-gray-900">Status</TableHead>
                           <TableHead className="font-semibold text-gray-900 w-24">Actions</TableHead>
                         </TableRow>
@@ -1789,16 +1789,26 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               </div>
                             </TableCell>
                             <TableCell>
-                              {team.primarySupervisorName ? (
-                                <div className="flex items-center gap-2">
-                                  <Shield className="h-4 w-4 text-windtre-purple" />
-                                  <span className="text-sm text-gray-600">
-                                    {team.primarySupervisorName}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">No supervisor</span>
-                              )}
+                              <div className="space-y-1">
+                                {team.primarySupervisorName ? (
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4 text-windtre-purple" />
+                                    <span className="text-sm text-gray-700 font-medium">
+                                      {team.primarySupervisorName}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-400">No primary supervisor</span>
+                                )}
+                                {team.secondarySupervisorName && (
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-3 w-3 text-gray-400" />
+                                    <span className="text-xs text-gray-500">
+                                      {team.secondarySupervisorName}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Badge variant={team.isActive ? 'default' : 'secondary'}>
