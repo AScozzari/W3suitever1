@@ -29,7 +29,9 @@ import {
   Hash,
   Calendar,
   RotateCw,
-  ClipboardCheck
+  ClipboardCheck,
+  Truck,
+  FileCheck
 } from 'lucide-react';
 import {
   Tooltip,
