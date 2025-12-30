@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useTenant } from '@/contexts/TenantContext';
+import { useTenantNavigation } from '@/hooks/useTenantNavigation';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -161,6 +162,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { currentTenant } = useTenant();
+  const { navigateTo } = useTenantNavigation();
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
@@ -1540,6 +1542,15 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       {coverageData.data.summary.criticalCount}
                     </Badge>
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigateTo('/settings/actions')}
+                  className="hover:bg-gray-100"
+                  data-testid="tab-action-management"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Action Management
                 </Button>
               </div>
 
