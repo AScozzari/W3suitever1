@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   User, Lock, UserCircle, Phone, MapPin, FileText, 
   Settings, Briefcase, Headphones, CheckCircle, Eye, EyeOff,
-  Building2, Store, Globe
+  Building2, Store, Globe, Star, Loader2
 } from 'lucide-react';
+import { apiRequest } from '../../lib/queryClient';
 import TabbedFormModal, { formStyles, TabSection } from '../ui/TabbedFormModal';
 import AvatarSelector from '../AvatarSelector';
 import { 
@@ -32,9 +33,9 @@ const initialUserData = {
   confirmPassword: '',
   ruolo: '',
   cambioPasswordObbligatorio: true,
-  ragioneSociale_id: null as number | null,
-  puntiVendita_ids: [] as number[],
-  puntoVenditaPreferito_id: null as number | null,
+  ragioneSociale_id: null as string | null,
+  puntiVendita_ids: [] as string[],
+  puntoVenditaPreferito_id: null as string | null,
   nome: '',
   cognome: '',
   avatar: { url: null as string | null, blob: null as Blob | null, type: 'upload' as 'upload' | 'generated' },
@@ -52,11 +53,11 @@ const initialUserData = {
   cap: '',
   provincia: '',
   paese: 'Italia',
-  scopeLevel: 'organizzazione',
-  selectAllLegalEntities: false,
-  selectedAreas: [] as string[],
-  selectedLegalEntities: [] as number[],
-  selectedStores: [] as number[],
+  scopeLevel: 'tenant' as 'tenant' | 'organization_entity' | 'store',
+  selectedOrganizationEntities: [] as string[],
+  primaryOrganizationEntityId: null as string | null,
+  selectedStores: [] as string[],
+  primaryStoreId: null as string | null,
   tipoDocumento: 'Carta Identità',
   numeroDocumento: '',
   dataScadenzaDocumento: '',
@@ -78,7 +79,7 @@ const initialUserData = {
     sipDomain: '',
     classOfService: 'internal',
     voicemailEnabled: false,
-    storeId: null as number | null
+    storeId: null as string | null
   },
   note: ''
 };
@@ -103,6 +104,14 @@ export default function UserFormModal({
 
   useEffect(() => {
     if (isOpen && data && (mode === 'edit' || mode === 'view')) {
+      // Determine scope level from existing data
+      let scopeLevel: 'tenant' | 'organization_entity' | 'store' = 'tenant';
+      if (data.scopeLevel === 'store' || data.scopeLevel === 'negozio' || (data.selectedStores && data.selectedStores.length > 0)) {
+        scopeLevel = 'store';
+      } else if (data.scopeLevel === 'organization_entity' || data.scopeLevel === 'organizzazione' || (data.selectedOrganizationEntities && data.selectedOrganizationEntities.length > 0)) {
+        scopeLevel = 'organization_entity';
+      }
+
       setFormData({
         username: data.username || '',
         password: '',
@@ -129,11 +138,11 @@ export default function UserFormModal({
         cap: data.cap || data.address?.postalCode || '',
         provincia: data.provincia || data.address?.province || '',
         paese: data.paese || data.address?.country || 'Italia',
-        scopeLevel: data.scopeLevel || 'organizzazione',
-        selectAllLegalEntities: data.selectAllLegalEntities || false,
-        selectedAreas: data.selectedAreas || [],
-        selectedLegalEntities: data.selectedLegalEntities || [],
+        scopeLevel,
+        selectedOrganizationEntities: data.selectedOrganizationEntities || [],
+        primaryOrganizationEntityId: data.primaryOrganizationEntityId || null,
         selectedStores: data.selectedStores || [],
+        primaryStoreId: data.primaryStoreId || null,
         tipoDocumento: data.tipoDocumento || data.documentType || 'Carta Identità',
         numeroDocumento: data.numeroDocumento || data.documentNumber || '',
         dataScadenzaDocumento: data.dataScadenzaDocumento || data.documentExpiry || '',
@@ -736,12 +745,14 @@ export default function UserFormModal({
             <select
               value={formData.scopeLevel}
               onChange={(e) => {
-                const newLevel = e.target.value;
+                const newLevel = e.target.value as 'tenant' | 'organization_entity' | 'store';
                 setFormData({ 
                   ...formData, 
                   scopeLevel: newLevel,
-                  selectedLegalEntities: newLevel === 'organizzazione' ? [] : formData.selectedLegalEntities,
-                  selectedStores: newLevel !== 'negozio' ? [] : formData.selectedStores
+                  selectedOrganizationEntities: newLevel === 'organization_entity' ? formData.selectedOrganizationEntities : [],
+                  primaryOrganizationEntityId: newLevel === 'organization_entity' ? formData.primaryOrganizationEntityId : null,
+                  selectedStores: newLevel === 'store' ? formData.selectedStores : [],
+                  primaryStoreId: newLevel === 'store' ? formData.primaryStoreId : null
                 });
               }}
               disabled={isReadOnly}
@@ -749,84 +760,16 @@ export default function UserFormModal({
               data-testid="select-user-scope-level"
             >
               <option value="tenant">Tutto il Tenant (Accesso Completo)</option>
-              <option value="organizzazione">Ragioni Sociali Specifiche</option>
-              <option value="negozio">Punti Vendita Specifici</option>
+              <option value="organization_entity">Entità Organizzative Specifiche</option>
+              <option value="store">Punti Vendita Specifici</option>
             </select>
           </div>
 
-          {formData.scopeLevel === 'organizzazione' && (
+          {formData.scopeLevel === 'organization_entity' && (
             <div style={{ marginBottom: '20px' }}>
-              <h4 style={formStyles.sectionTitle}><Building2 size={16} /> Ragioni Sociali Assegnate</h4>
+              <h4 style={formStyles.sectionTitle}><Building2 size={16} /> Entità Organizzative Assegnate</h4>
               <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>
-                Seleziona le ragioni sociali su cui l'utente può operare.
-              </p>
-              <div style={{ 
-                border: '1px solid #e5e7eb', 
-                borderRadius: '8px', 
-                maxHeight: '200px', 
-                overflowY: 'auto',
-                padding: '8px'
-              }}>
-                {organizationEntities.length === 0 ? (
-                  <p style={{ color: '#999', fontSize: '13px', padding: '8px' }}>
-                    Nessuna ragione sociale disponibile
-                  </p>
-                ) : (
-                  organizationEntities.map((org: any) => (
-                    <label 
-                      key={org.id} 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px', 
-                        padding: '8px',
-                        borderRadius: '4px',
-                        cursor: isReadOnly ? 'default' : 'pointer',
-                        backgroundColor: formData.selectedLegalEntities.includes(org.id) ? '#fff7ed' : 'transparent'
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedLegalEntities.includes(org.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ 
-                              ...formData, 
-                              selectedLegalEntities: [...formData.selectedLegalEntities, org.id]
-                            });
-                          } else {
-                            setFormData({ 
-                              ...formData, 
-                              selectedLegalEntities: formData.selectedLegalEntities.filter((id: number) => id !== org.id)
-                            });
-                          }
-                        }}
-                        disabled={isReadOnly}
-                        style={{ width: '16px', height: '16px' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 500 }}>{org.nome || org.name}</div>
-                        <div style={{ fontSize: '11px', color: '#888' }}>
-                          {org.codice || org.code} • P.IVA: {org.piva || org.pIva || '-'}
-                        </div>
-                      </div>
-                    </label>
-                  ))
-                )}
-              </div>
-              {formData.selectedLegalEntities.length > 0 && (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-                  {formData.selectedLegalEntities.length} ragione/i sociale/i selezionata/e
-                </div>
-              )}
-            </div>
-          )}
-
-          {formData.scopeLevel === 'negozio' && (
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={formStyles.sectionTitle}><Store size={16} /> Punti Vendita Assegnati</h4>
-              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>
-                Seleziona i punti vendita su cui l'utente può operare.
+                Seleziona le entità organizzative su cui l'utente può operare. Clicca sulla stella per impostare l'entità primaria.
               </p>
               <div style={{ 
                 border: '1px solid #e5e7eb', 
@@ -835,51 +778,203 @@ export default function UserFormModal({
                 overflowY: 'auto',
                 padding: '8px'
               }}>
+                {organizationEntities.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: '13px', padding: '8px' }}>
+                    Nessuna entità organizzativa disponibile
+                  </p>
+                ) : (
+                  organizationEntities.map((org: any) => {
+                    const isSelected = formData.selectedOrganizationEntities.includes(org.id);
+                    const isPrimary = formData.primaryOrganizationEntityId === org.id;
+                    return (
+                      <div 
+                        key={org.id} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          padding: '10px',
+                          borderRadius: '6px',
+                          marginBottom: '4px',
+                          cursor: isReadOnly ? 'default' : 'pointer',
+                          backgroundColor: isSelected ? '#fff7ed' : 'transparent',
+                          border: isPrimary ? '2px solid #f97316' : '1px solid transparent'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const newSelected = [...formData.selectedOrganizationEntities, org.id];
+                              setFormData({ 
+                                ...formData, 
+                                selectedOrganizationEntities: newSelected,
+                                primaryOrganizationEntityId: newSelected.length === 1 ? org.id : formData.primaryOrganizationEntityId
+                              });
+                            } else {
+                              const newSelected = formData.selectedOrganizationEntities.filter((id: string) => id !== org.id);
+                              setFormData({ 
+                                ...formData, 
+                                selectedOrganizationEntities: newSelected,
+                                primaryOrganizationEntityId: formData.primaryOrganizationEntityId === org.id 
+                                  ? (newSelected.length > 0 ? newSelected[0] : null) 
+                                  : formData.primaryOrganizationEntityId
+                              });
+                            }
+                          }}
+                          disabled={isReadOnly}
+                          style={{ width: '16px', height: '16px', flexShrink: 0 }}
+                          data-testid={`checkbox-org-${org.id}`}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {org.nome || org.name}
+                            {isPrimary && (
+                              <span style={{ 
+                                fontSize: '10px', 
+                                backgroundColor: '#f97316', 
+                                color: 'white', 
+                                padding: '2px 6px', 
+                                borderRadius: '4px' 
+                              }}>
+                                PRIMARIA
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#888' }}>
+                            {org.codice || org.code} • P.IVA: {org.piva || org.pIva || '-'}
+                          </div>
+                        </div>
+                        {isSelected && !isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, primaryOrganizationEntityId: org.id })}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '4px'
+                            }}
+                            title="Imposta come primaria"
+                            data-testid={`btn-primary-org-${org.id}`}
+                          >
+                            <Star size={18} fill={isPrimary ? '#f97316' : 'none'} color={isPrimary ? '#f97316' : '#ccc'} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              {formData.selectedOrganizationEntities.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                  {formData.selectedOrganizationEntities.length} entità selezionata/e
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.scopeLevel === 'store' && (
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={formStyles.sectionTitle}><Store size={16} /> Punti Vendita Assegnati</h4>
+              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>
+                Seleziona i punti vendita su cui l'utente può operare. Clicca sulla stella per impostare il punto vendita primario.
+              </p>
+              <div style={{ 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px', 
+                maxHeight: '300px', 
+                overflowY: 'auto',
+                padding: '8px'
+              }}>
                 {stores.length === 0 ? (
                   <p style={{ color: '#999', fontSize: '13px', padding: '8px' }}>
                     Nessun punto vendita disponibile
                   </p>
                 ) : (
-                  stores.map((store: any) => (
-                    <label 
-                      key={store.id} 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px', 
-                        padding: '8px',
-                        borderRadius: '4px',
-                        cursor: isReadOnly ? 'default' : 'pointer',
-                        backgroundColor: formData.selectedStores.includes(store.id) ? '#fff7ed' : 'transparent'
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.selectedStores.includes(store.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ 
-                              ...formData, 
-                              selectedStores: [...formData.selectedStores, store.id]
-                            });
-                          } else {
-                            setFormData({ 
-                              ...formData, 
-                              selectedStores: formData.selectedStores.filter((id: number) => id !== store.id)
-                            });
-                          }
+                  stores.map((store: any) => {
+                    const isSelected = formData.selectedStores.includes(store.id);
+                    const isPrimary = formData.primaryStoreId === store.id;
+                    return (
+                      <div 
+                        key={store.id} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          padding: '10px',
+                          borderRadius: '6px',
+                          marginBottom: '4px',
+                          cursor: isReadOnly ? 'default' : 'pointer',
+                          backgroundColor: isSelected ? '#fff7ed' : 'transparent',
+                          border: isPrimary ? '2px solid #f97316' : '1px solid transparent'
                         }}
-                        disabled={isReadOnly}
-                        style={{ width: '16px', height: '16px' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 500 }}>{store.nome || store.name}</div>
-                        <div style={{ fontSize: '11px', color: '#888' }}>
-                          {store.code || store.codice} • {store.citta || store.city || '-'}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const newSelected = [...formData.selectedStores, store.id];
+                              setFormData({ 
+                                ...formData, 
+                                selectedStores: newSelected,
+                                primaryStoreId: newSelected.length === 1 ? store.id : formData.primaryStoreId
+                              });
+                            } else {
+                              const newSelected = formData.selectedStores.filter((id: string) => id !== store.id);
+                              setFormData({ 
+                                ...formData, 
+                                selectedStores: newSelected,
+                                primaryStoreId: formData.primaryStoreId === store.id 
+                                  ? (newSelected.length > 0 ? newSelected[0] : null) 
+                                  : formData.primaryStoreId
+                              });
+                            }
+                          }}
+                          disabled={isReadOnly}
+                          style={{ width: '16px', height: '16px', flexShrink: 0 }}
+                          data-testid={`checkbox-store-${store.id}`}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {store.nome || store.name}
+                            {isPrimary && (
+                              <span style={{ 
+                                fontSize: '10px', 
+                                backgroundColor: '#f97316', 
+                                color: 'white', 
+                                padding: '2px 6px', 
+                                borderRadius: '4px' 
+                              }}>
+                                PRIMARIO
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#888' }}>
+                            {store.code || store.codice} • {store.citta || store.city || '-'}
+                          </div>
                         </div>
+                        {isSelected && !isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, primaryStoreId: store.id })}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '4px'
+                            }}
+                            title="Imposta come primario"
+                            data-testid={`btn-primary-store-${store.id}`}
+                          >
+                            <Star size={18} fill={isPrimary ? '#f97316' : 'none'} color={isPrimary ? '#f97316' : '#ccc'} />
+                          </button>
+                        )}
                       </div>
-                    </label>
-                  ))
+                    );
+                  })
                 )}
               </div>
               {formData.selectedStores.length > 0 && (
@@ -902,7 +997,7 @@ export default function UserFormModal({
                 <strong>Accesso Completo</strong>
               </div>
               <p style={{ fontSize: '13px', color: '#15803d', marginTop: '8px' }}>
-                L'utente avrà visibilità su tutte le ragioni sociali e tutti i punti vendita del tenant.
+                L'utente avrà visibilità su tutte le entità organizzative e tutti i punti vendita del tenant.
               </p>
             </div>
           )}
