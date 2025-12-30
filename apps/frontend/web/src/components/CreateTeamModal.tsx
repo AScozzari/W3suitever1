@@ -268,8 +268,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   // 🎯 Create team mutation - also adds members and observers
   const createTeamMutation = useMutation({
     mutationFn: async (teamData: CreateTeamData) => {
-      // Extract members/observers from form (not sent to team endpoint)
-      const { selectedMembers, selectedObservers, ...teamPayload } = teamData;
+      // Extract members/observers/workflowAssignments from form (not sent to team endpoint)
+      // workflowAssignments are now managed centrally via Action Management Dashboard
+      const { selectedMembers, selectedObservers, workflowAssignments, ...teamPayload } = teamData;
       
       // 1. Create the team
       const createdTeam = await apiRequest('/api/teams', {
@@ -321,7 +322,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   // 🎯 Update team mutation
   const updateTeamMutation = useMutation({
     mutationFn: async (teamData: CreateTeamData) => {
-      const { selectedMembers, selectedObservers, ...teamPayload } = teamData;
+      // workflowAssignments are now managed centrally via Action Management Dashboard
+      const { selectedMembers, selectedObservers, workflowAssignments, ...teamPayload } = teamData;
       
       return await apiRequest(`/api/teams/${editTeam.id}`, {
         method: 'PUT',
@@ -1110,138 +1112,69 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 </div>
               )}
 
-              {/* 🎯 STEP 5: Workflow Template Assignment */}
+              {/* 🎯 STEP 5: Workflow Overview (READ-ONLY) */}
               {currentStep === 5 && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Settings className="w-5 h-5 text-windtre-orange" />
-                    <h3 className="text-lg font-semibold">Assegnazione Template Workflow</h3>
+                    <h3 className="text-lg font-semibold">Panoramica Workflow Assegnati</h3>
                   </div>
 
-                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
-                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Department-Specific Workflows</h4>
-                    <p className="text-xs text-gray-600">
-                      Assign workflow templates to each department. When a request comes from these departments, the team will automatically handle it using the assigned templates.
-                    </p>
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-windtre-orange/5 rounded-lg border border-blue-200">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <Info className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 mb-1">Configurazione Centralizzata</h4>
+                        <p className="text-xs text-gray-600 mb-2">
+                          L'assegnazione dei workflow alle azioni è ora gestita centralmente dalla dashboard <strong>Action Management</strong>.
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Vai su <strong>Settings → Action Management</strong> per configurare quali azioni richiedono approvazione e quale workflow utilizzare.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {selectedDepartments.length === 0 ? (
                     <div className="text-center p-8 bg-gray-50 rounded-lg">
                       <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <p className="text-gray-500">Please select departments in Step 2 first</p>
+                      <p className="text-gray-500">Seleziona i dipartimenti nello Step 2</p>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      {selectedDepartments.map((department) => {
-                        const departmentTemplates = workflowTemplates.filter(
-                          (template: any) => template.category === department || !template.category
-                        );
-                        const assignedTemplates = selectedAssignments.filter(a => a.department === department);
-                        
-                        return (
-                          <div key={department} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex items-center gap-3 mb-4">
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">
+                        Questo team gestirà le richieste per i seguenti dipartimenti:
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedDepartments.map((department) => (
+                          <div key={department} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <div className="flex items-center gap-3">
                               {React.createElement(DEPARTMENTS[department].icon, { 
-                                className: `w-6 h-6 ${DEPARTMENTS[department].textColor}` 
+                                className: `w-5 h-5 ${DEPARTMENTS[department].textColor}` 
                               })}
-                              <h4 className="text-lg font-semibold">{DEPARTMENTS[department].label} Department</h4>
-                              <Badge className={`${DEPARTMENTS[department].color} ${DEPARTMENTS[department].textColor}`}>
-                                {assignedTemplates.length} templates assigned
-                              </Badge>
-                            </div>
-
-                            {/* Template Selection */}
-                            <div className="space-y-3">
-                              <h5 className="text-md font-medium">Available Workflow Templates</h5>
-                              {departmentTemplates.length === 0 ? (
-                                <p className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
-                                  No templates available for {DEPARTMENTS[department].label} department
+                              <div>
+                                <h4 className="font-medium">{DEPARTMENTS[department].label}</h4>
+                                <p className="text-xs text-gray-500">
+                                  Workflow configurati in Action Management
                                 </p>
-                              ) : (
-                                <div className="grid grid-cols-1 gap-3">
-                                  {departmentTemplates.map((template: any) => {
-                                    const isAssigned = assignedTemplates.some(a => a.templateId === template.id);
-                                    const assignment = assignedTemplates.find(a => a.templateId === template.id);
-                                    
-                                    return (
-                                      <div
-                                        key={template.id}
-                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                                          isAssigned
-                                            ? 'bg-green-50 border-green-200'
-                                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                        }`}
-                                        onClick={() => {
-                                          if (isAssigned) {
-                                            removeWorkflowAssignment(department, template.id);
-                                          } else {
-                                            addWorkflowAssignment(department, template.id);
-                                          }
-                                        }}
-                                        data-testid={`template-${department}-${template.id}`}
-                                      >
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex-1">
-                                            <div className="font-medium">{template.name}</div>
-                                            <div className="text-sm text-gray-600">{template.description}</div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                              <Badge variant="outline" className="text-xs">
-                                                {template.templateType || 'workflow'}
-                                              </Badge>
-                                              {template.category && (
-                                                <Badge variant="outline" className="text-xs">
-                                                  {template.category}
-                                                </Badge>
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            {isAssigned && assignment && (
-                                              <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1">
-                                                  <Checkbox
-                                                    checked={assignment.autoAssign}
-                                                    onCheckedChange={() => toggleAutoAssign(department, template.id)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  />
-                                                  <span className="text-xs text-gray-600">Auto-assign</span>
-                                                </div>
-                                              </div>
-                                            )}
-                                            <div className={`w-4 h-4 rounded-full ${
-                                              isAssigned ? 'bg-green-500' : 'bg-gray-300'
-                                            }`} />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Assignment Summary */}
-                            {assignedTemplates.length > 0 && (
-                              <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                                <h6 className="text-sm font-medium text-green-800 mb-2">Assigned Templates</h6>
-                                <div className="space-y-1">
-                                  {assignedTemplates.map((assignment) => {
-                                    const template = workflowTemplates.find((t: any) => t.id === assignment.templateId);
-                                    return template ? (
-                                      <div key={assignment.templateId} className="flex items-center justify-between text-sm">
-                                        <span className="text-green-700">✓ {template.name}</span>
-                                        <Badge variant={assignment.autoAssign ? 'default' : 'secondary'} className="text-xs">
-                                          {assignment.autoAssign ? 'Auto-assign' : 'Manual'}
-                                        </Badge>
-                                      </div>
-                                    ) : null;
-                                  })}
-                                </div>
                               </div>
-                            )}
+                            </div>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
+                      
+                      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-amber-800">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span className="text-sm font-medium">Nota</span>
+                        </div>
+                        <p className="text-xs text-amber-700 mt-1">
+                          Le azioni configurate per questi dipartimenti saranno automaticamente instradate ai supervisori di questo team.
+                          Il tipo di flusso (default o workflow) dipende dalla configurazione in Action Management.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
