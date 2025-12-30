@@ -683,25 +683,32 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <h3 className="text-lg font-semibold">Membri del Team</h3>
                   </div>
 
-                  {/* 🎯 Effective Members Preview */}
+                  {/* 🎯 Membri Selezionati - Rimovibili */}
                   {selectedUserMembers.length > 0 && (
                     <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
-                      <h4 className="text-sm font-medium text-windtre-purple mb-2">Membri del Team Selezionati</h4>
-                      <p className="text-xs text-gray-600 mb-3">
-                        Questo team include <strong>{selectedUserMembers.length} utenti</strong>
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedUserMembers.slice(0, 5).map(userId => {
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-windtre-purple">Membri Selezionati ({selectedUserMembers.length})</h4>
+                        <span className="text-xs text-gray-500">Clicca sulla X per rimuovere</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                        {selectedUserMembers.map(userId => {
                           const user = users.find(u => u.id === userId);
                           return user ? (
-                            <Badge key={userId} variant="outline" className="text-xs bg-windtre-purple/10">
+                            <Badge 
+                              key={userId} 
+                              className="bg-windtre-purple/20 text-windtre-purple hover:bg-windtre-purple/30 cursor-pointer flex items-center gap-1 pr-1"
+                            >
                               {user.name}
+                              <X 
+                                className="w-3 h-3 ml-1 hover:text-red-600" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleUserMember(userId);
+                                }}
+                              />
                             </Badge>
                           ) : null;
                         })}
-                        {selectedUserMembers.length > 5 && (
-                          <Badge variant="outline" className="text-xs">+{selectedUserMembers.length - 5} altri</Badge>
-                        )}
                       </div>
                     </div>
                   )}
@@ -740,7 +747,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       </Select>
                     </div>
                     
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    <div className="space-y-2 max-h-[450px] overflow-y-auto">
                       {users
                         .filter((user: any) => {
                           const searchLower = memberSearchQuery.toLowerCase();
