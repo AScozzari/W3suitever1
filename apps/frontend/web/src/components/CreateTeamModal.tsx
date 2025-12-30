@@ -87,44 +87,26 @@ const TEAM_TYPES = {
   }
 };
 
-// 🎯 Form validation schema
+// 🎯 Form validation schema - REFACTORED for user-based team management
+// Members are now managed via user_teams API, not stored in form directly
 const createTeamSchema = z.object({
   name: z.string().min(1, 'Il nome del team è obbligatorio').max(200, 'Nome troppo lungo'),
   description: z.string().optional(),
   teamType: z.enum(['functional', 'cross_functional', 'project', 'temporary', 'specialized']),
   assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'È richiesto almeno un dipartimento'),
-  userMembers: z.array(z.string()).default([]),
-  roleMembers: z.array(z.string()).default([]),
+  // Members and observers are managed via separate API calls after team creation
+  // Stored locally in form only for UI state, not sent to backend
+  selectedMembers: z.array(z.string()).default([]), // User IDs to add as members
+  selectedObservers: z.array(z.string()).default([]), // User IDs to add as observers
+  // Supervisors - user-based only (no more role-based)
   primarySupervisorUser: z.string().nullable().optional(),
-  primarySupervisorRole: z.string().nullable().optional(),
-  secondarySupervisorUser: z.string().nullable().optional(), // Changed from array to single user
-  secondarySupervisorRoles: z.array(z.string()).default([]),
+  secondarySupervisorUser: z.string().nullable().optional(),
   workflowAssignments: z.array(z.object({
     department: z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm']),
     templateId: z.string(),
     autoAssign: z.boolean().default(true)
   })).default([]),
   isActive: z.boolean().default(true)
-}).refine((data) => {
-  // ✅ Validation: Members cannot be supervisors
-  const members = data.userMembers;
-  const primarySup = data.primarySupervisorUser;
-  const secondarySup = data.secondarySupervisorUser;
-  
-  // Check if primary supervisor is in members
-  if (primarySup && members.includes(primarySup)) {
-    return false;
-  }
-  
-  // Check if secondary supervisor is in members
-  if (secondarySup && members.includes(secondarySup)) {
-    return false;
-  }
-  
-  return true;
-}, {
-  message: "⚠️ CONFLITTO: Un membro del team non può essere anche supervisore dello stesso team",
-  path: ["userMembers"] // Show error on members field
 }).refine((data) => {
   // ✅ Validation: Primary and secondary supervisors cannot be the same user
   const primarySup = data.primarySupervisorUser;
@@ -136,35 +118,7 @@ const createTeamSchema = z.object({
   
   return true;
 }, {
-  message: "⚠️ CONFLITTO: Il supervisore principale e il secondo supervisore non possono essere la stessa persona",
-  path: ["secondarySupervisorUser"]
-}).refine((data) => {
-  // ✅ Validation: XOR between primarySupervisorUser and primarySupervisorRole
-  const hasUserPrimary = !!data.primarySupervisorUser;
-  const hasRolePrimary = !!data.primarySupervisorRole;
-  
-  // Both cannot be set at the same time (mutual exclusion enforced by UI but validated here too)
-  if (hasUserPrimary && hasRolePrimary) {
-    return false;
-  }
-  
-  return true;
-}, {
-  message: "⚠️ CONFLITTO: Puoi selezionare solo un supervisore principale (utente O ruolo, non entrambi)",
-  path: ["primarySupervisorUser"]
-}).refine((data) => {
-  // ✅ Validation: XOR between secondarySupervisorUser and secondarySupervisorRoles
-  const hasUserSecondary = !!data.secondarySupervisorUser;
-  const hasRoleSecondary = data.secondarySupervisorRoles.length > 0;
-  
-  // Both cannot be set at the same time
-  if (hasUserSecondary && hasRoleSecondary) {
-    return false;
-  }
-  
-  return true;
-}, {
-  message: "⚠️ CONFLITTO: Puoi selezionare solo un supervisore secondario (utente O ruoli, non entrambi)",
+  message: "Il supervisore principale e il secondo supervisore non possono essere la stessa persona",
   path: ["secondarySupervisorUser"]
 });
 
@@ -189,12 +143,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     description: '',
     teamType: 'functional',
     assignedDepartments: [],
-    userMembers: [],
-    roleMembers: [],
+    selectedMembers: [],
+    selectedObservers: [],
     primarySupervisorUser: null,
-    primarySupervisorRole: null,
-    secondarySupervisorUser: null, // Changed from array to single user
-    secondarySupervisorRoles: [],
+    secondarySupervisorUser: null,
     workflowAssignments: [],
     isActive: true
   };
@@ -214,14 +166,11 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           description: editTeam.description || '',
           teamType: editTeam.teamType || 'functional',
           assignedDepartments: editTeam.assignedDepartments || [],
-          userMembers: editTeam.userMembers || [],
-          roleMembers: editTeam.roleMembers || [],
+          selectedMembers: [], // Will be loaded from API when editing
+          selectedObservers: [], // Will be loaded from API when editing
           primarySupervisorUser: editTeam.primarySupervisorUser || null,
-          primarySupervisorRole: editTeam.primarySupervisorRole || null,
-          // Handle both old (array) and new (single) format for backward compatibility
           secondarySupervisorUser: editTeam.secondarySupervisorUser || 
             (editTeam.secondarySupervisorUsers && editTeam.secondarySupervisorUsers[0]) || null,
-          secondarySupervisorRoles: editTeam.secondarySupervisorRoles || [],
           workflowAssignments: editTeam.workflowAssignments || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
         };
@@ -283,10 +232,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     if (!supervisorId) return { hasMismatch: false, mismatchDetails: [] };
     
     const supervisorAreaId = getUserAreaId(supervisorId);
-    const selectedMembers = form.watch('userMembers');
+    const selectedMemberIds = form.watch('selectedMembers');
     const mismatchDetails: { memberId: string; memberName: string; memberArea: string; supervisorArea: string }[] = [];
     
-    for (const memberId of selectedMembers) {
+    for (const memberId of selectedMemberIds) {
       const memberAreaId = getUserAreaId(memberId);
       // Both must have areas assigned for comparison
       if (supervisorAreaId && memberAreaId && supervisorAreaId !== memberAreaId) {
@@ -303,13 +252,39 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     return { hasMismatch: mismatchDetails.length > 0, mismatchDetails };
   };
 
-  // 🎯 Create team mutation
+  // 🎯 Create team mutation - also adds members and observers
   const createTeamMutation = useMutation({
     mutationFn: async (teamData: CreateTeamData) => {
-      return await apiRequest('/api/teams', {
+      // Extract members/observers from form (not sent to team endpoint)
+      const { selectedMembers, selectedObservers, ...teamPayload } = teamData;
+      
+      // 1. Create the team
+      const createdTeam = await apiRequest('/api/teams', {
         method: 'POST',
-        body: JSON.stringify(teamData)
+        body: JSON.stringify({
+          ...teamPayload,
+          primarySupervisorUser: teamPayload.primarySupervisorUser || undefined,
+          secondarySupervisorUser: teamPayload.secondarySupervisorUser || undefined
+        })
       });
+      
+      // 2. Add members if any
+      if (selectedMembers.length > 0 && createdTeam?.id) {
+        await apiRequest(`/api/teams/${createdTeam.id}/members`, {
+          method: 'POST',
+          body: JSON.stringify({ userIds: selectedMembers, isPrimaryTeam: true })
+        });
+      }
+      
+      // 3. Add observers if any
+      if (selectedObservers.length > 0 && createdTeam?.id) {
+        await apiRequest(`/api/teams/${createdTeam.id}/observers`, {
+          method: 'POST',
+          body: JSON.stringify({ userIds: selectedObservers, canApprove: true })
+        });
+      }
+      
+      return createdTeam;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
@@ -321,10 +296,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
       form.reset();
       setCurrentStep(1);
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Errore',
-        description: 'Creazione del team fallita',
+        description: error?.message || 'Creazione del team fallita',
         variant: 'destructive'
       });
     }
@@ -333,10 +308,17 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   // 🎯 Update team mutation
   const updateTeamMutation = useMutation({
     mutationFn: async (teamData: CreateTeamData) => {
+      const { selectedMembers, selectedObservers, ...teamPayload } = teamData;
+      
       return await apiRequest(`/api/teams/${editTeam.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(teamData)
+        method: 'PUT',
+        body: JSON.stringify({
+          ...teamPayload,
+          primarySupervisorUser: teamPayload.primarySupervisorUser || undefined,
+          secondarySupervisorUser: teamPayload.secondarySupervisorUser || undefined
+        })
       });
+      // Note: For updates, members/observers are managed separately via dedicated APIs
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
@@ -359,17 +341,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   // 🎯 Handle form submission
   const onSubmit = (data: CreateTeamData) => {
-    // Clean data for backend - convert null to undefined for optional fields
-    const processedData = {
-      ...data,
-      primarySupervisorUser: data.primarySupervisorUser || undefined,
-      primarySupervisorRole: data.primarySupervisorRole || undefined
-    };
-    
     if (editTeam) {
-      updateTeamMutation.mutate(processedData);
+      updateTeamMutation.mutate(data);
     } else {
-      createTeamMutation.mutate(processedData);
+      createTeamMutation.mutate(data);
     }
   };
 
@@ -393,23 +368,23 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   };
 
   // 🎯 Member selection helpers
-  const selectedUserMembers = form.watch('userMembers');
-  const selectedRoleMembers = form.watch('roleMembers');
+  const selectedUserMembers = form.watch('selectedMembers');
+  const selectedObserverUsers = form.watch('selectedObservers');
 
   const toggleUserMember = (userId: string) => {
     const current = selectedUserMembers;
     const updated = current.includes(userId)
       ? current.filter(id => id !== userId)
       : [...current, userId];
-    form.setValue('userMembers', updated);
+    form.setValue('selectedMembers', updated);
   };
 
-  const toggleRoleMember = (roleId: string) => {
-    const current = selectedRoleMembers;
-    const updated = current.includes(roleId)
-      ? current.filter(id => id !== roleId)
-      : [...current, roleId];
-    form.setValue('roleMembers', updated);
+  const toggleObserverUser = (userId: string) => {
+    const current = selectedObserverUsers;
+    const updated = current.includes(userId)
+      ? current.filter(id => id !== userId)
+      : [...current, userId];
+    form.setValue('selectedObservers', updated);
   };
 
   // 🎯 Workflow assignment helpers
@@ -831,18 +806,17 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
                   {/* Primary Supervisor - User */}
                   <div>
-                    <h4 className="text-md font-medium mb-1">Supervisore Utente</h4>
+                    <h4 className="text-md font-medium mb-1">Supervisore Principale</h4>
                     <p className="text-sm text-gray-600 mb-3">
                       Seleziona un utente specifico come supervisore principale
                     </p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {users.map((user: any) => {
                         const primaryUser = form.watch('primarySupervisorUser');
-                        const primaryRole = form.watch('primarySupervisorRole');
-                        const userMembers = form.watch('userMembers');
+                        const membersList = form.watch('selectedMembers');
                         const isSelected = primaryUser === user.id;
-                        const isMember = userMembers.includes(user.id);
-                        const isDisabled = !!primaryRole || isMember; // Disabled if role is selected OR user is a member
+                        const isMember = membersList.includes(user.id);
+                        const isDisabled = isMember; // Disabled if user is a member
                         
                         return (
                           <div
@@ -857,10 +831,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             onClick={() => {
                               if (!isDisabled) {
                                 form.setValue('primarySupervisorUser', isSelected ? null : user.id);
-                              } else if (isMember && !primaryRole) {
+                              } else if (isMember) {
                                 // Show conflict warning for members
                                 toast({
-                                  title: '⚠️ Conflitto Rilevato',
+                                  title: 'Conflitto Rilevato',
                                   description: `${user.name} è già un membro del team e non può essere supervisore dello stesso team.`,
                                   variant: 'destructive'
                                 });
@@ -929,51 +903,6 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     })()}
                   </div>
 
-                  <Separator />
-
-                  {/* Primary Supervisor - Role */}
-                  <div>
-                    <h4 className="text-md font-medium mb-1">Supervisore per Ruolo</h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Seleziona un ruolo - tutti gli utenti con questo ruolo saranno supervisori principali
-                    </p>
-                    <div className="space-y-2">
-                      {roles.map((role: any) => {
-                        const primaryRole = form.watch('primarySupervisorRole');
-                        const primaryUser = form.watch('primarySupervisorUser');
-                        const isSelected = primaryRole === role.id;
-                        const isDisabled = !!primaryUser; // Disabled if user is selected
-                        
-                        return (
-                          <div
-                            key={role.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isDisabled
-                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
-                                : isSelected
-                                  ? 'bg-windtre-orange/10 border-windtre-orange text-windtre-orange'
-                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            onClick={() => {
-                              if (!isDisabled) {
-                                form.setValue('primarySupervisorRole', isSelected ? null : role.id);
-                              }
-                            }}
-                            data-testid={`primary-supervisor-role-${role.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{role.name}</div>
-                                <div className="text-sm text-gray-500">{role.description}</div>
-                              </div>
-                              {isSelected && <Shield className="w-4 h-4 text-green-600" />}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
                   <Separator className="my-8" />
 
                   {/* 🎯 SECONDARY SUPERVISOR SECTION - Single User Only (Optional) */}
@@ -994,10 +923,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       {users.map((user: any) => {
                         const secondaryUser = form.watch('secondarySupervisorUser');
                         const primaryUser = form.watch('primarySupervisorUser');
-                        const userMembers = form.watch('userMembers');
+                        const membersList = form.watch('selectedMembers');
                         const isSelected = secondaryUser === user.id;
                         const isPrimary = primaryUser === user.id;
-                        const isMember = userMembers.includes(user.id);
+                        const isMember = membersList.includes(user.id);
                         
                         return (
                           <div
