@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,12 +75,6 @@ interface MovementTypeConfig {
   display_order: number;
 }
 
-interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-}
 
 const DEFAULT_MOVEMENT_TYPES: Omit<MovementTypeConfig, 'id' | 'tenant_id'>[] = [
   { movement_type: 'purchase', movement_direction: 'inbound', label_it: 'Acquisto', description: 'Merce ricevuta da fornitore', icon: 'Truck', color: '#10b981', is_enabled: true, requires_approval: false, workflow_template_id: null, required_documents: ['ddt', 'invoice'], display_order: 1 },
@@ -119,6 +114,7 @@ function getIcon(iconName: string | null) {
 
 function WMSMovementsTab() {
   const { toast } = useToast();
+  const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const [localConfigs, setLocalConfigs] = useState<MovementTypeConfig[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['inbound', 'outbound', 'internal']));
@@ -126,13 +122,6 @@ function WMSMovementsTab() {
   const { data: configs, isLoading: configsLoading, refetch: refetchConfigs } = useQuery<MovementTypeConfig[]>({
     queryKey: ['/api/wms/movement-type-configs', STAGING_TENANT_ID],
   });
-
-  // Fetch WMS-specific workflow templates (category: wms, approval, or null)
-  const { data: workflowsResponse } = useQuery<{ success: boolean; data: WorkflowTemplate[] }>({
-    queryKey: ['/api/wms/workflow-templates'],
-  });
-  
-  const workflows = workflowsResponse?.data || [];
 
   useEffect(() => {
     if (!configsLoading) {
@@ -188,13 +177,6 @@ function WMSMovementsTab() {
   const handleToggleApproval = (movementType: string, requires: boolean) => {
     setLocalConfigs(prev => prev.map(c => 
       c.movement_type === movementType ? { ...c, requires_approval: requires } : c
-    ));
-    setHasChanges(true);
-  };
-
-  const handleWorkflowChange = (movementType: string, workflowId: string | null) => {
-    setLocalConfigs(prev => prev.map(c => 
-      c.movement_type === movementType ? { ...c, workflow_template_id: workflowId } : c
     ));
     setHasChanges(true);
   };
@@ -377,32 +359,23 @@ function WMSMovementsTab() {
                                     <TooltipTrigger asChild>
                                       <Label className="text-[10px] text-gray-500 uppercase tracking-wider flex items-center gap-1 cursor-help">
                                         <Workflow className="w-3 h-3" />
-                                        Workflow Template
+                                        Workflow & Routing
                                         <Info className="w-3 h-3" />
                                       </Label>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="max-w-xs">
-                                      <p className="text-xs">Solo workflow della categoria <strong>Operations</strong> sono disponibili per i movimenti WMS</p>
+                                      <p className="text-xs">Workflow e routing sono gestiti centralmente nella sezione <strong>Action Management</strong></p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
-                                <Select
-                                  value={config.workflow_template_id || 'none'}
-                                  onValueChange={(val) => handleWorkflowChange(config.movement_type, val === 'none' ? null : val)}
-                                  disabled={!config.is_enabled || !config.requires_approval}
+                                <a 
+                                  href={`/${tenantSlug}/settings/actions`}
+                                  className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition-colors"
+                                  data-testid={`link-action-management-${config.movement_type}`}
                                 >
-                                  <SelectTrigger className="h-8 text-xs" data-testid={`select-workflow-${config.movement_type}`}>
-                                    <SelectValue placeholder="Nessun workflow" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">Nessun workflow (logica base)</SelectItem>
-                                    {workflows.map((wf) => (
-                                      <SelectItem key={wf.id} value={wf.id}>
-                                        {wf.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                  <Workflow className="w-3.5 h-3.5" />
+                                  Action Management
+                                </a>
                               </div>
                             </div>
                           </div>

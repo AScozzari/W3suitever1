@@ -593,6 +593,15 @@ async function startBackend() {
     console.warn('⚠️  WMS Snapshot service failed to start:', error);
   }
 
+  // 🚨 ACTION ESCALATION SERVICE - Automatic escalation after SLA timeout
+  try {
+    const { actionEscalationService } = await import('./services/action-escalation.service.js');
+    actionEscalationService.initialize();
+    console.log('🚨 Action escalation service started (every 15 min)');
+  } catch (error) {
+    console.warn('⚠️  Action escalation service failed to start:', error);
+  }
+
   // API-only backend - frontend apps handle their own routing
   // Only serve API, OAuth2, and well-known endpoints
 

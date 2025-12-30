@@ -6,7 +6,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon, CheckSquare } from 'lucide-react';
+import { Plus, Search, List, LayoutGrid, Grid2X2, BarChart3, GanttChart as GanttIcon, CheckSquare, ClipboardCheck } from 'lucide-react';
 import { TasksDataTable } from '@/components/tasks/TasksDataTable';
 import { TaskFilters, TaskFiltersState } from '@/components/tasks/TaskFilters';
 import { TaskDetailDialog, TaskDetailProps } from '@/components/tasks/TaskDetailDialog';
@@ -17,6 +17,7 @@ import { KanbanBoard } from '@/components/tasks/KanbanBoard';
 import { EisenhowerMatrix } from '@/components/tasks/EisenhowerMatrix';
 import { GanttChart } from '@/components/tasks/GanttChart';
 import { TaskAnalytics } from '@/components/tasks/TaskAnalytics';
+import { ApprovalRequestsTable } from '@/components/tasks/ApprovalRequestsTable';
 import { LoadingState } from '@w3suite/frontend-kit/components/blocks';
 import { EmptyState } from '@w3suite/frontend-kit/components/blocks';
 import { ErrorState } from '@w3suite/frontend-kit/components/blocks';
@@ -70,7 +71,7 @@ export default function TasksPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'list' | 'board' | 'matrix' | 'analytics'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'board' | 'matrix' | 'analytics' | 'requests'>('list');
   const [boardView, setBoardView] = useState<'kanban' | 'gantt'>('kanban');
 
   const { data: tasks = [], isLoading, error } = useQuery<Task[]>({
@@ -345,7 +346,8 @@ export default function TasksPage() {
                 { id: 'list', label: 'Lista', icon: List },
                 { id: 'board', label: 'Board', icon: LayoutGrid },
                 { id: 'matrix', label: 'Matrice', icon: Grid2X2 },
-                { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+                { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+                { id: 'requests', label: 'Richieste', icon: ClipboardCheck }
               ].map((tab) => (
                 <Button
                   key={tab.id}
@@ -506,6 +508,12 @@ export default function TasksPage() {
           {activeTab === 'analytics' && (
             <div className="pb-6">
               <TaskAnalytics />
+            </div>
+          )}
+
+          {activeTab === 'requests' && (
+            <div className="pb-6">
+              <ApprovalRequestsTable />
             </div>
           )}
         </div>

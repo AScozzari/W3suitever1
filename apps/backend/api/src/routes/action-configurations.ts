@@ -563,4 +563,25 @@ router.get('/meta/teams/:department', async (req, res) => {
   }
 });
 
+// ==================== ESCALATION CHECK (Manual Trigger) ====================
+
+router.post('/escalation/check', async (req, res) => {
+  try {
+    const { actionEscalationService } = await import('../services/action-escalation.service');
+    const result = await actionEscalationService.runManualCheck();
+    
+    res.json({
+      success: true,
+      message: `Escalation check completed: ${result.escalated} requests escalated out of ${result.processed} processed`,
+      ...result
+    });
+
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error running escalation check', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to run escalation check' });
+  }
+});
+
 export default router;

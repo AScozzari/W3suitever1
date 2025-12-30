@@ -22,6 +22,7 @@ import {
 } from '../db/schema/w3suite';
 import { notificationService } from '../core/notification-service';
 import { logger } from '../core/logger';
+import { unifiedTriggerService } from './unified-trigger.service';
 
 export interface WmsWorkflowContext {
   tenantId: string;
@@ -87,17 +88,20 @@ class WmsWorkflowService {
 
   /**
    * 🚀 Triggera il workflow di approvazione per un movimento
+   * 
+   * MIGRATED: Ora delega a UnifiedTriggerService per routing centralizzato
+   * L'actionId corrisponde al movementType (es: 'transfer_in', 'pullback')
    */
   async triggerApprovalWorkflow(context: WmsWorkflowContext): Promise<MovementApprovalResult> {
     try {
-      logger.info('🚀 [WMS-WORKFLOW] Triggering approval workflow for movement', {
+      logger.info('🚀 [WMS-WORKFLOW] Triggering approval via UnifiedTriggerService', {
         movementId: context.movementId,
         movementType: context.movementType,
         tenantId: context.tenantId
       });
 
-      // 1. Verifica configurazione movimento
-      const { requiresApproval, workflowTemplateId, config } = await this.checkApprovalRequired(
+      // 1. Verifica configurazione movimento (per requires_approval legacy)
+      const { requiresApproval } = await this.checkApprovalRequired(
         context.tenantId,
         context.movementType
       );
@@ -118,33 +122,35 @@ class WmsWorkflowService {
         })
         .where(eq(wmsStockMovements.id, context.movementId));
 
-      // 3. Trova supervisori del negozio
-      const supervisorIds = await this.findStoreSupervisors(context.tenantId, context.storeId);
+      // 3. Delega a UnifiedTriggerService per routing centralizzato
+      // Il movementType diventa l'actionId (es: 'transfer_in', 'pullback', 'doa')
+      const triggerResult = await unifiedTriggerService.trigger({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        department: 'wms',
+        actionId: context.movementType,
+        entityType: 'stock_movement',
+        entityId: context.movementId,
+        context: {
+          storeId: context.storeId,
+          movementDirection: context.movementDirection,
+          productName: context.productName,
+          quantity: context.quantity
+        }
+      });
 
-      // 4. Se c'è un workflow template configurato, crea istanza
-      let workflowInstanceId: string | undefined;
-      if (workflowTemplateId) {
-        workflowInstanceId = await this.createWorkflowInstance(
-          context,
-          workflowTemplateId,
-          supervisorIds
-        );
-      }
-
-      // 5. Invia notifiche ai supervisori
-      await this.notifySupervisors(context, supervisorIds, config);
-
-      logger.info('✅ [WMS-WORKFLOW] Approval workflow triggered successfully', {
+      logger.info('✅ [WMS-WORKFLOW] Approval triggered via UnifiedTriggerService', {
         movementId: context.movementId,
-        workflowInstanceId,
-        supervisorCount: supervisorIds.length
+        flowType: triggerResult.flowType,
+        workflowInstanceId: triggerResult.workflowInstanceId,
+        notifiedUsers: triggerResult.notifiedUsers?.length || 0
       });
 
       return {
         requiresApproval: true,
-        workflowInstanceId,
-        supervisorIds,
-        message: `Movimento in attesa di approvazione. ${supervisorIds.length} supervisore(i) notificato(i).`
+        workflowInstanceId: triggerResult.workflowInstanceId,
+        supervisorIds: triggerResult.notifiedUsers,
+        message: triggerResult.message
       };
 
     } catch (error) {

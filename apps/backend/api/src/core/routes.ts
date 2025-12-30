@@ -15333,6 +15333,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/workflow-instances/approvals - Lista richieste approvazione pendenti
+  app.get('/api/workflow-instances/approvals', ...authWithRBAC, requirePermission('workflows.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
+      const { status = 'pending' } = req.query;
+      
+      console.log(`[WORKFLOW-APPROVALS] 📋 Fetching approval requests for tenant ${tenantId}`);
+      
+      await setTenantContext(tenantId);
+      
+      const whereConditions = [eq(workflowInstances.tenantId, tenantId)];
+      
+      if (status !== 'all') {
+        whereConditions.push(eq(workflowInstances.status, status as string));
+      }
+      
+      const instances = await db
+        .select({
+          id: workflowInstances.id,
+          tenantId: workflowInstances.tenantId,
+          status: workflowInstances.status,
+          createdAt: workflowInstances.createdAt,
+          updatedAt: workflowInstances.updatedAt,
+          entityType: workflowInstances.entityType,
+          entityId: workflowInstances.entityId,
+          triggeredBy: workflowInstances.triggeredBy,
+          currentStepData: workflowInstances.currentStepData,
+          workflowTemplateId: workflowInstances.templateId,
+          workflowTemplateName: workflowTemplates.name
+        })
+        .from(workflowInstances)
+        .leftJoin(workflowTemplates, eq(workflowInstances.templateId, workflowTemplates.id))
+        .where(and(...whereConditions))
+        .orderBy(desc(workflowInstances.createdAt))
+        .limit(100);
+
+      const enrichedInstances = await Promise.all(instances.map(async (inst) => {
+        let triggeredByName = 'Utente';
+        if (inst.triggeredBy) {
+          const [user] = await db.select({ name: users.name }).from(users).where(eq(users.id, inst.triggeredBy)).limit(1);
+          if (user) triggeredByName = user.name || 'Utente';
+        }
+        return { ...inst, triggeredByName };
+      }));
+      
+      console.log(`[WORKFLOW-APPROVALS] ✅ Found ${enrichedInstances.length} approval requests`);
+      
+      res.json({ success: true, data: enrichedInstances });
+      
+    } catch (error) {
+      console.error('[WORKFLOW-APPROVALS] ❌ Error fetching approval requests:', error);
+      res.status(500).json({ error: 'Errore recupero richieste approvazione' });
+    }
+  });
+
+  // POST /api/workflow-instances/:id/approve - Approva richiesta
+  app.post('/api/workflow-instances/:id/approve', ...authWithRBAC, requirePermission('workflows.write'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
+      const instanceId = parseUUIDParam(req.params.id, 'Instance ID');
+      const { notes } = req.body;
+      const approverId = req.user?.id;
+      
+      console.log(`[WORKFLOW-APPROVALS] ✅ Approving instance ${instanceId} by ${approverId}`);
+      
+      await setTenantContext(tenantId);
+      
+      const [instance] = await db.select().from(workflowInstances).where(and(
+        eq(workflowInstances.id, instanceId),
+        eq(workflowInstances.tenantId, tenantId)
+      ));
+      
+      if (!instance) {
+        return res.status(404).json({ error: 'Richiesta non trovata' });
+      }
+      
+      if (instance.status !== 'pending') {
+        return res.status(400).json({ error: 'Richiesta già processata' });
+      }
+      
+      const currentStepData = (instance.currentStepData || {}) as any;
+      
+      await db.update(workflowInstances).set({
+        status: 'approved',
+        completedAt: new Date(),
+        updatedAt: new Date(),
+        currentStepData: {
+          ...currentStepData,
+          approvedBy: approverId,
+          approvedAt: new Date().toISOString(),
+          approvalNotes: notes
+        }
+      }).where(eq(workflowInstances.id, instanceId));
+      
+      console.log(`[WORKFLOW-APPROVALS] ✅ Instance ${instanceId} approved`);
+      res.json({ success: true, message: 'Richiesta approvata con successo' });
+      
+    } catch (error) {
+      console.error('[WORKFLOW-APPROVALS] ❌ Error approving request:', error);
+      res.status(500).json({ error: 'Errore approvazione richiesta' });
+    }
+  });
+
+  // POST /api/workflow-instances/:id/reject - Rifiuta richiesta
+  app.post('/api/workflow-instances/:id/reject', ...authWithRBAC, requirePermission('workflows.write'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
+      const instanceId = parseUUIDParam(req.params.id, 'Instance ID');
+      const { reason } = req.body;
+      const rejecterId = req.user?.id;
+      
+      if (!reason || !reason.trim()) {
+        return res.status(400).json({ error: 'Motivo del rifiuto obbligatorio' });
+      }
+      
+      console.log(`[WORKFLOW-APPROVALS] ❌ Rejecting instance ${instanceId} by ${rejecterId}`);
+      
+      await setTenantContext(tenantId);
+      
+      const [instance] = await db.select().from(workflowInstances).where(and(
+        eq(workflowInstances.id, instanceId),
+        eq(workflowInstances.tenantId, tenantId)
+      ));
+      
+      if (!instance) {
+        return res.status(404).json({ error: 'Richiesta non trovata' });
+      }
+      
+      if (instance.status !== 'pending') {
+        return res.status(400).json({ error: 'Richiesta già processata' });
+      }
+      
+      const currentStepData = (instance.currentStepData || {}) as any;
+      
+      await db.update(workflowInstances).set({
+        status: 'rejected',
+        completedAt: new Date(),
+        updatedAt: new Date(),
+        currentStepData: {
+          ...currentStepData,
+          rejectedBy: rejecterId,
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: reason
+        }
+      }).where(eq(workflowInstances.id, instanceId));
+      
+      console.log(`[WORKFLOW-APPROVALS] ❌ Instance ${instanceId} rejected`);
+      res.json({ success: true, message: 'Richiesta rifiutata' });
+      
+    } catch (error) {
+      console.error('[WORKFLOW-APPROVALS] ❌ Error rejecting request:', error);
+      res.status(500).json({ error: 'Errore rifiuto richiesta' });
+    }
+  });
+
   // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
   // NOTE: hierarchyRouter is now mounted earlier (line ~1287) BEFORE entitiesRoutes
   // to prevent the generic GET /api/:entity catch-all from intercepting /api/teams
