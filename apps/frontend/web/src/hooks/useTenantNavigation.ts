@@ -1,19 +1,31 @@
 import { useLocation } from 'wouter';
-import { useTenant } from '@/contexts/TenantContext';
 
 export function useTenantNavigation() {
-  const [, setLocation] = useLocation();
-  const { tenantSlug } = useTenant();
+  const [location, setLocation] = useLocation();
+  
+  const getTenantSlug = (): string => {
+    const storedTenant = localStorage.getItem('currentTenant');
+    if (storedTenant) return storedTenant;
+    
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    if (pathParts.length > 0) {
+      return pathParts[0];
+    }
+    
+    return 'staging';
+  };
 
   const navigateTo = (path: string) => {
+    const tenantSlug = getTenantSlug();
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     setLocation(`/${tenantSlug}${cleanPath}`);
   };
 
   const buildPath = (path: string) => {
+    const tenantSlug = getTenantSlug();
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `/${tenantSlug}${cleanPath}`;
   };
 
-  return { navigateTo, buildPath };
+  return { navigateTo, buildPath, tenantSlug: getTenantSlug() };
 }
