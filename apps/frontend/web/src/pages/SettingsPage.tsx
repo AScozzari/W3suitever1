@@ -603,6 +603,11 @@ export default function SettingsPage() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [newLogsAvailable, setNewLogsAvailable] = useState(false);
   
+  // ✅ Enterprise Audit Trail Filter States
+  const [enterpriseAuditLevel, setEnterpriseAuditLevel] = useState('ALL');
+  const [enterpriseAuditComponent, setEnterpriseAuditComponent] = useState('ALL');
+  const [enterpriseAuditSearch, setEnterpriseAuditSearch] = useState('');
+  
   // Legacy logs state (for backward compatibility)
   const [logsSearchTerm, setLogsSearchTerm] = useState('');
   const [logsLevelFilter, setLogsLevelFilter] = useState('ALL');
@@ -1091,154 +1096,193 @@ export default function SettingsPage() {
       );
     }
 
+    // Calculate stats from logs
+    const errorCount = logs.filter((l: any) => l.level === 'ERROR').length;
+    const warnCount = logs.filter((l: any) => l.level === 'WARN').length;
+    const infoCount = logs.filter((l: any) => l.level === 'INFO').length;
+    const debugCount = logs.filter((l: any) => l.level === 'DEBUG').length;
+    
+    // Group by component
+    const componentStats = logs.reduce((acc: any, log: any) => {
+      const comp = log.component || 'unknown';
+      acc[comp] = (acc[comp] || 0) + 1;
+      return acc;
+    }, {});
+    const topComponents = Object.entries(componentStats)
+      .sort((a: any, b: any) => b[1] - a[1])
+      .slice(0, 5);
+    
+    // Available filters from metadata
+    const availableLevels = ['ALL', 'ERROR', 'WARN', 'INFO', 'DEBUG'];
+    const availableComponents = ['ALL', ...(metadata.filters.available.components || [])];
+
     return (
       <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
         
-        {/* ✅ ENTERPRISE HEADER with Real-time Analytics */}
+        {/* ✅ ENTERPRISE HEADER */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-          backdropFilter: 'blur(15px)',
-          borderRadius: '16px',
-          padding: '32px',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          marginBottom: '28px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '24px',
+          flexWrap: 'wrap',
+          gap: '16px'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '24px',
-            flexWrap: 'wrap',
-            gap: '16px'
-          }}>
-            <div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                color: '#111827',
-                margin: '0 0 8px 0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <Shield size={32} style={{ color: '#ff6900' }} />
-                Enterprise Audit Trail
-              </h1>
-              <p style={{
-                fontSize: '16px',
-                color: '#6b7280',
-                margin: 0,
-                lineHeight: '1.5'
-              }}>
-                Sistema unificato di audit trail con structured logs + entity logs in tempo reale
-              </p>
-            </div>
-            
-            {/* Real-time Status Badge */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              background: 'rgba(34, 197, 94, 0.1)',
-              padding: '12px 20px',
-              borderRadius: '12px',
-              border: '1px solid rgba(34, 197, 94, 0.2)'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#22c55e',
-                animation: 'pulse 2s infinite'
-              }} />
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#059669'
-              }}>
-                Sistema Operativo
-              </span>
-              <span style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                marginLeft: '8px'
-              }}>
-                Perf: {metadata.duration}
-              </span>
-            </div>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Shield size={32} style={{ color: '#ff6900' }} />
+              Enterprise Audit Trail
+            </h1>
+            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
+              Sistema unificato di audit trail con structured logs + entity logs in tempo reale
+            </p>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(34, 197, 94, 0.1)', padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+            <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>Sistema Operativo</span>
+            <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>Query: {metadata.duration}</span>
+          </div>
+        </div>
 
-          {/* ✅ ANALYTICS CARDS with Real Data */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '20px'
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.6)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.4)',
-              textAlign: 'center'
-            }}>
-              <Database size={24} style={{ color: '#3b82f6', marginBottom: '8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>
-                {analytics.totalLogs.toLocaleString()}
-              </div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                Log Totali
-              </div>
+        {/* ✅ STATS CARDS - 6 cards con più info */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <Database size={24} style={{ color: '#3b82f6' }} />
+              <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600', background: 'rgba(59, 130, 246, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>TOTALI</span>
             </div>
-            
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.6)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.4)',
-              textAlign: 'center'
-            }}>
-              <Activity size={24} style={{ color: '#10b981', marginBottom: '8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>
-                {analytics.averagePerDay}
-              </div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                Media Giornaliera
-              </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#111827' }}>{analytics.totalLogs}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Log nelle ultime 24h</div>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <XCircle size={24} style={{ color: '#ef4444' }} />
+              <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '600', background: 'rgba(239, 68, 68, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>ERRORI</span>
             </div>
-            
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.6)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.4)',
-              textAlign: 'center'
-            }}>
-              <Filter size={24} style={{ color: '#f59e0b', marginBottom: '8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>
-                {metadata.filters.applied}
-              </div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                Filtri Attivi
-              </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#ef4444' }}>{errorCount}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Errori rilevati</div>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <AlertTriangle size={24} style={{ color: '#f59e0b' }} />
+              <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: '600', background: 'rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>WARNING</span>
             </div>
-            
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.6)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.4)',
-              textAlign: 'center'
-            }}>
-              <Clock size={24} style={{ color: '#8b5cf6', marginBottom: '8px' }} />
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>
-                {analytics.queryPerformance}ms
-              </div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                Performance Query
-              </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#f59e0b' }}>{warnCount}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Avvisi sistema</div>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <CheckCircle size={24} style={{ color: '#10b981' }} />
+              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '600', background: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>INFO</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#10b981' }}>{infoCount}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Operazioni normali</div>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <Clock size={24} style={{ color: '#8b5cf6' }} />
+              <span style={{ fontSize: '11px', color: '#8b5cf6', fontWeight: '600', background: 'rgba(139, 92, 246, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>PERF</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#8b5cf6' }}>{analytics.queryPerformance}ms</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Latenza query</div>
+          </div>
+          
+          <div style={{ background: 'linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(107, 114, 128, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(107, 114, 128, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <Activity size={24} style={{ color: '#6b7280' }} />
+              <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600', background: 'rgba(107, 114, 128, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>DEBUG</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#6b7280' }}>{debugCount}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Log debug</div>
+          </div>
+        </div>
+
+        {/* ✅ CHARTS ROW - Distribution by Level & Top Components */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+          {/* Level Distribution */}
+          <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Distribuzione per Livello</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { label: 'ERROR', count: errorCount, color: '#ef4444', percent: analytics.totalLogs > 0 ? (errorCount / analytics.totalLogs * 100).toFixed(1) : 0 },
+                { label: 'WARN', count: warnCount, color: '#f59e0b', percent: analytics.totalLogs > 0 ? (warnCount / analytics.totalLogs * 100).toFixed(1) : 0 },
+                { label: 'INFO', count: infoCount, color: '#3b82f6', percent: analytics.totalLogs > 0 ? (infoCount / analytics.totalLogs * 100).toFixed(1) : 0 },
+                { label: 'DEBUG', count: debugCount, color: '#6b7280', percent: analytics.totalLogs > 0 ? (debugCount / analytics.totalLogs * 100).toFixed(1) : 0 },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ width: '50px', fontSize: '12px', fontWeight: '600', color: item.color }}>{item.label}</span>
+                  <div style={{ flex: 1, height: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${item.percent}%`, height: '100%', background: item.color, borderRadius: '4px', transition: 'width 0.3s' }} />
+                  </div>
+                  <span style={{ width: '60px', fontSize: '12px', color: '#6b7280', textAlign: 'right' }}>{item.count} ({item.percent}%)</span>
+                </div>
+              ))}
             </div>
           </div>
+          
+          {/* Top Components */}
+          <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Top Componenti</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {topComponents.length === 0 ? (
+                <div style={{ color: '#6b7280', fontSize: '13px' }}>Nessun componente</div>
+              ) : topComponents.map(([comp, count]: any, idx) => (
+                <div key={comp} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ width: '20px', fontSize: '12px', fontWeight: '600', color: '#ff6900' }}>#{idx + 1}</span>
+                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '500', color: '#374151', textTransform: 'uppercase' }}>{comp}</span>
+                  <span style={{ fontSize: '12px', color: '#6b7280', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px' }}>{count} log</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ FILTERS BAR */}
+        <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={16} style={{ color: '#6b7280' }} />
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Filtri:</span>
+          </div>
+          <select
+            value={enterpriseAuditLevel}
+            onChange={(e) => setEnterpriseAuditLevel(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer' }}
+            data-testid="select-audit-level"
+          >
+            {availableLevels.map(level => (
+              <option key={level} value={level}>{level === 'ALL' ? 'Tutti i Livelli' : level}</option>
+            ))}
+          </select>
+          <select
+            value={enterpriseAuditComponent}
+            onChange={(e) => setEnterpriseAuditComponent(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer' }}
+            data-testid="select-audit-component"
+          >
+            {availableComponents.map(comp => (
+              <option key={comp} value={comp}>{comp === 'ALL' ? 'Tutti i Componenti' : comp.toUpperCase()}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Cerca messaggio..."
+            value={enterpriseAuditSearch}
+            onChange={(e) => setEnterpriseAuditSearch(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', minWidth: '200px' }}
+            data-testid="input-audit-search"
+          />
+          <button
+            onClick={() => { setEnterpriseAuditLevel('ALL'); setEnterpriseAuditComponent('ALL'); setEnterpriseAuditSearch(''); }}
+            style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            data-testid="button-reset-audit-filters"
+          >
+            <RotateCcw size={14} />
+            Reset
+          </button>
         </div>
 
         {/* ✅ ENTERPRISE LOGS TABLE - Real Data */}
