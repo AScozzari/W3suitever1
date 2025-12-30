@@ -147,7 +147,8 @@ import {
   XCircle,
   Truck,
   Landmark,
-  Archive
+  Archive,
+  Wrench
 } from 'lucide-react';
 
 // Hardcoded roles data - 10 specific roles instead of backend fetching
