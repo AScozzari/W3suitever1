@@ -740,7 +740,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       </Select>
                     </div>
                     
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
                       {users
                         .filter((user: any) => {
                           const searchLower = memberSearchQuery.toLowerCase();
@@ -806,7 +806,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <p className="text-sm text-gray-600 mb-3">
                       Seleziona un utente specifico come supervisore principale
                     </p>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       {users.map((user: any) => {
                         const primaryUser = form.watch('primarySupervisorUser');
                         const membersList = form.watch('selectedMembers');
@@ -915,7 +915,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <p className="text-sm text-gray-600 mb-3">
                       Seleziona un utente specifico come secondo supervisore (opzionale)
                     </p>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       {users.map((user: any) => {
                         const secondaryUser = form.watch('secondarySupervisorUser');
                         const primaryUser = form.watch('primarySupervisorUser');
