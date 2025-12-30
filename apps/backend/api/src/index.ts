@@ -6,7 +6,7 @@ import { exec, spawn, ChildProcess } from "child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { registerRoutes } from "./core/routes.js";
 import { seedCommercialAreas } from "./core/seed-areas.js";
-import { startWorkflowWorker, stopWorkflowWorker } from "./queue/index.js";
+import { startWorkflowWorker, stopWorkflowWorker, startActivityLogWorker, stopActivityLogWorker } from "./queue/index.js";
 
 const __filename = typeof import.meta?.url === 'string' 
   ? fileURLToPath(import.meta.url) 
@@ -418,14 +418,16 @@ async function startBackendOnly() {
     
     if (redisAvailable) {
       startWorkflowWorker();
+      startActivityLogWorker();
       console.log('✅ Workflow execution worker started');
+      console.log('✅ Activity log worker started');
     } else {
-      console.log('ℹ️  Skipping workflow worker startup (Redis not configured)');
+      console.log('ℹ️  Skipping workers startup (Redis not configured)');
       console.log('🔄 Workflow execution will run synchronously');
-      console.log('💡 Set REDIS_URL environment variable to enable async workflow execution');
+      console.log('💡 Set REDIS_URL environment variable to enable async execution');
     }
   } catch (error) {
-    console.warn('⚠️  Workflow worker failed to start:', error);
+    console.warn('⚠️  Workers failed to start:', error);
     console.warn('🔄 Workflow execution will run synchronously');
   }
 
@@ -433,6 +435,7 @@ async function startBackendOnly() {
   const gracefulShutdown = async () => {
     console.log("🛑 W3 Suite backend shutting down (pure backend mode)");
     await stopWorkflowWorker();
+    await stopActivityLogWorker();
     process.exit(0);
   };
 
@@ -552,21 +555,23 @@ async function startBackend() {
     console.warn('🔄 Notifications will use database polling fallback');
   }
 
-  // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ worker
+  // 🔄 WORKFLOW ASYNC EXECUTION ENGINE - Start BullMQ workers
   try {
     const { isRedisAvailable } = await import('./queue/queue-health.js');
     const redisAvailable = await isRedisAvailable();
     
     if (redisAvailable) {
       startWorkflowWorker();
+      startActivityLogWorker();
       console.log('✅ Workflow execution worker started');
+      console.log('✅ Activity log worker started');
     } else {
-      console.log('ℹ️  Skipping workflow worker startup (Redis not configured)');
+      console.log('ℹ️  Skipping workers startup (Redis not configured)');
       console.log('🔄 Workflow execution will run synchronously');
-      console.log('💡 Set REDIS_URL environment variable to enable async workflow execution');
+      console.log('💡 Set REDIS_URL environment variable to enable async execution');
     }
   } catch (error) {
-    console.warn('⚠️  Workflow worker failed to start:', error);
+    console.warn('⚠️  Workers failed to start:', error);
     console.warn('🔄 Workflow execution will run synchronously');
   }
 
@@ -595,6 +600,7 @@ async function startBackend() {
   const gracefulBackendShutdown = async () => {
     console.log("🚫 W3 Suite backend shutting down");
     await stopWorkflowWorker();
+    await stopActivityLogWorker();
     
     // Only manage frontend processes if in embedded nginx mode
     if (ENABLE_EMBEDDED_NGINX) {

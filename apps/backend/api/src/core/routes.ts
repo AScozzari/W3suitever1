@@ -25,6 +25,7 @@ import crmRoutes from "../routes/crm";
 import gtmRoutes from "../routes/gtm";
 import voipRoutes from "../routes/voip";
 import edgvoipWebhookRoutes from "../routes/webhooks-edgvoip";
+import activityLogsRoutes from "../routes/activity-logs";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1521,6 +1522,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== HR MANAGEMENT ROUTES ====================
   // Register HR management API routes with authentication and tenant middleware
   app.use('/api/hr', tenantMiddleware, rbacMiddleware, hrRoutes);
+
+  // ==================== ACTIVITY LOGS ROUTES ====================
+  // Register activity logs API routes for audit trail and monitoring
+  app.use('/api/activity-logs', tenantMiddleware, rbacMiddleware, activityLogsRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 
