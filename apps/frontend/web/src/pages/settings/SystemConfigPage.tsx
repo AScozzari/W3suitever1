@@ -28,7 +28,8 @@ import {
   FileText,
   Hash,
   Calendar,
-  RotateCw
+  RotateCw,
+  ClipboardCheck
 } from 'lucide-react';
 import {
   Tooltip,
