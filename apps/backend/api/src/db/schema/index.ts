@@ -179,17 +179,20 @@ export type { InsertUserAssignment, UserAssignment } from './w3suite';
 import { 
   legalForms as publicLegalForms,
   countries as publicCountries,
-  italianCities as publicItalianCities
+  italianCities as publicItalianCities,
+  actionDefinitions as publicActionDefinitions
 } from './public';
 
 export const legalForms = publicLegalForms;
 export const countries = publicCountries;
 export const italianCities = publicItalianCities;
+export const actionDefinitions = publicActionDefinitions;
 
 // Export types for backward compatibility
 export type { InsertLegalForm, LegalForm } from './public';
 export type { InsertCountry, Country } from './public';
 export type { InsertItalianCity, ItalianCity } from './public';
+export type { InsertActionDefinition, ActionDefinition } from './public';
 
 // ==================== USER EXTRA PERMS RE-EXPORTED FROM W3SUITE ====================
 import { userExtraPerms as w3suiteUserExtraPermsTable } from './w3suite';

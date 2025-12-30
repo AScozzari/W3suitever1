@@ -422,3 +422,40 @@ export const insertInstallmentMethodSchema = createInsertSchema(installmentMetho
 });
 export type InsertInstallmentMethod = z.infer<typeof insertInstallmentMethodSchema>;
 export type InstallmentMethod = typeof installmentMethods.$inferSelect;
+
+// ==================== ACTION DEFINITIONS (Evergreen Actions per tutti i tenant) ====================
+// Definizioni globali delle azioni che possono richiedere approvazione.
+// Ogni tenant può configurare le proprie impostazioni in action_configurations (w3suite schema)
+export const actionDefinitions = pgTable("action_definitions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  department: varchar("department", { length: 50 }).notNull(), // wms, hr, finance, sales, support, crm, marketing, operations
+  actionId: varchar("action_id", { length: 100 }).notNull(), // purchase, sale, transfer_in, leave_request, etc.
+  name: varchar("name", { length: 200 }).notNull(), // Nome visualizzato (italiano)
+  nameEn: varchar("name_en", { length: 200 }), // Nome inglese (opzionale)
+  description: text("description"), // Descrizione dettagliata
+  icon: varchar("icon", { length: 50 }), // Nome icona lucide-react (Truck, ShoppingCart, etc.)
+  color: varchar("color", { length: 20 }), // Colore HEX o classe Tailwind
+  direction: varchar("direction", { length: 20 }), // Per WMS: inbound, outbound, internal
+  category: varchar("category", { length: 50 }), // Categoria secondaria
+  isEvergreen: boolean("is_evergreen").default(true).notNull(), // true = azione predefinita, false = custom
+  requiresImplementation: boolean("requires_implementation").default(true), // true = già implementata nel BE
+  defaultRequiresApproval: boolean("default_requires_approval").default(false), // Default per nuovi tenant
+  defaultFlowType: varchar("default_flow_type", { length: 20 }).default('none'), // none, default, workflow
+  metadata: jsonb("metadata"), // Dati aggiuntivi (required_documents, payload_schema, etc.)
+  displayOrder: smallint("display_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_action_definitions_unique").on(table.department, table.actionId),
+  index("idx_action_definitions_department").on(table.department),
+  index("idx_action_definitions_active").on(table.isActive),
+]);
+
+export const insertActionDefinitionSchema = createInsertSchema(actionDefinitions).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertActionDefinition = z.infer<typeof insertActionDefinitionSchema>;
+export type ActionDefinition = typeof actionDefinitions.$inferSelect;

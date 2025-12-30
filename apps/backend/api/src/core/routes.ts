@@ -27,6 +27,7 @@ import voipRoutes from "../routes/voip";
 import edgvoipWebhookRoutes from "../routes/webhooks-edgvoip";
 import activityLogsRoutes from "../routes/activity-logs";
 import actionConfigurationsRoutes from "../routes/action-configurations";
+import actionDefinitionsRoutes from "../routes/action-definitions";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1536,6 +1537,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== ACTION CONFIGURATIONS ROUTES ====================
   // Centralized action management dashboard for configuring approval flows per department
   app.use('/api/action-configurations', tenantMiddleware, rbacMiddleware, actionConfigurationsRoutes);
+
+  // ==================== ACTION DEFINITIONS ROUTES ====================
+  // Global action definitions (evergreen actions) - read-only, no tenant middleware needed
+  app.use('/api/action-definitions', actionDefinitionsRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 
