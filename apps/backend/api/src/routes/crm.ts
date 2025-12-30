@@ -7837,19 +7837,19 @@ router.patch('/deals/:id/assign', async (req, res) => {
     const hasUserAccess = pipelineSettings.assignedUsers?.includes(currentUserId);
     const isAdmin = pipelineSettings.pipelineAdmins?.includes(currentUserId);
 
-    // Check if user belongs to any of the assigned teams
+    // Check if user belongs to any of the assigned teams via user_teams table
     let hasTeamAccess = false;
     if (pipelineSettings.assignedTeams && pipelineSettings.assignedTeams.length > 0) {
-      const userTeams = await db
-        .select({ id: teams.id })
-        .from(teams)
+      const membershipCheck = await db
+        .select({ teamId: userTeams.teamId })
+        .from(userTeams)
         .where(and(
-          eq(teams.tenantId, tenantId),
-          sql`${teams.id} = ANY(${pipelineSettings.assignedTeams})`,
-          sql`${currentUserId} = ANY(${teams.userMembers})`
+          eq(userTeams.tenantId, tenantId),
+          eq(userTeams.userId, currentUserId),
+          inArray(userTeams.teamId, pipelineSettings.assignedTeams)
         ));
       
-      hasTeamAccess = userTeams.length > 0;
+      hasTeamAccess = membershipCheck.length > 0;
     }
 
     if (!hasTeamAccess && !hasUserAccess && !isAdmin) {

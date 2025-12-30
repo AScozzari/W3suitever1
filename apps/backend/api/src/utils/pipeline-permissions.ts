@@ -1,6 +1,6 @@
 import { db } from '../core/db';
 import { eq, and, inArray, sql } from 'drizzle-orm';
-import { crmPipelineSettings, crmPipelines, teams, users } from '../db/schema/w3suite';
+import { crmPipelineSettings, crmPipelines, teams, userTeams, users } from '../db/schema/w3suite';
 
 export type PipelineAction = 'create' | 'modify' | 'delete';
 
@@ -124,21 +124,19 @@ async function isUserInTeams(userId: string, tenantId: string, teamIds: string[]
     return { allowed: false, reason: 'No teams assigned to pipeline' };
   }
 
-  const userTeams = await db
-    .select({ id: teams.id })
-    .from(teams)
+  // Check user membership via user_teams relational table
+  const memberships = await db
+    .select({ teamId: userTeams.teamId })
+    .from(userTeams)
     .where(
       and(
-        eq(teams.tenantId, tenantId),
-        inArray(teams.id, teamIds),
-        // Check if user in userMembers array
-        // Note: This is PostgreSQL array contains syntax
-        // @ts-ignore - Drizzle array contains
-        sql`${userId} = ANY(${teams.userMembers})`
+        eq(userTeams.tenantId, tenantId),
+        eq(userTeams.userId, userId),
+        inArray(userTeams.teamId, teamIds)
       )
     );
 
-  if (userTeams.length > 0) {
+  if (memberships.length > 0) {
     return { allowed: true };
   }
 

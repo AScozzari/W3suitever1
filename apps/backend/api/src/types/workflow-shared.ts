@@ -156,10 +156,9 @@ export const TeamSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
   teamType: TeamTypeEnum.default('functional'),
-  userMembers: z.array(z.string()).default([]),
-  roleMembers: z.array(z.string()).default([]),
-  primarySupervisor: z.string().optional(),
-  secondarySupervisors: z.array(z.string()).default([]),
+  // Note: Team members are now managed via user_teams relational table
+  primarySupervisorUser: z.string().uuid().optional(),
+  secondarySupervisorUser: z.string().uuid().optional(),
   // 🎯 DEPARTMENT ASSIGNMENT: Team può gestire multipli dipartimenti
   assignedDepartments: z.array(z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance'])).default([]),
   isActive: z.boolean().default(true),

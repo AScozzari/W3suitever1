@@ -248,14 +248,12 @@ export class WorkflowAIConnector {
       description: request.description
     };
 
-    // Team disponibili con condizioni
+    // Team disponibili con condizioni (using primarySupervisorUser only)
     const teamsInfo = eligibleTeams.map(team => ({
       id: team.id,
       name: team.name,
       type: team.teamType,
-      userMembers: team.userMembers,
-      roleMembers: team.roleMembers,
-      supervisor: (team as any).primarySupervisor || (team as any).primarySupervisorUser
+      supervisor: team.primarySupervisorUser
     }));
 
     // Regole business da teamAssignments

@@ -1085,15 +1085,13 @@ export class RequestTriggerService {
     tenantId: string
   ): Promise<string[]> {
     try {
-      // Get team with supervisor info (both user and role based)
+      // Get team with supervisor info (user-based only)
       const [team] = await db
         .select({
           id: teams.id,
           name: teams.name,
           primarySupervisorUser: teams.primarySupervisorUser,
-          secondarySupervisorUser: teams.secondarySupervisorUser,
-          primarySupervisorRole: teams.primarySupervisorRole,
-          secondarySupervisorRoles: teams.secondarySupervisorRoles
+          secondarySupervisorUser: teams.secondarySupervisorUser
         })
         .from(teams)
         .where(and(
@@ -1103,7 +1101,7 @@ export class RequestTriggerService {
 
       if (!team) {
         logger.warn('⚠️ Team not found for notification', { teamId, tenantId });
-        return;
+        return [];
       }
 
       // Get requester info for notification message
@@ -1123,7 +1121,7 @@ export class RequestTriggerService {
       // Collect supervisor IDs to notify (use Set to avoid duplicates)
       const supervisorIds = new Set<string>();
       
-      // 1. Add user-based supervisors
+      // Add user-based supervisors
       if (team.primarySupervisorUser) {
         supervisorIds.add(team.primarySupervisorUser);
       }
@@ -1131,41 +1129,11 @@ export class RequestTriggerService {
         supervisorIds.add(team.secondarySupervisorUser);
       }
 
-      // 2. If no user-based supervisors, try role-based supervisors
+      // If no supervisors configured, log warning and return empty array
       if (supervisorIds.size === 0) {
-        const roleIds: string[] = [];
-        
-        if (team.primarySupervisorRole) {
-          roleIds.push(team.primarySupervisorRole);
-        }
-        if (team.secondarySupervisorRoles && team.secondarySupervisorRoles.length > 0) {
-          roleIds.push(...team.secondarySupervisorRoles);
-        }
-
-        if (roleIds.length > 0) {
-          // Find users assigned to these supervisor roles
-          const usersWithSupervisorRoles = await db
-            .select({ userId: userAssignments.userId })
-            .from(userAssignments)
-            .where(inArray(userAssignments.roleId, roleIds));
-
-          usersWithSupervisorRoles.forEach(u => supervisorIds.add(u.userId));
-
-          logger.info('🔍 Found role-based supervisors', {
-            teamId: team.id,
-            roleIds,
-            foundUsers: usersWithSupervisorRoles.length
-          });
-        }
-      }
-
-      // 3. If still no supervisors, log warning and return empty array
-      if (supervisorIds.size === 0) {
-        logger.warn('⚠️ No supervisors (user or role-based) configured for team', { 
+        logger.warn('⚠️ No supervisors configured for team', { 
           teamId: team.id, 
-          teamName: team.name,
-          hasUserSupervisors: !!(team.primarySupervisorUser || team.secondarySupervisorUser),
-          hasRoleSupervisors: !!(team.primarySupervisorRole || (team.secondarySupervisorRoles && team.secondarySupervisorRoles.length > 0))
+          teamName: team.name
         });
         return [];
       }

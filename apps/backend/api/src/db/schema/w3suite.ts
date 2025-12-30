@@ -2805,6 +2805,8 @@ export const userTeamsRelations = relations(userTeams, ({ one }) => ({
   tenant: one(tenants, { fields: [userTeams.tenantId], references: [tenants.id] }),
 }));
 
+// Team Observers Relations - MOVED after teamObservers table definition (see below)
+
 // Notifications Relations
 // Object Metadata Relations
 export const objectMetadataRelations = relations(objectMetadata, ({ one }) => ({
@@ -3675,7 +3677,8 @@ export const insertTeamDepartmentSchema = createInsertSchema(teamDepartments).om
 export type InsertTeamDepartment = z.infer<typeof insertTeamDepartmentSchema>;
 export type TeamDepartment = typeof teamDepartments.$inferSelect;
 
-// Teams - Team ibridi con utenti e ruoli, supervisor RBAC-validated
+// Teams - User-based team structure with supervisor hierarchy
+// REFACTORED: Removed role-based assignments, using only user_teams for membership
 export const teams = w3suiteSchema.table("teams", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
@@ -3683,22 +3686,13 @@ export const teams = w3suiteSchema.table("teams", {
   // Team identification
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
-  teamType: varchar("team_type", { length: 50 }).default("functional"), // 'functional', 'project', 'department', 'crm', 'sales'
+  teamType: varchar("team_type", { length: 50 }).default("functional"), // 'functional', 'temporary', 'project', 'crm', 'sales'
   
-  // Hybrid membership (users + roles)
-  userMembers: text("user_members").array().default([]), // Array of user IDs
-  roleMembers: text("role_members").array().default([]), // Array of role IDs (tutti gli utenti con questi ruoli)
-  
-  // Supervisor configuration (RBAC validated) - Hybrid User/Role support
-  primarySupervisorUser: varchar("primary_supervisor_user").references(() => users.id, { onDelete: 'set null' }), // Primary supervisor (user-based)
-  primarySupervisorRole: uuid("primary_supervisor_role").references(() => roles.id, { onDelete: 'set null' }), // Primary supervisor (role-based)
-  secondarySupervisorUser: varchar("secondary_supervisor_user").references(() => users.id, { onDelete: 'set null' }), // Secondary supervisor (single user, optional)
-  secondarySupervisorRoles: uuid("secondary_supervisor_roles").array().default([]), // Secondary supervisors (role-based, UUID array - kept for compatibility)
-  requiredSupervisorPermission: varchar("required_supervisor_permission", { length: 200 }).default("team.manage"),
-  
-  // Team scope and permissions
-  scope: jsonb("scope").default({}), // Scope ereditato o personalizzato
-  permissions: jsonb("permissions").default({}), // Permessi team-specific
+  // 🎯 SUPERVISOR CONFIGURATION (User-based only - supervisor inherits their personal scope)
+  // Supervisor primario: obbligatorio, riceve sempre le richieste del team
+  primarySupervisorUser: varchar("primary_supervisor_user").references(() => users.id, { onDelete: 'set null' }),
+  // Supervisor secondario: opzionale, backup del primario
+  secondarySupervisorUser: varchar("secondary_supervisor_user").references(() => users.id, { onDelete: 'set null' }),
   
   // 🎯 DEPARTMENT ASSIGNMENT: Team può gestire multipli dipartimenti
   assignedDepartments: text("assigned_departments").array().default([]), // Array of department enum values ['hr', 'finance', 'sales']
@@ -3715,9 +3709,43 @@ export const teams = w3suiteSchema.table("teams", {
 }, (table) => [
   index("teams_tenant_active_idx").on(table.tenantId, table.isActive),
   index("teams_primary_supervisor_user_idx").on(table.primarySupervisorUser),
-  index("teams_primary_supervisor_role_idx").on(table.primarySupervisorRole),
+  index("teams_secondary_supervisor_user_idx").on(table.secondarySupervisorUser),
   uniqueIndex("teams_name_unique").on(table.tenantId, table.name),
 ]);
+
+// ==================== TEAM OBSERVERS (Fallback observers who can view/manage requests) ====================
+// Osservatori del team: possono vedere e gestire/approvare richieste in fallback
+export const teamObservers = w3suiteSchema.table("team_observers", {
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  teamId: uuid("team_id").notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Observer can approve/manage requests in fallback mode
+  canApprove: boolean("can_approve").default(true),
+  
+  // Metadata
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: varchar("assigned_by").references(() => users.id),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.teamId] }),
+  index("team_observers_user_idx").on(table.userId),
+  index("team_observers_team_idx").on(table.teamId),
+  index("team_observers_tenant_idx").on(table.tenantId),
+]);
+
+export const insertTeamObserverSchema = createInsertSchema(teamObservers).omit({ 
+  assignedAt: true 
+});
+export type InsertTeamObserver = z.infer<typeof insertTeamObserverSchema>;
+export type TeamObserver = typeof teamObservers.$inferSelect;
+
+// Team Observers Relations (fallback observers)
+export const teamObserversRelations = relations(teamObservers, ({ one }) => ({
+  user: one(users, { fields: [teamObservers.userId], references: [users.id] }),
+  team: one(teams, { fields: [teamObservers.teamId], references: [teams.id] }),
+  tenant: one(tenants, { fields: [teamObservers.tenantId], references: [tenants.id] }),
+  assignedByUser: one(users, { fields: [teamObservers.assignedBy], references: [users.id] }),
+}));
 
 // Team Workflow Assignments - Mapping N:M tra team e workflow (con condizioni)
 export const teamWorkflowAssignments = w3suiteSchema.table("team_workflow_assignments", {

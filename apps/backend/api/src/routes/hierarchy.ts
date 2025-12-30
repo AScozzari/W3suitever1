@@ -11,6 +11,7 @@ import {
   users, 
   tenants,
   userAssignments,
+  userTeams,
   insertOrganizationalStructureSchema,
   insertApprovalWorkflowSchema,
   insertUniversalRequestSchema,
@@ -873,23 +874,22 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
 });
 
 // 🔒 VALIDATION: Supervisor cannot be a member of the same team
-function validateSupervisorNotMember(teamData: {
-  userMembers?: string[] | null;
-  primarySupervisorUser?: string | null;
-  secondarySupervisorUser?: string | null;
-}): { valid: boolean; error?: string } {
-  const members = teamData.userMembers || [];
-  const primarySupervisor = teamData.primarySupervisorUser;
-  const secondarySupervisor = teamData.secondarySupervisorUser;
+// Now accepts memberUserIds directly (caller provides from user_teams or request body)
+function validateSupervisorNotMember(
+  memberUserIds: string[],
+  primarySupervisorUser: string | null | undefined,
+  secondarySupervisorUser: string | null | undefined
+): { valid: boolean; error?: string } {
+  const members = memberUserIds || [];
 
-  if (primarySupervisor && members.includes(primarySupervisor)) {
+  if (primarySupervisorUser && members.includes(primarySupervisorUser)) {
     return {
       valid: false,
       error: 'Il supervisore primario non può essere anche membro dello stesso team'
     };
   }
 
-  if (secondarySupervisor && members.includes(secondarySupervisor)) {
+  if (secondarySupervisorUser && members.includes(secondarySupervisorUser)) {
     return {
       valid: false,
       error: 'Il supervisore secondario non può essere anche membro dello stesso team'
@@ -901,11 +901,13 @@ function validateSupervisorNotMember(teamData: {
 
 // 🔒 VALIDATION: User can only belong to ONE functional team per department
 // Temporary/project teams allow multiple memberships per department
+// EXCEPTION: A user who is a SUPERVISOR of the new team CAN be a member of another team in the same department
 async function validateFunctionalTeamExclusivity(
   tenantId: string,
   teamType: string | null | undefined,
   assignedDepartments: string[] | null | undefined,
-  userMembers: string[] | null | undefined,
+  memberUserIds: string[],
+  supervisorUserIds: string[],
   excludeTeamId?: string
 ): Promise<{ valid: boolean; error?: string; conflicts?: { userId: string; department: string; existingTeam: string }[] }> {
   // Only validate for functional teams
@@ -914,26 +916,33 @@ async function validateFunctionalTeamExclusivity(
   }
 
   // Skip if no members or departments
-  if (!userMembers || userMembers.length === 0 || !assignedDepartments || assignedDepartments.length === 0) {
+  if (!memberUserIds || memberUserIds.length === 0 || !assignedDepartments || assignedDepartments.length === 0) {
     return { valid: true };
   }
 
-  // Query existing functional teams that overlap with this team's departments and members
-  // Uses Postgres array operators: && (overlap) to check intersections
-  // Cast to text[] to ensure type compatibility
+  // Exclude supervisors from the exclusivity check (supervisors can be in multiple teams)
+  const nonSupervisorMembers = memberUserIds.filter(id => !supervisorUserIds.includes(id));
+  
+  if (nonSupervisorMembers.length === 0) {
+    return { valid: true };
+  }
+
+  // Query existing functional teams that overlap with this team's departments
+  // Join with user_teams to find conflicting memberships
   const conflictQuery = await db.execute(sql`
-    SELECT 
+    SELECT DISTINCT
       t.id as team_id,
       t.name as team_name,
       t.assigned_departments,
-      t.user_members
+      ut.user_id
     FROM w3suite.teams t
+    INNER JOIN w3suite.user_teams ut ON ut.team_id = t.id AND ut.tenant_id = t.tenant_id
     WHERE t.tenant_id = ${tenantId}
       AND t.team_type = 'functional'
       AND t.is_active = true
       ${excludeTeamId ? sql`AND t.id != ${excludeTeamId}` : sql``}
       AND t.assigned_departments::text[] && ${sql`ARRAY[${sql.join(assignedDepartments.map(d => sql`${d}`), sql`, `)}]::text[]`}
-      AND t.user_members::text[] && ${sql`ARRAY[${sql.join(userMembers.map(m => sql`${m}`), sql`, `)}]::text[]`}
+      AND ut.user_id = ANY(${sql`ARRAY[${sql.join(nonSupervisorMembers.map(m => sql`${m}`), sql`, `)}]::text[]`})
   `);
 
   if (conflictQuery.rows.length === 0) {
@@ -945,20 +954,16 @@ async function validateFunctionalTeamExclusivity(
   
   for (const row of conflictQuery.rows as any[]) {
     const existingDepts = row.assigned_departments || [];
-    const existingMembers = row.user_members || [];
+    const userId = row.user_id;
     
-    // Find which users conflict in which departments
-    for (const userId of userMembers) {
-      if (existingMembers.includes(userId)) {
-        for (const dept of assignedDepartments) {
-          if (existingDepts.includes(dept)) {
-            conflicts.push({
-              userId,
-              department: dept,
-              existingTeam: row.team_name
-            });
-          }
-        }
+    // Find which departments conflict
+    for (const dept of assignedDepartments) {
+      if (existingDepts.includes(dept)) {
+        conflicts.push({
+          userId,
+          department: dept,
+          existingTeam: row.team_name
+        });
       }
     }
   }
@@ -985,11 +990,23 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // 🎯 Extract workflowAssignments before validation (not part of teams table)
-    const { workflowAssignments, ...teamData } = req.body;
+    // 🎯 Extract workflowAssignments and members before validation (not part of teams table)
+    const { workflowAssignments, members, ...teamData } = req.body;
+    
+    // Members array from request body (array of user IDs)
+    const memberUserIds: string[] = Array.isArray(members) ? members : [];
+    
+    // Build supervisor list for exclusivity exception
+    const supervisorUserIds: string[] = [];
+    if (teamData.primarySupervisorUser) supervisorUserIds.push(teamData.primarySupervisorUser);
+    if (teamData.secondarySupervisorUser) supervisorUserIds.push(teamData.secondarySupervisorUser);
 
     // 🔒 VALIDATION: Supervisor cannot be member of same team
-    const supervisorValidation = validateSupervisorNotMember(teamData);
+    const supervisorValidation = validateSupervisorNotMember(
+      memberUserIds,
+      teamData.primarySupervisorUser,
+      teamData.secondarySupervisorUser
+    );
     if (!supervisorValidation.valid) {
       return res.status(400).json({ error: supervisorValidation.error });
     }
@@ -999,7 +1016,8 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
       tenantId,
       teamData.teamType,
       teamData.assignedDepartments,
-      teamData.userMembers
+      memberUserIds,
+      supervisorUserIds
     );
     if (!exclusivityValidation.valid) {
       return res.status(400).json({ 
@@ -1021,6 +1039,23 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
       .insert(teams)
       .values(validatedData)
       .returning();
+    
+    // 🎯 INSERT MEMBERS INTO user_teams TABLE
+    if (memberUserIds.length > 0) {
+      const userTeamRecords = memberUserIds.map((memberId, index) => ({
+        userId: memberId,
+        teamId: newTeam.id,
+        tenantId,
+        isPrimary: index === 0
+      }));
+      
+      await db.insert(userTeams).values(userTeamRecords);
+      
+      logger.info('✅ Members added to user_teams', {
+        teamId: newTeam.id,
+        memberCount: memberUserIds.length
+      });
+    }
 
     // 🎯 SYNC WORKFLOW ASSIGNMENTS: Save to team_workflow_assignments table
     if (workflowAssignments && Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
@@ -1096,8 +1131,8 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // 🎯 Extract workflowAssignments before update (not part of teams table)
-    const { workflowAssignments, ...teamData } = req.body;
+    // 🎯 Extract workflowAssignments and members before update (not part of teams table)
+    const { workflowAssignments, members, ...teamData } = req.body;
 
     await setTenantContext(tenantId);
 
@@ -1114,17 +1149,40 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       return res.status(404).json({ error: 'Team not found' });
     }
 
+    // Get existing members from user_teams table
+    const existingMembers = await db
+      .select({ userId: userTeams.userId })
+      .from(userTeams)
+      .where(and(
+        eq(userTeams.teamId, teamId),
+        eq(userTeams.tenantId, tenantId)
+      ));
+    const existingMemberIds = existingMembers.map(m => m.userId);
+    
+    // Determine member list: use provided members or existing members
+    const memberUserIds: string[] = members !== undefined 
+      ? (Array.isArray(members) ? members : [])
+      : existingMemberIds;
+
     // Merge existing data with updates for validation
     const mergedData = {
-      userMembers: teamData.userMembers ?? existingTeam.userMembers,
       primarySupervisorUser: teamData.primarySupervisorUser ?? existingTeam.primarySupervisorUser,
       secondarySupervisorUser: teamData.secondarySupervisorUser ?? existingTeam.secondarySupervisorUser,
       teamType: teamData.teamType ?? existingTeam.teamType,
       assignedDepartments: teamData.assignedDepartments ?? existingTeam.assignedDepartments,
     };
 
+    // Build supervisor list for exclusivity exception
+    const supervisorUserIds: string[] = [];
+    if (mergedData.primarySupervisorUser) supervisorUserIds.push(mergedData.primarySupervisorUser);
+    if (mergedData.secondarySupervisorUser) supervisorUserIds.push(mergedData.secondarySupervisorUser);
+
     // 🔒 VALIDATION: Supervisor cannot be member of same team
-    const supervisorValidation = validateSupervisorNotMember(mergedData);
+    const supervisorValidation = validateSupervisorNotMember(
+      memberUserIds,
+      mergedData.primarySupervisorUser,
+      mergedData.secondarySupervisorUser
+    );
     if (!supervisorValidation.valid) {
       return res.status(400).json({ error: supervisorValidation.error });
     }
@@ -1134,7 +1192,8 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       tenantId,
       mergedData.teamType,
       mergedData.assignedDepartments,
-      mergedData.userMembers,
+      memberUserIds,
+      supervisorUserIds,
       teamId // Exclude current team from check
     );
     if (!exclusivityValidation.valid) {
@@ -1160,6 +1219,34 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
 
     if (!updatedTeam) {
       return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // 🎯 SYNC USER_TEAMS: Replace all existing members with new ones if members array was provided
+    if (members !== undefined) {
+      // Step 1: Delete all existing members for this team
+      await db
+        .delete(userTeams)
+        .where(and(
+          eq(userTeams.teamId, teamId),
+          eq(userTeams.tenantId, tenantId)
+        ));
+
+      // Step 2: Insert new members if any
+      if (memberUserIds.length > 0) {
+        const userTeamRecords = memberUserIds.map((memberId, index) => ({
+          userId: memberId,
+          teamId,
+          tenantId,
+          isPrimary: index === 0
+        }));
+        
+        await db.insert(userTeams).values(userTeamRecords);
+        
+        logger.info('✅ Members synced in user_teams for updated team', {
+          teamId,
+          memberCount: memberUserIds.length
+        });
+      }
     }
 
     // 🎯 SYNC WORKFLOW ASSIGNMENTS: Replace all existing assignments with new ones
@@ -1266,7 +1353,7 @@ router.delete('/teams/:id', requirePermission('teams.write'), async (req: Reques
   }
 });
 
-// GET /api/teams/:id/members - Get all members of a team (direct users + role-based users)
+// GET /api/teams/:id/members - Get all members of a team via user_teams table
 router.get('/teams/:id/members', requirePermission('teams.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
@@ -1278,9 +1365,13 @@ router.get('/teams/:id/members', requirePermission('teams.read'), async (req: Re
 
     await setTenantContext(tenantId);
 
-    // 1. Get team with members
+    // 1. Get team info
     const [team] = await db
-      .select()
+      .select({
+        id: teams.id,
+        name: teams.name,
+        assignedDepartments: teams.assignedDepartments
+      })
       .from(teams)
       .where(and(
         eq(teams.id, teamId),
@@ -1291,58 +1382,25 @@ router.get('/teams/:id/members', requirePermission('teams.read'), async (req: Re
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    const memberMap = new Map();
-
-    // 2. Get direct user members
-    if (team.userMembers && team.userMembers.length > 0) {
-      const directUsers = await db
-        .select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-          membershipType: sql<string>`'direct'`,
-        })
-        .from(users)
-        .where(
-          and(
-            eq(users.tenantId, tenantId),
-            inArray(users.id, team.userMembers)
-          )
-        );
-
-      directUsers.forEach(user => {
-        memberMap.set(user.id, user);
-      });
-    }
-
-    // 3. Get users via role assignments (roleMembers)
-    if (team.roleMembers && team.roleMembers.length > 0) {
-      const roleBasedUsers = await db
-        .select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-          membershipType: sql<string>`'role'`,
-        })
-        .from(users)
-        .innerJoin(userAssignments, eq(users.id, userAssignments.userId))
-        .where(
-          and(
-            eq(users.tenantId, tenantId),
-            inArray(userAssignments.roleId, team.roleMembers)
-          )
-        );
-
-      roleBasedUsers.forEach(user => {
-        if (!memberMap.has(user.id)) {
-          memberMap.set(user.id, user);
-        }
-      });
-    }
-
-    const members = Array.from(memberMap.values());
+    // 2. Get all members via user_teams table
+    const members = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        isPrimary: userTeams.isPrimary,
+        assignedAt: userTeams.assignedAt
+      })
+      .from(userTeams)
+      .innerJoin(users, eq(userTeams.userId, users.id))
+      .where(
+        and(
+          eq(userTeams.teamId, teamId),
+          eq(userTeams.tenantId, tenantId)
+        )
+      )
+      .orderBy(desc(userTeams.isPrimary), asc(users.lastName), asc(users.firstName));
 
     res.json({
       team: {
@@ -1934,10 +1992,7 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
         description: teams.description,
         teamType: teams.teamType,
         assignedDepartments: teams.assignedDepartments,
-        userMembers: teams.userMembers,
-        roleMembers: teams.roleMembers,
         primarySupervisorUser: teams.primarySupervisorUser,
-        primarySupervisorRole: teams.primarySupervisorRole,
         isActive: teams.isActive
       })
       .from(teams)
@@ -1945,6 +2000,23 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
         eq(teams.tenantId, tenantId),
         eq(teams.isActive, true)
       ));
+    
+    // 1b. Get all team memberships from user_teams table
+    const allTeamMemberships = await db
+      .select({
+        userId: userTeams.userId,
+        teamId: userTeams.teamId
+      })
+      .from(userTeams)
+      .where(eq(userTeams.tenantId, tenantId));
+    
+    // Build a map of teamId -> member user IDs
+    const teamMembersMap = new Map<string, string[]>();
+    allTeamMemberships.forEach(m => {
+      const members = teamMembersMap.get(m.teamId) || [];
+      members.push(m.userId);
+      teamMembersMap.set(m.teamId, members);
+    });
 
     // 2. Get all workflow templates with action tags
     const allTemplates = await db
@@ -1997,7 +2069,7 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
         teams: teamsForDept.map(t => ({
           id: t.id,
           name: t.name,
-          memberCount: (t.userMembers || []).length
+          memberCount: (teamMembersMap.get(t.id) || []).length
         })),
         status: teamsForDept.length > 0 ? 'ok' : 'critical'
       };
@@ -2092,7 +2164,7 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
 
     allTeams.forEach(team => {
       const teamDepartments = team.assignedDepartments || [];
-      const teamMembers = team.userMembers || [];
+      const teamMembers = teamMembersMap.get(team.id) || [];
       
       teamMembers.forEach(userId => {
         const coverage = userCoverageMap.get(userId);
@@ -2245,20 +2317,35 @@ router.get('/admin/orphan-users', requirePermission('teams.read'), async (req: R
         sql`(${users.status} = 'attivo' OR ${users.status} = 'active')`
       ));
 
-    // 2. Get all active teams with their members and departments
-    const allTeams = await db
+    // 2. Get all active teams with their departments
+    const allTeamsOrphan = await db
       .select({
         id: teams.id,
         name: teams.name,
-        assignedDepartments: teams.assignedDepartments,
-        userMembers: teams.userMembers,
-        roleMembers: teams.roleMembers
+        assignedDepartments: teams.assignedDepartments
       })
       .from(teams)
       .where(and(
         eq(teams.tenantId, tenantId),
         eq(teams.isActive, true)
       ));
+    
+    // 2b. Get all team memberships from user_teams table
+    const teamMembershipsOrphan = await db
+      .select({
+        userId: userTeams.userId,
+        teamId: userTeams.teamId
+      })
+      .from(userTeams)
+      .where(eq(userTeams.tenantId, tenantId));
+    
+    // Build a map of teamId -> member user IDs
+    const teamMembersMapOrphan = new Map<string, string[]>();
+    teamMembershipsOrphan.forEach(m => {
+      const members = teamMembersMapOrphan.get(m.teamId) || [];
+      members.push(m.userId);
+      teamMembersMapOrphan.set(m.teamId, members);
+    });
 
     // 3. Build user-to-department coverage map
     const userCoverage = new Map<string, Set<string>>();
@@ -2268,10 +2355,10 @@ router.get('/admin/orphan-users', requirePermission('teams.read'), async (req: R
       userCoverage.set(user.id, new Set());
     });
 
-    // Add department coverage based on team membership
-    allTeams.forEach(team => {
+    // Add department coverage based on team membership via user_teams
+    allTeamsOrphan.forEach(team => {
       const teamDepartments = team.assignedDepartments || [];
-      const teamMembers = team.userMembers || [];
+      const teamMembers = teamMembersMapOrphan.get(team.id) || [];
       
       teamMembers.forEach(userId => {
         const coverage = userCoverage.get(userId);

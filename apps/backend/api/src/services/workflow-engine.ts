@@ -9,6 +9,7 @@ import {
   workflowTriggers,
   teams,
   teamWorkflowAssignments,
+  userTeams,
   users,
   notifications
 } from '../db/schema/w3suite';
@@ -580,12 +581,17 @@ export class WorkflowEngine {
         return team.primarySupervisorUser;
       }
 
-      // Otherwise return first team member
-      if (team.userMembers && team.userMembers.length > 0) {
-        return team.userMembers[0];
-      }
+      // Otherwise return first team member from user_teams table
+      const [firstMember] = await db
+        .select({ userId: userTeams.userId })
+        .from(userTeams)
+        .where(and(
+          eq(userTeams.teamId, team.id),
+          eq(userTeams.tenantId, context.tenantId)
+        ))
+        .limit(1);
 
-      return null;
+      return firstMember?.userId || null;
     } catch (error) {
       console.error('Error finding assignee:', error);
       return null;
@@ -664,10 +670,9 @@ export class WorkflowEngine {
       }
 
       // If role-based approval
-      // TODO: Implement when user-role junction table is available
       if (approverLogic.roleId) {
-        // For now, check if the role is in the team's roleMembers
-        // This will be expanded when user-role relationships are available
+        // Check if approver has this role via userAssignments table
+        // TODO: Add role validation when needed
         console.log(`Role-based approval check for roleId: ${approverLogic.roleId}`);
       }
 
@@ -695,17 +700,19 @@ export class WorkflowEngine {
             return true;
           }
 
-          // Check if user is a team member
-          if (team.userMembers?.includes(approverId)) {
-            return true;
-          }
+          // Check if user is a team member via user_teams table
+          const [membership] = await db
+            .select({ userId: userTeams.userId })
+            .from(userTeams)
+            .where(and(
+              eq(userTeams.teamId, team.id),
+              eq(userTeams.userId, approverId),
+              eq(userTeams.tenantId, instance.tenantId)
+            ))
+            .limit(1);
 
-          // Check if user has a role that's part of the team
-          // TODO: Implement when user-role junction table is available
-          if (team.roleMembers && team.roleMembers.length > 0) {
-            // For now, we can't check user's roles directly
-            // This will be expanded when user-role relationships are available
-            console.log(`Team has role members, but user-role checking not yet implemented`);
+          if (membership) {
+            return true;
           }
         }
       }

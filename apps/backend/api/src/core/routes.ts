@@ -4180,6 +4180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ));
       
       // Map database fields to frontend camelCase format
+      // Note: userMembers/roleMembers arrays removed - use user_teams table now
       const mappedTeams = teamsData.map(team => ({
         ...team,
         // Map snake_case DB fields to camelCase for frontend
@@ -4190,17 +4191,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : (team.assignedDepartments && typeof team.assignedDepartments === 'string' && team.assignedDepartments !== '' 
             ? (team.assignedDepartments as string).split(',').map((d: string) => d.trim())
             : []),
-        userMembers: Array.isArray(team.userMembers) ? team.userMembers : [],
-        roleMembers: Array.isArray(team.roleMembers) ? team.roleMembers : [],
         primarySupervisorUser: team.primarySupervisorUser || null,
-        primarySupervisorRole: team.primarySupervisorRole || null,
-        secondarySupervisorUser: team.secondarySupervisorUser || null, // Changed from array to single user
-        secondarySupervisorRoles: Array.isArray(team.secondarySupervisorRoles) ? team.secondarySupervisorRoles : [],
+        secondarySupervisorUser: team.secondarySupervisorUser || null,
         // workflowAssignments doesn't exist in DB yet - always return empty array
         workflowAssignments: [],
-        // Legacy compatibility fields
+        // Legacy compatibility fields (deprecated - will be removed)
         primarySupervisor: team.primarySupervisorUser || null,
-        secondarySupervisorUsers: team.secondarySupervisorUser ? [team.secondarySupervisorUser] : [] // Legacy array format
+        secondarySupervisorUsers: team.secondarySupervisorUser ? [team.secondarySupervisorUser] : []
       }));
       
       res.json(mappedTeams);
