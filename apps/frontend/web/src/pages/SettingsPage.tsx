@@ -606,6 +606,7 @@ export default function SettingsPage() {
   // ✅ Enterprise Audit Trail Filter States
   const [enterpriseAuditLevel, setEnterpriseAuditLevel] = useState('ALL');
   const [enterpriseAuditComponent, setEnterpriseAuditComponent] = useState('ALL');
+  const [statsTimeRange, setStatsTimeRange] = useState<24 | 168 | 720>(168); // 24h, 7gg, 30gg
   const [enterpriseAuditSearch, setEnterpriseAuditSearch] = useState('');
   const [enterpriseAuditDateFrom, setEnterpriseAuditDateFrom] = useState('');
   const [enterpriseAuditDateTo, setEnterpriseAuditDateTo] = useState('');
@@ -1098,25 +1099,25 @@ export default function SettingsPage() {
       );
     }
 
-    // Calculate stats from logs
-    const errorCount = logs.filter((l: any) => l.level === 'ERROR').length;
-    const warnCount = logs.filter((l: any) => l.level === 'WARN').length;
-    const infoCount = logs.filter((l: any) => l.level === 'INFO').length;
-    const debugCount = logs.filter((l: any) => l.level === 'DEBUG').length;
+    // ✅ STATS FROM SUMMARY API (independent from datatable filters)
+    const summaryStats = auditSummary || { total: 0, byLevel: { ERROR: 0, WARN: 0, INFO: 0, DEBUG: 0 }, byService: {}, duration: '0ms' };
+    const errorCount = summaryStats.byLevel.ERROR;
+    const warnCount = summaryStats.byLevel.WARN;
+    const infoCount = summaryStats.byLevel.INFO;
+    const debugCount = summaryStats.byLevel.DEBUG;
+    const totalLogs = summaryStats.total;
     
-    // Group by SERVICE (microservizio)
-    const serviceStats = logs.reduce((acc: any, log: any) => {
-      const svc = log.service || 'SYSTEM';
-      acc[svc] = (acc[svc] || 0) + 1;
-      return acc;
-    }, {});
-    const topServices = Object.entries(serviceStats)
+    // Top services from summary
+    const topServices = Object.entries(summaryStats.byService || {})
       .sort((a: any, b: any) => b[1] - a[1])
       .slice(0, 5);
     
     // Available filters from metadata
     const availableLevels = ['ALL', 'ERROR', 'WARN', 'INFO', 'DEBUG'];
     const availableServices = ['ALL', ...(metadata.filters?.available?.services || [])];
+    
+    // Period label for cards
+    const periodLabel = statsTimeRange === 24 ? 'ultime 24h' : statsTimeRange === 168 ? 'ultimi 7gg' : 'ultimi 30gg';
 
     return (
       <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -1146,6 +1147,36 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* ✅ TIME RANGE SELECTOR FOR STATS CARDS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Periodo Statistiche:</span>
+          {[
+            { value: 24, label: 'Ultime 24h' },
+            { value: 168, label: 'Ultimi 7gg' },
+            { value: 720, label: 'Ultimi 30gg' }
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setStatsTimeRange(opt.value as 24 | 168 | 720)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: statsTimeRange === opt.value ? '2px solid #ff6900' : '1px solid rgba(0,0,0,0.1)',
+                background: statsTimeRange === opt.value ? 'rgba(255, 105, 0, 0.1)' : 'white',
+                color: statsTimeRange === opt.value ? '#ff6900' : '#6b7280',
+                fontWeight: statsTimeRange === opt.value ? '600' : '400',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              data-testid={`button-stats-range-${opt.value}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {summaryLoading && <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>Caricamento...</span>}
+        </div>
+
         {/* ✅ STATS CARDS - 6 cards con più info */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
@@ -1153,8 +1184,8 @@ export default function SettingsPage() {
               <Database size={24} style={{ color: '#3b82f6' }} />
               <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600', background: 'rgba(59, 130, 246, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>TOTALI</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#111827' }}>{analytics.totalLogs}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Log nelle ultime 24h</div>
+            <div style={{ fontSize: '32px', fontWeight: '700', color: '#111827' }}>{totalLogs}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Log nelle {periodLabel}</div>
           </div>
           
           <div style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -1210,10 +1241,10 @@ export default function SettingsPage() {
             <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Distribuzione per Livello</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[
-                { label: 'ERROR', count: errorCount, color: '#ef4444', percent: analytics.totalLogs > 0 ? (errorCount / analytics.totalLogs * 100).toFixed(1) : 0 },
-                { label: 'WARN', count: warnCount, color: '#f59e0b', percent: analytics.totalLogs > 0 ? (warnCount / analytics.totalLogs * 100).toFixed(1) : 0 },
-                { label: 'INFO', count: infoCount, color: '#3b82f6', percent: analytics.totalLogs > 0 ? (infoCount / analytics.totalLogs * 100).toFixed(1) : 0 },
-                { label: 'DEBUG', count: debugCount, color: '#6b7280', percent: analytics.totalLogs > 0 ? (debugCount / analytics.totalLogs * 100).toFixed(1) : 0 },
+                { label: 'ERROR', count: errorCount, color: '#ef4444', percent: totalLogs > 0 ? (errorCount / totalLogs * 100).toFixed(1) : 0 },
+                { label: 'WARN', count: warnCount, color: '#f59e0b', percent: totalLogs > 0 ? (warnCount / totalLogs * 100).toFixed(1) : 0 },
+                { label: 'INFO', count: infoCount, color: '#3b82f6', percent: totalLogs > 0 ? (infoCount / totalLogs * 100).toFixed(1) : 0 },
+                { label: 'DEBUG', count: debugCount, color: '#6b7280', percent: totalLogs > 0 ? (debugCount / totalLogs * 100).toFixed(1) : 0 },
               ].map(item => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ width: '50px', fontSize: '12px', fontWeight: '600', color: item.color }}>{item.label}</span>
@@ -1638,7 +1669,7 @@ export default function SettingsPage() {
     });
   }, [selectedRole, rolePermissionsLoading, selectedRolePermissions, rolePermissionsError, activeTab]);
   
-  // ✅ ENTERPRISE AUDIT: Load real data from unified audit trail API
+  // ✅ ENTERPRISE AUDIT: Load real data from unified audit trail API (for datatable)
   const enterpriseQueryParams = buildEnterpriseAuditQueryParams();
   const { data: enterpriseAuditData, isLoading: auditLoading, error: auditError, refetch: refetchAudit } = useQuery<EnterpriseAuditResponse>({
     queryKey: ['/api/audit/enterprise', enterpriseQueryParams],
@@ -1646,6 +1677,22 @@ export default function SettingsPage() {
     refetchInterval: autoRefreshEnabled ? 30000 : false, // Auto-refetch every 30s if enabled
     staleTime: 15 * 1000, // 15 seconds for real-time feel
     retry: 3, // Enterprise resilience
+  });
+
+  // ✅ STATISTICS SUMMARY: Separate query for cards (independent from datatable filters)
+  interface AuditSummaryResponse {
+    period: string;
+    hours: number;
+    total: number;
+    byLevel: { ERROR: number; WARN: number; INFO: number; DEBUG: number };
+    byService: Record<string, number>;
+    duration: string;
+  }
+  const { data: auditSummary, isLoading: summaryLoading } = useQuery<AuditSummaryResponse>({
+    queryKey: ['/api/audit/enterprise/summary', { hours: statsTimeRange }],
+    enabled: activeTab === 'Logs',
+    staleTime: 30 * 1000,
+    retry: 2,
   });
 
   // Legacy logs query (for backward compatibility if needed)
