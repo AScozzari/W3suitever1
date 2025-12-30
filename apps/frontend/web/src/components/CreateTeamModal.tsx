@@ -682,34 +682,23 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                   </div>
 
                   {/* 🎯 Effective Members Preview */}
-                  {(selectedUserMembers.length > 0 || selectedRoleMembers.length > 0) && (
+                  {selectedUserMembers.length > 0 && (
                     <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
-                      <h4 className="text-sm font-medium text-windtre-purple mb-2">👥 Effective Team Members</h4>
+                      <h4 className="text-sm font-medium text-windtre-purple mb-2">Membri del Team Selezionati</h4>
                       <p className="text-xs text-gray-600 mb-3">
-                        This team includes <strong>{selectedUserMembers.length} direct users</strong> + all users with <strong>{selectedRoleMembers.length} selected roles</strong>
+                        Questo team include <strong>{selectedUserMembers.length} utenti</strong>
                       </p>
                       <div className="flex flex-wrap gap-1">
-                        {selectedUserMembers.slice(0, 3).map(userId => {
+                        {selectedUserMembers.slice(0, 5).map(userId => {
                           const user = users.find(u => u.id === userId);
                           return user ? (
                             <Badge key={userId} variant="outline" className="text-xs bg-windtre-purple/10">
-                              👤 {user.name}
+                              {user.name}
                             </Badge>
                           ) : null;
                         })}
-                        {selectedUserMembers.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{selectedUserMembers.length - 3} more users</Badge>
-                        )}
-                        {selectedRoleMembers.slice(0, 2).map(roleId => {
-                          const role = roles.find(r => r.id === roleId);
-                          return role ? (
-                            <Badge key={roleId} variant="outline" className="text-xs bg-windtre-orange/10">
-                              🛡️ All {role.name}
-                            </Badge>
-                          ) : null;
-                        })}
-                        {selectedRoleMembers.length > 2 && (
-                          <Badge variant="outline" className="text-xs">+{selectedRoleMembers.length - 2} more roles</Badge>
+                        {selectedUserMembers.length > 5 && (
+                          <Badge variant="outline" className="text-xs">+{selectedUserMembers.length - 5} altri</Badge>
                         )}
                       </div>
                     </div>
@@ -751,40 +740,6 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     </div>
                   </div>
 
-                  <Separator />
-
-                  {/* Role Members */}
-                  <div>
-                    <h4 className="text-md font-medium mb-1">Role-Based Members</h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Add users by role. All current and future users with these roles will automatically be team members.
-                    </p>
-                    <div className="space-y-2">
-                      {roles.map((role: any) => {
-                        const isSelected = selectedRoleMembers.includes(role.id);
-                        return (
-                          <div
-                            key={role.id}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-windtre-orange/10 border-windtre-orange text-windtre-orange'
-                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                            }`}
-                            onClick={() => toggleRoleMember(role.id)}
-                            data-testid={`role-member-${role.id}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">{role.name}</div>
-                                <div className="text-sm text-gray-500">{role.description}</div>
-                              </div>
-                              {isSelected && <Shield className="w-4 h-4 text-green-600" />}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
