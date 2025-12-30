@@ -1,0 +1,115 @@
+CSeq: 108987091 NOTIFY
+Call-ID: c5390907-5ff8-123f-2c82-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+SettingsPage-DOfuQ9Gj.js:1 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage-DOfuQ9Gj.js:15 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:02:54, Token expires: 09:08:50
+index-z6OiQGhh.js:2  GET https://w3suite.it/api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24 500 (Internal Server Error)
+queryFn @ index-z6OiQGhh.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:02:56, Token expires: 09:08:50
+index-z6OiQGhh.js:2  GET https://w3suite.it/api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24 500 (Internal Server Error)
+queryFn @ index-z6OiQGhh.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:02:58, Token expires: 09:08:50
+index-z6OiQGhh.js:2  GET https://w3suite.it/api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24 500 (Internal Server Error)
+queryFn @ index-z6OiQGhh.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:02:59, Token expires: 09:08:50
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:03:02, Token expires: 09:08:50
+index-z6OiQGhh.js:2  GET https://w3suite.it/api/audit/enterprise?page=1&limit=25&sortBy=created_at&sortOrder=desc&logType=all&lastHours=24 500 (Internal Server Error)
+queryFn @ index-z6OiQGhh.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:03:04, Token expires: 09:08:50
+index-z6OiQGhh.js:2 🔍 Token expiry check: Current time: 09:03:09, Token expires: 09:08:50
