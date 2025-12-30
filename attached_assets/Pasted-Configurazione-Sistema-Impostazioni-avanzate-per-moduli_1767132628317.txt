@@ -1,0 +1,217 @@
+Configurazione Sistema
+Impostazioni avanzate per moduli e integrazioni
+
+
+WMS
+
+Sales
+
+VoIP
+
+HR
+
+CRM
+
+Notifiche
+Configurazione Tipi Movimento
+Abilita/disabilita tipi di movimento, configura approvazioni e collega workflow
+
+Annulla
+Salva
+
+Movimenti Entrata
+5/5 abilitati
+
+Acquisto
+purchase
+Ricezione merce da fornitore
+
+Doc:
+ddt
+fattura
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Reso Cliente
+customer_return
+Reso prodotto da cliente
+
+Doc:
+modulo_reso
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Trasferimento IN
+transfer_in
+Ricezione merce da altro negozio
+
+Doc:
+ddt_interno
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Rientro Garanzia
+warranty_return
+Rientro prodotto da riparazione garanzia
+
+Doc:
+modulo_garanzia
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Permuta
+trade_in
+Ritiro usato in permuta
+
+Doc:
+modulo_permuta
+valutazione
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+
+Movimenti Uscita
+6/6 abilitati
+
+Vendita
+sale
+Vendita prodotto a cliente
+
+Doc:
+scontrino
+fattura
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Reso Fornitore
+supplier_return
+Reso merce a fornitore
+
+Doc:
+ddt
+rma
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Trasferimento OUT
+transfer_out
+Invio merce ad altro negozio
+
+Doc:
+ddt_interno
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+DOA
+doa
+Dead On Arrival - Prodotto difettoso alla consegna
+
+Doc:
+modulo_doa
+foto
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Pullback
+pullback
+Ritiro forzato / Recall prodotto
+
+Doc:
+comunicazione_recall
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Comodato
+loan
+Prestito / Comodato d uso
+
+Doc:
+contratto_comodato
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+
+Movimenti Interno
+4/4 abilitati
+
+Rettifica
+adjustment
+Rettifica inventario per differenze
+
+Doc:
+verbale_inventario
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Danneggiamento
+damage
+Prodotto danneggiato / rotto
+
+Doc:
+verbale_danno
+foto
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Demo
+demo
+Prodotto in esposizione / demo
+
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+Uso Interno
+internal_use
+Consumo interno aziendale
+
+Doc:
+richiesta_interna
+Abilitato
+
+Approvazione
+
+Workflow & Routing
+Action Management
+RBAC: Solo gli utenti con ruolo Amministratore possono modificare queste impostazioni.
