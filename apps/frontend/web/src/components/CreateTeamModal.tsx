@@ -559,14 +559,14 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     control={form.control}
                     name="teamType"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="relative z-10">
                         <FormLabel>Tipo Team *</FormLabel>
                         <FormControl>
                           <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger data-testid="select-team-type">
                               <SelectValue placeholder="Seleziona tipo team" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999]">
                               {Object.entries(TEAM_TYPES).map(([key, type]) => (
                                 <SelectItem key={key} value={key}>
                                   <div className="flex items-start gap-2">
@@ -581,39 +581,40 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                             </SelectContent>
                           </Select>
                         </FormControl>
-                        {/* Alert for functional teams */}
-                        {field.value === 'functional' && (
-                          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div className="flex items-start gap-2">
-                              <span className="text-yellow-600">⚠️</span>
-                              <div className="text-sm text-yellow-800">
-                                <strong>Team Funzionale (Primario)</strong>
-                                <p className="mt-1">
-                                  Un utente può appartenere a max <strong>1 team funzionale</strong> per ogni dipartimento.
-                                  Le richieste saranno gestite prima dal supervisore di questo team.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {field.value === 'temporary' && (
-                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-start gap-2">
-                              <span className="text-blue-600">ℹ️</span>
-                              <div className="text-sm text-blue-800">
-                                <strong>Team Temporaneo (Flessibile)</strong>
-                                <p className="mt-1">
-                                  Un utente può appartenere a <strong>più team temporanei</strong> dello stesso dipartimento.
-                                  Il primo supervisore che gestisce la richiesta diventa responsabile (First Wins).
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* Alert for functional teams - MOVED OUTSIDE FormField to prevent overlay issues */}
+                  {form.watch('teamType') === 'functional' && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <span className="text-yellow-600">⚠️</span>
+                        <div className="text-sm text-yellow-800">
+                          <strong>Team Funzionale (Primario)</strong>
+                          <p className="mt-1">
+                            Un utente può appartenere a max <strong>1 team funzionale</strong> per ogni dipartimento.
+                            Le richieste saranno gestite prima dal supervisore di questo team.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {form.watch('teamType') === 'temporary' && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <span className="text-blue-600">ℹ️</span>
+                        <div className="text-sm text-blue-800">
+                          <strong>Team Temporaneo (Flessibile)</strong>
+                          <p className="mt-1">
+                            Un utente può appartenere a <strong>più team temporanei</strong> dello stesso dipartimento.
+                            Il primo supervisore che gestisce la richiesta diventa responsabile (First Wins).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

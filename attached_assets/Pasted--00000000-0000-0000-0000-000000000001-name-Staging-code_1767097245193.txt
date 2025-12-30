@@ -1,0 +1,101 @@
+: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+installHook.js:1 Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `Primitive.button.SlotClone`. Error Component Stack
+    at Badge (badge.tsx:33:18)
+    at chunk-TCRT5IO7.js?v=fac8f799:43:13
+    at chunk-TCRT5IO7.js?v=fac8f799:20:13
+    at chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at chunk-TCRT5IO7.js?v=fac8f799:43:13
+    at chunk-TCRT5IO7.js?v=fac8f799:20:13
+    at chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at chunk-OSM6UOV7.js?v=fac8f799:77:13
+    at @radix-ui_react-tooltip.js?v=fac8f799:203:13
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at Popper (chunk-OSM6UOV7.js?v=fac8f799:69:11)
+    at Tooltip (@radix-ui_react-tooltip.js?v=fac8f799:112:5)
+    at Provider (chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at TooltipProvider (@radix-ui_react-tooltip.js?v=fac8f799:68:5)
+    at td (<anonymous>)
+    at _c11 (table.tsx:83:6)
+    at tr (<anonymous>)
+    at _c9 (table.tsx:53:6)
+    at tbody (<anonymous>)
+    at _c5 (table.tsx:29:6)
+    at table (<anonymous>)
+    at div (<anonymous>)
+    at _c (table.tsx:7:6)
+    at div (<anonymous>)
+    at _c9 (card.tsx:52:6)
+    at div (<anonymous>)
+    at _c (card.tsx:6:6)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:160:50)
+    at AuthenticatedRoute (TenantShell.tsx:576:72)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:238:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:93:59)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+printWarning @ chunk-ZHRYBLGQ.js?v=fac8f799:521
+error @ chunk-ZHRYBLGQ.js?v=fac8f799:505
+validateFunctionComponentInDev @ chunk-ZHRYBLGQ.js?v=fac8f799:15013
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14988
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+useSIPRegistration.ts:145 🚀 [SIP Hook] Starting SIP setup with credentials: 
