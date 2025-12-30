@@ -1,6 +1,19 @@
 import { QueryClient } from "@tanstack/react-query";
 import { oauth2Client } from '../services/OAuth2Client';
 
+// Public endpoints that don't require tenant or auth headers
+const PUBLIC_ENDPOINT_PREFIXES = [
+  '/api/action-definitions',
+  '/api/reference/',
+  '/api/utm-sources',
+  '/api/utm-mediums'
+];
+
+// Helper to check if URL is a public endpoint
+const isPublicEndpoint = (url: string): boolean => {
+  return PUBLIC_ENDPOINT_PREFIXES.some(prefix => url.startsWith(prefix));
+};
+
 // Unified Authentication Mode Control - Fail-safe security
 const AUTH_MODE = import.meta.env.VITE_AUTH_MODE || 'development';
 // TODO: Remove default once VITE_AUTH_MODE is properly configured
@@ -140,29 +153,40 @@ export const queryClient = new QueryClient({
           await validateHRPrerequisites(finalUrl);
         }
         
-        const tenantId = getCurrentTenantId();
+        // Check if this is a public endpoint that doesn't require tenant/auth
+        const isPublic = isPublicEndpoint(finalUrl);
         
-        // CRITICAL SECURITY CHECK: Block API calls with undefined/invalid tenant IDs  
-        if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
-          console.error(`[TENANT-ERROR] ❌ BLOCKING API CALL - Invalid tenant ID detected!`);
-          console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
-          console.error(`[TENANT-ERROR] ❌ Tenant ID: "${tenantId}"`);
-          throw new Error(`Invalid tenant ID for API call: "${tenantId}". Cannot proceed with request.`);
+        let headers: Record<string, string> = {};
+        
+        if (isPublic) {
+          // Public endpoints - no tenant or auth headers needed
+          console.log(`[QUERY-CLIENT] 📖 Public endpoint: ${finalUrl}`);
+        } else {
+          // Tenant-scoped endpoints - require tenant ID and auth
+          const tenantId = getCurrentTenantId();
+          
+          // CRITICAL SECURITY CHECK: Block API calls with undefined/invalid tenant IDs  
+          if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
+            console.error(`[TENANT-ERROR] ❌ BLOCKING API CALL - Invalid tenant ID detected!`);
+            console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
+            console.error(`[TENANT-ERROR] ❌ Tenant ID: "${tenantId}"`);
+            throw new Error(`Invalid tenant ID for API call: "${tenantId}". Cannot proceed with request.`);
+          }
+          
+          // Validate tenant ID format (should be UUID)
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(tenantId)) {
+            console.error(`[TENANT-ERROR] ❌ Invalid tenant ID format! Expected UUID, got: "${tenantId}"`);
+            console.error(`[TENANT-ERROR] ❌ This could cause cross-tenant data leakage!`);
+          }
+          
+          headers['X-Tenant-ID'] = tenantId;
         }
         
-        // Validate tenant ID format (should be UUID)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(tenantId)) {
-          console.error(`[TENANT-ERROR] ❌ Invalid tenant ID format! Expected UUID, got: "${tenantId}"`);
-          console.error(`[TENANT-ERROR] ❌ This could cause cross-tenant data leakage!`);
-        }
-        
-        let headers: Record<string, string> = {
-          'X-Tenant-ID': tenantId, // Header per il tenant ID
-        };
-        
-        // Mode-based authentication - clean separation  
-        if (AUTH_MODE === 'development') {
+        // Mode-based authentication - clean separation (skip for public endpoints)
+        if (isPublic) {
+          // Public endpoints - no auth needed
+        } else if (AUTH_MODE === 'development') {
           // Development mode: ONLY use X-Auth-Session headers, NEVER call OAuth methods
           headers['X-Auth-Session'] = 'authenticated';
           const demoUserId = localStorage.getItem('demo_user_id') || 'admin-user';
@@ -249,20 +273,31 @@ export async function apiRequest(
     }
   }
   
-  const tenantId = getCurrentTenantId();
-  if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
-    console.error(`[TENANT-ERROR] ❌ BLOCKING API REQUEST - Invalid tenant ID detected!`);
-    console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
-    console.error(`[TENANT-ERROR] ❌ Tenant ID: "${tenantId}"`);
-    throw new Error(`Invalid tenant ID for apiRequest: "${tenantId}". Cannot proceed with request.`);
+  // Check if this is a public endpoint that doesn't require tenant/auth
+  const isPublic = isPublicEndpoint(finalUrl);
+  
+  let headers: Record<string, string> = {};
+  
+  if (isPublic) {
+    // Public endpoints - no tenant or auth headers needed
+    console.log(`[API-REQUEST] 📖 Public endpoint: ${finalUrl}`);
+  } else {
+    // Tenant-scoped endpoints - require tenant ID and auth
+    const tenantId = getCurrentTenantId();
+    if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
+      console.error(`[TENANT-ERROR] ❌ BLOCKING API REQUEST - Invalid tenant ID detected!`);
+      console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
+      console.error(`[TENANT-ERROR] ❌ Tenant ID: "${tenantId}"`);
+      throw new Error(`Invalid tenant ID for apiRequest: "${tenantId}". Cannot proceed with request.`);
+    }
+    
+    headers['X-Tenant-ID'] = tenantId;
   }
   
-  let headers: Record<string, string> = {
-    'X-Tenant-ID': tenantId,
-  };
-  
-  // Mode-based authentication for API requests
-  if (AUTH_MODE === 'development') {
+  // Mode-based authentication for API requests (skip for public endpoints)
+  if (isPublic) {
+    // Public endpoints - no auth needed
+  } else if (AUTH_MODE === 'development') {
     // Development mode: ONLY use X-Auth-Session headers
     headers['X-Auth-Session'] = 'authenticated';
     const demoUserId = localStorage.getItem('demo_user_id') || 'admin-user';
