@@ -1383,6 +1383,7 @@ export default function SettingsPage() {
                 <thead>
                   <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
                     <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Quando</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Livello</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Microservizio</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Chi</th>
                     <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Cosa</th>
@@ -1401,6 +1402,22 @@ export default function SettingsPage() {
                     >
                       <td style={{ padding: '10px 8px', color: '#6b7280', whiteSpace: 'nowrap' }}>
                         {formatLogTimestamp(log.created_at)}
+                      </td>
+                      <td style={{ padding: '10px 8px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          color: 'white',
+                          background: log.level === 'ERROR' ? '#ef4444' : 
+                                     log.level === 'WARN' ? '#f59e0b' : 
+                                     log.level === 'INFO' ? '#3b82f6' : 
+                                     log.level === 'DEBUG' ? '#6b7280' : '#6b7280'
+                        }}>
+                          {log.level || 'INFO'}
+                        </span>
                       </td>
                       <td style={{ padding: '10px 8px' }}>
                         <span style={{

@@ -1,0 +1,82 @@
+data load (not on Entity Management tab)
+SettingsPage-C_6I1jsM.js:15 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+2index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:33, Token expires: 11:35:28
+index-CFNPqEKa.js:2  GET https://w3suite.it/api/audit/enterprise/summary?hours=168 404 (Not Found)
+queryFn @ index-CFNPqEKa.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:35, Token expires: 11:35:28
+index-CFNPqEKa.js:2  GET https://w3suite.it/api/audit/enterprise/summary?hours=168 404 (Not Found)
+queryFn @ index-CFNPqEKa.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:37, Token expires: 11:35:28
+index-CFNPqEKa.js:2  GET https://w3suite.it/api/audit/enterprise/summary?hours=168 404 (Not Found)
+queryFn @ index-CFNPqEKa.js:2
+await in queryFn
+a @ query-akp2FCJ7.js:1
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+Promise.then
+(anonime) @ query-akp2FCJ7.js:1
+Promise.catch
+M @ query-akp2FCJ7.js:1
+start @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:38, Token expires: 11:35:28
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:42, Token expires: 11:35:28
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:47, Token expires: 11:35:28
+SettingsPage-C_6I1jsM.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-CFNPqEKa.js:2 🔍 Token expiry check: Current time: 11:20:47, Token expires: 11:35:28
