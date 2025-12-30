@@ -166,12 +166,15 @@ router.get('/templates', rbacMiddleware, requirePermission('workflow.read_templa
     
     // 🎯 DEPARTMENTAL FILTER: Only show templates assigned to user's teams
     // ✅ Skip team filter for CRM workflows (open access within tenant)
-    if (!isCrmCategory) {
+    // ✅ In development mode, show all templates for easier testing
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isCrmCategory && !isDevelopment) {
       if (accessibleTemplateIds.length > 0) {
         whereConditions.push(inArray(workflowTemplates.id, accessibleTemplateIds));
       } else {
         // If user has no team assignments, show no templates (secure by default)
-        whereConditions.push(eq(workflowTemplates.id, 'no-access'));
+        // Use a valid UUID that won't match anything instead of string 'no-access'
+        whereConditions.push(eq(workflowTemplates.id, '00000000-0000-0000-0000-000000000000'));
       }
     }
     
