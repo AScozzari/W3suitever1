@@ -146,8 +146,7 @@ export function ActionManagementContent() {
     queryKey: ['/api/action-definitions', selectedDepartment],
     queryFn: async () => {
       const params = selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : '';
-      const res = await apiRequest(`/api/action-definitions${params}`);
-      return res.json();
+      return await apiRequest(`/api/action-definitions${params}`);
     }
   });
 
@@ -155,31 +154,27 @@ export function ActionManagementContent() {
     queryKey: ['/api/action-configurations', selectedDepartment],
     queryFn: async () => {
       const params = selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : '';
-      const res = await apiRequest(`/api/action-configurations${params}`);
-      return res.json();
+      return await apiRequest(`/api/action-configurations${params}`);
     }
   });
 
   const { data: coverageData } = useQuery({
     queryKey: ['/api/action-configurations/stats/coverage'],
     queryFn: async () => {
-      const res = await apiRequest('/api/action-configurations/stats/coverage');
-      return res.json() as Promise<CoverageStats>;
+      return await apiRequest('/api/action-configurations/stats/coverage') as CoverageStats;
     }
   });
 
   const { data: departmentsData } = useQuery({
     queryKey: ['/api/action-configurations/meta/departments'],
     queryFn: async () => {
-      const res = await apiRequest('/api/action-configurations/meta/departments');
-      return res.json();
+      return await apiRequest('/api/action-configurations/meta/departments');
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest(`/api/action-configurations/${id}`, { method: 'DELETE' });
-      return res.json();
+      return await apiRequest(`/api/action-configurations/${id}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/action-configurations'] });
