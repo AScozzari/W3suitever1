@@ -1,0 +1,87 @@
+oken expiry check: Current time: 08:40:53, Token expires: 08:51:17
+index-Bcxxsw5-.js:21 [APP-ROUTER] 🚀 Router component rendered
+index-Bcxxsw5-.js:21 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 TypeError: a.map is not a function
+    at js (SettingsPage-B5zngCeF.js:10:5410)
+    at oo (SettingsPage-B5zngCeF.js:15:66992)
+    at Ui (SettingsPage-B5zngCeF.js:15:155379)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+overrideMethod @ installHook.js:1
+Po @ react-core-DamieDW-.js:32
+Da.t.callback @ react-core-DamieDW-.js:32
+Ci @ react-core-DamieDW-.js:30
+$i @ react-core-DamieDW-.js:32
+Ga @ react-core-DamieDW-.js:32
+Pd @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-akp2FCJ7.js:1
+u @ query-akp2FCJ7.js:1
+batch @ query-akp2FCJ7.js:1
+W @ query-akp2FCJ7.js:1
+setData @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+await in fetch
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+react-core-DamieDW-.js:30 Uncaught TypeError: a.map is not a function
+    at js (SettingsPage-B5zngCeF.js:10:5410)
+    at oo (SettingsPage-B5zngCeF.js:15:66992)
+    at Ui (SettingsPage-B5zngCeF.js:15:155379)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+js @ SettingsPage-B5zngCeF.js:10
+oo @ SettingsPage-B5zngCeF.js:15
+Ui @ SettingsPage-B5zngCeF.js:15
+gu @ react-core-DamieDW-.js:30
+No @ react-core-DamieDW-.js:32
+tc @ react-core-DamieDW-.js:32
+ba @ react-core-DamieDW-.js:32
+Ld @ react-core-DamieDW-.js:32
+el @ react-core-DamieDW-.js:32
+Uo @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-akp2FCJ7.js:1
+u @ query-akp2FCJ7.js:1
+batch @ query-akp2FCJ7.js:1
+W @ query-akp2FCJ7.js:1
+setData @ query-akp2FCJ7.js:1
+fetch @ query-akp2FCJ7.js:1
+await in fetch
+Lt @ query-akp2FCJ7.js:1
+setOptions @ query-akp2FCJ7.js:1
+(anonime) @ query-akp2FCJ7.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Bcxxsw5-.js:15 [SESSION-KEEPALIVE] 

@@ -7985,7 +7985,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LIMIT ${filters.limit} OFFSET ${offset}
       `;
       
-      const logs = await db.execute(unifiedQuery);
+      const logsResult = await db.execute(unifiedQuery);
+      const logs = logsResult.rows || [];
 
       // ✅ Get total count for pagination using parameterized SQL
       const totalCountQuery = await db.execute(sql`
