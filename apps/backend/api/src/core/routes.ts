@@ -8064,6 +8064,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ✅ STATISTICS SUMMARY: Aggregated stats for cards (separate from datatable)
+  app.get('/api/audit/enterprise/summary', tenantMiddleware, rbacMiddleware, requirePermission('logs.read'), async (req: any, res) => {
+    const startTime = Date.now();
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Parse time range: 24h, 168h (7 days), 720h (30 days)
+      const hours = parseInt(req.query.hours as string) || 168;
+      const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+      // Get aggregated counts by level
+      const levelStats = await db.execute(sql`
+        SELECT 
+          level,
+          COUNT(*) as count
+        FROM w3suite.activity_logs 
+        WHERE tenant_id = ${tenantId} AND executed_at >= ${hoursAgo}
+        GROUP BY level
+      `);
+
+      // Get aggregated counts by service (microservizio)
+      const serviceStats = await db.execute(sql`
+        SELECT 
+          service,
+          COUNT(*) as count
+        FROM w3suite.activity_logs 
+        WHERE tenant_id = ${tenantId} AND executed_at >= ${hoursAgo}
+        GROUP BY service
+        ORDER BY count DESC
+        LIMIT 10
+      `);
+
+      // Get total count
+      const totalResult = await db.execute(sql`
+        SELECT COUNT(*) as total FROM w3suite.activity_logs 
+        WHERE tenant_id = ${tenantId} AND executed_at >= ${hoursAgo}
+      `);
+
+      const levelRows = levelStats.rows as any[];
+      const serviceRows = serviceStats.rows as any[];
+      const total = Number((totalResult.rows as any[])[0]?.total) || 0;
+
+      // Build response
+      const levelCounts: Record<string, number> = {};
+      levelRows.forEach((r: any) => {
+        levelCounts[r.level || 'UNKNOWN'] = Number(r.count);
+      });
+
+      const serviceCounts: Record<string, number> = {};
+      serviceRows.forEach((r: any) => {
+        serviceCounts[r.service || 'SYSTEM'] = Number(r.count);
+      });
+
+      res.json({
+        period: hours === 24 ? '24h' : hours === 168 ? '7gg' : '30gg',
+        hours,
+        total,
+        byLevel: {
+          ERROR: levelCounts['ERROR'] || 0,
+          WARN: levelCounts['WARN'] || 0,
+          INFO: levelCounts['INFO'] || 0,
+          DEBUG: levelCounts['DEBUG'] || 0
+        },
+        byService: serviceCounts,
+        duration: `${Date.now() - startTime}ms`
+      });
+
+    } catch (error) {
+      console.error("Error fetching audit summary:", error);
+      res.status(500).json({ error: "Failed to fetch audit summary" });
+    }
+  });
+
   // ==================== STRUCTURED LOGS API ====================
 
   // Get structured logs with filtering and pagination
