@@ -7955,21 +7955,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Execute unified query using parameterized SQL with request tracking via correlation_id
       const structuredQueryPart = sql`
         SELECT 
-          id, 'structured' as log_type, created_at, level, message, component, action, 
-          entity_type, entity_id, correlation_id, user_id, user_email, duration, 
+          id::text, 'structured' as log_type, created_at, level, message, component, action, 
+          entity_type, entity_id::text, correlation_id::text, user_id::text, user_email, duration, 
           metadata, http_method, http_path, http_status_code, 
-          NULL as previous_status, NULL as new_status, NULL as changes, NULL as notes
+          NULL::text as previous_status, NULL::text as new_status, NULL::jsonb as changes, NULL::text as notes
         FROM w3suite.structured_logs 
         WHERE ${sql.join(structuredConditions, sql` AND `)}
       `;
       
       const entityQueryPart = sql`
         SELECT 
-          id, 'entity' as log_type, created_at, 'INFO' as level, 
+          id::text, 'entity' as log_type, created_at, 'INFO' as level, 
           CONCAT('Entity ', action, ': ', entity_type) as message,
-          'entity_engine' as component, action, entity_type, entity_id, 
-          entity_id::text as correlation_id, user_id, user_email, NULL as duration,
-          NULL as metadata, NULL as http_method, NULL as http_path, NULL as http_status_code,
+          'entity_engine' as component, action, entity_type, entity_id::text, 
+          entity_id::text as correlation_id, user_id::text, user_email, NULL::integer as duration,
+          NULL::jsonb as metadata, NULL::text as http_method, NULL::text as http_path, NULL::integer as http_status_code,
           previous_status, new_status, changes, notes
         FROM w3suite.entity_logs 
         WHERE ${sql.join(entityConditions, sql` AND `)}
