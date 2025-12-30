@@ -4380,7 +4380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await setTenantContext(tenantId);
       
-      // Verify team exists
+      // Verify team exists and get its departments
       const [team] = await db.select().from(teams).where(and(
         eq(teams.id, teamId),
         eq(teams.tenantId, tenantId)
@@ -4388,6 +4388,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!team) {
         return res.status(404).json({ error: 'Team non trovato' });
+      }
+
+      // EXCLUSIVITY VALIDATION: User can only be primary member of 1 functional team per department
+      // Exception: Supervisors of other teams can be members of multiple teams
+      if (isPrimaryTeam && team.teamType === 'functional' && team.assignedDepartments?.length) {
+        const teamDepartments = Array.isArray(team.assignedDepartments) 
+          ? team.assignedDepartments 
+          : [];
+        
+        const conflicts: { userId: string; conflictTeamName: string; department: string }[] = [];
+        
+        for (const uid of userIds) {
+          // Check if user is supervisor of this team (exception)
+          if (uid === team.primarySupervisorUser || uid === team.secondarySupervisorUser) {
+            continue; // Supervisors can be members of other teams
+          }
+          
+          // Find other functional teams in same departments where user is primary member
+          const existingMemberships = await db
+            .select({
+              teamId: userTeams.teamId,
+              teamName: teams.name,
+              departments: teams.assignedDepartments
+            })
+            .from(userTeams)
+            .innerJoin(teams, eq(teams.id, userTeams.teamId))
+            .where(and(
+              eq(userTeams.userId, uid),
+              eq(userTeams.tenantId, tenantId),
+              eq(userTeams.isPrimaryTeam, true),
+              eq(teams.teamType, 'functional'),
+              not(eq(teams.id, teamId)) // Exclude current team
+            ));
+          
+          for (const membership of existingMemberships) {
+            const existingDepts = Array.isArray(membership.departments) ? membership.departments : [];
+            const overlap = teamDepartments.filter((d: string) => existingDepts.includes(d));
+            
+            if (overlap.length > 0) {
+              conflicts.push({
+                userId: uid,
+                conflictTeamName: membership.teamName,
+                department: overlap[0] as string
+              });
+            }
+          }
+        }
+        
+        if (conflicts.length > 0) {
+          return res.status(409).json({
+            error: 'Conflitto esclusività dipartimento',
+            message: 'Alcuni utenti sono già membri primari di altri team funzionali per lo stesso dipartimento',
+            conflicts
+          });
+        }
       }
 
       // Add members (ignore duplicates)
