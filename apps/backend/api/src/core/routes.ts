@@ -7877,7 +7877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== ENTERPRISE AUDIT TRAIL API ====================
   
-  // ✅ PROFESSIONAL: Get unified audit trail (structured_logs + entity_logs) with advanced filtering
+  // ✅ PROFESSIONAL: Get activity logs (CHI ha fatto COSA, QUANDO, su quale MICROSERVIZIO)
   app.get('/api/audit/enterprise', tenantMiddleware, rbacMiddleware, requirePermission('logs.read'), async (req: any, res) => {
     const startTime = Date.now();
     try {
@@ -7888,149 +7888,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required - no tenant context' });
       }
 
-      // Validate query parameters with enterprise schema
-      const validationResult = getEnterpriseAuditQuerySchema.safeParse(req.query);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: 'Invalid query parameters',
-          details: validationResult.error.errors
-        });
+      // Parse query parameters
+      const filters = {
+        page: Math.max(1, parseInt(req.query.page as string) || 1),
+        limit: Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50)),
+        lastHours: parseInt(req.query.lastHours as string) || 168, // Default 7 days
+        service: req.query.service as string || null,
+        level: req.query.level as string || null,
+        action: req.query.action as string || null,
+        actorEmail: req.query.actorEmail as string || null,
+        entityType: req.query.entityType as string || null,
+        search: req.query.search as string || null,
+        sortBy: req.query.sortBy as string || 'created_at',
+        sortOrder: req.query.sortOrder as string || 'desc',
+      };
+      
+      // ✅ Build query conditions for activity_logs
+      let conditions = [sql`tenant_id = ${tenantId}`];
+      
+      // Date filter
+      const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
+      conditions.push(sql`created_at >= ${hoursAgo}`);
+      
+      // Optional filters
+      if (filters.service && filters.service !== 'ALL') {
+        conditions.push(sql`service = ${filters.service}`);
+      }
+      if (filters.level && filters.level !== 'ALL') {
+        conditions.push(sql`level = ${filters.level}`);
+      }
+      if (filters.action) {
+        conditions.push(sql`action ILIKE ${'%' + filters.action + '%'}`);
+      }
+      if (filters.actorEmail) {
+        conditions.push(sql`actor_email ILIKE ${'%' + filters.actorEmail + '%'}`);
+      }
+      if (filters.entityType) {
+        conditions.push(sql`entity_type = ${filters.entityType}`);
+      }
+      if (filters.search) {
+        conditions.push(sql`(message ILIKE ${'%' + filters.search + '%'} OR action ILIKE ${'%' + filters.search + '%'} OR actor_email ILIKE ${'%' + filters.search + '%'})`);
       }
 
-      const filters = validationResult.data;
-      
-      // ✅ Build proper parameterized query conditions
-      let dateConditions = [];
-      if (filters.lastHours) {
-        const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
-        dateConditions.push(sql`created_at >= ${hoursAgo}`);
-      } else {
-        if (filters.dateFrom) {
-          dateConditions.push(sql`created_at >= ${filters.dateFrom}`);
-        }
-        if (filters.dateTo) {
-          dateConditions.push(sql`created_at <= ${filters.dateTo}`);
-        }
-      }
-
-      // ✅ Build structured logs conditions using proper SQL placeholders
-      let structuredConditions = [sql`tenant_id = ${tenantId}`];
-      structuredConditions.push(...dateConditions);
-      
-      if (filters.level) structuredConditions.push(sql`level = ${filters.level}`);
-      if (filters.component) structuredConditions.push(sql`component ILIKE ${'%' + filters.component + '%'}`);
-      if (filters.action) structuredConditions.push(sql`action ILIKE ${'%' + filters.action + '%'}`);
-      if (filters.entityType) structuredConditions.push(sql`entity_type = ${filters.entityType}`);
-      if (filters.entityId) structuredConditions.push(sql`entity_id = ${filters.entityId}`);
-      if (filters.userId) structuredConditions.push(sql`user_id = ${filters.userId}`);
-      if (filters.userEmail) structuredConditions.push(sql`user_email ILIKE ${'%' + filters.userEmail + '%'}`);
-      if (filters.correlationId) structuredConditions.push(sql`correlation_id = ${filters.correlationId}`);
-      if (filters.search) structuredConditions.push(sql`(message ILIKE ${'%' + filters.search + '%'} OR component ILIKE ${'%' + filters.search + '%'})`);
-      if (filters.logType === 'entity') structuredConditions.push(sql`FALSE`);
-
-      // ✅ Build entity logs conditions using proper SQL placeholders
-      let entityConditions = [sql`tenant_id = ${tenantId}`];
-      entityConditions.push(...dateConditions);
-      
-      if (filters.action) entityConditions.push(sql`action ILIKE ${'%' + filters.action + '%'}`);
-      if (filters.entityType) entityConditions.push(sql`entity_type = ${filters.entityType}`);
-      if (filters.entityId) entityConditions.push(sql`entity_id = ${filters.entityId}`);
-      if (filters.userId) entityConditions.push(sql`user_id = ${filters.userId}`);
-      if (filters.userEmail) entityConditions.push(sql`user_email ILIKE ${'%' + filters.userEmail + '%'}`);
-      if (filters.search) entityConditions.push(sql`(notes ILIKE ${'%' + filters.search + '%'} OR action ILIKE ${'%' + filters.search + '%'})`);
-      if (filters.logType === 'structured') entityConditions.push(sql`FALSE`);
-
-      // ✅ Build complete parameterized query
       const sortColumn = {
         created_at: 'created_at',
         level: 'level', 
-        component: 'component',
+        service: 'service',
         action: 'action',
-        entity_type: 'entity_type'
+        actor_email: 'actor_email'
       }[filters.sortBy] || 'created_at';
       
       const sortDirection = filters.sortOrder === 'asc' ? sql`ASC` : sql`DESC`;
       const offset = (filters.page - 1) * filters.limit;
 
-      // Execute unified query using parameterized SQL with request tracking via correlation_id
-      const structuredQueryPart = sql`
+      // ✅ Query activity_logs table (CHI/COSA/QUANDO/MICROSERVIZIO)
+      const logsQuery = sql`
         SELECT 
-          id::text, 'structured' as log_type, created_at, level, message, component, action, 
-          entity_type, entity_id::text, correlation_id::text, user_id::text, user_email, duration, 
-          metadata, http_method, http_path, http_status_code, 
-          NULL::text as previous_status, NULL::text as new_status, NULL::jsonb as changes, NULL::text as notes
-        FROM w3suite.structured_logs 
-        WHERE ${sql.join(structuredConditions, sql` AND `)}
-      `;
-      
-      const entityQueryPart = sql`
-        SELECT 
-          id::text, 'entity' as log_type, created_at, 'INFO' as level, 
-          CONCAT('Entity ', action, ': ', entity_type) as message,
-          'entity_engine' as component, action, entity_type, entity_id::text, 
-          entity_id::text as correlation_id, user_id::text, user_email, NULL::integer as duration,
-          NULL::jsonb as metadata, NULL::text as http_method, NULL::text as http_path, NULL::integer as http_status_code,
-          previous_status, new_status, changes, notes
-        FROM w3suite.entity_logs 
-        WHERE ${sql.join(entityConditions, sql` AND `)}
-      `;
-
-      const unifiedQuery = sql`
-        SELECT * FROM (
-          ${structuredQueryPart}
-          UNION ALL
-          ${entityQueryPart}
-        ) as unified_logs
+          id::text,
+          service,
+          module,
+          action,
+          action_category,
+          entity_type,
+          entity_id,
+          entity_name,
+          actor_id,
+          actor_email,
+          actor_role,
+          level,
+          status,
+          message,
+          metadata,
+          latency_ms,
+          created_at
+        FROM w3suite.activity_logs 
+        WHERE ${sql.join(conditions, sql` AND `)}
         ORDER BY ${sql.identifier(sortColumn)} ${sortDirection}
         LIMIT ${filters.limit} OFFSET ${offset}
       `;
       
-      const logsResult = await db.execute(unifiedQuery);
+      const logsResult = await db.execute(logsQuery);
       const logs = logsResult.rows || [];
 
-      // ✅ Get total count for pagination using parameterized SQL
+      // ✅ Get total count
       const totalCountQuery = await db.execute(sql`
-        SELECT COUNT(*) as count FROM (
-          SELECT id FROM w3suite.structured_logs WHERE ${sql.join(structuredConditions, sql` AND `)}
-          UNION ALL
-          SELECT id FROM w3suite.entity_logs WHERE ${sql.join(entityConditions, sql` AND `)}
-        ) as count_logs
+        SELECT COUNT(*) as count FROM w3suite.activity_logs 
+        WHERE ${sql.join(conditions, sql` AND `)}
       `);
       
       const totalCountRows = totalCountQuery.rows as any[];
       const total = Number(totalCountRows[0]?.count) || 0;
       const totalPages = Math.ceil(total / filters.limit);
       
-      // ✅ Get filter options using raw SQL to avoid Drizzle issues
-      const [componentsResult, actionsResult, entityTypesResult] = await Promise.all([
-        // Available components
+      // ✅ Get filter options from activity_logs
+      const [servicesResult, actionsResult, entityTypesResult] = await Promise.all([
         db.execute(sql`
-          SELECT DISTINCT component FROM w3suite.structured_logs 
-          WHERE tenant_id = ${tenantId} AND component IS NOT NULL 
-          ORDER BY component LIMIT 50
+          SELECT DISTINCT service FROM w3suite.activity_logs 
+          WHERE tenant_id = ${tenantId} AND service IS NOT NULL 
+          ORDER BY service LIMIT 20
         `),
-        
-        // Available actions  
         db.execute(sql`
-          SELECT DISTINCT action FROM w3suite.structured_logs 
+          SELECT DISTINCT action FROM w3suite.activity_logs 
           WHERE tenant_id = ${tenantId} AND action IS NOT NULL 
           ORDER BY action LIMIT 50
         `),
-          
-        // Available entity types
         db.execute(sql`
-          SELECT DISTINCT entity_type as entitytype FROM w3suite.structured_logs 
+          SELECT DISTINCT entity_type FROM w3suite.activity_logs 
           WHERE tenant_id = ${tenantId} AND entity_type IS NOT NULL 
-          ORDER BY entity_type LIMIT 20
+          ORDER BY entity_type LIMIT 30
         `)
       ]);
       
       const duration = Date.now() - startTime;
-      const componentsRows = componentsResult.rows as any[];
+      const servicesRows = servicesResult.rows as any[];
       const actionsRows = actionsResult.rows as any[];
       const entityTypesRows = entityTypesResult.rows as any[];
       
-      // ✅ Enterprise response with analytics and filter options
+      // ✅ Enterprise response with analytics and filter options (CHI/COSA/QUANDO/MICROSERVIZIO)
       res.json({
         logs,
         metadata: {
@@ -8042,19 +8016,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filters: {
             applied: Object.keys(req.query).length,
             available: {
-              components: componentsRows.map((r: any) => r.component).filter(Boolean),
+              services: servicesRows.map((r: any) => r.service).filter(Boolean),
               actions: actionsRows.map((r: any) => r.action).filter(Boolean),
-              entityTypes: entityTypesRows.map((r: any) => r.entitytype).filter(Boolean),
-              levels: ['DEBUG', 'INFO', 'WARN', 'ERROR'],
-              logTypes: ['structured', 'entity', 'all'],
-              categories: ['hr', 'operations', 'support', 'crm', 'sales', 'finance'],
-              statuses: ['pending', 'approved', 'rejected', 'cancelled', 'completed']
+              entityTypes: entityTypesRows.map((r: any) => r.entity_type).filter(Boolean),
+              levels: ['DEBUG', 'INFO', 'WARN', 'ERROR']
             }
           }
         },
         analytics: {
           totalLogs: total,
-          averagePerDay: Math.round(total / 7), // Assuming 7 days of data
+          averagePerDay: Math.round(total / (filters.lastHours / 24)),
           queryPerformance: duration,
           dataFreshness: new Date().toISOString()
         }

@@ -1102,19 +1102,19 @@ export default function SettingsPage() {
     const infoCount = logs.filter((l: any) => l.level === 'INFO').length;
     const debugCount = logs.filter((l: any) => l.level === 'DEBUG').length;
     
-    // Group by component
-    const componentStats = logs.reduce((acc: any, log: any) => {
-      const comp = log.component || 'unknown';
-      acc[comp] = (acc[comp] || 0) + 1;
+    // Group by SERVICE (microservizio)
+    const serviceStats = logs.reduce((acc: any, log: any) => {
+      const svc = log.service || 'SYSTEM';
+      acc[svc] = (acc[svc] || 0) + 1;
       return acc;
     }, {});
-    const topComponents = Object.entries(componentStats)
+    const topServices = Object.entries(serviceStats)
       .sort((a: any, b: any) => b[1] - a[1])
       .slice(0, 5);
     
     // Available filters from metadata
     const availableLevels = ['ALL', 'ERROR', 'WARN', 'INFO', 'DEBUG'];
-    const availableComponents = ['ALL', ...(metadata.filters.available.components || [])];
+    const availableServices = ['ALL', ...(metadata.filters?.available?.services || [])];
 
     return (
       <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -1134,7 +1134,7 @@ export default function SettingsPage() {
               Enterprise Audit Trail
             </h1>
             <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
-              Sistema unificato di audit trail con structured logs + entity logs in tempo reale
+              Chi ha fatto cosa, quando e su quale microservizio
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(34, 197, 94, 0.1)', padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
@@ -1224,17 +1224,17 @@ export default function SettingsPage() {
             </div>
           </div>
           
-          {/* Top Components */}
+          {/* Top Microservizi */}
           <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Top Componenti</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Top Microservizi</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {topComponents.length === 0 ? (
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>Nessun componente</div>
-              ) : topComponents.map(([comp, count]: any, idx) => (
-                <div key={comp} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {topServices.length === 0 ? (
+                <div style={{ color: '#6b7280', fontSize: '13px' }}>Nessuna attività registrata</div>
+              ) : topServices.map(([svc, count]: any, idx) => (
+                <div key={svc} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ width: '20px', fontSize: '12px', fontWeight: '600', color: '#ff6900' }}>#{idx + 1}</span>
-                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '500', color: '#374151', textTransform: 'uppercase' }}>{comp}</span>
-                  <span style={{ fontSize: '12px', color: '#6b7280', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px' }}>{count} log</span>
+                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '500', color: '#374151' }}>{svc}</span>
+                  <span style={{ fontSize: '12px', color: '#6b7280', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px' }}>{count} attività</span>
                 </div>
               ))}
             </div>
@@ -1261,15 +1261,15 @@ export default function SettingsPage() {
             value={enterpriseAuditComponent}
             onChange={(e) => setEnterpriseAuditComponent(e.target.value)}
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer' }}
-            data-testid="select-audit-component"
+            data-testid="select-audit-service"
           >
-            {availableComponents.map(comp => (
-              <option key={comp} value={comp}>{comp === 'ALL' ? 'Tutti i Componenti' : comp.toUpperCase()}</option>
+            {availableServices.map(svc => (
+              <option key={svc} value={svc}>{svc === 'ALL' ? 'Tutti i Microservizi' : svc}</option>
             ))}
           </select>
           <input
             type="text"
-            placeholder="Cerca messaggio..."
+            placeholder="Cerca utente o azione..."
             value={enterpriseAuditSearch}
             onChange={(e) => setEnterpriseAuditSearch(e.target.value)}
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', minWidth: '200px' }}
@@ -1323,19 +1323,20 @@ export default function SettingsPage() {
           {logs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280' }}>
               <Database size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-              <p style={{ fontSize: '16px', margin: 0 }}>Nessun log trovato nelle ultime 24 ore</p>
+              <p style={{ fontSize: '16px', margin: '0 0 8px 0' }}>Nessuna attività registrata</p>
+              <p style={{ fontSize: '14px', margin: 0, opacity: 0.7 }}>Le attività degli utenti verranno tracciate automaticamente</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Timestamp</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Level</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Componente</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Azione</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Messaggio</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Utente</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Quando</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Microservizio</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Chi</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Cosa</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Entità</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Stato</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1358,22 +1359,39 @@ export default function SettingsPage() {
                           fontSize: '11px',
                           fontWeight: '600',
                           color: 'white',
-                          background: getLevelColor(log.level)
+                          background: log.service === 'WMS' ? '#3b82f6' : 
+                                     log.service === 'CRM' ? '#10b981' : 
+                                     log.service === 'POS' ? '#f59e0b' : 
+                                     log.service === 'HR' ? '#8b5cf6' :
+                                     log.service === 'AUTH' ? '#ef4444' :
+                                     log.service === 'VOIP' ? '#06b6d4' : '#6b7280'
                         }}>
-                          {log.level}
+                          {log.service || 'SYSTEM'}
                         </span>
                       </td>
                       <td style={{ padding: '10px 8px', color: '#374151', fontWeight: '500' }}>
-                        {log.component || '-'}
+                        {log.actor_email || log.actor_role || 'sistema'}
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#6b7280' }}>
+                      <td style={{ padding: '10px 8px', color: '#111827', fontWeight: '500' }}>
                         {log.action || '-'}
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#374151', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {log.message}
+                      <td style={{ padding: '10px 8px', color: '#6b7280', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {log.entity_name || log.entity_type || '-'}
+                        {log.entity_id && <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '4px' }}>#{log.entity_id.slice(0, 8)}</span>}
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#6b7280' }}>
-                        {log.user_email || '-'}
+                      <td style={{ padding: '10px 8px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          color: log.status === 'success' ? '#059669' : log.status === 'failure' ? '#dc2626' : '#d97706',
+                          background: log.status === 'success' ? 'rgba(16, 185, 129, 0.1)' : 
+                                     log.status === 'failure' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)'
+                        }}>
+                          {log.status === 'success' ? '✓ Successo' : log.status === 'failure' ? '✗ Errore' : log.status || 'OK'}
+                        </span>
                       </td>
                     </tr>
                   ))}
