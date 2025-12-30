@@ -647,6 +647,7 @@ function WMSDocumentNumberingSection() {
 }
 
 export default function SystemConfigPage() {
+  const { tenant: tenantSlug } = useParams<{ tenant: string }>();
   const [activeTab, setActiveTab] = useState('wms');
 
   return (
