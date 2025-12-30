@@ -112,16 +112,11 @@ function getIcon(iconName: string | null) {
   return ICON_MAP[iconName] || Package;
 }
 
-function WMSMovementsTab() {
-  const { toast } = useToast();
-  const { tenantSlug } = useParams<{ tenantSlug: string }>();
-  const [localConfigs, setLocalConfigs] = useState<MovementTypeConfig[]>([]);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['inbound', 'outbound', 'internal']));
+// WMSMovementsTab removed - actions now centralized in ActionManagementPage
 
-  const { data: configs, isLoading: configsLoading, refetch: refetchConfigs } = useQuery<MovementTypeConfig[]>({
-    queryKey: ['/api/wms/movement-type-configs', STAGING_TENANT_ID],
-  });
+interface DocumentNumberingConfigLegacyOld {
+  placeholder: true; // Placeholder to find next section
+}
 
   useEffect(() => {
     if (!configsLoading) {
@@ -1075,7 +1070,40 @@ export default function SystemConfigPage() {
           </TabsList>
 
           <TabsContent value="wms" className="mt-6">
-            <WMSMovementsTab />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-orange-600" />
+                  Configurazione WMS
+                </CardTitle>
+                <CardDescription>Gestione movimenti, azioni e approvazioni magazzino</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <Workflow className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100">Action Management Centralizzato</h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Le azioni WMS (movimenti, approvazioni, workflow) sono ora gestite centralmente nella sezione Action Management insieme a tutte le altre azioni del sistema.
+                      </p>
+                      <a 
+                        href={`/${tenantSlug}/settings/actions`}
+                        className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+                        data-testid="link-action-management-wms"
+                      >
+                        <Workflow className="w-4 h-4" />
+                        Vai ad Action Management
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <WMSDocumentNumberingSection />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="sales" className="mt-6">
