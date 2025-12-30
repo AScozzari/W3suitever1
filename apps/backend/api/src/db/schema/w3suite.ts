@@ -1139,6 +1139,46 @@ export const insertUserLegalEntitySchema = createInsertSchema(userLegalEntities)
 export type InsertUserLegalEntity = z.infer<typeof insertUserLegalEntitySchema>;
 export type UserLegalEntity = typeof userLegalEntities.$inferSelect;
 
+// ==================== USER ORGANIZATION ENTITIES (M:N Users → Organization Entities - INTERNAL scope) ====================
+export const userOrganizationEntities = w3suiteSchema.table("user_organization_entities", {
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  organizationEntityId: uuid("organization_entity_id").notNull().references(() => organizationEntities.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  isPrimary: boolean("is_primary").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.organizationEntityId] }),
+  index("user_org_entities_user_idx").on(table.userId),
+  index("user_org_entities_org_idx").on(table.organizationEntityId),
+  index("user_org_entities_tenant_idx").on(table.tenantId),
+]);
+
+export const insertUserOrganizationEntitySchema = createInsertSchema(userOrganizationEntities).omit({ 
+  createdAt: true 
+});
+export type InsertUserOrganizationEntity = z.infer<typeof insertUserOrganizationEntitySchema>;
+export type UserOrganizationEntity = typeof userOrganizationEntities.$inferSelect;
+
+// ==================== USER TEAMS (M:N Users → Teams - normalized relationship) ====================
+export const userTeams = w3suiteSchema.table("user_teams", {
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  teamId: uuid("team_id").notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  isPrimary: boolean("is_primary").default(false),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.teamId] }),
+  index("user_teams_user_idx").on(table.userId),
+  index("user_teams_team_idx").on(table.teamId),
+  index("user_teams_tenant_idx").on(table.tenantId),
+]);
+
+export const insertUserTeamSchema = createInsertSchema(userTeams).omit({ 
+  assignedAt: true 
+});
+export type InsertUserTeam = z.infer<typeof insertUserTeamSchema>;
+export type UserTeam = typeof userTeams.$inferSelect;
+
 export const storeOperators = w3suiteSchema.table("store_brands", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
   operatorId: uuid("operator_id").notNull().references(() => operators.id),
@@ -2749,6 +2789,20 @@ export const userLegalEntitiesRelations = relations(userLegalEntities, ({ one })
   user: one(users, { fields: [userLegalEntities.userId], references: [users.id] }),
   legalEntity: one(legalEntities, { fields: [userLegalEntities.legalEntityId], references: [legalEntities.id] }),
   tenant: one(tenants, { fields: [userLegalEntities.tenantId], references: [tenants.id] }),
+}));
+
+// User Organization Entities Relations (INTERNAL scope)
+export const userOrganizationEntitiesRelations = relations(userOrganizationEntities, ({ one }) => ({
+  user: one(users, { fields: [userOrganizationEntities.userId], references: [users.id] }),
+  organizationEntity: one(organizationEntities, { fields: [userOrganizationEntities.organizationEntityId], references: [organizationEntities.id] }),
+  tenant: one(tenants, { fields: [userOrganizationEntities.tenantId], references: [tenants.id] }),
+}));
+
+// User Teams Relations (normalized)
+export const userTeamsRelations = relations(userTeams, ({ one }) => ({
+  user: one(users, { fields: [userTeams.userId], references: [users.id] }),
+  team: one(teams, { fields: [userTeams.teamId], references: [teams.id] }),
+  tenant: one(tenants, { fields: [userTeams.tenantId], references: [tenants.id] }),
 }));
 
 // Notifications Relations

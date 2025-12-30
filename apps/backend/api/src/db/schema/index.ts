@@ -64,7 +64,17 @@ export {
   legalEntities as w3suiteLegalEntities,
   stores as w3suiteStores,
   userAssignments as w3suiteUserAssignments,
-  userStores as w3suiteUserStores
+  userStores as w3suiteUserStores,
+  userLegalEntities as w3suiteUserLegalEntities,
+  userOrganizationEntities as w3suiteUserOrganizationEntities,
+  userTeams as w3suiteUserTeams,
+  // Types for new user scope tables
+  type InsertUserOrganizationEntity,
+  type UserOrganizationEntity,
+  type InsertUserTeam,
+  type UserTeam,
+  type InsertUserLegalEntity,
+  type UserLegalEntity
 } from './w3suite';
 
 // ==================== ENUMS RE-EXPORTED FROM W3SUITE ====================
@@ -184,6 +194,19 @@ export type { InsertItalianCity, ItalianCity } from './public';
 // ==================== USER EXTRA PERMS RE-EXPORTED FROM W3SUITE ====================
 import { userExtraPerms as w3suiteUserExtraPermsTable } from './w3suite';
 export const userExtraPerms = w3suiteUserExtraPermsTable;
+
+// ==================== USER SCOPE TABLES RE-EXPORTED FROM W3SUITE ====================
+import { 
+  userStores as w3suiteUserStoresTable,
+  userLegalEntities as w3suiteUserLegalEntitiesTable,
+  userOrganizationEntities as w3suiteUserOrganizationEntitiesTable,
+  userTeams as w3suiteUserTeamsTable
+} from './w3suite';
+
+export const userStores = w3suiteUserStoresTable;
+export const userLegalEntities = w3suiteUserLegalEntitiesTable;
+export const userOrganizationEntities = w3suiteUserOrganizationEntitiesTable;
+export const userTeams = w3suiteUserTeamsTable;
 
 // ==================== ENTITY LOGS RE-EXPORTED FROM W3SUITE ====================
 import { entityLogs as w3suiteEntityLogsTable } from './w3suite';
