@@ -1,0 +1,179 @@
+istration transitioned to state Registered
+Layout-BMWAu29p.js:86 📡 Registration state: Registered
+Layout-BMWAu29p.js:86 ✅ SIP Registered successfully
+Layout-BMWAu29p.js:58 Tue Dec 30 2025 07:27:19 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+4index-Cid2ql8b.js:2 🔍 Token expiry check: Current time: 07:27:21, Token expires: 07:42:14
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents/stats 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents/timeline 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents/trend 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents?tab=passive&type=all&status=all&search=&page=1 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+4index-Cid2ql8b.js:2 🔍 Token expiry check: Current time: 07:27:22, Token expires: 07:42:14
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents/stats 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+Promise.then
+(anonime) @ query-CnrE4C-h.js:1
+Promise.catch
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents/trend 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+Promise.then
+(anonime) @ query-CnrE4C-h.js:1
+Promise.catch
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents?tab=passive&type=all&status=all&search=&page=1 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+Promise.then
+(anonime) @ query-CnrE4C-h.js:1
+Promise.catch
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2  GET https://w3suite.it/api/wms/documents/timeline 404 (Not Found)
+queryFn @ index-Cid2ql8b.js:2
+await in queryFn
+a @ query-CnrE4C-h.js:1
+M @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+Promise.then
+(anonime) @ query-CnrE4C-h.js:1
+Promise.catch
+M @ query-CnrE4C-h.js:1
+start @ query-CnrE4C-h.js:1
+fetch @ query-CnrE4C-h.js:1
+Lt @ query-CnrE4C-h.js:1
+onSubscribe @ query-CnrE4C-h.js:1
+subscribe @ query-CnrE4C-h.js:1
+(anonime) @ query-CnrE4C-h.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-Cid2ql8b.js:2 🔍 Token expiry check: Current time: 07:27:29, Token expires: 07:42:14
