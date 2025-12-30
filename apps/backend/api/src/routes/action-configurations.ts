@@ -27,7 +27,7 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const { department } = req.query;
 
     if (!tenantId) {
@@ -93,7 +93,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
 
     if (!tenantId) {
@@ -182,7 +182,7 @@ const createActionSchema = z.object({
 
 router.post('/', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const userId = req.user?.id;
 
     if (!tenantId) {
@@ -284,7 +284,7 @@ const updateActionSchema = createActionSchema.partial();
 
 router.put('/:id', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const userId = req.user?.id;
     const { id } = req.params;
 
@@ -380,7 +380,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
 
     if (!tenantId) {
@@ -421,7 +421,7 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/stats/coverage', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
 
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID required' });
@@ -490,7 +490,7 @@ router.get('/meta/departments', async (req, res) => {
 
 router.get('/meta/workflows/:department', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const { department } = req.params;
 
     if (!tenantId) {
@@ -529,7 +529,7 @@ router.get('/meta/workflows/:department', async (req, res) => {
 
 router.get('/meta/teams/:department', async (req, res) => {
   try {
-    const tenantId = req.tenantId;
+    const tenantId = req.tenant?.id;
     const { department } = req.params;
 
     if (!tenantId) {
