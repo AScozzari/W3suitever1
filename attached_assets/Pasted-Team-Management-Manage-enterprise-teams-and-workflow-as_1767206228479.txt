@@ -1,0 +1,323 @@
+Team Management
+Manage enterprise teams and workflow assignments
+
+Teams List
+Coverage Dashboard
+Action Management
+Stato Generale
+Critico
+Livello 1
+3/10
+Dipartimenti con Team
+
+Livello 2
+0/10
+Dipartimenti con Workflow
+
+Livello 3
+0/21
+Utenti OK
+
+Livello 1: Dipartimenti → Team
+Ogni dipartimento ha almeno un team assegnato?
+
+Hr
+Critico
+Team assegnati:
+0
+Finance
+OK
+Team assegnati:
+1
+Team:
+
+Team Amministrazione
+(3 membri)
+Sales
+Critico
+Team assegnati:
+0
+Operations
+Critico
+Team assegnati:
+0
+Support
+Critico
+Team assegnati:
+0
+Crm
+Critico
+Team assegnati:
+0
+Marketing
+Critico
+Team assegnati:
+0
+Customer_service
+Critico
+Team assegnati:
+0
+It
+OK
+Team assegnati:
+1
+Team:
+
+Team Amministrazione
+(3 membri)
+Wms
+OK
+Team assegnati:
+5
+Team:
+
+Team Vendite
+(4 membri)
+Team Amministrazione
+(3 membri)
+Team Risorse Umane
+(4 membri)
+Team Logistica
+(3 membri)
+Team Assistenza Clienti
+(4 membri)
+Dipartimenti senza Team
+Hr
+Sales
+Operations
+Support
+Crm
+Marketing
+Customer_service
+Livello 2: Dipartimenti → Workflow con Action Tags
+Ogni dipartimento ha workflow con azioni coperte?
+
+Hr
+9%
+1 workflow
+
+Workflow:
+
+Vacation Approval Workflow
+Azioni coperte:
+
+Richiesta Ferie
+Azioni mancanti (10):
+
+Richiesta Permessi
+Gestione Malattia
+Cambio Turno
+Richiesta Straordinario
+Gestione Timbratura
+Turno Extra
+Onboarding Dipendente
+Offboarding Dipendente
+Valutazione Performance
+Richiesta Formazione
+Finance
+33%
+2 workflow
+
+Workflow:
+
+Test Budget Approval Manual
+Approvazione Spesa
+Azioni coperte:
+
+Approvazione Budget
+Rimborso Spese
+Azioni mancanti (4):
+
+Gestione Fatture
+Anticipo Contanti
+Nota di Credito
+Pagamento Fornitore
+Sales
+40%
+1 workflow
+
+Workflow:
+
+Lead Qualification
+Azioni coperte:
+
+Proposta Commerciale
+Chiusura Deal
+Azioni mancanti (3):
+
+Approvazione Sconto
+Generazione Preventivo
+Approvazione Contratto
+Operations
+60%
+2 workflow
+
+Workflow:
+
+Richiesta Acquisto
+Gestione Inventario
+Azioni coperte:
+
+Richiesta Acquisti
+Gestione Inventario
+Ordine Materiale
+Azioni mancanti (2):
+
+Richiesta Manutenzione
+Trasferimento Merce
+Support
+40%
+1 workflow
+
+Workflow:
+
+Gestione Ticket Support
+Azioni coperte:
+
+Ticket Supporto
+Escalation Problema
+Azioni mancanti (3):
+
+Risoluzione Problema
+Assistenza Cliente
+Gestione Reclamo
+Crm
+40%
+4 workflow
+
+Workflow:
+
+Gestione Lead CRM
+Send Email via Gmail MCP
+Gmail MCP Workflow (FIXED)
+📧 Gmail MCP - FINAL
+Azioni coperte:
+
+Gestione Lead
+Follow-up Cliente
+Azioni mancanti (3):
+
+Qualifica Lead
+Nurturing Campagna
+Conversione Lead
+Marketing
+0%
+0 workflow
+
+Azioni mancanti (5):
+
+Approvazione Campagna
+Richiesta Materiale Marketing
+Organizzazione Evento
+Pubblicazione Contenuto
+Budget Campagna
+Customer_service
+0%
+0 workflow
+
+Azioni mancanti (5):
+
+Ticket Cliente
+Reclamo Cliente
+Rimborso Cliente
+Assistenza Post-Vendita
+Feedback Cliente
+It
+0%
+0 workflow
+
+Azioni mancanti (5):
+
+Richiesta Accesso Sistema
+Richiesta Nuovo Hardware
+Problema Software
+Segnalazione Sicurezza IT
+Configurazione Sistema
+Wms
+0%
+1 workflow
+
+Workflow:
+
+Gestione Inventario WMS
+Azioni mancanti (5):
+
+Rettifica Inventario
+Trasferimento Magazzino
+Ricezione Merce
+Approvazione Spedizione
+Inventario Fisico
+Livello 3: Utenti → Copertura per Dipartimento
+Ogni utente ha accesso ai dipartimenti critici (HR)?
+
+Utenti Totali
+
+21
+
+Utenti con Problemi
+
+21
+
+Copertura Completa
+
+0
+
+Copertura per Dipartimento
+Hr
+Critico
+0 / 21
+Finance
+3 / 21
+Sales
+Vuoto
+0 / 21
+Operations
+Vuoto
+0 / 21
+Support
+Vuoto
+0 / 21
+Crm
+Vuoto
+0 / 21
+Marketing
+Vuoto
+0 / 21
+Customer_service
+Vuoto
+0 / 21
+It
+3 / 21
+Wms
+18 / 21
+Dipartimenti senza Copertura Utenti (7)
+Nessun utente ha accesso a questi dipartimenti tramite team assegnati:
+
+Hr (Critico)
+Sales
+Operations
+Support
+Crm
+Marketing
+Customer_service
+Utenti con Dipartimenti Critici Mancanti (21)
+M
+Mario Rossi
+
+mario.rossi@windtre.it
+
+Store Manager
+hr
+D
+Davide Santoro
+
+davide.santoro@windtre.it
+
+Store Specialist
+hr
+F
+Francesca Marino
+
+francesca.marino@windtre.it
+
+Store Specialist

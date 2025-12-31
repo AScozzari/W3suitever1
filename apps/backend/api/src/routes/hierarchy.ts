@@ -36,7 +36,9 @@ import {
   // Team enrichment tables
   teamDepartments,
   departments,
-  teamObservers
+  teamObservers,
+  // Action configurations
+  actionConfigurations
 } from '../db/schema/w3suite';
 import { z } from 'zod';
 import { workflowEngine } from '../services/workflow-engine';
@@ -2626,6 +2628,524 @@ router.get('/admin/workflow-scopes', requirePermission('workflows.read'), async 
   } catch (error: any) {
     console.error('Error fetching workflow scopes:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch workflow scopes' });
+  }
+});
+
+// ==================== COVERAGE DASHBOARD V2 ====================
+/**
+ * 📊 GET /api/admin/coverage-dashboard-v2
+ * Complete 5-level coverage analysis + health checks:
+ * - L1: Team Coverage - Does each department have at least one team?
+ * - L2: User Coverage - Does each user belong to at least one team?
+ * - L3: Action Coverage - Which actions have active flows configured?
+ * - L4: Team-Action Coverage - Are all teams covered by active actions?
+ * - L5: Workflow Health - Are assigned workflows active and being used?
+ * - Health Checks: Teams without supervisors, actions without SLA, disabled workflows in use
+ */
+router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    await setTenantContext(tenantId);
+
+    // ==================== FETCH ALL DATA ====================
+    
+    // Get all departments
+    const allDepartments = await db
+      .select({
+        id: departments.id,
+        code: departments.code,
+        name: departments.name,
+        isActive: departments.isActive
+      })
+      .from(departments)
+      .where(and(
+        eq(departments.tenantId, tenantId),
+        eq(departments.isActive, true)
+      ));
+
+    // Get all teams with their departments
+    const allTeams = await db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        teamType: teams.teamType,
+        primarySupervisorUser: teams.primarySupervisorUser,
+        secondarySupervisorUser: teams.secondarySupervisorUser,
+        isActive: teams.isActive
+      })
+      .from(teams)
+      .where(and(
+        eq(teams.tenantId, tenantId),
+        eq(teams.isActive, true)
+      ));
+
+    // Get team-department associations
+    const allTeamDepts = await db
+      .select({
+        teamId: teamDepartments.teamId,
+        departmentId: teamDepartments.departmentId
+      })
+      .from(teamDepartments)
+      .where(eq(teamDepartments.tenantId, tenantId));
+
+    // Get team memberships
+    const allTeamMemberships = await db
+      .select({
+        userId: userTeams.userId,
+        teamId: userTeams.teamId
+      })
+      .from(userTeams)
+      .where(eq(userTeams.tenantId, tenantId));
+
+    // Get team observers
+    const allObservers = await db
+      .select({
+        teamId: teamObservers.teamId,
+        userId: teamObservers.userId,
+        canApprove: teamObservers.canApprove
+      })
+      .from(teamObservers)
+      .where(eq(teamObservers.tenantId, tenantId));
+
+    // Get all users
+    const allUsers = await db
+      .select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive
+      })
+      .from(users)
+      .where(and(
+        eq(users.tenantId, tenantId),
+        eq(users.isActive, true)
+      ));
+
+    // Get action configurations
+    const allActionConfigs = await db
+      .select({
+        id: actionConfigurations.id,
+        department: actionConfigurations.department,
+        actionId: actionConfigurations.actionId,
+        actionName: actionConfigurations.actionName,
+        flowType: actionConfigurations.flowType,
+        requiresApproval: actionConfigurations.requiresApproval,
+        defaultScope: actionConfigurations.defaultScope,
+        defaultTeamIds: actionConfigurations.defaultTeamIds,
+        workflowConfigs: actionConfigurations.workflowConfigs,
+        workflowTemplateId: actionConfigurations.workflowTemplateId,
+        slaHours: actionConfigurations.slaHours,
+        isActive: actionConfigurations.isActive
+      })
+      .from(actionConfigurations)
+      .where(eq(actionConfigurations.tenantId, tenantId));
+
+    // Get workflow templates
+    const allWorkflowTemplates = await db
+      .select({
+        id: workflowTemplates.id,
+        name: workflowTemplates.name,
+        category: workflowTemplates.category,
+        isActive: workflowTemplates.isActive,
+        createdAt: workflowTemplates.createdAt
+      })
+      .from(workflowTemplates)
+      .where(eq(workflowTemplates.tenantId, tenantId));
+
+    // Get workflow instances for usage stats
+    const workflowUsageStats = await db
+      .select({
+        templateId: workflowInstances.templateId,
+        lastUsed: sql<string>`MAX(${workflowInstances.createdAt})`,
+        usageCount: sql<number>`COUNT(*)::int`
+      })
+      .from(workflowInstances)
+      .where(eq(workflowInstances.tenantId, tenantId))
+      .groupBy(workflowInstances.templateId);
+
+    // ==================== BUILD MAPS ====================
+    
+    // Map: departmentId -> department
+    const deptMap = new Map(allDepartments.map(d => [d.id, d]));
+    const deptCodeMap = new Map(allDepartments.map(d => [d.code, d]));
+    
+    // Map: teamId -> departmentIds
+    const teamToDepts = new Map<string, string[]>();
+    allTeamDepts.forEach(td => {
+      const depts = teamToDepts.get(td.teamId) || [];
+      depts.push(td.departmentId);
+      teamToDepts.set(td.teamId, depts);
+    });
+
+    // Map: departmentId -> teams
+    const deptToTeams = new Map<string, typeof allTeams>();
+    allTeamDepts.forEach(td => {
+      const team = allTeams.find(t => t.id === td.teamId);
+      if (team) {
+        const teams = deptToTeams.get(td.departmentId) || [];
+        teams.push(team);
+        deptToTeams.set(td.departmentId, teams);
+      }
+    });
+
+    // Map: teamId -> member userIds
+    const teamMembers = new Map<string, string[]>();
+    allTeamMemberships.forEach(m => {
+      const members = teamMembers.get(m.teamId) || [];
+      members.push(m.userId);
+      teamMembers.set(m.teamId, members);
+    });
+
+    // Map: teamId -> observers
+    const teamObserversMap = new Map<string, typeof allObservers>();
+    allObservers.forEach(o => {
+      const obs = teamObserversMap.get(o.teamId) || [];
+      obs.push(o);
+      teamObserversMap.set(o.teamId, obs);
+    });
+
+    // Map: templateId -> usage stats
+    const workflowUsage = new Map(workflowUsageStats.map(w => [w.templateId, w]));
+
+    // ==================== LEVEL 1: TEAM COVERAGE ====================
+    
+    const level1Data = allDepartments.map(dept => {
+      const deptTeams = deptToTeams.get(dept.id) || [];
+      const hasTeams = deptTeams.length > 0;
+      
+      return {
+        departmentId: dept.id,
+        departmentCode: dept.code,
+        departmentName: dept.name,
+        hasTeams,
+        teamCount: deptTeams.length,
+        teams: deptTeams.map(t => ({
+          id: t.id,
+          name: t.name,
+          memberCount: (teamMembers.get(t.id) || []).length,
+          hasSupervisor: !!t.primarySupervisorUser
+        })),
+        status: hasTeams ? 'ok' : 'critical' as 'ok' | 'warning' | 'critical'
+      };
+    }).sort((a, b) => (a.hasTeams ? 1 : 0) - (b.hasTeams ? 1 : 0));
+
+    const level1Summary = {
+      totalDepartments: allDepartments.length,
+      coveredDepartments: level1Data.filter(d => d.hasTeams).length,
+      uncoveredDepartments: level1Data.filter(d => !d.hasTeams).length
+    };
+
+    // ==================== LEVEL 2: USER COVERAGE ====================
+    
+    // For each user, check if they belong to at least one team (as member or supervisor)
+    const userCoverage = allUsers.map(user => {
+      const memberOfTeams = allTeamMemberships.filter(m => m.userId === user.id).map(m => m.teamId);
+      const supervisorOfTeams = allTeams.filter(t => 
+        t.primarySupervisorUser === user.id || t.secondarySupervisorUser === user.id
+      ).map(t => t.id);
+      const observerOfTeams = allObservers.filter(o => o.userId === user.id).map(o => o.teamId);
+      
+      const allUserTeams = [...new Set([...memberOfTeams, ...supervisorOfTeams, ...observerOfTeams])];
+      
+      // Get departments covered by these teams
+      const coveredDeptIds = new Set<string>();
+      allUserTeams.forEach(teamId => {
+        const depts = teamToDepts.get(teamId) || [];
+        depts.forEach(d => coveredDeptIds.add(d));
+      });
+      
+      return {
+        userId: user.id,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        userEmail: user.email,
+        userRole: user.role,
+        teamCount: allUserTeams.length,
+        hasTeam: allUserTeams.length > 0,
+        coveredDepartments: Array.from(coveredDeptIds).map(id => deptMap.get(id)?.code || id),
+        missingDepartments: allDepartments
+          .filter(d => !coveredDeptIds.has(d.id))
+          .map(d => d.code)
+      };
+    });
+
+    const level2Summary = {
+      totalUsers: allUsers.length,
+      usersWithTeam: userCoverage.filter(u => u.hasTeam).length,
+      usersWithoutTeam: userCoverage.filter(u => !u.hasTeam).length
+    };
+
+    const level2Data = {
+      summary: level2Summary,
+      usersWithoutTeam: userCoverage.filter(u => !u.hasTeam),
+      departmentBreakdown: allDepartments.map(dept => {
+        const usersInDept = userCoverage.filter(u => u.coveredDepartments.includes(dept.code));
+        return {
+          departmentCode: dept.code,
+          departmentName: dept.name,
+          usersWithCoverage: usersInDept.length,
+          usersWithoutCoverage: allUsers.length - usersInDept.length,
+          coveragePercent: Math.round((usersInDept.length / allUsers.length) * 100) || 0
+        };
+      })
+    };
+
+    // ==================== LEVEL 3: ACTION COVERAGE ====================
+    
+    // Group actions by department from action_configurations
+    const actionsByDept = new Map<string, typeof allActionConfigs>();
+    allActionConfigs.forEach(ac => {
+      const dept = ac.department;
+      const actions = actionsByDept.get(dept) || [];
+      actions.push(ac);
+      actionsByDept.set(dept, actions);
+    });
+
+    const level3Data = allDepartments.map(dept => {
+      const deptActions = actionsByDept.get(dept.code) || [];
+      const activeActions = deptActions.filter(a => a.flowType !== 'none' && a.requiresApproval);
+      const inactiveActions = deptActions.filter(a => a.flowType === 'none' || !a.requiresApproval);
+      
+      return {
+        departmentCode: dept.code,
+        departmentName: dept.name,
+        totalActions: deptActions.length,
+        activeActions: activeActions.length,
+        inactiveActions: inactiveActions.length,
+        coveragePercent: deptActions.length > 0 
+          ? Math.round((activeActions.length / deptActions.length) * 100) 
+          : 0,
+        actions: deptActions.map(a => ({
+          id: a.id,
+          actionId: a.actionId,
+          actionName: a.actionName,
+          flowType: a.flowType,
+          isActive: a.flowType !== 'none' && a.requiresApproval,
+          defaultScope: a.defaultScope,
+          teamCount: a.defaultScope === 'all' 
+            ? (deptToTeams.get(dept.id) || []).length 
+            : ((a.defaultTeamIds as string[]) || []).length,
+          hasWorkflow: a.flowType === 'workflow',
+          slaHours: a.slaHours
+        })),
+        status: activeActions.length === deptActions.length && deptActions.length > 0 
+          ? 'ok' 
+          : activeActions.length > 0 
+            ? 'warning' 
+            : 'critical' as 'ok' | 'warning' | 'critical'
+      };
+    });
+
+    const level3Summary = {
+      totalActions: allActionConfigs.length,
+      activeActions: allActionConfigs.filter(a => a.flowType !== 'none' && a.requiresApproval).length,
+      inactiveActions: allActionConfigs.filter(a => a.flowType === 'none' || !a.requiresApproval).length,
+      withWorkflow: allActionConfigs.filter(a => a.flowType === 'workflow').length,
+      withDefault: allActionConfigs.filter(a => a.flowType === 'default').length
+    };
+
+    // ==================== LEVEL 4: TEAM-ACTION COVERAGE ====================
+    
+    // For each team, check if it's covered by active actions
+    const level4Data = allTeams.map(team => {
+      const teamDeptIds = teamToDepts.get(team.id) || [];
+      const teamDeptCodes = teamDeptIds.map(id => deptMap.get(id)?.code).filter(Boolean) as string[];
+      
+      // Find actions that cover this team
+      const coveringActions = allActionConfigs.filter(ac => {
+        if (ac.flowType === 'none' || !ac.requiresApproval) return false;
+        if (!teamDeptCodes.includes(ac.department)) return false;
+        
+        if (ac.defaultScope === 'all') return true;
+        if (ac.defaultScope === 'specific') {
+          const teamIds = (ac.defaultTeamIds as string[]) || [];
+          return teamIds.includes(team.id);
+        }
+        // Check workflowConfigs
+        const wfConfigs = (ac.workflowConfigs as Array<{teamId: string}>) || [];
+        return wfConfigs.some(wc => wc.teamId === team.id);
+      });
+
+      const memberCount = (teamMembers.get(team.id) || []).length;
+      const observers = teamObserversMap.get(team.id) || [];
+      
+      return {
+        teamId: team.id,
+        teamName: team.name,
+        teamType: team.teamType,
+        departments: teamDeptCodes,
+        memberCount,
+        hasSupervisor: !!team.primarySupervisorUser,
+        hasSecondarySupervisor: !!team.secondarySupervisorUser,
+        observerCount: observers.length,
+        coveredByActions: coveringActions.length,
+        actions: coveringActions.map(a => ({
+          actionId: a.actionId,
+          actionName: a.actionName,
+          flowType: a.flowType
+        })),
+        status: coveringActions.length > 0 ? 'ok' : 'warning' as 'ok' | 'warning' | 'critical'
+      };
+    });
+
+    const level4Summary = {
+      totalTeams: allTeams.length,
+      teamsCoveredByActions: level4Data.filter(t => t.coveredByActions > 0).length,
+      teamsNotCovered: level4Data.filter(t => t.coveredByActions === 0).length
+    };
+
+    // ==================== LEVEL 5: WORKFLOW HEALTH ====================
+    
+    const level5Data = allWorkflowTemplates.map(wf => {
+      const usage = workflowUsage.get(wf.id);
+      const usedInActions = allActionConfigs.filter(ac => 
+        ac.workflowTemplateId === wf.id || 
+        ((ac.workflowConfigs as Array<{workflowId: string}>) || []).some(wc => wc.workflowId === wf.id)
+      );
+      
+      const isUsedButDisabled = usedInActions.length > 0 && !wf.isActive;
+      const neverUsed = !usage || usage.usageCount === 0;
+      
+      return {
+        workflowId: wf.id,
+        workflowName: wf.name,
+        category: wf.category,
+        isActive: wf.isActive,
+        usageCount: usage?.usageCount || 0,
+        lastUsed: usage?.lastUsed || null,
+        usedInActionsCount: usedInActions.length,
+        isUsedButDisabled,
+        neverUsed: neverUsed && wf.isActive,
+        status: isUsedButDisabled 
+          ? 'critical' 
+          : neverUsed && wf.isActive 
+            ? 'warning' 
+            : 'ok' as 'ok' | 'warning' | 'critical'
+      };
+    });
+
+    const level5Summary = {
+      totalWorkflows: allWorkflowTemplates.length,
+      activeWorkflows: allWorkflowTemplates.filter(w => w.isActive).length,
+      disabledWorkflows: allWorkflowTemplates.filter(w => !w.isActive).length,
+      neverUsed: level5Data.filter(w => w.neverUsed).length,
+      usedButDisabled: level5Data.filter(w => w.isUsedButDisabled).length
+    };
+
+    // ==================== HEALTH CHECKS ====================
+    
+    const healthChecks = {
+      teamsWithoutSupervisor: allTeams
+        .filter(t => !t.primarySupervisorUser)
+        .map(t => ({ id: t.id, name: t.name, type: 'team_no_supervisor' })),
+      
+      actionsWithoutSLA: allActionConfigs
+        .filter(a => a.flowType !== 'none' && a.requiresApproval && (!a.slaHours || a.slaHours === 0))
+        .map(a => ({ id: a.id, name: a.actionName, department: a.department, type: 'action_no_sla' })),
+      
+      disabledWorkflowsInUse: level5Data
+        .filter(w => w.isUsedButDisabled)
+        .map(w => ({ id: w.workflowId, name: w.workflowName, usedInActions: w.usedInActionsCount, type: 'workflow_disabled_in_use' })),
+      
+      teamsWithoutMembers: allTeams
+        .filter(t => (teamMembers.get(t.id) || []).length === 0)
+        .map(t => ({ id: t.id, name: t.name, type: 'team_no_members' })),
+      
+      teamsWithoutObservers: allTeams
+        .filter(t => (teamObserversMap.get(t.id) || []).length === 0)
+        .map(t => ({ id: t.id, name: t.name, type: 'team_no_observers' }))
+    };
+
+    const totalIssues = 
+      healthChecks.teamsWithoutSupervisor.length +
+      healthChecks.actionsWithoutSLA.length +
+      healthChecks.disabledWorkflowsInUse.length +
+      healthChecks.teamsWithoutMembers.length;
+
+    // ==================== OVERALL SCORE ====================
+    
+    const scores = {
+      level1: level1Summary.totalDepartments > 0 
+        ? Math.round((level1Summary.coveredDepartments / level1Summary.totalDepartments) * 100) 
+        : 0,
+      level2: level2Summary.totalUsers > 0 
+        ? Math.round((level2Summary.usersWithTeam / level2Summary.totalUsers) * 100) 
+        : 0,
+      level3: level3Summary.totalActions > 0 
+        ? Math.round((level3Summary.activeActions / level3Summary.totalActions) * 100) 
+        : 0,
+      level4: level4Summary.totalTeams > 0 
+        ? Math.round((level4Summary.teamsCoveredByActions / level4Summary.totalTeams) * 100) 
+        : 0,
+      level5: level5Summary.totalWorkflows > 0 
+        ? Math.round((level5Summary.activeWorkflows / level5Summary.totalWorkflows) * 100) 
+        : 0
+    };
+
+    const overallScore = Math.round(
+      (scores.level1 + scores.level2 + scores.level3 + scores.level4 + scores.level5) / 5
+    );
+
+    const overallHealth = overallScore >= 80 
+      ? 'healthy' 
+      : overallScore >= 50 
+        ? 'warning' 
+        : 'critical';
+
+    // ==================== RESPONSE ====================
+    
+    res.json({
+      success: true,
+      data: {
+        overview: {
+          overallScore,
+          overallHealth,
+          scores,
+          totalIssues
+        },
+        healthChecks,
+        level1: {
+          name: 'Team Coverage',
+          description: 'Ogni dipartimento ha almeno un team?',
+          summary: level1Summary,
+          data: level1Data
+        },
+        level2: {
+          name: 'User Coverage',
+          description: 'Ogni utente appartiene ad almeno un team?',
+          summary: level2Summary,
+          data: level2Data
+        },
+        level3: {
+          name: 'Action Coverage',
+          description: 'Ogni azione ha un flusso attivo?',
+          summary: level3Summary,
+          data: level3Data
+        },
+        level4: {
+          name: 'Team-Action Coverage',
+          description: 'Ogni team è coperto da azioni attive?',
+          summary: level4Summary,
+          data: level4Data
+        },
+        level5: {
+          name: 'Workflow Health',
+          description: 'I workflow sono attivi e utilizzati?',
+          summary: level5Summary,
+          data: level5Data
+        }
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Error fetching coverage dashboard v2:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch coverage dashboard' });
   }
 });
 
