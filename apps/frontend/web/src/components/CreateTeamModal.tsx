@@ -552,63 +552,78 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                   <FormField
                     control={form.control}
                     name="teamType"
-                    render={({ field }) => (
-                      <FormItem className="relative z-10">
-                        <FormLabel>Tipo Team *</FormLabel>
-                        <FormControl>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger data-testid="select-team-type">
-                              <SelectValue placeholder="Seleziona tipo team" />
-                            </SelectTrigger>
-                            <SelectContent className="z-[9999]">
-                              {Object.entries(TEAM_TYPES).map(([key, type]) => (
-                                <SelectItem key={key} value={key}>
-                                  <div className="flex items-start gap-2">
-                                    <span className="text-lg">{type.icon}</span>
-                                    <div>
-                                      <div className="font-medium">{type.label}</div>
-                                      <div className="text-sm text-gray-500">{type.description}</div>
+                    render={({ field }) => {
+                      const selectedType = field.value ? TEAM_TYPES[field.value as keyof typeof TEAM_TYPES] : null;
+                      return (
+                        <FormItem className="relative z-10">
+                          <FormLabel className="flex items-center gap-2">
+                            Tipo Team *
+                            {selectedType?.exclusive && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help text-yellow-600">
+                                      <AlertTriangle className="h-4 w-4" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs p-3">
+                                    <div className="text-sm">
+                                      <p className="font-semibold text-yellow-800 mb-1">Team Funzionale (Primario)</p>
+                                      <p className="text-gray-700">
+                                        Un utente può appartenere a max <strong>1 team funzionale</strong> per ogni dipartimento.
+                                        Le richieste saranno gestite prima dal supervisore di questo team.
+                                      </p>
                                     </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {field.value === 'temporary' && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help text-blue-600">
+                                      <Info className="h-4 w-4" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs p-3">
+                                    <div className="text-sm">
+                                      <p className="font-semibold text-blue-800 mb-1">Team Temporaneo (Flessibile)</p>
+                                      <p className="text-gray-700">
+                                        Un utente può appartenere a <strong>più team temporanei</strong> dello stesso dipartimento.
+                                        Il primo supervisore che gestisce la richiesta diventa responsabile (First Wins).
+                                      </p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </FormLabel>
+                          <FormControl>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger data-testid="select-team-type">
+                                <SelectValue placeholder="Seleziona tipo team" />
+                              </SelectTrigger>
+                              <SelectContent className="z-[9999]">
+                                {Object.entries(TEAM_TYPES).map(([key, type]) => (
+                                  <SelectItem key={key} value={key}>
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-lg">{type.icon}</span>
+                                      <div>
+                                        <div className="font-medium">{type.label}</div>
+                                        <div className="text-sm text-gray-500">{type.description}</div>
+                                      </div>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
-
-                  {/* Alert for functional teams - MOVED OUTSIDE FormField to prevent overlay issues */}
-                  {form.watch('teamType') === 'functional' && (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <span className="text-yellow-600">⚠️</span>
-                        <div className="text-sm text-yellow-800">
-                          <strong>Team Funzionale (Primario)</strong>
-                          <p className="mt-1">
-                            Un utente può appartenere a max <strong>1 team funzionale</strong> per ogni dipartimento.
-                            Le richieste saranno gestite prima dal supervisore di questo team.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {form.watch('teamType') === 'temporary' && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <span className="text-blue-600">ℹ️</span>
-                        <div className="text-sm text-blue-800">
-                          <strong>Team Temporaneo (Flessibile)</strong>
-                          <p className="mt-1">
-                            Un utente può appartenere a <strong>più team temporanei</strong> dello stesso dipartimento.
-                            Il primo supervisore che gestisce la richiesta diventa responsabile (First Wins).
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
