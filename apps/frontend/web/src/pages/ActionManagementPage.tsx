@@ -273,7 +273,7 @@ export function ActionManagementContent() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Action Management</h1>
               <p className="text-gray-500 mt-1">
-                Configura le azioni per dipartimento e i flussi di approvazione
+                Configura le azioni per dipartimento e i relativi flussi operativi
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export function ActionManagementContent() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{computedStats.requiresApproval}</p>
-                    <p className="text-sm text-gray-500">Con Approvazione</p>
+                    <p className="text-sm text-gray-500">Con Flusso</p>
                     <p className="text-xs text-gray-400">{computedStats.withWorkflow} workflow, {computedStats.withDefault} default</p>
                   </div>
                 </div>
@@ -386,7 +386,7 @@ export function ActionManagementContent() {
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Approv.</span>
+                          <span className="text-gray-500">Flusso</span>
                           <span className={approvalPercent > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}>
                             {approvalPercent}%
                           </span>
@@ -409,7 +409,7 @@ export function ActionManagementContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Configurazione Azioni</CardTitle>
-                  <CardDescription>Gestisci le azioni e i flussi di approvazione per ogni dipartimento</CardDescription>
+                  <CardDescription>Gestisci le azioni e i flussi operativi per ogni dipartimento</CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="relative">
@@ -706,22 +706,22 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
     }
   }, [action, open]);
 
-  // Fetch workflows per dipartimento
+  // Fetch workflows per dipartimento - sempre caricati quando modal aperto
   const { data: workflowsData, isLoading: workflowsLoading } = useQuery({
     queryKey: ['/api/action-configurations/meta/workflows', formData.department],
     queryFn: async () => {
       return await apiRequest(`/api/action-configurations/meta/workflows/${formData.department}`);
     },
-    enabled: open && formData.requiresFlow
+    enabled: open && !!formData.department
   });
 
-  // Fetch teams per dipartimento
+  // Fetch teams per dipartimento - sempre caricati quando modal aperto
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
     queryKey: ['/api/action-configurations/meta/teams', formData.department],
     queryFn: async () => {
       return await apiRequest(`/api/action-configurations/meta/teams/${formData.department}`);
     },
-    enabled: open && formData.requiresFlow
+    enabled: open && !!formData.department
   });
 
   // Teams già usati in workflow configs (non selezionabili per altri)
