@@ -100,6 +100,7 @@ interface ActionConfiguration {
   actionName: string;
   description?: string;
   requiresApproval: boolean;
+  isActive: boolean;
   // Legacy fields (for backward compatibility)
   flowType?: 'none' | 'default' | 'workflow';
   workflowTemplateId?: string;
@@ -116,7 +117,6 @@ interface ActionConfiguration {
   slaHours: number;
   escalationEnabled: boolean;
   priority: number;
-  isActive: boolean;
   workflowTemplate?: {
     id: string;
     name: string;
@@ -194,6 +194,25 @@ export function ActionManagementContent() {
     },
     onError: () => {
       toast({ title: 'Errore durante l\'eliminazione', variant: 'destructive' });
+    }
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ department, actionId, isActive }: { department: string; actionId: string; isActive: boolean }) => {
+      return await apiRequest(`/api/action-configurations/toggle/${department}/${actionId}`, { 
+        method: 'PATCH',
+        body: { isActive }
+      });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/action-configurations'] });
+      toast({ 
+        title: variables.isActive ? 'Azione abilitata' : 'Azione disabilitata',
+        description: `L'azione è ora ${variables.isActive ? 'attiva' : 'disattivata'}`
+      });
+    },
+    onError: () => {
+      toast({ title: 'Errore durante l\'aggiornamento', variant: 'destructive' });
     }
   });
 
@@ -396,8 +415,8 @@ export function ActionManagementContent() {
                       <TableHead>Flusso</TableHead>
                       <TableHead>Workflow</TableHead>
                       <TableHead>SLA</TableHead>
-                      <TableHead>Stato</TableHead>
-                      <TableHead className="text-right">Azioni</TableHead>
+                      <TableHead>Abilitato</TableHead>
+                      <TableHead className="text-right">Configura</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -471,11 +490,23 @@ export function ActionManagementContent() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {isConfigured ? (
-                              <Badge className="bg-green-100 text-green-700">Configurato</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-gray-500">Default</Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={configuration?.isActive !== false}
+                                onCheckedChange={(checked) => {
+                                  toggleMutation.mutate({
+                                    department: definition.department,
+                                    actionId: definition.actionId,
+                                    isActive: checked
+                                  });
+                                }}
+                                disabled={toggleMutation.isPending}
+                                data-testid={`switch-toggle-${definition.actionId}`}
+                              />
+                              <span className={`text-xs ${configuration?.isActive !== false ? 'text-green-600' : 'text-gray-400'}`}>
+                                {configuration?.isActive !== false ? 'Attivo' : 'Disattivato'}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button 
