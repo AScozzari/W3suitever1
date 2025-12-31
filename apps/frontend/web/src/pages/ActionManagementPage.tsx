@@ -891,13 +891,13 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                               </SelectTrigger>
                               <SelectContent position="popper" className="z-[9999]">
                                 {workflowsLoading ? (
-                                  <SelectItem value="" disabled>Caricamento...</SelectItem>
+                                  <SelectItem value="__loading__" disabled>Caricamento...</SelectItem>
                                 ) : workflowsData?.templates?.length > 0 ? (
                                   workflowsData.templates.map((wf: any) => (
                                     <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
                                   ))
                                 ) : (
-                                  <SelectItem value="" disabled>Nessun workflow disponibile</SelectItem>
+                                  <SelectItem value="__empty__" disabled>Nessun workflow disponibile</SelectItem>
                                 )}
                               </SelectContent>
                             </Select>
@@ -944,7 +944,7 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                               </SelectTrigger>
                               <SelectContent position="popper" className="z-[9999]">
                                 {teamsLoading ? (
-                                  <SelectItem value="" disabled>Caricamento...</SelectItem>
+                                  <SelectItem value="__loading__" disabled>Caricamento...</SelectItem>
                                 ) : teamsData?.teams?.length > 0 ? (
                                   teamsData.teams.map((team: any) => (
                                     <SelectItem key={team.id} value={team.id}>
@@ -957,7 +957,7 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                                     </SelectItem>
                                   ))
                                 ) : (
-                                  <SelectItem value="" disabled>Nessun team disponibile</SelectItem>
+                                  <SelectItem value="__empty__" disabled>Nessun team disponibile</SelectItem>
                                 )}
                               </SelectContent>
                             </Select>

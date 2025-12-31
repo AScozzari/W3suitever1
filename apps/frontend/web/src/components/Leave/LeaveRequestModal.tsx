@@ -276,7 +276,7 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
                 <SelectValue placeholder="Seleziona sostituto" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nessuno</SelectItem>
+                <SelectItem value="__none__">Nessuno</SelectItem>
                 {/* TODO: Load team members */}
                 <SelectItem value="user1">Mario Rossi</SelectItem>
                 <SelectItem value="user2">Laura Bianchi</SelectItem>
