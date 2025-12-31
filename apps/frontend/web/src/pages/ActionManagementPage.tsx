@@ -630,26 +630,11 @@ export function ActionManagementContent() {
   );
 }
 
-// 🎯 Assignment structure: each action can have multiple workflow-team pairs
-interface ActionAssignment {
-  id: string;
-  flowType: 'default' | 'workflow';
-  workflowTemplateId: string;
-  teamScope: 'all' | 'specific';
-  teamIds: string[];
-}
-
-// 🔀 Team Override from database
-interface TeamOverride {
+// Configurazione workflow per team (semplificato)
+interface WorkflowConfig {
   id: string;
   teamId: string;
-  teamName: string;
-  flowType: 'default' | 'workflow';
-  workflowTemplateId: string | null;
-  workflowName: string | null;
-  slaHoursOverride: number | null;
-  priority: number;
-  isActive: boolean;
+  workflowId: string;
 }
 
 interface ActionFormModalProps {
@@ -663,157 +648,109 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
   const { toast } = useToast();
   const isEditing = !!action;
   
-  // Base action data (name, description, etc.)
+  // Form state semplificato
   const [formData, setFormData] = useState({
     department: action?.department || 'hr',
     actionId: action?.actionId || '',
     actionName: action?.actionName || '',
     description: action?.description || '',
-    requiresApproval: action?.requiresApproval ?? false,
+    requiresFlow: false,
+    defaultScope: 'all' as 'all' | 'specific',
+    defaultTeamIds: [] as string[],
     slaHours: action?.slaHours || 24,
     escalationEnabled: action?.escalationEnabled ?? true,
     priority: action?.priority || 100
   });
 
-  // Multiple assignments for this action
-  const [assignments, setAssignments] = useState<ActionAssignment[]>([]);
+  // Configurazioni workflow (team + workflow)
+  const [workflowConfigs, setWorkflowConfigs] = useState<WorkflowConfig[]>([]);
 
-  // Update formData when action changes
+  // Update form when action changes
   useEffect(() => {
     if (action) {
+      const hasWorkflowConfigs = action.workflowConfigs && action.workflowConfigs.length > 0;
+      const hasDefaultTeams = action.defaultTeamIds && action.defaultTeamIds.length > 0;
+      const requiresFlow = action.requiresApproval || action.flowType !== 'none';
+      
       setFormData({
         department: action.department || 'hr',
         actionId: action.actionId || '',
         actionName: action.actionName || '',
         description: action.description || '',
-        requiresApproval: action.requiresApproval ?? false,
+        requiresFlow,
+        defaultScope: hasDefaultTeams ? 'specific' : 'all',
+        defaultTeamIds: action.defaultTeamIds || [],
         slaHours: action.slaHours || 24,
         escalationEnabled: action.escalationEnabled ?? true,
         priority: action.priority || 100
       });
-      // Load existing assignments or convert legacy format
-      if (action.assignments && action.assignments.length > 0) {
-        setAssignments(action.assignments);
-      } else if (action.flowType && action.flowType !== 'none') {
-        // Convert legacy single assignment to array
-        setAssignments([{
-          id: crypto.randomUUID(),
-          flowType: action.flowType as 'default' | 'workflow',
-          workflowTemplateId: action.workflowTemplateId || '',
-          teamScope: action.teamScope || 'all',
-          teamIds: action.specificTeamIds || []
-        }]);
-      } else {
-        setAssignments([]);
-      }
+      setWorkflowConfigs(action.workflowConfigs || []);
     } else {
       setFormData({
         department: 'hr',
         actionId: '',
         actionName: '',
         description: '',
-        requiresApproval: false,
+        requiresFlow: false,
+        defaultScope: 'all',
+        defaultTeamIds: [],
         slaHours: 24,
         escalationEnabled: true,
         priority: 100
       });
-      setAssignments([]);
+      setWorkflowConfigs([]);
     }
   }, [action, open]);
 
-  // Always fetch workflows for the selected department
+  // Fetch workflows per dipartimento
   const { data: workflowsData, isLoading: workflowsLoading } = useQuery({
     queryKey: ['/api/action-configurations/meta/workflows', formData.department],
     queryFn: async () => {
       return await apiRequest(`/api/action-configurations/meta/workflows/${formData.department}`);
     },
-    enabled: open && formData.requiresApproval
+    enabled: open && formData.requiresFlow
   });
 
-  // Always fetch teams for the selected department
+  // Fetch teams per dipartimento
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
     queryKey: ['/api/action-configurations/meta/teams', formData.department],
     queryFn: async () => {
       return await apiRequest(`/api/action-configurations/meta/teams/${formData.department}`);
     },
-    enabled: open && formData.requiresApproval
+    enabled: open && formData.requiresFlow
   });
 
-  // Fetch existing team overrides (only when editing)
-  const { data: overridesData, isLoading: overridesLoading, refetch: refetchOverrides } = useQuery({
-    queryKey: ['/api/action-configurations', action?.id, 'team-overrides'],
-    queryFn: async () => {
-      return await apiRequest(`/api/action-configurations/${action?.id}/team-overrides`);
-    },
-    enabled: open && isEditing && !!action?.id && formData.requiresApproval
-  });
+  // Teams già usati in workflow configs (non selezionabili per altri)
+  const usedTeamIds = workflowConfigs.map(c => c.teamId);
+  const availableTeamsForWorkflow = teamsData?.teams?.filter((t: any) => !usedTeamIds.includes(t.id)) || [];
 
-  // State for new override form
-  const [newOverride, setNewOverride] = useState({
-    teamId: '',
-    flowType: 'default' as 'default' | 'workflow',
-    workflowTemplateId: ''
-  });
-
-  // Create override mutation
-  const createOverrideMutation = useMutation({
-    mutationFn: async (data: typeof newOverride) => {
-      return await apiRequest(`/api/action-configurations/${action?.id}/team-overrides`, {
-        method: 'POST',
-        body: data
-      });
-    },
-    onSuccess: () => {
-      toast({ title: 'Override team creato con successo' });
-      setNewOverride({ teamId: '', flowType: 'default', workflowTemplateId: '' });
-      refetchOverrides();
-    },
-    onError: (error: Error) => {
-      toast({ title: error.message, variant: 'destructive' });
-    }
-  });
-
-  // Delete override mutation
-  const deleteOverrideMutation = useMutation({
-    mutationFn: async (overrideId: string) => {
-      return await apiRequest(`/api/action-configurations/${action?.id}/team-overrides/${overrideId}`, {
-        method: 'DELETE'
-      });
-    },
-    onSuccess: () => {
-      toast({ title: 'Override eliminato' });
-      refetchOverrides();
-    },
-    onError: (error: Error) => {
-      toast({ title: error.message, variant: 'destructive' });
-    }
-  });
-
-  // Add a new assignment
-  const addAssignment = () => {
-    setAssignments([...assignments, {
+  // Aggiungi configurazione workflow
+  const addWorkflowConfig = (teamId: string, workflowId: string) => {
+    if (!teamId || !workflowId) return;
+    setWorkflowConfigs([...workflowConfigs, {
       id: crypto.randomUUID(),
-      flowType: 'default',
-      workflowTemplateId: '',
-      teamScope: 'all',
-      teamIds: []
+      teamId,
+      workflowId
     }]);
   };
 
-  // Update an assignment
-  const updateAssignment = (id: string, updates: Partial<ActionAssignment>) => {
-    setAssignments(assignments.map(a => a.id === id ? { ...a, ...updates } : a));
+  // Rimuovi configurazione workflow
+  const removeWorkflowConfig = (id: string) => {
+    setWorkflowConfigs(workflowConfigs.filter(c => c.id !== id));
   };
 
-  // Remove an assignment
-  const removeAssignment = (id: string) => {
-    setAssignments(assignments.filter(a => a.id !== id));
+  // Toggle team nella selezione default
+  const toggleDefaultTeam = (teamId: string) => {
+    const newIds = formData.defaultTeamIds.includes(teamId)
+      ? formData.defaultTeamIds.filter(id => id !== teamId)
+      : [...formData.defaultTeamIds, teamId];
+    setFormData({ ...formData, defaultTeamIds: newIds });
   };
 
   const saveMutation = useMutation({
-    mutationFn: async (data: typeof formData & { assignments: ActionAssignment[] }) => {
+    mutationFn: async (data: any) => {
       const url = isEditing 
-        ? `/api/action-configurations/${action.id}` 
+        ? `/api/action-configurations/${action?.id}` 
         : '/api/action-configurations';
       const method = isEditing ? 'PUT' : 'POST';
       return await apiRequest(url, { method, body: data });
@@ -829,13 +766,24 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Combine formData with assignments
     saveMutation.mutate({
-      ...formData,
-      // If requiresApproval is off, clear assignments
-      assignments: formData.requiresApproval ? assignments : []
+      department: formData.department,
+      actionId: formData.actionId,
+      actionName: formData.actionName,
+      description: formData.description,
+      requiresApproval: formData.requiresFlow,
+      flowType: formData.requiresFlow ? 'default' : 'none',
+      defaultScope: formData.defaultScope,
+      defaultTeamIds: formData.defaultScope === 'specific' ? formData.defaultTeamIds : [],
+      workflowConfigs,
+      slaHours: formData.slaHours,
+      escalationEnabled: formData.escalationEnabled,
+      priority: formData.priority
     });
   };
+
+  // State per nuovo workflow config
+  const [newConfig, setNewConfig] = useState({ teamId: '', workflowId: '' });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -902,371 +850,181 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
             />
           </div>
 
+          {/* Toggle Richiede Flusso */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
-              <Label className="font-medium">Richiede Approvazione</Label>
-              <p className="text-sm text-gray-500">Attiva per richiedere approvazione supervisore</p>
+              <Label className="font-medium">Richiede Flusso</Label>
+              <p className="text-sm text-gray-500">Attiva per richiedere approvazione</p>
             </div>
             <Switch 
-              checked={formData.requiresApproval}
-              onCheckedChange={(checked) => setFormData({
-                ...formData, 
-                requiresApproval: checked,
-                flowType: checked ? 'default' : 'none'
-              })}
-              data-testid="switch-requires-approval"
+              checked={formData.requiresFlow}
+              onCheckedChange={(checked) => setFormData({ ...formData, requiresFlow: checked })}
+              data-testid="switch-requires-flow"
             />
           </div>
 
-          {formData.requiresApproval && (
+          {formData.requiresFlow && (
             <>
-              {/* 🎯 ASSIGNMENTS SECTION - Multiple workflow-team pairs */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base font-semibold">Configurazioni Workflow</Label>
-                    <p className="text-xs text-gray-500">
-                      Puoi assegnare workflow diversi a team diversi
-                    </p>
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={addAssignment}
-                    data-testid="button-add-assignment"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Aggiungi Configurazione
-                  </Button>
+              {/* SEZIONE 1: Flusso Default */}
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <Label className="font-medium text-blue-900">Flusso Default (Supervisori)</Label>
+                </div>
+                <p className="text-xs text-blue-700">
+                  Team che usano il flusso default con approvazione supervisore
+                </p>
+                
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="defaultScope" 
+                      checked={formData.defaultScope === 'all'}
+                      onChange={() => setFormData({ ...formData, defaultScope: 'all', defaultTeamIds: [] })}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm">Tutti i team</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="defaultScope" 
+                      checked={formData.defaultScope === 'specific'}
+                      onChange={() => setFormData({ ...formData, defaultScope: 'specific' })}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm">Team specifici</span>
+                  </label>
                 </div>
 
-                {assignments.length === 0 && (
-                  <div className="p-6 border-2 border-dashed border-gray-200 rounded-lg text-center">
-                    <Workflow className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500 mb-2">
-                      Nessuna configurazione workflow definita
-                    </p>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={addAssignment}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Aggiungi prima configurazione
-                    </Button>
+                {formData.defaultScope === 'specific' && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {teamsLoading ? (
+                      <span className="text-xs text-gray-500">Caricamento...</span>
+                    ) : teamsData?.teams?.map((team: any) => (
+                      <button
+                        key={team.id}
+                        type="button"
+                        onClick={() => toggleDefaultTeam(team.id)}
+                        className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                          formData.defaultTeamIds.includes(team.id)
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                        }`}
+                        data-testid={`toggle-default-team-${team.id}`}
+                      >
+                        {team.name}
+                      </button>
+                    ))}
                   </div>
                 )}
-
-                {/* Render each assignment */}
-                {assignments.map((assignment, index) => (
-                  <Card key={assignment.id} className="border-l-4 border-l-windtre-orange">
-                    <CardHeader className="py-3 px-4">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium">
-                          Configurazione #{index + 1}
-                        </CardTitle>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeAssignment(assignment.id)}
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
-                          data-testid={`button-remove-assignment-${index}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="py-3 px-4 space-y-4">
-                      {/* Row 1: Flow Type + Workflow */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Tipo Flusso</Label>
-                          <Select 
-                            value={assignment.flowType} 
-                            onValueChange={(v) => updateAssignment(assignment.id, { 
-                              flowType: v as 'default' | 'workflow',
-                              workflowTemplateId: v === 'default' ? '' : assignment.workflowTemplateId
-                            })}
-                          >
-                            <SelectTrigger className="h-9" data-testid={`select-flowType-${index}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent position="popper" className="z-[9999]">
-                              <SelectItem value="default">
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-3 w-3" />
-                                  Default (Supervisori)
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="workflow">
-                                <div className="flex items-center gap-2">
-                                  <Workflow className="h-3 w-3" />
-                                  Workflow Personalizzato
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {assignment.flowType === 'workflow' && (
-                          <div className="space-y-1">
-                            <Label className="text-xs">Workflow Template</Label>
-                            <Select 
-                              value={assignment.workflowTemplateId} 
-                              onValueChange={(v) => updateAssignment(assignment.id, { workflowTemplateId: v })}
-                            >
-                              <SelectTrigger className="h-9" data-testid={`select-workflow-${index}`}>
-                                <SelectValue placeholder="Seleziona..." />
-                              </SelectTrigger>
-                              <SelectContent position="popper" className="z-[9999]">
-                                {workflowsLoading ? (
-                                  <SelectItem value="__loading__" disabled>Caricamento...</SelectItem>
-                                ) : workflowsData?.templates?.length > 0 ? (
-                                  workflowsData.templates.map((wf: any) => (
-                                    <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="__empty__" disabled>Nessun workflow disponibile</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Row 2: Team Scope + Team Selection */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Scope Team</Label>
-                          <Select 
-                            value={assignment.teamScope} 
-                            onValueChange={(v) => updateAssignment(assignment.id, { 
-                              teamScope: v as 'all' | 'specific',
-                              teamIds: v === 'all' ? [] : assignment.teamIds
-                            })}
-                          >
-                            <SelectTrigger className="h-9" data-testid={`select-teamScope-${index}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent position="popper" className="z-[9999]">
-                              <SelectItem value="all">Tutti i Team</SelectItem>
-                              <SelectItem value="specific">Team Specifici</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {assignment.teamScope === 'specific' && (
-                          <div className="space-y-1">
-                            <Label className="text-xs">Team Selezionati ({assignment.teamIds.length})</Label>
-                            <Select 
-                              value={assignment.teamIds[0] || ''} 
-                              onValueChange={(v) => {
-                                // Toggle team selection (multi-select emulation)
-                                const newTeamIds = assignment.teamIds.includes(v)
-                                  ? assignment.teamIds.filter(t => t !== v)
-                                  : [...assignment.teamIds, v];
-                                updateAssignment(assignment.id, { teamIds: newTeamIds });
-                              }}
-                            >
-                              <SelectTrigger className="h-9" data-testid={`select-teams-${index}`}>
-                                <SelectValue placeholder={`${assignment.teamIds.length} team selezionati`} />
-                              </SelectTrigger>
-                              <SelectContent position="popper" className="z-[9999]">
-                                {teamsLoading ? (
-                                  <SelectItem value="__loading__" disabled>Caricamento...</SelectItem>
-                                ) : teamsData?.teams?.length > 0 ? (
-                                  teamsData.teams.map((team: any) => (
-                                    <SelectItem key={team.id} value={team.id}>
-                                      <div className="flex items-center gap-2">
-                                        {assignment.teamIds.includes(team.id) && (
-                                          <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                        )}
-                                        {team.name}
-                                      </div>
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="__empty__" disabled>Nessun team disponibile</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Show selected teams as badges */}
-                      {assignment.teamScope === 'specific' && assignment.teamIds.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {assignment.teamIds.map(teamId => {
-                            const team = teamsData?.teams?.find((t: any) => t.id === teamId);
-                            return team ? (
-                              <Badge key={teamId} variant="secondary" className="text-xs">
-                                {team.name}
-                                <button
-                                  type="button"
-                                  onClick={() => updateAssignment(assignment.id, { 
-                                    teamIds: assignment.teamIds.filter(t => t !== teamId) 
-                                  })}
-                                  className="ml-1 hover:text-red-500"
-                                >
-                                  ×
-                                </button>
-                              </Badge>
-                            ) : null;
-                          })}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
               </div>
 
-              {/* Team Overrides Section */}
-              {isEditing && (
-                <div className="space-y-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 text-purple-600" />
-                      <Label className="font-medium text-sm text-purple-900">Override per Team</Label>
-                    </div>
-                    <Badge variant="outline" className="text-purple-700 border-purple-300">
-                      {overridesData?.overrides?.length || 0} override
-                    </Badge>
+              {/* SEZIONE 2: Configurazioni Workflow (Override) */}
+              <div className="space-y-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Workflow className="h-4 w-4 text-purple-600" />
+                    <Label className="font-medium text-purple-900">Workflow Personalizzati</Label>
                   </div>
-                  
-                  <p className="text-xs text-purple-700">
-                    Configura flussi diversi per team specifici. L'override ha precedenza sul flusso globale.
-                  </p>
+                  <Badge variant="outline" className="text-purple-700 border-purple-300">
+                    {workflowConfigs.length} configurazioni
+                  </Badge>
+                </div>
+                <p className="text-xs text-purple-700">
+                  Team con workflow dedicato (override del flusso default)
+                </p>
 
-                  {/* Existing Overrides List */}
-                  {overridesLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                    </div>
-                  ) : overridesData?.overrides?.length > 0 ? (
-                    <div className="space-y-2">
-                      {overridesData.overrides.map((override: TeamOverride) => (
-                        <div key={override.id} className="flex items-center justify-between p-2 bg-white rounded border border-purple-100">
+                {/* Lista configurazioni esistenti */}
+                {workflowConfigs.length > 0 && (
+                  <div className="space-y-2">
+                    {workflowConfigs.map((config) => {
+                      const team = teamsData?.teams?.find((t: any) => t.id === config.teamId);
+                      const workflow = workflowsData?.templates?.find((w: any) => w.id === config.workflowId);
+                      return (
+                        <div key={config.id} className="flex items-center justify-between p-2 bg-white rounded border border-purple-100">
                           <div className="flex items-center gap-3">
-                            <Users className="h-4 w-4 text-purple-500" />
-                            <div>
-                              <span className="text-sm font-medium">{override.teamName}</span>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <Badge variant="outline" className="text-xs">
-                                  {override.flowType === 'workflow' ? 'Workflow' : 'Default'}
-                                </Badge>
-                                {override.workflowName && (
-                                  <span className="text-xs text-gray-500">{override.workflowName}</span>
-                                )}
-                              </div>
-                            </div>
+                            <span className="text-sm font-medium">{team?.name || config.teamId}</span>
+                            <span className="text-gray-400">→</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {workflow?.name || config.workflowId}
+                            </Badge>
                           </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteOverrideMutation.mutate(override.id)}
-                            disabled={deleteOverrideMutation.isPending}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            data-testid={`button-delete-override-${override.id}`}
+                            onClick={() => removeWorkflowConfig(config.id)}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-purple-600 italic py-2">Nessun override configurato</p>
-                  )}
-
-                  {/* Add New Override Form */}
-                  <div className="pt-3 border-t border-purple-200 space-y-3">
-                    <Label className="text-xs font-medium text-purple-800">Aggiungi Override</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Select
-                        value={newOverride.teamId}
-                        onValueChange={(v) => setNewOverride({...newOverride, teamId: v})}
-                      >
-                        <SelectTrigger className="text-xs" data-testid="select-override-team">
-                          <SelectValue placeholder="Seleziona team" />
-                        </SelectTrigger>
-                        <SelectContent position="popper" className="z-[9999]">
-                          {teamsData?.teams?.filter((t: any) => 
-                            !overridesData?.overrides?.some((o: TeamOverride) => o.teamId === t.id)
-                          ).map((team: any) => (
-                            <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={newOverride.flowType}
-                        onValueChange={(v) => setNewOverride({...newOverride, flowType: v as 'default' | 'workflow', workflowTemplateId: ''})}
-                      >
-                        <SelectTrigger className="text-xs" data-testid="select-override-flowType">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent position="popper" className="z-[9999]">
-                          <SelectItem value="default">Flusso Default</SelectItem>
-                          <SelectItem value="workflow">Workflow</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {newOverride.flowType === 'workflow' ? (
-                        <Select
-                          value={newOverride.workflowTemplateId}
-                          onValueChange={(v) => setNewOverride({...newOverride, workflowTemplateId: v})}
-                        >
-                          <SelectTrigger className="text-xs" data-testid="select-override-workflow">
-                            <SelectValue placeholder="Workflow" />
-                          </SelectTrigger>
-                          <SelectContent position="popper" className="z-[9999]">
-                            {workflowsData?.workflows?.map((wf: any) => (
-                              <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => createOverrideMutation.mutate(newOverride)}
-                          disabled={!newOverride.teamId || createOverrideMutation.isPending}
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
-                          data-testid="button-add-override"
-                        >
-                          {createOverrideMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Plus className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-                    </div>
-
-                    {newOverride.flowType === 'workflow' && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => createOverrideMutation.mutate(newOverride)}
-                        disabled={!newOverride.teamId || !newOverride.workflowTemplateId || createOverrideMutation.isPending}
-                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                        data-testid="button-add-override-workflow"
-                      >
-                        {createOverrideMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : (
-                          <Plus className="h-4 w-4 mr-2" />
-                        )}
-                        Aggiungi Override Workflow
-                      </Button>
-                    )}
+                      );
+                    })}
                   </div>
+                )}
+
+                {/* Aggiungi nuova configurazione */}
+                <div className="flex gap-2 items-end pt-2">
+                  <div className="flex-1">
+                    <Label className="text-xs text-purple-700">Team</Label>
+                    <Select 
+                      value={newConfig.teamId} 
+                      onValueChange={(v) => setNewConfig({ ...newConfig, teamId: v })}
+                    >
+                      <SelectTrigger className="h-9" data-testid="select-new-workflow-team">
+                        <SelectValue placeholder="Seleziona team..." />
+                      </SelectTrigger>
+                      <SelectContent position="popper" className="z-[9999]">
+                        {availableTeamsForWorkflow.length === 0 ? (
+                          <SelectItem value="__none__" disabled>Tutti i team già configurati</SelectItem>
+                        ) : (
+                          availableTeamsForWorkflow.map((team: any) => (
+                            <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-xs text-purple-700">Workflow</Label>
+                    <Select 
+                      value={newConfig.workflowId} 
+                      onValueChange={(v) => setNewConfig({ ...newConfig, workflowId: v })}
+                    >
+                      <SelectTrigger className="h-9" data-testid="select-new-workflow-template">
+                        <SelectValue placeholder="Seleziona workflow..." />
+                      </SelectTrigger>
+                      <SelectContent position="popper" className="z-[9999]">
+                        {workflowsLoading ? (
+                          <SelectItem value="__loading__" disabled>Caricamento...</SelectItem>
+                        ) : workflowsData?.templates?.length > 0 ? (
+                          workflowsData.templates.map((wf: any) => (
+                            <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__empty__" disabled>Nessun workflow</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      addWorkflowConfig(newConfig.teamId, newConfig.workflowId);
+                      setNewConfig({ teamId: '', workflowId: '' });
+                    }}
+                    disabled={!newConfig.teamId || !newConfig.workflowId}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    data-testid="button-add-workflow-config"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
+              </div>
 
               {/* SLA and Escalation settings */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
