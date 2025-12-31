@@ -302,7 +302,7 @@ function ApiKeysTab({
   const [showKey, setShowKey] = useState(false);
 
   const deleteMutation = useMutation({
-    mutationFn: (keyId: string) => apiRequest('DELETE', `/api/mcp-gateway/keys/${keyId}`),
+    mutationFn: (keyId: string) => apiRequest(`/api/mcp-gateway/keys/${keyId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
       toast({ title: 'API Key eliminata', description: 'La chiave è stata revocata con successo' });
@@ -311,7 +311,7 @@ function ApiKeysTab({
 
   const toggleMutation = useMutation({
     mutationFn: ({ keyId, isActive }: { keyId: string; isActive: boolean }) => 
-      apiRequest('PATCH', `/api/mcp-gateway/keys/${keyId}`, { isActive }),
+      apiRequest(`/api/mcp-gateway/keys/${keyId}`, { method: 'PATCH', body: { isActive } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
     }
@@ -527,7 +527,7 @@ function ToolsCatalogTab({
 
   const toggleMutation = useMutation({
     mutationFn: ({ actionId, mcpExposed }: { actionId: string; mcpExposed: boolean }) => 
-      apiRequest('PATCH', `/api/mcp-gateway/tools/${actionId}`, { mcpExposed }),
+      apiRequest(`/api/mcp-gateway/tools/${actionId}`, { method: 'PATCH', body: { mcpExposed } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/tools'] });
       toast({ title: 'Tool aggiornato', description: 'Visibilità MCP modificata' });
@@ -674,7 +674,7 @@ function PermissionsMatrixTab({
 
   const updatePermissionMutation = useMutation({
     mutationFn: async ({ keyId, permissions }: { keyId: string; permissions: ToolPermission[] }) => {
-      await apiRequest('PUT', `/api/mcp-gateway/keys/${keyId}/permissions`, { permissions });
+      await apiRequest(`/api/mcp-gateway/keys/${keyId}/permissions`, { method: 'PUT', body: { permissions } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'] });
@@ -1214,16 +1214,18 @@ function CreateApiKeyDialog({
 
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('POST', '/api/mcp-gateway/keys', {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        rateLimitPerMinute: parseInt(rateLimitPerMinute),
-        dailyQuota: parseInt(dailyQuota),
-        ipRestrictionEnabled,
-        allowedIps: ipRestrictionEnabled ? allowedIps.split('\n').filter(ip => ip.trim()) : []
+      const data = await apiRequest('/api/mcp-gateway/keys', {
+        method: 'POST',
+        body: {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          rateLimitPerMinute: parseInt(rateLimitPerMinute),
+          dailyQuota: parseInt(dailyQuota),
+          ipRestrictionEnabled,
+          allowedIps: ipRestrictionEnabled ? allowedIps.split('\n').filter(ip => ip.trim()) : []
+        }
       });
 
-      const data = await response.json();
       onKeyCreated(data.apiKey);
       onClose();
       setName('');
