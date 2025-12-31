@@ -1,0 +1,125 @@
+sion keep-alive stopped
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+WorkflowManagementPage.tsx:601 Uncaught ReferenceError: DEPARTMENTS is not defined
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:601:37)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14582:28)
+    at mountLazyComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14833:23)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15918:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+WorkflowManagementPage @ WorkflowManagementPage.tsx:601
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14582
+mountLazyComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14833
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15918
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopConcurrent @ chunk-ZHRYBLGQ.js?v=fac8f799:19189
+renderRootConcurrent @ chunk-ZHRYBLGQ.js?v=fac8f799:19164
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+WorkflowManagementPage.tsx:601 Uncaught ReferenceError: DEPARTMENTS is not defined
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:601:37)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14582:28)
+    at mountLazyComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14833:23)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15918:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+WorkflowManagementPage @ WorkflowManagementPage.tsx:601
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14582
+mountLazyComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14833
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15918
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+installHook.js:1 The above error occurred in the <WorkflowManagementPage> component:
+
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:90:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:960:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:266:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:124:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=fac8f799:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=fac8f799:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=fac8f799:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+chunk-ZHRYBLGQ.js?v=fac8f799:19413 Uncaught ReferenceError: DEPARTMENTS is not defined
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:601:37)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14582:28)
+    at mountLazyComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14833:23)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15918:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=fac8f799:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=fac8f799:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=fac8f799:18736:28)
+WorkflowManagementPage @ WorkflowManagementPage.tsx:601
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14582
+mountLazyComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14833
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15918
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped

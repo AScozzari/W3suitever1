@@ -598,7 +598,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                   
                   {/* Department Selection Grid */}
                   <div className="grid grid-cols-2 gap-3 mt-4">
-                    {Object.entries(DEPARTMENTS).map(([key, dept]) => {
+                    {Object.entries(DEPARTMENT_STYLES).map(([key, dept]) => {
                       const Icon = dept.icon;
                       return (
                         <Button
@@ -948,7 +948,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         
                         {/* Department Selection Grid */}
                         <div className="grid grid-cols-2 gap-3 mt-4">
-                          {Object.entries(DEPARTMENTS).map(([key, dept]) => {
+                          {Object.entries(DEPARTMENT_STYLES).map(([key, dept]) => {
                             const Icon = dept.icon;
                             return (
                               <Button
@@ -1565,7 +1565,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-departments">
-                      {Object.keys(DEPARTMENTS).length}
+                      {Object.keys(DEPARTMENT_STYLES).length}
                     </div>
                   </CardContent>
                 </Card>
@@ -1596,7 +1596,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Departments</SelectItem>
-                        {Object.entries(DEPARTMENTS).map(([key, dept]) => (
+                        {Object.entries(DEPARTMENT_STYLES).map(([key, dept]) => (
                           <SelectItem key={key} value={key}>
                             {dept.label}
                           </SelectItem>
