@@ -790,9 +790,7 @@ function ToolsCatalogTab({
                         ) : (
                           <ChevronRight className="h-5 w-5 text-gray-500" />
                         )}
-                        <Badge style={{ backgroundColor: style.color }} className="text-white">
-                          {style.label}
-                        </Badge>
+                        <span className="font-semibold text-gray-900">{style.label}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-sm text-gray-500">
