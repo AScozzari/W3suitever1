@@ -26,6 +26,7 @@ import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics 
 import WorkflowBuilder from '../components/WorkflowBuilder';
 import { QueueMetricsPanel, WorkflowExecutionDrawer, WorkflowAnalyticsDashboard } from '@/components/workflow';
 import MCPSettingsDashboard from './settings/MCPSettingsDashboard';
+import MCPActionGatewayPage from './settings/MCPActionGatewayPage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
 import { WorkflowTestResultDialog } from '../components/WorkflowTestResultDialog';
@@ -57,7 +58,8 @@ import {
   AlertTriangle,
   Tags,
   Info,
-  Eye
+  Eye,
+  Server
 } from 'lucide-react';
 import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle } from '@/lib/constants/departments';
 
@@ -122,7 +124,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
-  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'queue' | 'settings'>(defaultView);
+  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'queue' | 'settings' | 'mcp-gateway'>(defaultView);
   const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENT_STYLES | null>(null);
   const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view
@@ -641,7 +643,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               { id: 'teams', label: 'Teams', icon: Users },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
               { id: 'queue', label: 'Queue Monitor', icon: Activity },
-              { id: 'settings', label: 'MCP Settings', icon: Settings }
+              { id: 'settings', label: 'MCP Settings', icon: Settings },
+              { id: 'mcp-gateway', label: 'MCP Gateway', icon: Server }
             ].map((tab) => (
               <Button
                 key={tab.id}
@@ -2603,6 +2606,9 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
 
           {/* 🔧 MCP SETTINGS VIEW - MCP Server Management Dashboard */}
           {activeView === 'settings' && <MCPSettingsDashboard />}
+
+          {/* 🔌 MCP ACTION GATEWAY - External Integrations */}
+          {activeView === 'mcp-gateway' && <MCPActionGatewayPage />}
         </div>
       </div>
 

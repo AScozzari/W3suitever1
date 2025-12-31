@@ -1,0 +1,1251 @@
+/**
+ * 🔌 MCP ACTION GATEWAY - External Integration Manager
+ * 
+ * Manages API Keys, Tool permissions, and analytics for external integrations
+ * (n8n, Claude AI, Zapier, custom integrations)
+ * 
+ * @author W3 Suite Team
+ * @date 2025-12-31
+ */
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Key, 
+  Plus, 
+  Search,
+  Copy,
+  Trash2,
+  Eye,
+  EyeOff,
+  Shield,
+  Clock,
+  Activity,
+  Code,
+  FileText,
+  BarChart3,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Server,
+  Zap,
+  ExternalLink,
+  Download,
+  Globe,
+  Lock,
+  Settings
+} from 'lucide-react';
+import { DEPARTMENT_STYLES, getDepartmentStyle } from '@/lib/constants/departments';
+import { format } from 'date-fns';
+
+interface MCPApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  description?: string;
+  allowedDepartments: string[];
+  ipWhitelist: string[];
+  rateLimitPerMinute: number;
+  dailyQuota: number;
+  usageCount: number;
+  isActive: boolean;
+  expiresAt?: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+interface MCPToolPermission {
+  apiKeyId: string;
+  actionConfigId: string;
+  canExecute: boolean;
+  customParameters?: Record<string, any>;
+}
+
+interface MCPUsageLog {
+  id: string;
+  apiKeyId: string;
+  actionCode: string;
+  success: boolean;
+  responseTime: number;
+  errorMessage?: string;
+  timestamp: string;
+  ipAddress: string;
+}
+
+interface ActionConfiguration {
+  id: string;
+  actionCode: string;
+  actionName: string;
+  departmentId: string;
+  flowType: 'none' | 'default' | 'workflow';
+  isActive: boolean;
+  mcpExposed: boolean;
+}
+
+interface GatewayStats {
+  totalCalls: number;
+  successRate: number;
+  avgResponseTime: number;
+  activeKeys: number;
+  exposedTools: number;
+  callsToday: number;
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+export default function MCPActionGatewayPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('keys');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+  const [createKeyDialogOpen, setCreateKeyDialogOpen] = useState(false);
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
+
+  const { data: apiKeys = [], isLoading: isLoadingKeys } = useQuery<MCPApiKey[]>({
+    queryKey: ['/api/mcp-gateway/keys'],
+  });
+
+  const { data: actions = [], isLoading: isLoadingActions } = useQuery<ActionConfiguration[]>({
+    queryKey: ['/api/mcp-gateway/tools'],
+  });
+
+  const { data: stats } = useQuery<GatewayStats>({
+    queryKey: ['/api/mcp-gateway/stats'],
+  });
+
+  const { data: usageLogs = [] } = useQuery<MCPUsageLog[]>({
+    queryKey: ['/api/mcp-gateway/usage-logs'],
+  });
+
+  const activeKeys = apiKeys.filter(k => k.isActive).length;
+  const exposedTools = actions.filter(a => a.mcpExposed).length;
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#FF6900]/10 to-[#7B2CBF]/10 border border-[#FF6900]/20">
+                  <Server className="h-6 w-6 text-[#FF6900]" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    MCP Action Gateway
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Esponi le azioni del tenant come tool per integrazioni esterne
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200">
+                <Key className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-700">{activeKeys} API Keys</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200">
+                <Zap className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700">{exposedTools} Tools</span>
+              </div>
+              {stats && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200">
+                  <Activity className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-700">{stats.callsToday} calls today</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-6 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-6 bg-gray-100/80">
+            <TabsTrigger value="keys" className="gap-2" data-testid="tab-api-keys">
+              <Key className="h-4 w-4" />
+              API Keys
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="gap-2" data-testid="tab-tools">
+              <Code className="h-4 w-4" />
+              Tools Catalog
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="gap-2" data-testid="tab-permissions">
+              <Shield className="h-4 w-4" />
+              Permissions
+            </TabsTrigger>
+            <TabsTrigger value="docs" className="gap-2" data-testid="tab-documentation">
+              <FileText className="h-4 w-4" />
+              Documentation
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2" data-testid="tab-analytics">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          {/* API Keys Tab */}
+          <TabsContent value="keys" className="space-y-6">
+            <ApiKeysTab 
+              apiKeys={apiKeys}
+              isLoading={isLoadingKeys}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onCreateKey={() => setCreateKeyDialogOpen(true)}
+              newApiKey={newApiKey}
+              setNewApiKey={setNewApiKey}
+            />
+          </TabsContent>
+
+          {/* Tools Catalog Tab */}
+          <TabsContent value="tools" className="space-y-6">
+            <ToolsCatalogTab 
+              actions={actions}
+              isLoading={isLoadingActions}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              departmentFilter={departmentFilter}
+              setDepartmentFilter={setDepartmentFilter}
+            />
+          </TabsContent>
+
+          {/* Permissions Tab */}
+          <TabsContent value="permissions" className="space-y-6">
+            <PermissionsMatrixTab 
+              apiKeys={apiKeys}
+              actions={actions}
+            />
+          </TabsContent>
+
+          {/* Documentation Tab */}
+          <TabsContent value="docs" className="space-y-6">
+            <DocumentationTab actions={actions.filter(a => a.mcpExposed)} />
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <AnalyticsTab 
+              stats={stats}
+              usageLogs={usageLogs}
+              apiKeys={apiKeys}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Create API Key Dialog */}
+      <CreateApiKeyDialog 
+        open={createKeyDialogOpen}
+        onClose={() => setCreateKeyDialogOpen(false)}
+        onKeyCreated={(key) => {
+          setNewApiKey(key);
+          queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
+        }}
+      />
+    </div>
+  );
+}
+
+function ApiKeysTab({ 
+  apiKeys, 
+  isLoading, 
+  searchQuery, 
+  setSearchQuery,
+  onCreateKey,
+  newApiKey,
+  setNewApiKey
+}: {
+  apiKeys: MCPApiKey[];
+  isLoading: boolean;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  onCreateKey: () => void;
+  newApiKey: string | null;
+  setNewApiKey: (key: string | null) => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showKey, setShowKey] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: (keyId: string) => apiRequest('DELETE', `/api/mcp-gateway/keys/${keyId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
+      toast({ title: 'API Key eliminata', description: 'La chiave è stata revocata con successo' });
+    }
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ keyId, isActive }: { keyId: string; isActive: boolean }) => 
+      apiRequest('PATCH', `/api/mcp-gateway/keys/${keyId}`, { isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
+    }
+  });
+
+  const filteredKeys = apiKeys.filter(key =>
+    key.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    key.keyPrefix.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copiato!', description: 'API Key copiata negli appunti' });
+  };
+
+  return (
+    <>
+      {/* New Key Alert */}
+      {newApiKey && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-semibold text-amber-800">Salva questa chiave!</h4>
+              <p className="text-sm text-amber-700 mt-1">
+                Questa è l'unica volta che vedrai la chiave completa. Copiala ora.
+              </p>
+              <div className="mt-3 flex items-center gap-2 p-2 rounded-md bg-white border border-amber-300">
+                <code className="flex-1 text-sm font-mono break-all">
+                  {showKey ? newApiKey : '•'.repeat(40)}
+                </code>
+                <Button variant="ghost" size="sm" onClick={() => setShowKey(!showKey)}>
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => copyToClipboard(newApiKey)}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3" 
+                onClick={() => setNewApiKey(null)}
+              >
+                Ho salvato la chiave
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Cerca API keys..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-keys"
+            />
+          </div>
+        </div>
+        <Button 
+          onClick={onCreateKey}
+          className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF] text-white"
+          data-testid="button-create-key"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nuova API Key
+        </Button>
+      </div>
+
+      {/* Keys Table */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : filteredKeys.length === 0 ? (
+        <Card className="p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#FF6900]/10 to-[#7B2CBF]/10 mb-4">
+            <Key className="h-8 w-8 text-[#FF6900]" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Nessuna API Key
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Crea una API Key per permettere integrazioni esterne
+          </p>
+          <Button 
+            className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF]"
+            onClick={onCreateKey}
+            data-testid="button-create-first-key"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crea API Key
+          </Button>
+        </Card>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Prefisso</TableHead>
+                <TableHead>Dipartimenti</TableHead>
+                <TableHead>Rate Limit</TableHead>
+                <TableHead>Utilizzo</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Ultimo uso</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredKeys.map((key) => (
+                <TableRow key={key.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{key.name}</div>
+                      {key.description && (
+                        <div className="text-xs text-gray-500">{key.description}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded">{key.keyPrefix}...</code>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {key.allowedDepartments.length === 0 ? (
+                        <Badge variant="outline" className="text-xs">Tutti</Badge>
+                      ) : (
+                        key.allowedDepartments.slice(0, 2).map(dept => {
+                          const style = getDepartmentStyle(dept);
+                          return (
+                            <Badge key={dept} variant="outline" className="text-xs" style={{ borderColor: style.color, color: style.color }}>
+                              {style.label}
+                            </Badge>
+                          );
+                        })
+                      )}
+                      {key.allowedDepartments.length > 2 && (
+                        <Badge variant="outline" className="text-xs">+{key.allowedDepartments.length - 2}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {key.rateLimitPerMinute}/min
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {key.dailyQuota}/day
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">{key.usageCount.toLocaleString()}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={key.isActive}
+                      onCheckedChange={(checked) => toggleMutation.mutate({ keyId: key.id, isActive: checked })}
+                      data-testid={`switch-key-${key.id}`}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-500">
+                      {key.lastUsedAt ? format(new Date(key.lastUsedAt), 'dd/MM/yyyy HH:mm') : 'Mai'}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(key.id)}
+                      data-testid={`button-delete-key-${key.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+    </>
+  );
+}
+
+function ToolsCatalogTab({
+  actions,
+  isLoading,
+  searchQuery,
+  setSearchQuery,
+  departmentFilter,
+  setDepartmentFilter
+}: {
+  actions: ActionConfiguration[];
+  isLoading: boolean;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  departmentFilter: string;
+  setDepartmentFilter: (d: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ actionId, mcpExposed }: { actionId: string; mcpExposed: boolean }) => 
+      apiRequest('PATCH', `/api/mcp-gateway/tools/${actionId}`, { mcpExposed }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/tools'] });
+      toast({ title: 'Tool aggiornato', description: 'Visibilità MCP modificata' });
+    }
+  });
+
+  const filteredActions = actions.filter(action => {
+    const matchesSearch = action.actionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          action.actionCode.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDept = departmentFilter === 'all' || action.departmentId === departmentFilter;
+    return matchesSearch && matchesDept;
+  });
+
+  const groupedByDepartment = filteredActions.reduce((acc, action) => {
+    const dept = action.departmentId || 'other';
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(action);
+    return acc;
+  }, {} as Record<string, ActionConfiguration[]>);
+
+  return (
+    <>
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Cerca azioni..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-tools"
+          />
+        </div>
+        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+          <SelectTrigger className="w-48" data-testid="select-department-filter">
+            <SelectValue placeholder="Tutti i dipartimenti" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i dipartimenti</SelectItem>
+            {Object.entries(DEPARTMENT_STYLES).map(([key, style]) => (
+              <SelectItem key={key} value={key}>{style.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-6"
+        >
+          {Object.entries(groupedByDepartment).map(([deptId, deptActions]) => {
+            const style = getDepartmentStyle(deptId);
+            return (
+              <motion.div key={deptId} variants={itemVariants}>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="p-2 rounded-lg"
+                        style={{ backgroundColor: `${style.color}15` }}
+                      >
+                        <Zap className="h-5 w-5" style={{ color: style.color }} />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{style.label}</CardTitle>
+                        <CardDescription>{deptActions.length} azioni disponibili</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {deptActions.map((action) => (
+                        <div 
+                          key={action.id}
+                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                              {action.actionCode}
+                            </code>
+                            <span className="text-sm font-medium">{action.actionName}</span>
+                            {action.flowType !== 'none' && (
+                              <Badge variant="outline" className="text-xs">
+                                {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-500">
+                              {action.mcpExposed ? 'Esposto' : 'Nascosto'}
+                            </span>
+                            <Switch
+                              checked={action.mcpExposed}
+                              onCheckedChange={(checked) => toggleMutation.mutate({ actionId: action.id, mcpExposed: checked })}
+                              data-testid={`switch-tool-${action.actionCode}`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      )}
+    </>
+  );
+}
+
+function PermissionsMatrixTab({
+  apiKeys,
+  actions
+}: {
+  apiKeys: MCPApiKey[];
+  actions: ActionConfiguration[];
+}) {
+  const exposedActions = actions.filter(a => a.mcpExposed);
+  const activeKeys = apiKeys.filter(k => k.isActive);
+
+  if (activeKeys.length === 0 || exposedActions.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#FF6900]/10 to-[#7B2CBF]/10 mb-4">
+          <Shield className="h-8 w-8 text-[#FF6900]" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Matrice Permessi
+        </h3>
+        <p className="text-sm text-gray-500">
+          {activeKeys.length === 0 
+            ? 'Crea almeno una API Key attiva'
+            : 'Esponi almeno un tool per visualizzare la matrice'}
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Matrice Permessi API Key / Tools</CardTitle>
+        <CardDescription>
+          Configura quali API Keys possono accedere a quali tools
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky left-0 bg-white z-10">API Key</TableHead>
+                {exposedActions.map(action => (
+                  <TableHead key={action.id} className="text-center min-w-[120px]">
+                    <div className="text-xs">
+                      <div className="font-medium">{action.actionCode}</div>
+                      <div className="text-gray-500 font-normal truncate max-w-[100px]">
+                        {action.actionName}
+                      </div>
+                    </div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activeKeys.map(key => (
+                <TableRow key={key.id}>
+                  <TableCell className="sticky left-0 bg-white z-10 font-medium">
+                    {key.name}
+                  </TableCell>
+                  {exposedActions.map(action => {
+                    const hasAccess = key.allowedDepartments.length === 0 || 
+                                      key.allowedDepartments.includes(action.departmentId);
+                    return (
+                      <TableCell key={action.id} className="text-center">
+                        {hasAccess ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-400 mx-auto" />
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DocumentationTab({ actions }: { actions: ActionConfiguration[] }) {
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  
+  const copyCode = (code: string, section: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedSection(section);
+    setTimeout(() => setCopiedSection(null), 2000);
+  };
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const apiUrl = `${baseUrl}/api/mcp-public`;
+
+  const curlExample = `curl -X POST "${apiUrl}/execute/CRM_CREATE_LEAD" \\
+  -H "Authorization: Bearer sk_live_staging_xxxxxxxxxxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "parameters": {
+      "name": "Mario Rossi",
+      "email": "mario@example.com",
+      "source": "website"
+    }
+  }'`;
+
+  const n8nExample = `{
+  "nodes": [
+    {
+      "name": "W3 Suite MCP",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "${apiUrl}/execute/{{$json.actionCode}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "options": {},
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ parameters: $json.params }) }}"
+      }
+    }
+  ]
+}`;
+
+  const claudeConfig = `{
+  "mcpServers": {
+    "w3suite": {
+      "url": "${apiUrl}/mcp",
+      "apiKey": "sk_live_staging_xxxxxxxxxxxx"
+    }
+  }
+}`;
+
+  return (
+    <div className="space-y-6">
+      {/* Quick Start */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-[#FF6900]" />
+            Quick Start
+          </CardTitle>
+          <CardDescription>
+            Integra W3 Suite con i tuoi sistemi esterni in pochi minuti
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="h-5 w-5 text-gray-600" />
+                <span className="font-medium">REST API</span>
+              </div>
+              <p className="text-sm text-gray-500">
+                Chiamate HTTP standard con autenticazione Bearer token
+              </p>
+            </div>
+            <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <Code className="h-5 w-5 text-gray-600" />
+                <span className="font-medium">MCP Protocol</span>
+              </div>
+              <p className="text-sm text-gray-500">
+                Compatibile con Claude AI e altri client MCP
+              </p>
+            </div>
+            <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="h-5 w-5 text-gray-600" />
+                <span className="font-medium">Webhooks</span>
+              </div>
+              <p className="text-sm text-gray-500">
+                Notifiche push per eventi e risultati workflow
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Endpoints */}
+      <Card>
+        <CardHeader>
+          <CardTitle>API Endpoints</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-100 text-green-700">GET</Badge>
+                <code className="text-sm font-mono">/api/mcp-public/tools</code>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Lista tutti i tools disponibili per la tua API key</p>
+          </div>
+          <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-blue-100 text-blue-700">POST</Badge>
+                <code className="text-sm font-mono">/api/mcp-public/execute/:actionCode</code>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Esegui un'azione specifica con parametri</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Code Examples */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Esempi di Integrazione</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="curl">
+            <TabsList className="mb-4">
+              <TabsTrigger value="curl">cURL</TabsTrigger>
+              <TabsTrigger value="n8n">n8n</TabsTrigger>
+              <TabsTrigger value="claude">Claude AI</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="curl">
+              <div className="relative">
+                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
+                  <code>{curlExample}</code>
+                </pre>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                  onClick={() => copyCode(curlExample, 'curl')}
+                  data-testid="button-copy-curl"
+                >
+                  {copiedSection === 'curl' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="n8n">
+              <div className="relative">
+                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
+                  <code>{n8nExample}</code>
+                </pre>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                  onClick={() => copyCode(n8nExample, 'n8n')}
+                  data-testid="button-copy-n8n"
+                >
+                  {copiedSection === 'n8n' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="claude">
+              <div className="relative">
+                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
+                  <code>{claudeConfig}</code>
+                </pre>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                  onClick={() => copyCode(claudeConfig, 'claude')}
+                  data-testid="button-copy-claude"
+                >
+                  {copiedSection === 'claude' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Available Tools */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tools Disponibili ({actions.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[300px]">
+            <div className="space-y-2">
+              {actions.map(action => (
+                <div key={action.id} className="p-3 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <code className="text-sm font-mono font-medium">{action.actionCode}</code>
+                      <p className="text-sm text-gray-500 mt-1">{action.actionName}</p>
+                    </div>
+                    <Badge variant="outline">
+                      {getDepartmentStyle(action.departmentId).label}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AnalyticsTab({
+  stats,
+  usageLogs,
+  apiKeys
+}: {
+  stats?: GatewayStats;
+  usageLogs: MCPUsageLog[];
+  apiKeys: MCPApiKey[];
+}) {
+  const recentLogs = usageLogs.slice(0, 20);
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-100">
+              <Activity className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats?.totalCalls?.toLocaleString() || 0}</div>
+              <div className="text-sm text-gray-500">Chiamate totali</div>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-100">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats?.successRate?.toFixed(1) || 0}%</div>
+              <div className="text-sm text-gray-500">Success rate</div>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-100">
+              <Clock className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats?.avgResponseTime?.toFixed(0) || 0}ms</div>
+              <div className="text-sm text-gray-500">Tempo medio</div>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-orange-100">
+              <Zap className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats?.callsToday || 0}</div>
+              <div className="text-sm text-gray-500">Chiamate oggi</div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Attività Recente</CardTitle>
+          <CardDescription>Ultime 20 chiamate API</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recentLogs.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Nessuna attività registrata
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead>API Key</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Stato</TableHead>
+                  <TableHead>Tempo</TableHead>
+                  <TableHead>IP</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentLogs.map((log) => {
+                  const apiKey = apiKeys.find(k => k.id === log.apiKeyId);
+                  return (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-sm">
+                        {format(new Date(log.timestamp), 'dd/MM HH:mm:ss')}
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                          {apiKey?.keyPrefix || log.apiKeyId.slice(0, 8)}...
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs">{log.actionCode}</code>
+                      </TableCell>
+                      <TableCell>
+                        {log.success ? (
+                          <Badge className="bg-green-100 text-green-700">OK</Badge>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge className="bg-red-100 text-red-700">Error</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{log.errorMessage}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {log.responseTime}ms
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {log.ipAddress}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CreateApiKeyDialog({
+  open,
+  onClose,
+  onKeyCreated
+}: {
+  open: boolean;
+  onClose: () => void;
+  onKeyCreated: (key: string) => void;
+}) {
+  const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [rateLimitPerMinute, setRateLimitPerMinute] = useState('60');
+  const [dailyQuota, setDailyQuota] = useState('10000');
+  const [ipWhitelist, setIpWhitelist] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      toast({ title: 'Errore', description: 'Il nome è obbligatorio', variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await apiRequest('POST', '/api/mcp-gateway/keys', {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        allowedDepartments: selectedDepartments,
+        rateLimitPerMinute: parseInt(rateLimitPerMinute),
+        dailyQuota: parseInt(dailyQuota),
+        ipWhitelist: ipWhitelist.split('\n').filter(ip => ip.trim())
+      });
+
+      const data = await response.json();
+      onKeyCreated(data.apiKey);
+      onClose();
+      setName('');
+      setDescription('');
+      setSelectedDepartments([]);
+      setRateLimitPerMinute('60');
+      setDailyQuota('10000');
+      setIpWhitelist('');
+    } catch (error: any) {
+      toast({ 
+        title: 'Errore', 
+        description: error.message || 'Impossibile creare la API key', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nuova API Key</DialogTitle>
+          <DialogDescription>
+            Crea una nuova chiave per integrazioni esterne
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nome *</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="es. n8n Production"
+              data-testid="input-key-name"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Descrizione</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="es. Automazioni CRM"
+              data-testid="input-key-description"
+            />
+          </div>
+
+          <div>
+            <Label>Dipartimenti consentiti</Label>
+            <p className="text-xs text-gray-500 mb-2">Lascia vuoto per tutti i dipartimenti</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(DEPARTMENT_STYLES).map(([key, style]) => (
+                <Badge
+                  key={key}
+                  variant={selectedDepartments.includes(key) ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  style={selectedDepartments.includes(key) ? { backgroundColor: style.color } : { borderColor: style.color, color: style.color }}
+                  onClick={() => {
+                    setSelectedDepartments(prev => 
+                      prev.includes(key) 
+                        ? prev.filter(d => d !== key)
+                        : [...prev, key]
+                    );
+                  }}
+                  data-testid={`badge-dept-${key}`}
+                >
+                  {style.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="rateLimit">Rate limit/min</Label>
+              <Input
+                id="rateLimit"
+                type="number"
+                value={rateLimitPerMinute}
+                onChange={(e) => setRateLimitPerMinute(e.target.value)}
+                data-testid="input-rate-limit"
+              />
+            </div>
+            <div>
+              <Label htmlFor="dailyQuota">Quota giornaliera</Label>
+              <Input
+                id="dailyQuota"
+                type="number"
+                value={dailyQuota}
+                onChange={(e) => setDailyQuota(e.target.value)}
+                data-testid="input-daily-quota"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="ipWhitelist">IP Whitelist (uno per riga)</Label>
+            <Textarea
+              id="ipWhitelist"
+              value={ipWhitelist}
+              onChange={(e) => setIpWhitelist(e.target.value)}
+              placeholder="192.168.1.1&#10;10.0.0.0/24"
+              rows={3}
+              data-testid="textarea-ip-whitelist"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annulla
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="bg-gradient-to-r from-[#FF6900] to-[#7B2CBF]"
+            data-testid="button-submit-key"
+          >
+            {isSubmitting ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+            Crea API Key
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
