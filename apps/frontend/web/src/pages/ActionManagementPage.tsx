@@ -23,7 +23,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { 
   Plus, 
   Search, 
@@ -899,24 +903,68 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                 </div>
 
                 {formData.defaultScope === 'specific' && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {teamsLoading ? (
-                      <span className="text-xs text-gray-500">Caricamento...</span>
-                    ) : teamsData?.teams?.map((team: any) => (
-                      <button
-                        key={team.id}
-                        type="button"
-                        onClick={() => toggleDefaultTeam(team.id)}
-                        className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                          formData.defaultTeamIds.includes(team.id)
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                        }`}
-                        data-testid={`toggle-default-team-${team.id}`}
-                      >
-                        {team.name}
-                      </button>
-                    ))}
+                  <div className="space-y-2 pt-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between h-9 text-left font-normal"
+                          data-testid="multiselect-default-teams"
+                        >
+                          {formData.defaultTeamIds.length === 0
+                            ? "Seleziona team..."
+                            : `${formData.defaultTeamIds.length} team selezionati`}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0 z-[9999]" align="start">
+                        <Command>
+                          <CommandInput placeholder="Cerca team..." />
+                          <CommandList>
+                            <CommandEmpty>Nessun team trovato</CommandEmpty>
+                            <CommandGroup>
+                              {teamsLoading ? (
+                                <CommandItem disabled>Caricamento...</CommandItem>
+                              ) : teamsData?.teams?.map((team: any) => (
+                                <CommandItem
+                                  key={team.id}
+                                  value={team.name}
+                                  onSelect={() => toggleDefaultTeam(team.id)}
+                                  className="cursor-pointer"
+                                >
+                                  <Checkbox
+                                    checked={formData.defaultTeamIds.includes(team.id)}
+                                    className="mr-2"
+                                  />
+                                  {team.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    
+                    {formData.defaultTeamIds.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {formData.defaultTeamIds.map(teamId => {
+                          const team = teamsData?.teams?.find((t: any) => t.id === teamId);
+                          return team ? (
+                            <Badge key={teamId} variant="secondary" className="text-xs">
+                              {team.name}
+                              <button
+                                type="button"
+                                onClick={() => toggleDefaultTeam(teamId)}
+                                className="ml-1 hover:text-red-500"
+                              >
+                                ×
+                              </button>
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

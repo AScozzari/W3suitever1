@@ -1,0 +1,74 @@
+
+
+queryClient.ts:370  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/keys/33694411-79ed-4f24-b3cf-9854d88fb6be/permissions 500 (Internal Server Error)
+apiRequest @ queryClient.ts:370
+queryFn @ MCPActionGatewayPage.tsx:666
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+queryClient.ts:370  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/keys/33694411-79ed-4f24-b3cf-9854d88fb6be/permissions 500 (Internal Server Error)
+apiRequest @ queryClient.ts:370
+queryFn @ MCPActionGatewayPage.tsx:666
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+(anonime) @ @tanstack_react-query.js?v=fac8f799:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=fac8f799:816
+Promise.catch
+run @ @tanstack_react-query.js?v=fac8f799:799
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+queryClient.ts:370  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/keys/382aa898-b212-497d-88d9-8aa0fa894d63/permissions 500 (Internal Server Error)
+apiRequest @ queryClient.ts:370
+queryFn @ MCPActionGatewayPage.tsx:666
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+queryClient.ts:370  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/keys/382aa898-b212-497d-88d9-8aa0fa894d63/permissions 500 (Internal Server Error)
