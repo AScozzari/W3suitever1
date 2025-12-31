@@ -20,6 +20,7 @@ import {
   departments,
   insertActionConfigurationSchema
 } from '../db/schema/w3suite';
+import { actionDefinitions } from '../db/schema/public';
 import { logger } from '../core/logger';
 import { z } from 'zod';
 import { departmentEnum, ALL_DEPARTMENT_CODES } from '../core/constants/departments';
@@ -689,6 +690,215 @@ router.post('/escalation/check', async (req, res) => {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     res.status(500).json({ error: 'Failed to run escalation check' });
+  }
+});
+
+// ==================== TOGGLE ACTION ENABLE/DISABLE ====================
+// Toggle isActive - if config doesn't exist, create it from action_definitions
+
+router.patch('/toggle/:department/:actionId', async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { department, actionId } = req.params;
+    const { isActive } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ error: 'isActive boolean required' });
+    }
+
+    // Check if configuration already exists
+    const [existing] = await db
+      .select()
+      .from(actionConfigurations)
+      .where(
+        and(
+          eq(actionConfigurations.tenantId, tenantId),
+          eq(actionConfigurations.department, department as any),
+          eq(actionConfigurations.actionId, actionId)
+        )
+      )
+      .limit(1);
+
+    if (existing) {
+      // Update existing configuration
+      const [updated] = await db
+        .update(actionConfigurations)
+        .set({ 
+          isActive, 
+          updatedAt: new Date(),
+          updatedBy: userId 
+        })
+        .where(eq(actionConfigurations.id, existing.id))
+        .returning();
+
+      logger.info('✅ [ACTION-CONFIG] Action toggled', {
+        id: updated.id,
+        department,
+        actionId,
+        isActive
+      });
+
+      return res.json(updated);
+    }
+
+    // Configuration doesn't exist - create from action_definitions
+    const [definition] = await db
+      .select()
+      .from(actionDefinitions)
+      .where(
+        and(
+          eq(actionDefinitions.department, department),
+          eq(actionDefinitions.actionId, actionId)
+        )
+      )
+      .limit(1);
+
+    if (!definition) {
+      return res.status(404).json({ 
+        error: 'Action definition not found',
+        message: `Nessuna definizione trovata per ${department}/${actionId}`
+      });
+    }
+
+    // Create configuration from definition with requested isActive state
+    const [newConfig] = await db
+      .insert(actionConfigurations)
+      .values({
+        tenantId,
+        department: definition.department as any,
+        actionId: definition.actionId,
+        actionName: definition.name,
+        description: definition.description,
+        requiresApproval: definition.defaultRequiresApproval ?? false,
+        flowType: (definition.defaultFlowType as any) || 'default',
+        isActive,
+        slaHours: 24,
+        escalationEnabled: true,
+        priority: definition.displayOrder ?? 100,
+        metadata: { 
+          fromDefinition: true, 
+          definitionId: definition.id,
+          assignments: [] 
+        },
+        createdBy: userId,
+        updatedBy: userId
+      })
+      .returning();
+
+    logger.info('✅ [ACTION-CONFIG] Configuration created from definition', {
+      id: newConfig.id,
+      department,
+      actionId,
+      isActive
+    });
+
+    res.status(201).json(newConfig);
+
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error toggling action', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to toggle action' });
+  }
+});
+
+// ==================== SEED ALL CONFIGURATIONS FROM DEFINITIONS ====================
+// Creates configurations for all action_definitions that don't have one yet
+
+router.post('/seed', async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    // Get all action definitions
+    const definitions = await db
+      .select()
+      .from(actionDefinitions)
+      .where(eq(actionDefinitions.isActive, true));
+
+    // Get existing configurations for this tenant
+    const existingConfigs = await db
+      .select({
+        department: actionConfigurations.department,
+        actionId: actionConfigurations.actionId
+      })
+      .from(actionConfigurations)
+      .where(eq(actionConfigurations.tenantId, tenantId));
+
+    // Create a set of existing department+actionId combinations
+    const existingSet = new Set(
+      existingConfigs.map(c => `${c.department}:${c.actionId}`)
+    );
+
+    // Filter definitions that don't have configurations yet
+    const toCreate = definitions.filter(
+      d => !existingSet.has(`${d.department}:${d.actionId}`)
+    );
+
+    if (toCreate.length === 0) {
+      return res.json({
+        success: true,
+        message: 'All definitions already have configurations',
+        created: 0,
+        total: definitions.length
+      });
+    }
+
+    // Insert all missing configurations (with isActive = true by default)
+    const inserted = await db
+      .insert(actionConfigurations)
+      .values(
+        toCreate.map(def => ({
+          tenantId,
+          department: def.department as any,
+          actionId: def.actionId,
+          actionName: def.name,
+          description: def.description,
+          requiresApproval: def.defaultRequiresApproval ?? false,
+          flowType: (def.defaultFlowType as any) || 'default',
+          isActive: true,
+          slaHours: 24,
+          escalationEnabled: true,
+          priority: def.displayOrder ?? 100,
+          metadata: { 
+            fromDefinition: true, 
+            definitionId: def.id,
+            assignments: [] 
+          },
+          createdBy: userId,
+          updatedBy: userId
+        }))
+      )
+      .returning();
+
+    logger.info('✅ [ACTION-CONFIG] Seeded configurations from definitions', {
+      tenantId,
+      created: inserted.length,
+      total: definitions.length
+    });
+
+    res.json({
+      success: true,
+      message: `Created ${inserted.length} configurations`,
+      created: inserted.length,
+      total: definitions.length,
+      configs: inserted
+    });
+
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error seeding configurations', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to seed configurations' });
   }
 });
 
