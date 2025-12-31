@@ -790,7 +790,13 @@ function ToolsCatalogTab({
                         ) : (
                           <ChevronRight className="h-5 w-5 text-gray-500" />
                         )}
-                        <span className="font-semibold text-gray-900">{style.label}</span>
+                        <div 
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: `${style.color}15` }}
+                        >
+                          <Zap className="h-5 w-5" style={{ color: style.color }} />
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">{style.label}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-sm text-gray-500">
@@ -1088,21 +1094,22 @@ function PermissionsMatrixTab({
                   const isExpanded = expandedDepts[dept];
                   
                   return (
-                    <div key={dept} className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div key={dept} className="rounded-lg border border-gray-200 overflow-hidden hover:border-[#FF6900]/50 transition-all group">
                       <div 
-                        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-3 cursor-pointer hover:bg-[#FF6900]/5 transition-colors"
                         onClick={() => toggleDept(dept)}
                         data-testid={`dept-row-${dept}`}
                       >
                         <div className="flex items-center gap-3">
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                            <ChevronDown className="h-4 w-4 text-[#FF6900]" />
                           ) : (
-                            <ChevronRight className="h-4 w-4 text-gray-500" />
+                            <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#FF6900] transition-colors" />
                           )}
-                          <Badge style={{ backgroundColor: style.color }} className="text-white text-xs">
-                            {style.label}
-                          </Badge>
+                          <span className="font-semibold text-gray-900">{style.label}</span>
+                          <span className="text-xs text-gray-400 group-hover:text-[#FF6900] transition-colors">
+                            clicca per espandere
+                          </span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                           <span className="text-gray-500">{deptActions.length} azioni</span>
