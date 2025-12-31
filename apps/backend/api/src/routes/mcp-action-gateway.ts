@@ -249,8 +249,8 @@ router.get('/tools', requirePermission('settings.read'), async (req: Request, re
     const actions = await db
       .select({
         id: actionConfigurations.id,
-        code: actionConfigurations.code,
-        name: actionConfigurations.name,
+        code: actionConfigurations.actionId,
+        name: actionConfigurations.actionName,
         description: actionConfigurations.description,
         department: actionConfigurations.department,
         flowType: actionConfigurations.flowType,
@@ -258,10 +258,16 @@ router.get('/tools', requirePermission('settings.read'), async (req: Request, re
       })
       .from(actionConfigurations)
       .where(eq(actionConfigurations.tenantId, tenantId))
-      .orderBy(actionConfigurations.department, actionConfigurations.name);
+      .orderBy(actionConfigurations.department, actionConfigurations.actionName);
 
     const settings = await db
-      .select()
+      .select({
+        id: mcpToolSettings.id,
+        actionConfigId: mcpToolSettings.actionConfigId,
+        exposedViaMcp: mcpToolSettings.exposedViaMcp,
+        customToolName: mcpToolSettings.customToolName,
+        customToolDescription: mcpToolSettings.customToolDescription,
+      })
       .from(mcpToolSettings)
       .where(eq(mcpToolSettings.tenantId, tenantId));
 
@@ -504,7 +510,7 @@ router.get('/usage-logs', requirePermission('settings.read'), async (req: Reques
         success: mcpUsageLogs.success,
         responseTime: mcpUsageLogs.responseTime,
         errorMessage: mcpUsageLogs.errorMessage,
-        ipAddress: mcpUsageLogs.ipAddress,
+        ipAddress: mcpUsageLogs.clientIp,
         timestamp: mcpUsageLogs.executedAt,
       })
       .from(mcpUsageLogs)
