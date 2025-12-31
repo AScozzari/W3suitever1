@@ -1,0 +1,33 @@
+Wed Dec 31 2025 19:34:09 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+installHook.js:1 RequestPendingError: REGISTER request already in progress, waiting for final response
+    at _Registerer.unregister (sip__js.js?v=fac8f799:5736:21)
+    at useSIPRegistration.ts:237:31
+    at safelyCallDestroy (chunk-ZHRYBLGQ.js?v=fac8f799:16748:13)
+    at commitHookEffectListUnmount (chunk-ZHRYBLGQ.js?v=fac8f799:16875:19)
+    at commitPassiveUnmountInsideDeletedTreeOnFiber (chunk-ZHRYBLGQ.js?v=fac8f799:18283:17)
+    at commitPassiveUnmountEffectsInsideOfDeletedTree_begin (chunk-ZHRYBLGQ.js?v=fac8f799:18245:13)
+    at commitPassiveUnmountEffects_begin (chunk-ZHRYBLGQ.js?v=fac8f799:18181:19)
+    at commitPassiveUnmountEffects (chunk-ZHRYBLGQ.js?v=fac8f799:18169:11)
+    at flushPassiveEffectsImpl (chunk-ZHRYBLGQ.js?v=fac8f799:19489:11)
+    at flushPassiveEffects (chunk-ZHRYBLGQ.js?v=fac8f799:19447:22)
+overrideMethod @ installHook.js:1
+Promise.catch
+(anonime) @ useSIPRegistration.ts:237
+safelyCallDestroy @ chunk-ZHRYBLGQ.js?v=fac8f799:16748
+commitHookEffectListUnmount @ chunk-ZHRYBLGQ.js?v=fac8f799:16875
+commitPassiveUnmountInsideDeletedTreeOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18283
+commitPassiveUnmountEffectsInsideOfDeletedTree_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18245
+commitPassiveUnmountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18181
+commitPassiveUnmountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18169
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19489
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=fac8f799:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'errore
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 19:34:09 GMT+0100 (Ora standard dell’Europa centrale) | 
