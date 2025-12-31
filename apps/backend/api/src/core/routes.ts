@@ -129,6 +129,7 @@ import { drivers } from "../db/schema";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam, parseUUIDParam } from "./error-utils";
+import { departmentEnum, ALL_DEPARTMENT_CODES } from "./constants/departments";
 
 // ==================== UNIVERSAL REQUEST VALIDATION SCHEMAS ====================
 const updateUniversalRequestSchema = insertUniversalRequestSchema.partial();
@@ -141,7 +142,7 @@ const calendarEventFiltersSchema = z.object({
   type: z.enum(['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']).optional(),
   // ✅ FASE 1.1: Use correct visibility enum from database schema
   visibility: z.enum(['private', 'team', 'store', 'area', 'tenant']).optional(),
-  category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).optional(),
+  category: departmentEnum.optional(),
   storeId: z.string().uuid().optional(),
   teamId: z.string().uuid().optional()
 });
@@ -156,7 +157,7 @@ const createCalendarEventSchema = z.object({
   // ✅ FASE 1.1: Use correct calendar event types from database schema
   type: z.enum(['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']).default('other'),
   visibility: z.enum(['private', 'team', 'store', 'area', 'tenant']).default('private'),
-  category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).default('hr'),
+  category: departmentEnum.default('hr'),
   hrSensitive: z.boolean().default(false),
   teamId: z.string().uuid().optional(),
   storeId: z.string().uuid().optional(),
@@ -432,7 +433,7 @@ const getEnterpriseAuditQuerySchema = z.object({
   
   // Status and department filters
   status: z.enum(['pending', 'approved', 'rejected', 'cancelled', 'completed']).optional(),
-  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+  department: departmentEnum.optional(),
   
   // Advanced search
   search: z.string().min(1).max(200).optional(), // Full-text search across message, notes, changes
@@ -495,7 +496,7 @@ const createUniversalRequestBodySchema = (insertUniversalRequestSchema.omit({
   currentApproverId: true
 }) as any).extend({
   // Enhanced validation for enterprise use
-  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']),
+  department: departmentEnum,
   category: z.string().min(1).max(100), // 'leave', 'expense', 'access', 'discount'
   type: z.string().max(100).optional(), // 'vacation', 'sick', 'maternity', etc.
   title: z.string().min(1).max(255),
@@ -511,7 +512,7 @@ const createUniversalRequestBodySchema = (insertUniversalRequestSchema.omit({
 
 const universalRequestFiltersSchema = z.object({
   // Core filters
-  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+  department: departmentEnum.optional(),
   status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
   category: z.string().optional(),
   type: z.string().optional(),
@@ -14771,8 +14772,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Universal Request validation schemas (legacy endpoint)
   const legacyUniversalRequestFiltersSchema = z.object({
     status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
-    department: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).optional(),
-    category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).optional(),
+    department: departmentEnum.optional(),
+    category: departmentEnum.optional(),
     requestType: z.string().optional(),
     requestSubtype: z.string().optional(),
     priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),

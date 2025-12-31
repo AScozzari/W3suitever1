@@ -22,6 +22,7 @@ import {
   InsertTaskAttachment,
   InsertTaskTemplate
 } from '../db/schema/w3suite';
+import { departmentEnum } from '../core/constants/departments';
 
 const router = express.Router();
 
@@ -74,7 +75,7 @@ const taskFiltersSchema = z.object({
   urgency: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   assignedUserId: z.string().uuid().optional(),
   createdByUserId: z.string().uuid().optional(),
-  department: z.enum(['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing']).optional(),
+  department: departmentEnum.optional(),
   linkedWorkflowInstanceId: z.string().uuid().optional(),
   dueBefore: z.string().datetime().optional(),
   dueAfter: z.string().datetime().optional(),

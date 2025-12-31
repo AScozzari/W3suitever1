@@ -41,6 +41,7 @@ import { z } from 'zod';
 import { workflowEngine } from '../services/workflow-engine';
 import { detectWorkflowRoutingNodes } from '../utils/workflow-routing-utils';
 import { DEPARTMENT_ACTION_TAGS, ALL_DEPARTMENTS as ACTION_TAG_DEPARTMENTS } from '../lib/action-tags';
+import { ALL_DEPARTMENT_CODES, departmentEnum } from '../core/constants/departments';
 
 const router = Router();
 
@@ -1122,7 +1123,7 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
     // 🎯 SYNC WORKFLOW ASSIGNMENTS: Save to team_workflow_assignments table
     if (workflowAssignments && Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
       // Valid department enum values (must match departmentEnum in schema)
-      const validDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+      const validDepartments = [...ALL_DEPARTMENT_CODES];
       
       const assignmentsToInsert = workflowAssignments
         .filter((assignment: any) => {
@@ -1329,7 +1330,7 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       // Step 2: Insert new assignments if any
       if (Array.isArray(workflowAssignments) && workflowAssignments.length > 0) {
         // Valid department enum values (must match departmentEnum in schema)
-        const validDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+        const validDepartments = [...ALL_DEPARTMENT_CODES];
         
         const assignmentsToInsert = workflowAssignments
           .filter((assignment: any) => {
@@ -2114,7 +2115,7 @@ router.get('/admin/coverage-dashboard', requirePermission('teams.read'), async (
       ));
 
     // 4. Define all departments
-    const allDepartments = ['hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'];
+    const allDepartments = [...ALL_DEPARTMENT_CODES];
     const criticalDepartments = ['hr']; // Departments that all users should have access to
 
     // ==================== LEVEL 1: Departments → Teams ====================
@@ -2461,7 +2462,7 @@ router.get('/admin/orphan-users', requirePermission('teams.read'), async (req: R
       });
 
     // 7. Build department-wise breakdown
-    const allDepartments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing'];
+    const allDepartments = [...ALL_DEPARTMENT_CODES];
     const departmentBreakdown = allDepartments.map(dept => {
       const usersWithCoverage = allUsers.filter(user => {
         const coverage = userCoverage.get(user.id);

@@ -73,13 +73,34 @@ export const DEPARTMENT_ACTION_TAGS = {
     { value: 'pubblicazione_contenuto', label: 'Pubblicazione Contenuto', routingCategory: 'administrative' },
     { value: 'budget_campagna', label: 'Budget Campagna', routingCategory: 'administrative' },
   ] as ActionTagDefinition[],
+  customer_service: [
+    { value: 'ticket_cliente', label: 'Ticket Cliente', routingCategory: 'operational' },
+    { value: 'reclamo_cliente', label: 'Reclamo Cliente', routingCategory: 'administrative' },
+    { value: 'rimborso_cliente', label: 'Rimborso Cliente', routingCategory: 'administrative' },
+    { value: 'assistenza_post_vendita', label: 'Assistenza Post-Vendita', routingCategory: 'operational' },
+    { value: 'feedback_cliente', label: 'Feedback Cliente', routingCategory: 'administrative' },
+  ] as ActionTagDefinition[],
+  it: [
+    { value: 'richiesta_accesso', label: 'Richiesta Accesso Sistema', routingCategory: 'administrative' },
+    { value: 'nuovo_hardware', label: 'Richiesta Nuovo Hardware', routingCategory: 'administrative' },
+    { value: 'problema_software', label: 'Problema Software', routingCategory: 'operational' },
+    { value: 'sicurezza_it', label: 'Segnalazione Sicurezza IT', routingCategory: 'administrative' },
+    { value: 'configurazione_sistema', label: 'Configurazione Sistema', routingCategory: 'administrative' },
+  ] as ActionTagDefinition[],
+  wms: [
+    { value: 'rettifica_inventario', label: 'Rettifica Inventario', routingCategory: 'operational' },
+    { value: 'trasferimento_magazzino', label: 'Trasferimento Magazzino', routingCategory: 'operational' },
+    { value: 'ricezione_merce', label: 'Ricezione Merce', routingCategory: 'operational' },
+    { value: 'spedizione', label: 'Approvazione Spedizione', routingCategory: 'administrative' },
+    { value: 'inventario_fisico', label: 'Inventario Fisico', routingCategory: 'operational' },
+  ] as ActionTagDefinition[],
 } as const;
 
 export type Department = keyof typeof DEPARTMENT_ACTION_TAGS;
 export type ActionTag = typeof DEPARTMENT_ACTION_TAGS[Department][number]['value'];
 
 export const ALL_DEPARTMENTS: Department[] = [
-  'hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'
+  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it', 'wms'
 ];
 
 export function getActionTagsForDepartment(department: string): ActionTagDefinition[] {

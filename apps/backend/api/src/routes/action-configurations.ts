@@ -22,6 +22,7 @@ import {
 } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 import { z } from 'zod';
+import { departmentEnum, ALL_DEPARTMENT_CODES } from '../core/constants/departments';
 
 const router = Router();
 
@@ -185,7 +186,7 @@ const assignmentSchema = z.object({
 });
 
 const createActionSchema = z.object({
-  department: z.enum(['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing', 'wms']),
+  department: departmentEnum,
   actionId: z.string().min(1).max(100),
   actionName: z.string().min(1).max(200),
   description: z.string().optional(),
@@ -514,10 +515,10 @@ router.get('/stats/coverage', async (req, res) => {
       );
 
     // Raggruppa per department e calcola coverage
-    const departments = ['hr', 'operations', 'support', 'finance', 'crm', 'sales', 'marketing', 'wms'];
+    const deptCodes = [...ALL_DEPARTMENT_CODES];
     const coverage: Record<string, any> = {};
 
-    for (const dept of departments) {
+    for (const dept of deptCodes) {
       const deptActions = actions.filter(a => a.department === dept);
       coverage[dept] = {
         total: deptActions.length,

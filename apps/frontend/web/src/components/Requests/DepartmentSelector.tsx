@@ -9,7 +9,7 @@ import {
   Megaphone 
 } from 'lucide-react';
 
-export type Department = 'hr' | 'finance' | 'operations' | 'support' | 'crm' | 'sales' | 'marketing';
+export type Department = 'hr' | 'finance' | 'operations' | 'support' | 'crm' | 'sales' | 'marketing' | 'customer_service' | 'it' | 'wms';
 
 interface DepartmentOption {
   id: Department;
@@ -76,6 +76,30 @@ const DEPARTMENTS: DepartmentOption[] = [
     icon: Megaphone,
     color: '#8B5CF6',
     bgGradient: 'from-violet-500/10 to-violet-600/5'
+  },
+  {
+    id: 'customer_service',
+    name: 'Assistenza Clienti',
+    description: 'Ticket, reclami, assistenza post-vendita',
+    icon: MessageSquare,
+    color: '#14B8A6',
+    bgGradient: 'from-teal-500/10 to-teal-600/5'
+  },
+  {
+    id: 'it',
+    name: 'IT',
+    description: 'Sistemi, hardware, software, sicurezza',
+    icon: Monitor,
+    color: '#64748B',
+    bgGradient: 'from-slate-500/10 to-slate-600/5'
+  },
+  {
+    id: 'wms',
+    name: 'WMS',
+    description: 'Magazzino, inventario, movimenti',
+    icon: Wrench,
+    color: '#F59E0B',
+    bgGradient: 'from-amber-500/10 to-amber-600/5'
   }
 ];
 

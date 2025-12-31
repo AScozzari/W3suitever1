@@ -59,13 +59,34 @@ export const DEPARTMENT_ACTION_TAGS = {
     { value: 'pubblicazione_contenuto', label: 'Pubblicazione Contenuto' },
     { value: 'budget_campagna', label: 'Budget Campagna' },
   ],
+  customer_service: [
+    { value: 'ticket_cliente', label: 'Ticket Cliente' },
+    { value: 'reclamo_cliente', label: 'Reclamo Cliente' },
+    { value: 'rimborso_cliente', label: 'Rimborso Cliente' },
+    { value: 'assistenza_post_vendita', label: 'Assistenza Post-Vendita' },
+    { value: 'feedback_cliente', label: 'Feedback Cliente' },
+  ],
+  it: [
+    { value: 'richiesta_accesso', label: 'Richiesta Accesso Sistema' },
+    { value: 'nuovo_hardware', label: 'Richiesta Nuovo Hardware' },
+    { value: 'problema_software', label: 'Problema Software' },
+    { value: 'sicurezza_it', label: 'Segnalazione Sicurezza IT' },
+    { value: 'configurazione_sistema', label: 'Configurazione Sistema' },
+  ],
+  wms: [
+    { value: 'rettifica_inventario', label: 'Rettifica Inventario' },
+    { value: 'trasferimento_magazzino', label: 'Trasferimento Magazzino' },
+    { value: 'ricezione_merce', label: 'Ricezione Merce' },
+    { value: 'spedizione', label: 'Approvazione Spedizione' },
+    { value: 'inventario_fisico', label: 'Inventario Fisico' },
+  ],
 } as const;
 
 export type Department = keyof typeof DEPARTMENT_ACTION_TAGS;
 export type ActionTag = typeof DEPARTMENT_ACTION_TAGS[Department][number]['value'];
 
 export const ALL_DEPARTMENTS: Department[] = [
-  'hr', 'finance', 'operations', 'support', 'crm', 'sales', 'marketing'
+  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it', 'wms'
 ];
 
 export const DEPARTMENT_LABELS: Record<Department, string> = {
@@ -76,6 +97,9 @@ export const DEPARTMENT_LABELS: Record<Department, string> = {
   crm: 'CRM',
   sales: 'Vendite',
   marketing: 'Marketing',
+  customer_service: 'Assistenza Clienti',
+  it: 'IT',
+  wms: 'WMS',
 };
 
 export function getActionTagsForDepartment(department: string): { value: string; label: string }[] {

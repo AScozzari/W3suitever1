@@ -5,6 +5,7 @@
  * vengono dal database via /api/action-configurations/meta/departments
  */
 
+import { z } from 'zod';
 import { 
   Users, 
   DollarSign, 
@@ -134,6 +135,13 @@ export const TEAM_TYPES = {
 
 export type TeamType = keyof typeof TEAM_TYPES;
 export type DepartmentCode = keyof typeof DEPARTMENT_STYLES;
+
+export const ALL_DEPARTMENT_CODES = [
+  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it', 'wms'
+] as const;
+
+export const departmentEnum = z.enum(ALL_DEPARTMENT_CODES);
+export type DepartmentEnumType = z.infer<typeof departmentEnum>;
 
 export function getDepartmentStyle(code: string): DepartmentStyle {
   return DEPARTMENT_STYLES[code] || {

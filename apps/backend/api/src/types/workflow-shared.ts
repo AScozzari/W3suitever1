@@ -14,9 +14,11 @@ import { z } from 'zod';
 
 // ==================== SHARED ENUMS ====================
 
-export const WorkflowDepartmentEnum = z.enum([
-  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing'
-]);
+export const ALL_DEPARTMENT_CODES = [
+  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it', 'wms'
+] as const;
+
+export const WorkflowDepartmentEnum = z.enum(ALL_DEPARTMENT_CODES);
 
 export const WorkflowStatusEnum = z.enum([
   'draft', 'pending', 'approved', 'rejected', 'cancelled'
@@ -160,7 +162,7 @@ export const TeamSchema = z.object({
   primarySupervisorUser: z.string().uuid().optional(),
   secondarySupervisorUser: z.string().uuid().optional(),
   // 🎯 DEPARTMENT ASSIGNMENT: Team può gestire multipli dipartimenti
-  assignedDepartments: z.array(z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance'])).default([]),
+  assignedDepartments: z.array(WorkflowDepartmentEnum).default([]),
   isActive: z.boolean().default(true),
   metadata: z.record(z.any()).default({})
 });
@@ -182,7 +184,7 @@ export const TeamWorkflowAssignmentSchema = z.object({
   teamId: z.string().uuid(),
   templateId: z.string().uuid(),
   // 🎯 DEPARTMENT-SPECIFIC ASSIGNMENT: Workflow assignato per specifico dipartimento
-  forDepartment: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']),
+  forDepartment: WorkflowDepartmentEnum,
   autoAssign: z.boolean().default(true),
   priority: z.number().int().default(100),
   conditions: z.record(z.any()).default({}),

@@ -36,7 +36,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle } from '@/lib/constants/departments';
+import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle, departmentEnum } from '@/lib/constants/departments';
 
 // 🎯 Team types imported from centralized constants
 
@@ -46,7 +46,7 @@ const createTeamSchema = z.object({
   name: z.string().min(1, 'Il nome del team è obbligatorio').max(200, 'Nome troppo lungo'),
   description: z.string().optional(),
   teamType: z.enum(['functional', 'cross_functional', 'project', 'temporary', 'specialized']),
-  assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it'])).min(1, 'È richiesto almeno un dipartimento'),
+  assignedDepartments: z.array(departmentEnum).min(1, 'È richiesto almeno un dipartimento'),
   // Members and observers are managed via separate API calls after team creation
   // Stored locally in form only for UI state, not sent to backend
   selectedMembers: z.array(z.string()).default([]), // User IDs to add as members
@@ -55,7 +55,7 @@ const createTeamSchema = z.object({
   primarySupervisorUser: z.string().nullable().optional(),
   secondarySupervisorUser: z.string().nullable().optional(),
   workflowAssignments: z.array(z.object({
-    department: z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm']),
+    department: departmentEnum,
     templateId: z.string(),
     autoAssign: z.boolean().default(true)
   })).default([]),

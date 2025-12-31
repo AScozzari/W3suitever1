@@ -63,6 +63,8 @@ const DEPARTMENTS = {
   'support': { icon: HeadphonesIcon, label: 'Support IT', color: 'bg-cyan-500', textColor: 'text-cyan-700', description: 'Accessi, hardware, software' },
   'crm': { icon: Users, label: 'CRM', color: 'bg-pink-500', textColor: 'text-pink-700', description: 'Clienti, reclami, escalation' },
   'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-violet-500', textColor: 'text-violet-700', description: 'Campagne, contenuti' },
+  'customer_service': { icon: HeadphonesIcon, label: 'Assistenza Clienti', color: 'bg-teal-500', textColor: 'text-teal-700', description: 'Ticket, reclami, assistenza' },
+  'it': { icon: Settings, label: 'IT', color: 'bg-slate-500', textColor: 'text-slate-700', description: 'Sistemi, hardware, software' },
   'wms': { icon: Package, label: 'WMS', color: 'bg-amber-500', textColor: 'text-amber-700', description: 'Magazzino, movimenti, inventario' }
 };
 
