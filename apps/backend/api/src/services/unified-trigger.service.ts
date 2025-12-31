@@ -281,14 +281,14 @@ class UnifiedTriggerService {
 
       if (!team) return null;
 
-      // Recupera observers
+      // Recupera observers (can_approve = true significa che possono approvare dopo escalation 24h)
       const observers = await db
-        .select({ observerId: teamObservers.observerId })
+        .select({ observerId: teamObservers.userId })
         .from(teamObservers)
         .where(
           and(
             eq(teamObservers.teamId, teamId),
-            eq(teamObservers.isActive, true)
+            eq(teamObservers.canApprove, true)
           )
         );
 
