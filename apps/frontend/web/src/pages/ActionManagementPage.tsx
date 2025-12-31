@@ -1023,6 +1023,25 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                 ))}
               </div>
 
+              {/* Team Override Info Box */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Shield className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="font-medium text-sm text-purple-900">Override per Team</Label>
+                    <p className="text-xs text-purple-700 mt-1">
+                      Puoi configurare flussi diversi per team specifici. Se un team ha un override, 
+                      userà quel flusso invece del default. Gli override sono gestiti via API:
+                    </p>
+                    <code className="block mt-2 text-xs bg-white/50 px-2 py-1 rounded border border-purple-200 text-purple-800">
+                      GET/POST /api/action-configurations/{'{id}'}/team-overrides
+                    </code>
+                  </div>
+                </div>
+              </div>
+
               {/* SLA and Escalation settings */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div className="space-y-2">

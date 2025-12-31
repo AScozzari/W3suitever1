@@ -18,7 +18,9 @@ import {
   teams,
   teamDepartments,
   departments,
-  insertActionConfigurationSchema
+  insertActionConfigurationSchema,
+  actionTeamOverrides,
+  insertActionTeamOverrideSchema
 } from '../db/schema/w3suite';
 import { actionDefinitions } from '../db/schema/public';
 import { logger } from '../core/logger';
@@ -899,6 +901,269 @@ router.post('/seed', async (req, res) => {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     res.status(500).json({ error: 'Failed to seed configurations' });
+  }
+});
+
+// ==================== ACTION TEAM OVERRIDES ====================
+// Override per-team: permette di avere flowType diversi per team diversi sulla stessa azione
+
+// GET overrides per una action configuration
+router.get('/:actionConfigId/team-overrides', async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { actionConfigId } = req.params;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    const overrides = await db
+      .select({
+        id: actionTeamOverrides.id,
+        tenantId: actionTeamOverrides.tenantId,
+        actionConfigId: actionTeamOverrides.actionConfigId,
+        teamId: actionTeamOverrides.teamId,
+        teamName: teams.name,
+        flowType: actionTeamOverrides.flowType,
+        workflowTemplateId: actionTeamOverrides.workflowTemplateId,
+        workflowName: workflowTemplates.name,
+        slaHoursOverride: actionTeamOverrides.slaHoursOverride,
+        priority: actionTeamOverrides.priority,
+        isActive: actionTeamOverrides.isActive,
+        createdAt: actionTeamOverrides.createdAt,
+        updatedAt: actionTeamOverrides.updatedAt
+      })
+      .from(actionTeamOverrides)
+      .leftJoin(teams, eq(teams.id, actionTeamOverrides.teamId))
+      .leftJoin(workflowTemplates, eq(workflowTemplates.id, actionTeamOverrides.workflowTemplateId))
+      .where(
+        and(
+          eq(actionTeamOverrides.actionConfigId, actionConfigId),
+          eq(actionTeamOverrides.tenantId, tenantId)
+        )
+      )
+      .orderBy(actionTeamOverrides.priority);
+
+    res.json({
+      overrides,
+      total: overrides.length
+    });
+
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error fetching team overrides', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to fetch team overrides' });
+  }
+});
+
+// CREATE team override
+router.post('/:actionConfigId/team-overrides', async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { actionConfigId } = req.params;
+    const { teamId, flowType, workflowTemplateId, slaHoursOverride, priority } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    if (!teamId || !flowType) {
+      return res.status(400).json({ error: 'teamId and flowType are required' });
+    }
+
+    // Validate flowType
+    if (!['none', 'default', 'workflow'].includes(flowType)) {
+      return res.status(400).json({ error: 'Invalid flowType. Must be: none, default, or workflow' });
+    }
+
+    // If flowType is 'workflow', workflowTemplateId is required
+    if (flowType === 'workflow' && !workflowTemplateId) {
+      return res.status(400).json({ error: 'workflowTemplateId is required when flowType is workflow' });
+    }
+
+    // Check if action config exists
+    const [actionConfig] = await db
+      .select()
+      .from(actionConfigurations)
+      .where(
+        and(
+          eq(actionConfigurations.id, actionConfigId),
+          eq(actionConfigurations.tenantId, tenantId)
+        )
+      )
+      .limit(1);
+
+    if (!actionConfig) {
+      return res.status(404).json({ error: 'Action configuration not found' });
+    }
+
+    // Check if team exists
+    const [team] = await db
+      .select()
+      .from(teams)
+      .where(
+        and(
+          eq(teams.id, teamId),
+          eq(teams.tenantId, tenantId)
+        )
+      )
+      .limit(1);
+
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // Create override
+    const [override] = await db
+      .insert(actionTeamOverrides)
+      .values({
+        tenantId,
+        actionConfigId,
+        teamId,
+        flowType: flowType as any,
+        workflowTemplateId: flowType === 'workflow' ? workflowTemplateId : null,
+        slaHoursOverride: slaHoursOverride || null,
+        priority: priority || 100,
+        isActive: true,
+        createdBy: userId,
+        updatedBy: userId
+      })
+      .returning();
+
+    logger.info('✅ [ACTION-CONFIG] Team override created', {
+      tenantId,
+      actionConfigId,
+      teamId,
+      flowType
+    });
+
+    res.json({
+      success: true,
+      override,
+      message: `Override creato per il team ${team.name}`
+    });
+
+  } catch (error: any) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Override already exists for this team' });
+    }
+    logger.error('❌ [ACTION-CONFIG] Error creating team override', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to create team override' });
+  }
+});
+
+// UPDATE team override
+router.patch('/:actionConfigId/team-overrides/:overrideId', async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { actionConfigId, overrideId } = req.params;
+    const { flowType, workflowTemplateId, slaHoursOverride, priority, isActive } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    // Validate flowType if provided
+    if (flowType && !['none', 'default', 'workflow'].includes(flowType)) {
+      return res.status(400).json({ error: 'Invalid flowType. Must be: none, default, or workflow' });
+    }
+
+    // If flowType is 'workflow', workflowTemplateId is required
+    if (flowType === 'workflow' && !workflowTemplateId) {
+      return res.status(400).json({ error: 'workflowTemplateId is required when flowType is workflow' });
+    }
+
+    const updateData: any = {
+      updatedAt: new Date(),
+      updatedBy: userId
+    };
+
+    if (flowType !== undefined) updateData.flowType = flowType;
+    if (workflowTemplateId !== undefined) updateData.workflowTemplateId = flowType === 'workflow' ? workflowTemplateId : null;
+    if (slaHoursOverride !== undefined) updateData.slaHoursOverride = slaHoursOverride;
+    if (priority !== undefined) updateData.priority = priority;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const [updated] = await db
+      .update(actionTeamOverrides)
+      .set(updateData)
+      .where(
+        and(
+          eq(actionTeamOverrides.id, overrideId),
+          eq(actionTeamOverrides.actionConfigId, actionConfigId),
+          eq(actionTeamOverrides.tenantId, tenantId)
+        )
+      )
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Override not found' });
+    }
+
+    logger.info('✅ [ACTION-CONFIG] Team override updated', {
+      tenantId,
+      overrideId,
+      changes: updateData
+    });
+
+    res.json({
+      success: true,
+      override: updated
+    });
+
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error updating team override', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to update team override' });
+  }
+});
+
+// DELETE team override
+router.delete('/:actionConfigId/team-overrides/:overrideId', async (req, res) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { actionConfigId, overrideId } = req.params;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    const [deleted] = await db
+      .delete(actionTeamOverrides)
+      .where(
+        and(
+          eq(actionTeamOverrides.id, overrideId),
+          eq(actionTeamOverrides.actionConfigId, actionConfigId),
+          eq(actionTeamOverrides.tenantId, tenantId)
+        )
+      )
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Override not found' });
+    }
+
+    logger.info('✅ [ACTION-CONFIG] Team override deleted', {
+      tenantId,
+      overrideId
+    });
+
+    res.json({
+      success: true,
+      message: 'Override eliminato'
+    });
+
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error deleting team override', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to delete team override' });
   }
 });
 

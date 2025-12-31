@@ -13,9 +13,10 @@
  */
 
 import { db } from '../core/db';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, asc } from 'drizzle-orm';
 import { 
   actionConfigurations,
+  actionTeamOverrides,
   teams,
   userTeams,
   teamObservers,
@@ -122,7 +123,36 @@ class UnifiedTriggerService {
         return await this.handleNoTeamFallback(ctx);
       }
 
-      // 4. Verifica scope team se configurazione specifica
+      // 4. 🎯 NUOVO: Cerca override per team specifico
+      const teamOverride = await this.getTeamOverride(actionConfig.id, teamSupervisors.teamId);
+      
+      if (teamOverride) {
+        logger.info('🔀 [UNIFIED-TRIGGER] Using team-specific override', {
+          teamId: teamSupervisors.teamId,
+          teamName: teamSupervisors.teamName,
+          overrideFlowType: teamOverride.flowType,
+          hasWorkflow: !!teamOverride.workflowTemplateId
+        });
+        
+        // Route in base a flowType dell'override
+        switch (teamOverride.flowType) {
+          case 'workflow':
+            return await this.handleWorkflowFlowWithOverride(ctx, actionConfig, teamSupervisors, teamOverride);
+          
+          case 'default':
+            return await this.handleDefaultFlowWithSupervisors(ctx, teamSupervisors);
+          
+          case 'none':
+          default:
+            return {
+              success: true,
+              flowType: 'none',
+              message: 'Team override: azione non richiede flusso di approvazione'
+            };
+        }
+      }
+
+      // 5. Verifica scope team se configurazione specifica (fallback senza override)
       if (actionConfig.teamScope === 'specific' && actionConfig.specificTeamIds) {
         const teamIds = actionConfig.specificTeamIds as string[];
         if (!teamIds.includes(teamSupervisors.teamId)) {
@@ -131,7 +161,7 @@ class UnifiedTriggerService {
         }
       }
 
-      // 5. Route in base a flowType
+      // 6. Route in base a flowType globale (nessun override trovato)
       switch (actionConfig.flowType) {
         case 'workflow':
           return await this.handleWorkflowFlow(ctx, actionConfig, teamSupervisors);
@@ -186,6 +216,54 @@ class UnifiedTriggerService {
         tenantId,
         department,
         actionId
+      });
+      return null;
+    }
+  }
+
+  /**
+   * 🔀 Cerca override per team specifico
+   * 
+   * Se esiste un override attivo per actionConfigId + teamId,
+   * quel flowType ha precedenza sulla configurazione globale.
+   * Ordinato per priority (più basso = più alta priorità)
+   */
+  async getTeamOverride(actionConfigId: string, teamId: string) {
+    try {
+      const [override] = await db
+        .select({
+          id: actionTeamOverrides.id,
+          flowType: actionTeamOverrides.flowType,
+          workflowTemplateId: actionTeamOverrides.workflowTemplateId,
+          slaHoursOverride: actionTeamOverrides.slaHoursOverride,
+          priority: actionTeamOverrides.priority
+        })
+        .from(actionTeamOverrides)
+        .where(
+          and(
+            eq(actionTeamOverrides.actionConfigId, actionConfigId),
+            eq(actionTeamOverrides.teamId, teamId),
+            eq(actionTeamOverrides.isActive, true)
+          )
+        )
+        .orderBy(asc(actionTeamOverrides.priority))
+        .limit(1);
+
+      if (override) {
+        logger.info('✅ [UNIFIED-TRIGGER] Team override found', {
+          overrideId: override.id,
+          flowType: override.flowType,
+          priority: override.priority,
+          hasSlaOverride: !!override.slaHoursOverride
+        });
+      }
+
+      return override || null;
+    } catch (error) {
+      logger.error('❌ [UNIFIED-TRIGGER] Error getting team override', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        actionConfigId,
+        teamId
       });
       return null;
     }
@@ -451,6 +529,84 @@ class UnifiedTriggerService {
     } catch (error) {
       logger.error('❌ [UNIFIED-TRIGGER] Error handling workflow flow', {
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      // Fallback a flusso default in caso di errore
+      logger.info('🔄 [UNIFIED-TRIGGER] Falling back to default flow due to workflow error');
+      return await this.handleDefaultFlowWithSupervisors(ctx, supervisors);
+    }
+  }
+
+  /**
+   * 🔀 FLUSSO WORKFLOW CON OVERRIDE: Avvia workflow da team override
+   * 
+   * Usa workflowTemplateId dall'override invece che dalla configurazione globale
+   */
+  async handleWorkflowFlowWithOverride(
+    ctx: TriggerContext,
+    actionConfig: any,
+    supervisors: TeamSupervisors,
+    override: { id: string; flowType: string; workflowTemplateId: string | null; slaHoursOverride: number | null }
+  ): Promise<TriggerResult> {
+    try {
+      if (!override.workflowTemplateId) {
+        logger.warn('⚠️ [UNIFIED-TRIGGER] Team override has workflow flow but no template, falling back to default');
+        return await this.handleDefaultFlowWithSupervisors(ctx, supervisors);
+      }
+
+      // Verifica che il template esista e sia attivo
+      const [template] = await db
+        .select()
+        .from(workflowTemplates)
+        .where(
+          and(
+            eq(workflowTemplates.id, override.workflowTemplateId),
+            eq(workflowTemplates.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!template) {
+        logger.warn('⚠️ [UNIFIED-TRIGGER] Workflow template from override not found, falling back to default');
+        return await this.handleDefaultFlowWithSupervisors(ctx, supervisors);
+      }
+
+      // Avvia istanza workflow tramite WorkflowEngine
+      const workflowEngine = new WorkflowEngine();
+      const instanceResult = await workflowEngine.startInstance({
+        templateId: override.workflowTemplateId,
+        tenantId: ctx.tenantId,
+        triggeredBy: ctx.userId,
+        referenceId: ctx.requestId,
+        referenceType: ctx.department,
+        inputData: {
+          department: ctx.department,
+          actionId: ctx.actionId,
+          teamOverrideId: override.id,
+          ...ctx.context
+        },
+        assignedTeamId: supervisors.teamId
+      });
+
+      logger.info('✅ [UNIFIED-TRIGGER] Workflow instance started from team override', {
+        workflowInstanceId: instanceResult.instanceId,
+        templateId: override.workflowTemplateId,
+        teamId: supervisors.teamId,
+        overrideId: override.id
+      });
+
+      return {
+        success: true,
+        flowType: 'workflow',
+        message: 'Workflow avviato con successo (override team)',
+        workflowInstanceId: instanceResult.instanceId,
+        teamId: supervisors.teamId,
+        requestId: ctx.requestId
+      };
+
+    } catch (error) {
+      logger.error('❌ [UNIFIED-TRIGGER] Error handling workflow flow with override', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        overrideId: override.id
       });
       // Fallback a flusso default in caso di errore
       logger.info('🔄 [UNIFIED-TRIGGER] Falling back to default flow due to workflow error');
