@@ -10721,6 +10721,7 @@ export const mcpApiKeys = w3suiteSchema.table("mcp_api_keys", {
   dailyQuota: integer("daily_quota").default(10000).notNull(),
   
   // IP restrictions (optional)
+  ipRestrictionEnabled: boolean("ip_restriction_enabled").default(false).notNull(),
   allowedIps: text("allowed_ips").array(), // null = no restriction
   
   // Status

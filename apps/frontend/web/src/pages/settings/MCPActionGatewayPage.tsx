@@ -1095,9 +1095,9 @@ function CreateApiKeyDialog({
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [rateLimitPerMinute, setRateLimitPerMinute] = useState('60');
   const [dailyQuota, setDailyQuota] = useState('10000');
+  const [ipRestrictionEnabled, setIpRestrictionEnabled] = useState(false);
   const [allowedIps, setAllowedIps] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -1107,15 +1107,20 @@ function CreateApiKeyDialog({
       return;
     }
 
+    if (ipRestrictionEnabled && !allowedIps.trim()) {
+      toast({ title: 'Errore', description: 'Inserisci almeno un indirizzo IP', variant: 'destructive' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await apiRequest('POST', '/api/mcp-gateway/keys', {
         name: name.trim(),
         description: description.trim() || undefined,
-        allowedDepartments: selectedDepartments,
         rateLimitPerMinute: parseInt(rateLimitPerMinute),
         dailyQuota: parseInt(dailyQuota),
-        allowedIps: allowedIps.split('\n').filter(ip => ip.trim())
+        ipRestrictionEnabled,
+        allowedIps: ipRestrictionEnabled ? allowedIps.split('\n').filter(ip => ip.trim()) : []
       });
 
       const data = await response.json();
@@ -1123,9 +1128,9 @@ function CreateApiKeyDialog({
       onClose();
       setName('');
       setDescription('');
-      setSelectedDepartments([]);
       setRateLimitPerMinute('60');
       setDailyQuota('10000');
+      setIpRestrictionEnabled(false);
       setAllowedIps('');
     } catch (error: any) {
       toast({ 
@@ -1144,7 +1149,7 @@ function CreateApiKeyDialog({
         <DialogHeader>
           <DialogTitle>Nuova API Key</DialogTitle>
           <DialogDescription>
-            Crea una nuova chiave per integrazioni esterne
+            Crea una nuova chiave per integrazioni esterne. Dopo la creazione, potrai abilitare i singoli tool dalla tab Permessi.
           </DialogDescription>
         </DialogHeader>
 
@@ -1166,34 +1171,9 @@ function CreateApiKeyDialog({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="es. Automazioni CRM"
+              placeholder="es. Automazioni workflow HR"
               data-testid="input-key-description"
             />
-          </div>
-
-          <div>
-            <Label>Dipartimenti consentiti</Label>
-            <p className="text-xs text-gray-500 mb-2">Lascia vuoto per tutti i dipartimenti</p>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(DEPARTMENT_STYLES).map(([key, style]) => (
-                <Badge
-                  key={key}
-                  variant={selectedDepartments.includes(key) ? 'default' : 'outline'}
-                  className="cursor-pointer"
-                  style={selectedDepartments.includes(key) ? { backgroundColor: style.color } : { borderColor: style.color, color: style.color }}
-                  onClick={() => {
-                    setSelectedDepartments(prev => 
-                      prev.includes(key) 
-                        ? prev.filter(d => d !== key)
-                        : [...prev, key]
-                    );
-                  }}
-                  data-testid={`badge-dept-${key}`}
-                >
-                  {style.label}
-                </Badge>
-              ))}
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -1219,16 +1199,41 @@ function CreateApiKeyDialog({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="allowedIps">IP Whitelist (uno per riga)</Label>
-            <Textarea
-              id="allowedIps"
-              value={allowedIps}
-              onChange={(e) => setAllowedIps(e.target.value)}
-              placeholder="192.168.1.1&#10;10.0.0.0/24"
-              rows={3}
-              data-testid="textarea-ip-whitelist"
-            />
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="ipRestriction" className="text-sm font-medium">
+                  Limita accesso a IP specifici
+                </Label>
+                <p className="text-xs text-gray-500">
+                  Se disattivo, la chiave funziona da qualsiasi IP
+                </p>
+              </div>
+              <Switch
+                id="ipRestriction"
+                checked={ipRestrictionEnabled}
+                onCheckedChange={setIpRestrictionEnabled}
+                data-testid="switch-ip-restriction"
+              />
+            </div>
+            
+            {ipRestrictionEnabled && (
+              <div>
+                <Label htmlFor="allowedIps">IP Whitelist (uno per riga)</Label>
+                <Textarea
+                  id="allowedIps"
+                  value={allowedIps}
+                  onChange={(e) => setAllowedIps(e.target.value)}
+                  placeholder="192.168.1.1&#10;10.0.0.0/24&#10;203.0.113.50"
+                  rows={3}
+                  className="mt-1"
+                  data-testid="textarea-ip-whitelist"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Inserisci gli IP dei tuoi server n8n, Zapier o altre automazioni
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

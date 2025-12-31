@@ -106,7 +106,7 @@ router.post('/keys', requirePermission('settings.write'), async (req: Request, r
     }
     await setTenantContext(tenantId);
 
-    const { name, description, allowedDepartments, rateLimitPerMinute, dailyQuota, allowedIps, expiresAt } = req.body;
+    const { name, description, rateLimitPerMinute, dailyQuota, ipRestrictionEnabled, allowedIps, expiresAt } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
@@ -132,10 +132,10 @@ router.post('/keys', requirePermission('settings.write'), async (req: Request, r
         description,
         keyPrefix: prefix,
         keyHash: hash,
-        allowedDepartments: allowedDepartments || null,
         rateLimitPerMinute: rateLimitPerMinute || 60,
         dailyQuota: dailyQuota || 10000,
-        allowedIps: allowedIps || null,
+        ipRestrictionEnabled: ipRestrictionEnabled || false,
+        allowedIps: ipRestrictionEnabled ? (allowedIps || null) : null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         createdBy: userId,
       })
@@ -167,17 +167,17 @@ router.patch('/keys/:id', requirePermission('settings.write'), async (req: Reque
     }
     await setTenantContext(tenantId);
 
-    const { name, description, allowedDepartments, rateLimitPerMinute, dailyQuota, allowedIps, isActive, expiresAt } = req.body;
+    const { name, description, rateLimitPerMinute, dailyQuota, ipRestrictionEnabled, allowedIps, isActive, expiresAt } = req.body;
 
     const [updated] = await db
       .update(mcpApiKeys)
       .set({
         name,
         description,
-        allowedDepartments,
         rateLimitPerMinute,
         dailyQuota,
-        allowedIps,
+        ipRestrictionEnabled,
+        allowedIps: ipRestrictionEnabled ? allowedIps : null,
         isActive,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         updatedAt: new Date(),
