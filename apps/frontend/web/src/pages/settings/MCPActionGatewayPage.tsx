@@ -61,10 +61,11 @@ interface MCPApiKey {
   keyPrefix: string;
   description?: string;
   allowedDepartments: string[];
-  ipWhitelist: string[];
+  allowedIps: string[];
   rateLimitPerMinute: number;
   dailyQuota: number;
-  usageCount: number;
+  totalCalls: number;
+  enabledTools: number;
   isActive: boolean;
   expiresAt?: string;
   createdAt: string;
@@ -472,7 +473,7 @@ function ApiKeysTab({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm font-medium">{key.usageCount.toLocaleString()}</div>
+                    <div className="text-sm font-medium">{key.totalCalls.toLocaleString()}</div>
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -1097,7 +1098,7 @@ function CreateApiKeyDialog({
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [rateLimitPerMinute, setRateLimitPerMinute] = useState('60');
   const [dailyQuota, setDailyQuota] = useState('10000');
-  const [ipWhitelist, setIpWhitelist] = useState('');
+  const [allowedIps, setAllowedIps] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -1114,7 +1115,7 @@ function CreateApiKeyDialog({
         allowedDepartments: selectedDepartments,
         rateLimitPerMinute: parseInt(rateLimitPerMinute),
         dailyQuota: parseInt(dailyQuota),
-        ipWhitelist: ipWhitelist.split('\n').filter(ip => ip.trim())
+        allowedIps: allowedIps.split('\n').filter(ip => ip.trim())
       });
 
       const data = await response.json();
@@ -1125,7 +1126,7 @@ function CreateApiKeyDialog({
       setSelectedDepartments([]);
       setRateLimitPerMinute('60');
       setDailyQuota('10000');
-      setIpWhitelist('');
+      setAllowedIps('');
     } catch (error: any) {
       toast({ 
         title: 'Errore', 
@@ -1219,11 +1220,11 @@ function CreateApiKeyDialog({
           </div>
 
           <div>
-            <Label htmlFor="ipWhitelist">IP Whitelist (uno per riga)</Label>
+            <Label htmlFor="allowedIps">IP Whitelist (uno per riga)</Label>
             <Textarea
-              id="ipWhitelist"
-              value={ipWhitelist}
-              onChange={(e) => setIpWhitelist(e.target.value)}
+              id="allowedIps"
+              value={allowedIps}
+              onChange={(e) => setAllowedIps(e.target.value)}
               placeholder="192.168.1.1&#10;10.0.0.0/24"
               rows={3}
               data-testid="textarea-ip-whitelist"
