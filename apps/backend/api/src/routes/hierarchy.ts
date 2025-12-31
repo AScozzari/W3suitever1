@@ -871,14 +871,15 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
       .where(whereCondition)
       .orderBy(asc(teams.name));
 
-    // 🎯 Enrich teams with member count, supervisor names, and departments
+    // 🎯 Enrich teams with member count, member IDs, supervisor names, and departments
     const enrichedTeams = await Promise.all(allTeams.map(async (team) => {
-      // Get member count from user_teams
-      const memberCountResult = await db
-        .select({ count: sql<number>`count(*)` })
+      // Get members from user_teams (both count and IDs for edit functionality)
+      const membersResult = await db
+        .select({ userId: userTeams.userId })
         .from(userTeams)
         .where(eq(userTeams.teamId, team.id));
-      const memberCount = Number(memberCountResult[0]?.count || 0);
+      const memberCount = membersResult.length;
+      const userMembers = membersResult.map(m => m.userId);
       
       // Get primary supervisor name
       let primarySupervisorName = null;
@@ -921,6 +922,7 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
         ...team,
         teamType: team.teamType || 'functional',
         memberCount,
+        userMembers, // Array of user IDs for edit functionality
         primarySupervisorName,
         secondarySupervisorName,
         departments: teamDepts,

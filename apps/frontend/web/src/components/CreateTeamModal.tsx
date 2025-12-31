@@ -121,16 +121,22 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   React.useEffect(() => {
     if (open) {
       if (editTeam) {
+        // 🎯 Load existing team data including members, observers and supervisors
         const formData = {
           name: editTeam.name || '',
           description: editTeam.description || '',
           teamType: editTeam.teamType || 'functional',
           assignedDepartments: editTeam.assignedDepartments || [],
-          selectedMembers: [], // Will be loaded from API when editing
-          selectedObservers: [], // Will be loaded from API when editing
-          primarySupervisorUser: editTeam.primarySupervisorUser || null,
-          secondarySupervisorUser: editTeam.secondarySupervisorUser || 
-            (editTeam.secondarySupervisorUsers && editTeam.secondarySupervisorUsers[0]) || null,
+          // Load existing members from userMembers array
+          selectedMembers: editTeam.userMembers || [],
+          // Load existing observers from metadata or dedicated field
+          selectedObservers: editTeam.observers || editTeam.metadata?.observers || [],
+          // Load primary supervisor
+          primarySupervisorUser: editTeam.primarySupervisor || editTeam.primarySupervisorUser || null,
+          // Load secondary supervisor (first from array or direct field)
+          secondarySupervisorUser: 
+            (editTeam.secondarySupervisors && editTeam.secondarySupervisors[0]) ||
+            editTeam.secondarySupervisorUser || null,
           workflowAssignments: editTeam.workflowAssignments || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
         };
@@ -273,21 +279,36 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     }
   });
 
-  // 🎯 Update team mutation
+  // 🎯 Update team mutation - uses PATCH /api/teams/:id
   const updateTeamMutation = useMutation({
     mutationFn: async (teamData: CreateTeamData) => {
       // workflowAssignments are now managed centrally via Action Management Dashboard
       const { selectedMembers, selectedObservers, workflowAssignments, ...teamPayload } = teamData;
       
+      // Build metadata with observers
+      const existingMetadata = editTeam?.metadata || {};
+      const updatedMetadata = {
+        ...existingMetadata,
+        observers: selectedObservers || []
+      };
+      
       return await apiRequest(`/api/teams/${editTeam.id}`, {
-        method: 'PUT',
+        method: 'PATCH', // API uses PATCH, not PUT
         body: JSON.stringify({
-          ...teamPayload,
-          primarySupervisorUser: teamPayload.primarySupervisorUser || undefined,
-          secondarySupervisorUser: teamPayload.secondarySupervisorUser || undefined
+          name: teamPayload.name,
+          description: teamPayload.description,
+          teamType: teamPayload.teamType,
+          assignedDepartments: teamPayload.assignedDepartments,
+          isActive: teamPayload.isActive,
+          // Members as expected by API
+          members: selectedMembers || [],
+          // Supervisors with correct field names
+          primarySupervisorUser: teamPayload.primarySupervisorUser || null,
+          secondarySupervisorUser: teamPayload.secondarySupervisorUser || null,
+          // Observers stored in metadata
+          metadata: updatedMetadata
         })
       });
-      // Note: For updates, members/observers are managed separately via dedicated APIs
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
