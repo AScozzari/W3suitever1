@@ -32,7 +32,10 @@ import {
   insertTeamSchema,
   insertTeamWorkflowAssignmentSchema,
   insertUserWorkflowAssignmentSchema,
-  insertWorkflowInstanceSchema
+  insertWorkflowInstanceSchema,
+  // Team enrichment tables
+  teamDepartments,
+  departments
 } from '../db/schema/w3suite';
 import { z } from 'zod';
 import { workflowEngine } from '../services/workflow-engine';
@@ -842,6 +845,7 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
 
 // GET /api/teams - Get all teams for tenant (with optional type filter)
 // Supports workflow.read permission (used by both workflow and teams features)
+// 🎯 ENRICHED: Returns memberCount, supervisorNames, and department codes
 router.get('/teams', requirePermission('workflow.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
@@ -866,7 +870,65 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
       .where(whereCondition)
       .orderBy(asc(teams.name));
 
-    res.json(allTeams);
+    // 🎯 Enrich teams with member count, supervisor names, and departments
+    const enrichedTeams = await Promise.all(allTeams.map(async (team) => {
+      // Get member count from user_teams
+      const memberCountResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(userTeams)
+        .where(eq(userTeams.teamId, team.id));
+      const memberCount = Number(memberCountResult[0]?.count || 0);
+      
+      // Get primary supervisor name
+      let primarySupervisorName = null;
+      if (team.primarySupervisorUser) {
+        const [supervisor] = await db
+          .select({ firstName: users.firstName, lastName: users.lastName })
+          .from(users)
+          .where(eq(users.id, team.primarySupervisorUser))
+          .limit(1);
+        if (supervisor) {
+          primarySupervisorName = `${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim();
+        }
+      }
+      
+      // Get secondary supervisor name
+      let secondarySupervisorName = null;
+      if (team.secondarySupervisorUser) {
+        const [supervisor] = await db
+          .select({ firstName: users.firstName, lastName: users.lastName })
+          .from(users)
+          .where(eq(users.id, team.secondarySupervisorUser))
+          .limit(1);
+        if (supervisor) {
+          secondarySupervisorName = `${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim();
+        }
+      }
+      
+      // Get departments from junction table
+      const teamDepts = await db
+        .select({ 
+          departmentId: teamDepartments.departmentId,
+          code: departments.code,
+          name: departments.name
+        })
+        .from(teamDepartments)
+        .innerJoin(departments, eq(teamDepartments.departmentId, departments.id))
+        .where(eq(teamDepartments.teamId, team.id));
+      
+      return {
+        ...team,
+        teamType: team.teamType || 'functional',
+        memberCount,
+        primarySupervisorName,
+        secondarySupervisorName,
+        departments: teamDepts,
+        assignedDepartments: teamDepts.map(d => d.code),
+        workflowAssignments: []
+      };
+    }));
+
+    res.json(enrichedTeams);
   } catch (error) {
     console.error('Error fetching teams:', error);
     res.status(500).json({ error: 'Failed to fetch teams' });
