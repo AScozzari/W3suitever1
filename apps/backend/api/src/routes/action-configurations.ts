@@ -593,17 +593,20 @@ router.get('/meta/departments', async (req, res) => {
   }
 });
 
-// ==================== GET WORKFLOW TEMPLATES FOR DEPARTMENT ====================
+// ==================== GET ALL WORKFLOW TEMPLATES FOR TENANT ====================
+// NOTE: Returns ALL tenant workflows, not filtered by department, for maximum flexibility
+// The department param is kept for backwards compatibility but is now ignored
 
 router.get('/meta/workflows/:department', async (req, res) => {
   try {
     const tenantId = req.tenant?.id;
-    const { department } = req.params;
 
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID required' });
     }
 
+    // Return ALL active workflows for the tenant (no department filter)
+    // This allows assigning any workflow to any action for maximum flexibility
     const templates = await db
       .select({
         id: workflowTemplates.id,
@@ -617,10 +620,10 @@ router.get('/meta/workflows/:department', async (req, res) => {
       .where(
         and(
           eq(workflowTemplates.tenantId, tenantId),
-          eq(workflowTemplates.category, department),
           eq(workflowTemplates.isActive, true)
         )
-      );
+      )
+      .orderBy(workflowTemplates.name);
 
     res.json({ templates });
 
@@ -632,37 +635,35 @@ router.get('/meta/workflows/:department', async (req, res) => {
   }
 });
 
-// ==================== GET TEAMS FOR DEPARTMENT ====================
+// ==================== GET ALL TEAMS FOR TENANT ====================
+// NOTE: Returns ALL tenant teams, not filtered by department, for maximum flexibility
+// The department param is kept for backwards compatibility but is now ignored
 
 router.get('/meta/teams/:department', async (req, res) => {
   try {
     const tenantId = req.tenant?.id;
-    const { department } = req.params; // department code like 'hr', 'wms', etc.
 
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID required' });
     }
 
-    // Teams are linked to departments via teamDepartments junction table
-    // department param is a code (e.g., 'hr'), not a UUID
-    // We need: teams → teamDepartments → departments (filter by code)
+    // Return ALL active teams for the tenant (no department filter)
+    // This allows assigning any team to any action for maximum flexibility
     const teamList = await db
-      .selectDistinct({
+      .select({
         id: teams.id,
         name: teams.name,
         teamType: teams.teamType,
         primarySupervisorUser: teams.primarySupervisorUser
       })
       .from(teams)
-      .innerJoin(teamDepartments, eq(teams.id, teamDepartments.teamId))
-      .innerJoin(departments, eq(teamDepartments.departmentId, departments.id))
       .where(
         and(
           eq(teams.tenantId, tenantId),
-          eq(departments.code, department), // Filter by department code
           eq(teams.isActive, true)
         )
-      );
+      )
+      .orderBy(teams.name);
 
     res.json({ teams: teamList });
 
