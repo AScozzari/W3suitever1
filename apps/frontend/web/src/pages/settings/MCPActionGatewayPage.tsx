@@ -663,11 +663,7 @@ function PermissionsMatrixTab({
   const { data: keyPermissions = [], isLoading: loadingPermissions } = useQuery<ToolPermission[]>({
     queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'],
     queryFn: async () => {
-      const res = await fetch(`/api/mcp-gateway/keys/${selectedKeyId}/permissions`, {
-        headers: { 'X-Tenant-ID': localStorage.getItem('tenantId') || '' }
-      });
-      if (!res.ok) throw new Error('Failed to fetch permissions');
-      return res.json();
+      return await apiRequest(`/api/mcp-gateway/keys/${selectedKeyId}/permissions`);
     },
     enabled: !!selectedKeyId,
   });
