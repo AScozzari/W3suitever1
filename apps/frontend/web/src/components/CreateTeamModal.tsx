@@ -412,11 +412,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`glass-modal max-w-4xl transition-all duration-300 flex flex-col ${
-        currentStep <= 2 
-          ? 'max-h-[70vh]' 
-          : 'max-h-[90vh]'
-      }`}>
+      <DialogContent className="glass-modal max-w-4xl max-h-[85vh] h-[85vh] transition-all duration-300 flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-windtre-orange" />
@@ -453,7 +449,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="flex-1 pr-4 overflow-y-auto" style={{ maxHeight: 'calc(100% - 80px)' }}>
+            <ScrollArea className="flex-1 pr-4 h-full" style={{ height: 'calc(85vh - 220px)' }}>
               
               {/* 🎯 STEP 1: Basic Information */}
               {currentStep === 1 && (
@@ -1151,7 +1147,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
             </ScrollArea>
 
             {/* 🎯 Footer Actions */}
-            <div className="flex justify-between pt-4 border-t mt-4 flex-shrink-0 bg-white sticky bottom-0">
+            <div className="flex justify-between pt-4 border-t mt-4 flex-shrink-0 bg-white pb-2">
               <Button
                 type="button"
                 variant="outline"
