@@ -86,11 +86,43 @@ interface CoverageData {
     description: string;
     summary: {
       totalUsers: number;
+      totalDepartments: number;
+      usersWithFullCoverage: number;
+      usersWithPartialCoverage: number;
+      usersWithNoCoverage: number;
       usersWithTeam: number;
       usersWithoutTeam: number;
     };
     data: {
-      summary: { totalUsers: number; usersWithTeam: number; usersWithoutTeam: number };
+      summary: { 
+        totalUsers: number; 
+        totalDepartments: number;
+        usersWithFullCoverage: number;
+        usersWithPartialCoverage: number;
+        usersWithNoCoverage: number;
+        usersWithTeam: number; 
+        usersWithoutTeam: number;
+      };
+      usersWithFullCoverage: Array<{
+        userId: string;
+        userName: string;
+        userRole: string;
+        teamCount: number;
+        coveragePercent: number;
+      }>;
+      usersWithPartialCoverage: Array<{
+        userId: string;
+        userName: string;
+        userRole: string;
+        teamCount: number;
+        coveragePercent: number;
+        missingDepartments: Array<{ code: string; name: string }>;
+      }>;
+      usersWithNoCoverage: Array<{
+        userId: string;
+        userName: string;
+        userRole: string;
+      }>;
       usersWithoutTeam: Array<{
         userId: string;
         userName: string;
@@ -103,8 +135,8 @@ interface CoverageData {
         usersWithCoverage: number;
         usersWithoutCoverage: number;
         coveragePercent: number;
-        coveredUsers?: Array<{ userId: string; userName: string; userRole: string; teamCount: number }>;
-        uncoveredUsers?: Array<{ userId: string; userName: string; userRole: string }>;
+        coveredUsers?: Array<{ userId: string; userName: string; userRole: string; teamCount: number; coveragePercent?: number }>;
+        uncoveredUsers?: Array<{ userId: string; userName: string; userRole: string; missingDepts?: string[] }>;
         hasMoreCovered?: boolean;
         hasMoreUncovered?: boolean;
       }>;
@@ -540,14 +572,27 @@ export default function CoverageDashboardV2({
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Users className="h-5 w-5 text-windtre-orange" />
                     {data.level2.name}
-                    <Badge variant="outline">
-                      {data.level2.summary.usersWithTeam}/{data.level2.summary.totalUsers}
-                    </Badge>
-                    {data.level2.summary.usersWithoutTeam > 0 && (
-                      <Badge variant="destructive">{data.level2.summary.usersWithoutTeam} orfani</Badge>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge className="bg-green-100 text-green-700 border-green-200">
+                          {data.level2.summary.usersWithFullCoverage || 0} completi
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Utenti con team in TUTTI i {data.level2.summary.totalDepartments || 0} dipartimenti</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+                          {data.level2.summary.usersWithPartialCoverage || 0} parziali
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Utenti con team in alcuni dipartimenti (copertura incompleta)</TooltipContent>
+                    </Tooltip>
+                    {(data.level2.summary.usersWithNoCoverage || 0) > 0 && (
+                      <Badge variant="destructive">{data.level2.summary.usersWithNoCoverage} orfani</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -555,28 +600,83 @@ export default function CoverageDashboardV2({
                     {expandedLevels.level2 ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                   </div>
                 </CardTitle>
-                <CardDescription>{data.level2.description}</CardDescription>
+                <CardDescription>
+                  Ogni utente deve avere almeno 1 team per OGNI dipartimento ({data.level2.summary.totalDepartments || 0} totali)
+                </CardDescription>
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent>
-                {data.level2.data.usersWithoutTeam.length > 0 && (
+                {/* Summary Cards */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+                    <div className="text-2xl font-bold text-green-700">{data.level2.summary.usersWithFullCoverage || 0}</div>
+                    <div className="text-xs text-green-600">Copertura Completa</div>
+                  </div>
+                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
+                    <div className="text-2xl font-bold text-yellow-700">{data.level2.summary.usersWithPartialCoverage || 0}</div>
+                    <div className="text-xs text-yellow-600">Copertura Parziale</div>
+                  </div>
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-200 text-center">
+                    <div className="text-2xl font-bold text-red-700">{data.level2.summary.usersWithNoCoverage || 0}</div>
+                    <div className="text-xs text-red-600">Nessuna Copertura</div>
+                  </div>
+                </div>
+
+                {/* Users with Partial Coverage - show missing departments */}
+                {data.level2.data.usersWithPartialCoverage && data.level2.data.usersWithPartialCoverage.length > 0 && (
+                  <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <h4 className="font-medium text-yellow-700 mb-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Utenti con Copertura Parziale ({data.level2.summary.usersWithPartialCoverage})
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {data.level2.data.usersWithPartialCoverage.slice(0, 10).map(user => (
+                        <div key={user.userId} className="flex items-start gap-2 text-sm p-2 bg-white rounded border border-yellow-100">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{user.userName}</div>
+                            <div className="text-xs text-gray-500">{user.userRole} · {user.teamCount} team · {user.coveragePercent}% copertura</div>
+                          </div>
+                          <div className="text-xs text-red-600">
+                            Manca: {user.missingDepartments?.slice(0, 3).map(d => d.name).join(', ')}
+                            {user.missingDepartments && user.missingDepartments.length > 3 && ` +${user.missingDepartments.length - 3}`}
+                          </div>
+                        </div>
+                      ))}
+                      {data.level2.data.usersWithPartialCoverage.length > 10 && (
+                        <div className="text-xs text-gray-500 text-center">+{data.level2.data.usersWithPartialCoverage.length - 10} altri utenti</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Users with No Coverage */}
+                {data.level2.data.usersWithNoCoverage && data.level2.data.usersWithNoCoverage.length > 0 && (
                   <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                    <h4 className="font-medium text-red-700 mb-2">Utenti senza Team</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {data.level2.data.usersWithoutTeam.slice(0, 6).map(user => (
+                    <h4 className="font-medium text-red-700 mb-2 flex items-center gap-2">
+                      <UserX className="h-4 w-4" />
+                      Utenti senza Team ({data.level2.summary.usersWithNoCoverage})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                      {data.level2.data.usersWithNoCoverage.slice(0, 10).map(user => (
                         <div key={user.userId} className="flex items-center gap-2 text-sm">
                           <UserX className="h-4 w-4 text-red-400" />
                           <span>{user.userName}</span>
                           <span className="text-gray-400">({user.userRole})</span>
                         </div>
                       ))}
-                      {data.level2.data.usersWithoutTeam.length > 6 && (
-                        <span className="text-sm text-gray-500">+{data.level2.data.usersWithoutTeam.length - 6} altri</span>
+                      {data.level2.data.usersWithNoCoverage.length > 10 && (
+                        <span className="text-sm text-gray-500">+{data.level2.data.usersWithNoCoverage.length - 10} altri</span>
                       )}
                     </div>
                   </div>
                 )}
+
+                {/* Department Breakdown Header */}
+                <h4 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Dettaglio per Dipartimento
+                </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {data.level2.data.departmentBreakdown.map(dept => (
@@ -696,51 +796,94 @@ export default function CoverageDashboardV2({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {data.level3.data.map(dept => (
-                    <div key={dept.departmentCode} className={`p-4 rounded-lg border-2 ${
-                      dept.status === 'critical' ? 'border-red-200 bg-red-50' :
-                      dept.status === 'warning' ? 'border-yellow-200 bg-yellow-50' :
-                      'border-green-200 bg-green-50'
+                    <div key={dept.departmentCode} className={`rounded-lg border-2 overflow-hidden ${
+                      dept.status === 'critical' ? 'border-red-200' :
+                      dept.status === 'warning' ? 'border-yellow-200' :
+                      'border-green-200'
                     }`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
+                      {/* Master Row - Clickable */}
+                      <div 
+                        className={`p-4 cursor-pointer transition-colors flex items-center justify-between ${
+                          dept.status === 'critical' ? 'bg-red-50 hover:bg-red-100' :
+                          dept.status === 'warning' ? 'bg-yellow-50 hover:bg-yellow-100' :
+                          'bg-green-50 hover:bg-green-100'
+                        }`}
+                        onClick={() => toggleDept(`l3-${dept.departmentCode}`)}
+                        data-testid={`l3-dept-toggle-${dept.departmentCode}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedDepts[`l3-${dept.departmentCode}`] ? (
+                            <ChevronDown className="h-5 w-5 text-gray-500" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-500" />
+                          )}
                           <h4 className="font-semibold text-gray-900">{dept.departmentName}</h4>
                           {getStatusBadge(dept.status)}
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {dept.activeActions}/{dept.totalActions} attive ({dept.coveragePercent}%)
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-900">
+                              {dept.activeActions}/{dept.totalActions} attive
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {dept.coveragePercent}% copertura
+                            </div>
+                          </div>
+                          <Progress value={dept.coveragePercent} className="w-20 h-2" />
                         </div>
                       </div>
                       
-                      {dept.actions.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {dept.actions.slice(0, 4).map(action => (
-                            <div 
-                              key={action.id} 
-                              className="flex items-center justify-between p-2 bg-white/50 rounded cursor-pointer hover:bg-white/80"
-                              onClick={() => onNavigateToAction?.(action.id)}
-                            >
-                              <div className="flex items-center gap-2">
-                                {action.isActive ? 
-                                  <CheckCircle className="h-4 w-4 text-green-500" /> : 
-                                  <XCircle className="h-4 w-4 text-gray-300" />
-                                }
-                                <span className="text-sm">{action.actionName}</span>
+                      {/* Expanded Actions List */}
+                      {expandedDepts[`l3-${dept.departmentCode}`] && dept.actions.length > 0 && (
+                        <div className="border-t border-gray-200 bg-white p-4 max-h-64 overflow-y-auto">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {dept.actions.map(action => (
+                              <div 
+                                key={action.id} 
+                                className={`flex items-center justify-between p-3 rounded border cursor-pointer transition-colors ${
+                                  action.isActive 
+                                    ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                }`}
+                                onClick={() => onNavigateToAction?.(action.id)}
+                                data-testid={`action-${action.actionId}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {action.isActive ? 
+                                    <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                                    <XCircle className="h-4 w-4 text-gray-400" />
+                                  }
+                                  <span className="text-sm font-medium">{action.actionName}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {action.flowType === 'workflow' && (
+                                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                                      Workflow
+                                    </Badge>
+                                  )}
+                                  {action.flowType === 'default' && (
+                                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                                      Default
+                                    </Badge>
+                                  )}
+                                  {action.flowType === 'none' && (
+                                    <Badge variant="outline" className="text-xs text-gray-400">
+                                      Nessuno
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                {action.hasWorkflow && (
-                                  <Badge variant="outline" className="text-xs">workflow</Badge>
-                                )}
-                                {action.flowType === 'default' && (
-                                  <Badge variant="secondary" className="text-xs">default</Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                          {dept.actions.length > 4 && (
-                            <span className="text-sm text-gray-500 p-2">+{dept.actions.length - 4} altre azioni</span>
-                          )}
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Empty State */}
+                      {expandedDepts[`l3-${dept.departmentCode}`] && dept.actions.length === 0 && (
+                        <div className="border-t border-gray-200 bg-white p-4 text-center text-sm text-gray-500">
+                          Nessuna azione configurata per questo dipartimento
                         </div>
                       )}
                     </div>

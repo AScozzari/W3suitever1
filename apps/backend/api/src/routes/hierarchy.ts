@@ -2817,7 +2817,8 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
 
     // ==================== LEVEL 2: USER COVERAGE ====================
     
-    // For each user, check if they belong to at least one team (as member or supervisor)
+    // For each user, check coverage across ALL departments (not just any team)
+    const totalDeptCount = allDepartments.length;
     const userCoverage = allUsers.map(user => {
       const memberOfTeams = allTeamMemberships.filter(m => m.userId === user.id).map(m => m.teamId);
       const supervisorOfTeams = allTeams.filter(t => 
@@ -2834,6 +2835,19 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
         depts.forEach(d => coveredDeptIds.add(d));
       });
       
+      const coveredDepts = Array.from(coveredDeptIds).map(id => deptMap.get(id)?.code || id);
+      const missingDepts = allDepartments.filter(d => !coveredDeptIds.has(d.id)).map(d => ({
+        code: d.code,
+        name: d.name
+      }));
+      
+      // Full coverage = has team in ALL departments
+      const hasFullCoverage = coveredDeptIds.size === totalDeptCount;
+      // Partial coverage = has at least 1 team but not all departments
+      const hasPartialCoverage = allUserTeams.length > 0 && !hasFullCoverage;
+      // No coverage = no teams at all
+      const hasNoCoverage = allUserTeams.length === 0;
+      
       return {
         userId: user.id,
         userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
@@ -2841,22 +2855,37 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
         userRole: user.role,
         teamCount: allUserTeams.length,
         hasTeam: allUserTeams.length > 0,
-        coveredDepartments: Array.from(coveredDeptIds).map(id => deptMap.get(id)?.code || id),
-        missingDepartments: allDepartments
-          .filter(d => !coveredDeptIds.has(d.id))
-          .map(d => d.code)
+        hasFullCoverage,
+        hasPartialCoverage,
+        hasNoCoverage,
+        coveredDepartments: coveredDepts,
+        coveredDeptCount: coveredDeptIds.size,
+        missingDepartments: missingDepts,
+        missingDeptCount: missingDepts.length,
+        coveragePercent: Math.round((coveredDeptIds.size / totalDeptCount) * 100)
       };
     });
 
     const level2Summary = {
       totalUsers: allUsers.length,
+      totalDepartments: totalDeptCount,
+      usersWithFullCoverage: userCoverage.filter(u => u.hasFullCoverage).length,
+      usersWithPartialCoverage: userCoverage.filter(u => u.hasPartialCoverage).length,
+      usersWithNoCoverage: userCoverage.filter(u => u.hasNoCoverage).length,
+      // Legacy fields for backward compat
       usersWithTeam: userCoverage.filter(u => u.hasTeam).length,
       usersWithoutTeam: userCoverage.filter(u => !u.hasTeam).length
     };
 
     const level2Data = {
       summary: level2Summary,
+      // Users grouped by coverage status
+      usersWithFullCoverage: userCoverage.filter(u => u.hasFullCoverage).slice(0, 30),
+      usersWithPartialCoverage: userCoverage.filter(u => u.hasPartialCoverage).slice(0, 30),
+      usersWithNoCoverage: userCoverage.filter(u => u.hasNoCoverage).slice(0, 30),
+      // Legacy field
       usersWithoutTeam: userCoverage.filter(u => !u.hasTeam),
+      // Per-department breakdown (who is/isn't covered for THIS specific dept)
       departmentBreakdown: allDepartments.map(dept => {
         const usersInDept = userCoverage.filter(u => u.coveredDepartments.includes(dept.code));
         const usersNotInDept = userCoverage.filter(u => !u.coveredDepartments.includes(dept.code));
@@ -2870,12 +2899,14 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
             userId: u.userId,
             userName: u.userName,
             userRole: u.userRole,
-            teamCount: u.teamCount
+            teamCount: u.teamCount,
+            coveragePercent: u.coveragePercent
           })),
           uncoveredUsers: usersNotInDept.slice(0, 20).map(u => ({
             userId: u.userId,
             userName: u.userName,
-            userRole: u.userRole
+            userRole: u.userRole,
+            missingDepts: u.missingDepartments.map(d => d.name)
           })),
           hasMoreCovered: usersInDept.length > 20,
           hasMoreUncovered: usersNotInDept.length > 20
