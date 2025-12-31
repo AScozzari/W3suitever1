@@ -54,7 +54,7 @@ import {
 } from 'lucide-react';
 import { DEPARTMENT_STYLES, getDepartmentStyle } from '@/lib/constants/departments';
 import { format } from 'date-fns';
-import { ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Sparkles, Workflow, BookOpen, FileJson, AlertCircle } from 'lucide-react';
 
 const ACTION_DESCRIPTIONS: Record<string, { purpose: string; details: string }> = {
   CRM_CREATE_LEAD: { 
@@ -1226,6 +1226,7 @@ interface ToolPermission {
 
 function DocumentationTab({ actions }: { actions: ActionConfiguration[] }) {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'overview' | 'auth' | 'endpoints' | 'examples' | 'claude' | 'n8n' | 'zapier' | 'errors' | 'downloads'>('overview');
   
   const copyCode = (code: string, section: string) => {
     navigator.clipboard.writeText(code);
@@ -1234,211 +1235,1031 @@ function DocumentationTab({ actions }: { actions: ActionConfiguration[] }) {
   };
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const apiUrl = `${baseUrl}/api/mcp-public`;
+  const apiUrl = `${baseUrl}/api/mcp-public-gateway`;
 
-  const curlExample = `curl -X POST "${apiUrl}/execute/CRM_CREATE_LEAD" \\
+  const downloadFile = (content: string, filename: string, type: string = 'application/json') => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateOpenAPISpec = () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: {
+        title: 'W3 Suite MCP Gateway API',
+        version: '1.0.0',
+        description: 'API per integrare W3 Suite con sistemi esterni via MCP Protocol'
+      },
+      servers: [{ url: apiUrl }],
+      security: [{ bearerAuth: [] }],
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer', description: 'API Key generata dal pannello MCP Gateway' }
+        }
+      },
+      paths: {
+        '/tools': {
+          get: {
+            summary: 'Lista tools disponibili',
+            description: 'Restituisce tutti i tools abilitati per la tua API Key',
+            responses: { '200': { description: 'Lista tools' } }
+          }
+        },
+        '/actions/{actionCode}/execute': {
+          post: {
+            summary: 'Esegui azione',
+            description: 'Esegue un\'azione specifica con i parametri forniti',
+            parameters: [{ name: 'actionCode', in: 'path', required: true, schema: { type: 'string' } }],
+            requestBody: {
+              content: { 'application/json': { schema: { type: 'object', properties: { parameters: { type: 'object' } } } } }
+            },
+            responses: { '200': { description: 'Risultato esecuzione' }, '401': { description: 'Non autorizzato' }, '403': { description: 'Tool non abilitato' }, '429': { description: 'Rate limit superato' } }
+          }
+        }
+      }
+    };
+    return JSON.stringify(spec, null, 2);
+  };
+
+  const generatePostmanCollection = () => {
+    const collection = {
+      info: { name: 'W3 Suite MCP Gateway', schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json' },
+      auth: { type: 'bearer', bearer: [{ key: 'token', value: '{{API_KEY}}', type: 'string' }] },
+      variable: [{ key: 'API_KEY', value: 'sk_live_staging_xxxxxxxxxxxx' }, { key: 'BASE_URL', value: apiUrl }],
+      item: [
+        {
+          name: 'Lista Tools',
+          request: { method: 'GET', url: '{{BASE_URL}}/tools', header: [{ key: 'Authorization', value: 'Bearer {{API_KEY}}' }] }
+        },
+        {
+          name: 'Esegui Azione',
+          request: {
+            method: 'POST',
+            url: '{{BASE_URL}}/actions/CRM_CREATE_LEAD/execute',
+            header: [{ key: 'Authorization', value: 'Bearer {{API_KEY}}' }, { key: 'Content-Type', value: 'application/json' }],
+            body: { mode: 'raw', raw: JSON.stringify({ parameters: { name: 'Mario Rossi', email: 'mario@example.com' } }, null, 2) }
+          }
+        }
+      ]
+    };
+    return JSON.stringify(collection, null, 2);
+  };
+
+  const generateClaudeDesktopConfig = () => {
+    const config = {
+      mcpServers: {
+        'w3suite-gateway': {
+          command: 'node',
+          args: ['w3suite-mcp-proxy.js'],
+          env: {
+            W3SUITE_API_URL: apiUrl,
+            W3SUITE_API_KEY: 'INSERISCI_LA_TUA_API_KEY_QUI'
+          }
+        }
+      }
+    };
+    return JSON.stringify(config, null, 2);
+  };
+
+  const generateClaudeProxyScript = () => {
+    return `#!/usr/bin/env node
+/**
+ * W3 Suite MCP Proxy per Claude Desktop
+ * Questo script fa da bridge tra Claude Desktop e il tuo W3 Suite MCP Gateway
+ * 
+ * INSTALLAZIONE:
+ * 1. Salva questo file come w3suite-mcp-proxy.js
+ * 2. Copia il file claude_desktop_config.json nella cartella di Claude Desktop
+ * 3. Modifica l'API Key nel file di configurazione
+ * 4. Riavvia Claude Desktop
+ */
+
+const https = require('https');
+const http = require('http');
+
+const API_URL = process.env.W3SUITE_API_URL || '${apiUrl}';
+const API_KEY = process.env.W3SUITE_API_KEY || '';
+
+if (!API_KEY || API_KEY === 'INSERISCI_LA_TUA_API_KEY_QUI') {
+  console.error('ERRORE: Devi configurare la tua API Key nel file claude_desktop_config.json');
+  process.exit(1);
+}
+
+// MCP Server implementation
+const readline = require('readline');
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
+
+async function callW3SuiteAPI(endpoint, method = 'GET', body = null) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(endpoint, API_URL);
+    const options = {
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
+      path: url.pathname + url.search,
+      method,
+      headers: {
+        'Authorization': \`Bearer \${API_KEY}\`,
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    const protocol = url.protocol === 'https:' ? https : http;
+    const req = protocol.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          resolve({ raw: data });
+        }
+      });
+    });
+    
+    req.on('error', reject);
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+async function handleRequest(request) {
+  const { method, params, id } = request;
+  
+  try {
+    switch (method) {
+      case 'initialize':
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            protocolVersion: '2024-11-05',
+            capabilities: { tools: {} },
+            serverInfo: { name: 'W3 Suite MCP Gateway', version: '1.0.0' }
+          }
+        };
+        
+      case 'tools/list':
+        const tools = await callW3SuiteAPI('/tools');
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            tools: (tools.data || []).map(t => ({
+              name: t.actionCode,
+              description: t.actionName,
+              inputSchema: { type: 'object', properties: { parameters: { type: 'object' } } }
+            }))
+          }
+        };
+        
+      case 'tools/call':
+        const { name, arguments: args } = params;
+        const result = await callW3SuiteAPI(\`/actions/\${name}/execute\`, 'POST', args);
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        };
+        
+      default:
+        return { jsonrpc: '2.0', id, error: { code: -32601, message: 'Method not found' } };
+    }
+  } catch (error) {
+    return { jsonrpc: '2.0', id, error: { code: -32000, message: error.message } };
+  }
+}
+
+rl.on('line', async (line) => {
+  try {
+    const request = JSON.parse(line);
+    const response = await handleRequest(request);
+    console.log(JSON.stringify(response));
+  } catch (e) {
+    console.log(JSON.stringify({ jsonrpc: '2.0', error: { code: -32700, message: 'Parse error' } }));
+  }
+});
+
+console.error('W3 Suite MCP Proxy avviato. In attesa di comandi da Claude Desktop...');
+`;
+  };
+
+  const curlExample = `# Lista tutti i tools disponibili
+curl -X GET "${apiUrl}/tools" \\
+  -H "Authorization: Bearer sk_live_staging_xxxxxxxxxxxx"
+
+# Esegui un'azione CRM
+curl -X POST "${apiUrl}/actions/CRM_CREATE_LEAD/execute" \\
   -H "Authorization: Bearer sk_live_staging_xxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
     "parameters": {
       "name": "Mario Rossi",
       "email": "mario@example.com",
+      "phone": "+39 333 1234567",
       "source": "website"
     }
   }'`;
 
-  const n8nExample = `{
+  const jsExample = `// JavaScript / Node.js
+const API_KEY = 'sk_live_staging_xxxxxxxxxxxx';
+const BASE_URL = '${apiUrl}';
+
+// Lista tools disponibili
+async function getTools() {
+  const response = await fetch(\`\${BASE_URL}/tools\`, {
+    headers: { 'Authorization': \`Bearer \${API_KEY}\` }
+  });
+  return response.json();
+}
+
+// Esegui un'azione
+async function executeAction(actionCode, parameters) {
+  const response = await fetch(\`\${BASE_URL}/actions/\${actionCode}/execute\`, {
+    method: 'POST',
+    headers: {
+      'Authorization': \`Bearer \${API_KEY}\`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ parameters })
+  });
+  return response.json();
+}
+
+// Esempio: crea un lead CRM
+const result = await executeAction('CRM_CREATE_LEAD', {
+  name: 'Mario Rossi',
+  email: 'mario@example.com'
+});
+console.log(result);`;
+
+  const pythonExample = `# Python
+import requests
+
+API_KEY = 'sk_live_staging_xxxxxxxxxxxx'
+BASE_URL = '${apiUrl}'
+HEADERS = {'Authorization': f'Bearer {API_KEY}'}
+
+# Lista tools disponibili
+def get_tools():
+    response = requests.get(f'{BASE_URL}/tools', headers=HEADERS)
+    return response.json()
+
+# Esegui un'azione
+def execute_action(action_code: str, parameters: dict):
+    response = requests.post(
+        f'{BASE_URL}/actions/{action_code}/execute',
+        headers={**HEADERS, 'Content-Type': 'application/json'},
+        json={'parameters': parameters}
+    )
+    return response.json()
+
+# Esempio: crea un lead CRM
+result = execute_action('CRM_CREATE_LEAD', {
+    'name': 'Mario Rossi',
+    'email': 'mario@example.com'
+})
+print(result)`;
+
+  const n8nWorkflow = `{
+  "name": "W3 Suite MCP Integration",
   "nodes": [
     {
-      "name": "W3 Suite MCP",
+      "name": "W3 Suite API",
       "type": "n8n-nodes-base.httpRequest",
       "parameters": {
         "method": "POST",
-        "url": "${apiUrl}/execute/{{$json.actionCode}}",
+        "url": "${apiUrl}/actions/{{$json.actionCode}}/execute",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
-        "options": {},
-        "jsonParameters": true,
-        "bodyParametersJson": "={{ JSON.stringify({ parameters: $json.params }) }}"
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "parameters", "value": "={{ $json.params }}" }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "W3 Suite API Key",
+          "headerName": "Authorization",
+          "headerValue": "Bearer sk_live_staging_xxxxxxxxxxxx"
+        }
       }
     }
   ]
 }`;
 
-  const claudeConfig = `{
-  "mcpServers": {
-    "w3suite": {
-      "url": "${apiUrl}/mcp",
-      "apiKey": "sk_live_staging_xxxxxxxxxxxx"
-    }
+  const zapierConfig = `CONFIGURAZIONE ZAPIER - Webhook Personalizzato
+
+1. Crea un nuovo Zap
+2. Scegli "Webhooks by Zapier" come trigger o action
+3. Seleziona "Custom Request"
+
+CONFIGURAZIONE REQUEST:
+━━━━━━━━━━━━━━━━━━━━━
+Method: POST
+URL: ${apiUrl}/actions/[ACTION_CODE]/execute
+
+Headers:
+  Authorization: Bearer sk_live_staging_xxxxxxxxxxxx
+  Content-Type: application/json
+
+Body (JSON):
+{
+  "parameters": {
+    "campo1": "valore1",
+    "campo2": "valore2"
   }
-}`;
+}
+
+ESEMPI ACTION_CODE:
+━━━━━━━━━━━━━━━━━━
+- CRM_CREATE_LEAD
+- WMS_PURCHASE
+- POS_CREATE_ORDER
+- HR_CREATE_EMPLOYEE`;
+
+  const sections = [
+    { id: 'overview', label: 'Overview', icon: BookOpen },
+    { id: 'auth', label: 'Autenticazione', icon: Shield },
+    { id: 'endpoints', label: 'Endpoints', icon: Globe },
+    { id: 'examples', label: 'Esempi Codice', icon: Code },
+    { id: 'claude', label: 'Claude Desktop', icon: Sparkles },
+    { id: 'n8n', label: 'n8n', icon: Workflow },
+    { id: 'zapier', label: 'Zapier', icon: Zap },
+    { id: 'errors', label: 'Errori', icon: AlertCircle },
+    { id: 'downloads', label: 'Downloads', icon: Download }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Quick Start */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-[#FF6900]" />
-            Quick Start
-          </CardTitle>
-          <CardDescription>
-            Integra W3 Suite con i tuoi sistemi esterni in pochi minuti
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="h-5 w-5 text-gray-600" />
-                <span className="font-medium">REST API</span>
-              </div>
-              <p className="text-sm text-gray-500">
-                Chiamate HTTP standard con autenticazione Bearer token
-              </p>
-            </div>
-            <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Code className="h-5 w-5 text-gray-600" />
-                <span className="font-medium">MCP Protocol</span>
-              </div>
-              <p className="text-sm text-gray-500">
-                Compatibile con Claude AI e altri client MCP
-              </p>
-            </div>
-            <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-5 w-5 text-gray-600" />
-                <span className="font-medium">Webhooks</span>
-              </div>
-              <p className="text-sm text-gray-500">
-                Notifiche push per eventi e risultati workflow
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex gap-6">
+      {/* Sidebar Navigation */}
+      <div className="w-48 flex-shrink-0">
+        <nav className="sticky top-4 space-y-1">
+          {sections.map(section => {
+            const Icon = section.icon;
+            return (
+              <button
+                key={section.id}
+                onClick={() => setActiveSection(section.id as typeof activeSection)}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors text-left ${
+                  activeSection === section.id 
+                    ? 'bg-[#FF6900]/10 text-[#FF6900] font-medium' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+                data-testid={`btn-section-${section.id}`}
+              >
+                <Icon className="h-4 w-4" />
+                {section.label}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-      {/* Endpoints */}
-      <Card>
-        <CardHeader>
-          <CardTitle>API Endpoints</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-100 text-green-700">GET</Badge>
-                <code className="text-sm font-mono">/api/mcp-public/tools</code>
+      {/* Content */}
+      <div className="flex-1 space-y-6">
+        {/* Overview Section */}
+        {activeSection === 'overview' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-[#FF6900]" />
+                MCP Gateway - Overview
+              </CardTitle>
+              <CardDescription>
+                Integra W3 Suite con sistemi esterni tramite API REST o protocollo MCP
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg border border-gray-200 bg-gradient-to-br from-blue-50 to-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="h-5 w-5 text-blue-600" />
+                    <span className="font-semibold">REST API</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Chiamate HTTP standard. Perfetto per integrazioni custom, script, e automazioni.
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg border border-gray-200 bg-gradient-to-br from-purple-50 to-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-5 w-5 text-purple-600" />
+                    <span className="font-semibold">Claude Desktop</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Integrazione nativa con Claude AI. Permetti a Claude di eseguire azioni W3 Suite.
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg border border-gray-200 bg-gradient-to-br from-orange-50 to-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Workflow className="h-5 w-5 text-orange-600" />
+                    <span className="font-semibold">Automazioni</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Compatibile con n8n, Zapier, Make e altri strumenti di automazione.
+                  </p>
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-600">Lista tutti i tools disponibili per la tua API key</p>
-          </div>
-          <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-blue-100 text-blue-700">POST</Badge>
-                <code className="text-sm font-mono">/api/mcp-public/execute/:actionCode</code>
+
+              <div className="p-4 rounded-lg bg-[#FF6900]/5 border border-[#FF6900]/20">
+                <h4 className="font-semibold text-gray-900 mb-2">Come funziona</h4>
+                <ol className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-xs font-bold">1</span>
+                    <span><strong>Crea una API Key</strong> dalla tab "API Keys" con i permessi necessari</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-xs font-bold">2</span>
+                    <span><strong>Configura i permessi</strong> per abilitare solo i tools necessari</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-xs font-bold">3</span>
+                    <span><strong>Integra</strong> usando REST API, Claude Desktop, o altri strumenti</span>
+                  </li>
+                </ol>
               </div>
-            </div>
-            <p className="text-sm text-gray-600">Esegui un'azione specifica con parametri</p>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Code Examples */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Esempi di Integrazione</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="curl">
-            <TabsList className="mb-4">
-              <TabsTrigger value="curl">cURL</TabsTrigger>
-              <TabsTrigger value="n8n">n8n</TabsTrigger>
-              <TabsTrigger value="claude">Claude AI</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="curl">
-              <div className="relative">
-                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
-                  <code>{curlExample}</code>
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
-                  onClick={() => copyCode(curlExample, 'curl')}
-                  data-testid="button-copy-curl"
-                >
-                  {copiedSection === 'curl' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-[#FF6900]">{actions.length}</div>
+                  <div className="text-xs text-gray-500">Tools Esposti</div>
+                </div>
+                <div className="h-8 w-px bg-gray-200" />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">REST + MCP</div>
+                  <div className="text-xs text-gray-500">Protocolli</div>
+                </div>
+                <div className="h-8 w-px bg-gray-200" />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">Multi-tenant</div>
+                  <div className="text-xs text-gray-500">Isolamento</div>
+                </div>
               </div>
-            </TabsContent>
+            </CardContent>
+          </Card>
+        )}
 
-            <TabsContent value="n8n">
-              <div className="relative">
-                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
-                  <code>{n8nExample}</code>
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
-                  onClick={() => copyCode(n8nExample, 'n8n')}
-                  data-testid="button-copy-n8n"
-                >
-                  {copiedSection === 'n8n' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+        {/* Authentication Section */}
+        {activeSection === 'auth' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-[#FF6900]" />
+                Autenticazione
+              </CardTitle>
+              <CardDescription>
+                Tutte le richieste richiedono autenticazione via Bearer Token
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 rounded-lg bg-gray-900 text-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">Header richiesto</span>
+                  <Button variant="ghost" size="sm" className="h-6 text-gray-400 hover:text-white" onClick={() => copyCode('Authorization: Bearer sk_live_staging_xxxxxxxxxxxx', 'auth')}>
+                    {copiedSection === 'auth' ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                </div>
+                <code className="text-sm">Authorization: Bearer sk_live_staging_xxxxxxxxxxxx</code>
               </div>
-            </TabsContent>
 
-            <TabsContent value="claude">
-              <div className="relative">
-                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
-                  <code>{claudeConfig}</code>
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
-                  onClick={() => copyCode(claudeConfig, 'claude')}
-                  data-testid="button-copy-claude"
-                >
-                  {copiedSection === 'claude' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Available Tools */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tools Disponibili ({actions.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              {actions.map(action => (
-                <div key={action.id} className="p-3 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <code className="text-sm font-mono font-medium">{action.actionCode}</code>
-                      <p className="text-sm text-gray-500 mt-1">{action.actionName}</p>
-                    </div>
-                    <Badge variant="outline">
-                      {getDepartmentStyle(action.departmentId).label}
-                    </Badge>
+              <div className="space-y-4">
+                <h4 className="font-semibold">Formato API Key</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg border border-gray-200">
+                    <code className="text-sm text-green-600">sk_live_staging_...</code>
+                    <p className="text-xs text-gray-500 mt-1">Chiave produzione per tenant "staging"</p>
+                  </div>
+                  <div className="p-3 rounded-lg border border-gray-200">
+                    <code className="text-sm text-yellow-600">sk_test_staging_...</code>
+                    <p className="text-xs text-gray-500 mt-1">Chiave di test (ambiente sandbox)</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-semibold">Rate Limiting</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-3 rounded-lg border border-gray-200 text-center">
+                    <div className="text-xl font-bold text-gray-900">60</div>
+                    <div className="text-xs text-gray-500">richieste/minuto</div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-gray-200 text-center">
+                    <div className="text-xl font-bold text-gray-900">10.000</div>
+                    <div className="text-xs text-gray-500">richieste/giorno</div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-gray-200 text-center">
+                    <div className="text-xl font-bold text-gray-900">IP Whitelist</div>
+                    <div className="text-xs text-gray-500">opzionale</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h5 className="font-semibold text-yellow-800">Sicurezza</h5>
+                    <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                      <li>• Non condividere mai la tua API Key in codice pubblico</li>
+                      <li>• Usa variabili d'ambiente per memorizzare le chiavi</li>
+                      <li>• Ruota le chiavi periodicamente dalla tab API Keys</li>
+                      <li>• Abilita IP Whitelist per ambienti di produzione</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Endpoints Section */}
+        {activeSection === 'endpoints' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-[#FF6900]" />
+                API Endpoints
+              </CardTitle>
+              <CardDescription>
+                Base URL: <code className="bg-gray-100 px-2 py-0.5 rounded text-sm">{apiUrl}</code>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-green-100 text-green-700">GET</Badge>
+                  <code className="text-sm font-mono font-medium">/tools</code>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Restituisce la lista di tutti i tools abilitati per la tua API Key</p>
+                <div className="text-xs text-gray-500">
+                  <strong>Response:</strong> <code>{'{ "data": [{ "actionCode": "...", "actionName": "...", "departmentId": "..." }] }'}</code>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-blue-100 text-blue-700">POST</Badge>
+                  <code className="text-sm font-mono font-medium">/actions/:actionCode/execute</code>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">Esegue un'azione specifica con i parametri forniti</p>
+                <div className="space-y-2 text-xs">
+                  <div><strong>Path param:</strong> <code>actionCode</code> - Codice dell'azione (es. CRM_CREATE_LEAD)</div>
+                  <div><strong>Body:</strong> <code>{'{ "parameters": { ... } }'}</code></div>
+                  <div><strong>Response:</strong> <code>{'{ "success": true, "data": { ... }, "executionTime": 123 }'}</code></div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-purple-100 text-purple-700">GET</Badge>
+                  <code className="text-sm font-mono font-medium">/health</code>
+                </div>
+                <p className="text-sm text-gray-600">Verifica lo stato del gateway (non richiede autenticazione)</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Code Examples Section */}
+        {activeSection === 'examples' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5 text-[#FF6900]" />
+                Esempi di Codice
+              </CardTitle>
+              <CardDescription>
+                Copia e incolla questi esempi per iniziare rapidamente
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="curl">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="curl">cURL</TabsTrigger>
+                  <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                  <TabsTrigger value="python">Python</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="curl">
+                  <div className="relative">
+                    <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto max-h-96">
+                      <code>{curlExample}</code>
+                    </pre>
+                    <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(curlExample, 'curl')} data-testid="button-copy-curl">
+                      {copiedSection === 'curl' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="javascript">
+                  <div className="relative">
+                    <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto max-h-96">
+                      <code>{jsExample}</code>
+                    </pre>
+                    <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(jsExample, 'js')} data-testid="button-copy-js">
+                      {copiedSection === 'js' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="python">
+                  <div className="relative">
+                    <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto max-h-96">
+                      <code>{pythonExample}</code>
+                    </pre>
+                    <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(pythonExample, 'python')} data-testid="button-copy-python">
+                      {copiedSection === 'python' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Claude Desktop Section */}
+        {activeSection === 'claude' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-[#FF6900]" />
+                  Integrazione Claude Desktop
+                </CardTitle>
+                <CardDescription>
+                  Permetti a Claude AI di eseguire azioni W3 Suite direttamente dalla chat
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100">
+                  <h4 className="font-semibold text-gray-900 mb-3">Guida passo-passo</h4>
+                  <ol className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-sm font-bold">1</span>
+                      <div>
+                        <strong>Scarica i file</strong>
+                        <p className="text-sm text-gray-600 mt-1">Clicca sui bottoni qui sotto per scaricare lo script proxy e il file di configurazione</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-sm font-bold">2</span>
+                      <div>
+                        <strong>Trova la cartella di Claude Desktop</strong>
+                        <p className="text-sm text-gray-600 mt-1">
+                          <strong>Windows:</strong> <code className="bg-gray-100 px-1 rounded">%APPDATA%\Claude\</code><br />
+                          <strong>macOS:</strong> <code className="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/</code>
+                        </p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-sm font-bold">3</span>
+                      <div>
+                        <strong>Copia i file nella cartella</strong>
+                        <p className="text-sm text-gray-600 mt-1">Metti entrambi i file (<code>w3suite-mcp-proxy.js</code> e <code>claude_desktop_config.json</code>) nella cartella di Claude</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-sm font-bold">4</span>
+                      <div>
+                        <strong>Inserisci la tua API Key</strong>
+                        <p className="text-sm text-gray-600 mt-1">Apri <code>claude_desktop_config.json</code> e sostituisci <code>INSERISCI_LA_TUA_API_KEY_QUI</code> con la tua chiave</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FF6900] text-white flex items-center justify-center text-sm font-bold">5</span>
+                      <div>
+                        <strong>Riavvia Claude Desktop</strong>
+                        <p className="text-sm text-gray-600 mt-1">Chiudi completamente Claude Desktop e riaprilo. Il server MCP sarà caricato automaticamente.</p>
+                      </div>
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => downloadFile(generateClaudeProxyScript(), 'w3suite-mcp-proxy.js', 'application/javascript')}
+                    className="bg-[#FF6900] hover:bg-[#FF6900]/90"
+                    data-testid="btn-download-claude-script"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica w3suite-mcp-proxy.js
+                  </Button>
+                  <Button
+                    onClick={() => downloadFile(generateClaudeDesktopConfig(), 'claude_desktop_config.json')}
+                    variant="outline"
+                    data-testid="btn-download-claude-config"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica claude_desktop_config.json
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Anteprima configurazione</h4>
+                  <div className="relative">
+                    <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
+                      <code>{generateClaudeDesktopConfig()}</code>
+                    </pre>
+                    <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(generateClaudeDesktopConfig(), 'claudeConfig')} data-testid="button-copy-claude-config">
+                      {copiedSection === 'claudeConfig' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-semibold text-blue-800">Nota</h5>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Lo script proxy richiede Node.js installato sul tuo computer. Se non lo hai, scaricalo da <a href="https://nodejs.org" target="_blank" rel="noopener noreferrer" className="underline">nodejs.org</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* n8n Section */}
+        {activeSection === 'n8n' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Workflow className="h-5 w-5 text-[#FF6900]" />
+                Integrazione n8n
+              </CardTitle>
+              <CardDescription>
+                Usa W3 Suite come nodo HTTP in n8n per automazioni avanzate
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <h4 className="font-semibold mb-3">Configurazione credenziali</h4>
+                <ol className="space-y-2 text-sm text-gray-600">
+                  <li>1. In n8n, vai su <strong>Settings → Credentials</strong></li>
+                  <li>2. Crea nuova credenziale di tipo <strong>Header Auth</strong></li>
+                  <li>3. Nome header: <code className="bg-gray-100 px-1 rounded">Authorization</code></li>
+                  <li>4. Valore: <code className="bg-gray-100 px-1 rounded">Bearer sk_live_staging_xxxxxxxxxxxx</code></li>
+                </ol>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold">Esempio workflow</h4>
+                  <Button variant="outline" size="sm" onClick={() => downloadFile(n8nWorkflow, 'w3suite-n8n-workflow.json')} data-testid="btn-download-n8n">
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica workflow
+                  </Button>
+                </div>
+                <div className="relative">
+                  <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto max-h-80">
+                    <code>{n8nWorkflow}</code>
+                  </pre>
+                  <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(n8nWorkflow, 'n8n')} data-testid="button-copy-n8n">
+                    {copiedSection === 'n8n' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Zapier Section */}
+        {activeSection === 'zapier' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-[#FF6900]" />
+                Integrazione Zapier
+              </CardTitle>
+              <CardDescription>
+                Usa Webhooks by Zapier per connettere W3 Suite ai tuoi Zaps
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="relative">
+                <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto whitespace-pre-wrap">
+                  <code>{zapierConfig}</code>
+                </pre>
+                <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(zapierConfig, 'zapier')} data-testid="button-copy-zapier">
+                  {copiedSection === 'zapier' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+
+              <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h5 className="font-semibold text-yellow-800">Tip</h5>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Per vedere la lista completa degli ACTION_CODE disponibili, vai alla tab "Catalogo Tools" o usa l'endpoint GET /tools
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Errors Section */}
+        {activeSection === 'errors' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-[#FF6900]" />
+                Codici di Errore
+              </CardTitle>
+              <CardDescription>
+                Riferimento completo per gestire gli errori API
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-24">Codice</TableHead>
+                    <TableHead className="w-40">Nome</TableHead>
+                    <TableHead>Descrizione</TableHead>
+                    <TableHead className="w-48">Soluzione</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell><Badge className="bg-yellow-100 text-yellow-700">400</Badge></TableCell>
+                    <TableCell className="font-medium">Bad Request</TableCell>
+                    <TableCell className="text-sm text-gray-600">Parametri mancanti o non validi</TableCell>
+                    <TableCell className="text-sm text-gray-500">Verifica il body della richiesta</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell><Badge className="bg-red-100 text-red-700">401</Badge></TableCell>
+                    <TableCell className="font-medium">Unauthorized</TableCell>
+                    <TableCell className="text-sm text-gray-600">API Key mancante o non valida</TableCell>
+                    <TableCell className="text-sm text-gray-500">Verifica l'header Authorization</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell><Badge className="bg-red-100 text-red-700">403</Badge></TableCell>
+                    <TableCell className="font-medium">Forbidden</TableCell>
+                    <TableCell className="text-sm text-gray-600">Tool non abilitato per questa API Key</TableCell>
+                    <TableCell className="text-sm text-gray-500">Abilita il tool dalla tab Permessi</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell><Badge className="bg-gray-100 text-gray-700">404</Badge></TableCell>
+                    <TableCell className="font-medium">Not Found</TableCell>
+                    <TableCell className="text-sm text-gray-600">Action code non esistente</TableCell>
+                    <TableCell className="text-sm text-gray-500">Verifica il codice azione</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell><Badge className="bg-orange-100 text-orange-700">429</Badge></TableCell>
+                    <TableCell className="font-medium">Rate Limited</TableCell>
+                    <TableCell className="text-sm text-gray-600">Superato il limite di richieste</TableCell>
+                    <TableCell className="text-sm text-gray-500">Attendi e riprova dopo</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell><Badge className="bg-red-100 text-red-700">500</Badge></TableCell>
+                    <TableCell className="font-medium">Server Error</TableCell>
+                    <TableCell className="text-sm text-gray-600">Errore interno del server</TableCell>
+                    <TableCell className="text-sm text-gray-500">Contatta il supporto</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+
+              <div className="mt-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <h4 className="font-semibold mb-2">Formato risposta errore</h4>
+                <pre className="text-sm bg-gray-900 text-gray-100 p-3 rounded-lg">
+{`{
+  "success": false,
+  "error": {
+    "code": "TOOL_NOT_ENABLED",
+    "message": "Il tool CRM_CREATE_LEAD non è abilitato per questa API Key",
+    "details": { ... }
+  }
+}`}
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Downloads Section */}
+        {activeSection === 'downloads' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5 text-[#FF6900]" />
+                Downloads
+              </CardTitle>
+              <CardDescription>
+                File pronti all'uso pre-configurati con il tuo endpoint
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-blue-100">
+                      <FileJson className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">OpenAPI Spec</h4>
+                      <p className="text-xs text-gray-500">openapi.json</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Specifica OpenAPI 3.0 per generare client SDK</p>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => downloadFile(generateOpenAPISpec(), 'w3suite-openapi.json')} data-testid="btn-download-openapi">
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica OpenAPI
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-orange-100">
+                      <FileJson className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Postman Collection</h4>
+                      <p className="text-xs text-gray-500">postman_collection.json</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Importa in Postman per testare subito le API</p>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => downloadFile(generatePostmanCollection(), 'w3suite-postman-collection.json')} data-testid="btn-download-postman">
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica Collection
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-purple-100">
+                      <Sparkles className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Claude Desktop Config</h4>
+                      <p className="text-xs text-gray-500">claude_desktop_config.json</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Configurazione per Claude Desktop MCP</p>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => downloadFile(generateClaudeDesktopConfig(), 'claude_desktop_config.json')} data-testid="btn-download-claude-config-2">
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica Config
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-green-100">
+                      <Code className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">MCP Proxy Script</h4>
+                      <p className="text-xs text-gray-500">w3suite-mcp-proxy.js</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Script Node.js per Claude Desktop</p>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => downloadFile(generateClaudeProxyScript(), 'w3suite-mcp-proxy.js', 'application/javascript')} data-testid="btn-download-proxy">
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica Proxy
+                  </Button>
+                </div>
+              </div>
+
+              {/* Tools List */}
+              <div className="mt-6">
+                <h4 className="font-semibold mb-3">Tools Esposti ({actions.length})</h4>
+                <ScrollArea className="h-[200px] border rounded-lg">
+                  <div className="p-4 space-y-2">
+                    {actions.map(action => (
+                      <div key={action.id} className="flex items-center justify-between p-2 rounded hover:bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{action.actionCode}</code>
+                          <span className="text-sm text-gray-600">{action.actionName}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {getDepartmentStyle(action.departmentId).label}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
