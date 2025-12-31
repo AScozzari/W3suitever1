@@ -659,6 +659,11 @@ function PermissionsMatrixTab({
   const exposedActions = actions.filter(a => a.mcpExposed);
   const activeKeys = apiKeys.filter(k => k.isActive);
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
+  const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
+  
+  const toggleDept = (deptCode: string) => {
+    setExpandedDepts(prev => ({ ...prev, [deptCode]: !prev[deptCode] }));
+  };
   
   const { data: keyPermissions = [], isLoading: loadingPermissions } = useQuery<ToolPermission[]>({
     queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'],
@@ -694,7 +699,7 @@ function PermissionsMatrixTab({
     updatePermissionMutation.mutate({ keyId: selectedKeyId, permissions: newPermissions });
   };
 
-  if (activeKeys.length === 0 || exposedActions.length === 0) {
+  if (activeKeys.length === 0) {
     return (
       <Card className="p-12 text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#FF6900]/10 to-[#7B2CBF]/10 mb-4">
@@ -704,18 +709,16 @@ function PermissionsMatrixTab({
           Matrice Permessi
         </h3>
         <p className="text-sm text-gray-500">
-          {activeKeys.length === 0 
-            ? 'Crea almeno una API Key attiva'
-            : 'Esponi almeno un tool dalla tab Catalogo Tools'}
+          Crea almeno una API Key attiva dalla tab API Keys
         </p>
       </Card>
     );
   }
 
-  const groupedByDepartment = exposedActions.reduce((acc, action) => {
-    const dept = action.departmentId || 'other';
-    if (!acc[dept]) acc[dept] = [];
-    acc[dept].push(action);
+  const allDepartments = Object.keys(DEPARTMENT_STYLES);
+  
+  const groupedByDepartment = allDepartments.reduce((acc, dept) => {
+    acc[dept] = exposedActions.filter(a => a.departmentId === dept);
     return acc;
   }, {} as Record<string, ActionConfiguration[]>);
 
@@ -723,27 +726,78 @@ function PermissionsMatrixTab({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Seleziona API Key</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5 text-[#FF6900]" />
+            API Keys
+          </CardTitle>
           <CardDescription>
-            Scegli una API Key per configurare quali tools può utilizzare
+            Seleziona una API Key per configurare i permessi sui tools
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {activeKeys.map(key => (
-              <Button
-                key={key.id}
-                variant={selectedKeyId === key.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedKeyId(key.id)}
-                className={selectedKeyId === key.id ? 'bg-gradient-to-r from-[#FF6900] to-[#7B2CBF]' : ''}
-                data-testid={`btn-select-key-${key.id}`}
-              >
-                <Key className="h-4 w-4 mr-2" />
-                {key.name}
-              </Button>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Nome</TableHead>
+                <TableHead>Descrizione</TableHead>
+                <TableHead className="w-[150px]">API Key</TableHead>
+                <TableHead className="w-[100px]">Tools</TableHead>
+                <TableHead className="w-[120px] text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activeKeys.map(key => (
+                <TableRow 
+                  key={key.id} 
+                  className={`cursor-pointer transition-colors ${selectedKeyId === key.id ? 'bg-[#FF6900]/5 border-l-2 border-l-[#FF6900]' : 'hover:bg-gray-50'}`}
+                  onClick={() => setSelectedKeyId(key.id)}
+                  data-testid={`row-key-${key.id}`}
+                >
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {selectedKeyId === key.id && (
+                        <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
+                      )}
+                      {key.name}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-500 text-sm">
+                    {key.description || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                      {key.keyPrefix}***
+                    </code>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {key.enabledTools} abilitati
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={(e) => { e.stopPropagation(); setSelectedKeyId(key.id); }}
+                              data-testid={`btn-config-${key.id}`}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Configura permessi</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
@@ -752,10 +806,10 @@ function PermissionsMatrixTab({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-[#FF6900]" />
-              Permessi Tool per "{activeKeys.find(k => k.id === selectedKeyId)?.name}"
+              Tool Catalog per "{activeKeys.find(k => k.id === selectedKeyId)?.name}"
             </CardTitle>
             <CardDescription>
-              Abilita i singoli tool che questa API Key può chiamare
+              Clicca su un dipartimento per espandere e configurare i permessi dei singoli tools
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -764,49 +818,133 @@ function PermissionsMatrixTab({
                 <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
               </div>
             ) : (
-              <div className="space-y-6">
-                {Object.entries(groupedByDepartment).map(([dept, deptActions]) => {
+              <div className="space-y-2">
+                {allDepartments.map(dept => {
                   const style = DEPARTMENT_STYLES[dept] || { label: dept, color: '#666' };
+                  const deptActions = groupedByDepartment[dept] || [];
+                  const enabledCount = deptActions.filter(a => {
+                    const perm = keyPermissions.find(p => p.actionConfigId === a.id);
+                    return perm?.isEnabled;
+                  }).length;
+                  const isExpanded = expandedDepts[dept];
+                  
                   return (
-                    <div key={dept}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge style={{ backgroundColor: style.color }} className="text-white">
-                          {style.label}
-                        </Badge>
-                        <span className="text-sm text-gray-500">
-                          {deptActions.length} tools
-                        </span>
-                      </div>
-                      <div className="grid gap-2">
-                        {deptActions.map(action => {
-                          const permission = keyPermissions.find(p => p.actionConfigId === action.id);
-                          const isEnabled = permission?.isEnabled ?? false;
-                          return (
-                            <div
-                              key={action.id}
-                              className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors"
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <code className="text-sm font-mono text-gray-700">{action.actionCode}</code>
-                                </div>
-                                <p className="text-sm text-gray-500 mt-0.5">{action.actionName}</p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className={`text-xs ${isEnabled ? 'text-green-600' : 'text-gray-400'}`}>
-                                  {isEnabled ? 'Abilitato' : 'Disabilitato'}
-                                </span>
-                                <Switch
-                                  checked={isEnabled}
-                                  onCheckedChange={() => toggleToolPermission(action.id, isEnabled)}
-                                  disabled={updatePermissionMutation.isPending}
-                                  data-testid={`switch-perm-${action.actionCode}`}
-                                />
-                              </div>
+                    <div key={dept} className="rounded-lg border border-gray-200 overflow-hidden">
+                      <div 
+                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => toggleDept(dept)}
+                        data-testid={`dept-row-${dept}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isExpanded ? (
+                            <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          ) : (
+                            <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                          <Badge style={{ backgroundColor: style.color }} className="text-white">
+                            {style.label}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium text-gray-900">{deptActions.length}</span> azioni
+                          </div>
+                          <div className="text-sm">
+                            <span className={`font-medium ${enabledCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                              {enabledCount}
+                            </span>
+                            <span className="text-gray-400"> attive</span>
+                          </div>
+                          {deptActions.length > 0 && (
+                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-green-500 transition-all"
+                                style={{ width: `${deptActions.length > 0 ? (enabledCount / deptActions.length) * 100 : 0}%` }}
+                              />
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
                       </div>
+                      
+                      {isExpanded && (
+                        <div className="border-t border-gray-200 bg-gray-50 p-4 max-h-80 overflow-y-auto">
+                          {deptActions.length === 0 ? (
+                            <div className="text-center py-6 text-gray-500 text-sm">
+                              Nessuna azione esposta per questo dipartimento
+                            </div>
+                          ) : (
+                            <div className="grid gap-2">
+                              {deptActions.map(action => {
+                                const permission = keyPermissions.find(p => p.actionConfigId === action.id);
+                                const isEnabled = permission?.isEnabled ?? false;
+                                return (
+                                  <div
+                                    key={action.id}
+                                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                                      isEnabled 
+                                        ? 'bg-green-50 border-green-200' 
+                                        : 'bg-white border-gray-200 hover:border-gray-300'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3 flex-1">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <code className="text-sm font-mono text-gray-700">{action.actionCode}</code>
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <button className="text-gray-400 hover:text-[#FF6900] transition-colors">
+                                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                  </svg>
+                                                </button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="right" className="max-w-xs">
+                                                <div className="space-y-1">
+                                                  <p className="font-medium">{action.actionName}</p>
+                                                  <p className="text-xs text-gray-400">
+                                                    {action.flowType === 'workflow' 
+                                                      ? 'Azione con workflow di approvazione personalizzato'
+                                                      : action.flowType === 'default'
+                                                        ? 'Azione con flusso approvazione standard del team'
+                                                        : 'Azione eseguita immediatamente senza approvazione'
+                                                    }
+                                                  </p>
+                                                </div>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                          {action.flowType !== 'none' && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <p className="text-sm text-gray-500 mt-0.5">{action.actionName}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className={`text-xs ${isEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+                                        {isEnabled ? 'Abilitato' : 'Disabilitato'}
+                                      </span>
+                                      <Switch
+                                        checked={isEnabled}
+                                        onCheckedChange={() => toggleToolPermission(action.id, isEnabled)}
+                                        disabled={updatePermissionMutation.isPending}
+                                        data-testid={`switch-perm-${action.actionCode}`}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
