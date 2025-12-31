@@ -380,8 +380,8 @@ router.get('/keys/:keyId/permissions', requirePermission('settings.read'), async
         actionConfigId: mcpToolPermissions.actionConfigId,
         isEnabled: mcpToolPermissions.isEnabled,
         rateLimitOverride: mcpToolPermissions.rateLimitOverride,
-        actionCode: actionConfigurations.code,
-        actionName: actionConfigurations.name,
+        actionCode: actionConfigurations.actionId,
+        actionName: actionConfigurations.actionName,
         department: actionConfigurations.department,
       })
       .from(mcpToolPermissions)
