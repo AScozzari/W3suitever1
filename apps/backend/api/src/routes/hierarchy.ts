@@ -2652,123 +2652,96 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
 
     await setTenantContext(tenantId);
 
-    // ==================== FETCH ALL DATA ====================
+    // ==================== FETCH ALL DATA (raw SQL for reliability) ====================
     
     // Get all departments
-    const allDepartments = await db
-      .select({
-        id: departments.id,
-        code: departments.code,
-        name: departments.name,
-        isActive: departments.isActive
-      })
-      .from(departments)
-      .where(and(
-        eq(departments.tenantId, tenantId),
-        eq(departments.isActive, true)
-      ));
+    const allDepartments = await db.execute<{
+      id: string; code: string; name: string; is_active: boolean;
+    }>(sql`
+      SELECT id, code, name, is_active FROM w3suite.departments
+      WHERE tenant_id = ${tenantId} AND is_active = true
+    `).then(r => r.rows.map(d => ({
+      id: d.id, code: d.code, name: d.name, isActive: d.is_active
+    })));
 
-    // Get all teams with their departments
-    const allTeams = await db
-      .select({
-        id: teams.id,
-        name: teams.name,
-        teamType: teams.teamType,
-        primarySupervisorUser: teams.primarySupervisorUser,
-        secondarySupervisorUser: teams.secondarySupervisorUser,
-        isActive: teams.isActive
-      })
-      .from(teams)
-      .where(and(
-        eq(teams.tenantId, tenantId),
-        eq(teams.isActive, true)
-      ));
+    // Get all teams
+    const allTeams = await db.execute<{
+      id: string; name: string; team_type: string; primary_supervisor_user: string | null; secondary_supervisor_user: string | null; is_active: boolean;
+    }>(sql`
+      SELECT id, name, team_type, primary_supervisor_user, secondary_supervisor_user, is_active 
+      FROM w3suite.teams WHERE tenant_id = ${tenantId} AND is_active = true
+    `).then(r => r.rows.map(t => ({
+      id: t.id, name: t.name, teamType: t.team_type,
+      primarySupervisorUser: t.primary_supervisor_user,
+      secondarySupervisorUser: t.secondary_supervisor_user,
+      isActive: t.is_active
+    })));
 
     // Get team-department associations
-    const allTeamDepts = await db
-      .select({
-        teamId: teamDepartments.teamId,
-        departmentId: teamDepartments.departmentId
-      })
-      .from(teamDepartments)
-      .where(eq(teamDepartments.tenantId, tenantId));
+    const allTeamDepts = await db.execute<{
+      team_id: string; department_id: string;
+    }>(sql`
+      SELECT team_id, department_id FROM w3suite.team_departments WHERE tenant_id = ${tenantId}
+    `).then(r => r.rows.map(td => ({ teamId: td.team_id, departmentId: td.department_id })));
 
     // Get team memberships
-    const allTeamMemberships = await db
-      .select({
-        userId: userTeams.userId,
-        teamId: userTeams.teamId
-      })
-      .from(userTeams)
-      .where(eq(userTeams.tenantId, tenantId));
+    const allTeamMemberships = await db.execute<{
+      user_id: string; team_id: string;
+    }>(sql`
+      SELECT user_id, team_id FROM w3suite.user_teams WHERE tenant_id = ${tenantId}
+    `).then(r => r.rows.map(m => ({ userId: m.user_id, teamId: m.team_id })));
 
     // Get team observers
-    const allObservers = await db
-      .select({
-        teamId: teamObservers.teamId,
-        userId: teamObservers.userId,
-        canApprove: teamObservers.canApprove
-      })
-      .from(teamObservers)
-      .where(eq(teamObservers.tenantId, tenantId));
+    const allObservers = await db.execute<{
+      team_id: string; user_id: string; can_approve: boolean;
+    }>(sql`
+      SELECT team_id, user_id, can_approve FROM w3suite.team_observers WHERE tenant_id = ${tenantId}
+    `).then(r => r.rows.map(o => ({ teamId: o.team_id, userId: o.user_id, canApprove: o.can_approve })));
 
-    // Get all users
-    const allUsers = await db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-        role: users.role,
-        isActive: users.isActive
-      })
-      .from(users)
-      .where(and(
-        eq(users.tenantId, tenantId),
-        eq(users.isActive, true)
-      ));
+    // Get all users (status = 'active' instead of is_active)
+    const allUsers = await db.execute<{
+      id: string; first_name: string; last_name: string; email: string; role: string; status: string;
+    }>(sql`
+      SELECT id, first_name, last_name, email, role, status FROM w3suite.users
+      WHERE tenant_id = ${tenantId} AND status = 'active'
+    `).then(r => r.rows.map(u => ({
+      id: u.id, firstName: u.first_name, lastName: u.last_name, email: u.email, role: u.role, isActive: u.status === 'active'
+    })));
 
     // Get action configurations
-    const allActionConfigs = await db
-      .select({
-        id: actionConfigurations.id,
-        department: actionConfigurations.department,
-        actionId: actionConfigurations.actionId,
-        actionName: actionConfigurations.actionName,
-        flowType: actionConfigurations.flowType,
-        requiresApproval: actionConfigurations.requiresApproval,
-        defaultScope: actionConfigurations.defaultScope,
-        defaultTeamIds: actionConfigurations.defaultTeamIds,
-        workflowConfigs: actionConfigurations.workflowConfigs,
-        workflowTemplateId: actionConfigurations.workflowTemplateId,
-        slaHours: actionConfigurations.slaHours,
-        isActive: actionConfigurations.isActive
-      })
-      .from(actionConfigurations)
-      .where(eq(actionConfigurations.tenantId, tenantId));
+    const allActionConfigs = await db.execute<{
+      id: string; department: string; action_id: string; action_name: string; flow_type: string;
+      requires_approval: boolean; team_scope: string; specific_team_ids: string[];
+      workflow_template_id: string | null; sla_hours: number | null; is_active: boolean;
+    }>(sql`
+      SELECT id, department, action_id, action_name, flow_type, requires_approval, 
+             team_scope, specific_team_ids, workflow_template_id, sla_hours, is_active
+      FROM w3suite.action_configurations WHERE tenant_id = ${tenantId}
+    `).then(r => r.rows.map(a => ({
+      id: a.id, department: a.department, actionId: a.action_id, actionName: a.action_name,
+      flowType: a.flow_type, requiresApproval: a.requires_approval, teamScope: a.team_scope,
+      specificTeamIds: a.specific_team_ids || [], workflowTemplateId: a.workflow_template_id,
+      slaHours: a.sla_hours, isActive: a.is_active
+    })));
 
     // Get workflow templates
-    const allWorkflowTemplates = await db
-      .select({
-        id: workflowTemplates.id,
-        name: workflowTemplates.name,
-        category: workflowTemplates.category,
-        isActive: workflowTemplates.isActive,
-        createdAt: workflowTemplates.createdAt
-      })
-      .from(workflowTemplates)
-      .where(eq(workflowTemplates.tenantId, tenantId));
+    const allWorkflowTemplates = await db.execute<{
+      id: string; name: string; category: string; is_active: boolean; created_at: string;
+    }>(sql`
+      SELECT id, name, category, is_active, created_at FROM w3suite.workflow_templates WHERE tenant_id = ${tenantId}
+    `).then(r => r.rows.map(w => ({
+      id: w.id, name: w.name, category: w.category, isActive: w.is_active, createdAt: w.created_at
+    })));
 
     // Get workflow instances for usage stats
-    const workflowUsageStats = await db
-      .select({
-        templateId: workflowInstances.templateId,
-        lastUsed: sql<string>`MAX(${workflowInstances.createdAt})`,
-        usageCount: sql<number>`COUNT(*)::int`
-      })
-      .from(workflowInstances)
-      .where(eq(workflowInstances.tenantId, tenantId))
-      .groupBy(workflowInstances.templateId);
+    const workflowUsageStats = await db.execute<{
+      template_id: string; last_used: string; usage_count: number;
+    }>(sql`
+      SELECT template_id, MAX(created_at) as last_used, COUNT(*)::int as usage_count 
+      FROM w3suite.workflow_instances WHERE tenant_id = ${tenantId} GROUP BY template_id
+    `).then(r => r.rows.map(s => ({
+      templateId: s.template_id, lastUsed: s.last_used, usageCount: s.usage_count
+    })));
 
     // ==================== BUILD MAPS ====================
     
@@ -2927,10 +2900,10 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
           actionName: a.actionName,
           flowType: a.flowType,
           isActive: a.flowType !== 'none' && a.requiresApproval,
-          defaultScope: a.defaultScope,
-          teamCount: a.defaultScope === 'all' 
+          defaultScope: a.teamScope,
+          teamCount: a.teamScope === 'all' 
             ? (deptToTeams.get(dept.id) || []).length 
-            : ((a.defaultTeamIds as string[]) || []).length,
+            : ((a.specificTeamIds as string[]) || []).length,
           hasWorkflow: a.flowType === 'workflow',
           slaHours: a.slaHours
         })),
@@ -2962,14 +2935,12 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
         if (ac.flowType === 'none' || !ac.requiresApproval) return false;
         if (!teamDeptCodes.includes(ac.department)) return false;
         
-        if (ac.defaultScope === 'all') return true;
-        if (ac.defaultScope === 'specific') {
-          const teamIds = (ac.defaultTeamIds as string[]) || [];
+        if (ac.teamScope === 'all') return true;
+        if (ac.teamScope === 'specific') {
+          const teamIds = (ac.specificTeamIds as string[]) || [];
           return teamIds.includes(team.id);
         }
-        // Check workflowConfigs
-        const wfConfigs = (ac.workflowConfigs as Array<{teamId: string}>) || [];
-        return wfConfigs.some(wc => wc.teamId === team.id);
+        return false;
       });
 
       const memberCount = (teamMembers.get(team.id) || []).length;
@@ -3005,8 +2976,7 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
     const level5Data = allWorkflowTemplates.map(wf => {
       const usage = workflowUsage.get(wf.id);
       const usedInActions = allActionConfigs.filter(ac => 
-        ac.workflowTemplateId === wf.id || 
-        ((ac.workflowConfigs as Array<{workflowId: string}>) || []).some(wc => wc.workflowId === wf.id)
+        ac.workflowTemplateId === wf.id
       );
       
       const isUsedButDisabled = usedInActions.length > 0 && !wf.isActive;
