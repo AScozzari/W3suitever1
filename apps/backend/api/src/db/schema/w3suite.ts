@@ -10695,3 +10695,185 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 });
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+// ==================== MCP SERVER & TOOLS ====================
+// Multi-tenant MCP Server for exposing actions as callable tools
+
+// MCP API Keys - Per-tenant API keys for external integrations
+export const mcpApiKeys = w3suiteSchema.table("mcp_api_keys", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Key identification
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  
+  // Security - Key format: sk_live_{tenantSlug}_{randomString}
+  // We store ONLY the hash, never the plain key
+  keyPrefix: varchar("key_prefix", { length: 20 }).notNull(), // First 8 chars for identification (sk_live_)
+  keyHash: varchar("key_hash", { length: 128 }).notNull(), // SHA-256 hash of full key
+  
+  // Scopes - which action categories this key can access
+  allowedDepartments: text("allowed_departments").array(), // ['hr', 'sales', 'wms'] or null = all
+  
+  // Rate limiting
+  rateLimitPerMinute: integer("rate_limit_per_minute").default(60).notNull(),
+  dailyQuota: integer("daily_quota").default(10000).notNull(),
+  
+  // IP restrictions (optional)
+  allowedIps: text("allowed_ips").array(), // null = no restriction
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"), // null = never expires
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  revokedAt: timestamp("revoked_at"),
+  revokedBy: varchar("revoked_by").references(() => users.id),
+}, (table) => [
+  index("mcp_api_keys_tenant_idx").on(table.tenantId),
+  index("mcp_api_keys_prefix_idx").on(table.keyPrefix),
+  index("mcp_api_keys_active_idx").on(table.isActive),
+  index("mcp_api_keys_hash_idx").on(table.keyHash),
+]);
+
+export const insertMcpApiKeySchema = createInsertSchema(mcpApiKeys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMcpApiKey = z.infer<typeof insertMcpApiKeySchema>;
+export type McpApiKey = typeof mcpApiKeys.$inferSelect;
+
+// MCP Tool Permissions - Which specific tools (actions) each API key can access
+export const mcpToolPermissions = w3suiteSchema.table("mcp_tool_permissions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // API Key reference
+  apiKeyId: uuid("api_key_id").notNull().references(() => mcpApiKeys.id, { onDelete: 'cascade' }),
+  
+  // Action reference (the tool)
+  actionConfigId: uuid("action_config_id").notNull().references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  
+  // Permission
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  
+  // Rate limit override for this specific tool (optional)
+  rateLimitOverride: integer("rate_limit_override"), // null = use key default
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+}, (table) => [
+  index("mcp_tool_permissions_tenant_idx").on(table.tenantId),
+  index("mcp_tool_permissions_key_idx").on(table.apiKeyId),
+  index("mcp_tool_permissions_action_idx").on(table.actionConfigId),
+  uniqueIndex("mcp_tool_permissions_unique").on(table.apiKeyId, table.actionConfigId),
+]);
+
+export const insertMcpToolPermissionSchema = createInsertSchema(mcpToolPermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMcpToolPermission = z.infer<typeof insertMcpToolPermissionSchema>;
+export type McpToolPermission = typeof mcpToolPermissions.$inferSelect;
+
+// MCP Usage Logs - Track all MCP calls for analytics and audit
+export const mcpUsageLogs = w3suiteSchema.table("mcp_usage_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // API Key used
+  apiKeyId: uuid("api_key_id").notNull().references(() => mcpApiKeys.id, { onDelete: 'cascade' }),
+  apiKeyName: varchar("api_key_name", { length: 100 }), // Denormalized for fast display
+  
+  // Tool/Action called
+  actionConfigId: uuid("action_config_id").references(() => actionConfigurations.id, { onDelete: 'set null' }),
+  actionCode: varchar("action_code", { length: 100 }).notNull(),
+  department: varchar("department", { length: 50 }),
+  
+  // Request details
+  endpoint: varchar("endpoint", { length: 50 }).notNull(), // 'tools' or 'execute'
+  method: varchar("method", { length: 10 }).default('POST').notNull(),
+  requestPayloadHash: varchar("request_payload_hash", { length: 64 }), // SHA-256 for security
+  requestSize: integer("request_size"), // bytes
+  
+  // Response details
+  statusCode: integer("status_code").notNull(),
+  responseTime: integer("response_time").notNull(), // milliseconds
+  responseSize: integer("response_size"), // bytes
+  
+  // Result
+  success: boolean("success").default(true).notNull(),
+  errorCode: varchar("error_code", { length: 50 }),
+  errorMessage: text("error_message"),
+  
+  // Workflow triggered (if any)
+  workflowInstanceId: uuid("workflow_instance_id"),
+  
+  // Client info
+  clientIp: varchar("client_ip", { length: 45 }),
+  userAgent: text("user_agent"),
+  
+  // Timestamp
+  executedAt: timestamp("executed_at").defaultNow().notNull(),
+}, (table) => [
+  index("mcp_usage_logs_tenant_time_idx").on(table.tenantId, table.executedAt),
+  index("mcp_usage_logs_key_time_idx").on(table.apiKeyId, table.executedAt),
+  index("mcp_usage_logs_action_time_idx").on(table.actionCode, table.executedAt),
+  index("mcp_usage_logs_success_idx").on(table.success),
+  index("mcp_usage_logs_department_idx").on(table.department),
+]);
+
+export const insertMcpUsageLogSchema = createInsertSchema(mcpUsageLogs).omit({
+  id: true,
+});
+export type InsertMcpUsageLog = z.infer<typeof insertMcpUsageLogSchema>;
+export type McpUsageLog = typeof mcpUsageLogs.$inferSelect;
+
+// MCP Tool Exposure Settings - Controls which actions are exposed as MCP tools
+export const mcpToolSettings = w3suiteSchema.table("mcp_tool_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Action reference
+  actionConfigId: uuid("action_config_id").notNull().references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  
+  // Exposure settings
+  exposedViaMcp: boolean("exposed_via_mcp").default(false).notNull(),
+  
+  // Custom tool name/description for MCP (optional overrides)
+  customToolName: varchar("custom_tool_name", { length: 100 }),
+  customToolDescription: text("custom_tool_description"),
+  
+  // Parameters schema (JSON Schema format for MCP tool parameters)
+  parametersSchema: jsonb("parameters_schema"),
+  
+  // Rate limiting at tool level
+  rateLimitPerMinute: integer("rate_limit_per_minute"), // null = no specific limit
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("mcp_tool_settings_tenant_idx").on(table.tenantId),
+  index("mcp_tool_settings_action_idx").on(table.actionConfigId),
+  index("mcp_tool_settings_exposed_idx").on(table.exposedViaMcp),
+  uniqueIndex("mcp_tool_settings_unique").on(table.tenantId, table.actionConfigId),
+]);
+
+export const insertMcpToolSettingSchema = createInsertSchema(mcpToolSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMcpToolSetting = z.infer<typeof insertMcpToolSettingSchema>;
+export type McpToolSetting = typeof mcpToolSettings.$inferSelect;
