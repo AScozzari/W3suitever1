@@ -16,6 +16,8 @@ import chatRoutes from "../routes/chat";
 import mcpRoutes from "../routes/mcp";
 import mcpOAuthRoutes from "../routes/mcp-oauth";
 import mcpCredentialsRoutes from "../routes/mcp-credentials";
+import mcpActionGatewayRoutes from "../routes/mcp-action-gateway";
+import mcpPublicGatewayRoutes from "../routes/mcp-public-gateway";
 import { aiSettingsRoutes } from "../routes/ai-settings";
 import entitiesRoutes from "../routes/entities";
 import productsRoutes from "../routes/products";
@@ -1466,6 +1468,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== MCP CREDENTIALS ROUTES ====================
   // API key and credential management for MCP servers (AWS, Stripe, GTM)
   app.use('/api/mcp/credentials', mcpCredentialsRoutes);
+  
+  // ==================== MCP ACTION GATEWAY ROUTES ====================
+  // Exposes actions as MCP tools for external integrations (n8n, Claude, Zapier)
+  app.use('/api/mcp-gateway', tenantMiddleware, rbacMiddleware, mcpActionGatewayRoutes);
+  
+  // ==================== MCP PUBLIC GATEWAY ROUTES ====================
+  // PUBLIC API for external integrations - uses API Key auth (not session/JWT)
+  // Must be registered WITHOUT tenant/rbac middleware - handles its own auth
+  app.use('/api/mcp-public', mcpPublicGatewayRoutes);
   
   // ==================== AI SETTINGS ROUTES ====================
   // AI configuration and OpenAI connection management
