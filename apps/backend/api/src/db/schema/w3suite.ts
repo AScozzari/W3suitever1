@@ -3896,6 +3896,53 @@ export const insertActionConfigurationSchema = createInsertSchema(actionConfigur
 export type InsertActionConfiguration = z.infer<typeof insertActionConfigurationSchema>;
 export type ActionConfiguration = typeof actionConfigurations.$inferSelect;
 
+// ==================== ACTION TEAM OVERRIDES ====================
+// Override per-team: permette di avere flowType diversi per team diversi sulla stessa azione
+// Es: Azione "Reso Merce" → Default per tutti (notifica supervisori), MA Team Logistica → usa workflow specifico
+
+export const actionTeamOverrides = w3suiteSchema.table("action_team_overrides", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // 🎯 RIFERIMENTI
+  actionConfigId: uuid("action_config_id").notNull().references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  teamId: uuid("team_id").notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  
+  // 🎯 OVERRIDE CONFIGURAZIONE
+  flowType: actionFlowTypeEnum("flow_type").notNull(), // none | default | workflow
+  workflowTemplateId: uuid("workflow_template_id").references(() => workflowTemplates.id, { onDelete: 'set null' }),
+  
+  // 🎯 SLA OVERRIDE (opzionale, null = usa default da actionConfig)
+  slaHoursOverride: integer("sla_hours_override"),
+  
+  // 🎯 PRIORITÀ (per ordinamento in caso di conflitti)
+  priority: integer("priority").default(100),
+  
+  // 🎯 STATO
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // 🎯 AUDIT
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("action_team_overrides_tenant_idx").on(table.tenantId),
+  index("action_team_overrides_action_idx").on(table.actionConfigId),
+  index("action_team_overrides_team_idx").on(table.teamId),
+  index("action_team_overrides_active_idx").on(table.isActive),
+  // 🎯 UNIQUE: Un solo override per azione+team
+  uniqueIndex("action_team_overrides_unique").on(table.actionConfigId, table.teamId),
+]);
+
+export const insertActionTeamOverrideSchema = createInsertSchema(actionTeamOverrides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertActionTeamOverride = z.infer<typeof insertActionTeamOverrideSchema>;
+export type ActionTeamOverride = typeof actionTeamOverrides.$inferSelect;
+
 // ==================== WORKFLOW INSTANCES ====================
 
 // Workflow Instances - Istanze runtime di workflow in esecuzione
