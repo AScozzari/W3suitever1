@@ -783,6 +783,99 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     </div>
                   </div>
 
+                  <Separator className="my-6" />
+
+                  {/* 🎯 OBSERVERS SECTION */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <UserCheck className="w-5 h-5 text-amber-600" />
+                    <h3 className="text-lg font-semibold">Osservatori</h3>
+                  </div>
+
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                    <p className="text-xs text-amber-700">
+                      <strong>Gli osservatori</strong> ricevono notifiche sulle richieste del team. 
+                      Dopo 24h (escalation SLA) possono anche approvare/rifiutare le richieste in attesa.
+                    </p>
+                  </div>
+
+                  {/* 🎯 Osservatori Selezionati - Rimovibili */}
+                  {selectedObserverUsers.length > 0 && (
+                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-amber-700">Osservatori Selezionati ({selectedObserverUsers.length})</h4>
+                        <span className="text-xs text-gray-500">Clicca sulla X per rimuovere</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                        {selectedObserverUsers.map(userId => {
+                          const user = users.find((u: any) => u.id === userId);
+                          return user ? (
+                            <Badge 
+                              key={userId} 
+                              className="bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-pointer flex items-center gap-1 pr-1"
+                            >
+                              <UserCheck className="w-3 h-3" />
+                              {getUserDisplayName(user)}
+                              <X 
+                                className="w-3 h-3 ml-1 hover:text-red-600" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleObserverUser(userId);
+                                }}
+                              />
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Observer Users Selection */}
+                  <div>
+                    <h4 className="text-md font-medium mb-1">Seleziona Osservatori</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Scegli utenti che monitoreranno le attività del team e potranno approvare dopo escalation.
+                    </p>
+                    
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {users
+                        .filter((user: any) => {
+                          // Exclude already selected members and supervisors
+                          const isMember = selectedUserMembers.includes(user.id);
+                          const isPrimary = form.watch('primarySupervisorUser') === user.id;
+                          const isSecondary = form.watch('secondarySupervisorUser') === user.id;
+                          return !isMember && !isPrimary && !isSecondary;
+                        })
+                        .map((user: any) => {
+                          const isSelected = selectedObserverUsers.includes(user.id);
+                          const userRole = roles.find((r: any) => r.id === user.roleId);
+                          return (
+                            <div
+                              key={user.id}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-amber-50 border-amber-400 text-amber-800'
+                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              }`}
+                              onClick={() => toggleObserverUser(user.id)}
+                              data-testid={`observer-user-${user.id}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">{getUserDisplayName(user)}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
+                                  <Badge variant="outline">{user.department && DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES] ? DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES].label : 'No Dept'}</Badge>
+                                  {isSelected && <UserCheck className="w-4 h-4 text-amber-600" />}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
                 </div>
               )}
 
@@ -793,6 +886,56 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <Shield className="w-5 h-5 text-windtre-orange" />
                     <h3 className="text-lg font-semibold">Supervisori</h3>
                   </div>
+
+                  {/* 🎯 Supervisori Selezionati - Riepilogo */}
+                  {(form.watch('primarySupervisorUser') || form.watch('secondarySupervisorUser')) && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-green-700">Supervisori Selezionati</h4>
+                        <Shield className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {form.watch('primarySupervisorUser') && (() => {
+                          const user = users.find((u: any) => u.id === form.watch('primarySupervisorUser'));
+                          return user ? (
+                            <Badge 
+                              key={user.id} 
+                              className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer flex items-center gap-1 pr-1"
+                            >
+                              <Shield className="w-3 h-3" />
+                              {getUserDisplayName(user)} (Primario)
+                              <X 
+                                className="w-3 h-3 ml-1 hover:text-red-600" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  form.setValue('primarySupervisorUser', null);
+                                }}
+                              />
+                            </Badge>
+                          ) : null;
+                        })()}
+                        {form.watch('secondarySupervisorUser') && (() => {
+                          const user = users.find((u: any) => u.id === form.watch('secondarySupervisorUser'));
+                          return user ? (
+                            <Badge 
+                              key={user.id} 
+                              className="bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer flex items-center gap-1 pr-1"
+                            >
+                              <Shield className="w-3 h-3" />
+                              {getUserDisplayName(user)} (Secondario)
+                              <X 
+                                className="w-3 h-3 ml-1 hover:text-red-600" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  form.setValue('secondarySupervisorUser', null);
+                                }}
+                              />
+                            </Badge>
+                          ) : null;
+                        })()}
+                      </div>
+                    </div>
+                  )}
 
                   {/* 🎯 PRIMARY SUPERVISOR SECTION */}
                   <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
