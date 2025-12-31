@@ -654,8 +654,49 @@ function PermissionsMatrixTab({
   apiKeys: MCPApiKey[];
   actions: ActionConfiguration[];
 }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const exposedActions = actions.filter(a => a.mcpExposed);
   const activeKeys = apiKeys.filter(k => k.isActive);
+  const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
+  
+  const { data: keyPermissions = [], isLoading: loadingPermissions } = useQuery<ToolPermission[]>({
+    queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'],
+    queryFn: async () => {
+      const res = await fetch(`/api/mcp-gateway/keys/${selectedKeyId}/permissions`, {
+        headers: { 'X-Tenant-ID': localStorage.getItem('tenantId') || '' }
+      });
+      if (!res.ok) throw new Error('Failed to fetch permissions');
+      return res.json();
+    },
+    enabled: !!selectedKeyId,
+  });
+
+  const updatePermissionMutation = useMutation({
+    mutationFn: async ({ keyId, permissions }: { keyId: string; permissions: ToolPermission[] }) => {
+      await apiRequest('PUT', `/api/mcp-gateway/keys/${keyId}/permissions`, { permissions });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'] });
+      toast({ title: 'Permessi aggiornati', description: 'Le modifiche sono state salvate' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile salvare i permessi', variant: 'destructive' });
+    }
+  });
+
+  const toggleToolPermission = (actionConfigId: string, currentlyEnabled: boolean) => {
+    if (!selectedKeyId) return;
+    
+    const existingPerm = keyPermissions.find(p => p.actionConfigId === actionConfigId);
+    const newPermissions = existingPerm
+      ? keyPermissions.map(p => 
+          p.actionConfigId === actionConfigId ? { ...p, isEnabled: !currentlyEnabled } : p
+        )
+      : [...keyPermissions, { actionConfigId, isEnabled: true, rateLimitOverride: null }];
+    
+    updatePermissionMutation.mutate({ keyId: selectedKeyId, permissions: newPermissions });
+  };
 
   if (activeKeys.length === 0 || exposedActions.length === 0) {
     return (
@@ -669,65 +710,124 @@ function PermissionsMatrixTab({
         <p className="text-sm text-gray-500">
           {activeKeys.length === 0 
             ? 'Crea almeno una API Key attiva'
-            : 'Esponi almeno un tool per visualizzare la matrice'}
+            : 'Esponi almeno un tool dalla tab Catalogo Tools'}
         </p>
       </Card>
     );
   }
 
+  const groupedByDepartment = exposedActions.reduce((acc, action) => {
+    const dept = action.departmentId || 'other';
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(action);
+    return acc;
+  }, {} as Record<string, ActionConfiguration[]>);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Matrice Permessi API Key / Tools</CardTitle>
-        <CardDescription>
-          Configura quali API Keys possono accedere a quali tools
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="sticky left-0 bg-white z-10">API Key</TableHead>
-                {exposedActions.map(action => (
-                  <TableHead key={action.id} className="text-center min-w-[120px]">
-                    <div className="text-xs">
-                      <div className="font-medium">{action.actionCode}</div>
-                      <div className="text-gray-500 font-normal truncate max-w-[100px]">
-                        {action.actionName}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Seleziona API Key</CardTitle>
+          <CardDescription>
+            Scegli una API Key per configurare quali tools può utilizzare
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {activeKeys.map(key => (
+              <Button
+                key={key.id}
+                variant={selectedKeyId === key.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedKeyId(key.id)}
+                className={selectedKeyId === key.id ? 'bg-gradient-to-r from-[#FF6900] to-[#7B2CBF]' : ''}
+                data-testid={`btn-select-key-${key.id}`}
+              >
+                <Key className="h-4 w-4 mr-2" />
+                {key.name}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedKeyId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-[#FF6900]" />
+              Permessi Tool per "{activeKeys.find(k => k.id === selectedKeyId)?.name}"
+            </CardTitle>
+            <CardDescription>
+              Abilita i singoli tool che questa API Key può chiamare
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingPermissions ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(groupedByDepartment).map(([dept, deptActions]) => {
+                  const style = DEPARTMENT_STYLES[dept] || { label: dept, color: '#666' };
+                  return (
+                    <div key={dept}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge style={{ backgroundColor: style.color }} className="text-white">
+                          {style.label}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {deptActions.length} tools
+                        </span>
+                      </div>
+                      <div className="grid gap-2">
+                        {deptActions.map(action => {
+                          const permission = keyPermissions.find(p => p.actionConfigId === action.id);
+                          const isEnabled = permission?.isEnabled ?? false;
+                          return (
+                            <div
+                              key={action.id}
+                              className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#FF6900]/30 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <code className="text-sm font-mono text-gray-700">{action.actionCode}</code>
+                                </div>
+                                <p className="text-sm text-gray-500 mt-0.5">{action.actionName}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={`text-xs ${isEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+                                  {isEnabled ? 'Abilitato' : 'Disabilitato'}
+                                </span>
+                                <Switch
+                                  checked={isEnabled}
+                                  onCheckedChange={() => toggleToolPermission(action.id, isEnabled)}
+                                  disabled={updatePermissionMutation.isPending}
+                                  data-testid={`switch-perm-${action.actionCode}`}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeKeys.map(key => (
-                <TableRow key={key.id}>
-                  <TableCell className="sticky left-0 bg-white z-10 font-medium">
-                    {key.name}
-                  </TableCell>
-                  {exposedActions.map(action => {
-                    const hasAccess = key.allowedDepartments.length === 0 || 
-                                      key.allowedDepartments.includes(action.departmentId);
-                    return (
-                      <TableCell key={action.id} className="text-center">
-                        {hasAccess ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-400 mx-auto" />
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
+}
+
+interface ToolPermission {
+  id?: string;
+  actionConfigId: string;
+  isEnabled: boolean;
+  rateLimitOverride?: number | null;
 }
 
 function DocumentationTab({ actions }: { actions: ActionConfiguration[] }) {
