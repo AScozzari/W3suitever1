@@ -918,7 +918,7 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-0 z-[9999]" align="start">
+                      <PopoverContent className="w-[300px] p-0 z-[9999]" align="start">
                         <Command>
                           <CommandInput placeholder="Cerca team..." />
                           <CommandList>
