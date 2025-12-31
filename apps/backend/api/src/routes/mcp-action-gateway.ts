@@ -41,7 +41,7 @@ function hashApiKey(key: string): string {
 
 // ==================== API KEYS MANAGEMENT ====================
 
-router.get('/api-keys', requirePermission('settings.read'), async (req: Request, res: Response) => {
+router.get('/keys', requirePermission('settings.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     if (!tenantId) {
@@ -97,7 +97,7 @@ router.get('/api-keys', requirePermission('settings.read'), async (req: Request,
   }
 });
 
-router.post('/api-keys', requirePermission('settings.write'), async (req: Request, res: Response) => {
+router.post('/keys', requirePermission('settings.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const userId = (req as any).user?.id;
@@ -158,7 +158,7 @@ router.post('/api-keys', requirePermission('settings.write'), async (req: Reques
   }
 });
 
-router.patch('/api-keys/:id', requirePermission('settings.write'), async (req: Request, res: Response) => {
+router.patch('/keys/:id', requirePermission('settings.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const keyId = req.params.id;
@@ -199,7 +199,7 @@ router.patch('/api-keys/:id', requirePermission('settings.write'), async (req: R
   }
 });
 
-router.delete('/api-keys/:id', requirePermission('settings.write'), async (req: Request, res: Response) => {
+router.delete('/keys/:id', requirePermission('settings.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const keyId = req.params.id;
@@ -238,7 +238,7 @@ router.delete('/api-keys/:id', requirePermission('settings.write'), async (req: 
 
 // ==================== TOOL SETTINGS ====================
 
-router.get('/tool-settings', requirePermission('settings.read'), async (req: Request, res: Response) => {
+router.get('/tools', requirePermission('settings.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     if (!tenantId) {
@@ -267,16 +267,21 @@ router.get('/tool-settings', requirePermission('settings.read'), async (req: Req
 
     const settingsMap = new Map(settings.map(s => [s.actionConfigId, s]));
 
-    const enrichedActions = actions.map(action => ({
-      ...action,
-      mcpSettings: settingsMap.get(action.id) || {
-        exposedViaMcp: false,
-        customToolName: null,
-        customToolDescription: null,
-        parametersSchema: null,
-        rateLimitPerMinute: null,
-      }
-    }));
+    const enrichedActions = actions.map(action => {
+      const settings = settingsMap.get(action.id);
+      return {
+        id: action.id,
+        actionCode: action.code,
+        actionName: action.name,
+        description: action.description,
+        departmentId: action.department,
+        flowType: action.flowType,
+        isActive: action.isActive,
+        mcpExposed: settings?.exposedViaMcp || false,
+        customToolName: settings?.customToolName || null,
+        customToolDescription: settings?.customToolDescription || null,
+      };
+    });
 
     res.json(enrichedActions);
   } catch (error) {
@@ -285,7 +290,7 @@ router.get('/tool-settings', requirePermission('settings.read'), async (req: Req
   }
 });
 
-router.put('/tool-settings/:actionId', requirePermission('settings.write'), async (req: Request, res: Response) => {
+router.patch('/tools/:actionId', requirePermission('settings.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const actionId = req.params.actionId;
@@ -295,7 +300,8 @@ router.put('/tool-settings/:actionId', requirePermission('settings.write'), asyn
     }
     await setTenantContext(tenantId);
 
-    const { exposedViaMcp, customToolName, customToolDescription, parametersSchema, rateLimitPerMinute } = req.body;
+    const { mcpExposed, exposedViaMcp, customToolName, customToolDescription, parametersSchema, rateLimitPerMinute } = req.body;
+    const exposed = mcpExposed !== undefined ? mcpExposed : exposedViaMcp;
 
     const [existing] = await db
       .select()
@@ -311,7 +317,7 @@ router.put('/tool-settings/:actionId', requirePermission('settings.write'), asyn
       [result] = await db
         .update(mcpToolSettings)
         .set({
-          exposedViaMcp,
+          exposedViaMcp: exposed,
           customToolName,
           customToolDescription,
           parametersSchema,
@@ -327,7 +333,7 @@ router.put('/tool-settings/:actionId', requirePermission('settings.write'), asyn
         .values({
           tenantId,
           actionConfigId: actionId,
-          exposedViaMcp,
+          exposedViaMcp: exposed,
           customToolName,
           customToolDescription,
           parametersSchema,
@@ -346,7 +352,7 @@ router.put('/tool-settings/:actionId', requirePermission('settings.write'), asyn
 
 // ==================== TOOL PERMISSIONS (API Key -> Actions) ====================
 
-router.get('/api-keys/:keyId/permissions', requirePermission('settings.read'), async (req: Request, res: Response) => {
+router.get('/keys/:keyId/permissions', requirePermission('settings.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const keyId = req.params.keyId;
@@ -379,7 +385,7 @@ router.get('/api-keys/:keyId/permissions', requirePermission('settings.read'), a
   }
 });
 
-router.put('/api-keys/:keyId/permissions', requirePermission('settings.write'), async (req: Request, res: Response) => {
+router.put('/keys/:keyId/permissions', requirePermission('settings.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const keyId = req.params.keyId;
@@ -419,6 +425,99 @@ router.put('/api-keys/:keyId/permissions', requirePermission('settings.write'), 
 });
 
 // ==================== USAGE ANALYTICS ====================
+
+// Stats endpoint for dashboard summary
+router.get('/stats', requirePermission('settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [totalCallsResult] = await db
+      .select({ count: count() })
+      .from(mcpUsageLogs)
+      .where(eq(mcpUsageLogs.tenantId, tenantId));
+
+    const [successCallsResult] = await db
+      .select({ count: count() })
+      .from(mcpUsageLogs)
+      .where(and(eq(mcpUsageLogs.tenantId, tenantId), eq(mcpUsageLogs.success, true)));
+
+    const [avgResponseResult] = await db
+      .select({ avg: sql<number>`COALESCE(AVG(response_time), 0)` })
+      .from(mcpUsageLogs)
+      .where(eq(mcpUsageLogs.tenantId, tenantId));
+
+    const [activeKeysResult] = await db
+      .select({ count: count() })
+      .from(mcpApiKeys)
+      .where(and(eq(mcpApiKeys.tenantId, tenantId), eq(mcpApiKeys.isActive, true)));
+
+    const [exposedToolsResult] = await db
+      .select({ count: count() })
+      .from(mcpToolSettings)
+      .where(and(eq(mcpToolSettings.tenantId, tenantId), eq(mcpToolSettings.exposedViaMcp, true)));
+
+    const [callsTodayResult] = await db
+      .select({ count: count() })
+      .from(mcpUsageLogs)
+      .where(and(eq(mcpUsageLogs.tenantId, tenantId), gte(mcpUsageLogs.executedAt, today)));
+
+    const totalCalls = Number(totalCallsResult?.count || 0);
+    const successCalls = Number(successCallsResult?.count || 0);
+
+    res.json({
+      totalCalls,
+      successRate: totalCalls > 0 ? (successCalls / totalCalls * 100) : 100,
+      avgResponseTime: Math.round(avgResponseResult?.avg || 0),
+      activeKeys: Number(activeKeysResult?.count || 0),
+      exposedTools: Number(exposedToolsResult?.count || 0),
+      callsToday: Number(callsTodayResult?.count || 0),
+    });
+  } catch (error) {
+    logger.error('Error fetching MCP stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Usage logs endpoint for activity table
+router.get('/usage-logs', requirePermission('settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const logs = await db
+      .select({
+        id: mcpUsageLogs.id,
+        apiKeyId: mcpUsageLogs.apiKeyId,
+        actionCode: mcpUsageLogs.actionCode,
+        success: mcpUsageLogs.success,
+        responseTime: mcpUsageLogs.responseTime,
+        errorMessage: mcpUsageLogs.errorMessage,
+        ipAddress: mcpUsageLogs.ipAddress,
+        timestamp: mcpUsageLogs.executedAt,
+      })
+      .from(mcpUsageLogs)
+      .where(eq(mcpUsageLogs.tenantId, tenantId))
+      .orderBy(desc(mcpUsageLogs.executedAt))
+      .limit(limit);
+
+    res.json(logs);
+  } catch (error) {
+    logger.error('Error fetching MCP usage logs:', error);
+    res.status(500).json({ error: 'Failed to fetch usage logs' });
+  }
+});
 
 router.get('/analytics', requirePermission('settings.read'), async (req: Request, res: Response) => {
   try {
