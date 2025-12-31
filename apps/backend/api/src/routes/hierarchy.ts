@@ -1200,6 +1200,12 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
     const tenantId = req.headers['x-tenant-id'] as string;
     const teamId = req.params.id;
     const userId = (req as any).user?.id;
+
+    logger.info('🔍 [TEAM-PATCH] Request received', {
+      teamId,
+      tenantId,
+      body: JSON.stringify(req.body).substring(0, 500)
+    });
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
@@ -1262,6 +1268,15 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
     }
 
     // 🔒 VALIDATION: User can only belong to ONE functional team per department
+    logger.info('🔍 [TEAM-PATCH] Validating exclusivity', {
+      teamId,
+      teamType: mergedData.teamType,
+      assignedDepartments: mergedData.assignedDepartments,
+      memberUserIds,
+      supervisorUserIds,
+      observers: req.body.observers
+    });
+
     const exclusivityValidation = await validateFunctionalTeamExclusivity(
       tenantId,
       mergedData.teamType,
@@ -1271,6 +1286,10 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       teamId // Exclude current team from check
     );
     if (!exclusivityValidation.valid) {
+      logger.warn('❌ [TEAM-PATCH] Exclusivity validation failed', {
+        error: exclusivityValidation.error,
+        conflicts: exclusivityValidation.conflicts
+      });
       return res.status(400).json({ 
         error: exclusivityValidation.error,
         conflicts: exclusivityValidation.conflicts 
