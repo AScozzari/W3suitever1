@@ -45,7 +45,9 @@ import {
   Shield,
   AlertTriangle,
   Save,
-  X
+  X,
+  Loader2,
+  GitBranch
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -218,6 +220,17 @@ export function ActionManagementContent() {
 
   const definitions: ActionDefinition[] = definitionsData?.actions || [];
   const configurations: ActionConfiguration[] = actionsData?.actions || [];
+
+  // Computed stats from configurations
+  const computedStats = {
+    totalActions: configurations.length,
+    requiresApproval: configurations.filter(c => c.flowType !== 'none').length,
+    withWorkflow: configurations.filter(c => c.flowType === 'workflow').length,
+    withDefault: configurations.filter(c => c.flowType === 'default').length,
+    avgSla: configurations.length > 0 
+      ? Math.round(configurations.reduce((sum, c) => sum + (c.slaHours || 24), 0) / configurations.length)
+      : 24
+  };
   
   const mergedActions: MergedAction[] = definitions.map(def => {
     const config = configurations.find(c => 
@@ -270,59 +283,61 @@ export function ActionManagementContent() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Settings className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{coverageData?.totalActions || 0}</p>
-                    <p className="text-sm text-gray-500">Azioni Totali</p>
+                    <p className="text-2xl font-bold">{definitions.length}</p>
+                    <p className="text-sm text-gray-500">Azioni Definite</p>
+                    <p className="text-xs text-gray-400">{computedStats.totalActions} configurate</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Workflow className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{coverageData?.totalWithWorkflow || 0}</p>
-                    <p className="text-sm text-gray-500">Con Workflow</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <Users className="h-5 w-5 text-green-600" />
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{coverageData?.totalWithDefaultFlow || 0}</p>
-                    <p className="text-sm text-gray-500">Flusso Default</p>
+                    <p className="text-2xl font-bold">{computedStats.requiresApproval}</p>
+                    <p className="text-sm text-gray-500">Con Approvazione</p>
+                    <p className="text-xs text-gray-400">{computedStats.withWorkflow} workflow, {computedStats.withDefault} default</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="pt-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <XCircle className="h-5 w-5 text-gray-600" />
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <GitBranch className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
-                      {(coverageData?.totalActions || 0) - (coverageData?.totalWithWorkflow || 0) - (coverageData?.totalWithDefaultFlow || 0)}
-                    </p>
-                    <p className="text-sm text-gray-500">Senza Approvazione</p>
+                    <p className="text-2xl font-bold">{computedStats.withWorkflow}</p>
+                    <p className="text-sm text-gray-500">Con Workflow</p>
+                    <p className="text-xs text-gray-400">Flusso automatizzato</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{computedStats.avgSla}h</p>
+                    <p className="text-sm text-gray-500">SLA Medio</p>
+                    <p className="text-xs text-gray-400">Tempo di approvazione</p>
                   </div>
                 </div>
               </CardContent>
@@ -332,30 +347,53 @@ export function ActionManagementContent() {
           <Card>
             <CardHeader>
               <CardTitle>Coverage per Dipartimento</CardTitle>
-              <CardDescription>Percentuale di azioni con workflow assegnato</CardDescription>
+              <CardDescription>Clicca su un dipartimento per filtrare le azioni</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {Object.entries(DEPARTMENTS).map(([deptKey, dept]) => {
-                  const stats = coverageData?.coverage?.[deptKey];
+                  const deptDefs = definitions.filter(d => d.department === deptKey);
+                  const deptConfigs = configurations.filter(c => c.department === deptKey);
+                  const withApproval = deptConfigs.filter(c => c.flowType !== 'none').length;
+                  const withWorkflow = deptConfigs.filter(c => c.flowType === 'workflow').length;
+                  const approvalPercent = deptDefs.length > 0 
+                    ? Math.round((withApproval / deptDefs.length) * 100) 
+                    : 0;
                   const Icon = dept.icon;
+                  const isSelected = selectedDepartment === deptKey;
+                  
                   return (
-                    <div key={deptKey} className="p-3 border rounded-lg">
+                    <button
+                      key={deptKey}
+                      type="button"
+                      onClick={() => setSelectedDepartment(isSelected ? 'all' : deptKey)}
+                      className={`p-3 border rounded-lg text-left transition-all hover:shadow-md ${
+                        isSelected 
+                          ? 'ring-2 ring-offset-1 ring-windtre-orange border-windtre-orange bg-orange-50' 
+                          : 'hover:border-gray-300'
+                      }`}
+                      data-testid={`button-dept-${deptKey}`}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <div className={`p-1.5 ${dept.color} rounded`}>
-                          <Icon className="h-4 w-4 text-white" />
+                          <Icon className="h-3 w-3 text-white" />
                         </div>
-                        <span className="font-medium text-sm">{dept.label}</span>
+                        <span className="font-medium text-xs truncate">{dept.label}</span>
                       </div>
                       <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Workflow</span>
-                          <span>{stats?.workflowCoveragePercent || 0}%</span>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">Approv.</span>
+                          <span className={approvalPercent > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}>
+                            {approvalPercent}%
+                          </span>
                         </div>
-                        <Progress value={stats?.workflowCoveragePercent || 0} className="h-2" />
-                        <p className="text-xs text-gray-400">{stats?.total || 0} azioni configurate</p>
+                        <Progress value={approvalPercent} className="h-1.5" />
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>{deptDefs.length} def.</span>
+                          <span>{withWorkflow > 0 ? `${withWorkflow} wf` : ''}</span>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -601,6 +639,19 @@ interface ActionAssignment {
   teamIds: string[];
 }
 
+// 🔀 Team Override from database
+interface TeamOverride {
+  id: string;
+  teamId: string;
+  teamName: string;
+  flowType: 'default' | 'workflow';
+  workflowTemplateId: string | null;
+  workflowName: string | null;
+  slaHoursOverride: number | null;
+  priority: number;
+  isActive: boolean;
+}
+
 interface ActionFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -686,6 +737,56 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
       return await apiRequest(`/api/action-configurations/meta/teams/${formData.department}`);
     },
     enabled: open && formData.requiresApproval
+  });
+
+  // Fetch existing team overrides (only when editing)
+  const { data: overridesData, isLoading: overridesLoading, refetch: refetchOverrides } = useQuery({
+    queryKey: ['/api/action-configurations', action?.id, 'team-overrides'],
+    queryFn: async () => {
+      return await apiRequest(`/api/action-configurations/${action?.id}/team-overrides`);
+    },
+    enabled: open && isEditing && !!action?.id && formData.requiresApproval
+  });
+
+  // State for new override form
+  const [newOverride, setNewOverride] = useState({
+    teamId: '',
+    flowType: 'default' as 'default' | 'workflow',
+    workflowTemplateId: ''
+  });
+
+  // Create override mutation
+  const createOverrideMutation = useMutation({
+    mutationFn: async (data: typeof newOverride) => {
+      return await apiRequest(`/api/action-configurations/${action?.id}/team-overrides`, {
+        method: 'POST',
+        body: data
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Override team creato con successo' });
+      setNewOverride({ teamId: '', flowType: 'default', workflowTemplateId: '' });
+      refetchOverrides();
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Delete override mutation
+  const deleteOverrideMutation = useMutation({
+    mutationFn: async (overrideId: string) => {
+      return await apiRequest(`/api/action-configurations/${action?.id}/team-overrides/${overrideId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Override eliminato' });
+      refetchOverrides();
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: 'destructive' });
+    }
   });
 
   // Add a new assignment
@@ -1023,24 +1124,149 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
                 ))}
               </div>
 
-              {/* Team Override Info Box */}
-              <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Shield className="h-4 w-4 text-purple-600" />
+              {/* Team Overrides Section */}
+              {isEditing && (
+                <div className="space-y-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-purple-600" />
+                      <Label className="font-medium text-sm text-purple-900">Override per Team</Label>
+                    </div>
+                    <Badge variant="outline" className="text-purple-700 border-purple-300">
+                      {overridesData?.overrides?.length || 0} override
+                    </Badge>
                   </div>
-                  <div className="flex-1">
-                    <Label className="font-medium text-sm text-purple-900">Override per Team</Label>
-                    <p className="text-xs text-purple-700 mt-1">
-                      Puoi configurare flussi diversi per team specifici. Se un team ha un override, 
-                      userà quel flusso invece del default. Gli override sono gestiti via API:
-                    </p>
-                    <code className="block mt-2 text-xs bg-white/50 px-2 py-1 rounded border border-purple-200 text-purple-800">
-                      GET/POST /api/action-configurations/{'{id}'}/team-overrides
-                    </code>
+                  
+                  <p className="text-xs text-purple-700">
+                    Configura flussi diversi per team specifici. L'override ha precedenza sul flusso globale.
+                  </p>
+
+                  {/* Existing Overrides List */}
+                  {overridesLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                    </div>
+                  ) : overridesData?.overrides?.length > 0 ? (
+                    <div className="space-y-2">
+                      {overridesData.overrides.map((override: TeamOverride) => (
+                        <div key={override.id} className="flex items-center justify-between p-2 bg-white rounded border border-purple-100">
+                          <div className="flex items-center gap-3">
+                            <Users className="h-4 w-4 text-purple-500" />
+                            <div>
+                              <span className="text-sm font-medium">{override.teamName}</span>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="outline" className="text-xs">
+                                  {override.flowType === 'workflow' ? 'Workflow' : 'Default'}
+                                </Badge>
+                                {override.workflowName && (
+                                  <span className="text-xs text-gray-500">{override.workflowName}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteOverrideMutation.mutate(override.id)}
+                            disabled={deleteOverrideMutation.isPending}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            data-testid={`button-delete-override-${override.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-purple-600 italic py-2">Nessun override configurato</p>
+                  )}
+
+                  {/* Add New Override Form */}
+                  <div className="pt-3 border-t border-purple-200 space-y-3">
+                    <Label className="text-xs font-medium text-purple-800">Aggiungi Override</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select
+                        value={newOverride.teamId}
+                        onValueChange={(v) => setNewOverride({...newOverride, teamId: v})}
+                      >
+                        <SelectTrigger className="text-xs" data-testid="select-override-team">
+                          <SelectValue placeholder="Seleziona team" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" className="z-[9999]">
+                          {teamsData?.teams?.filter((t: any) => 
+                            !overridesData?.overrides?.some((o: TeamOverride) => o.teamId === t.id)
+                          ).map((team: any) => (
+                            <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={newOverride.flowType}
+                        onValueChange={(v) => setNewOverride({...newOverride, flowType: v as 'default' | 'workflow', workflowTemplateId: ''})}
+                      >
+                        <SelectTrigger className="text-xs" data-testid="select-override-flowType">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent position="popper" className="z-[9999]">
+                          <SelectItem value="default">Flusso Default</SelectItem>
+                          <SelectItem value="workflow">Workflow</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {newOverride.flowType === 'workflow' ? (
+                        <Select
+                          value={newOverride.workflowTemplateId}
+                          onValueChange={(v) => setNewOverride({...newOverride, workflowTemplateId: v})}
+                        >
+                          <SelectTrigger className="text-xs" data-testid="select-override-workflow">
+                            <SelectValue placeholder="Workflow" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" className="z-[9999]">
+                            {workflowsData?.workflows?.map((wf: any) => (
+                              <SelectItem key={wf.id} value={wf.id}>{wf.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => createOverrideMutation.mutate(newOverride)}
+                          disabled={!newOverride.teamId || createOverrideMutation.isPending}
+                          className="bg-purple-600 hover:bg-purple-700 text-white"
+                          data-testid="button-add-override"
+                        >
+                          {createOverrideMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    {newOverride.flowType === 'workflow' && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => createOverrideMutation.mutate(newOverride)}
+                        disabled={!newOverride.teamId || !newOverride.workflowTemplateId || createOverrideMutation.isPending}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                        data-testid="button-add-override-workflow"
+                      >
+                        {createOverrideMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Plus className="h-4 w-4 mr-2" />
+                        )}
+                        Aggiungi Override Workflow
+                      </Button>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* SLA and Escalation settings */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
