@@ -129,8 +129,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           assignedDepartments: editTeam.assignedDepartments || [],
           // Load existing members from userMembers array
           selectedMembers: editTeam.userMembers || [],
-          // Load existing observers from metadata or dedicated field
-          selectedObservers: editTeam.observers || editTeam.metadata?.observers || [],
+          // Load existing observers from team_observers table (now a direct field)
+          selectedObservers: editTeam.observers || [],
           // Load primary supervisor
           primarySupervisorUser: editTeam.primarySupervisor || editTeam.primarySupervisorUser || null,
           // Load secondary supervisor (first from array or direct field)
@@ -285,13 +285,6 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
       // workflowAssignments are now managed centrally via Action Management Dashboard
       const { selectedMembers, selectedObservers, workflowAssignments, ...teamPayload } = teamData;
       
-      // Build metadata with observers
-      const existingMetadata = editTeam?.metadata || {};
-      const updatedMetadata = {
-        ...existingMetadata,
-        observers: selectedObservers || []
-      };
-      
       return await apiRequest(`/api/teams/${editTeam.id}`, {
         method: 'PATCH', // API uses PATCH, not PUT
         body: JSON.stringify({
@@ -300,13 +293,13 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           teamType: teamPayload.teamType,
           assignedDepartments: teamPayload.assignedDepartments,
           isActive: teamPayload.isActive,
-          // Members as expected by API
+          // Members as expected by API (synced to user_teams table)
           members: selectedMembers || [],
+          // Observers as expected by API (synced to team_observers table)
+          observers: selectedObservers || [],
           // Supervisors with correct field names
           primarySupervisorUser: teamPayload.primarySupervisorUser || null,
-          secondarySupervisorUser: teamPayload.secondarySupervisorUser || null,
-          // Observers stored in metadata
-          metadata: updatedMetadata
+          secondarySupervisorUser: teamPayload.secondarySupervisorUser || null
         })
       });
     },

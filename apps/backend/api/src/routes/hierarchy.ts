@@ -35,7 +35,8 @@ import {
   insertWorkflowInstanceSchema,
   // Team enrichment tables
   teamDepartments,
-  departments
+  departments,
+  teamObservers
 } from '../db/schema/w3suite';
 import { z } from 'zod';
 import { workflowEngine } from '../services/workflow-engine';
@@ -871,7 +872,7 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
       .where(whereCondition)
       .orderBy(asc(teams.name));
 
-    // 🎯 Enrich teams with member count, member IDs, supervisor names, and departments
+    // 🎯 Enrich teams with member count, member IDs, observers, supervisor names, and departments
     const enrichedTeams = await Promise.all(allTeams.map(async (team) => {
       // Get members from user_teams (both count and IDs for edit functionality)
       const membersResult = await db
@@ -880,6 +881,13 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
         .where(eq(userTeams.teamId, team.id));
       const memberCount = membersResult.length;
       const userMembers = membersResult.map(m => m.userId);
+      
+      // Get observers from team_observers table
+      const observersResult = await db
+        .select({ userId: teamObservers.userId })
+        .from(teamObservers)
+        .where(eq(teamObservers.teamId, team.id));
+      const observers = observersResult.map(o => o.userId);
       
       // Get primary supervisor name
       let primarySupervisorName = null;
@@ -923,6 +931,7 @@ router.get('/teams', requirePermission('workflow.read'), async (req: Request, re
         teamType: team.teamType || 'functional',
         memberCount,
         userMembers, // Array of user IDs for edit functionality
+        observers, // Array of observer user IDs for edit functionality
         primarySupervisorName,
         secondarySupervisorName,
         departments: teamDepts,
@@ -1196,8 +1205,8 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // 🎯 Extract workflowAssignments and members before update (not part of teams table)
-    const { workflowAssignments, members, ...teamData } = req.body;
+    // 🎯 Extract workflowAssignments, members, and observers before update (not part of teams table)
+    const { workflowAssignments, members, observers, ...teamData } = req.body;
 
     await setTenantContext(tenantId);
 
@@ -1310,6 +1319,36 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
         logger.info('✅ Members synced in user_teams for updated team', {
           teamId,
           memberCount: memberUserIds.length
+        });
+      }
+    }
+
+    // 🎯 SYNC TEAM_OBSERVERS: Replace all existing observers with new ones if observers array was provided
+    if (observers !== undefined) {
+      // Step 1: Delete all existing observers for this team
+      await db
+        .delete(teamObservers)
+        .where(and(
+          eq(teamObservers.teamId, teamId),
+          eq(teamObservers.tenantId, tenantId)
+        ));
+
+      // Step 2: Insert new observers if any
+      const observerUserIds: string[] = Array.isArray(observers) ? observers : [];
+      if (observerUserIds.length > 0) {
+        const observerRecords = observerUserIds.map(observerId => ({
+          userId: observerId,
+          teamId,
+          tenantId,
+          canApprove: true,
+          assignedBy: userId || null
+        }));
+        
+        await db.insert(teamObservers).values(observerRecords);
+        
+        logger.info('✅ Observers synced in team_observers for updated team', {
+          teamId,
+          observerCount: observerUserIds.length
         });
       }
     }
