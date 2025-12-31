@@ -1,0 +1,352 @@
+/api/action-definitions
+installHook.js:1 Wed Dec 31 2025 12:41:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request timed out. Generating internal 408 Request Timeout.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onRequestTimeout @ sip__js.js?v=fac8f799:8696
+onRequestTimeout @ sip__js.js?v=fac8f799:8769
+onRequestTimeout @ sip__js.js?v=fac8f799:7713
+timerF @ sip__js.js?v=fac8f799:7887
+(anonime) @ sip__js.js?v=fac8f799:7733
+setTimeout
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7733
+init @ sip__js.js?v=fac8f799:8781
+authenticationGuard @ sip__js.js?v=fac8f799:8680
+receiveResponse @ sip__js.js?v=fac8f799:8729
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'avviso
+installHook.js:1 Wed Dec 31 2025 12:41:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 408
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onReject @ sip__js.js?v=fac8f799:5694
+receiveResponse @ sip__js.js?v=fac8f799:8759
+onRequestTimeout @ sip__js.js?v=fac8f799:8700
+onRequestTimeout @ sip__js.js?v=fac8f799:8769
+onRequestTimeout @ sip__js.js?v=fac8f799:7713
+timerF @ sip__js.js?v=fac8f799:7887
+(anonime) @ sip__js.js?v=fac8f799:7733
+setTimeout
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7733
+init @ sip__js.js?v=fac8f799:8781
+authenticationGuard @ sip__js.js?v=fac8f799:8680
+receiveResponse @ sip__js.js?v=fac8f799:8729
+receiveResponse @ sip__js.js?v=fac8f799:8779
+receiveResponse @ sip__js.js?v=fac8f799:7781
+receiveResponseFromTransport @ sip__js.js?v=fac8f799:11320
+receiveIncomingResponseFromTransport @ sip__js.js?v=fac8f799:11051
+onTransportMessage @ sip__js.js?v=fac8f799:13378
+transport.onMessage @ sip__js.js?v=fac8f799:13296
+onWebSocketMessage @ sip__js.js?v=fac8f799:12473
+(anonime) @ sip__js.js?v=fac8f799:12295Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 12:41:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+useSIPRegistration.ts:204 📡 Registration state: Unregistered
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 12:41:08 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+MCPActionGatewayPage.tsx:450 Uncaught TypeError: Cannot read properties of null (reading 'length')
+    at MCPActionGatewayPage.tsx:450:47
+    at Array.map (<anonymous>)
+    at ApiKeysTab (MCPActionGatewayPage.tsx:435:29)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+(anonime) @ MCPActionGatewayPage.tsx:450
+ApiKeysTab @ MCPActionGatewayPage.tsx:435
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+MCPActionGatewayPage.tsx:450 Uncaught TypeError: Cannot read properties of null (reading 'length')
+    at MCPActionGatewayPage.tsx:450:47
+    at Array.map (<anonymous>)
+    at ApiKeysTab (MCPActionGatewayPage.tsx:435:29)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15924:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+(anonime) @ MCPActionGatewayPage.tsx:450
+ApiKeysTab @ MCPActionGatewayPage.tsx:435
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15924
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+installHook.js:1 The above error occurred in the <ApiKeysTab> component:
+
+    at ApiKeysTab (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/settings/MCPActionGatewayPage.tsx:407:3)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=fac8f799:177:13
+    at _c5 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/tabs.tsx:61:12)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=fac8f799:55:7
+    at div
+    at div
+    at MCPActionGatewayPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/settings/MCPActionGatewayPage.tsx:72:21)
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:207:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:92:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:960:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:266:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:124:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=fac8f799:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=fac8f799:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=fac8f799:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+chunk-ZHRYBLGQ.js?v=fac8f799:9129 Uncaught TypeError: Cannot read properties of null (reading 'length')
+    at MCPActionGatewayPage.tsx:450:47
+    at Array.map (<anonymous>)
+    at ApiKeysTab (MCPActionGatewayPage.tsx:435:29)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at updateFunctionComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14582:28)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15924:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=fac8f799:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=fac8f799:19116:15)
+(anonime) @ MCPActionGatewayPage.tsx:450
+ApiKeysTab @ MCPActionGatewayPage.tsx:435
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+updateFunctionComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14582
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15924
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+installHook.js:1 Wed Dec 31 2025 12:41:09 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Not currently registered, but sending an unregister anyway. Error Component Stack
+    at SoftphoneWidget (SoftphoneWidget.tsx:42:35)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:119:50)
+    at AuthenticatedRoute (TenantShell.tsx:583:72)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:239:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:94:59)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+unregister @ sip__js.js?v=fac8f799:5740
+(anonime) @ useSIPRegistration.ts:237
+safelyCallDestroy @ chunk-ZHRYBLGQ.js?v=fac8f799:16748
+commitHookEffectListUnmount @ chunk-ZHRYBLGQ.js?v=fac8f799:16875
+commitPassiveUnmountInsideDeletedTreeOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18283
+commitPassiveUnmountEffectsInsideOfDeletedTree_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18245
+commitPassiveUnmountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18181
+commitPassiveUnmountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18169
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19489
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'avviso
+useSIPRegistration.ts:237 Wed Dec 31 2025 12:41:09 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+useSIPRegistration.ts:237 Wed Dec 31 2025 12:41:09 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:

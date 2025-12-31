@@ -447,7 +447,7 @@ function ApiKeysTab({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {key.allowedDepartments.length === 0 ? (
+                      {(!key.allowedDepartments || key.allowedDepartments.length === 0) ? (
                         <Badge variant="outline" className="text-xs">Tutti</Badge>
                       ) : (
                         key.allowedDepartments.slice(0, 2).map(dept => {
@@ -459,8 +459,8 @@ function ApiKeysTab({
                           );
                         })
                       )}
-                      {key.allowedDepartments.length > 2 && (
-                        <Badge variant="outline" className="text-xs">+{key.allowedDepartments.length - 2}</Badge>
+                      {(key.allowedDepartments?.length || 0) > 2 && (
+                        <Badge variant="outline" className="text-xs">+{key.allowedDepartments!.length - 2}</Badge>
                       )}
                     </div>
                   </TableCell>
