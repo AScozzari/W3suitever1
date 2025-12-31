@@ -103,6 +103,10 @@ interface CoverageData {
         usersWithCoverage: number;
         usersWithoutCoverage: number;
         coveragePercent: number;
+        coveredUsers?: Array<{ userId: string; userName: string; userRole: string; teamCount: number }>;
+        uncoveredUsers?: Array<{ userId: string; userName: string; userRole: string }>;
+        hasMoreCovered?: boolean;
+        hasMoreUncovered?: boolean;
       }>;
     };
   };
@@ -196,6 +200,12 @@ export default function CoverageDashboardV2({
     level5: false,
     health: true
   });
+
+  const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
+
+  const toggleDept = (deptCode: string) => {
+    setExpandedDepts(prev => ({ ...prev, [deptCode]: !prev[deptCode] }));
+  };
 
   const { data, isLoading, refetch, isFetching } = useQuery<CoverageData>({
     queryKey: ['/api/admin/coverage-dashboard-v2']
@@ -570,16 +580,77 @@ export default function CoverageDashboardV2({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {data.level2.data.departmentBreakdown.map(dept => (
-                    <div key={dept.departmentCode} className="p-4 rounded-lg border bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{dept.departmentName}</h4>
-                        <span className="text-sm font-medium">{dept.coveragePercent}%</span>
+                    <div key={dept.departmentCode} className="rounded-lg border bg-gray-50 overflow-hidden">
+                      <div 
+                        className="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => toggleDept(`l2-${dept.departmentCode}`)}
+                        data-testid={`dept-toggle-${dept.departmentCode}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {expandedDepts[`l2-${dept.departmentCode}`] ? (
+                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            )}
+                            <h4 className="font-medium text-gray-900">{dept.departmentName}</h4>
+                          </div>
+                          <span className="text-sm font-medium">{dept.coveragePercent}%</span>
+                        </div>
+                        <Progress value={dept.coveragePercent} className="h-2" />
+                        <div className="flex justify-between mt-2 text-xs text-gray-500">
+                          <span className="text-green-600">{dept.usersWithCoverage} coperti</span>
+                          <span className="text-red-600">{dept.usersWithoutCoverage} mancanti</span>
+                        </div>
                       </div>
-                      <Progress value={dept.coveragePercent} className="h-2" />
-                      <div className="flex justify-between mt-2 text-xs text-gray-500">
-                        <span>{dept.usersWithCoverage} coperti</span>
-                        <span>{dept.usersWithoutCoverage} mancanti</span>
-                      </div>
+                      
+                      {expandedDepts[`l2-${dept.departmentCode}`] && (
+                        <div className="px-4 pb-4 border-t border-gray-200 bg-white">
+                          {dept.coveredUsers && dept.coveredUsers.length > 0 && (
+                            <div className="mt-3">
+                              <h5 className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Utenti Coperti ({dept.usersWithCoverage})
+                              </h5>
+                              <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                                {dept.coveredUsers.map(user => (
+                                  <div key={user.userId} className="flex items-center justify-between text-xs py-1 px-2 bg-green-50 rounded">
+                                    <span className="text-gray-700">{user.userName}</span>
+                                    <span className="text-gray-400">{user.userRole} · {user.teamCount} team</span>
+                                  </div>
+                                ))}
+                                {dept.hasMoreCovered && (
+                                  <span className="text-xs text-gray-400 pl-2">+altri utenti...</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {dept.uncoveredUsers && dept.uncoveredUsers.length > 0 && (
+                            <div className="mt-3">
+                              <h5 className="text-xs font-semibold text-red-700 mb-2 flex items-center gap-1">
+                                <XCircle className="h-3 w-3" />
+                                Utenti NON Coperti ({dept.usersWithoutCoverage})
+                              </h5>
+                              <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                                {dept.uncoveredUsers.map(user => (
+                                  <div key={user.userId} className="flex items-center justify-between text-xs py-1 px-2 bg-red-50 rounded">
+                                    <span className="text-gray-700">{user.userName}</span>
+                                    <span className="text-gray-400">{user.userRole}</span>
+                                  </div>
+                                ))}
+                                {dept.hasMoreUncovered && (
+                                  <span className="text-xs text-gray-400 pl-2">+altri utenti...</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {(!dept.coveredUsers || dept.coveredUsers.length === 0) && (!dept.uncoveredUsers || dept.uncoveredUsers.length === 0) && (
+                            <p className="text-xs text-gray-400 mt-3">Nessun dettaglio disponibile</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

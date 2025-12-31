@@ -2859,12 +2859,26 @@ router.get('/admin/coverage-dashboard-v2', requirePermission('teams.read'), asyn
       usersWithoutTeam: userCoverage.filter(u => !u.hasTeam),
       departmentBreakdown: allDepartments.map(dept => {
         const usersInDept = userCoverage.filter(u => u.coveredDepartments.includes(dept.code));
+        const usersNotInDept = userCoverage.filter(u => !u.coveredDepartments.includes(dept.code));
         return {
           departmentCode: dept.code,
           departmentName: dept.name,
           usersWithCoverage: usersInDept.length,
-          usersWithoutCoverage: allUsers.length - usersInDept.length,
-          coveragePercent: Math.round((usersInDept.length / allUsers.length) * 100) || 0
+          usersWithoutCoverage: usersNotInDept.length,
+          coveragePercent: Math.round((usersInDept.length / allUsers.length) * 100) || 0,
+          coveredUsers: usersInDept.slice(0, 20).map(u => ({
+            userId: u.userId,
+            userName: u.userName,
+            userRole: u.userRole,
+            teamCount: u.teamCount
+          })),
+          uncoveredUsers: usersNotInDept.slice(0, 20).map(u => ({
+            userId: u.userId,
+            userName: u.userName,
+            userRole: u.userRole
+          })),
+          hasMoreCovered: usersInDept.length > 20,
+          hasMoreUncovered: usersNotInDept.length > 20
         };
       })
     };
