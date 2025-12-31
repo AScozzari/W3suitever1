@@ -246,6 +246,9 @@ router.get('/tools', requirePermission('settings.read'), async (req: Request, re
     }
     await setTenantContext(tenantId);
 
+    // Get activeOnly filter from query params - for admin view show all, for public gateway filter active only
+    const activeOnly = req.query.activeOnly === 'true';
+    
     const actions = await db
       .select({
         id: actionConfigurations.id,
@@ -257,7 +260,11 @@ router.get('/tools', requirePermission('settings.read'), async (req: Request, re
         isActive: actionConfigurations.isActive,
       })
       .from(actionConfigurations)
-      .where(eq(actionConfigurations.tenantId, tenantId))
+      .where(
+        activeOnly 
+          ? and(eq(actionConfigurations.tenantId, tenantId), eq(actionConfigurations.isActive, true))
+          : eq(actionConfigurations.tenantId, tenantId)
+      )
       .orderBy(actionConfigurations.department, actionConfigurations.actionName);
 
     const settings = await db
