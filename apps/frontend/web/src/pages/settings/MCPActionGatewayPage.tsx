@@ -54,6 +54,163 @@ import {
 } from 'lucide-react';
 import { DEPARTMENT_STYLES, getDepartmentStyle } from '@/lib/constants/departments';
 import { format } from 'date-fns';
+import { ChevronDown, ChevronRight, Info } from 'lucide-react';
+
+const ACTION_DESCRIPTIONS: Record<string, { purpose: string; details: string }> = {
+  CRM_CREATE_LEAD: { 
+    purpose: 'Crea un nuovo lead nel CRM',
+    details: 'Inserisce un potenziale cliente con nome, email, telefono e fonte di acquisizione. Attiva notifica al team sales.'
+  },
+  CRM_UPDATE_LEAD: { 
+    purpose: 'Aggiorna i dati di un lead',
+    details: 'Modifica informazioni esistenti di un lead: contatti, stato, note, assegnazione agente.'
+  },
+  CRM_CONVERT_LEAD: { 
+    purpose: 'Converte lead in opportunità',
+    details: 'Trasforma un lead qualificato in opportunità commerciale, creando il record cliente associato.'
+  },
+  CRM_CREATE_DEAL: { 
+    purpose: 'Crea una nuova trattativa',
+    details: 'Registra una nuova opportunità di vendita con valore, prodotti interessati e probabilità di chiusura.'
+  },
+  CRM_UPDATE_DEAL: { 
+    purpose: 'Aggiorna stato trattativa',
+    details: 'Modifica fase pipeline, valore, scadenza o assegnazione di una trattativa esistente.'
+  },
+  CRM_CLOSE_DEAL: { 
+    purpose: 'Chiude una trattativa',
+    details: 'Segna come vinta o persa una trattativa, registrando motivo e note di chiusura.'
+  },
+  WMS_CREATE_MOVEMENT: { 
+    purpose: 'Crea movimento magazzino',
+    details: 'Registra entrata, uscita o trasferimento di prodotti tra ubicazioni con tracciabilità completa.'
+  },
+  WMS_UPDATE_STOCK: { 
+    purpose: 'Aggiorna giacenza prodotto',
+    details: 'Modifica la quantità disponibile di un prodotto in una specifica ubicazione.'
+  },
+  WMS_CREATE_SHIPMENT: { 
+    purpose: 'Crea spedizione',
+    details: 'Prepara una spedizione con prodotti, destinatario, corriere e tracking number.'
+  },
+  WMS_RECEIVE_GOODS: { 
+    purpose: 'Riceve merce in entrata',
+    details: 'Registra l\'arrivo di prodotti da fornitore con controllo qualità e allocazione a ubicazione.'
+  },
+  WMS_INVENTORY_CHECK: { 
+    purpose: 'Controllo inventario',
+    details: 'Avvia verifica giacenze fisiche vs sistema per una o più ubicazioni.'
+  },
+  POS_CREATE_SALE: { 
+    purpose: 'Registra vendita',
+    details: 'Crea transazione di vendita con prodotti, pagamento e generazione scontrino/fattura.'
+  },
+  POS_VOID_SALE: { 
+    purpose: 'Annulla vendita',
+    details: 'Storna una transazione di vendita precedente con gestione reso prodotti e rimborso.'
+  },
+  POS_APPLY_DISCOUNT: { 
+    purpose: 'Applica sconto',
+    details: 'Aggiunge sconto percentuale o fisso a una transazione in corso.'
+  },
+  POS_CLOSE_REGISTER: { 
+    purpose: 'Chiusura cassa',
+    details: 'Esegue chiusura giornaliera con conteggio contanti e riconciliazione transazioni.'
+  },
+  HR_CREATE_EMPLOYEE: { 
+    purpose: 'Crea dipendente',
+    details: 'Registra nuovo dipendente con dati anagrafici, contratto, reparto e credenziali accesso.'
+  },
+  HR_UPDATE_EMPLOYEE: { 
+    purpose: 'Aggiorna dipendente',
+    details: 'Modifica dati personali, ruolo, reparto o stato contrattuale di un dipendente.'
+  },
+  HR_REQUEST_LEAVE: { 
+    purpose: 'Richiesta ferie/permesso',
+    details: 'Invia richiesta di assenza con tipo, date e motivazione per approvazione supervisore.'
+  },
+  HR_APPROVE_LEAVE: { 
+    purpose: 'Approva ferie/permesso',
+    details: 'Autorizza o rifiuta una richiesta di assenza di un dipendente del team.'
+  },
+  HR_CLOCK_IN: { 
+    purpose: 'Registra entrata',
+    details: 'Timbra ingresso lavoro con orario, ubicazione e note opzionali.'
+  },
+  HR_CLOCK_OUT: { 
+    purpose: 'Registra uscita',
+    details: 'Timbra uscita lavoro con calcolo automatico ore lavorate.'
+  },
+  ANALYTICS_GENERATE_REPORT: { 
+    purpose: 'Genera report',
+    details: 'Crea report personalizzato con metriche selezionate, periodo e formato output.'
+  },
+  ANALYTICS_EXPORT_DATA: { 
+    purpose: 'Esporta dati',
+    details: 'Esporta dataset in formato CSV, Excel o JSON per analisi esterne.'
+  },
+  CMS_CREATE_CONTENT: { 
+    purpose: 'Crea contenuto',
+    details: 'Pubblica nuovo articolo, pagina o elemento multimediale nel CMS.'
+  },
+  CMS_UPDATE_CONTENT: { 
+    purpose: 'Aggiorna contenuto',
+    details: 'Modifica testo, immagini o metadati di un contenuto esistente.'
+  },
+  CMS_PUBLISH_CONTENT: { 
+    purpose: 'Pubblica contenuto',
+    details: 'Rende visibile al pubblico un contenuto in stato bozza.'
+  },
+  VOIP_MAKE_CALL: { 
+    purpose: 'Avvia chiamata',
+    details: 'Inizia chiamata VoIP verso numero destinatario con registrazione opzionale.'
+  },
+  VOIP_TRANSFER_CALL: { 
+    purpose: 'Trasferisci chiamata',
+    details: 'Inoltra chiamata in corso a altro operatore o reparto.'
+  },
+  VOIP_END_CALL: { 
+    purpose: 'Termina chiamata',
+    details: 'Chiude chiamata attiva con salvataggio durata e note.'
+  },
+  WORKFLOW_START: { 
+    purpose: 'Avvia workflow',
+    details: 'Inizia esecuzione di un flusso automatizzato con parametri specifici.'
+  },
+  WORKFLOW_APPROVE: { 
+    purpose: 'Approva step workflow',
+    details: 'Autorizza avanzamento di un workflow in attesa di approvazione.'
+  },
+  WORKFLOW_REJECT: { 
+    purpose: 'Rifiuta step workflow',
+    details: 'Blocca avanzamento workflow con motivazione del rifiuto.'
+  },
+  NOTIFICATION_SEND: { 
+    purpose: 'Invia notifica',
+    details: 'Spedisce notifica push, email o SMS a utenti selezionati.'
+  },
+  TASK_CREATE: { 
+    purpose: 'Crea task',
+    details: 'Assegna nuovo compito a utente con scadenza, priorità e descrizione.'
+  },
+  TASK_COMPLETE: { 
+    purpose: 'Completa task',
+    details: 'Segna un task come completato con note di chiusura.'
+  },
+};
+
+const getActionDescription = (actionCode: string): { purpose: string; details: string } => {
+  if (ACTION_DESCRIPTIONS[actionCode]) {
+    return ACTION_DESCRIPTIONS[actionCode];
+  }
+  const parts = actionCode.split('_');
+  const module = parts[0] || 'SYSTEM';
+  const action = parts.slice(1).join(' ').toLowerCase();
+  return {
+    purpose: `${action || 'Azione'} ${module}`,
+    details: `Esegue l'operazione ${actionCode} nel modulo ${module}. Contatta l'amministratore per dettagli specifici.`
+  };
+};
 
 interface MCPApiKey {
   id: string;
@@ -837,13 +994,9 @@ function PermissionsMatrixTab({
                       >
                         <div className="flex items-center gap-3">
                           {isExpanded ? (
-                            <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDown className="h-5 w-5 text-gray-500 transition-transform" />
                           ) : (
-                            <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                            <ChevronRight className="h-5 w-5 text-gray-500 transition-transform" />
                           )}
                           <Badge style={{ backgroundColor: style.color }} className="text-white">
                             {style.label}
@@ -894,26 +1047,32 @@ function PermissionsMatrixTab({
                                       <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                           <code className="text-sm font-mono text-gray-700">{action.actionCode}</code>
-                                          <TooltipProvider>
+                                          <TooltipProvider delayDuration={100}>
                                             <Tooltip>
                                               <TooltipTrigger asChild>
-                                                <button className="text-gray-400 hover:text-[#FF6900] transition-colors">
-                                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                  </svg>
+                                                <button className="text-gray-400 hover:text-[#FF6900] transition-colors p-0.5 rounded hover:bg-[#FF6900]/10">
+                                                  <Info className="h-4 w-4" />
                                                 </button>
                                               </TooltipTrigger>
-                                              <TooltipContent side="right" className="max-w-xs">
-                                                <div className="space-y-1">
-                                                  <p className="font-medium">{action.actionName}</p>
-                                                  <p className="text-xs text-gray-400">
-                                                    {action.flowType === 'workflow' 
-                                                      ? 'Azione con workflow di approvazione personalizzato'
-                                                      : action.flowType === 'default'
-                                                        ? 'Azione con flusso approvazione standard del team'
-                                                        : 'Azione eseguita immediatamente senza approvazione'
-                                                    }
+                                              <TooltipContent side="right" className="max-w-sm p-3 bg-white shadow-lg border">
+                                                <div className="space-y-2">
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
+                                                    <p className="font-semibold text-gray-900">{getActionDescription(action.actionCode).purpose}</p>
+                                                  </div>
+                                                  <p className="text-sm text-gray-600 leading-relaxed">
+                                                    {getActionDescription(action.actionCode).details}
                                                   </p>
+                                                  <div className="pt-1 border-t border-gray-100">
+                                                    <p className="text-xs text-gray-400">
+                                                      {action.flowType === 'workflow' 
+                                                        ? '⚙️ Richiede workflow di approvazione'
+                                                        : action.flowType === 'default'
+                                                          ? '✅ Richiede approvazione supervisore'
+                                                          : '⚡ Esecuzione immediata'
+                                                      }
+                                                    </p>
+                                                  </div>
                                                 </div>
                                               </TooltipContent>
                                             </Tooltip>
