@@ -27,9 +27,6 @@ import {
   UserPlus, 
   Shield, 
   Building2, 
-  DollarSign, 
-  HeadphonesIcon, 
-  Settings,
   Plus,
   X,
   Info,
@@ -39,53 +36,9 @@ import {
   MapPin
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle } from '@/lib/constants/departments';
 
-// 🎯 WindTre department mapping - VERI dipartimenti dal sistema
-const DEPARTMENTS = {
-  'hr': { icon: Users, label: 'HR', color: 'bg-windtre-purple/10', textColor: 'text-windtre-purple', borderColor: 'border-windtre-purple/20' },
-  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' },
-  'sales': { icon: Building2, label: 'Sales', color: 'bg-windtre-purple/10', textColor: 'text-windtre-purple', borderColor: 'border-windtre-purple/20' },
-  'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' },
-  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple/10', textColor: 'text-windtre-purple', borderColor: 'border-windtre-purple/20' },
-  'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange/10', textColor: 'text-windtre-orange', borderColor: 'border-windtre-orange/20' }
-};
-
-// 🎯 Team types mapping with exclusivity rules
-// FUNCTIONAL teams: 1 user = max 1 team per department (primary/exclusive)
-// Other team types: Allow multiple memberships per department (flexible)
-const TEAM_TYPES = {
-  'functional': { 
-    label: 'Funzionale', 
-    description: '🔒 Team primario per dipartimento',
-    exclusive: true,
-    warning: 'Un utente può appartenere a max 1 team funzionale per dipartimento',
-    icon: '🔒'
-  },
-  'cross_functional': { 
-    label: 'Cross-Funzionale', 
-    description: 'Team multi-dipartimento',
-    exclusive: false,
-    icon: '🔗'
-  },
-  'project': { 
-    label: 'Progetto', 
-    description: 'Team temporanei per progetto specifico',
-    exclusive: false,
-    icon: '📋'
-  },
-  'temporary': { 
-    label: 'Temporaneo', 
-    description: '⏰ Membership multipla consentita',
-    exclusive: false,
-    icon: '⏰'
-  },
-  'specialized': { 
-    label: 'Specializzato', 
-    description: 'Team di esperti/specialisti',
-    exclusive: false,
-    icon: '⭐'
-  }
-};
+// 🎯 Team types imported from centralized constants
 
 // 🎯 Form validation schema - REFACTORED for user-based team management
 // Members are now managed via user_teams API, not stored in form directly
@@ -93,7 +46,7 @@ const createTeamSchema = z.object({
   name: z.string().min(1, 'Il nome del team è obbligatorio').max(200, 'Nome troppo lungo'),
   description: z.string().optional(),
   teamType: z.enum(['functional', 'cross_functional', 'project', 'temporary', 'specialized']),
-  assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'È richiesto almeno un dipartimento'),
+  assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it'])).min(1, 'È richiesto almeno un dipartimento'),
   // Members and observers are managed via separate API calls after team creation
   // Stored locally in form only for UI state, not sent to backend
   selectedMembers: z.array(z.string()).default([]), // User IDs to add as members
@@ -374,7 +327,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   // 🎯 Department selection helpers
   const selectedDepartments = form.watch('assignedDepartments');
-  const toggleDepartment = (department: keyof typeof DEPARTMENTS) => {
+  const toggleDepartment = (department: keyof typeof DEPARTMENT_STYLES) => {
     const current = selectedDepartments;
     const updated = current.includes(department)
       ? current.filter(d => d !== department)
@@ -647,7 +600,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                           {Object.entries(DEPARTMENTS).map(([key, dept]) => {
                             const Icon = dept.icon;
-                            const isSelected = selectedDepartments.includes(key as keyof typeof DEPARTMENTS);
+                            const isSelected = selectedDepartments.includes(key as keyof typeof DEPARTMENT_STYLES);
                             
                             return (
                               <div
@@ -657,7 +610,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                     ? `${dept.color} ${dept.borderColor} ring-2 ring-offset-2 ring-windtre-orange/50`
                                     : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                                 }`}
-                                onClick={() => toggleDepartment(key as keyof typeof DEPARTMENTS)}
+                                onClick={() => toggleDepartment(key as keyof typeof DEPARTMENT_STYLES)}
                                 data-testid={`department-${key}`}
                               >
                                 <div className="flex items-center space-x-3">
@@ -683,10 +636,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                               {selectedDepartments.map((dept) => (
                                 <Badge 
                                   key={dept} 
-                                  className={`${DEPARTMENTS[dept].color} ${DEPARTMENTS[dept].textColor}`}
+                                  className={`${DEPARTMENT_STYLES[dept].color} ${DEPARTMENT_STYLES[dept].textColor}`}
                                   data-testid={`selected-department-${dept}`}
                                 >
-                                  {DEPARTMENTS[dept].label}
+                                  {DEPARTMENT_STYLES[dept].label}
                                   <X 
                                     className="w-3 h-3 ml-1 cursor-pointer" 
                                     onClick={(e) => {
@@ -811,7 +764,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
-                                  <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
+                                  <Badge variant="outline">{user.department && DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES] ? DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES].label : 'No Dept'}</Badge>
                                   {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
                                 </div>
                               </div>
@@ -924,8 +877,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 <div className="flex items-center gap-2">
                                   {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
                                   <Badge variant="outline">
-                                    {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
-                                      ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                    {user.department && DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES] 
+                                      ? DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES].label 
                                       : 'No Dept'}
                                   </Badge>
                                   {isMember && <Badge className="bg-yellow-100 text-yellow-800">Membro</Badge>}
@@ -1073,8 +1026,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 <div className="flex items-center gap-2">
                                   {userRole && <Badge variant="secondary" className="text-xs">{userRole.name}</Badge>}
                                   <Badge variant="outline">
-                                    {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] 
-                                      ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label 
+                                    {user.department && DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES] 
+                                      ? DEPARTMENT_STYLES[user.department as keyof typeof DEPARTMENT_STYLES].label 
                                       : 'No Dept'}
                                   </Badge>
                                   {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primario</Badge>}
@@ -1166,11 +1119,11 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                         {selectedDepartments.map((department) => (
                           <div key={department} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                             <div className="flex items-center gap-3">
-                              {React.createElement(DEPARTMENTS[department].icon, { 
-                                className: `w-5 h-5 ${DEPARTMENTS[department].textColor}` 
+                              {React.createElement(DEPARTMENT_STYLES[department].icon, { 
+                                className: `w-5 h-5 ${DEPARTMENT_STYLES[department].textColor}` 
                               })}
                               <div>
-                                <h4 className="font-medium">{DEPARTMENTS[department].label}</h4>
+                                <h4 className="font-medium">{DEPARTMENT_STYLES[department].label}</h4>
                                 <p className="text-xs text-gray-500">
                                   Workflow configurati in Action Management
                                 </p>

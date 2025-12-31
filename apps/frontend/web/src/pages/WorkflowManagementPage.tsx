@@ -42,8 +42,6 @@ import {
   Settings,
   Workflow,
   Building2,
-  DollarSign,
-  HeadphonesIcon,
   FileText,
   Edit,
   Trash2,
@@ -56,65 +54,12 @@ import {
   CheckCircle,
   XCircle,
   Activity,
-  TrendingUp,
-  Megaphone,
   AlertTriangle,
   Tags,
   Info,
   Eye
 } from 'lucide-react';
-
-// 🎯 WindTre department mapping - VERI dipartimenti dal sistema
-const DEPARTMENTS = {
-  'hr': { icon: Users, label: 'HR', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'sales': { icon: TrendingUp, label: 'Sales', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' }
-};
-
-// 🎯 Team types mapping with exclusivity indicator
-// FUNCTIONAL teams: 1 user = max 1 team per department (primary/exclusive)
-// Other team types: Allow multiple memberships per department (flexible)
-const TEAM_TYPES = {
-  'functional': { 
-    label: 'Funzionale', 
-    color: 'bg-blue-600 text-white', 
-    exclusive: true,
-    description: 'Primario - 1 utente = 1 team per dipartimento',
-    icon: '🔒'
-  },
-  'cross_functional': { 
-    label: 'Cross-Funzionale', 
-    color: 'bg-green-100 text-green-800', 
-    exclusive: false,
-    description: 'Multi-dipartimento',
-    icon: '🔗'
-  },
-  'project': { 
-    label: 'Progetto', 
-    color: 'bg-purple-100 text-purple-800', 
-    exclusive: false,
-    description: 'Team temporaneo per progetto',
-    icon: '📋'
-  },
-  'temporary': { 
-    label: 'Temporaneo', 
-    color: 'bg-yellow-100 text-yellow-800', 
-    exclusive: false,
-    description: 'Membership multipla consentita',
-    icon: '⏰'
-  },
-  'specialized': { 
-    label: 'Specializzato', 
-    color: 'bg-orange-100 text-orange-800', 
-    exclusive: false,
-    description: 'Esperti/specialisti',
-    icon: '⭐'
-  }
-};
+import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle } from '@/lib/constants/departments';
 
 // 🎯 TypeScript interfaces for teams
 interface Team {
@@ -127,7 +72,7 @@ interface Team {
   roleMembers: string[];
   primarySupervisor?: string;
   secondarySupervisors: string[];
-  assignedDepartments: (keyof typeof DEPARTMENTS)[];
+  assignedDepartments: (keyof typeof DEPARTMENT_STYLES)[];
   isActive: boolean;
   metadata: Record<string, any>;
   createdAt?: string;
@@ -175,7 +120,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const [currentModule, setCurrentModule] = useState('workflow');
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics' | 'queue' | 'settings'>(defaultView);
   const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENTS | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENT_STYLES | null>(null);
   const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   
@@ -449,7 +394,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                          team.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesDepartment = selectedTeamDepartment === 'all' || 
-                             team.assignedDepartments.includes(selectedTeamDepartment as keyof typeof DEPARTMENTS);
+                             team.assignedDepartments.includes(selectedTeamDepartment as keyof typeof DEPARTMENT_STYLES);
     
     const matchesTeamType = selectedTeamType === 'all' || team.teamType === selectedTeamType;
     
@@ -505,7 +450,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   };
 
   // 🎯 Handle department selection and proceed to builder
-  const handleDepartmentSelected = async (department: keyof typeof DEPARTMENTS) => {
+  const handleDepartmentSelected = async (department: keyof typeof DEPARTMENT_STYLES) => {
     setSelectedDepartment(department);
     setShowDepartmentDialog(false);
     
@@ -516,7 +461,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
     
     toast({
       title: 'Department Selected',
-      description: `Creating ${DEPARTMENTS[department].label} workflow template`,
+      description: `Creating ${DEPARTMENT_STYLES[department].label} workflow template`,
     });
   };
   
@@ -659,7 +604,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                         <Button
                           key={key}
                           variant="outline"
-                          onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
+                          onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENT_STYLES)}
                           className={`h-20 flex flex-col items-center gap-2 transition-all duration-200 pointer-events-auto ${
                             key === 'hr' || key === 'sales' || key === 'support'
                               ? 'bg-windtre-purple/10 border-windtre-purple/30 hover:bg-windtre-purple/20 hover:border-windtre-purple/50'
@@ -826,8 +771,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                             data-testid={`category-stat-${categoryData.category}`}
                           >
                             <div className="flex items-center gap-3">
-                              {DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS] && (() => {
-                                const dept = DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS];
+                              {DEPARTMENT_STYLES[categoryData.category as keyof typeof DEPARTMENT_STYLES] && (() => {
+                                const dept = DEPARTMENT_STYLES[categoryData.category as keyof typeof DEPARTMENT_STYLES];
                                 const Icon = dept.icon;
                                 return (
                                   <div className={`p-2 rounded-lg ${dept.color} opacity-20`}>
@@ -837,7 +782,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               })()}
                               <div>
                                 <h4 className="font-medium text-gray-900">
-                                  {DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS]?.label || categoryData.category}
+                                  {DEPARTMENT_STYLES[categoryData.category as keyof typeof DEPARTMENT_STYLES]?.label || categoryData.category}
                                 </h4>
                                 <p className="text-sm text-gray-600">
                                   {categoryData.active} attivi di {categoryData.total} totali
@@ -887,7 +832,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               <div>
                                 <h4 className="font-medium text-gray-900">{template.name}</h4>
                                 <p className="text-sm text-gray-600">
-                                  {template.instanceCount} istanze • {DEPARTMENTS[template.category as keyof typeof DEPARTMENTS]?.label || template.category}
+                                  {template.instanceCount} istanze • {DEPARTMENT_STYLES[template.category as keyof typeof DEPARTMENT_STYLES]?.label || template.category}
                                 </p>
                               </div>
                             </div>
@@ -1009,7 +954,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               <Button
                                 key={key}
                                 variant="outline"
-                                onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
+                                onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENT_STYLES)}
                                 className={`h-20 flex flex-col items-center gap-2 transition-all duration-200 pointer-events-auto ${
                             key === 'hr' || key === 'sales' || key === 'support'
                               ? 'bg-windtre-purple/10 border-windtre-purple/30 hover:bg-windtre-purple/20 hover:border-windtre-purple/50'
@@ -1083,7 +1028,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               const getDepartmentLabel = (forDepartment: string, category: string) => {
                                 if (forDepartment) return forDepartment;
                                 // Fallback ai dipartimenti mappati dalle categorie
-                                const dept = DEPARTMENTS[category as keyof typeof DEPARTMENTS];
+                                const dept = DEPARTMENT_STYLES[category as keyof typeof DEPARTMENT_STYLES];
                                 return dept?.label || 'Non Assegnato';
                               };
                               
@@ -1264,7 +1209,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                       <>
                         <div className="space-y-6">
                           {timelineData.entries.map((entry, index) => {
-                            const dept = DEPARTMENTS[entry.templateCategory as keyof typeof DEPARTMENTS];
+                            const dept = DEPARTMENT_STYLES[entry.templateCategory as keyof typeof DEPARTMENT_STYLES];
                             const isLast = index === timelineData.entries.length - 1;
                             
                             // Calcola tempo relativo
@@ -1773,7 +1718,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {(team.assignedDepartments || []).map((dept) => {
-                                  const deptInfo = DEPARTMENTS[dept];
+                                  const deptInfo = DEPARTMENT_STYLES[dept];
                                   return (
                                     <Badge 
                                       key={dept} 
@@ -2335,7 +2280,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                           <p className="text-sm text-gray-600 mb-2">Assigned Departments</p>
                           <div className="flex flex-wrap gap-1">
                             {(selectedTeamForWorkflows.assignedDepartments || []).map((dept) => {
-                              const deptInfo = DEPARTMENTS[dept];
+                              const deptInfo = DEPARTMENT_STYLES[dept];
                               return (
                                 <Badge 
                                   key={dept} 
@@ -2365,7 +2310,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                           </h4>
                           
                           {(selectedTeamForWorkflows.assignedDepartments || []).map((department) => {
-                            const deptInfo = DEPARTMENTS[department];
+                            const deptInfo = DEPARTMENT_STYLES[department];
                             // Filter templates by department category AND manual team routing
                             const departmentTemplates = templates.filter(
                               (template: any) => 

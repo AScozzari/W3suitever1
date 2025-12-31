@@ -548,18 +548,45 @@ router.get('/stats/coverage', async (req, res) => {
 // ==================== GET AVAILABLE DEPARTMENTS ====================
 
 router.get('/meta/departments', async (req, res) => {
-  res.json({
-    departments: [
-      { id: 'hr', name: 'Human Resources', description: 'Ferie, permessi, congedi' },
-      { id: 'operations', name: 'Operations', description: 'Manutenzione, logistics, inventory' },
-      { id: 'support', name: 'Support IT', description: 'Accessi, hardware, software' },
-      { id: 'finance', name: 'Finance', description: 'Expenses, budgets, payments' },
-      { id: 'crm', name: 'CRM', description: 'Customer relations, complaints, escalations' },
-      { id: 'sales', name: 'Sales', description: 'Discount approvals, contract changes' },
-      { id: 'marketing', name: 'Marketing', description: 'Campaigns, content, branding' },
-      { id: 'wms', name: 'WMS', description: 'Warehouse movements, approvals, inventory' }
-    ]
-  });
+  try {
+    const tenantId = req.tenant?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    const deptList = await db
+      .select({
+        id: departments.id,
+        code: departments.code,
+        name: departments.name,
+        description: departments.description,
+        isActive: departments.isActive,
+        sortOrder: departments.sortOrder
+      })
+      .from(departments)
+      .where(
+        and(
+          eq(departments.tenantId, tenantId),
+          eq(departments.isActive, true)
+        )
+      )
+      .orderBy(departments.sortOrder, departments.name);
+
+    res.json({
+      departments: deptList.map(d => ({
+        id: d.code,
+        code: d.code,
+        name: d.name,
+        description: d.description || ''
+      }))
+    });
+  } catch (error) {
+    logger.error('❌ [ACTION-CONFIG] Error fetching departments', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    res.status(500).json({ error: 'Failed to fetch departments' });
+  }
 });
 
 // ==================== GET WORKFLOW TEMPLATES FOR DEPARTMENT ====================
