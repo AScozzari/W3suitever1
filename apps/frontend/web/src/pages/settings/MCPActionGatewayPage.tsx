@@ -816,18 +816,21 @@ function PermissionsMatrixTab({
   const exposedActions = actions.filter(a => a.mcpExposed);
   const activeKeys = apiKeys.filter(k => k.isActive);
   const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
+  const [localPermissions, setLocalPermissions] = useState<ToolPermission[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
   
   const toggleDept = (deptCode: string) => {
     setExpandedDepts(prev => ({ ...prev, [deptCode]: !prev[deptCode] }));
   };
   
-  const { data: keyPermissions = [], isLoading: loadingPermissions } = useQuery<ToolPermission[]>({
+  const { data: keyPermissions = [], isLoading: loadingPermissions, refetch: refetchPermissions } = useQuery<ToolPermission[]>({
     queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'],
     queryFn: async () => {
       return await apiRequest(`/api/mcp-gateway/keys/${selectedKeyId}/permissions`);
     },
-    enabled: !!selectedKeyId,
+    enabled: !!selectedKeyId && isModalOpen,
   });
 
   const updatePermissionMutation = useMutation({
@@ -836,25 +839,54 @@ function PermissionsMatrixTab({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'] });
-      toast({ title: 'Permessi aggiornati', description: 'Le modifiche sono state salvate' });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
+      toast({ title: 'Permessi salvati', description: 'Le modifiche sono state applicate con successo' });
+      setIsModalOpen(false);
+      setHasChanges(false);
     },
     onError: () => {
       toast({ title: 'Errore', description: 'Impossibile salvare i permessi', variant: 'destructive' });
     }
   });
 
-  const toggleToolPermission = (actionConfigId: string, currentlyEnabled: boolean) => {
+  const openModal = (keyId: string) => {
+    setSelectedKeyId(keyId);
+    setIsModalOpen(true);
+    setExpandedDepts({});
+    setHasChanges(false);
+  };
+
+  const closeModal = () => {
+    if (hasChanges) {
+      if (!confirm('Hai modifiche non salvate. Vuoi chiudere senza salvare?')) return;
+    }
+    setIsModalOpen(false);
+    setSelectedKeyId(null);
+    setLocalPermissions([]);
+    setHasChanges(false);
+  };
+
+  const handleSave = () => {
     if (!selectedKeyId) return;
-    
-    const existingPerm = keyPermissions.find(p => p.actionConfigId === actionConfigId);
+    updatePermissionMutation.mutate({ keyId: selectedKeyId, permissions: localPermissions });
+  };
+
+  const toggleLocalPermission = (actionConfigId: string, currentlyEnabled: boolean) => {
+    const existingPerm = localPermissions.find(p => p.actionConfigId === actionConfigId);
     const newPermissions = existingPerm
-      ? keyPermissions.map(p => 
+      ? localPermissions.map(p => 
           p.actionConfigId === actionConfigId ? { ...p, isEnabled: !currentlyEnabled } : p
         )
-      : [...keyPermissions, { actionConfigId, isEnabled: true, rateLimitOverride: null }];
+      : [...localPermissions, { actionConfigId, isEnabled: true, rateLimitOverride: null }];
     
-    updatePermissionMutation.mutate({ keyId: selectedKeyId, permissions: newPermissions });
+    setLocalPermissions(newPermissions);
+    setHasChanges(true);
   };
+
+  // Sync server permissions to local state when modal opens
+  if (isModalOpen && keyPermissions.length > 0 && localPermissions.length === 0 && !hasChanges) {
+    setLocalPermissions([...keyPermissions]);
+  }
 
   if (activeKeys.length === 0) {
     return (
@@ -879,16 +911,18 @@ function PermissionsMatrixTab({
     return acc;
   }, {} as Record<string, ActionConfiguration[]>);
 
+  const selectedKey = activeKeys.find(k => k.id === selectedKeyId);
+
   return (
-    <div className="space-y-6">
+    <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5 text-[#FF6900]" />
-            API Keys
+            Gestione Permessi API Keys
           </CardTitle>
           <CardDescription>
-            Seleziona una API Key per configurare i permessi sui tools
+            Clicca su una riga per configurare quali tools può utilizzare ogni API Key
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -898,26 +932,18 @@ function PermissionsMatrixTab({
                 <TableHead className="w-[200px]">Nome</TableHead>
                 <TableHead>Descrizione</TableHead>
                 <TableHead className="w-[150px]">API Key</TableHead>
-                <TableHead className="w-[100px]">Tools</TableHead>
-                <TableHead className="w-[120px] text-right">Azioni</TableHead>
+                <TableHead className="w-[80px] text-center">Tools</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {activeKeys.map(key => (
                 <TableRow 
                   key={key.id} 
-                  className={`cursor-pointer transition-colors ${selectedKeyId === key.id ? 'bg-[#FF6900]/5 border-l-2 border-l-[#FF6900]' : 'hover:bg-gray-50'}`}
-                  onClick={() => setSelectedKeyId(key.id)}
+                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                  onClick={() => openModal(key.id)}
                   data-testid={`row-key-${key.id}`}
                 >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {selectedKeyId === key.id && (
-                        <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
-                      )}
-                      {key.name}
-                    </div>
-                  </TableCell>
+                  <TableCell className="font-medium">{key.name}</TableCell>
                   <TableCell className="text-gray-500 text-sm">
                     {key.description || '-'}
                   </TableCell>
@@ -926,30 +952,10 @@ function PermissionsMatrixTab({
                       {key.keyPrefix}***
                     </code>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {key.enabledTools} abilitati
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                              onClick={(e) => { e.stopPropagation(); setSelectedKeyId(key.id); }}
-                              data-testid={`btn-config-${key.id}`}
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Configura permessi</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
+                  <TableCell className="text-center">
+                    <span className={`font-semibold ${key.enabledTools > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                      {key.enabledTools}
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}
@@ -958,20 +964,21 @@ function PermissionsMatrixTab({
         </CardContent>
       </Card>
 
-      {selectedKeyId && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+      <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-[#FF6900]" />
-              Tool Catalog per "{activeKeys.find(k => k.id === selectedKeyId)?.name}"
-            </CardTitle>
-            <CardDescription>
-              Clicca su un dipartimento per espandere e configurare i permessi dei singoli tools
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+              Permessi Tool - {selectedKey?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Abilita o disabilita i singoli tools per questa API Key. Clicca su un dipartimento per espandere.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto py-4">
             {loadingPermissions ? (
-              <div className="flex items-center justify-center py-8">
+              <div className="flex items-center justify-center py-12">
                 <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
               </div>
             ) : (
@@ -980,7 +987,7 @@ function PermissionsMatrixTab({
                   const style = DEPARTMENT_STYLES[dept] || { label: dept, color: '#666' };
                   const deptActions = groupedByDepartment[dept] || [];
                   const enabledCount = deptActions.filter(a => {
-                    const perm = keyPermissions.find(p => p.actionConfigId === a.id);
+                    const perm = localPermissions.find(p => p.actionConfigId === a.id);
                     return perm?.isEnabled;
                   }).length;
                   const isExpanded = expandedDepts[dept];
@@ -988,115 +995,86 @@ function PermissionsMatrixTab({
                   return (
                     <div key={dept} className="rounded-lg border border-gray-200 overflow-hidden">
                       <div 
-                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
                         onClick={() => toggleDept(dept)}
                         data-testid={`dept-row-${dept}`}
                       >
                         <div className="flex items-center gap-3">
                           {isExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-gray-500 transition-transform" />
+                            <ChevronDown className="h-4 w-4 text-gray-500" />
                           ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-500 transition-transform" />
+                            <ChevronRight className="h-4 w-4 text-gray-500" />
                           )}
-                          <Badge style={{ backgroundColor: style.color }} className="text-white">
+                          <Badge style={{ backgroundColor: style.color }} className="text-white text-xs">
                             {style.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium text-gray-900">{deptActions.length}</span> azioni
-                          </div>
-                          <div className="text-sm">
-                            <span className={`font-medium ${enabledCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                              {enabledCount}
-                            </span>
-                            <span className="text-gray-400"> attive</span>
-                          </div>
-                          {deptActions.length > 0 && (
-                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-green-500 transition-all"
-                                style={{ width: `${deptActions.length > 0 ? (enabledCount / deptActions.length) * 100 : 0}%` }}
-                              />
-                            </div>
-                          )}
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-gray-500">{deptActions.length} azioni</span>
+                          <span className={`font-medium ${enabledCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                            {enabledCount} attive
+                          </span>
                         </div>
                       </div>
                       
                       {isExpanded && (
-                        <div className="border-t border-gray-200 bg-gray-50 p-4 max-h-80 overflow-y-auto">
+                        <div className="border-t border-gray-200 bg-gray-50 p-3 max-h-60 overflow-y-auto">
                           {deptActions.length === 0 ? (
-                            <div className="text-center py-6 text-gray-500 text-sm">
-                              Nessuna azione esposta per questo dipartimento
+                            <div className="text-center py-4 text-gray-500 text-sm">
+                              Nessuna azione esposta
                             </div>
                           ) : (
-                            <div className="grid gap-2">
+                            <div className="space-y-2">
                               {deptActions.map(action => {
-                                const permission = keyPermissions.find(p => p.actionConfigId === action.id);
+                                const permission = localPermissions.find(p => p.actionConfigId === action.id);
                                 const isEnabled = permission?.isEnabled ?? false;
                                 return (
                                   <div
                                     key={action.id}
-                                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                                    className={`flex items-center justify-between p-2 rounded border transition-colors ${
                                       isEnabled 
                                         ? 'bg-green-50 border-green-200' 
-                                        : 'bg-white border-gray-200 hover:border-gray-300'
+                                        : 'bg-white border-gray-200'
                                     }`}
                                   >
-                                    <div className="flex items-center gap-3 flex-1">
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <code className="text-sm font-mono text-gray-700">{action.actionCode}</code>
-                                          <TooltipProvider delayDuration={100}>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <button className="text-gray-400 hover:text-[#FF6900] transition-colors p-0.5 rounded hover:bg-[#FF6900]/10">
-                                                  <Info className="h-4 w-4" />
-                                                </button>
-                                              </TooltipTrigger>
-                                              <TooltipContent side="right" className="max-w-sm p-3 bg-white shadow-lg border">
-                                                <div className="space-y-2">
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
-                                                    <p className="font-semibold text-gray-900">{getActionDescription(action.actionCode).purpose}</p>
-                                                  </div>
-                                                  <p className="text-sm text-gray-600 leading-relaxed">
-                                                    {getActionDescription(action.actionCode).details}
-                                                  </p>
-                                                  <div className="pt-1 border-t border-gray-100">
-                                                    <p className="text-xs text-gray-400">
-                                                      {action.flowType === 'workflow' 
-                                                        ? '⚙️ Richiede workflow di approvazione'
-                                                        : action.flowType === 'default'
-                                                          ? '✅ Richiede approvazione supervisore'
-                                                          : '⚡ Esecuzione immediata'
-                                                      }
-                                                    </p>
-                                                  </div>
-                                                </div>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                          {action.flowType !== 'none' && (
-                                            <Badge variant="outline" className="text-xs">
-                                              {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        <p className="text-sm text-gray-500 mt-0.5">{action.actionName}</p>
-                                      </div>
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <code className="text-xs font-mono text-gray-700">{action.actionCode}</code>
+                                      <TooltipProvider delayDuration={100}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button className="text-gray-400 hover:text-[#FF6900] transition-colors">
+                                              <Info className="h-3.5 w-3.5" />
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="right" className="max-w-sm p-3 bg-white shadow-lg border">
+                                            <div className="space-y-2">
+                                              <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
+                                                <p className="font-semibold text-gray-900">{getActionDescription(action.actionCode).purpose}</p>
+                                              </div>
+                                              <p className="text-sm text-gray-600">
+                                                {getActionDescription(action.actionCode).details}
+                                              </p>
+                                              <div className="pt-1 border-t border-gray-100">
+                                                <p className="text-xs text-gray-400">
+                                                  {action.flowType === 'workflow' 
+                                                    ? '⚙️ Workflow approvazione'
+                                                    : action.flowType === 'default'
+                                                      ? '✅ Approvazione supervisore'
+                                                      : '⚡ Esecuzione immediata'
+                                                  }
+                                                </p>
+                                              </div>
+                                            </div>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                      <span className={`text-xs ${isEnabled ? 'text-green-600' : 'text-gray-400'}`}>
-                                        {isEnabled ? 'Abilitato' : 'Disabilitato'}
-                                      </span>
-                                      <Switch
-                                        checked={isEnabled}
-                                        onCheckedChange={() => toggleToolPermission(action.id, isEnabled)}
-                                        disabled={updatePermissionMutation.isPending}
-                                        data-testid={`switch-perm-${action.actionCode}`}
-                                      />
-                                    </div>
+                                    <Switch
+                                      checked={isEnabled}
+                                      onCheckedChange={() => toggleLocalPermission(action.id, isEnabled)}
+                                      data-testid={`switch-perm-${action.actionCode}`}
+                                    />
                                   </div>
                                 );
                               })}
@@ -1109,10 +1087,31 @@ function PermissionsMatrixTab({
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <Button variant="outline" onClick={closeModal} data-testid="btn-cancel-permissions">
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={!hasChanges || updatePermissionMutation.isPending}
+              className="bg-[#FF6900] hover:bg-[#FF6900]/90"
+              data-testid="btn-save-permissions"
+            >
+              {updatePermissionMutation.isPending ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                'Salva modifiche'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
