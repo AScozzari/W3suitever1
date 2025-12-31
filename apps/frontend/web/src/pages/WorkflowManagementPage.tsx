@@ -70,8 +70,11 @@ interface Team {
   teamType: keyof typeof TEAM_TYPES;
   userMembers: string[];
   roleMembers: string[];
-  primarySupervisor?: string;
-  secondarySupervisors: string[];
+  // Supervisor fields from database (correct field names)
+  primarySupervisorUser?: string | null;
+  secondarySupervisorUser?: string | null;
+  // Observers from team_observers table
+  observers?: string[];
   assignedDepartments: (keyof typeof DEPARTMENT_STYLES)[];
   isActive: boolean;
   metadata: Record<string, any>;
@@ -83,6 +86,7 @@ interface Team {
   memberCount?: number;
   primarySupervisorName?: string;
   secondarySupervisorName?: string;
+  observerCount?: number;
   departments?: Array<{ id: string; name: string; code: string }>;
 }
 
@@ -1669,6 +1673,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                           <TableHead className="font-semibold text-gray-900">Departments</TableHead>
                           <TableHead className="font-semibold text-gray-900">Members</TableHead>
                           <TableHead className="font-semibold text-gray-900">Supervisors</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Observers</TableHead>
                           <TableHead className="font-semibold text-gray-900">Status</TableHead>
                           <TableHead className="font-semibold text-gray-900 w-24">Actions</TableHead>
                         </TableRow>
@@ -1759,6 +1764,14 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                     </span>
                                   </div>
                                 )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Eye className="h-4 w-4 text-blue-400" />
+                                <span className="text-sm text-gray-600">
+                                  {(team.observers || []).length} observers
+                                </span>
                               </div>
                             </TableCell>
                             <TableCell>

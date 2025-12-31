@@ -131,12 +131,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           selectedMembers: editTeam.userMembers || [],
           // Load existing observers from team_observers table (now a direct field)
           selectedObservers: editTeam.observers || [],
-          // Load primary supervisor
-          primarySupervisorUser: editTeam.primarySupervisor || editTeam.primarySupervisorUser || null,
-          // Load secondary supervisor (first from array or direct field)
-          secondarySupervisorUser: 
-            (editTeam.secondarySupervisors && editTeam.secondarySupervisors[0]) ||
-            editTeam.secondarySupervisorUser || null,
+          // Load primary supervisor (field name is primarySupervisorUser from database)
+          primarySupervisorUser: editTeam.primarySupervisorUser || null,
+          // Load secondary supervisor (field name is secondarySupervisorUser from database)
+          secondarySupervisorUser: editTeam.secondarySupervisorUser || null,
           workflowAssignments: editTeam.workflowAssignments || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
         };
