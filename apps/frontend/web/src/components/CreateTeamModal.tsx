@@ -459,10 +459,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`glass-modal max-w-4xl transition-all duration-300 ${
+      <DialogContent className={`glass-modal max-w-4xl transition-all duration-300 flex flex-col ${
         currentStep <= 2 
-          ? 'max-h-[60vh] h-auto' 
-          : 'max-h-[95vh] h-[85vh]'
+          ? 'max-h-[70vh]' 
+          : 'max-h-[90vh]'
       }`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -499,8 +499,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="space-y-6">
-            <ScrollArea className="max-h-[60vh] pr-4">
+          <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="flex flex-col flex-1 min-h-0">
+            <ScrollArea className="flex-1 pr-4">
               
               {/* 🎯 STEP 1: Basic Information */}
               {currentStep === 1 && (
@@ -1183,7 +1183,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
             </ScrollArea>
 
             {/* 🎯 Footer Actions */}
-            <div className="flex justify-between pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t mt-4 flex-shrink-0">
               <Button
                 type="button"
                 variant="outline"
