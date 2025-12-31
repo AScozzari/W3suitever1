@@ -1,0 +1,100 @@
+ER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS qamujiikr84v.invalid;branch=z9hG4bK2637543
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=sft42vvrtv
+CSeq: 2 REGISTER
+Call-ID: 49uotlpfo6kdn0mfam2d
+Max-Forwards: 70
+Contact: <sip:0ds17e2r@qamujiikr84v.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:24:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS qamujiikr84v.invalid;branch=z9hG4bK2637543;received=127.0.0.1;rport=50014
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=sft42vvrtv
+To: <sip:2000@demo.edgvoip.it>;tag=7cQKHZU4DyvyN
+Call-ID: 49uotlpfo6kdn0mfam2d
+CSeq: 2 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="0b33c6a6-cf4f-4db7-8de3-d8168c5fc5cc", algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:24:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS qamujiikr84v.invalid;branch=z9hG4bK4697872
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=sft42vvrtv
+CSeq: 3 REGISTER
+Call-ID: 49uotlpfo6kdn0mfam2d
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="0b33c6a6-cf4f-4db7-8de3-d8168c5fc5cc", uri="sip:demo.edgvoip.it", response="8577e2d95ff7ea0a255313c0085801ac", qop=auth, cnonce="n8qdkhortdip", nc=00000001
+Contact: <sip:0ds17e2r@qamujiikr84v.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+CreateTeamModal.tsx:1083 Uncaught ReferenceError: Settings is not defined
+    at CreateTeamModal (CreateTeamModal.tsx:1083:22)
+CreateTeamModal.tsx:1083 Uncaught ReferenceError: Settings is not defined
+    at CreateTeamModal (CreateTeamModal.tsx:1083:22)
+installHook.js:1 The above error occurred in the <CreateTeamModal> component:
+
+    at CreateTeamModal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/CreateTeamModal.tsx?t=1767165870703:79:43)
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:207:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:90:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:960:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:266:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:124:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=fac8f799:9129 Uncaught ReferenceError: Settings is not defined
+    at CreateTeamModal (CreateTeamModal.tsx:1083:22)
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+installHook.js:1 Wed Dec 31 2025 08:24:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | An attempt was made to send a REGISTER request while a prior one was still in progress. RFC 3261 requires UAs MUST NOT send a new registration until they have received a final response from the registrar for the previous one or the previous REGISTER request has timed out. Note that if the transport disconnects, you still must wait for the prior request to time out before sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer. Error Component Stack
+    at SoftphoneWidget (SoftphoneWidget.tsx:42:35)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:113:50)
+    at AuthenticatedRoute (TenantShell.tsx:583:72)
+    at TenantRoutes (TenantShell.tsx:239:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:94:59)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at App (App.tsx:42:3)
+useSIPRegistration.ts:240 Wed Dec 31 2025 08:24:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Stopping sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:240 Wed Dec 31 2025 08:24:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of registerers
+useSIPRegistration.ts:240 Wed Dec 31 2025 08:24:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registerer 49uotlpfo6kdn0mfam2dsft42vvrtv in state Initial is being disposed
+installHook.js:1 RequestPendingError: REGISTER request already in progress, waiting for final response
+    at useSIPRegistration.ts:237:31

@@ -33,7 +33,8 @@ import {
   Save,
   UserCheck,
   AlertTriangle,
-  MapPin
+  MapPin,
+  Settings
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle, departmentEnum } from '@/lib/constants/departments';
