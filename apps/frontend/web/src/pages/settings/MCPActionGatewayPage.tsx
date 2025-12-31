@@ -681,6 +681,11 @@ function ToolsCatalogTab({
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({});
+
+  const toggleDept = (deptCode: string) => {
+    setExpandedDepts(prev => ({ ...prev, [deptCode]: !prev[deptCode] }));
+  };
 
   const toggleMutation = useMutation({
     mutationFn: ({ actionId, mcpExposed }: { actionId: string; mcpExposed: boolean }) => 
@@ -692,114 +697,206 @@ function ToolsCatalogTab({
   });
 
   const filteredActions = actions.filter(action => {
-    const matchesSearch = action.actionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = searchQuery === '' || 
+                          action.actionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           action.actionCode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDept = departmentFilter === 'all' || action.departmentId === departmentFilter;
     return matchesSearch && matchesDept;
   });
 
-  const groupedByDepartment = filteredActions.reduce((acc, action) => {
-    const dept = action.departmentId || 'other';
-    if (!acc[dept]) acc[dept] = [];
-    acc[dept].push(action);
+  const allDepartments = Object.keys(DEPARTMENT_STYLES);
+  
+  const groupedByDepartment = allDepartments.reduce((acc, dept) => {
+    acc[dept] = filteredActions.filter(a => a.departmentId === dept);
     return acc;
   }, {} as Record<string, ActionConfiguration[]>);
 
+  const totalActions = actions.length;
+  const exposedActions = actions.filter(a => a.mcpExposed).length;
+
   return (
     <>
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Cerca azioni..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-            data-testid="input-search-tools"
-          />
-        </div>
-        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-          <SelectTrigger className="w-48" data-testid="select-department-filter">
-            <SelectValue placeholder="Tutti i dipartimenti" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti i dipartimenti</SelectItem>
-            {Object.entries(DEPARTMENT_STYLES).map(([key, style]) => (
-              <SelectItem key={key} value={key}>{style.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5 text-[#FF6900]" />
+                Catalogo Tools MCP
+              </CardTitle>
+              <CardDescription>
+                Gestisci quali azioni sono esposte via MCP Gateway
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <div className="px-3 py-1.5 rounded-lg bg-gray-100">
+                <span className="text-gray-500">Totale:</span>
+                <span className="ml-1 font-semibold text-gray-900">{totalActions}</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg bg-green-50">
+                <span className="text-green-600">Esposti:</span>
+                <span className="ml-1 font-semibold text-green-700">{exposedActions}</span>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cerca azioni..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-tools"
+              />
+            </div>
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-48" data-testid="select-department-filter">
+                <SelectValue placeholder="Tutti i dipartimenti" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i dipartimenti</SelectItem>
+                {Object.entries(DEPARTMENT_STYLES).map(([key, style]) => (
+                  <SelectItem key={key} value={key}>{style.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      ) : (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-6"
-        >
-          {Object.entries(groupedByDepartment).map(([deptId, deptActions]) => {
-            const style = getDepartmentStyle(deptId);
-            return (
-              <motion.div key={deptId} variants={itemVariants}>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="p-2 rounded-lg"
-                        style={{ backgroundColor: `${style.color}15` }}
-                      >
-                        <Zap className="h-5 w-5" style={{ color: style.color }} />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {allDepartments.map(dept => {
+                const style = DEPARTMENT_STYLES[dept] || { label: dept, color: '#666' };
+                const deptActions = groupedByDepartment[dept] || [];
+                const exposedCount = deptActions.filter(a => a.mcpExposed).length;
+                const isExpanded = expandedDepts[dept];
+                
+                return (
+                  <div key={dept} className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div 
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleDept(dept)}
+                      data-testid={`dept-catalog-${dept}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isExpanded ? (
+                          <ChevronDown className="h-5 w-5 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-gray-500" />
+                        )}
+                        <Badge style={{ backgroundColor: style.color }} className="text-white">
+                          {style.label}
+                        </Badge>
                       </div>
-                      <div>
-                        <CardTitle className="text-lg">{style.label}</CardTitle>
-                        <CardDescription>{deptActions.length} azioni disponibili</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {deptActions.map((action) => (
-                        <div 
-                          key={action.id}
-                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
-                              {action.actionCode}
-                            </code>
-                            <span className="text-sm font-medium">{action.actionName}</span>
-                            {action.flowType !== 'none' && (
-                              <Badge variant="outline" className="text-xs">
-                                {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-gray-500">
-                              {action.mcpExposed ? 'Esposto' : 'Nascosto'}
-                            </span>
-                            <Switch
-                              checked={action.mcpExposed}
-                              onCheckedChange={(checked) => toggleMutation.mutate({ actionId: action.id, mcpExposed: checked })}
-                              data-testid={`switch-tool-${action.actionCode}`}
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium text-gray-900">{deptActions.length}</span> azioni
+                        </div>
+                        <div className="text-sm">
+                          <span className={`font-medium ${exposedCount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                            {exposedCount}
+                          </span>
+                          <span className="text-gray-400"> esposte</span>
+                        </div>
+                        {deptActions.length > 0 && (
+                          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 transition-all"
+                              style={{ width: `${(exposedCount / deptActions.length) * 100}%` }}
                             />
                           </div>
-                        </div>
-                      ))}
+                        )}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      )}
+                    
+                    {isExpanded && (
+                      <div className="border-t border-gray-200 bg-gray-50 p-4 max-h-96 overflow-y-auto">
+                        {deptActions.length === 0 ? (
+                          <div className="text-center py-6 text-gray-500 text-sm">
+                            Nessuna azione disponibile per questo dipartimento
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {deptActions.map(action => (
+                              <div
+                                key={action.id}
+                                className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                                  action.mcpExposed 
+                                    ? 'bg-green-50 border-green-200' 
+                                    : 'bg-white border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-700">
+                                    {action.actionCode}
+                                  </code>
+                                  <span className="text-sm font-medium text-gray-900">{action.actionName}</span>
+                                  <TooltipProvider delayDuration={100}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button className="text-gray-400 hover:text-[#FF6900] transition-colors p-0.5 rounded hover:bg-[#FF6900]/10">
+                                          <Info className="h-4 w-4" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="right" className="max-w-sm p-3 bg-white shadow-lg border">
+                                        <div className="space-y-2">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
+                                            <p className="font-semibold text-gray-900">{getActionDescription(action.actionCode).purpose}</p>
+                                          </div>
+                                          <p className="text-sm text-gray-600 leading-relaxed">
+                                            {getActionDescription(action.actionCode).details}
+                                          </p>
+                                          <div className="pt-1 border-t border-gray-100">
+                                            <p className="text-xs text-gray-400">
+                                              {action.flowType === 'workflow' 
+                                                ? '⚙️ Richiede workflow di approvazione'
+                                                : action.flowType === 'default'
+                                                  ? '✅ Richiede approvazione supervisore'
+                                                  : '⚡ Esecuzione immediata'
+                                              }
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  {action.flowType !== 'none' && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className={`text-xs ${action.mcpExposed ? 'text-green-600' : 'text-gray-400'}`}>
+                                    {action.mcpExposed ? 'Esposto' : 'Nascosto'}
+                                  </span>
+                                  <Switch
+                                    checked={action.mcpExposed}
+                                    onCheckedChange={(checked) => toggleMutation.mutate({ actionId: action.id, mcpExposed: checked })}
+                                    disabled={toggleMutation.isPending}
+                                    data-testid={`switch-tool-${action.actionCode}`}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
