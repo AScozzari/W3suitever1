@@ -452,8 +452,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="flex flex-col flex-1 min-h-0">
-            <ScrollArea className="flex-1 pr-4">
+          <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="flex-1 pr-4 overflow-y-auto" style={{ maxHeight: 'calc(100% - 80px)' }}>
               
               {/* 🎯 STEP 1: Basic Information */}
               {currentStep === 1 && (
@@ -1151,7 +1151,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
             </ScrollArea>
 
             {/* 🎯 Footer Actions */}
-            <div className="flex justify-between pt-4 border-t mt-4 flex-shrink-0">
+            <div className="flex justify-between pt-4 border-t mt-4 flex-shrink-0 bg-white sticky bottom-0">
               <Button
                 type="button"
                 variant="outline"
