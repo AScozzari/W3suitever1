@@ -1738,31 +1738,37 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                               </div>
                             </TableCell>
                             <TableCell>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="inline-flex">
-                                      <Badge className={`${TEAM_TYPES[team.teamType]?.color} cursor-help`}>
-                                        <span className="mr-1">{TEAM_TYPES[team.teamType]?.icon}</span>
-                                        {TEAM_TYPES[team.teamType]?.label}
-                                      </Badge>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="right" className="max-w-xs">
-                                    <div className="text-sm">
-                                      <p className="font-semibold mb-1">
-                                        {TEAM_TYPES[team.teamType]?.exclusive ? '🔒 Team Primario' : '🔓 Team Flessibile'}
-                                      </p>
-                                      <p>{TEAM_TYPES[team.teamType]?.description}</p>
-                                      {TEAM_TYPES[team.teamType]?.exclusive && (
-                                        <p className="text-yellow-600 mt-1 text-xs">
-                                          Un utente può appartenere a max 1 team funzionale per dipartimento
-                                        </p>
-                                      )}
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              {(() => {
+                                const typeKey = team.teamType && TEAM_TYPES[team.teamType] ? team.teamType : 'functional';
+                                const typeInfo = TEAM_TYPES[typeKey];
+                                return (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="inline-flex">
+                                          <Badge className={`${typeInfo.color} cursor-help`}>
+                                            <span className="mr-1">{typeInfo.icon}</span>
+                                            {typeInfo.label}
+                                          </Badge>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="right" className="max-w-xs">
+                                        <div className="text-sm">
+                                          <p className="font-semibold mb-1">
+                                            {typeInfo.exclusive ? '🔒 Team Primario' : '🔓 Team Flessibile'}
+                                          </p>
+                                          <p>{typeInfo.description}</p>
+                                          {typeInfo.exclusive && (
+                                            <p className="text-yellow-600 mt-1 text-xs">
+                                              Un utente può appartenere a max 1 team funzionale per dipartimento
+                                            </p>
+                                          )}
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
