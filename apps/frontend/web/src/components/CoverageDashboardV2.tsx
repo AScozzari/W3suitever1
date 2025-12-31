@@ -197,11 +197,9 @@ export default function CoverageDashboardV2({
     health: true
   });
 
-  const { data: coverageData, isLoading, refetch, isFetching } = useQuery<{ data: CoverageData }>({
+  const { data, isLoading, refetch, isFetching } = useQuery<CoverageData>({
     queryKey: ['/api/admin/coverage-dashboard-v2']
   });
-
-  const data = coverageData?.data;
 
   const toggleLevel = (level: string) => {
     setExpandedLevels(prev => ({ ...prev, [level]: !prev[level] }));
