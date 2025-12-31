@@ -1,0 +1,350 @@
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+CreateTeamModal.tsx:601 Uncaught ReferenceError: DEPARTMENTS is not defined
+    at Object.render (CreateTeamModal.tsx:601:43)
+    at Controller (chunk-SNPXSC7A.js?v=fac8f799:345:35)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+render @ CreateTeamModal.tsx:601
+Controller @ chunk-SNPXSC7A.js?v=fac8f799:345
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+CreateTeamModal.tsx:601 Uncaught ReferenceError: DEPARTMENTS is not defined
+    at Object.render (CreateTeamModal.tsx:601:43)
+    at Controller (chunk-SNPXSC7A.js?v=fac8f799:345:35)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=fac8f799:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=fac8f799:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=fac8f799:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+render @ CreateTeamModal.tsx:601
+Controller @ chunk-SNPXSC7A.js?v=fac8f799:345
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=fac8f799:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=fac8f799:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+installHook.js:1 The above error occurred in the <Controller> component:
+
+    at Controller (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-SNPXSC7A.js?v=fac8f799:345:35)
+    at FormField (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/form.tsx:33:6)
+    at div
+    at div
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=fac8f799:117:13
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=fac8f799:55:7
+    at _c (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/scroll-area.tsx:22:11)
+    at form
+    at FormProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-SNPXSC7A.js?v=fac8f799:101:11)
+    at div
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-R54IPKTL.js?v=fac8f799:47:7
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=fac8f799:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=fac8f799:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-ALPY2UPK.js?v=fac8f799:29:5
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-EV34TC36.js?v=fac8f799:239:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-EV34TC36.js?v=fac8f799:162:58
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-EV34TC36.js?v=fac8f799:153:64
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=fac8f799:43:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-TCRT5IO7.js?v=fac8f799:20:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-7JN5FQRM.js?v=fac8f799:42:13
+    at https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-R54IPKTL.js?v=fac8f799:244:22
+    at Presence (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3RPIZZKC.js?v=fac8f799:24:11)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at DialogPortal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-EV34TC36.js?v=fac8f799:115:11)
+    at _c3 (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/ui/dialog.tsx:44:49)
+    at Provider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-3WVMON5O.js?v=fac8f799:38:15)
+    at Dialog (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/chunk-EV34TC36.js?v=fac8f799:56:5)
+    at CreateTeamModal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/CreateTeamModal.tsx:79:43)
+    at div
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:207:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:90:50)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:960:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:266:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:124:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=fac8f799:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=fac8f799:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=fac8f799:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=fac8f799:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=fac8f799:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+chunk-ZHRYBLGQ.js?v=fac8f799:9129 Uncaught ReferenceError: DEPARTMENTS is not defined
+    at Object.render (CreateTeamModal.tsx:601:43)
+    at Controller (chunk-SNPXSC7A.js?v=fac8f799:345:35)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=fac8f799:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=fac8f799:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=fac8f799:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=fac8f799:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=fac8f799:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=fac8f799:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=fac8f799:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=fac8f799:18736:28)
+render @ CreateTeamModal.tsx:601
+Controller @ chunk-SNPXSC7A.js?v=fac8f799:345
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=fac8f799:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=fac8f799:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=fac8f799:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=fac8f799:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=fac8f799:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=fac8f799:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=fac8f799:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+installHook.js:1 Wed Dec 31 2025 08:20:51 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | An attempt was made to send a REGISTER request while a prior one was still in progress. RFC 3261 requires UAs MUST NOT send a new registration until they have received a final response from the registrar for the previous one or the previous REGISTER request has timed out. Note that if the transport disconnects, you still must wait for the prior request to time out before sending a new REGISTER request or alternatively dispose of the current Registerer and create a new Registerer. Error Component Stack
+    at SoftphoneWidget (SoftphoneWidget.tsx:42:35)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:144:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:113:50)
+    at AuthenticatedRoute (TenantShell.tsx:583:72)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:239:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:94:59)
+    at Route (wouter.js?v=fac8f799:206:16)
+    at Switch (wouter.js?v=fac8f799:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=fac8f799:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+waitingWarning @ sip__js.js?v=fac8f799:5922
+unregister @ sip__js.js?v=fac8f799:5735
+(anonime) @ useSIPRegistration.ts:237
+safelyCallDestroy @ chunk-ZHRYBLGQ.js?v=fac8f799:16748
+commitHookEffectListUnmount @ chunk-ZHRYBLGQ.js?v=fac8f799:16875
+commitPassiveUnmountInsideDeletedTreeOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18283
+commitPassiveUnmountEffectsInsideOfDeletedTree_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18245
+commitPassiveUnmountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18181
+commitPassiveUnmountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18169
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19489
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'avviso
+useSIPRegistration.ts:240 Wed Dec 31 2025 08:20:51 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Stopping sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:240 Wed Dec 31 2025 08:20:51 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of registerers
+useSIPRegistration.ts:240 Wed Dec 31 2025 08:20:51 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registerer ii0sro1dce07opqh2ld1jguu465rh1 in state Initial is being disposed
+installHook.js:1 RequestPendingError: REGISTER request already in progress, waiting for final response
+    at _Registerer.unregister (sip__js.js?v=fac8f799:5736:21)
+    at useSIPRegistration.ts:237:31
+    at safelyCallDestroy (chunk-ZHRYBLGQ.js?v=fac8f799:16748:13)
+    at commitHookEffectListUnmount (chunk-ZHRYBLGQ.js?v=fac8f799:16875:19)
+    at commitPassiveUnmountInsideDeletedTreeOnFiber (chunk-ZHRYBLGQ.js?v=fac8f799:18283:17)
+    at commitPassiveUnmountEffectsInsideOfDeletedTree_begin (chunk-ZHRYBLGQ.js?v=fac8f799:18245:13)
+    at commitPassiveUnmountEffects_begin (chunk-ZHRYBLGQ.js?v=fac8f799:18181:19)
+    at commitPassiveUnmountEffects (chunk-ZHRYBLGQ.js?v=fac8f799:18169:11)
+    at flushPassiveEffectsImpl (chunk-ZHRYBLGQ.js?v=fac8f799:19489:11)
+    at flushPassiveEffects (chunk-ZHRYBLGQ.js?v=fac8f799:19447:22)
+overrideMethod @ installHook.js:1
+Promise.catch
+(anonime) @ useSIPRegistration.ts:237
+safelyCallDestroy @ chunk-ZHRYBLGQ.js?v=fac8f799:16748
+commitHookEffectListUnmount @ chunk-ZHRYBLGQ.js?v=fac8f799:16875
+commitPassiveUnmountInsideDeletedTreeOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18283
+commitPassiveUnmountEffectsInsideOfDeletedTree_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18245
+commitPassiveUnmountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18181
+commitPassiveUnmountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18169
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19489
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+installHook.js:1 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request timed out. Generating internal 408 Request Timeout.
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onRequestTimeout @ sip__js.js?v=fac8f799:8696
+onRequestTimeout @ sip__js.js?v=fac8f799:8769
+onRequestTimeout @ sip__js.js?v=fac8f799:7713
+timerF @ sip__js.js?v=fac8f799:7887
+(anonime) @ sip__js.js?v=fac8f799:7733
+setTimeout
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7733
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+setupSIP @ useSIPRegistration.ts:218
+await in setupSIP
+(anonime) @ useSIPRegistration.ts:232
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'avviso
+installHook.js:1 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 408
+overrideMethod @ installHook.js:1
+print @ sip__js.js?v=fac8f799:6962
+genericLog @ sip__js.js?v=fac8f799:6941
+genericLog @ sip__js.js?v=fac8f799:6881
+warn @ sip__js.js?v=fac8f799:6872
+onReject @ sip__js.js?v=fac8f799:5694
+receiveResponse @ sip__js.js?v=fac8f799:8759
+onRequestTimeout @ sip__js.js?v=fac8f799:8700
+onRequestTimeout @ sip__js.js?v=fac8f799:8769
+onRequestTimeout @ sip__js.js?v=fac8f799:7713
+timerF @ sip__js.js?v=fac8f799:7887
+(anonime) @ sip__js.js?v=fac8f799:7733
+setTimeout
+NonInviteClientTransaction @ sip__js.js?v=fac8f799:7733
+init @ sip__js.js?v=fac8f799:8781
+_UserAgentClient @ sip__js.js?v=fac8f799:8556
+RegisterUserAgentClient @ sip__js.js?v=fac8f799:10340
+register @ sip__js.js?v=fac8f799:10983
+register @ sip__js.js?v=fac8f799:5602
+setupSIP @ useSIPRegistration.ts:218
+await in setupSIP
+(anonime) @ useSIPRegistration.ts:232
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=fac8f799:103
+flush @ @tanstack_react-query.js?v=fac8f799:610
+batch @ @tanstack_react-query.js?v=fac8f799:628
+dispatch_fn @ @tanstack_react-query.js?v=fac8f799:1260
+setData @ @tanstack_react-query.js?v=fac8f799:931
+fetch @ @tanstack_react-query.js?v=fac8f799:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+setOptions @ @tanstack_react-query.js?v=fac8f799:1392
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=fac8f799:197
+flushWork @ chunk-ZHRYBLGQ.js?v=fac8f799:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=fac8f799:384Comprendi l'avviso
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+useSIPRegistration.ts:204 📡 Registration state: Unregistered
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Terminated
+useSIPRegistration.ts:204 📡 Registration state: Terminated
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of sessions
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of subscriptions
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of publishers
+sip__js.js?v=fac8f799:6965 Wed Dec 31 2025 08:21:03 GMT+0100 (Ora standard dell’Europa centrale) | 

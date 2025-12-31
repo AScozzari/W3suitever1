@@ -598,7 +598,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                           Seleziona i dipartimenti per cui questo team gestirà i workflow
                         </FormDescription>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                          {Object.entries(DEPARTMENTS).map(([key, dept]) => {
+                          {Object.entries(DEPARTMENT_STYLES).map(([key, dept]) => {
                             const Icon = dept.icon;
                             const isSelected = selectedDepartments.includes(key as keyof typeof DEPARTMENT_STYLES);
                             
