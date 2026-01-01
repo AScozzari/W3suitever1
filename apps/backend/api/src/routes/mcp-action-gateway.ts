@@ -710,21 +710,34 @@ router.get('/variable-categories', requirePermission('settings.read'), async (_r
 router.get('/custom-actions', requirePermission('settings.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
+    const { showAll } = req.query; // showAll=true mostra tutte le azioni (operative + query)
+    
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
     await setTenantContext(tenantId);
 
-    const customActions = await db
-      .select()
-      .from(actionConfigurations)
-      .where(and(
-        eq(actionConfigurations.tenantId, tenantId),
-        eq(actionConfigurations.isCustomAction, true)
-      ))
-      .orderBy(desc(actionConfigurations.createdAt));
+    let actions;
+    if (showAll === 'true') {
+      // Mostra TUTTE le azioni (per Action Builder e MCP Gateway Catalog)
+      actions = await db
+        .select()
+        .from(actionConfigurations)
+        .where(eq(actionConfigurations.tenantId, tenantId))
+        .orderBy(desc(actionConfigurations.createdAt));
+    } else {
+      // Mostra solo azioni custom MCP (comportamento legacy)
+      actions = await db
+        .select()
+        .from(actionConfigurations)
+        .where(and(
+          eq(actionConfigurations.tenantId, tenantId),
+          eq(actionConfigurations.isCustomAction, true)
+        ))
+        .orderBy(desc(actionConfigurations.createdAt));
+    }
 
-    res.json(customActions);
+    res.json(actions);
   } catch (error) {
     logger.error('Error fetching custom actions:', error);
     res.status(500).json({ error: 'Failed to fetch custom actions' });
@@ -746,6 +759,7 @@ router.post('/custom-actions', requirePermission('settings.write'), async (req: 
       description, 
       department, 
       actionType,
+      actionCategory = 'query', // Default to query if not specified
       queryTemplateId,
       selectedVariables,
       requiredVariables = []
@@ -754,6 +768,9 @@ router.post('/custom-actions', requirePermission('settings.write'), async (req: 
     if (!code || !name || !department || !actionType || !queryTemplateId) {
       return res.status(400).json({ error: 'Missing required fields: code, name, department, actionType, queryTemplateId' });
     }
+
+    // Validate actionCategory
+    const validCategory = actionCategory === 'operative' ? 'operative' : 'query';
 
     const mcpInputSchema = generateMcpInputSchema(selectedVariables || []);
 
@@ -769,7 +786,7 @@ router.post('/custom-actions', requirePermission('settings.write'), async (req: 
         name,
         description,
         department,
-        actionCategory: 'query', // Custom MCP actions are query-type
+        actionCategory: validCategory, // operative or query based on user selection
         isCustomAction: true,
         mcpActionType: actionType,
         queryTemplateId,

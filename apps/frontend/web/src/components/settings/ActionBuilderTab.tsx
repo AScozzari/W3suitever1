@@ -157,9 +157,18 @@ export function ActionBuilderTab() {
   const [actionName, setActionName] = useState('');
   const [actionCode, setActionCode] = useState('');
   const [actionDescription, setActionDescription] = useState('');
+  const [actionCategory, setActionCategory] = useState<'operative' | 'query'>('query');
 
   const { data: customActions = [], isLoading: isLoadingActions } = useQuery<CustomAction[]>({
-    queryKey: ['/api/mcp-gateway/custom-actions'],
+    queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'],
+    queryFn: async () => {
+      const res = await fetch('/api/mcp-gateway/custom-actions?showAll=true', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Failed to fetch actions');
+      return res.json();
+    }
   });
 
   const { data: variableCategories = [] } = useQuery<VariableCategory[]>({
@@ -173,7 +182,7 @@ export function ActionBuilderTab() {
   const createActionMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/mcp-gateway/custom-actions', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'] });
       toast({ title: 'Azione creata', description: 'La nuova azione custom è stata creata con successo.' });
       resetWizard();
     },
@@ -185,7 +194,7 @@ export function ActionBuilderTab() {
   const duplicateActionMutation = useMutation({
     mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}/duplicate`, { method: 'POST' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'] });
       toast({ title: 'Azione duplicata', description: 'L\'azione è stata duplicata con successo.' });
     }
   });
@@ -193,7 +202,7 @@ export function ActionBuilderTab() {
   const deleteActionMutation = useMutation({
     mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}`, { method: 'DELETE' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'] });
       toast({ title: 'Azione archiviata', description: 'L\'azione è stata archiviata con successo.' });
     }
   });
@@ -209,6 +218,7 @@ export function ActionBuilderTab() {
     setActionName('');
     setActionCode('');
     setActionDescription('');
+    setActionCategory('query');
   };
 
   const filteredTemplates = queryTemplates.filter(t => 
@@ -226,6 +236,7 @@ export function ActionBuilderTab() {
       description: actionDescription,
       department: selectedDepartment,
       actionType: selectedActionType,
+      actionCategory, // operative | query
       queryTemplateId: selectedTemplate.id,
       selectedVariables,
       requiredVariables,
@@ -301,6 +312,7 @@ export function ActionBuilderTab() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Dipartimento</TableHead>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Categoria</TableHead>
                   <TableHead>Variabili</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
@@ -325,6 +337,11 @@ export function ActionBuilderTab() {
                         <Badge variant="outline" className="gap-1">
                           {typeConfig?.icon && <typeConfig.icon className="h-3 w-3" />}
                           {typeConfig?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${(action as any).actionCategory === 'operative' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'} border-0`}>
+                          {(action as any).actionCategory === 'operative' ? 'Operativa' : 'MCP Query'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -581,6 +598,45 @@ export function ActionBuilderTab() {
                       rows={2}
                       data-testid="input-action-description"
                     />
+                  </div>
+
+                  {/* Action Category Selection */}
+                  <div>
+                    <Label className="mb-3 block">Tipo Azione *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Card 
+                        className={`cursor-pointer transition-all ${actionCategory === 'operative' ? 'ring-2 ring-orange-500 bg-orange-50' : 'hover:bg-gray-50'}`}
+                        onClick={() => setActionCategory('operative')}
+                        data-testid="btn-category-operative"
+                      >
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${actionCategory === 'operative' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                            <Users className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">Operativa</p>
+                            <p className="text-xs text-gray-500">Team + Workflow configurabili</p>
+                          </div>
+                          {actionCategory === 'operative' && <Check className="h-5 w-5 text-orange-500 ml-auto" />}
+                        </CardContent>
+                      </Card>
+                      <Card 
+                        className={`cursor-pointer transition-all ${actionCategory === 'query' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:bg-gray-50'}`}
+                        onClick={() => setActionCategory('query')}
+                        data-testid="btn-category-query"
+                      >
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${actionCategory === 'query' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                            <Database className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">MCP Query</p>
+                            <p className="text-xs text-gray-500">Solo interrogazione dati</p>
+                          </div>
+                          {actionCategory === 'query' && <Check className="h-5 w-5 text-purple-500 ml-auto" />}
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
 
                   {/* Variable Selection */}
