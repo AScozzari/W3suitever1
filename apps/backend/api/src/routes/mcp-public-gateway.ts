@@ -6,6 +6,68 @@
  *   - API Key (sk_live_*, sk_test_*) - for scripts, n8n, Zapier
  *   - OAuth2 JWT (eyJ*) - for ChatGPT, Claude Desktop, browser-based clients
  * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * CHATGPT CUSTOM MCP SERVER CONFIGURATION (OpenAI)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * In ChatGPT Settings → Connectors → Add Custom MCP Server:
+ * 
+ *   Name:              W3 Suite
+ *   MCP Server URL:    https://your-domain.com/api/mcp-public/sse
+ *   Authentication:    OAuth 2.0
+ *   Authorization URL: https://your-domain.com/oauth2/authorize
+ *   Token URL:         https://your-domain.com/oauth2/token
+ *   Client ID:         chatgpt-mcp-client
+ *   Client Secret:     (leave empty - public client)
+ *   Scopes:            openid tenant_access mcp_read mcp_write
+ * 
+ * OAuth2 Flow: Authorization Code with PKCE (S256)
+ * Grant Types: authorization_code, refresh_token
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * CLAUDE DESKTOP CONFIGURATION (Anthropic)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * In claude_desktop_config.json (via mcp-remote):
+ * 
+ *   {
+ *     "mcpServers": {
+ *       "w3suite": {
+ *         "command": "npx",
+ *         "args": [
+ *           "mcp-remote",
+ *           "https://your-domain.com/api/mcp-public/sse",
+ *           "--oauth-client-id", "claude-mcp-client",
+ *           "--oauth-authorize-url", "https://your-domain.com/oauth2/authorize",
+ *           "--oauth-token-url", "https://your-domain.com/oauth2/token",
+ *           "--oauth-scopes", "openid tenant_access mcp_read mcp_write"
+ *         ]
+ *       }
+ *     }
+ *   }
+ * 
+ * Config file location:
+ *   - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+ *   - Windows: %APPDATA%\Claude\claude_desktop_config.json
+ *   - Linux: ~/.config/Claude/claude_desktop_config.json
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * REGISTERED OAUTH CLIENTS
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ *   Client ID              | Platform       | Redirect URI
+ *   -----------------------|----------------|----------------------------------
+ *   chatgpt-mcp-client     | ChatGPT        | https://chatgpt.com/aip/{id}/oauth/callback
+ *   claude-mcp-client      | Claude Desktop | http://localhost:{port}/callback
+ *   n8n-mcp-client         | n8n            | (workflow callback)
+ *   zapier-mcp-client      | Zapier         | https://zapier.com/oauth/callback
+ * 
+ * MCP Scopes:
+ *   - mcp_read:  Read-only access to MCP tools (list, query)
+ *   - mcp_write: Write access to MCP tools (create, update, delete, execute actions)
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
  * @author W3 Suite Team
  * @date 2025-12-31
  */
