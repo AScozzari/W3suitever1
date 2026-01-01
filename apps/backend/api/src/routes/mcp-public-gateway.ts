@@ -26,6 +26,55 @@ import { UnifiedTriggerService } from '../services/unified-trigger.service';
 
 const router = Router();
 
+// In-memory rate limiting cache (per-minute tracking)
+// Per-minute tracking uses memory for speed; daily quota uses database for persistence
+const rateLimitCache = new Map<string, { count: number; resetAt: number }>();
+
+function checkMinuteRateLimit(apiKeyId: string, rateLimitPerMinute: number): { allowed: boolean; error?: string } {
+  if (rateLimitPerMinute <= 0) return { allowed: true };
+  
+  const now = Date.now();
+  const minuteWindow = 60 * 1000;
+  
+  let limits = rateLimitCache.get(apiKeyId);
+  
+  if (!limits || now > limits.resetAt) {
+    limits = { count: 0, resetAt: now + minuteWindow };
+    rateLimitCache.set(apiKeyId, limits);
+  }
+  
+  if (limits.count >= rateLimitPerMinute) {
+    return { allowed: false, error: `Rate limit exceeded: ${rateLimitPerMinute} requests per minute` };
+  }
+  
+  limits.count++;
+  return { allowed: true };
+}
+
+async function checkDailyQuota(apiKeyId: string, dailyQuota: number): Promise<{ allowed: boolean; error?: string }> {
+  if (dailyQuota <= 0) return { allowed: true };
+  
+  // Query database for today's usage count (persistent across restarts)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  
+  const [usage] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(mcpUsageLogs)
+    .where(and(
+      eq(mcpUsageLogs.apiKeyId, apiKeyId),
+      sql`executed_at >= ${todayStart.toISOString()}::timestamp`
+    ));
+  
+  const todayCount = Number(usage?.count || 0);
+  
+  if (todayCount >= dailyQuota) {
+    return { allowed: false, error: `Daily quota exceeded: ${dailyQuota} requests per day (used: ${todayCount})` };
+  }
+  
+  return { allowed: true };
+}
+
 interface McpAuthenticatedRequest extends Request {
   mcpAuth?: {
     apiKeyId: string;
@@ -103,6 +152,21 @@ async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: 
         logger.warn(`🔑 [MCP-GATEWAY] IP not allowed: ${clientIp} for key ${keyRecord.name}`);
         return res.status(403).json({ error: 'IP address not allowed' });
       }
+    }
+    
+    // SECURITY: Enforce rate limiting per API key
+    // 1. Check per-minute rate limit (in-memory for speed)
+    const minuteCheck = checkMinuteRateLimit(keyRecord.id, keyRecord.rateLimitPerMinute);
+    if (!minuteCheck.allowed) {
+      logger.warn(`🔑 [MCP-GATEWAY] ${minuteCheck.error} for key ${keyRecord.name}`);
+      return res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: minuteCheck.error });
+    }
+    
+    // 2. Check daily quota (database-backed for persistence)
+    const dailyCheck = await checkDailyQuota(keyRecord.id, keyRecord.dailyQuota);
+    if (!dailyCheck.allowed) {
+      logger.warn(`🔑 [MCP-GATEWAY] ${dailyCheck.error} for key ${keyRecord.name}`);
+      return res.status(429).json({ error: 'QUOTA_EXCEEDED', message: dailyCheck.error });
     }
     
     await db
