@@ -15,15 +15,16 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **DATABASE ARCHITECTURE**: Always use 3-schema structure (w3suite, public, brand_interface)
 - **MCP/ACTION RLS ARCHITECTURE (OBBLIGATORIO)**:
   - **🌐 TABELLE GLOBALI (RLS DISABILITATO)** - Disponibili per TUTTI i tenant attuali e futuri:
-    - `action_definitions` - Definizioni base azioni operative (WMS, HR, Sales, CRM, Operations)
-    - `mcp_query_templates` - Template SQL parametrizzati per dipartimento
+    - `action_definitions` - SOLO azioni OPERATIVE (15 azioni WMS: sale, purchase, transfer, etc.) - **NO azioni MCP**
+    - `mcp_query_templates` - Template SQL parametrizzati per dipartimento (25 templates)
     - `mcp_query_template_variables` - Variabili con tipo, validazione, tooltip (45 variabili)
   - **🔒 TABELLE TENANT (RLS ABILITATO)** - Configurazioni specifiche per tenant:
-    - `action_configurations` - Workflow, team assignments, SLA per tenant
-    - `mcp_tool_settings` - Tool MCP configurati dal tenant
+    - `action_configurations` - Workflow, team assignments, SLA per azioni operative
+    - `mcp_tool_settings` - **AZIONI MCP TOOLS** create dal tenant (tenant-specific!)
     - `mcp_tool_permissions` - Permessi ruoli MCP per tenant
+  - **⚠️ REGOLA CHIAVE**: Le azioni MCP (mcp_wms_*, mcp_hr_*, etc.) NON vanno in action_definitions globale, ma SOLO in mcp_tool_settings (tenant RLS)
   - **Policy RLS**: `USING (tenant_id = current_setting('app.tenant_id')::uuid)`
-  - **Nuovo Tenant**: Eredita automaticamente tutte le tabelle globali, deve creare solo configurazioni tenant
+  - **Nuovo Tenant**: Eredita automaticamente tabelle globali (templates, variabili, azioni operative), deve creare solo mcp_tool_settings
 - **COMPONENT-FIRST APPROACH (OBBLIGATORIO)**:
   1. **SEMPRE shadcn/ui FIRST** - Check 48 componenti disponibili prima di creare custom
   2. **Copy & Paste workflow** - `npx shadcn@latest add [component-name]`
