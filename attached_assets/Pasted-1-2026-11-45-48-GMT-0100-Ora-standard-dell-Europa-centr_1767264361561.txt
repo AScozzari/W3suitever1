@@ -1,0 +1,94 @@
+1 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "4ii92cs6se2p.invalid"
+useSIPRegistration.ts:196 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:196 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+useSIPRegistration.ts:196 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it/ws
+useSIPRegistration.ts:196 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+ActionBuilderTab.tsx:166  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/custom-actions?showAll=true 401 (Unauthorized)
+queryFn @ ActionBuilderTab.tsx:166
+fetchFn @ @tanstack_react-query.js?v=fac8f799:1097
+run @ @tanstack_react-query.js?v=fac8f799:795
+start @ @tanstack_react-query.js?v=fac8f799:838
+fetch @ @tanstack_react-query.js?v=fac8f799:1144
+executeFetch_fn @ @tanstack_react-query.js?v=fac8f799:1639
+onSubscribe @ @tanstack_react-query.js?v=fac8f799:1335
+subscribe @ @tanstack_react-query.js?v=fac8f799:24
+(anonime) @ @tanstack_react-query.js?v=fac8f799:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=fac8f799:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=fac8f799:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=fac8f799:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=fac8f799:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=fac8f799:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=fac8f799:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=fac8f799:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=fac8f799:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=fac8f799:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=fac8f799:18627Comprendi l'errore
+sip__js.js?v=fac8f799:6965 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket opened wss://demo.edgvoip.it/ws
+sip__js.js?v=fac8f799:6965 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Connected
+useSIPRegistration.ts:197 ✅ SIP UserAgent started
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Configuration:
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · expires: 600
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraContactHeaderParams: []
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraHeaders: []
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · logConfiguration: true
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · instanceId: ""
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · params: {}
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · regId: 0
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · registrar: sip:demo.edgvoip.it
+useSIPRegistration.ts:200 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · refreshFrequency: 99
+useSIPRegistration.ts:218 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+useSIPRegistration.ts:218 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS 4ii92cs6se2p.invalid;branch=z9hG4bK1388
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=04tuijmpbs
+CSeq: 2 REGISTER
+Call-ID: 7v5jg0atjl155jairu9h
+Max-Forwards: 70
+Contact: <sip:it4f3jvg@4ii92cs6se2p.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=fac8f799:6965 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS 4ii92cs6se2p.invalid;branch=z9hG4bK1388;received=127.0.0.1;rport=45890
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=04tuijmpbs
+To: <sip:2000@demo.edgvoip.it>;tag=583c2tp4N79Sa
+Call-ID: 7v5jg0atjl155jairu9h
+CSeq: 2 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="0b047424-9ca6-4756-a840-0704823724aa", algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+sip__js.js?v=fac8f799:6965 Thu Jan 01 2026 11:45:48 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS 4ii92cs6se2p.invalid;branch=z9hG4bK7742812
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=04tuijmpbs
+CSeq: 3 REGISTER
+Call-ID: 7v5jg0atjl155jairu9h
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="0b047424-9ca6-4756-a840-0704823724aa", uri="sip:demo.edgvoip.it", response="a3b22624e1303bcf861950d1a78e4c55", qop=auth, cnonce="giua76igec72", nc=00000001
+Contact: <sip:it4f3jvg@4ii92cs6se2p.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+ActionBuilderTab.tsx:166  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/custom-actions?showAll=true 401 (Unauthorized)

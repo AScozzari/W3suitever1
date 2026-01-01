@@ -161,15 +161,7 @@ export function ActionBuilderTab() {
   const [actionCategory, setActionCategory] = useState<'operative' | 'query'>('query');
 
   const { data: customActions = [], isLoading: isLoadingActions } = useQuery<CustomAction[]>({
-    queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'],
-    queryFn: async () => {
-      const res = await fetch('/api/mcp-gateway/custom-actions?showAll=true', {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!res.ok) throw new Error('Failed to fetch actions');
-      return res.json();
-    }
+    queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'],
   });
 
   const { data: variableCategories = [] } = useQuery<VariableCategory[]>({
@@ -183,7 +175,7 @@ export function ActionBuilderTab() {
   const createActionMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/mcp-gateway/custom-actions', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'] });
       toast({ title: 'Azione creata', description: 'La nuova azione custom è stata creata con successo.' });
       resetWizard();
     },
@@ -195,7 +187,7 @@ export function ActionBuilderTab() {
   const duplicateActionMutation = useMutation({
     mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}/duplicate`, { method: 'POST' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'] });
       toast({ title: 'Azione duplicata', description: 'L\'azione è stata duplicata con successo.' });
     }
   });
@@ -203,7 +195,7 @@ export function ActionBuilderTab() {
   const deleteActionMutation = useMutation({
     mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}`, { method: 'DELETE' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions', 'showAll'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'] });
       toast({ title: 'Azione archiviata', description: 'L\'azione è stata archiviata con successo.' });
     }
   });
@@ -332,7 +324,7 @@ export function ActionBuilderTab() {
                       <TableCell className="font-mono text-sm">{action.code}</TableCell>
                       <TableCell className="font-medium">{action.name}</TableCell>
                       <TableCell>
-                        <Badge className={`${deptStyle.bgColor} ${deptStyle.textColor} border-0`}>
+                        <Badge className={`${deptStyle.color} ${deptStyle.textColor} border-0`}>
                           {deptStyle.label}
                         </Badge>
                       </TableCell>
@@ -553,7 +545,7 @@ export function ActionBuilderTab() {
                           data-testid={`dept-${deptKey}`}
                         >
                           <CardContent className="p-4 flex flex-col items-center text-center">
-                            <div className={`w-12 h-12 rounded-xl ${style.bgColor} flex items-center justify-center mb-3`}>
+                            <div className={`w-12 h-12 rounded-xl ${style.color} flex items-center justify-center mb-3`}>
                               <style.icon className={`h-6 w-6 ${style.textColor}`} />
                             </div>
                             <h3 className="font-medium text-gray-900">{style.label}</h3>
