@@ -1230,7 +1230,7 @@ interface ToolPermission {
 
 function DocumentationTab({ actions }: { actions: ActionConfiguration[] }) {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'overview' | 'auth' | 'endpoints' | 'examples' | 'claude' | 'n8n' | 'zapier' | 'errors' | 'downloads'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'auth' | 'endpoints' | 'examples' | 'chatgpt' | 'claude' | 'n8n' | 'zapier' | 'errors' | 'downloads'>('overview');
   
   const copyCode = (code: string, section: string) => {
     navigator.clipboard.writeText(code);
@@ -1599,6 +1599,7 @@ ESEMPI ACTION_CODE:
     { id: 'auth', label: 'Autenticazione', icon: Shield },
     { id: 'endpoints', label: 'Endpoints', icon: Globe },
     { id: 'examples', label: 'Esempi Codice', icon: Code },
+    { id: 'chatgpt', label: 'ChatGPT', icon: Sparkles },
     { id: 'claude', label: 'Claude Desktop', icon: Sparkles },
     { id: 'n8n', label: 'n8n', icon: Workflow },
     { id: 'zapier', label: 'Zapier', icon: Zap },
@@ -1724,22 +1725,55 @@ ESEMPI ACTION_CODE:
                 Autenticazione
               </CardTitle>
               <CardDescription>
-                Tutte le richieste richiedono autenticazione via Bearer Token
+                Supportiamo due metodi di autenticazione: API Key e OAuth2
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="p-4 rounded-lg bg-gray-900 text-gray-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-400">Header richiesto</span>
-                  <Button variant="ghost" size="sm" className="h-6 text-gray-400 hover:text-white" onClick={() => copyCode('Authorization: Bearer sk_live_staging_xxxxxxxxxxxx', 'auth')}>
-                    {copiedSection === 'auth' ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  </Button>
+              {/* Two Auth Methods */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border-2 border-blue-200 bg-blue-50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Key className="h-5 w-5 text-blue-600" />
+                    <span className="font-semibold text-blue-900">API Key</span>
+                    <Badge className="bg-blue-100 text-blue-700 text-xs">Scripts, n8n, Zapier</Badge>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Ideale per automazioni server-side, script e workflow
+                  </p>
+                  <div className="p-2 rounded bg-gray-900 text-gray-100">
+                    <code className="text-xs">Authorization: Bearer sk_live_xxx</code>
+                  </div>
                 </div>
-                <code className="text-sm">Authorization: Bearer sk_live_staging_xxxxxxxxxxxx</code>
+                <div className="p-4 rounded-lg border-2 border-green-200 bg-green-50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lock className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-900">OAuth2</span>
+                    <Badge className="bg-green-100 text-green-700 text-xs">ChatGPT, Claude</Badge>
+                  </div>
+                  <p className="text-sm text-green-700 mb-3">
+                    Autenticazione sicura per AI assistants e app browser
+                  </p>
+                  <div className="p-2 rounded bg-gray-900 text-gray-100">
+                    <code className="text-xs">Authorization: Bearer eyJhbG...</code>
+                  </div>
+                </div>
               </div>
 
+              {/* API Key Section */}
               <div className="space-y-4">
-                <h4 className="font-semibold">Formato API Key</h4>
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  API Key Authentication
+                </h4>
+                <div className="p-4 rounded-lg bg-gray-900 text-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-400">Header richiesto</span>
+                    <Button variant="ghost" size="sm" className="h-6 text-gray-400 hover:text-white" onClick={() => copyCode('Authorization: Bearer sk_live_staging_xxxxxxxxxxxx', 'auth')}>
+                      {copiedSection === 'auth' ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <code className="text-sm">Authorization: Bearer sk_live_staging_xxxxxxxxxxxx</code>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg border border-gray-200">
                     <code className="text-sm text-green-600">sk_live_staging_...</code>
@@ -1752,6 +1786,58 @@ ESEMPI ACTION_CODE:
                 </div>
               </div>
 
+              {/* OAuth2 Section */}
+              <div className="space-y-4">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  OAuth2 Authentication
+                </h4>
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="px-4 py-2 bg-gray-50 font-medium w-1/3">Authorization URL</td>
+                        <td className="px-4 py-2"><code className="bg-gray-100 px-2 py-0.5 rounded text-xs">https://w3suite.it/oauth2/authorize</code></td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="px-4 py-2 bg-gray-50 font-medium">Token URL</td>
+                        <td className="px-4 py-2"><code className="bg-gray-100 px-2 py-0.5 rounded text-xs">https://w3suite.it/oauth2/token</code></td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="px-4 py-2 bg-gray-50 font-medium">Flow</td>
+                        <td className="px-4 py-2">Authorization Code + PKCE (S256)</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 bg-gray-50 font-medium">Scopes</td>
+                        <td className="px-4 py-2">
+                          <code className="bg-blue-100 text-blue-700 px-1 rounded mr-1">mcp_read</code>
+                          <code className="bg-orange-100 text-orange-700 px-1 rounded">mcp_write</code>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                  <div className="p-2 rounded border border-gray-200">
+                    <code className="text-xs text-gray-600">chatgpt-mcp-client</code>
+                    <div className="text-xs text-gray-400">ChatGPT</div>
+                  </div>
+                  <div className="p-2 rounded border border-gray-200">
+                    <code className="text-xs text-gray-600">claude-mcp-client</code>
+                    <div className="text-xs text-gray-400">Claude</div>
+                  </div>
+                  <div className="p-2 rounded border border-gray-200">
+                    <code className="text-xs text-gray-600">n8n-mcp-client</code>
+                    <div className="text-xs text-gray-400">n8n</div>
+                  </div>
+                  <div className="p-2 rounded border border-gray-200">
+                    <code className="text-xs text-gray-600">zapier-mcp-client</code>
+                    <div className="text-xs text-gray-400">Zapier</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rate Limiting */}
               <div className="space-y-4">
                 <h4 className="font-semibold">Rate Limiting</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1891,6 +1977,123 @@ ESEMPI ACTION_CODE:
               </Tabs>
             </CardContent>
           </Card>
+        )}
+
+        {/* ChatGPT Section */}
+        {activeSection === 'chatgpt' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-[#10A37F]" />
+                  Integrazione ChatGPT (OAuth2)
+                </CardTitle>
+                <CardDescription>
+                  Connetti ChatGPT a W3 Suite usando OAuth2 per autenticazione sicura
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-teal-50 border border-green-100">
+                  <h4 className="font-semibold text-gray-900 mb-3">Configurazione ChatGPT Custom MCP Server</h4>
+                  <ol className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#10A37F] text-white flex items-center justify-center text-sm font-bold">1</span>
+                      <div>
+                        <strong>Apri ChatGPT Settings</strong>
+                        <p className="text-sm text-gray-600 mt-1">Vai su ChatGPT → Settings → Connectors → Add Custom MCP Server</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#10A37F] text-white flex items-center justify-center text-sm font-bold">2</span>
+                      <div>
+                        <strong>Inserisci i dati di configurazione</strong>
+                        <p className="text-sm text-gray-600 mt-1">Copia i valori dalla tabella qui sotto</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#10A37F] text-white flex items-center justify-center text-sm font-bold">3</span>
+                      <div>
+                        <strong>Autorizza la connessione</strong>
+                        <p className="text-sm text-gray-600 mt-1">ChatGPT ti reindirizzerà alla pagina di login W3 Suite per autorizzare l'accesso</p>
+                      </div>
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Parametri OAuth2</h4>
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                      <tbody>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium w-1/3">Name</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded">W3 Suite</code></td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium">MCP Server URL</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded text-xs">https://w3suite.it/api/mcp-public/sse</code></td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium">Authentication</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded">OAuth 2.0</code></td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium">Authorization URL</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded text-xs">https://w3suite.it/oauth2/authorize</code></td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium">Token URL</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded text-xs">https://w3suite.it/oauth2/token</code></td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium">Client ID</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded">chatgpt-mcp-client</code></td>
+                        </tr>
+                        <tr className="border-b border-gray-100">
+                          <td className="px-4 py-3 bg-gray-50 font-medium">Client Secret</td>
+                          <td className="px-4 py-3"><span className="text-gray-500">(lascia vuoto - public client)</span></td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 bg-gray-50 font-medium">Scopes</td>
+                          <td className="px-4 py-3"><code className="bg-gray-100 px-2 py-0.5 rounded">openid tenant_access mcp_read mcp_write</code></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-semibold text-blue-800">OAuth2 Flow</h5>
+                      <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                        <li>• <strong>Protocollo:</strong> Authorization Code con PKCE (S256)</li>
+                        <li>• <strong>Grant Types:</strong> authorization_code, refresh_token</li>
+                        <li>• <strong>Sicurezza:</strong> I token vengono rinnovati automaticamente</li>
+                        <li>• <strong>Audit:</strong> Ogni azione viene loggata con user ID</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-semibold text-green-800">Vantaggi OAuth2 vs API Key</h5>
+                      <ul className="text-sm text-green-700 mt-1 space-y-1">
+                        <li>• Nessuna API key da gestire manualmente</li>
+                        <li>• Autenticazione legata al tuo account W3 Suite</li>
+                        <li>• Revoca accesso in qualsiasi momento</li>
+                        <li>• Token con scadenza automatica per maggiore sicurezza</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Claude Desktop Section */}
