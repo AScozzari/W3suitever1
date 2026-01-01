@@ -1,0 +1,383 @@
+VE] 🚀 Session keep-alive initialized (12-min interval)
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 19:31:19, Token expires: 19:46:18
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 19:31:19, Token expires: 19:46:18
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 19:31:19, Token expires: 19:46:18
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 19:31:19, Token expires: 19:46:18
+index-DjZYMQKr.js:1189 🔍 Token expiry check: Current time: 19:31:19, Token expires: 19:46:18
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+index-DjZYMQKr.js:1189 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/react-core-DamieDW-.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/DashboardPage-BB1wDu_1.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/radix-ui-CLSFh9a9.js 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/useTenantSafety-RLYhNkzA.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/Layout-3BRFO574.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/query-BNy7z5T9.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/Layout-BZV40eAE.css net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1202 [APP-ROUTER] 🚀 Router component rendered
+index-DjZYMQKr.js:1202 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 Error: Unable to preload CSS for /assets/Layout-BZV40eAE.css
+    at HTMLLinkElement.<anonymous> (index-DjZYMQKr.js:1189:7393)
+overrideMethod @ installHook.js:1
+Zc @ index-DjZYMQKr.js:33
+B0.n.callback @ index-DjZYMQKr.js:33
+xf @ index-DjZYMQKr.js:31
+If @ index-DjZYMQKr.js:33
+sy @ index-DjZYMQKr.js:33
+dx @ index-DjZYMQKr.js:33
+mx @ index-DjZYMQKr.js:33
+mr @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189 Uncaught Error: Unable to preload CSS for /assets/Layout-BZV40eAE.css
+    at HTMLLinkElement.<anonymous> (index-DjZYMQKr.js:1189:7393)
+(anonime) @ index-DjZYMQKr.js:1189Comprendi l'errore
+index-DjZYMQKr.js:1202 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/it-DnNY9yJU.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/endOfMonth-BpiC_VQ1.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/button-BG2gNR7U.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/icons-DhnPAtO_.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/format-DI4HtZIj.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/badge-XWtIGcKx.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/utils-D5y9Z8cT.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/tabs-DIrT69oW.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/proxy-DMDFFhYY.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/separator-CWcj7Jri.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/flow-BWkjIzJi.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/ApiService-DJ6NMhKt.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/select-u7LlNPrS.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/BarChart-yIsA_ZaX.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/PieChart-BMGKP-Wx.js net::ERR_ABORTED 404 (Not Found)
+(anonime) @ index-DjZYMQKr.js:1189
+ce @ index-DjZYMQKr.js:1189
+(anonime) @ index-DjZYMQKr.js:1202
+kb @ index-DjZYMQKr.js:10
+bf @ index-DjZYMQKr.js:31
+x @ index-DjZYMQKr.js:31
+Ke @ index-DjZYMQKr.js:33
+Jc @ index-DjZYMQKr.js:33
+py @ index-DjZYMQKr.js:33
+dy @ index-DjZYMQKr.js:33
+px @ index-DjZYMQKr.js:33
+xs @ index-DjZYMQKr.js:33
+ly @ index-DjZYMQKr.js:33
+_ @ index-DjZYMQKr.js:18
+N @ index-DjZYMQKr.js:18Comprendi l'errore
+index-DjZYMQKr.js:1189  GET https://w3suite.it/assets/AreaChart-CpKLlXgS.js net::ERR_ABORTED 404 (Not Found)
