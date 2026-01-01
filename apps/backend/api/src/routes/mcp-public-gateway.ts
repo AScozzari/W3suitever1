@@ -989,6 +989,7 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
           actionName: actionConfigurations.actionName,
           description: actionConfigurations.description,
           mcpInputSchema: actionConfigurations.mcpInputSchema,
+          actionCategory: actionConfigurations.actionCategory,
         })
         .from(actionConfigurations)
         .innerJoin(mcpToolPermissions, and(
@@ -998,13 +999,16 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
         ))
         .where(and(
           eq(actionConfigurations.tenantId, tenantId),
-          eq(actionConfigurations.isActive, true),
-          eq(actionConfigurations.actionCategory, 'query')
+          eq(actionConfigurations.isActive, true)
         ));
       
       return res.json({
         jsonrpc: '2.0', id,
-        result: { tools: actions.map(a => ({ name: a.actionId, description: a.description || a.actionName, inputSchema: a.mcpInputSchema || { type: 'object', properties: {}, required: [] } })) },
+        result: { tools: actions.map(a => ({ 
+          name: a.actionId, 
+          description: `[${a.actionCategory?.toUpperCase() || 'QUERY'}] ${a.description || a.actionName}`, 
+          inputSchema: a.mcpInputSchema || { type: 'object', properties: {}, required: [] } 
+        })) },
       });
     }
     
@@ -1012,7 +1016,12 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
       const { name: toolName, arguments: toolArgs } = params;
       
       const [action] = await db
-        .select({ queryTemplateId: actionConfigurations.queryTemplateId })
+        .select({ 
+          queryTemplateId: actionConfigurations.queryTemplateId,
+          actionCategory: actionConfigurations.actionCategory,
+          actionName: actionConfigurations.actionName,
+          actionId: actionConfigurations.actionId,
+        })
         .from(actionConfigurations)
         .innerJoin(mcpToolPermissions, and(
           eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
@@ -1022,8 +1031,32 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
         .where(and(eq(actionConfigurations.actionId, toolName), eq(actionConfigurations.tenantId, tenantId), eq(actionConfigurations.isActive, true)))
         .limit(1);
       
-      if (!action?.queryTemplateId) {
-        return res.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Tool not found: ${toolName}` } });
+      if (!action) {
+        return res.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Tool not found or not authorized: ${toolName}` } });
+      }
+      
+      if (action.actionCategory === 'operative') {
+        logger.info(`[MCP-SSE] Operative action called: ${toolName}`, { args: toolArgs });
+        return res.json({
+          jsonrpc: '2.0', id,
+          result: {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                status: 'pending',
+                action: action.actionName,
+                actionId: action.actionId,
+                message: `Azione operativa "${action.actionName}" registrata. Questa azione richiede elaborazione nel sistema WMS.`,
+                parameters: toolArgs,
+                timestamp: new Date().toISOString()
+              }, null, 2)
+            }]
+          }
+        });
+      }
+      
+      if (!action.queryTemplateId) {
+        return res.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Query template not configured for: ${toolName}` } });
       }
       
       const [template] = await db.select().from(mcpQueryTemplates).where(eq(mcpQueryTemplates.id, action.queryTemplateId)).limit(1);
