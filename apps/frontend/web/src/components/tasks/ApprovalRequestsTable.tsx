@@ -100,7 +100,7 @@ export function ApprovalRequestsTable() {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const { data: requestsData, isLoading } = useQuery<{ success: boolean; data: ApprovalRequest[] }>({
-    queryKey: ['/api/workflow-instances/approvals'],
+    queryKey: ['/api/workflow-instances/approvals', { excludeDepartment: 'hr' }],
   });
   
   const requests = requestsData?.data || [];
@@ -113,6 +113,7 @@ export function ApprovalRequestsTable() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances/approvals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances'] });
       setShowApproveDialog(false);
       setApprovalNotes('');
@@ -132,6 +133,7 @@ export function ApprovalRequestsTable() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances/approvals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances'] });
       setShowRejectDialog(false);
       setRejectionReason('');

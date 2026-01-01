@@ -3,6 +3,7 @@ import { eq, and, sql, asc, desc, isNull, inArray, exists } from 'drizzle-orm';
 import { db, setTenantContext } from '../core/db';
 import { requirePermission } from '../middleware/tenant';
 import { logger } from '../core/logger';
+import { notificationService } from '../core/notification-service';
 import { 
   organizationalStructure, 
   approvalWorkflows, 
@@ -1980,27 +1981,280 @@ router.post('/workflow-instances', requirePermission('workflows.write'), async (
   }
 });
 
-// POST /api/workflow-instances/:id/approve - Approve workflow step
-router.post('/workflow-instances/:id/approve', requirePermission('workflows.approve'), async (req: Request, res: Response) => {
+// GET /api/workflow-instances/approvals - Get pending approval requests for current user
+router.get('/workflow-instances/approvals', requirePermission('workflows.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
-    const instanceId = req.params.id;
     const userId = (req as any).user?.id;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    const { comment, attachments } = req.body;
+    const { 
+      status = 'pending',
+      department,
+      excludeDepartment,
+      limit = '50',
+      offset = '0'
+    } = req.query;
+
+    // Build query to get workflow instances where current user can approve
+    // User can approve if:
+    // 1. Direct assignee (currentAssigneeId matches)
+    // 2. Primary/secondary supervisor of the team linked to the workflow
+    // 3. Observer of the team (if escalated)
+    const results = await db.execute<{
+      id: string;
+      tenant_id: string;
+      template_id: string;
+      template_name: string;
+      current_status: string;
+      current_node_id: string;
+      current_step_id: string;
+      reference_id: string;
+      instance_name: string;
+      created_at: string;
+      updated_at: string;
+      entity_type: string;
+      entity_id: string;
+      triggered_by: string;
+      triggered_by_name: string;
+      department: string;
+      action_id: string;
+      action_name: string;
+      escalated: boolean;
+      sla_hours: number;
+    }>(`
+      SELECT DISTINCT
+        wi.id,
+        wi.tenant_id,
+        wi.template_id,
+        wt.name as template_name,
+        wi.current_status,
+        wi.current_node_id,
+        wi.current_step_id,
+        wi.reference_id,
+        wi.instance_name,
+        wi.created_at,
+        wi.updated_at,
+        COALESCE(ur.category, 'workflow') as entity_type,
+        COALESCE(ur.id::text, wi.reference_id) as entity_id,
+        COALESCE(ur.requester_id, wi.workflow_data->>'requesterId') as triggered_by,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as triggered_by_name,
+        COALESCE(ur.department::text, wt.for_department, 'general') as department,
+        COALESCE(wi.workflow_data->>'actionId', ur.type, 'generic') as action_id,
+        COALESCE(wi.workflow_data->>'actionName', ur.title, wi.instance_name) as action_name,
+        COALESCE((wi.workflow_data->>'escalated')::boolean, false) as escalated,
+        COALESCE((wi.workflow_data->>'slaHours')::integer, 24) as sla_hours
+      FROM w3suite.workflow_instances wi
+      LEFT JOIN w3suite.workflow_templates wt ON wt.id = wi.template_id
+      LEFT JOIN w3suite.universal_requests ur ON ur.workflow_instance_id = wi.id
+      LEFT JOIN w3suite.users u ON u.id = ur.requester_id
+      WHERE wi.tenant_id = $1
+        AND wi.current_status IN ('running', 'waiting_approval', 'pending')
+        -- Filter by status if specified
+        AND ($3::text IS NULL OR $3::text = 'all' OR wi.current_status = $3::text)
+        -- Filter by department if specified
+        AND ($4::text IS NULL OR ur.department::text = $4::text OR wt.for_department = $4::text)
+        -- Exclude department (e.g., exclude HR from Tasks view)
+        AND (
+          $5::text IS NULL 
+          OR (
+            (ur.department IS NULL OR ur.department::text != $5::text)
+            AND (wt.for_department IS NULL OR wt.for_department != $5::text)
+          )
+        )
+        -- User authorization: can approve if direct assignee OR team supervisor OR explicit approver
+        AND (
+          -- Direct assignee in workflow_data
+          wi.workflow_data->>'currentAssigneeId' = $2
+          -- OR explicit approver in approvers array
+          OR wi.workflow_data->'approvers' @> to_jsonb($2::text)
+          -- OR supervisor of team linked to request (only if teamId exists)
+          OR (
+            COALESCE(ur.metadata->>'teamId', wi.workflow_data->>'teamId', ur.metadata->'firstWinsRouting'->>'teamId') IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM w3suite.teams t
+              WHERE t.tenant_id = $1
+                AND t.is_active = true
+                AND t.id::text = COALESCE(
+                  ur.metadata->>'teamId',
+                  wi.workflow_data->>'teamId',
+                  ur.metadata->'firstWinsRouting'->>'teamId'
+                )
+                AND (t.primary_supervisor_id = $2 OR t.secondary_supervisor_id = $2)
+            )
+          )
+          -- OR observer if escalated (only if teamId exists)
+          OR (
+            COALESCE((wi.workflow_data->>'escalated')::boolean, false) = true
+            AND COALESCE(ur.metadata->>'teamId', wi.workflow_data->>'teamId', ur.metadata->'firstWinsRouting'->>'teamId') IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM w3suite.team_observers tobs
+              JOIN w3suite.teams t ON t.id = tobs.team_id
+              WHERE t.tenant_id = $1
+                AND t.is_active = true
+                AND tobs.user_id = $2
+                AND t.id::text = COALESCE(
+                  ur.metadata->>'teamId',
+                  wi.workflow_data->>'teamId',
+                  ur.metadata->'firstWinsRouting'->>'teamId'
+                )
+            )
+          )
+        )
+      ORDER BY wi.created_at DESC
+      LIMIT $6 OFFSET $7
+    `, [
+      tenantId,
+      userId,
+      status === 'all' ? null : (status || 'pending'),
+      department || null,
+      excludeDepartment || null,
+      parseInt(limit as string, 10),
+      parseInt(offset as string, 10)
+    ]);
+
+    // Transform results to match ApprovalRequest interface
+    const approvals = results.rows.map(row => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      status: row.current_status === 'running' || row.current_status === 'waiting_approval' ? 'pending' : row.current_status,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      triggeredBy: row.triggered_by,
+      triggeredByName: row.triggered_by_name,
+      currentStepData: {
+        department: row.department,
+        actionId: row.action_id,
+        actionName: row.action_name,
+        escalated: row.escalated,
+        observersCanApprove: row.escalated,
+        slaHours: row.sla_hours
+      },
+      workflowTemplateId: row.template_id,
+      workflowTemplateName: row.template_name
+    }));
+
+    res.json({ 
+      success: true, 
+      data: approvals,
+      meta: {
+        total: approvals.length,
+        limit: parseInt(limit as string, 10),
+        offset: parseInt(offset as string, 10)
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching approval requests:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch approval requests' });
+  }
+});
+
+// POST /api/workflow-instances/:id/approve - Approve workflow step
+router.post('/workflow-instances/:id/approve', requirePermission('workflows.approve'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const instanceId = req.params.id;
+    const userId = (req as any).user?.id;
+    const userName = (req as any).user?.firstName 
+      ? `${(req as any).user.firstName} ${(req as any).user.lastName || ''}`.trim()
+      : 'Un supervisore';
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const { comment, attachments, notes } = req.body;
+
+    // Get workflow instance details for notification
+    const [instance] = await db
+      .select({
+        id: workflowInstances.id,
+        referenceId: workflowInstances.referenceId,
+        instanceName: workflowInstances.instanceName,
+        workflowData: workflowInstances.workflowData
+      })
+      .from(workflowInstances)
+      .where(eq(workflowInstances.id, instanceId))
+      .limit(1);
+
+    // Get requester from universal_requests if linked
+    let requesterId: string | null = null;
+    let actionName = instance?.instanceName || 'Richiesta';
+    let department: string | null = null;
+
+    if (instance?.referenceId) {
+      const [linkedRequest] = await db
+        .select({
+          requesterId: universalRequests.requesterId,
+          title: universalRequests.title,
+          department: universalRequests.department
+        })
+        .from(universalRequests)
+        .where(eq(universalRequests.id, instance.referenceId))
+        .limit(1);
+
+      if (linkedRequest) {
+        requesterId = linkedRequest.requesterId;
+        actionName = linkedRequest.title || actionName;
+        department = linkedRequest.department;
+      }
+    }
+
+    // Fallback to workflow_data requesterId
+    if (!requesterId && instance?.workflowData) {
+      requesterId = (instance.workflowData as any)?.requesterId || null;
+    }
 
     // Use workflow engine to process approval
     const result = await workflowEngine.processApproval({
       instanceId,
       approverId: userId || 'system',
       decision: 'approve',
-      comment,
+      comment: comment || notes,
       attachments
     });
+
+    // Send notification to requester (skip HR - has its own notification system)
+    if (requesterId && department !== 'hr') {
+      await notificationService.sendNotification(
+        tenantId,
+        requesterId,
+        '✅ Richiesta Approvata',
+        `La tua richiesta "${actionName}" è stata approvata da ${userName}.${comment ? ` Note: ${comment}` : ''}`,
+        'request_approved',
+        'normal',
+        {
+          workflowInstanceId: instanceId,
+          status: 'approved',
+          approverId: userId,
+          actionName,
+          department
+        }
+      );
+      logger.info('📧 [APPROVAL] Notification sent to requester', {
+        instanceId,
+        requesterId,
+        actionName,
+        department
+      });
+    }
+
+    // Update universal_requests status if linked
+    if (instance?.referenceId && department !== 'hr') {
+      await db
+        .update(universalRequests)
+        .set({
+          status: 'approved',
+          completedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(universalRequests.id, instance.referenceId));
+    }
 
     res.json(result);
   } catch (error: any) {
@@ -2015,20 +2269,103 @@ router.post('/workflow-instances/:id/reject', requirePermission('workflows.appro
     const tenantId = req.headers['x-tenant-id'] as string;
     const instanceId = req.params.id;
     const userId = (req as any).user?.id;
+    const userName = (req as any).user?.firstName 
+      ? `${(req as any).user.firstName} ${(req as any).user.lastName || ''}`.trim()
+      : 'Un supervisore';
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
     const { reason, comment } = req.body;
+    const rejectionReason = reason || comment || 'Nessuna motivazione specificata';
+
+    // Get workflow instance details for notification
+    const [instance] = await db
+      .select({
+        id: workflowInstances.id,
+        referenceId: workflowInstances.referenceId,
+        instanceName: workflowInstances.instanceName,
+        workflowData: workflowInstances.workflowData
+      })
+      .from(workflowInstances)
+      .where(eq(workflowInstances.id, instanceId))
+      .limit(1);
+
+    // Get requester from universal_requests if linked
+    let requesterId: string | null = null;
+    let actionName = instance?.instanceName || 'Richiesta';
+    let department: string | null = null;
+
+    if (instance?.referenceId) {
+      const [linkedRequest] = await db
+        .select({
+          requesterId: universalRequests.requesterId,
+          title: universalRequests.title,
+          department: universalRequests.department
+        })
+        .from(universalRequests)
+        .where(eq(universalRequests.id, instance.referenceId))
+        .limit(1);
+
+      if (linkedRequest) {
+        requesterId = linkedRequest.requesterId;
+        actionName = linkedRequest.title || actionName;
+        department = linkedRequest.department;
+      }
+    }
+
+    // Fallback to workflow_data requesterId
+    if (!requesterId && instance?.workflowData) {
+      requesterId = (instance.workflowData as any)?.requesterId || null;
+    }
 
     // Use workflow engine to process rejection
     const result = await workflowEngine.processApproval({
       instanceId,
       approverId: userId || 'system',
       decision: 'reject',
-      comment: reason || comment
+      comment: rejectionReason
     });
+
+    // Send notification to requester (skip HR - has its own notification system)
+    if (requesterId && department !== 'hr') {
+      await notificationService.sendNotification(
+        tenantId,
+        requesterId,
+        '❌ Richiesta Rifiutata',
+        `La tua richiesta "${actionName}" è stata rifiutata da ${userName}.\nMotivo: ${rejectionReason}`,
+        'request_rejected',
+        'high',
+        {
+          workflowInstanceId: instanceId,
+          status: 'rejected',
+          rejecterId: userId,
+          reason: rejectionReason,
+          actionName,
+          department
+        }
+      );
+      logger.info('📧 [REJECTION] Notification sent to requester', {
+        instanceId,
+        requesterId,
+        actionName,
+        department,
+        reason: rejectionReason
+      });
+    }
+
+    // Update universal_requests status if linked
+    if (instance?.referenceId && department !== 'hr') {
+      await db
+        .update(universalRequests)
+        .set({
+          status: 'rejected',
+          completedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(universalRequests.id, instance.referenceId));
+    }
 
     res.json(result);
   } catch (error: any) {
