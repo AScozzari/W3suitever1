@@ -3835,6 +3835,14 @@ export const actionFlowTypeEnum = pgEnum('action_flow_type', [
   'workflow'   // Flusso workflow - segue workflow template specifico
 ]);
 
+// MCP Action Type Enum - Tipo di operazione MCP
+export const mcpActionTypeEnum = pgEnum('mcp_action_type', [
+  'read',      // Query/lettura dati
+  'create',    // Inserimento nuovi record
+  'update',    // Modifica record esistenti
+  'delete'     // Eliminazione record
+]);
+
 // Team Scope Enum - Scope applicazione team
 export const teamScopeEnum = pgEnum('team_scope', [
   'all',       // Applicabile a tutti i team
@@ -3874,6 +3882,12 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   // 🎯 METADATA
   metadata: jsonb("metadata").default({}), // Metadati aggiuntivi configurabili
   
+  // 🎯 MCP ACTION BUILDER - Campi per azioni custom esposte via MCP Gateway
+  isCustomAction: boolean("is_custom_action").default(false), // true = creata da Action Builder
+  mcpActionType: mcpActionTypeEnum("mcp_action_type"), // read | create | update | delete
+  mcpInputSchema: jsonb("mcp_input_schema"), // JSON Schema parametri accettati da MCP
+  queryTemplateId: uuid("query_template_id"), // Riferimento a template SQL per esecuzione
+  
   // 🎯 AUDIT
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -3884,6 +3898,8 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   index("action_configurations_department_idx").on(table.department),
   index("action_configurations_active_idx").on(table.isActive),
   index("action_configurations_flow_type_idx").on(table.flowType),
+  index("action_configurations_custom_idx").on(table.isCustomAction),
+  index("action_configurations_mcp_type_idx").on(table.mcpActionType),
   // 🎯 UNIQUE: Una sola configurazione per azione per dipartimento per tenant
   uniqueIndex("action_configurations_unique").on(table.tenantId, table.department, table.actionId),
 ]);
@@ -3895,6 +3911,59 @@ export const insertActionConfigurationSchema = createInsertSchema(actionConfigur
 });
 export type InsertActionConfiguration = z.infer<typeof insertActionConfigurationSchema>;
 export type ActionConfiguration = typeof actionConfigurations.$inferSelect;
+
+// ==================== MCP QUERY TEMPLATES ====================
+// 🎯 Template SQL predefiniti per ogni dipartimento - usati dall'Action Builder
+// Ogni template definisce una query base con variabili sostituibili
+
+export const mcpQueryTemplates = w3suiteSchema.table("mcp_query_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // 🎯 IDENTIFICAZIONE
+  code: varchar("code", { length: 100 }).notNull().unique(), // HR_CHECK_VACATION, SALES_QUERY_BY_PRODUCT
+  name: varchar("name", { length: 200 }).notNull(), // "Verifica Ferie Dipendente"
+  description: text("description"), // Descrizione dettagliata del template
+  
+  // 🎯 CLASSIFICAZIONE
+  department: departmentEnum("department").notNull(), // hr, sales, wms, crm, operations
+  actionType: mcpActionTypeEnum("action_type").notNull(), // read, create, update, delete
+  
+  // 🎯 TEMPLATE SQL
+  // Usa {{variableName}} per i placeholder, es: WHERE u.full_name ILIKE '%{{employeeName}}%'
+  sqlTemplate: text("sql_template").notNull(),
+  
+  // 🎯 VARIABILI DISPONIBILI
+  // Array di variabili che questo template accetta (es: ['employeeName', 'dateFrom', 'dateTo', 'storeId'])
+  availableVariables: text("available_variables").array().notNull().default([]),
+  
+  // 🎯 VARIABILI OBBLIGATORIE
+  // Subset di availableVariables che sono required (es: ['employeeName'])
+  requiredVariables: text("required_variables").array().notNull().default([]),
+  
+  // 🎯 TABELLE COINVOLTE (per documentazione/audit)
+  involvedTables: text("involved_tables").array().default([]), // ['users', 'vacations']
+  
+  // 🎯 STATO
+  isActive: boolean("is_active").default(true).notNull(),
+  isSystemTemplate: boolean("is_system_template").default(true).notNull(), // true = fornito dal sistema
+  
+  // 🎯 AUDIT
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("mcp_query_templates_department_idx").on(table.department),
+  index("mcp_query_templates_action_type_idx").on(table.actionType),
+  index("mcp_query_templates_active_idx").on(table.isActive),
+  index("mcp_query_templates_dept_type_idx").on(table.department, table.actionType),
+]);
+
+export const insertMcpQueryTemplateSchema = createInsertSchema(mcpQueryTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMcpQueryTemplate = z.infer<typeof insertMcpQueryTemplateSchema>;
+export type McpQueryTemplate = typeof mcpQueryTemplates.$inferSelect;
 
 // ==================== ACTION TEAM OVERRIDES ====================
 // Override per-team: permette di avere flowType diversi per team diversi sulla stessa azione
@@ -10766,6 +10835,9 @@ export const mcpApiKeys = w3suiteSchema.table("mcp_api_keys", {
   // Rate limiting
   rateLimitPerMinute: integer("rate_limit_per_minute").default(60).notNull(),
   dailyQuota: integer("daily_quota").default(10000).notNull(),
+  
+  // Action type permissions - which operations this key can perform
+  allowedActionTypes: text("allowed_action_types").array().default(['read', 'create', 'update', 'delete']), // ['read'] = solo lettura
   
   // IP restrictions (optional)
   ipRestrictionEnabled: boolean("ip_restriction_enabled").default(false).notNull(),
