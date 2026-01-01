@@ -1146,7 +1146,7 @@ function PermissionsMatrixTab({
                       </div>
                       
                       {isExpanded && (
-                        <div className="border-t border-gray-200 bg-gray-50 p-3 max-h-60 overflow-y-auto">
+                        <div className="border-t border-gray-200 bg-gray-50 p-3 max-h-[300px] overflow-y-auto">
                           {deptActions.length === 0 ? (
                             <div className="text-center py-4 text-gray-500 text-sm">
                               Nessuna azione esposta
