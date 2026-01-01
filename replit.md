@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules including CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules like CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform provides a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -102,45 +102,39 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
 
 # System Architecture
-- **UI/UX Decisions**: The platform features a WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). Content is integrated into existing dashboards, leveraging `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE=80`). Content integrates into existing dashboards using `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
-    - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **HR Module (Shifts, Leaves, Tracking)**:
-        - **Tables**: `shifts`, `shift_assignments`, `shift_assignment_history` (audit trail), `shift_templates`, `shift_template_versions`, `time_tracking`, `shift_attendance`, `resource_availability`, `hr_request_impacts`.
-        - **Shift States**: 15 stati (scheduled, confirmed, in_progress, completed, no_show, sick_call, late_arrival, early_departure, cancelled, swap_pending, swap_approved, override, partial, on_break, extended).
-        - **Leave Categories**: vacation, sick, maternity_leave, matrimonio, legge_104, smart_working.
-        - **HrImpactService**: Real-time shift impact analysis with store derivation priority (timbratura → turno → user home store). Severity: none/low/medium/high/critical based on shifts (5+) or hours (40+).
-        - **Approval Flow**: Request → Preview impacts → Submit → Supervisor approval → Auto-create `resource_availability` → Blocks future shift assignments (except smart_working).
-        - **APIs**: `POST /api/workflows/requests/preview-impacts`, `GET /api/workflows/requests/:id/impacts`.
-        - **Frontend**: `LeaveRequestModal` with `ShiftImpactAlert` component showing real-time conflicts.
-    - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. It manages complex relationships between movements and documents, with distinct document classifications (operational/fiscal, active/passive) and rules for generating logistic movements. A comprehensive status history system tracks product and batch status changes, driven by document types and movements. The WMS document item structure has been refactored for serialized products to use direct FKs to `product_items` and for prices/IVA to use FKs to `public.vat_rates` and `public.vat_regimes`, ensuring consistency with price lists.
+    - **HR Module (Shifts, Leaves, Tracking)**: Manages shifts, leave requests, and time tracking. Features a comprehensive shift state system (15 states), various leave categories, and a `HrImpactService` for real-time shift impact analysis. Includes an approval flow for leave requests that updates resource availability and an API for previewing impacts.
+    - **WMS Module (CQRS)**: Uses Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. Manages complex relationships between movements and documents, with distinct classifications and rules for generating logistic movements.
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
+    - **MCP Public Gateway (External API)**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations with API Key authentication, parameterized SQL queries, tenant isolation via RLS, rate limiting, and query templates.
 - **System Design Choices**:
-    - **Business Drivers Architecture**: Multi-tenant business drivers are managed within `w3suite.drivers` using RLS.
-    - **Organizational Hierarchy**: A pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) governs data access and request routing.
+    - **Business Drivers Architecture**: Multi-tenant business drivers within `w3suite.drivers` using RLS.
+    - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) for data access and request routing.
     - **Entity Architecture**: Differentiates between internal `organization_entities` and external `legal_entities` with specific propagation rules.
-    - **Cross-Store Architecture**: Provides default tenant-wide data views with role-based access control, allowing optional filters for drill-down, and explicitly forbidding auto-selection of stores.
-    - **Request Routing**: Implements "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location.
-    - **Action Management System**: Centralized configuration for all department actions. Uses `action_configurations` table with `flowType` (none/default/workflow) to determine approval behavior. `UnifiedTriggerService` routes actions through team supervisors (primarySupervisorId/secondarySupervisorId/observers) with "First Wins" pattern. Default flow notifies supervisors; workflow flow starts workflow instance. Dashboard at `/settings/actions` for centralized management. 24h escalation enables observers to approve after SLA timeout.
-    - **Deployment & Governance**: Features a Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment is managed via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access uses `deploy/keys/vps_key`, and database access to `w3suite_prod` is exclusively via a local socket. VoIP WebSocket connections are standardized to `wss://{extension.sipServer}/ws` on port 443.
-    - **Price List Architecture**: Defines a detailed structure for `price_list_items`, `price_list_items_canvas`, and `price_list_item_compositions` with distinct usage rules.
+    - **Cross-Store Architecture**: Default tenant-wide data views with role-based access control, allowing optional filters, explicitly forbidding auto-selection of stores.
+    - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location.
+    - **Action Management System**: Centralized configuration for department actions using `action_configurations`. `UnifiedTriggerService` routes actions through supervisors with "First Wins" and 24h escalation.
+    - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections to `wss://{extension.sipServer}/ws`.
+    - **Price List Architecture**: Detailed structure for `price_list_items`, `price_list_items_canvas`, and `price_list_item_compositions`.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
 - **Redis**: Used for BullMQ and the Unified Notification System.
-- **OAuth2/OIDC Enterprise**: Provides authentication and authorization.
+- **OAuth2/OIDC Enterprise**: Authentication and authorization.
 - **SHADCN/UI**: Primary UI component library.
 - **Radix UI**: Accessible component primitives.
 - **Lucide React**: Icon library.
-- **TanStack React Query**: Manages server state and data fetching.
+- **TanStack React Query**: Server state and data fetching.
 - **React Hook Form**: Form management and validation.
 - **Vite**: Frontend build tool.
 - **Drizzle Kit**: Database schema management.
 - **PostCSS**: CSS pre-processor.
 - **ESBuild**: Server-side code bundling.
 - **Nginx**: Reverse proxy.
-- **OpenAI**: Integrated for AI services, including `gpt-4o` and `gpt-4o-realtime`.
+- **OpenAI**: Integrated for AI services (`gpt-4o`, `gpt-4o-realtime`).
