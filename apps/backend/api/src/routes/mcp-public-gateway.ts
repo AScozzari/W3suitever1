@@ -260,12 +260,28 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
         };
       });
     
+    const [apiKeySettings] = await db
+      .select({
+        allowedActionTypes: mcpApiKeys.allowedActionTypes,
+      })
+      .from(mcpApiKeys)
+      .where(eq(mcpApiKeys.id, apiKeyId))
+      .limit(1);
+    
+    const allowedActionTypes = apiKeySettings?.allowedActionTypes || ['read', 'create', 'update', 'delete'];
+    
     const customTools = customActions
       .filter(action => {
+        if (permissions.length > 0 && !allowedActionIds.has(action.id)) {
+          return false;
+        }
         if (allowedDepartments && allowedDepartments.length > 0) {
           if (!allowedDepartments.includes(action.department)) {
             return false;
           }
+        }
+        if (action.mcpActionType && !allowedActionTypes.includes(action.mcpActionType)) {
+          return false;
         }
         return true;
       })
