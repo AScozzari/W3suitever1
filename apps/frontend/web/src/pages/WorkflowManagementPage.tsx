@@ -642,7 +642,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
               { id: 'builder', label: 'Workflow Builder', icon: Workflow },
               { id: 'timeline', label: 'Timeline', icon: FileText },
-              { id: 'teams', label: 'Teams', icon: Users },
+              { id: 'teams', label: 'Gestione Operativa', icon: Users },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
               { id: 'queue', label: 'Queue Monitor', icon: Activity },
               { id: 'settings', label: 'MCP Settings', icon: Settings },

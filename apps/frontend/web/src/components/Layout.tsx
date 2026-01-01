@@ -576,7 +576,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
     { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
-    { id: 'workflow-management', label: 'Workflow & Teams', icon: Users, path: '/workflow-management' },
+    { id: 'workflow-management', label: 'Centro Operativo', icon: Users, path: '/workflow-management' },
     { 
       id: 'prodotti-listini', 
       label: 'Gestione Catalogo', 
