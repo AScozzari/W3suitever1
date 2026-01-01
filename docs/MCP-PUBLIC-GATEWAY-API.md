@@ -110,10 +110,22 @@ All requests use JSON-RPC 2.0 format:
         "type": "text",
         "text": "[{\"shift_id\":\"...\",\"user_name\":\"...\"}]"
       }
-    ]
+    ],
+    "data": [
+      {"shift_id": "...", "user_name": "..."}
+    ],
+    "meta": {
+      "rowCount": 1,
+      "tool": "mcp_hr_list_shifts",
+      "executedAt": "2026-01-01T12:00:00.000Z"
+    }
   }
 }
 ```
+
+- **content**: MCP-compliant format (for Claude Desktop)
+- **data**: Structured JSON array (for n8n, Zapier, programmatic access)
+- **meta**: Execution metadata
 
 ### Error Response
 
@@ -294,6 +306,19 @@ All numeric parameters (limit, offset, year) are validated:
 - Must be integers
 - Range: 0-10000
 - Invalid values return JSON-RPC error -32602
+
+### String Length Validation
+
+String parameters exceeding 500 characters are rejected. Suspicious SQL patterns are logged (but not blocked since parameterized queries are used).
+
+### Proxy-Aware IP Detection
+
+For clients behind load balancers or CDNs, the gateway reads client IP from:
+1. `X-Forwarded-For` header (first IP in chain)
+2. `X-Real-IP` header
+3. Direct connection IP (fallback)
+
+This ensures IP allowlists work correctly when deployed behind Nginx, Cloudflare, or other proxies.
 
 ### Permissions
 

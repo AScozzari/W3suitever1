@@ -90,6 +90,19 @@ function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
 
+function getClientIpFromRequest(req: Request): string {
+  // Handle proxy headers (X-Forwarded-For, X-Real-IP) for clients behind load balancers/CDNs
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') {
+    // X-Forwarded-For can contain multiple IPs; take the first (original client)
+    const firstIp = forwarded.split(',')[0].trim();
+    if (firstIp) return firstIp;
+  }
+  const realIp = req.headers['x-real-ip'];
+  if (typeof realIp === 'string') return realIp;
+  return req.ip || req.socket.remoteAddress || '';
+}
+
 async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: NextFunction) {
   const startTime = Date.now();
   
@@ -147,7 +160,8 @@ async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: 
     }
     
     if (keyRecord.allowedIps && keyRecord.allowedIps.length > 0) {
-      const clientIp = req.ip || req.socket.remoteAddress || '';
+      // Use proxy-aware IP detection for allowlist checks
+      const clientIp = getClientIpFromRequest(req);
       if (!keyRecord.allowedIps.includes(clientIp)) {
         logger.warn(`🔑 [MCP-GATEWAY] IP not allowed: ${clientIp} for key ${keyRecord.name}`);
         return res.status(403).json({ error: 'IP address not allowed' });
@@ -220,7 +234,7 @@ async function logMcpUsage(
       errorCode,
       errorMessage,
       workflowInstanceId,
-      clientIp: req.ip || req.socket.remoteAddress,
+      clientIp: getClientIpFromRequest(req),
       userAgent: req.headers['user-agent'],
     });
   } catch (error) {
@@ -754,6 +768,19 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
         }
       }
       
+      // SECURITY: Validate string fields don't contain SQL-risky patterns
+      // Even though we use parameterized queries, this provides defense-in-depth
+      const sqlRiskyPatterns = /(['";]--|\bUNION\b|\bSELECT\b|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bEXEC\b)/i;
+      for (const [key, val] of Object.entries(normalizedArgs)) {
+        if (typeof val === 'string' && val.length > 500) {
+          return res.json({ jsonrpc: '2.0', id, error: { code: -32602, message: `Parameter ${key} exceeds max length` } });
+        }
+        // Note: We only log suspicious patterns, not block them, since parameterized queries handle safety
+        if (typeof val === 'string' && sqlRiskyPatterns.test(val)) {
+          logger.warn(`[MCP-SSE] Suspicious pattern in parameter ${key}`, { value: val.substring(0, 50) });
+        }
+      }
+      
       // Process Handlebars-style conditionals: {{#if varName}}...{{/if}}
       sqlQuery = sqlQuery.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, varName, content) => {
         return normalizedArgs[varName] !== undefined && normalizedArgs[varName] !== '' ? content : '';
@@ -790,7 +817,22 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
         
         await logMcpUsage(req, toolName, null, '/sse', 200, true, Date.now() - startTime);
         
-        return res.json({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(result.rows || [], null, 2) }] } });
+        // MCP-compliant response with both text (for Claude) and structured data (for n8n/Zapier)
+        const rows = result.rows || [];
+        return res.json({ 
+          jsonrpc: '2.0', 
+          id, 
+          result: { 
+            content: [{ type: 'text', text: JSON.stringify(rows) }],
+            // Extended: structured data for programmatic access (n8n, Zapier)
+            data: rows,
+            meta: {
+              rowCount: rows.length,
+              tool: toolName,
+              executedAt: new Date().toISOString()
+            }
+          } 
+        });
       } finally {
         client.release();
       }
