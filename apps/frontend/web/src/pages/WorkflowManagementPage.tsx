@@ -33,6 +33,7 @@ import { WorkflowTestResultDialog } from '../components/WorkflowTestResultDialog
 import { getActionTagLabel } from '@/lib/action-tags';
 import '../styles/workflow-builder.css';
 import { ActionManagementContent } from './ActionManagementPage';
+import { ActionBuilderTab } from '@/components/settings/ActionBuilderTab';
 import CoverageDashboardV2 from '../components/CoverageDashboardV2';
 import { 
   Play, 
@@ -137,7 +138,7 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const [selectedInstanceName, setSelectedInstanceName] = useState<string>('');
   
   // 🎯 Teams state management  
-  const [teamsSubView, setTeamsSubView] = useState<'list' | 'coverage' | 'actions'>('list');
+  const [teamsSubView, setTeamsSubView] = useState<'list' | 'coverage' | 'actions' | 'builder'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeamDepartment, setSelectedTeamDepartment] = useState<string>('all');
   const [selectedTeamType, setSelectedTeamType] = useState<string>('all');
@@ -1515,6 +1516,17 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                   <Settings className="h-4 w-4 mr-2" />
                   Action Management
                 </Button>
+                <Button
+                  variant={teamsSubView === 'builder' ? 'default' : 'outline'}
+                  onClick={() => setTeamsSubView('builder')}
+                  className={teamsSubView === 'builder' 
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white' 
+                    : 'hover:bg-gray-100'}
+                  data-testid="tab-action-builder"
+                >
+                  <Workflow className="h-4 w-4 mr-2" />
+                  Action Builder
+                </Button>
               </div>
 
               {/* 🎯 Teams List View */}
@@ -1847,6 +1859,11 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
               {/* 🎯 Action Management View */}
               {teamsSubView === 'actions' && (
                 <ActionManagementContent />
+              )}
+
+              {/* 🎯 Action Builder View - Custom MCP Actions */}
+              {teamsSubView === 'builder' && (
+                <ActionBuilderTab />
               )}
 
               {/* 🎯 Create/Edit Team Modal */}
