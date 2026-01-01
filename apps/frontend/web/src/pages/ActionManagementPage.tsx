@@ -60,6 +60,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { Wand2 } from 'lucide-react';
+import { ActionBuilderTab } from '@/components/settings/ActionBuilderTab';
 
 const DEPARTMENTS = {
   'hr': { icon: Users, label: 'Human Resources', color: 'bg-purple-500', textColor: 'text-purple-700', description: 'Ferie, permessi, congedi' },
