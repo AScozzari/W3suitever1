@@ -86,8 +86,8 @@ interface ActionDefinition {
   id: string;
   department: string;
   actionId: string;
-  name: string;
-  nameEn: string;
+  actionName: string;
+  actionCategory: string;
   description?: string;
   icon?: string;
   color?: string;
@@ -252,8 +252,8 @@ export function ActionManagementContent() {
   }).sort((a, b) => a.definition.displayOrder - b.definition.displayOrder);
 
   const filteredActions = mergedActions.filter(action => 
-    action.definition.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    action.definition.actionId.toLowerCase().includes(searchQuery.toLowerCase())
+    (action.definition.actionName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (action.definition.actionId || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const isLoading = definitionsLoading || actionsLoading;
@@ -490,7 +490,7 @@ export function ActionManagementContent() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{definition.name}</p>
+                              <p className="font-medium">{definition.actionName}</p>
                               <p className="text-xs text-gray-500">{definition.actionId}</p>
                             </div>
                           </TableCell>
@@ -567,7 +567,7 @@ export function ActionManagementContent() {
                                     tenantId: '',
                                     department: definition.department as keyof typeof DEPARTMENTS,
                                     actionId: definition.actionId,
-                                    actionName: definition.name,
+                                    actionName: definition.actionName,
                                     description: definition.description || '',
                                     requiresApproval: definition.defaultRequiresApproval,
                                     flowType: definition.defaultFlowType,
