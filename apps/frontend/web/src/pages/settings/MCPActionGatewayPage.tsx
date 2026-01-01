@@ -256,6 +256,7 @@ interface ActionConfiguration {
   flowType: 'none' | 'default' | 'workflow';
   isActive: boolean;
   mcpExposed: boolean;
+  actionCategory?: 'operative' | 'query';
 }
 
 interface GatewayStats {
@@ -881,6 +882,9 @@ function ToolsCatalogTab({
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
+                                  <Badge className={`text-xs border-0 ${action.actionCategory === 'operative' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
+                                    {action.actionCategory === 'operative' ? 'Operativa' : 'MCP Query'}
+                                  </Badge>
                                   {action.flowType !== 'none' && (
                                     <Badge variant="outline" className="text-xs">
                                       {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}

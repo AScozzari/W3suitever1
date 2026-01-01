@@ -260,6 +260,7 @@ router.get('/tools', requirePermission('settings.read'), async (req: Request, re
         department: actionConfigurations.department,
         flowType: actionConfigurations.flowType,
         isActive: actionConfigurations.isActive,
+        actionCategory: actionConfigurations.actionCategory,
       })
       .from(actionConfigurations)
       .where(
@@ -292,6 +293,7 @@ router.get('/tools', requirePermission('settings.read'), async (req: Request, re
         departmentId: action.department,
         flowType: action.flowType,
         isActive: action.isActive,
+        actionCategory: action.actionCategory || 'operative', // operative or query
         mcpExposed: settings?.exposedViaMcp || false,
         customToolName: settings?.customToolName || null,
         customToolDescription: settings?.customToolDescription || null,
