@@ -2292,6 +2292,67 @@ export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).
 export type InsertShiftAssignment = z.infer<typeof insertShiftAssignmentSchema>;
 export type ShiftAssignment = typeof shiftAssignments.$inferSelect;
 
+// ==================== SHIFT ASSIGNMENT HISTORY ====================
+// Tracks all changes to shift assignments for audit and rollback
+export const shiftAssignmentHistory = w3suiteSchema.table("shift_assignment_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  assignmentId: varchar("assignment_id").notNull().references(() => shiftAssignments.id, { onDelete: 'cascade' }),
+  
+  // What changed
+  changeType: varchar("change_type", { length: 30 }).notNull(), 
+  // created, status_changed, user_reassigned, shift_changed, override_applied, cancelled, restored
+  
+  // Previous and new values
+  previousUserId: varchar("previous_user_id").references(() => users.id),
+  newUserId: varchar("new_user_id").references(() => users.id),
+  previousShiftId: varchar("previous_shift_id"),
+  newShiftId: varchar("new_shift_id"),
+  previousStatus: varchar("previous_status", { length: 20 }),
+  newStatus: varchar("new_status", { length: 20 }),
+  
+  // Context
+  reason: text("reason"), // Why the change was made
+  relatedRequestId: uuid("related_request_id").references(() => universalRequests.id), // If change due to HR request
+  
+  // Store context (derived from shift or explicit)
+  storeId: uuid("store_id").references(() => stores.id),
+  shiftDate: date("shift_date"), // Denormalized for fast querying
+  
+  // Who and when
+  changedBy: varchar("changed_by").notNull().references(() => users.id),
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
+  
+  // Full snapshot for audit
+  snapshotBefore: jsonb("snapshot_before"), // Full assignment state before change
+  snapshotAfter: jsonb("snapshot_after"), // Full assignment state after change
+}, (table) => [
+  index("shift_assignment_history_tenant_idx").on(table.tenantId),
+  index("shift_assignment_history_assignment_idx").on(table.assignmentId),
+  index("shift_assignment_history_user_idx").on(table.newUserId),
+  index("shift_assignment_history_change_type_idx").on(table.changeType),
+  index("shift_assignment_history_date_idx").on(table.shiftDate),
+  index("shift_assignment_history_changed_at_idx").on(table.changedAt),
+  index("shift_assignment_history_request_idx").on(table.relatedRequestId),
+]);
+
+export const insertShiftAssignmentHistorySchema = createInsertSchema(shiftAssignmentHistory).omit({ 
+  id: true, 
+  changedAt: true 
+});
+export type InsertShiftAssignmentHistory = z.infer<typeof insertShiftAssignmentHistorySchema>;
+export type ShiftAssignmentHistory = typeof shiftAssignmentHistory.$inferSelect;
+
+export const shiftAssignmentHistoryRelations = relations(shiftAssignmentHistory, ({ one }) => ({
+  tenant: one(tenants, { fields: [shiftAssignmentHistory.tenantId], references: [tenants.id] }),
+  assignment: one(shiftAssignments, { fields: [shiftAssignmentHistory.assignmentId], references: [shiftAssignments.id] }),
+  previousUser: one(users, { fields: [shiftAssignmentHistory.previousUserId], references: [users.id] }),
+  newUser: one(users, { fields: [shiftAssignmentHistory.newUserId], references: [users.id] }),
+  changedByUser: one(users, { fields: [shiftAssignmentHistory.changedBy], references: [users.id] }),
+  store: one(stores, { fields: [shiftAssignmentHistory.storeId], references: [stores.id] }),
+  relatedRequest: one(universalRequests, { fields: [shiftAssignmentHistory.relatedRequestId], references: [universalRequests.id] }),
+}));
+
 // ==================== SHIFT ATTENDANCE ====================
 // Enhanced shift compliance and attendance matching system
 export const shiftAttendance = w3suiteSchema.table("shift_attendance", {

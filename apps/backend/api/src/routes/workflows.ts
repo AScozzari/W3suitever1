@@ -50,6 +50,7 @@ import {
 import { WorkflowAIConnector } from '../services/workflow-ai-connector';
 import { AIRegistryService } from '../services/ai-registry-service';
 import { RequestTriggerService } from '../services/request-trigger-service';
+import { HrImpactService } from '../services/hr-impact-service';
 import { DEPARTMENT_ACTION_TAGS, ALL_DEPARTMENTS, getActionTagsForDepartment, getAllActionTags } from '../lib/action-tags';
 
 // Initialize Workflow Engine
@@ -1022,6 +1023,169 @@ router.post('/requests', rbacMiddleware, async (req, res) => {
 
   } catch (error) {
     logger.error('Error creating universal request', { error, tenantId: req.user?.tenantId });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== HR IMPACT ANALYSIS ====================
+
+/**
+ * POST /api/workflows/requests/preview-impacts
+ * Preview shift impacts before creating an HR request
+ * Shows which shifts will be affected by the requested leave dates
+ */
+router.post('/requests/preview-impacts', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId || !userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant or user context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const impactPreviewSchema = z.object({
+      startDate: z.string().min(1, 'Start date is required'),
+      endDate: z.string().optional(),
+      requesterId: z.string().optional()
+    });
+
+    const validation = impactPreviewSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => i.message).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { startDate, endDate, requesterId } = validation.data;
+    const targetUserId = requesterId || userId;
+    
+    const startDateObj = new Date(startDate);
+    const endDateObj = endDate ? new Date(endDate) : startDateObj;
+
+    // Analyze impacts
+    const impacts = await HrImpactService.analyzeImpacts(
+      tenantId,
+      targetUserId,
+      startDateObj,
+      endDateObj
+    );
+
+    // Get store derivation info
+    const storeInfo = await HrImpactService.deriveStoreForRequest(
+      tenantId,
+      targetUserId,
+      startDateObj
+    );
+
+    res.json({
+      success: true,
+      data: {
+        ...impacts,
+        derivedStore: storeInfo
+      },
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof impacts & { derivedStore: typeof storeInfo }>);
+
+  } catch (error) {
+    logger.error('Error previewing HR request impacts', { error, tenantId: req.user?.tenantId });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
+ * GET /api/workflows/requests/:id/impacts
+ * Get calculated impacts for an existing request
+ */
+router.get('/requests/:id/impacts', rbacMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const requestId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const [request] = await db
+      .select()
+      .from(universalRequests)
+      .where(and(
+        eq(universalRequests.id, requestId),
+        eq(universalRequests.tenantId, tenantId)
+      ));
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        error: 'Request not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // If impacts already calculated, return them
+    const [existingImpact] = await db
+      .select()
+      .from(hrRequestImpacts)
+      .where(eq(hrRequestImpacts.requestId, requestId));
+
+    if (existingImpact) {
+      return res.json({
+        success: true,
+        data: existingImpact,
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse<typeof existingImpact>);
+    }
+
+    // Calculate fresh impacts
+    if (!request.startDate) {
+      return res.json({
+        success: true,
+        data: {
+          hasImpact: false,
+          totalShiftsImpacted: 0,
+          totalHoursImpacted: 0,
+          impacts: [],
+          severity: 'none',
+          summary: 'No date range specified for this request',
+          warnings: []
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const impacts = await HrImpactService.analyzeImpacts(
+      tenantId,
+      request.requesterId,
+      new Date(request.startDate),
+      request.endDate ? new Date(request.endDate) : new Date(request.startDate)
+    );
+
+    res.json({
+      success: true,
+      data: impacts,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof impacts>);
+
+  } catch (error) {
+    logger.error('Error getting request impacts', { error, requestId: req.params.id });
     res.status(500).json({
       success: false,
       error: 'Internal server error',

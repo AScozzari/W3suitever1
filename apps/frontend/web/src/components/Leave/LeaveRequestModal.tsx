@@ -16,6 +16,8 @@ import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LeaveRequest } from '@/services/leaveService';
 import { leaveService } from '@/services/leaveService';
+import { ShiftImpactAlert } from '@/components/hr/ShiftImpactAlert';
+import { useTenantContext } from '@/context/TenantContext';
 import { 
   useCreateLeaveRequest, 
   useUpdateLeaveRequest, 
@@ -32,6 +34,8 @@ interface LeaveRequestModalProps {
 
 export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) {
   const isEditing = !!request;
+  const { tenant } = useTenantContext();
+  const tenantSlug = tenant?.code || 'staging';
   
   // Form state
   const [formData, setFormData] = useState<{
@@ -239,6 +243,15 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
               </div>
             )}
           </div>
+          
+          {/* Shift Impact Alert - Shows affected shifts */}
+          {formData.startDate && (
+            <ShiftImpactAlert
+              startDate={formData.startDate}
+              endDate={formData.endDate}
+              tenantSlug={tenantSlug}
+            />
+          )}
           
           {/* Reason (for specific types) */}
           {['personal', 'other', 'unpaid'].includes(formData.leaveType) && (
