@@ -1147,6 +1147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath === '/utm-sources' || // UTM parameters are public reference data
         apiPath === '/utm-mediums' || // UTM parameters are public reference data
         apiPath.startsWith('/action-definitions') || // Action definitions are global evergreen data
+        apiPath.startsWith('/mcp-gateway/sse') || // MCP SSE uses Bearer token auth
+        apiPath.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth
         apiPath === '/' // Skip auth for /api/ root endpoint
       ) {
         const reason = isBrowserRequest ? 'browser page request' : 'static/public asset';
@@ -1268,7 +1270,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath === '/tenants/resolve' ||
         apiPath === '/utm-sources' ||
         apiPath === '/utm-mediums' ||
-        apiPath.startsWith('/action-definitions') // Action definitions are global evergreen data
+        apiPath.startsWith('/action-definitions') || // Action definitions are global evergreen data
+        apiPath.startsWith('/mcp-gateway/sse') || // MCP SSE uses Bearer token auth
+        apiPath.startsWith('/mcp-public/') // MCP Public gateway uses API key auth
       ) {
         console.log(`[OAUTH2-AUTH] ⏭️  Skipping auth for public endpoint: ${apiPath}`);
         return next();
@@ -1353,6 +1357,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.path.startsWith('/auth/') || 
         req.path.startsWith('/public/') ||
         req.path.startsWith('/mcp/oauth/') || // OAuth endpoints use query params, not headers
+        req.path.startsWith('/mcp-gateway/sse') || // MCP SSE uses Bearer token auth internally
+        req.path.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth
         req.path === '/webhooks' || req.path.startsWith('/webhooks/') || // Webhooks identify tenant from payload, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||
@@ -1471,6 +1477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== MCP ACTION GATEWAY ROUTES ====================
   // Exposes actions as MCP tools for external integrations (n8n, Claude, Zapier)
+  // NOTE: SSE endpoints for Claude are in /api/mcp-public/sse (no tenant middleware)
   app.use('/api/mcp-gateway', tenantMiddleware, rbacMiddleware, mcpActionGatewayRoutes);
   
   // ==================== MCP PUBLIC GATEWAY ROUTES ====================

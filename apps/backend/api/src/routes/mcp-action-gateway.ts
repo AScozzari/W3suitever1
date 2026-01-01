@@ -41,6 +41,332 @@ function hashApiKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
 
+// ==================== MCP SSE TRANSPORT ENDPOINTS ====================
+
+const sseConnections = new Map<string, Response>();
+
+async function validateBearerToken(authHeader: string | undefined): Promise<{ valid: boolean; tenantId?: string; keyId?: string; error?: string }> {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { valid: false, error: 'Missing or invalid Authorization header' };
+  }
+  
+  const token = authHeader.substring(7);
+  const keyHash = hashApiKey(token);
+  
+  const [apiKey] = await db
+    .select({
+      id: mcpApiKeys.id,
+      tenantId: mcpApiKeys.tenantId,
+      isActive: mcpApiKeys.isActive,
+      expiresAt: mcpApiKeys.expiresAt,
+    })
+    .from(mcpApiKeys)
+    .where(eq(mcpApiKeys.keyHash, keyHash))
+    .limit(1);
+  
+  if (!apiKey) {
+    return { valid: false, error: 'Invalid API key' };
+  }
+  
+  if (!apiKey.isActive) {
+    return { valid: false, error: 'API key is inactive' };
+  }
+  
+  if (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date()) {
+    return { valid: false, error: 'API key has expired' };
+  }
+  
+  return { valid: true, tenantId: apiKey.tenantId, keyId: apiKey.id };
+}
+
+async function handleSseGet(req: Request, res: Response) {
+  const authHeader = req.headers.authorization;
+  const tenantIdHeader = req.headers['x-tenant-id'] as string;
+  
+  const validation = await validateBearerToken(authHeader);
+  
+  if (!validation.valid) {
+    logger.warn(`[MCP-SSE] Auth failed: ${validation.error}`);
+    return res.status(401).json({ error: validation.error });
+  }
+  
+  const tenantId = tenantIdHeader || validation.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant ID required' });
+  }
+  
+  await setTenantContext(tenantId);
+  
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  
+  const connectionId = `${validation.keyId}-${Date.now()}`;
+  sseConnections.set(connectionId, res);
+  
+  logger.info(`[MCP-SSE] New connection: ${connectionId} for tenant ${tenantId}`);
+  
+  const actions = await db
+    .select({
+      id: actionConfigurations.id,
+      actionId: actionConfigurations.actionId,
+      actionName: actionConfigurations.actionName,
+      description: actionConfigurations.description,
+      department: actionConfigurations.department,
+      mcpActionType: actionConfigurations.mcpActionType,
+      mcpInputSchema: actionConfigurations.mcpInputSchema,
+    })
+    .from(actionConfigurations)
+    .innerJoin(mcpToolPermissions, and(
+      eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
+      eq(mcpToolPermissions.apiKeyId, validation.keyId!),
+      eq(mcpToolPermissions.isEnabled, true)
+    ))
+    .where(and(
+      eq(actionConfigurations.tenantId, tenantId),
+      eq(actionConfigurations.isActive, true),
+      eq(actionConfigurations.actionCategory, 'query')
+    ));
+  
+  const tools = actions.map(action => ({
+    name: action.actionId,
+    description: action.description || action.actionName,
+    inputSchema: action.mcpInputSchema || { type: 'object', properties: {}, required: [] },
+  }));
+  
+  const serverInfo = {
+    jsonrpc: '2.0',
+    method: 'notifications/initialized',
+    params: {
+      protocolVersion: '2024-11-05',
+      capabilities: {
+        tools: { listChanged: false },
+      },
+      serverInfo: {
+        name: 'w3suite-mcp',
+        version: '1.0.0',
+      },
+    },
+  };
+  
+  res.write(`data: ${JSON.stringify(serverInfo)}\n\n`);
+  
+  const toolsList = {
+    jsonrpc: '2.0',
+    method: 'notifications/tools/list_changed',
+    params: { tools },
+  };
+  res.write(`data: ${JSON.stringify(toolsList)}\n\n`);
+  
+  const keepAlive = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n');
+    } catch {
+      clearInterval(keepAlive);
+    }
+  }, 30000);
+  
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    sseConnections.delete(connectionId);
+    logger.info(`[MCP-SSE] Connection closed: ${connectionId}`);
+  });
+}
+
+async function handleSsePost(req: Request, res: Response) {
+  const authHeader = req.headers.authorization;
+  const tenantIdHeader = req.headers['x-tenant-id'] as string;
+  
+  const validation = await validateBearerToken(authHeader);
+  
+  if (!validation.valid) {
+    return res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: validation.error } });
+  }
+  
+  const tenantId = tenantIdHeader || validation.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ jsonrpc: '2.0', error: { code: -32002, message: 'Tenant ID required' } });
+  }
+  
+  await setTenantContext(tenantId);
+  
+  const { jsonrpc, id, method, params } = req.body;
+  
+  logger.info(`[MCP-SSE] RPC Request: ${method}`, { id, params });
+  
+  try {
+    if (method === 'initialize') {
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: {
+            tools: { listChanged: false },
+          },
+          serverInfo: {
+            name: 'w3suite-mcp',
+            version: '1.0.0',
+          },
+        },
+      });
+    }
+    
+    if (method === 'tools/list') {
+      const actions = await db
+        .select({
+          id: actionConfigurations.id,
+          actionId: actionConfigurations.actionId,
+          actionName: actionConfigurations.actionName,
+          description: actionConfigurations.description,
+          mcpInputSchema: actionConfigurations.mcpInputSchema,
+        })
+        .from(actionConfigurations)
+        .innerJoin(mcpToolPermissions, and(
+          eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
+          eq(mcpToolPermissions.apiKeyId, validation.keyId!),
+          eq(mcpToolPermissions.isEnabled, true)
+        ))
+        .where(and(
+          eq(actionConfigurations.tenantId, tenantId),
+          eq(actionConfigurations.isActive, true),
+          eq(actionConfigurations.actionCategory, 'query')
+        ));
+      
+      const tools = actions.map(action => ({
+        name: action.actionId,
+        description: action.description || action.actionName,
+        inputSchema: action.mcpInputSchema || { type: 'object', properties: {}, required: [] },
+      }));
+      
+      return res.json({ jsonrpc: '2.0', id, result: { tools } });
+    }
+    
+    if (method === 'tools/call') {
+      const { name: toolName, arguments: toolArgs } = params;
+      
+      const [action] = await db
+        .select({
+          id: actionConfigurations.id,
+          actionId: actionConfigurations.actionId,
+          queryTemplateId: actionConfigurations.queryTemplateId,
+        })
+        .from(actionConfigurations)
+        .innerJoin(mcpToolPermissions, and(
+          eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
+          eq(mcpToolPermissions.apiKeyId, validation.keyId!),
+          eq(mcpToolPermissions.isEnabled, true)
+        ))
+        .where(and(
+          eq(actionConfigurations.actionId, toolName),
+          eq(actionConfigurations.tenantId, tenantId),
+          eq(actionConfigurations.isActive, true)
+        ))
+        .limit(1);
+      
+      if (!action) {
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          error: { code: -32601, message: `Tool not found: ${toolName}` },
+        });
+      }
+      
+      if (!action.queryTemplateId) {
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          error: { code: -32603, message: 'Tool has no query template configured' },
+        });
+      }
+      
+      const [template] = await db
+        .select()
+        .from(mcpQueryTemplates)
+        .where(eq(mcpQueryTemplates.id, action.queryTemplateId))
+        .limit(1);
+      
+      if (!template) {
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          error: { code: -32603, message: 'Query template not found' },
+        });
+      }
+      
+      let sqlQuery = template.sqlTemplate;
+      const queryParams: string[] = [];
+      let paramIndex = 1;
+      
+      sqlQuery = sqlQuery.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+        if (toolArgs && toolArgs[varName] !== undefined) {
+          queryParams.push(String(toolArgs[varName]));
+          return `$${paramIndex++}`;
+        }
+        return match;
+      });
+      
+      const startTime = Date.now();
+      const result = await db.execute(sql.raw(`${sqlQuery}`, queryParams));
+      const responseTime = Date.now() - startTime;
+      
+      await db.insert(mcpUsageLogs).values({
+        tenantId,
+        apiKeyId: validation.keyId!,
+        actionCode: toolName,
+        inputParams: toolArgs || {},
+        success: true,
+        responseTime,
+        clientIp: req.ip || 'unknown',
+      });
+      
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [{ type: 'text', text: JSON.stringify(result.rows || result, null, 2) }],
+        },
+      });
+    }
+    
+    if (method === 'notifications/initialized') {
+      return res.json({ jsonrpc: '2.0', id, result: {} });
+    }
+    
+    return res.json({
+      jsonrpc: '2.0',
+      id,
+      error: { code: -32601, message: `Method not found: ${method}` },
+    });
+    
+  } catch (error: any) {
+    logger.error(`[MCP-SSE] Error executing ${method}:`, error);
+    
+    await db.insert(mcpUsageLogs).values({
+      tenantId,
+      apiKeyId: validation.keyId!,
+      actionCode: params?.name || method,
+      inputParams: params || {},
+      success: false,
+      errorMessage: error.message,
+      clientIp: req.ip || 'unknown',
+    });
+    
+    return res.json({
+      jsonrpc: '2.0',
+      id,
+      error: { code: -32603, message: error.message },
+    });
+  }
+}
+
+router.get('/sse', handleSseGet);
+router.post('/sse', handleSsePost);
+router.get('/', handleSseGet);
+router.post('/', handleSsePost);
+
 // ==================== API KEYS MANAGEMENT ====================
 
 router.get('/keys', requirePermission('settings.read'), async (req: Request, res: Response) => {

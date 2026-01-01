@@ -1,0 +1,42 @@
+Windows PowerShell
+Copyright (C) Microsoft Corporation. Tutti i diritti riservati.
+
+Installa la versione più recente di PowerShell per nuove funzionalità e miglioramenti. https://aka.ms/PSWindows
+
+PS C:\Users\a.scozzari> Remove-Item -Recurse -Force "$env:USERPROFILE\.mcp-auth"
+PS C:\Users\a.scozzari> npx -p mcp-remote@latest mcp-remote-client https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/sse
+[11104] Using automatically selected callback port: 25107
+[11104] Discovering OAuth server configuration...
+[11104] [11104] Connecting to remote server: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/sse
+[11104] Using transport strategy: http-first
+[11104] Received error (status unknown): HTTP 404: Invalid OAuth error response: SyntaxError: Unexpected end of JSON input. Raw body:
+[11104] Recursively reconnecting for reason: falling-back-to-alternate-transport
+[11104] [11104] Connecting to remote server: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/mcp-gateway/sse
+[11104] Using transport strategy: sse-only
+[11104] Connection error: ServerError: HTTP 404: Invalid OAuth error response: SyntaxError: Unexpected end of JSON input. Raw body:
+    at parseErrorResponse (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17144:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async registerClient (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17565:11)
+    at async authInternal (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17200:31)
+    at async auth (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17150:12)
+    at async SSEClientTransport._authThenStart (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:18023:16)
+    at async SSEClientTransport.start (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:18120:12)
+    at async Client.connect (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:16048:5)
+    at async Client.connect (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:16558:5)
+    at async connectToRemoteServer (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:19131:7) {
+  errorUri: undefined
+}
+[11104] Fatal error: ServerError: HTTP 404: Invalid OAuth error response: SyntaxError: Unexpected end of JSON input. Raw body:
+    at parseErrorResponse (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17144:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async registerClient (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17565:11)
+    at async authInternal (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17200:31)
+    at async auth (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:17150:12)
+    at async SSEClientTransport._authThenStart (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:18023:16)
+    at async SSEClientTransport.start (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:18120:12)
+    at async Client.connect (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:16048:5)
+    at async Client.connect (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:16558:5)
+    at async connectToRemoteServer (file:///C:/Users/a.scozzari/AppData/Local/npm-cache/_npx/1a3c4333f3a90708/node_modules/mcp-remote/dist/chunk-F76MHFRJ.js:19131:7) {
+  errorUri: undefined
+}
+PS C:\Users\a.scozzari>
