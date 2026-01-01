@@ -769,6 +769,7 @@ router.post('/custom-actions', requirePermission('settings.write'), async (req: 
         name,
         description,
         department,
+        actionCategory: 'query', // Custom MCP actions are query-type
         isCustomAction: true,
         mcpActionType: actionType,
         queryTemplateId,
@@ -917,6 +918,7 @@ router.post('/custom-actions/:id/duplicate', requirePermission('settings.write')
         name: newName,
         description: original.description,
         department: original.department,
+        actionCategory: original.actionCategory || 'query', // Preserve category
         isCustomAction: true,
         mcpActionType: original.mcpActionType,
         queryTemplateId: original.queryTemplateId,

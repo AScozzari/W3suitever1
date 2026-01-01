@@ -3849,6 +3849,12 @@ export const teamScopeEnum = pgEnum('team_scope', [
   'specific'   // Applicabile solo a team specifici
 ]);
 
+// Action Category Enum - Categoria azione (operative = team+workflow, query = solo MCP)
+export const actionCategoryEnum = pgEnum('action_category', [
+  'operative',  // Azioni operative/gestionali con team e workflow
+  'query'       // Azioni query MCP per interrogare/modificare dati
+]);
+
 // Action Configurations - Master list azioni per dipartimento con configurazione flusso
 export const actionConfigurations = w3suiteSchema.table("action_configurations", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -3859,6 +3865,9 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   actionId: varchar("action_id", { length: 100 }).notNull(), // 'richiesta_ferie', 'reso_merce', 'rimborso_spese'
   actionName: varchar("action_name", { length: 200 }).notNull(), // Nome leggibile: 'Richiesta Ferie'
   description: text("description"), // Descrizione dettagliata dell'azione
+  
+  // 🎯 CATEGORIA AZIONE (operative = team+workflow, query = solo MCP)
+  actionCategory: actionCategoryEnum("action_category").default('operative').notNull(),
   
   // 🎯 CONFIGURAZIONE FLUSSO APPROVAZIONE
   requiresApproval: boolean("requires_approval").default(false).notNull(), // Richiede approvazione?
@@ -3900,6 +3909,7 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   index("action_configurations_flow_type_idx").on(table.flowType),
   index("action_configurations_custom_idx").on(table.isCustomAction),
   index("action_configurations_mcp_type_idx").on(table.mcpActionType),
+  index("action_configurations_category_idx").on(table.actionCategory),
   // 🎯 UNIQUE: Una sola configurazione per azione per dipartimento per tenant
   uniqueIndex("action_configurations_unique").on(table.tenantId, table.department, table.actionId),
 ]);

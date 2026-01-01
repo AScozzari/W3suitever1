@@ -170,10 +170,12 @@ export function ActionManagementContent() {
   });
 
   const { data: actionsData, isLoading: actionsLoading } = useQuery({
-    queryKey: ['/api/action-configurations', selectedDepartment],
+    queryKey: ['/api/action-configurations', selectedDepartment, 'operative'],
     queryFn: async () => {
-      const params = selectedDepartment !== 'all' ? `?department=${selectedDepartment}` : '';
-      return await apiRequest(`/api/action-configurations${params}`);
+      // Action Management mostra SOLO azioni operative (team+workflow)
+      const baseParams = 'actionCategory=operative';
+      const deptParams = selectedDepartment !== 'all' ? `&department=${selectedDepartment}` : '';
+      return await apiRequest(`/api/action-configurations?${baseParams}${deptParams}`);
     }
   });
 

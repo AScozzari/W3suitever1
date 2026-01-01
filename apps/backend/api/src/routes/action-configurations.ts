@@ -34,7 +34,7 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const tenantId = req.tenant?.id;
-    const { department } = req.query;
+    const { department, actionCategory } = req.query;
 
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID required' });
@@ -48,6 +48,7 @@ router.get('/', async (req, res) => {
         actionId: actionConfigurations.actionId,
         actionName: actionConfigurations.actionName,
         description: actionConfigurations.description,
+        actionCategory: actionConfigurations.actionCategory,
         requiresApproval: actionConfigurations.requiresApproval,
         flowType: actionConfigurations.flowType,
         workflowTemplateId: actionConfigurations.workflowTemplateId,
@@ -67,10 +68,14 @@ router.get('/', async (req, res) => {
 
     const actions = await query;
 
-    // Se richiesto un department specifico, filtra
-    const filteredActions = department 
-      ? actions.filter(a => a.department === department)
-      : actions;
+    // Filtra per department e/o actionCategory
+    let filteredActions = actions;
+    if (department) {
+      filteredActions = filteredActions.filter(a => a.department === department);
+    }
+    if (actionCategory && (actionCategory === 'operative' || actionCategory === 'query')) {
+      filteredActions = filteredActions.filter(a => a.actionCategory === actionCategory);
+    }
 
     // Extract assignments from metadata and add as top-level field
     const actionsWithAssignments = filteredActions.map(action => {
