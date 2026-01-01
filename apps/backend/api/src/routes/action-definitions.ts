@@ -17,7 +17,7 @@ const router = Router();
 // ==================== GET ALL ACTION DEFINITIONS ====================
 router.get('/', async (req, res) => {
   try {
-    const { department, activeOnly } = req.query;
+    const { department, activeOnly, category, includeMcp } = req.query;
 
     let query = db
       .select()
@@ -31,6 +31,18 @@ router.get('/', async (req, res) => {
     if (department && department !== 'all') {
       filteredActions = allActions.filter(a => a.department === department);
     }
+
+    // Filter by action category (operative, query, etc.)
+    // - category=operative → solo azioni operative (per Action Management)
+    // - category=all or includeMcp=true → tutte le azioni (per Action Builder / MCP Catalog)
+    // - Default: solo operative per retrocompatibilità
+    if (category && category !== 'all') {
+      filteredActions = filteredActions.filter(a => a.actionCategory === category);
+    } else if (includeMcp !== 'true' && !category) {
+      // Default: solo operative per retrocompatibilità con Action Management
+      filteredActions = filteredActions.filter(a => a.actionCategory === 'operative');
+    }
+    // Se includeMcp=true o category=all, mostra tutte
 
     // Filter by active status if specified
     if (activeOnly === 'true') {
