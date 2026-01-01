@@ -1,6 +1,7 @@
 /**
  * Action Builder Tab - Visual wizard for creating custom MCP actions
- * 4-step process: Department → Action Type → Template → Variables
+ * 4-step process: Info (Nome/Desc/Categoria) → Dipartimento → Template → Variabili
+ * Struttura gerarchica: Dipartimento → Templates (figli) → Variabili (figlie del template)
  */
 
 import { useState } from 'react';
@@ -221,9 +222,11 @@ export function ActionBuilderTab() {
     setActionCategory('query');
   };
 
-  const filteredTemplates = queryTemplates.filter(t => 
-    t.department === selectedDepartment && t.actionType === selectedActionType
-  );
+  // Filtra templates per dipartimento (struttura gerarchica)
+  const filteredTemplates = queryTemplates.filter(t => t.department === selectedDepartment);
+  
+  // Estrai dipartimenti che hanno almeno un template disponibile
+  const availableDepartments = [...new Set(queryTemplates.map(t => t.department))];
 
   const handleCreateAction = () => {
     if (!actionCode || !actionName || !selectedTemplate) {
@@ -412,7 +415,7 @@ export function ActionBuilderTab() {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Progress Steps */}
+          {/* Progress Steps - Nuovo ordine: Info → Dipartimento → Template → Variabili */}
           <div className="flex items-center justify-center gap-2 py-4 border-b">
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center">
@@ -424,8 +427,8 @@ export function ActionBuilderTab() {
                   {s < step ? <Check className="h-4 w-4" /> : s}
                 </div>
                 <span className={`ml-2 text-sm ${s === step ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
-                  {s === 1 && 'Dipartimento'}
-                  {s === 2 && 'Tipo Azione'}
+                  {s === 1 && 'Info Azione'}
+                  {s === 2 && 'Dipartimento'}
                   {s === 3 && 'Template'}
                   {s === 4 && 'Variabili'}
                 </span>
@@ -436,135 +439,15 @@ export function ActionBuilderTab() {
 
           <ScrollArea className="flex-1 py-4">
             <AnimatePresence mode="wait">
-              {/* Step 1: Department Selection */}
+              {/* Step 1: Info Azione (Nome, Descrizione, Categoria) */}
               {step === 1 && (
                 <motion.div
                   key="step1"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="grid grid-cols-3 gap-4 p-4"
-                >
-                  {departments.map(([key, style]) => (
-                    <Card 
-                      key={key}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedDepartment === key ? 'ring-2 ring-orange-500 shadow-md' : ''
-                      }`}
-                      onClick={() => setSelectedDepartment(key)}
-                      data-testid={`dept-${key}`}
-                    >
-                      <CardContent className="p-4 flex flex-col items-center text-center">
-                        <div className={`w-12 h-12 rounded-xl ${style.bgColor} flex items-center justify-center mb-3`}>
-                          <style.icon className={`h-6 w-6 ${style.textColor}`} />
-                        </div>
-                        <h3 className="font-medium text-gray-900">{style.label}</h3>
-                        <p className="text-xs text-gray-500 mt-1">{style.description}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* Step 2: Action Type Selection */}
-              {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="grid grid-cols-2 gap-4 p-4"
-                >
-                  {Object.entries(ACTION_TYPE_CONFIG).map(([key, config]) => (
-                    <Card 
-                      key={key}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        selectedActionType === key ? 'ring-2 ring-orange-500 shadow-md' : ''
-                      }`}
-                      onClick={() => setSelectedActionType(key)}
-                      data-testid={`type-${key}`}
-                    >
-                      <CardContent className="p-6 flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-xl ${config.color} flex items-center justify-center`}>
-                          <config.icon className="h-7 w-7 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{config.label}</h3>
-                          <p className="text-sm text-gray-500">{config.description}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* Step 3: Template Selection */}
-              {step === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4 p-4"
-                >
-                  {filteredTemplates.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Database className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                      <p className="text-gray-500">
-                        Nessun template disponibile per {getDepartmentStyle(selectedDepartment).label} - {selectedActionType.toUpperCase()}
-                      </p>
-                    </div>
-                  ) : (
-                    filteredTemplates.map((template) => (
-                      <Card 
-                        key={template.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          selectedTemplate?.id === template.id ? 'ring-2 ring-orange-500 shadow-md' : ''
-                        }`}
-                        onClick={() => {
-                          setSelectedTemplate(template);
-                          setSelectedVariables([...template.requiredVariables]);
-                          setRequiredVariables([...template.requiredVariables]);
-                        }}
-                        data-testid={`template-${template.id}`}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                              <p className="text-sm text-gray-500 mt-1">{template.description}</p>
-                              <div className="flex items-center gap-2 mt-3">
-                                <Badge variant="outline" className="text-xs">
-                                  {template.availableVariables.length} variabili
-                                </Badge>
-                                {template.requiredVariables.length > 0 && (
-                                  <Badge className="bg-red-100 text-red-700 border-0 text-xs">
-                                    {template.requiredVariables.length} obbligatorie
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            {selectedTemplate?.id === template.id && (
-                              <Check className="h-5 w-5 text-orange-500" />
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </motion.div>
-              )}
-
-              {/* Step 4: Variable Configuration */}
-              {step === 4 && selectedTemplate && (
-                <motion.div
-                  key="step4"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
                   className="space-y-6 p-4"
                 >
-                  {/* Action Details */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="actionCode">Codice Azione *</Label>
@@ -576,6 +459,7 @@ export function ActionBuilderTab() {
                         className="font-mono"
                         data-testid="input-action-code"
                       />
+                      <p className="text-xs text-gray-400 mt-1">Identificativo univoco per MCP</p>
                     </div>
                     <div>
                       <Label htmlFor="actionName">Nome Azione *</Label>
@@ -586,23 +470,25 @@ export function ActionBuilderTab() {
                         placeholder="Es. Verifica Saldo Ferie"
                         data-testid="input-action-name"
                       />
+                      <p className="text-xs text-gray-400 mt-1">Nome descrittivo per l'interfaccia</p>
                     </div>
                   </div>
+                  
                   <div>
                     <Label htmlFor="actionDescription">Descrizione</Label>
                     <Textarea
                       id="actionDescription"
                       value={actionDescription}
                       onChange={(e) => setActionDescription(e.target.value)}
-                      placeholder="Descrizione opzionale dell'azione..."
-                      rows={2}
+                      placeholder="Descrizione dettagliata di cosa fa questa azione..."
+                      rows={3}
                       data-testid="input-action-description"
                     />
                   </div>
 
-                  {/* Action Category Selection */}
+                  {/* Categoria Azione */}
                   <div>
-                    <Label className="mb-3 block">Tipo Azione *</Label>
+                    <Label className="mb-3 block">Categoria Azione *</Label>
                     <div className="grid grid-cols-2 gap-4">
                       <Card 
                         className={`cursor-pointer transition-all ${actionCategory === 'operative' ? 'ring-2 ring-orange-500 bg-orange-50' : 'hover:bg-gray-50'}`}
@@ -613,11 +499,11 @@ export function ActionBuilderTab() {
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${actionCategory === 'operative' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
                             <Users className="h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium text-gray-900">Operativa</p>
-                            <p className="text-xs text-gray-500">Team + Workflow configurabili</p>
+                            <p className="text-xs text-gray-500">Assegnabile a Team + Workflow</p>
                           </div>
-                          {actionCategory === 'operative' && <Check className="h-5 w-5 text-orange-500 ml-auto" />}
+                          {actionCategory === 'operative' && <Check className="h-5 w-5 text-orange-500" />}
                         </CardContent>
                       </Card>
                       <Card 
@@ -629,20 +515,196 @@ export function ActionBuilderTab() {
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${actionCategory === 'query' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
                             <Database className="h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium text-gray-900">MCP Query</p>
                             <p className="text-xs text-gray-500">Solo interrogazione dati</p>
                           </div>
-                          {actionCategory === 'query' && <Check className="h-5 w-5 text-purple-500 ml-auto" />}
+                          {actionCategory === 'query' && <Check className="h-5 w-5 text-purple-500" />}
                         </CardContent>
                       </Card>
                     </div>
                   </div>
+                </motion.div>
+              )}
 
-                  {/* Variable Selection */}
+              {/* Step 2: Dipartimento (solo quelli con templates) */}
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4 p-4"
+                >
+                  <p className="text-sm text-gray-600 mb-4">
+                    Seleziona il dipartimento per cui creare l'azione. Verranno mostrati solo i dipartimenti con template disponibili.
+                  </p>
+                  <div className="grid grid-cols-3 gap-4">
+                    {availableDepartments.map((deptKey) => {
+                      const style = getDepartmentStyle(deptKey);
+                      const templateCount = queryTemplates.filter(t => t.department === deptKey).length;
+                      return (
+                        <Card 
+                          key={deptKey}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedDepartment === deptKey ? 'ring-2 ring-orange-500 shadow-md' : ''
+                          }`}
+                          onClick={() => setSelectedDepartment(deptKey)}
+                          data-testid={`dept-${deptKey}`}
+                        >
+                          <CardContent className="p-4 flex flex-col items-center text-center">
+                            <div className={`w-12 h-12 rounded-xl ${style.bgColor} flex items-center justify-center mb-3`}>
+                              <style.icon className={`h-6 w-6 ${style.textColor}`} />
+                            </div>
+                            <h3 className="font-medium text-gray-900">{style.label}</h3>
+                            <Badge variant="outline" className="text-xs mt-2">
+                              {templateCount} template{templateCount !== 1 ? 's' : ''}
+                            </Badge>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  {availableDepartments.length === 0 && (
+                    <div className="text-center py-12">
+                      <Database className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                      <p className="text-gray-500">Nessun template disponibile nel sistema</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Step 3: Template Selection (figli del dipartimento) */}
+              {step === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4 p-4"
+                >
+                  <p className="text-sm text-gray-600 mb-4">
+                    Templates disponibili per <strong>{getDepartmentStyle(selectedDepartment).label}</strong>
+                  </p>
+                  {filteredTemplates.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Database className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                      <p className="text-gray-500">
+                        Nessun template disponibile per {getDepartmentStyle(selectedDepartment).label}
+                      </p>
+                    </div>
+                  ) : (
+                    filteredTemplates.map((template) => {
+                      const typeConfig = ACTION_TYPE_CONFIG[template.actionType as keyof typeof ACTION_TYPE_CONFIG];
+                      return (
+                        <Card 
+                          key={template.id}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedTemplate?.id === template.id ? 'ring-2 ring-orange-500 shadow-md' : ''
+                          }`}
+                          onClick={() => {
+                            setSelectedTemplate(template);
+                            setSelectedActionType(template.actionType);
+                            setSelectedVariables([...template.requiredVariables]);
+                            setRequiredVariables([...template.requiredVariables]);
+                          }}
+                          data-testid={`template-${template.id}`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                                  {typeConfig && (
+                                    <Badge className={`${typeConfig.color} text-white text-xs`}>
+                                      {typeConfig.label}
+                                    </Badge>
+                                  )}
+                                  <TooltipProvider delayDuration={100}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button className="text-gray-400 hover:text-orange-500 transition-colors">
+                                          <Info className="h-4 w-4" />
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="right" className="max-w-md p-4 bg-white shadow-lg border">
+                                        <div className="space-y-2">
+                                          <p className="font-semibold text-gray-900">{template.name}</p>
+                                          <p className="text-sm text-gray-600">{template.description}</p>
+                                          {template.involvedTables && template.involvedTables.length > 0 && (
+                                            <div className="pt-2 border-t">
+                                              <p className="text-xs font-medium text-gray-500">Tabelle coinvolte:</p>
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                {template.involvedTables.map(t => (
+                                                  <Badge key={t} variant="outline" className="text-xs font-mono">
+                                                    {t}
+                                                  </Badge>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          <div className="pt-2 border-t">
+                                            <p className="text-xs text-gray-400">
+                                              {template.availableVariables.length} variabili disponibili, {template.requiredVariables.length} obbligatorie
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                                <p className="text-sm text-gray-500">{template.description}</p>
+                                <div className="flex items-center gap-2 mt-3">
+                                  <Badge variant="outline" className="text-xs">
+                                    {template.availableVariables.length} variabili
+                                  </Badge>
+                                  {template.requiredVariables.length > 0 && (
+                                    <Badge className="bg-red-100 text-red-700 border-0 text-xs">
+                                      {template.requiredVariables.length} obbligatorie
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {selectedTemplate?.id === template.id && (
+                                <Check className="h-5 w-5 text-orange-500" />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  )}
+                </motion.div>
+              )}
+
+              {/* Step 4: Variabili (figlie del template) */}
+              {step === 4 && selectedTemplate && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6 p-4"
+                >
+                  {/* Riepilogo azione */}
+                  <div className="bg-gray-50 rounded-lg p-4 border">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">{actionName || 'Nuova Azione'}</h4>
+                      <Badge className={`${actionCategory === 'operative' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'} border-0`}>
+                        {actionCategory === 'operative' ? 'Operativa' : 'MCP Query'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-500 font-mono">{actionCode || 'CODICE_AZIONE'}</p>
+                    <p className="text-sm text-gray-600 mt-1">{selectedTemplate.name} - {getDepartmentStyle(selectedDepartment).label}</p>
+                  </div>
+
+                  {/* Variable Selection con tooltip */}
                   <div>
-                    <Label className="mb-3 block">Seleziona Variabili</Label>
-                    <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                    <Label className="mb-3 block">Seleziona Variabili per l'Azione</Label>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Le variabili definiscono i parametri che l'azione accetta. Quelle obbligatorie devono essere fornite ad ogni chiamata.
+                    </p>
+                    <div className="border rounded-lg divide-y max-h-[350px] overflow-y-auto">
                       {selectedTemplate.availableVariables.map((varId) => {
                         const variable = getVariableDetails(varId);
                         const isSelected = selectedVariables.includes(varId);
@@ -659,26 +721,37 @@ export function ActionBuilderTab() {
                             />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm text-gray-900">{varId}</span>
+                                <span className="font-mono text-sm text-gray-900">{variable?.name || varId}</span>
                                 {variable && (
-                                  <TooltipProvider>
+                                  <TooltipProvider delayDuration={100}>
                                     <Tooltip>
-                                      <TooltipTrigger>
-                                        <Info className="h-4 w-4 text-gray-400" />
+                                      <TooltipTrigger asChild>
+                                        <button className="text-gray-400 hover:text-orange-500 transition-colors">
+                                          <Info className="h-4 w-4" />
+                                        </button>
                                       </TooltipTrigger>
-                                      <TooltipContent className="max-w-xs">
-                                        <p className="font-medium">{variable.name}</p>
-                                        <p className="text-sm text-gray-400 mt-1">{variable.tooltip}</p>
-                                        {variable.table && (
-                                          <p className="text-xs text-gray-500 mt-2">
-                                            📍 {variable.table}.{variable.column}
-                                          </p>
-                                        )}
-                                        {variable.example && (
-                                          <p className="text-xs text-gray-500">
-                                            Esempio: {variable.example}
-                                          </p>
-                                        )}
+                                      <TooltipContent side="right" className="max-w-sm p-3 bg-white shadow-lg border">
+                                        <div className="space-y-2">
+                                          <p className="font-semibold text-gray-900">{variable.name}</p>
+                                          <p className="text-sm text-gray-600">{variable.tooltip}</p>
+                                          {variable.table && (
+                                            <div className="pt-2 border-t">
+                                              <p className="text-xs text-gray-500">
+                                                📍 Tabella: <code className="bg-gray-100 px-1 rounded">{variable.table}.{variable.column}</code>
+                                              </p>
+                                            </div>
+                                          )}
+                                          {variable.example && (
+                                            <p className="text-xs text-gray-500">
+                                              💡 Esempio: <code className="bg-gray-100 px-1 rounded">{variable.example}</code>
+                                            </p>
+                                          )}
+                                          {variable.type && (
+                                            <p className="text-xs text-gray-400">
+                                              Tipo: {variable.type}
+                                            </p>
+                                          )}
+                                        </div>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -732,10 +805,10 @@ export function ActionBuilderTab() {
                   }
                 }}
                 disabled={
-                  (step === 1 && !selectedDepartment) ||
-                  (step === 2 && !selectedActionType) ||
+                  (step === 1 && (!actionCode || !actionName)) ||
+                  (step === 2 && !selectedDepartment) ||
                   (step === 3 && !selectedTemplate) ||
-                  (step === 4 && (!actionCode || !actionName))
+                  (step === 4 && selectedVariables.length === 0)
                 }
                 className="gap-2"
                 data-testid="btn-wizard-next"
