@@ -233,11 +233,27 @@ export function useSIPRegistration(): UseSIPRegistrationReturn {
 
     // Cleanup on unmount
     return () => {
-      if (registererRef.current) {
-        registererRef.current.unregister().catch(console.error);
+      const registerer = registererRef.current;
+      const userAgent = userAgentRef.current;
+      
+      // Only unregister if currently registered (avoid "REGISTER request already in progress" warning)
+      if (registerer) {
+        const state = registerer.state;
+        if (state === RegistererState.Registered) {
+          registerer.unregister().catch((err) => {
+            // Ignore errors during cleanup - component is unmounting
+            console.log('[SIP] Cleanup unregister:', err?.message || 'completed');
+          });
+        } else {
+          console.log('[SIP] Skipping unregister - state:', state);
+        }
       }
-      if (userAgentRef.current) {
-        userAgentRef.current.stop().catch(console.error);
+      
+      if (userAgent) {
+        userAgent.stop().catch((err) => {
+          // Ignore errors during cleanup
+          console.log('[SIP] Cleanup stop:', err?.message || 'completed');
+        });
       }
     };
   }, [credentials, isLoading, error]);
