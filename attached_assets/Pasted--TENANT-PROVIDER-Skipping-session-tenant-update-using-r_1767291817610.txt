@@ -1,0 +1,32 @@
+[TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+radix-ui-CLSFh9a9.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+DashboardPage-BB1wDu_1.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+react-core-DamieDW-.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+Layout-BZV40eAE.css:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+2index-DjZYMQKr.js:1202 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 Error: Unable to preload CSS for /assets/Layout-BZV40eAE.css
+    at HTMLLinkElement.<anonymous> (index-DjZYMQKr.js:1189:7393)
+overrideMethod @ installHook.js:1Comprendi l'errore
+index-DjZYMQKr.js:33 Uncaught Error: Unable to preload CSS for /assets/Layout-BZV40eAE.css
+    at HTMLLinkElement.<anonymous> (index-DjZYMQKr.js:1189:7393)Comprendi l'errore
+index-DjZYMQKr.js:1202 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+Layout-3BRFO574.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+query-BNy7z5T9.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+useTenantSafety-RLYhNkzA.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+icons-DhnPAtO_.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+it-DnNY9yJU.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+format-DI4HtZIj.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+button-BG2gNR7U.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+endOfMonth-BpiC_VQ1.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+proxy-DMDFFhYY.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+utils-D5y9Z8cT.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+tabs-DIrT69oW.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+badge-XWtIGcKx.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+separator-CWcj7Jri.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+flow-BWkjIzJi.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+select-u7LlNPrS.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+BarChart-yIsA_ZaX.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+AreaChart-CpKLlXgS.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+ApiService-DJ6NMhKt.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+PieChart-BMGKP-Wx.js:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
+Layout-BZV40eAE.css:1  Failed to load resource: the server responded with a status of 404 (Not Found)Comprendi l'errore
