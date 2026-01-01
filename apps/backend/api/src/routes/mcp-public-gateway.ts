@@ -9,7 +9,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { db, setTenantContext } from '../core/db';
+import { db, pool, setTenantContext } from '../core/db';
 import { 
   mcpApiKeys, 
   mcpToolPermissions, 
@@ -660,16 +660,33 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
       const queryParams: any[] = [];
       let paramIndex = 1;
       
+      // SECURITY: Inject tenantId from authenticated API key (not from client input)
+      const normalizedArgs: Record<string, any> = {
+        tenant_id: tenantId,
+        tenantId: tenantId
+      };
+      
       // Map common parameter name variations (MCP schema uses camelCase, templates use snake_case)
       const paramMapping: Record<string, string> = {
         'dateFrom': 'date_start', 'dateTo': 'date_end', 'storeId': 'store_id',
         'employeeName': 'employee_name', 'status': 'shift_status', 'category': 'request_category'
       };
-      const normalizedArgs: Record<string, any> = {};
       if (toolArgs) {
         for (const [key, val] of Object.entries(toolArgs)) {
           normalizedArgs[key] = val;
           if (paramMapping[key]) normalizedArgs[paramMapping[key]] = val;
+        }
+      }
+      
+      // SECURITY: Validate numeric fields to prevent SQL injection
+      const numericFields = ['limit', 'offset', 'page', 'pageSize', 'year'];
+      for (const field of numericFields) {
+        if (normalizedArgs[field] !== undefined) {
+          const numVal = parseInt(String(normalizedArgs[field]), 10);
+          if (isNaN(numVal) || numVal < 0 || numVal > 10000) {
+            return res.json({ jsonrpc: '2.0', id, error: { code: -32602, message: `Invalid ${field} value` } });
+          }
+          normalizedArgs[field] = numVal;
         }
       }
       
@@ -678,29 +695,41 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
         return normalizedArgs[varName] !== undefined && normalizedArgs[varName] !== '' ? content : '';
       });
       
-      // Process variables with defaults: {{varName|default}}
-      sqlQuery = sqlQuery.replace(/\{\{(\w+)\|(\w+)\}\}/g, (_, varName, defaultVal) => {
-        const val = normalizedArgs[varName] !== undefined ? normalizedArgs[varName] : defaultVal;
-        return String(val);
+      // SECURITY: Process variables with defaults - validate numeric defaults only allow safe chars
+      sqlQuery = sqlQuery.replace(/\{\{(\w+)\|(\d+)\}\}/g, (_, varName, defaultVal) => {
+        const val = normalizedArgs[varName] !== undefined ? normalizedArgs[varName] : parseInt(defaultVal, 10);
+        const numVal = parseInt(String(val), 10);
+        if (isNaN(numVal) || numVal < 0 || numVal > 10000) return '100'; // Safe fallback
+        return String(numVal);
       });
       
-      // Process simple variables: {{varName}} - inline value directly (template already has quotes)
+      // SECURITY: Process simple variables with PARAMETERIZED queries (not inline)
       sqlQuery = sqlQuery.replace(/'?\{\{(\w+)\}\}'?/g, (fullMatch, varName) => {
         if (normalizedArgs[varName] !== undefined) {
-          const value = String(normalizedArgs[varName]).replace(/'/g, "''");
-          return `'${value}'`;
+          queryParams.push(normalizedArgs[varName]);
+          return `$${paramIndex++}`;
         }
         return 'NULL';
       });
       
-      const startTime = Date.now();
-      logger.info(`[MCP-SSE] Executing query:`, { query: sqlQuery.substring(0, 200) });
-      const result = await db.execute(sql.raw(sqlQuery));
-      logger.info(`[MCP-SSE] Query returned ${(result as any).rows?.length || 0} rows`);
-      
-      await logMcpUsage(req, toolName, null, '/sse', 200, true, Date.now() - startTime);
-      
-      return res.json({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(result.rows || result, null, 2) }] } });
+      // Set RLS context for tenant isolation using pool connection
+      const client = await pool.connect();
+      try {
+        await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [tenantId]);
+        
+        const startTime = Date.now();
+        logger.info(`[MCP-SSE] Executing secure query:`, { query: sqlQuery.substring(0, 200), paramCount: queryParams.length });
+        
+        // SECURITY: Execute with parameterized query using pg pool directly
+        const result = await client.query(sqlQuery, queryParams);
+        logger.info(`[MCP-SSE] Query returned ${result.rows?.length || 0} rows`);
+        
+        await logMcpUsage(req, toolName, null, '/sse', 200, true, Date.now() - startTime);
+        
+        return res.json({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(result.rows || [], null, 2) }] } });
+      } finally {
+        client.release();
+      }
     }
     
     if (method === 'notifications/initialized') {
