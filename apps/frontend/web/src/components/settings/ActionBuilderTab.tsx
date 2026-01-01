@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DEPARTMENT_STYLES, getDepartmentStyle } from '@/lib/constants/departments';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, 
   ArrowRight, 
@@ -47,7 +48,9 @@ import {
   Pencil,
   Archive,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Search,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -159,6 +162,13 @@ export function ActionBuilderTab() {
   const [actionCode, setActionCode] = useState('');
   const [actionDescription, setActionDescription] = useState('');
   const [actionCategory, setActionCategory] = useState<'operative' | 'query'>('query');
+  
+  // Filtri per la lista azioni
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const { data: customActions = [], isLoading: isLoadingActions } = useQuery<CustomAction[]>({
     queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'],
@@ -265,6 +275,45 @@ export function ActionBuilderTab() {
 
   const departments = Object.entries(DEPARTMENT_STYLES);
 
+  // Filtra le azioni custom in base ai filtri attivi
+  const filteredActions = customActions.filter((action) => {
+    // Ricerca libera (codice, nome, descrizione)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        action.code?.toLowerCase().includes(query) ||
+        action.name?.toLowerCase().includes(query) ||
+        action.description?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+    // Filtro dipartimento
+    if (filterDepartment !== 'all' && action.department !== filterDepartment) return false;
+    // Filtro tipo azione
+    if (filterType !== 'all' && action.mcpActionType !== filterType) return false;
+    // Filtro categoria
+    if (filterCategory !== 'all') {
+      const category = (action as any).actionCategory || 'query';
+      if (category !== filterCategory) return false;
+    }
+    // Filtro stato
+    if (filterStatus !== 'all') {
+      const isActive = action.isActive;
+      if (filterStatus === 'active' && !isActive) return false;
+      if (filterStatus === 'archived' && isActive) return false;
+    }
+    return true;
+  });
+
+  const hasActiveFilters = searchQuery || filterDepartment !== 'all' || filterType !== 'all' || filterCategory !== 'all' || filterStatus !== 'all';
+  
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilterDepartment('all');
+    setFilterType('all');
+    setFilterCategory('all');
+    setFilterStatus('all');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -284,10 +333,97 @@ export function ActionBuilderTab() {
       {/* Custom Actions List */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Azioni Custom Attive</CardTitle>
-          <CardDescription>Azioni create con Action Builder esposte via MCP Gateway</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Azioni Custom</CardTitle>
+              <CardDescription>Azioni create con Action Builder esposte via MCP Gateway</CardDescription>
+            </div>
+            <div className="text-sm text-gray-500">
+              {filteredActions.length} di {customActions.length} azioni
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filtri */}
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Ricerca libera */}
+            <div className="relative flex-1 min-w-[200px] max-w-[300px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cerca per codice, nome..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-actions"
+              />
+            </div>
+            
+            {/* Filtro Dipartimento */}
+            <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+              <SelectTrigger className="w-[150px]" data-testid="select-filter-department">
+                <SelectValue placeholder="Dipartimento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i Dipartimenti</SelectItem>
+                {Object.entries(DEPARTMENT_STYLES).map(([key, style]) => (
+                  <SelectItem key={key} value={key}>{style.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Filtro Tipo */}
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[120px]" data-testid="select-filter-type">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i Tipi</SelectItem>
+                <SelectItem value="read">READ</SelectItem>
+                <SelectItem value="create">CREATE</SelectItem>
+                <SelectItem value="update">UPDATE</SelectItem>
+                <SelectItem value="delete">DELETE</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Filtro Categoria */}
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[140px]" data-testid="select-filter-category">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le Categorie</SelectItem>
+                <SelectItem value="operative">Operativa</SelectItem>
+                <SelectItem value="query">MCP Query</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Filtro Stato */}
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[120px]" data-testid="select-filter-status">
+                <SelectValue placeholder="Stato" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti gli Stati</SelectItem>
+                <SelectItem value="active">Attiva</SelectItem>
+                <SelectItem value="archived">Archiviata</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Pulsante reset filtri */}
+            {hasActiveFilters && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearAllFilters}
+                className="text-gray-500 hover:text-gray-700"
+                data-testid="btn-clear-filters"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Pulisci filtri
+              </Button>
+            )}
+          </div>
+
           {isLoadingActions ? (
             <div className="text-center py-8 text-gray-500">Caricamento...</div>
           ) : customActions.length === 0 ? (
@@ -297,6 +433,15 @@ export function ActionBuilderTab() {
               <Button variant="outline" onClick={() => setWizardOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Crea la tua prima azione
+              </Button>
+            </div>
+          ) : filteredActions.length === 0 && hasActiveFilters ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500 mb-4">Nessuna azione corrisponde ai filtri selezionati</p>
+              <Button variant="outline" onClick={clearAllFilters} className="gap-2">
+                <X className="h-4 w-4" />
+                Pulisci filtri
               </Button>
             </div>
           ) : (
@@ -314,7 +459,7 @@ export function ActionBuilderTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customActions.map((action) => {
+                {filteredActions.map((action) => {
                   const deptStyle = getDepartmentStyle(action.department);
                   const typeConfig = ACTION_TYPE_CONFIG[action.mcpActionType as keyof typeof ACTION_TYPE_CONFIG];
                   const variablesCount = action.mcpInputSchema?.properties ? Object.keys(action.mcpInputSchema.properties).length : 0;
