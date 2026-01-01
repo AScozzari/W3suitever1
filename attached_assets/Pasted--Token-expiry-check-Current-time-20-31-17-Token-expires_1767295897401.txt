@@ -1,0 +1,84 @@
+🔍 Token expiry check: Current time: 20:31:17, Token expires: 20:46:12
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:31:17, Token expires: 20:46:12
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:31:17, Token expires: 20:46:12
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:31:17, Token expires: 20:46:12
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:31:17, Token expires: 20:46:12
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/teams 500 (Internal Server Error)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket opened wss://demo.edgvoip.it/ws
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Connected
+Layout-CH4F1KqV.js:86 ✅ SIP UserAgent started
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Configuration:
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · expires: 600
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraContactHeaderParams: []
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraHeaders: []
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · logConfiguration: true
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · instanceId: ""
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · params: {}
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · regId: 0
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · registrar: sip:demo.edgvoip.it
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · refreshFrequency: 99
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:31:18 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS bv4c0l4geqh3.invalid;branch=z9hG4bK9619645
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=mhq44nn84a
+CSeq: 2 REGISTER
+Call-ID: 9kqbes1lfk6ju39oda20
+Max-Forwards: 70
+Contact: <sip:7s0c9uje@bv4c0l4geqh3.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:31:19, Token expires: 20:46:12
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/teams 500 (Internal Server Error)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
