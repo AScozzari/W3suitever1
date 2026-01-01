@@ -1330,6 +1330,25 @@ function DocumentationTab({ actions }: { actions: ActionConfiguration[] }) {
     return JSON.stringify(config, null, 2);
   };
 
+  const generateClaudeOAuth2Config = () => {
+    const config = {
+      mcpServers: {
+        'w3suite': {
+          command: 'npx',
+          args: [
+            'mcp-remote',
+            'https://w3suite.it/api/mcp-public/sse',
+            '--oauth-client-id', 'claude-mcp-client',
+            '--oauth-authorize-url', 'https://w3suite.it/oauth2/authorize',
+            '--oauth-token-url', 'https://w3suite.it/oauth2/token',
+            '--oauth-scopes', 'openid tenant_access mcp_read mcp_write'
+          ]
+        }
+      }
+    };
+    return JSON.stringify(config, null, 2);
+  };
+
   const generateClaudeProxyScript = () => {
     return `#!/usr/bin/env node
 /**
@@ -2099,14 +2118,103 @@ ESEMPI ACTION_CODE:
         {/* Claude Desktop Section */}
         {activeSection === 'claude' && (
           <div className="space-y-6">
-            <Card>
+            {/* OAuth2 Method - RECOMMENDED */}
+            <Card className="border-2 border-green-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-[#FF6900]" />
-                  Integrazione Claude Desktop
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-[#FF6900]" />
+                    Claude Desktop (OAuth2)
+                  </CardTitle>
+                  <Badge className="bg-green-100 text-green-700">Consigliato</Badge>
+                </div>
                 <CardDescription>
-                  Permetti a Claude AI di eseguire azioni W3 Suite direttamente dalla chat
+                  Metodo moderno con autenticazione OAuth2 - nessuna API Key richiesta
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-teal-50 border border-green-100">
+                  <h4 className="font-semibold text-gray-900 mb-3">Setup con mcp-remote (3 passi)</h4>
+                  <ol className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">1</span>
+                      <div>
+                        <strong>Trova la cartella di Claude Desktop</strong>
+                        <p className="text-sm text-gray-600 mt-1">
+                          <strong>Windows:</strong> <code className="bg-gray-100 px-1 rounded">%APPDATA%\Claude\</code><br />
+                          <strong>macOS:</strong> <code className="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/</code>
+                        </p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">2</span>
+                      <div>
+                        <strong>Copia la configurazione</strong>
+                        <p className="text-sm text-gray-600 mt-1">Crea/modifica <code>claude_desktop_config.json</code> con il contenuto qui sotto</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">3</span>
+                      <div>
+                        <strong>Riavvia e autorizza</strong>
+                        <p className="text-sm text-gray-600 mt-1">Al primo utilizzo, Claude aprirà il browser per effettuare il login W3 Suite</p>
+                      </div>
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Configurazione OAuth2 (mcp-remote)</h4>
+                  <div className="relative">
+                    <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
+                      <code>{generateClaudeOAuth2Config()}</code>
+                    </pre>
+                    <Button variant="ghost" size="sm" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={() => copyCode(generateClaudeOAuth2Config(), 'claudeOAuth2')} data-testid="button-copy-claude-oauth2">
+                      {copiedSection === 'claudeOAuth2' ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => downloadFile(generateClaudeOAuth2Config(), 'claude_desktop_config.json')}
+                    className="bg-green-600 hover:bg-green-700"
+                    data-testid="btn-download-claude-oauth2-config"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica claude_desktop_config.json
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="font-semibold text-green-800">Vantaggi OAuth2</h5>
+                      <ul className="text-sm text-green-700 mt-1 space-y-1">
+                        <li>• Nessuna API Key da gestire</li>
+                        <li>• Autenticazione legata al tuo account W3 Suite</li>
+                        <li>• Token con scadenza automatica per maggiore sicurezza</li>
+                        <li>• Usa <code>npx mcp-remote</code> - nessun file proxy da installare</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* API Key Method - LEGACY */}
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="h-5 w-5 text-gray-500" />
+                    Claude Desktop (API Key)
+                  </CardTitle>
+                  <Badge variant="outline" className="text-gray-500">Metodo Alternativo</Badge>
+                </div>
+                <CardDescription>
+                  Metodo tradizionale con script proxy e API Key
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -2174,7 +2282,7 @@ ESEMPI ACTION_CODE:
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-semibold">Anteprima configurazione</h4>
+                  <h4 className="font-semibold">Anteprima configurazione (API Key)</h4>
                   <div className="relative">
                     <pre className="p-4 rounded-lg bg-gray-900 text-gray-100 text-sm overflow-x-auto">
                       <code>{generateClaudeDesktopConfig()}</code>

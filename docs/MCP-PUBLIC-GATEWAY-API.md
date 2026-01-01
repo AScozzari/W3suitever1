@@ -4,7 +4,8 @@
 
 The MCP Public Gateway provides external JSON-RPC 2.0 endpoints for Claude Desktop, n8n, Zapier, and other AI/automation platforms to execute W3 Suite business operations through secure, parameterized query templates.
 
-**Base URL:** `https://your-domain.com/api/mcp-public/sse`
+**Base URL (Production):** `https://w3suite.it/api/mcp-public/sse`  
+**Base URL (Development):** `https://your-replit-domain.replit.dev/api/mcp-public/sse`
 
 ## Authentication
 
@@ -57,12 +58,22 @@ For ChatGPT, Claude Desktop, and browser-based integrations, use OAuth2 with JWT
 
 #### OAuth2 Endpoints
 
-| Endpoint | URL |
-|----------|-----|
-| Authorization | `https://your-domain.com/oauth2/authorize` |
-| Token | `https://your-domain.com/oauth2/token` |
-| Revoke | `https://your-domain.com/oauth2/revoke` |
-| JWKS | `https://your-domain.com/oauth2/jwks` |
+| Endpoint | Production URL | Development URL |
+|----------|----------------|-----------------|
+| Authorization | `https://w3suite.it/oauth2/authorize` | `https://your-replit-domain.replit.dev/oauth2/authorize` |
+| Token | `https://w3suite.it/oauth2/token` | `https://your-replit-domain.replit.dev/oauth2/token` |
+| Revoke | `https://w3suite.it/oauth2/revoke` | `https://your-replit-domain.replit.dev/oauth2/revoke` |
+| JWKS | `https://w3suite.it/oauth2/jwks` | `https://your-replit-domain.replit.dev/oauth2/jwks` |
+
+#### Registered Redirect URIs (Production)
+
+| Client | Redirect URIs |
+|--------|---------------|
+| `w3suite-frontend` | `https://w3suite.it/auth/callback`, `https://*.w3suite.it/auth/callback` |
+| `chatgpt-mcp-client` | `https://chatgpt.com/aip/*/oauth/callback` |
+| `claude-mcp-client` | `http://127.0.0.1/*/callback`, `http://localhost/*/callback` |
+| `n8n-mcp-client` | `https://*/oauth/callback` |
+| `zapier-mcp-client` | `https://zapier.com/oauth/callback` |
 
 #### OAuth2 Clients (Pre-Configured)
 
@@ -119,15 +130,17 @@ Example JWT payload:
 
 In ChatGPT settings, add a new MCP connector:
 
-| Field | Value |
-|-------|-------|
+| Field | Value (Production) |
+|-------|---------------------|
 | Name | W3 Suite |
-| MCP Server URL | `https://your-domain.com/api/mcp-public/sse` |
+| MCP Server URL | `https://w3suite.it/api/mcp-public/sse` |
 | Authentication | OAuth 2.0 |
-| Authorization URL | `https://your-domain.com/oauth2/authorize` |
-| Token URL | `https://your-domain.com/oauth2/token` |
+| Authorization URL | `https://w3suite.it/oauth2/authorize` |
+| Token URL | `https://w3suite.it/oauth2/token` |
 | Client ID | `chatgpt-mcp-client` |
 | Scopes | `openid tenant_access mcp_read mcp_write` |
+
+**Note:** ChatGPT uses PKCE (Proof Key for Code Exchange) automatically. The redirect URI pattern `https://chatgpt.com/aip/*/oauth/callback` is pre-registered.
 
 ---
 
@@ -135,6 +148,7 @@ In ChatGPT settings, add a new MCP connector:
 
 Configure `claude_desktop_config.json`:
 
+**Production Configuration:**
 ```json
 {
   "mcpServers": {
@@ -142,16 +156,18 @@ Configure `claude_desktop_config.json`:
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://your-domain.com/api/mcp-public/sse",
+        "https://w3suite.it/api/mcp-public/sse",
         "--oauth-client-id", "claude-mcp-client",
-        "--oauth-authorize-url", "https://your-domain.com/oauth2/authorize",
-        "--oauth-token-url", "https://your-domain.com/oauth2/token",
+        "--oauth-authorize-url", "https://w3suite.it/oauth2/authorize",
+        "--oauth-token-url", "https://w3suite.it/oauth2/token",
         "--oauth-scopes", "openid tenant_access mcp_read mcp_write"
       ]
     }
   }
 }
 ```
+
+**Note:** Claude Desktop uses `mcp-remote` which opens a local browser for OAuth. The redirect URIs `http://127.0.0.1/*/callback` and `http://localhost/*/callback` are pre-registered to support this flow.
 
 ---
 
@@ -530,10 +546,31 @@ Use the Webhooks by Zapier action:
 When deploying to VPS, the MCP gateway is accessible at:
 
 ```
-https://w3suite.yourdomain.com/api/mcp-public/sse
+https://w3suite.it/api/mcp-public/sse
 ```
 
-Nginx configuration automatically proxies requests to the backend API.
+### Deployment Details
+
+| Component | Path |
+|-----------|------|
+| Backend Bundle | `/var/www/w3suite/apps/backend/api/dist/server.cjs` |
+| Start Script | `/var/www/w3suite/start-w3-api.sh` |
+| PM2 Process | `w3-api` (port 3004) |
+| Frontend Dist | `/var/www/w3suite/apps/frontend/web/dist/` |
+
+### Nginx Configuration
+
+Nginx reverse proxy automatically routes:
+- `/api/*` → Backend (port 3004)
+- `/oauth2/*` → Backend OAuth2 server (port 3004)
+- `/*` → Frontend static files
+
+### Environment Requirements
+
+Production frontend must be built with:
+```bash
+VITE_AUTH_MODE=oauth2 VITE_FONT_SCALE=80 npx vite build
+```
 
 ## Troubleshooting
 
@@ -563,6 +600,30 @@ Nginx configuration automatically proxies requests to the backend API.
 
 ---
 
-**Document Version:** 2.0  
+## Quick Reference
+
+### Production URLs
+
+| Service | URL |
+|---------|-----|
+| MCP Gateway (SSE) | `https://w3suite.it/api/mcp-public/sse` |
+| OAuth2 Authorize | `https://w3suite.it/oauth2/authorize` |
+| OAuth2 Token | `https://w3suite.it/oauth2/token` |
+| OAuth2 JWKS | `https://w3suite.it/oauth2/jwks` |
+| MCP Gateway Admin UI | `https://w3suite.it/staging/settings/mcp-gateway` |
+
+### Pre-Registered OAuth2 Clients
+
+| Client ID | Type | PKCE | Redirect Pattern |
+|-----------|------|------|------------------|
+| `w3suite-frontend` | Public | Required | `https://w3suite.it/auth/callback`, `https://*.w3suite.it/auth/callback` |
+| `chatgpt-mcp-client` | Public | Required | `https://chatgpt.com/aip/*/oauth/callback` |
+| `claude-mcp-client` | Public | Required | `http://127.0.0.1/*/callback`, `http://localhost/*/callback` |
+| `n8n-mcp-client` | Confidential | Optional | `https://*/oauth/callback` |
+| `zapier-mcp-client` | Confidential | Optional | `https://zapier.com/oauth/callback` |
+
+---
+
+**Document Version:** 2.1  
 **Last Updated:** 2026-01-01  
 **API Version:** 2.0 (Hybrid Auth: API Key + OAuth2)

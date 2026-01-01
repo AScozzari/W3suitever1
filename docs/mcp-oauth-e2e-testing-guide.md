@@ -1,5 +1,14 @@
 # MCP OAuth E2E Testing Guide
 
+## 🌐 Production URLs
+
+| Service | URL |
+|---------|-----|
+| MCP Gateway | `https://w3suite.it/api/mcp-public/sse` |
+| OAuth2 Authorize | `https://w3suite.it/oauth2/authorize` |
+| OAuth2 Token | `https://w3suite.it/oauth2/token` |
+| Admin UI | `https://w3suite.it/staging/settings/mcp-gateway` |
+
 ## 🎯 Obiettivo Task 7
 Testare il sistema multi-user OAuth completo con almeno 2 provider (Google + Microsoft) e 2+ utenti diversi per verificare:
 - ✅ Isolamento credenziali per utente
@@ -294,10 +303,11 @@ Compila dopo i test:
 
 Una volta Task 7 passato:
 
-1. **Production Deployment**:
-   - Setup OAuth apps production (Google/Microsoft)
-   - Configure secrets production environment
-   - Enable HTTPS redirect URIs
+1. **Production Deployment** ✅ DONE:
+   - VPS deployed at `https://w3suite.it`
+   - OAuth2 endpoints: `/oauth2/authorize`, `/oauth2/token`, `/oauth2/jwks`
+   - Pre-registered clients: `w3suite-frontend`, `chatgpt-mcp-client`, `claude-mcp-client`
+   - Redirect URIs: `https://w3suite.it/auth/callback`, ChatGPT/Claude patterns
 
 2. **Monitoring**:
    - Setup alerts per token refresh failures
@@ -316,6 +326,29 @@ Una volta Task 7 passato:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** October 8, 2025  
-**Status:** Ready for Testing
+## 🔐 Production OAuth2 Client Configuration
+
+### Registered Clients
+
+| Client ID | Type | PKCE | Redirect Pattern |
+|-----------|------|------|------------------|
+| `w3suite-frontend` | Public | Required | `https://w3suite.it/auth/callback` |
+| `chatgpt-mcp-client` | Public | Required | `https://chatgpt.com/aip/*/oauth/callback` |
+| `claude-mcp-client` | Public | Required | `http://127.0.0.1/*/callback` |
+| `n8n-mcp-client` | Confidential | Optional | `https://*/oauth/callback` |
+| `zapier-mcp-client` | Confidential | Optional | `https://zapier.com/oauth/callback` |
+
+### Testing Production OAuth
+
+```bash
+# Test OAuth2 authorize endpoint
+curl -v "https://w3suite.it/oauth2/authorize?response_type=code&client_id=w3suite-frontend&redirect_uri=https://w3suite.it/auth/callback&scope=openid+profile+email+tenant_access&state=test123&code_challenge=test&code_challenge_method=S256"
+
+# Should show login form HTML (not "Invalid redirect URI")
+```
+
+---
+
+**Document Version:** 1.1  
+**Last Updated:** January 1, 2026  
+**Status:** Production Ready
