@@ -109,6 +109,14 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
+    - **HR Module (Shifts, Leaves, Tracking)**:
+        - **Tables**: `shifts`, `shift_assignments`, `shift_assignment_history` (audit trail), `shift_templates`, `shift_template_versions`, `time_tracking`, `shift_attendance`, `resource_availability`, `hr_request_impacts`.
+        - **Shift States**: 15 stati (scheduled, confirmed, in_progress, completed, no_show, sick_call, late_arrival, early_departure, cancelled, swap_pending, swap_approved, override, partial, on_break, extended).
+        - **Leave Categories**: vacation, sick, maternity_leave, matrimonio, legge_104, smart_working.
+        - **HrImpactService**: Real-time shift impact analysis with store derivation priority (timbratura → turno → user home store). Severity: none/low/medium/high/critical based on shifts (5+) or hours (40+).
+        - **Approval Flow**: Request → Preview impacts → Submit → Supervisor approval → Auto-create `resource_availability` → Blocks future shift assignments (except smart_working).
+        - **APIs**: `POST /api/workflows/requests/preview-impacts`, `GET /api/workflows/requests/:id/impacts`.
+        - **Frontend**: `LeaveRequestModal` with `ShiftImpactAlert` component showing real-time conflicts.
     - **WMS Module (CQRS)**: Designed with Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. It manages complex relationships between movements and documents, with distinct document classifications (operational/fiscal, active/passive) and rules for generating logistic movements. A comprehensive status history system tracks product and batch status changes, driven by document types and movements. The WMS document item structure has been refactored for serialized products to use direct FKs to `product_items` and for prices/IVA to use FKs to `public.vat_rates` and `public.vat_regimes`, ensuring consistency with price lists.
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
