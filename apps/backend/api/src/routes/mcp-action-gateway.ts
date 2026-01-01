@@ -45,12 +45,19 @@ function hashApiKey(key: string): string {
 
 const sseConnections = new Map<string, Response>();
 
-async function validateBearerToken(authHeader: string | undefined): Promise<{ valid: boolean; tenantId?: string; keyId?: string; error?: string }> {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { valid: false, error: 'Missing or invalid Authorization header' };
+async function validateBearerToken(authHeader: string | undefined, queryApiKey?: string): Promise<{ valid: boolean; tenantId?: string; keyId?: string; error?: string }> {
+  // Support both Authorization header and query string api_key
+  let token: string | undefined;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  } else if (queryApiKey) {
+    token = queryApiKey;
   }
   
-  const token = authHeader.substring(7);
+  if (!token) {
+    return { valid: false, error: 'Missing API key (use Authorization header or api_key query param)' };
+  }
   const keyHash = hashApiKey(token);
   
   const [apiKey] = await db
@@ -82,8 +89,9 @@ async function validateBearerToken(authHeader: string | undefined): Promise<{ va
 async function handleSseGet(req: Request, res: Response) {
   const authHeader = req.headers.authorization;
   const tenantIdHeader = req.headers['x-tenant-id'] as string;
+  const queryApiKey = req.query.api_key as string | undefined;
   
-  const validation = await validateBearerToken(authHeader);
+  const validation = await validateBearerToken(authHeader, queryApiKey);
   
   if (!validation.valid) {
     logger.warn(`[MCP-SSE] Auth failed: ${validation.error}`);
@@ -178,8 +186,9 @@ async function handleSseGet(req: Request, res: Response) {
 async function handleSsePost(req: Request, res: Response) {
   const authHeader = req.headers.authorization;
   const tenantIdHeader = req.headers['x-tenant-id'] as string;
+  const queryApiKey = req.query.api_key as string | undefined;
   
-  const validation = await validateBearerToken(authHeader);
+  const validation = await validateBearerToken(authHeader, queryApiKey);
   
   if (!validation.valid) {
     return res.status(401).json({ jsonrpc: '2.0', error: { code: -32001, message: validation.error } });

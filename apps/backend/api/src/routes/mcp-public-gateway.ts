@@ -258,6 +258,7 @@ async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: 
   try {
     const authHeader = req.headers['authorization'] as string;
     const apiKeyHeader = req.headers['x-mcp-key'] as string;
+    const queryApiKey = req.query.api_key as string | undefined;
     
     let apiKey: string | null = null;
     let oauthToken: string | null = null;
@@ -265,8 +266,12 @@ async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: 
     // 1. Try X-MCP-Key header (API key only)
     if (apiKeyHeader) {
       apiKey = apiKeyHeader;
-    } 
-    // 2. Try Authorization header
+    }
+    // 2. Try api_key query parameter (for Claude Web connectors)
+    else if (queryApiKey) {
+      apiKey = queryApiKey;
+    }
+    // 3. Try Authorization header
     else if (authHeader) {
       if (authHeader.startsWith('Api-Key ')) {
         apiKey = authHeader.substring(8);
