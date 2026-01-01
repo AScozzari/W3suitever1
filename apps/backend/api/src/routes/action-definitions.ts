@@ -9,7 +9,7 @@
 import { Router } from 'express';
 import { db } from '../core/db';
 import { eq, and, asc } from 'drizzle-orm';
-import { actionDefinitions } from '../db/schema/public';
+import { actionDefinitions } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 
 const router = Router();

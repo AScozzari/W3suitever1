@@ -3916,6 +3916,42 @@ export const actionCategoryEnum = pgEnum('action_category', [
   'query'       // Azioni query MCP per interrogare/modificare dati
 ]);
 
+// ==================== ACTION DEFINITIONS (GLOBAL - No RLS) ====================
+// Template globali per tutte le azioni - disponibili per tutti i tenant
+export const actionDefinitions = w3suiteSchema.table("action_definitions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  actionId: varchar("action_id", { length: 100 }).notNull().unique(),
+  department: departmentEnum("department").notNull(),
+  actionName: varchar("action_name", { length: 200 }).notNull(),
+  description: text("description"),
+  actionCategory: actionCategoryEnum("action_category").default('operative').notNull(),
+  icon: varchar("icon", { length: 50 }),
+  color: varchar("color", { length: 20 }),
+  direction: varchar("direction", { length: 20 }),
+  flowType: actionFlowTypeEnum("flow_type").default('none').notNull(),
+  requiresApproval: boolean("requires_approval").default(false).notNull(),
+  isMcpEnabled: boolean("is_mcp_enabled").default(false).notNull(),
+  mcpActionType: mcpActionTypeEnum("mcp_action_type"),
+  defaultSlaHours: integer("default_sla_hours").default(24),
+  isActive: boolean("is_active").default(true).notNull(),
+  displayOrder: integer("display_order").default(100),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_action_definitions_department").on(table.department),
+  index("idx_action_definitions_category").on(table.actionCategory),
+  index("idx_action_definitions_active").on(table.isActive),
+  index("idx_action_definitions_mcp").on(table.isMcpEnabled),
+]);
+
+export const insertActionDefinitionSchema = createInsertSchema(actionDefinitions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertActionDefinition = z.infer<typeof insertActionDefinitionSchema>;
+export type ActionDefinition = typeof actionDefinitions.$inferSelect;
+
 // Action Configurations - Master list azioni per dipartimento con configurazione flusso
 export const actionConfigurations = w3suiteSchema.table("action_configurations", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
