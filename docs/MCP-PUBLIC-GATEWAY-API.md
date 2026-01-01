@@ -8,9 +8,16 @@ The MCP Public Gateway provides external JSON-RPC 2.0 endpoints for Claude Deskt
 
 ## Authentication
 
+The MCP Public Gateway supports **hybrid authentication** - you can use either API Keys or OAuth2 tokens:
+
+| Method | Token Format | Use Case |
+|--------|--------------|----------|
+| **API Key** | `sk_live_*`, `sk_test_*` | n8n, Zapier, scripts, automation |
+| **OAuth2 JWT** | `eyJ*` (JWT) | ChatGPT, Claude Desktop, browser apps |
+
 ### API Key Authentication
 
-All requests require an API key in the `Authorization` header or `X-MCP-Key` header:
+Provide API key via `Authorization` header or `X-MCP-Key` header:
 
 ```bash
 # Using Bearer token
@@ -41,6 +48,138 @@ Required fields:
 - `permissions`: JSON array of allowed actions (e.g., `["hr:read", "hr:write"]`)
 - `rateLimitPerMinute`: Max requests per minute (0 = unlimited)
 - `dailyQuota`: Max requests per day (0 = unlimited)
+
+---
+
+### OAuth2 Authentication
+
+For ChatGPT, Claude Desktop, and browser-based integrations, use OAuth2 with JWT tokens.
+
+#### OAuth2 Endpoints
+
+| Endpoint | URL |
+|----------|-----|
+| Authorization | `https://your-domain.com/oauth2/authorize` |
+| Token | `https://your-domain.com/oauth2/token` |
+| Revoke | `https://your-domain.com/oauth2/revoke` |
+| JWKS | `https://your-domain.com/oauth2/jwks` |
+
+#### OAuth2 Clients (Pre-Configured)
+
+| Client ID | Type | Use Case |
+|-----------|------|----------|
+| `chatgpt-mcp-client` | Public (PKCE) | ChatGPT Custom MCP Server |
+| `claude-mcp-client` | Public (PKCE) | Claude Desktop via mcp-remote |
+| `n8n-mcp-client` | Confidential | n8n workflow automation |
+| `zapier-mcp-client` | Confidential | Zapier integrations |
+
+#### OAuth2 Scopes
+
+| Scope | Description |
+|-------|-------------|
+| `openid` | OpenID Connect standard |
+| `profile` | User profile information |
+| `tenant_access` | Access tenant data |
+| `mcp_read` | Read-only MCP tool access (required) |
+| `mcp_write` | Write MCP tool access (mutations, actions) |
+
+#### Using OAuth2 JWT Token
+
+Once you have a JWT token from OAuth2 flow:
+
+```bash
+curl -X POST https://your-domain.com/api/mcp-public/sse \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp_hr_list_shifts"}}'
+```
+
+#### JWT Token Requirements
+
+The JWT must contain:
+- `sub`: User ID (UUID)
+- `tenant_id`: Tenant UUID
+- `scope`: Space-separated scopes (must include `mcp_read` or `mcp_write`)
+
+Example JWT payload:
+```json
+{
+  "sub": "user-uuid-here",
+  "tenant_id": "tenant-uuid-here",
+  "scope": "openid tenant_access mcp_read mcp_write",
+  "client_id": "chatgpt-mcp-client",
+  "iat": 1735689600,
+  "exp": 1735693200
+}
+```
+
+---
+
+### ChatGPT Custom MCP Server Configuration
+
+In ChatGPT settings, add a new MCP connector:
+
+| Field | Value |
+|-------|-------|
+| Name | W3 Suite |
+| MCP Server URL | `https://your-domain.com/api/mcp-public/sse` |
+| Authentication | OAuth 2.0 |
+| Authorization URL | `https://your-domain.com/oauth2/authorize` |
+| Token URL | `https://your-domain.com/oauth2/token` |
+| Client ID | `chatgpt-mcp-client` |
+| Scopes | `openid tenant_access mcp_read mcp_write` |
+
+---
+
+### Claude Desktop with mcp-remote
+
+Configure `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "w3suite": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://your-domain.com/api/mcp-public/sse",
+        "--oauth-client-id", "claude-mcp-client",
+        "--oauth-authorize-url", "https://your-domain.com/oauth2/authorize",
+        "--oauth-token-url", "https://your-domain.com/oauth2/token",
+        "--oauth-scopes", "openid tenant_access mcp_read mcp_write"
+      ]
+    }
+  }
+}
+```
+
+---
+
+### OpenAI Responses API (Programmatic)
+
+Use MCP tools directly via OpenAI API with Bearer token:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.responses.create(
+    model="gpt-4.1",
+    tools=[{
+        "type": "mcp",
+        "server_label": "w3suite",
+        "server_url": "https://your-domain.com/api/mcp-public/sse",
+        "require_approval": "never",
+        "headers": {
+            "Authorization": "Bearer sk_live_staging_xxxxxxxxxxxx"
+        }
+    }],
+    input="List HR shifts for January 2025"
+)
+
+print(response.output_text)
+```
 
 ## Rate Limiting
 
@@ -424,6 +563,6 @@ Nginx configuration automatically proxies requests to the backend API.
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Last Updated:** 2026-01-01  
-**API Version:** 1.0
+**API Version:** 2.0 (Hybrid Auth: API Key + OAuth2)
