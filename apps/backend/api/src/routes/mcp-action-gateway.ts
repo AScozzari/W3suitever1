@@ -926,29 +926,31 @@ router.post('/custom-actions/:id/duplicate', requirePermission('settings.write')
       return res.status(404).json({ error: 'Action not found' });
     }
 
-    const newCode = `${original.code}_copy_${Date.now().toString(36)}`;
-    const newName = `${original.name} (Copy)`;
+    const newActionId = `${original.actionId}_copy_${Date.now().toString(36)}`;
+    const newActionName = `${original.actionName} (Copy)`;
 
     const [duplicated] = await db
       .insert(actionConfigurations)
       .values({
         tenantId,
-        code: newCode,
-        name: newName,
+        actionId: newActionId,
+        actionName: newActionName,
         description: original.description,
         department: original.department,
-        actionCategory: original.actionCategory || 'query', // Preserve category
+        actionCategory: original.actionCategory || 'query',
         isCustomAction: true,
         mcpActionType: original.mcpActionType,
         queryTemplateId: original.queryTemplateId,
         mcpInputSchema: original.mcpInputSchema,
         flowType: 'none',
+        teamScope: original.teamScope || 'all',
+        requiresApproval: false,
         isActive: true,
         createdBy: userId,
       })
       .returning();
 
-    logger.info(`📋 [MCP-GATEWAY] Custom action duplicated: ${original.code} → ${newCode} by ${userId}`);
+    logger.info(`📋 [MCP-GATEWAY] Custom action duplicated: ${original.actionId} → ${newActionId} by ${userId}`);
 
     res.status(201).json(duplicated);
   } catch (error) {

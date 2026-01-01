@@ -718,7 +718,7 @@ export function ActionBuilderTab() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4 p-4"
+                  className="flex flex-col p-4"
                 >
                   <p className="text-sm text-gray-600 mb-4">
                     Templates disponibili per <strong>{getDepartmentStyle(selectedDepartment).label}</strong>
@@ -731,7 +731,8 @@ export function ActionBuilderTab() {
                       </p>
                     </div>
                   ) : (
-                    filteredTemplates.map((template) => {
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                    {filteredTemplates.map((template) => {
                       const typeConfig = ACTION_TYPE_CONFIG[template.actionType as keyof typeof ACTION_TYPE_CONFIG];
                       return (
                         <Card 
@@ -809,7 +810,8 @@ export function ActionBuilderTab() {
                           </CardContent>
                         </Card>
                       );
-                    })
+                    })}
+                    </div>
                   )}
                 </motion.div>
               )}
