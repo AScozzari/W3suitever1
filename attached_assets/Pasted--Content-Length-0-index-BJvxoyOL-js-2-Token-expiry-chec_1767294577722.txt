@@ -1,0 +1,99 @@
+
+Content-Length: 0
+
+
+
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:08:37, Token expires: 20:18:18
+2index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:08:37, Token expires: 20:18:18
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/admin/coverage-dashboard-v2 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:08:38, Token expires: 20:18:18
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/admin/coverage-dashboard-v2 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:08:39, Token expires: 20:18:18
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:08:39, Token expires: 20:18:18
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:09:02, Token expires: 20:18:18
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/admin/coverage-dashboard-v2 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:09:04, Token expires: 20:18:18
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/admin/coverage-dashboard-v2 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:09:04, Token expires: 20:18:18
