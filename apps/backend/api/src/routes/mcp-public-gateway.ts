@@ -7,16 +7,53 @@
  *   - OAuth2 JWT (eyJ*) - for ChatGPT, Claude Desktop, browser-based clients
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
+ * API ENDPOINTS REFERENCE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * JSON-RPC 2.0 SSE Transport (Model Context Protocol):
+ *   POST /api/mcp-public/sse         - MCP SSE endpoint (main entry point)
+ * 
+ * REST Endpoints (Management):
+ *   GET  /api/mcp-gateway/tools      - List available MCP tools
+ *   POST /api/mcp-gateway/execute    - Execute an MCP tool
+ *   GET  /api/mcp-gateway/stats      - Usage statistics
+ *   GET  /api/mcp-gateway/keys       - List API keys
+ *   POST /api/mcp-gateway/keys       - Create new API key
+ *   GET  /api/mcp-gateway/usage-logs - Usage logs
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * AUTHENTICATION METHODS
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * 1. API Key Authentication (for scripts, n8n, Zapier):
+ *    Header: Authorization: Bearer sk_live_xxxxxxxxxxxx
+ *    
+ *    API keys support:
+ *    - Rate limiting (per-minute)
+ *    - Daily quota limits
+ *    - Department-scoped permissions
+ *    - IP whitelisting (optional)
+ * 
+ * 2. OAuth2 JWT Authentication (for ChatGPT, Claude Desktop):
+ *    Header: Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+ *    
+ *    OAuth2 supports:
+ *    - Authorization Code flow with PKCE (S256)
+ *    - Refresh token rotation
+ *    - Scope-based permissions (mcp_read, mcp_write)
+ *    - User-level audit trails
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
  * CHATGPT CUSTOM MCP SERVER CONFIGURATION (OpenAI)
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
  * In ChatGPT Settings → Connectors → Add Custom MCP Server:
  * 
  *   Name:              W3 Suite
- *   MCP Server URL:    https://your-domain.com/api/mcp-public/sse
+ *   MCP Server URL:    https://w3suite.it/api/mcp-public/sse
  *   Authentication:    OAuth 2.0
- *   Authorization URL: https://your-domain.com/oauth2/authorize
- *   Token URL:         https://your-domain.com/oauth2/token
+ *   Authorization URL: https://w3suite.it/oauth2/authorize
+ *   Token URL:         https://w3suite.it/oauth2/token
  *   Client ID:         chatgpt-mcp-client
  *   Client Secret:     (leave empty - public client)
  *   Scopes:            openid tenant_access mcp_read mcp_write
@@ -36,10 +73,10 @@
  *         "command": "npx",
  *         "args": [
  *           "mcp-remote",
- *           "https://your-domain.com/api/mcp-public/sse",
+ *           "https://w3suite.it/api/mcp-public/sse",
  *           "--oauth-client-id", "claude-mcp-client",
- *           "--oauth-authorize-url", "https://your-domain.com/oauth2/authorize",
- *           "--oauth-token-url", "https://your-domain.com/oauth2/token",
+ *           "--oauth-authorize-url", "https://w3suite.it/oauth2/authorize",
+ *           "--oauth-token-url", "https://w3suite.it/oauth2/token",
  *           "--oauth-scopes", "openid tenant_access mcp_read mcp_write"
  *         ]
  *       }
@@ -50,6 +87,28 @@
  *   - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
  *   - Windows: %APPDATA%\Claude\claude_desktop_config.json
  *   - Linux: ~/.config/Claude/claude_desktop_config.json
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * N8N / ZAPIER / SCRIPTS CONFIGURATION
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * For automated workflows, use API Key authentication:
+ * 
+ *   1. Generate API key in W3 Suite → Impostazioni → MCP Gateway → API Keys
+ *   2. Copy the sk_live_* or sk_test_* key
+ *   3. Add to your workflow:
+ * 
+ *   cURL Example:
+ *   curl -X POST https://w3suite.it/api/mcp-gateway/execute \
+ *     -H "Authorization: Bearer sk_live_xxxxxxxxxxxx" \
+ *     -H "Content-Type: application/json" \
+ *     -d '{"tool": "CRM_CREATE_LEAD", "params": {"name": "John", "email": "john@example.com"}}'
+ * 
+ *   n8n HTTP Request Node:
+ *     - Method: POST
+ *     - URL: https://w3suite.it/api/mcp-gateway/execute
+ *     - Authentication: Header Auth
+ *     - Name: Authorization, Value: Bearer sk_live_xxxxxxxxxxxx
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
  * REGISTERED OAUTH CLIENTS
@@ -65,6 +124,20 @@
  * MCP Scopes:
  *   - mcp_read:  Read-only access to MCP tools (list, query)
  *   - mcp_write: Write access to MCP tools (create, update, delete, execute actions)
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * RATE LIMITING & QUOTAS
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Per API Key:
+ *   - Rate limit: Configurable per-minute limit (default: 60/min)
+ *   - Daily quota: Configurable daily limit (default: 1000/day)
+ *   - Department restrictions: Optional scope to specific departments
+ * 
+ * Rate limit headers in response:
+ *   - X-RateLimit-Limit: Maximum requests per minute
+ *   - X-RateLimit-Remaining: Requests remaining in current window
+ *   - X-RateLimit-Reset: Unix timestamp when limit resets
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
