@@ -261,20 +261,14 @@ SELECT
   l.email,
   l.phone,
   l.company_name,
-  l.job_title,
   l.status,
-  l.source,
-  l.score,
+  l.source_channel AS source,
+  l.lead_score AS score,
   l.created_at,
-  l.last_contacted_at,
-  u.full_name AS assigned_to_name,
-  ps.name AS pipeline_stage,
-  COUNT(a.id) AS activity_count,
-  MAX(a.created_at) AS last_activity_at
-FROM w3suite.leads l
-LEFT JOIN w3suite.users u ON u.id = l.assigned_to
-LEFT JOIN w3suite.pipeline_stages ps ON ps.id = l.pipeline_stage_id
-LEFT JOIN w3suite.activities a ON a.lead_id = l.id
+  l.last_contact_date,
+  u.full_name AS assigned_to_name
+FROM w3suite.crm_leads l
+LEFT JOIN w3suite.users u ON u.id = l.owner_user_id
 WHERE l.tenant_id = '{{tenantId}}'::uuid
   AND (
     l.first_name ILIKE '%{{searchTerm}}%'
@@ -283,13 +277,12 @@ WHERE l.tenant_id = '{{tenantId}}'::uuid
     OR l.phone ILIKE '%{{searchTerm}}%'
     OR l.company_name ILIKE '%{{searchTerm}}%'
   )
-GROUP BY l.id, u.full_name, ps.name
-ORDER BY l.score DESC, l.created_at DESC
+ORDER BY l.lead_score DESC NULLS LAST, l.created_at DESC
 LIMIT {{limit}};
 `,
-    availableVariables: ['tenantId', 'searchTerm', 'status', 'assignedTo', 'source', 'limit'],
+    availableVariables: ['tenantId', 'searchTerm', 'status', 'source', 'limit'],
     requiredVariables: ['tenantId', 'searchTerm'],
-    involvedTables: ['leads', 'users', 'pipeline_stages', 'activities'],
+    involvedTables: ['crm_leads', 'users'],
     isActive: true,
     isSystemTemplate: true
   },
