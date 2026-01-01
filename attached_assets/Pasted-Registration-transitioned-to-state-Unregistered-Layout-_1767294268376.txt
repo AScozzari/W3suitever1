@@ -1,0 +1,208 @@
+Registration transitioned to state Unregistered
+Layout-CH4F1KqV.js:86 📡 Registration state: Unregistered
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:03:56 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+4index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:03:58, Token expires: 20:18:18
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/usage-logs 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/keys 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/tools 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/stats 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+4index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:03:59, Token expires: 20:18:18
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/tools 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/stats 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/usage-logs 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-BJvxoyOL.js:2  GET https://w3suite.it/api/mcp-gateway/keys 404 (Not Found)
+queryFn @ index-BJvxoyOL.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+Layout-CH4F1KqV.js:58 Thu Jan 01 2026 20:04:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS 3r4embc1afel.invalid;branch=z9hG4bK9922192;received=127.0.0.1;rport=58216
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=rk8m9432et
+To: <sip:2000@demo.edgvoip.it>;tag=4H7gKtB3QZF0m
+Call-ID: 6pijfatogvark5vqbopi
+CSeq: 2 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="91fa006a-1717-44f2-85f7-b47eee489d0f", algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+installHook.js:1 Thu Jan 01 2026 20:04:01 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-core | Discarding unmatched 401 response to REGISTER z9hG4bK9922192REGISTER.
+overrideMethod @ installHook.js:1
+print @ Layout-CH4F1KqV.js:58
+genericLog @ Layout-CH4F1KqV.js:58
+genericLog @ Layout-CH4F1KqV.js:58
+warn @ Layout-CH4F1KqV.js:58
+receiveResponseFromTransport @ Layout-CH4F1KqV.js:71
+receiveIncomingResponseFromTransport @ Layout-CH4F1KqV.js:71
+onTransportMessage @ Layout-CH4F1KqV.js:86
+transport.onMessage @ Layout-CH4F1KqV.js:86
+onWebSocketMessage @ Layout-CH4F1KqV.js:84
+(anonime) @ Layout-CH4F1KqV.js:75Comprendi l'avviso
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:04:04, Token expires: 20:18:18
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:04:09, Token expires: 20:18:18
+index-BJvxoyOL.js:2 🔍 Token expiry check: Current time: 20:04:09, Token expires: 20:18:18
