@@ -1149,15 +1149,22 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
         
         // MCP-compliant response with both text (for Claude) and structured data (for n8n/Zapier)
         const rows = result.rows || [];
+        
+        // Human-readable message for empty results (Claude Web needs this to not interpret as error)
+        const textContent = rows.length > 0 
+          ? JSON.stringify(rows, null, 2)
+          : `Nessun risultato trovato per la query "${toolName}". Prova a modificare i parametri di ricerca (es. ampliare il range di date o rimuovere filtri).`;
+        
         return res.json({ 
           jsonrpc: '2.0', 
           id, 
           result: { 
-            content: [{ type: 'text', text: JSON.stringify(rows) }],
+            content: [{ type: 'text', text: textContent }],
             // Extended: structured data for programmatic access (n8n, Zapier)
             data: rows,
             meta: {
               rowCount: rows.length,
+              success: true,
               tool: toolName,
               executedAt: new Date().toISOString()
             }
