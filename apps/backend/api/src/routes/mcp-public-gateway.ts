@@ -184,10 +184,22 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
       .from(mcpToolSettings)
       .where(whereCondition);
     
-    if (exposedSettings.length === 0) {
-      await logMcpUsage(req, 'discovery', null, 'tools', 200, true, Date.now() - startTime);
-      return res.json({ tools: [], message: 'No tools exposed via MCP for this tenant' });
-    }
+    const customActions = await db
+      .select({
+        id: actionConfigurations.id,
+        code: actionConfigurations.code,
+        name: actionConfigurations.name,
+        description: actionConfigurations.description,
+        department: actionConfigurations.department,
+        mcpActionType: actionConfigurations.mcpActionType,
+        mcpInputSchema: actionConfigurations.mcpInputSchema,
+      })
+      .from(actionConfigurations)
+      .where(and(
+        eq(actionConfigurations.tenantId, tenantId),
+        eq(actionConfigurations.isActive, true),
+        eq(actionConfigurations.isCustomAction, true)
+      ));
     
     const actionIds = exposedSettings.map(s => s.actionConfigId);
     
@@ -201,7 +213,7 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
     
     const allowedActionIds = new Set(permissions.map(p => p.actionConfigId));
     
-    const actions = await db
+    const standardActions = actionIds.length > 0 ? await db
       .select({
         id: actionConfigurations.id,
         code: actionConfigurations.code,
@@ -215,11 +227,11 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
         eq(actionConfigurations.tenantId, tenantId),
         eq(actionConfigurations.isActive, true),
         inArray(actionConfigurations.id, actionIds)
-      ));
+      )) : [];
     
     const settingsMap = new Map(exposedSettings.map(s => [s.actionConfigId, s]));
     
-    const tools = actions
+    const standardTools = standardActions
       .filter(action => {
         if (permissions.length > 0 && !allowedActionIds.has(action.id)) {
           return false;
@@ -238,6 +250,7 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
           description: settings?.customToolDescription || action.description || action.name,
           department: action.department,
           flowType: action.flowType,
+          isCustomAction: false,
           inputSchema: settings?.parametersSchema || {
             type: 'object',
             properties: {
@@ -247,11 +260,36 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
         };
       });
     
+    const customTools = customActions
+      .filter(action => {
+        if (allowedDepartments && allowedDepartments.length > 0) {
+          if (!allowedDepartments.includes(action.department)) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .map(action => ({
+        name: action.code,
+        description: action.description || action.name,
+        department: action.department,
+        actionType: action.mcpActionType,
+        isCustomAction: true,
+        inputSchema: action.mcpInputSchema || {
+          type: 'object',
+          properties: {}
+        }
+      }));
+    
+    const tools = [...standardTools, ...customTools];
+    
     await logMcpUsage(req, 'discovery', null, 'tools', 200, true, Date.now() - startTime);
     
     res.json({
       tools,
       count: tools.length,
+      standardCount: standardTools.length,
+      customCount: customTools.length,
       tenant: tenantId,
     });
   } catch (error) {

@@ -54,7 +54,8 @@ import {
 } from 'lucide-react';
 import { DEPARTMENT_STYLES, getDepartmentStyle } from '@/lib/constants/departments';
 import { format } from 'date-fns';
-import { ChevronDown, ChevronRight, Info, Sparkles, Workflow, BookOpen, FileJson, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, Sparkles, Workflow, BookOpen, FileJson, AlertCircle, Wand2 } from 'lucide-react';
+import { ActionBuilderTab } from '@/components/settings/ActionBuilderTab';
 
 const ACTION_DESCRIPTIONS: Record<string, { purpose: string; details: string }> = {
   CRM_CREATE_LEAD: { 
@@ -373,6 +374,10 @@ export default function MCPActionGatewayPage() {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="builder" className="gap-2" data-testid="tab-action-builder">
+              <Wand2 className="h-4 w-4" />
+              Action Builder
+            </TabsTrigger>
           </TabsList>
 
           {/* API Keys Tab */}
@@ -420,6 +425,11 @@ export default function MCPActionGatewayPage() {
               usageLogs={usageLogs}
               apiKeys={apiKeys}
             />
+          </TabsContent>
+
+          {/* Action Builder Tab */}
+          <TabsContent value="builder" className="space-y-6">
+            <ActionBuilderTab />
           </TabsContent>
         </Tabs>
       </div>
