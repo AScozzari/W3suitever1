@@ -1,8 +1,10 @@
 /**
  * MCP Public Gateway Routes
  * 
- * PUBLIC endpoints for external integrations (n8n, Claude, Zapier)
- * Authenticated via API Key (not session/JWT)
+ * PUBLIC endpoints for external integrations (n8n, Claude, Zapier, ChatGPT)
+ * Authenticated via:
+ *   - API Key (sk_live_*, sk_test_*) - for scripts, n8n, Zapier
+ *   - OAuth2 JWT (eyJ*) - for ChatGPT, Claude Desktop, browser-based clients
  * 
  * @author W3 Suite Team
  * @date 2025-12-31
@@ -23,6 +25,8 @@ import { eq, and, inArray, sql } from 'drizzle-orm';
 import { createHash } from 'crypto';
 import { logger } from '../core/logger';
 import { UnifiedTriggerService } from '../services/unified-trigger.service';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../core/config';
 
 const router = Router();
 
@@ -83,6 +87,9 @@ interface McpAuthenticatedRequest extends Request {
     allowedDepartments: string[] | null;
     rateLimitPerMinute: number;
     dailyQuota: number;
+    authMethod: 'api_key' | 'oauth';  // Track which auth method was used
+    userId?: string;                   // User ID from OAuth token
+    scopes?: string[];                 // OAuth scopes (mcp_read, mcp_write)
   };
 }
 
@@ -103,6 +110,13 @@ function getClientIpFromRequest(req: Request): string {
   return req.ip || req.socket.remoteAddress || '';
 }
 
+/**
+ * Hybrid MCP Authentication Middleware
+ * Supports both API Key and OAuth2 JWT authentication
+ * 
+ * API Key: sk_live_*, sk_test_* → Validates against mcp_api_keys table
+ * OAuth JWT: eyJ* → Validates JWT signature and extracts tenant/user/scopes
+ */
 async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: NextFunction) {
   const startTime = Date.now();
   
@@ -111,98 +125,241 @@ async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: 
     const apiKeyHeader = req.headers['x-mcp-key'] as string;
     
     let apiKey: string | null = null;
+    let oauthToken: string | null = null;
     
+    // 1. Try X-MCP-Key header (API key only)
     if (apiKeyHeader) {
       apiKey = apiKeyHeader;
-    } else if (authHeader?.startsWith('Api-Key ')) {
-      apiKey = authHeader.substring(8);
-    } else if (authHeader?.startsWith('Bearer sk_')) {
-      apiKey = authHeader.substring(7);
-    }
-    
-    if (!apiKey) {
-      return res.status(401).json({
-        error: 'Authentication required',
-        message: 'Provide API key via X-MCP-Key header or Authorization: Api-Key sk_live_...',
-        docs: '/api/mcp-gateway/docs'
-      });
-    }
-    
-    const keyHash = hashApiKey(apiKey);
-    
-    const [keyRecord] = await db
-      .select({
-        id: mcpApiKeys.id,
-        name: mcpApiKeys.name,
-        tenantId: mcpApiKeys.tenantId,
-        allowedDepartments: mcpApiKeys.allowedDepartments,
-        rateLimitPerMinute: mcpApiKeys.rateLimitPerMinute,
-        dailyQuota: mcpApiKeys.dailyQuota,
-        isActive: mcpApiKeys.isActive,
-        expiresAt: mcpApiKeys.expiresAt,
-        allowedIps: mcpApiKeys.allowedIps,
-      })
-      .from(mcpApiKeys)
-      .where(eq(mcpApiKeys.keyHash, keyHash))
-      .limit(1);
-    
-    if (!keyRecord) {
-      logger.warn('🔑 [MCP-GATEWAY] Invalid API key attempt');
-      return res.status(401).json({ error: 'Invalid API key' });
-    }
-    
-    if (!keyRecord.isActive) {
-      return res.status(403).json({ error: 'API key is revoked' });
-    }
-    
-    if (keyRecord.expiresAt && new Date(keyRecord.expiresAt) < new Date()) {
-      return res.status(403).json({ error: 'API key has expired' });
-    }
-    
-    if (keyRecord.allowedIps && keyRecord.allowedIps.length > 0) {
-      // Use proxy-aware IP detection for allowlist checks
-      const clientIp = getClientIpFromRequest(req);
-      if (!keyRecord.allowedIps.includes(clientIp)) {
-        logger.warn(`🔑 [MCP-GATEWAY] IP not allowed: ${clientIp} for key ${keyRecord.name}`);
-        return res.status(403).json({ error: 'IP address not allowed' });
+    } 
+    // 2. Try Authorization header
+    else if (authHeader) {
+      if (authHeader.startsWith('Api-Key ')) {
+        apiKey = authHeader.substring(8);
+      } else if (authHeader.startsWith('Bearer sk_')) {
+        // API key in Bearer format (sk_live_*, sk_test_*)
+        apiKey = authHeader.substring(7);
+      } else if (authHeader.startsWith('Bearer eyJ')) {
+        // OAuth2 JWT token (starts with eyJ = base64 of {"alg":...})
+        oauthToken = authHeader.substring(7);
+      } else if (authHeader.startsWith('Bearer ')) {
+        // Other bearer token - try as JWT first, then API key
+        const token = authHeader.substring(7);
+        if (token.startsWith('eyJ')) {
+          oauthToken = token;
+        } else {
+          apiKey = token;
+        }
       }
     }
     
-    // SECURITY: Enforce rate limiting per API key
-    // 1. Check per-minute rate limit (in-memory for speed)
-    const minuteCheck = checkMinuteRateLimit(keyRecord.id, keyRecord.rateLimitPerMinute);
-    if (!minuteCheck.allowed) {
-      logger.warn(`🔑 [MCP-GATEWAY] ${minuteCheck.error} for key ${keyRecord.name}`);
-      return res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: minuteCheck.error });
+    // Route to appropriate auth handler
+    if (oauthToken) {
+      return await handleOAuthAuth(req, res, next, oauthToken);
+    } else if (apiKey) {
+      return await handleApiKeyAuth(req, res, next, apiKey);
     }
     
-    // 2. Check daily quota (database-backed for persistence)
-    const dailyCheck = await checkDailyQuota(keyRecord.id, keyRecord.dailyQuota);
-    if (!dailyCheck.allowed) {
-      logger.warn(`🔑 [MCP-GATEWAY] ${dailyCheck.error} for key ${keyRecord.name}`);
-      return res.status(429).json({ error: 'QUOTA_EXCEEDED', message: dailyCheck.error });
-    }
+    // No valid auth provided
+    return res.status(401).json({
+      error: 'Authentication required',
+      message: 'Provide API key (X-MCP-Key or Bearer sk_live_...) or OAuth token (Bearer eyJ...)',
+      docs: '/api/mcp-gateway/docs',
+      supported_auth: ['api_key', 'oauth2']
+    });
     
-    await db
-      .update(mcpApiKeys)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(mcpApiKeys.id, keyRecord.id));
-    
-    await setTenantContext(keyRecord.tenantId);
-    
-    req.mcpAuth = {
-      apiKeyId: keyRecord.id,
-      apiKeyName: keyRecord.name,
-      tenantId: keyRecord.tenantId,
-      allowedDepartments: keyRecord.allowedDepartments,
-      rateLimitPerMinute: keyRecord.rateLimitPerMinute,
-      dailyQuota: keyRecord.dailyQuota,
-    };
-    
-    next();
   } catch (error) {
     logger.error('🔑 [MCP-GATEWAY] Auth error:', error);
     return res.status(500).json({ error: 'Authentication failed' });
+  }
+}
+
+/**
+ * Handle API Key Authentication
+ */
+async function handleApiKeyAuth(
+  req: McpAuthenticatedRequest, 
+  res: Response, 
+  next: NextFunction,
+  apiKey: string
+) {
+  const keyHash = hashApiKey(apiKey);
+  
+  const [keyRecord] = await db
+    .select({
+      id: mcpApiKeys.id,
+      name: mcpApiKeys.name,
+      tenantId: mcpApiKeys.tenantId,
+      allowedDepartments: mcpApiKeys.allowedDepartments,
+      rateLimitPerMinute: mcpApiKeys.rateLimitPerMinute,
+      dailyQuota: mcpApiKeys.dailyQuota,
+      isActive: mcpApiKeys.isActive,
+      expiresAt: mcpApiKeys.expiresAt,
+      allowedIps: mcpApiKeys.allowedIps,
+    })
+    .from(mcpApiKeys)
+    .where(eq(mcpApiKeys.keyHash, keyHash))
+    .limit(1);
+  
+  if (!keyRecord) {
+    logger.warn('🔑 [MCP-GATEWAY] Invalid API key attempt');
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+  
+  if (!keyRecord.isActive) {
+    return res.status(403).json({ error: 'API key is revoked' });
+  }
+  
+  if (keyRecord.expiresAt && new Date(keyRecord.expiresAt) < new Date()) {
+    return res.status(403).json({ error: 'API key has expired' });
+  }
+  
+  if (keyRecord.allowedIps && keyRecord.allowedIps.length > 0) {
+    const clientIp = getClientIpFromRequest(req);
+    if (!keyRecord.allowedIps.includes(clientIp)) {
+      logger.warn(`🔑 [MCP-GATEWAY] IP not allowed: ${clientIp} for key ${keyRecord.name}`);
+      return res.status(403).json({ error: 'IP address not allowed' });
+    }
+  }
+  
+  // Rate limiting
+  const minuteCheck = checkMinuteRateLimit(keyRecord.id, keyRecord.rateLimitPerMinute);
+  if (!minuteCheck.allowed) {
+    logger.warn(`🔑 [MCP-GATEWAY] ${minuteCheck.error} for key ${keyRecord.name}`);
+    return res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: minuteCheck.error });
+  }
+  
+  const dailyCheck = await checkDailyQuota(keyRecord.id, keyRecord.dailyQuota);
+  if (!dailyCheck.allowed) {
+    logger.warn(`🔑 [MCP-GATEWAY] ${dailyCheck.error} for key ${keyRecord.name}`);
+    return res.status(429).json({ error: 'QUOTA_EXCEEDED', message: dailyCheck.error });
+  }
+  
+  await db
+    .update(mcpApiKeys)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(mcpApiKeys.id, keyRecord.id));
+  
+  await setTenantContext(keyRecord.tenantId);
+  
+  req.mcpAuth = {
+    apiKeyId: keyRecord.id,
+    apiKeyName: keyRecord.name,
+    tenantId: keyRecord.tenantId,
+    allowedDepartments: keyRecord.allowedDepartments,
+    rateLimitPerMinute: keyRecord.rateLimitPerMinute,
+    dailyQuota: keyRecord.dailyQuota,
+    authMethod: 'api_key',
+  };
+  
+  logger.info(`🔑 [MCP-GATEWAY] API Key auth: ${keyRecord.name}`);
+  next();
+}
+
+/**
+ * Handle OAuth2 JWT Authentication
+ * Validates JWT tokens issued by W3 Suite OAuth2 server
+ * 
+ * JWT payload expected:
+ * - sub: user ID
+ * - tenant_id: tenant UUID
+ * - scope: space-separated scopes (e.g., "openid mcp_read mcp_write")
+ * - client_id: OAuth client (chatgpt-mcp-client, claude-mcp-client, etc.)
+ */
+async function handleOAuthAuth(
+  req: McpAuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+  token: string
+) {
+  try {
+    // Verify JWT signature and expiration
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      sub: string;           // User ID
+      tenant_id: string;     // Tenant UUID
+      scope?: string;        // Space-separated scopes
+      scopes?: string[];     // Array of scopes (alternative format)
+      client_id?: string;    // OAuth client ID
+      iat?: number;
+      exp?: number;
+    };
+    
+    // Extract tenant ID (required)
+    const tenantId = decoded.tenant_id;
+    if (!tenantId) {
+      logger.warn('🔐 [MCP-GATEWAY] OAuth token missing tenant_id');
+      return res.status(401).json({ error: 'Invalid OAuth token: missing tenant_id' });
+    }
+    
+    // Extract user ID (required)
+    const userId = decoded.sub;
+    if (!userId) {
+      logger.warn('🔐 [MCP-GATEWAY] OAuth token missing sub (user ID)');
+      return res.status(401).json({ error: 'Invalid OAuth token: missing user ID' });
+    }
+    
+    // Parse scopes (support both space-separated string and array)
+    let scopes: string[] = [];
+    if (decoded.scopes && Array.isArray(decoded.scopes)) {
+      scopes = decoded.scopes;
+    } else if (decoded.scope && typeof decoded.scope === 'string') {
+      scopes = decoded.scope.split(' ').filter(s => s.length > 0);
+    }
+    
+    // Validate MCP scopes
+    const hasMcpRead = scopes.includes('mcp_read');
+    const hasMcpWrite = scopes.includes('mcp_write');
+    const hasTenantAccess = scopes.includes('tenant_access');
+    
+    if (!hasMcpRead && !hasMcpWrite) {
+      logger.warn(`🔐 [MCP-GATEWAY] OAuth token lacks MCP scopes: ${scopes.join(', ')}`);
+      return res.status(403).json({ 
+        error: 'Insufficient scope', 
+        message: 'Token requires mcp_read or mcp_write scope',
+        provided_scopes: scopes
+      });
+    }
+    
+    // Set tenant context
+    await setTenantContext(tenantId);
+    
+    // Generate synthetic API key ID for logging/rate limiting (based on user+client)
+    const syntheticKeyId = `oauth:${userId}:${decoded.client_id || 'unknown'}`;
+    const clientName = decoded.client_id || 'OAuth User';
+    
+    // OAuth users get default rate limits (can be customized per client in future)
+    const oauthRateLimitPerMinute = 60;
+    const oauthDailyQuota = 1000;
+    
+    // Apply rate limiting for OAuth users
+    const minuteCheck = checkMinuteRateLimit(syntheticKeyId, oauthRateLimitPerMinute);
+    if (!minuteCheck.allowed) {
+      return res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: minuteCheck.error });
+    }
+    
+    req.mcpAuth = {
+      apiKeyId: syntheticKeyId,
+      apiKeyName: `OAuth: ${clientName}`,
+      tenantId: tenantId,
+      allowedDepartments: null, // OAuth users can access all departments (controlled by scopes)
+      rateLimitPerMinute: oauthRateLimitPerMinute,
+      dailyQuota: oauthDailyQuota,
+      authMethod: 'oauth',
+      userId: userId,
+      scopes: scopes,
+    };
+    
+    logger.info(`🔐 [MCP-GATEWAY] OAuth auth: user=${userId}, client=${decoded.client_id}, scopes=${scopes.join(',')}`);
+    next();
+    
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'OAuth token expired' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      logger.warn(`🔐 [MCP-GATEWAY] Invalid JWT: ${error.message}`);
+      return res.status(401).json({ error: 'Invalid OAuth token' });
+    }
+    throw error;
   }
 }
 

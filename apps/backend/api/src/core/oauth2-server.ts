@@ -33,7 +33,9 @@ const OAUTH2_CONFIG = {
     'profile', 
     'email',
     'tenant_access',
-    'admin'
+    'admin',
+    'mcp_read',   // MCP Gateway: read-only access to query templates
+    'mcp_write'   // MCP Gateway: write access (actions, mutations)
   ],
   codeChallengeMethods: ['S256', 'plain'], // PKCE with S256 preferred, plain for HTTP fallback
   tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_post', 'none']
@@ -80,6 +82,60 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
     scopes: ['openid', 'profile', 'email', 'tenant_access', 'admin'],
     clientType: 'confidential',
     name: 'W3 Suite Admin Panel'
+  }],
+  // MCP Gateway OAuth Clients for external AI platforms
+  ['chatgpt-mcp-client', {
+    clientId: 'chatgpt-mcp-client',
+    clientSecret: undefined, // Public client (ChatGPT uses PKCE)
+    redirectUris: [
+      'https://chatgpt.com/aip/g-*/oauth/callback',
+      'https://chat.openai.com/aip/g-*/oauth/callback',
+      'https://platform.openai.com/oauth/callback'
+    ],
+    grantTypes: ['authorization_code', 'refresh_token'],
+    responseTypes: ['code'],
+    scopes: ['openid', 'profile', 'tenant_access', 'mcp_read', 'mcp_write'],
+    clientType: 'public',
+    name: 'ChatGPT MCP Integration'
+  }],
+  ['claude-mcp-client', {
+    clientId: 'claude-mcp-client',
+    clientSecret: undefined, // Public client (Claude Desktop uses PKCE)
+    redirectUris: [
+      'http://localhost:*/callback',
+      'http://127.0.0.1:*/callback',
+      'https://claude.ai/oauth/callback'
+    ],
+    grantTypes: ['authorization_code', 'refresh_token'],
+    responseTypes: ['code'],
+    scopes: ['openid', 'profile', 'tenant_access', 'mcp_read', 'mcp_write'],
+    clientType: 'public',
+    name: 'Claude Desktop MCP Integration'
+  }],
+  ['n8n-mcp-client', {
+    clientId: 'n8n-mcp-client',
+    clientSecret: process.env.N8N_MCP_CLIENT_SECRET || 'n8n-mcp-secret-key',
+    redirectUris: [
+      'https://*.app.n8n.cloud/oauth2/callback',
+      'http://localhost:5678/oauth2/callback'
+    ],
+    grantTypes: ['authorization_code', 'refresh_token', 'client_credentials'],
+    responseTypes: ['code'],
+    scopes: ['openid', 'tenant_access', 'mcp_read', 'mcp_write'],
+    clientType: 'confidential',
+    name: 'n8n Workflow Automation'
+  }],
+  ['zapier-mcp-client', {
+    clientId: 'zapier-mcp-client',
+    clientSecret: process.env.ZAPIER_MCP_CLIENT_SECRET || 'zapier-mcp-secret-key',
+    redirectUris: [
+      'https://zapier.com/dashboard/auth/oauth/return/*'
+    ],
+    grantTypes: ['authorization_code', 'refresh_token'],
+    responseTypes: ['code'],
+    scopes: ['openid', 'tenant_access', 'mcp_read', 'mcp_write'],
+    clientType: 'confidential',
+    name: 'Zapier Automation'
   }]
 ]);
 
