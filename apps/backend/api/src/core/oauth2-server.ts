@@ -61,6 +61,8 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
       'http://localhost:3004/auth/callback',
       'http://localhost:5000/auth/callback',
       'http://82.165.16.223/auth/callback',
+      'https://w3suite.it/auth/callback',
+      'https://*.w3suite.it/auth/callback',
       'https://*.w3suite.com/auth/callback',
       'https://*.replit.dev/auth/callback'
     ],

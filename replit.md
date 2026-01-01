@@ -70,8 +70,10 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **📁 File protetti** (esclusi da rsync in `deploy/rsync-exclude.txt`):
     - `.env.production`, `.env`, `ecosystem.config.cjs`
   - **❌ NEVER use full bundle upload** (85MB) - usa sempre deploy incrementale
-  - **VPS Symlink**: `/var/w3suite/current/server.cjs`
+  - **📍 Bundle Path**: `/var/www/w3suite/apps/backend/api/dist/server.cjs`
+  - **📜 Start Script**: `/var/www/w3suite/start-w3-api.sh` (sources `.env.production` then runs node)
   - **PM2 Process**: `w3-api` (porta 3004)
+  - **❌ DEPRECATED**: Il vecchio symlink `/var/www/w3suite/current/` non è più usato
   - **FRONTEND DEPLOY (VARIABILI OBBLIGATORIE)**:
     - **🔐 VITE_AUTH_MODE=oauth2** - OBBLIGATORIO per produzione (default è 'development'!)
     - **📏 VITE_FONT_SCALE=80** - UI zoom al 80%
