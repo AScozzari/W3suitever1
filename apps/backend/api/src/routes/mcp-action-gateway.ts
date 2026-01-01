@@ -18,8 +18,10 @@ import {
   mcpUsageLogs, 
   mcpToolSettings,
   actionConfigurations,
-  tenants
+  tenants,
+  mcpQueryTemplates
 } from '../db/schema/w3suite';
+import { VARIABLE_CATEGORIES, getVariableById, generateMcpInputSchema } from '../constants/mcp-action-variables';
 import { eq, and, desc, sql, gte, lte, count } from 'drizzle-orm';
 import { createHash, randomBytes } from 'crypto';
 import { requirePermission } from '../middleware/tenant';
@@ -636,6 +638,301 @@ router.get('/analytics', requirePermission('settings.read'), async (req: Request
   } catch (error) {
     logger.error('Error fetching MCP analytics:', error);
     res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+// ==================== QUERY TEMPLATES ====================
+
+router.get('/query-templates', requirePermission('settings.read'), async (req: Request, res: Response) => {
+  try {
+    const { department } = req.query;
+
+    let whereCondition = eq(mcpQueryTemplates.isActive, true);
+    if (department) {
+      whereCondition = and(whereCondition, eq(mcpQueryTemplates.department, department as any)) as any;
+    }
+
+    const templates = await db
+      .select()
+      .from(mcpQueryTemplates)
+      .where(whereCondition)
+      .orderBy(mcpQueryTemplates.department, mcpQueryTemplates.name);
+
+    res.json(templates);
+  } catch (error) {
+    logger.error('Error fetching query templates:', error);
+    res.status(500).json({ error: 'Failed to fetch query templates' });
+  }
+});
+
+router.get('/query-templates/:id', requirePermission('settings.read'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const [template] = await db
+      .select()
+      .from(mcpQueryTemplates)
+      .where(eq(mcpQueryTemplates.id, id))
+      .limit(1);
+
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    const variableDetails = template.availableVariables.map(varId => {
+      const variable = getVariableById(varId);
+      return variable || { id: varId, name: varId, description: 'Unknown variable' };
+    });
+
+    res.json({
+      ...template,
+      variableDetails,
+    });
+  } catch (error) {
+    logger.error('Error fetching query template:', error);
+    res.status(500).json({ error: 'Failed to fetch query template' });
+  }
+});
+
+// ==================== VARIABLE CATEGORIES ====================
+
+router.get('/variable-categories', requirePermission('settings.read'), async (_req: Request, res: Response) => {
+  try {
+    res.json(VARIABLE_CATEGORIES);
+  } catch (error) {
+    logger.error('Error fetching variable categories:', error);
+    res.status(500).json({ error: 'Failed to fetch variable categories' });
+  }
+});
+
+// ==================== CUSTOM ACTIONS BUILDER ====================
+
+router.get('/custom-actions', requirePermission('settings.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const customActions = await db
+      .select()
+      .from(actionConfigurations)
+      .where(and(
+        eq(actionConfigurations.tenantId, tenantId),
+        eq(actionConfigurations.isCustomAction, true)
+      ))
+      .orderBy(desc(actionConfigurations.createdAt));
+
+    res.json(customActions);
+  } catch (error) {
+    logger.error('Error fetching custom actions:', error);
+    res.status(500).json({ error: 'Failed to fetch custom actions' });
+  }
+});
+
+router.post('/custom-actions', requirePermission('settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const { 
+      code, 
+      name, 
+      description, 
+      department, 
+      actionType,
+      queryTemplateId,
+      selectedVariables,
+      requiredVariables = []
+    } = req.body;
+
+    if (!code || !name || !department || !actionType || !queryTemplateId) {
+      return res.status(400).json({ error: 'Missing required fields: code, name, department, actionType, queryTemplateId' });
+    }
+
+    const mcpInputSchema = generateMcpInputSchema(selectedVariables || []);
+
+    if (requiredVariables.length > 0) {
+      mcpInputSchema.required = requiredVariables;
+    }
+
+    const [newAction] = await db
+      .insert(actionConfigurations)
+      .values({
+        tenantId,
+        code,
+        name,
+        description,
+        department,
+        isCustomAction: true,
+        mcpActionType: actionType,
+        queryTemplateId,
+        mcpInputSchema,
+        flowType: 'none',
+        isActive: true,
+        createdBy: userId,
+      })
+      .returning();
+
+    logger.info(`🔧 [MCP-GATEWAY] Custom action created: ${code} by ${userId}`);
+
+    res.status(201).json(newAction);
+  } catch (error: any) {
+    logger.error('Error creating custom action:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'An action with this code already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create custom action' });
+  }
+});
+
+router.patch('/custom-actions/:id', requirePermission('settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const actionId = req.params.id;
+    const userId = (req as any).user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const { 
+      name, 
+      description, 
+      selectedVariables,
+      requiredVariables,
+      isActive 
+    } = req.body;
+
+    const updateData: any = { updatedAt: new Date() };
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    if (selectedVariables) {
+      const mcpInputSchema = generateMcpInputSchema(selectedVariables);
+      if (requiredVariables?.length > 0) {
+        mcpInputSchema.required = requiredVariables;
+      }
+      updateData.mcpInputSchema = mcpInputSchema;
+    }
+
+    const [updated] = await db
+      .update(actionConfigurations)
+      .set(updateData)
+      .where(and(
+        eq(actionConfigurations.id, actionId),
+        eq(actionConfigurations.tenantId, tenantId),
+        eq(actionConfigurations.isCustomAction, true)
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Custom action not found' });
+    }
+
+    logger.info(`🔧 [MCP-GATEWAY] Custom action updated: ${updated.code} by ${userId}`);
+
+    res.json(updated);
+  } catch (error) {
+    logger.error('Error updating custom action:', error);
+    res.status(500).json({ error: 'Failed to update custom action' });
+  }
+});
+
+router.delete('/custom-actions/:id', requirePermission('settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const actionId = req.params.id;
+    const userId = (req as any).user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const [deleted] = await db
+      .update(actionConfigurations)
+      .set({ 
+        isActive: false, 
+        archivedAt: new Date(),
+        archivedBy: userId,
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(actionConfigurations.id, actionId),
+        eq(actionConfigurations.tenantId, tenantId),
+        eq(actionConfigurations.isCustomAction, true)
+      ))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Custom action not found' });
+    }
+
+    logger.info(`🗑️ [MCP-GATEWAY] Custom action archived: ${deleted.code} by ${userId}`);
+
+    res.json({ message: 'Action archived successfully' });
+  } catch (error) {
+    logger.error('Error archiving custom action:', error);
+    res.status(500).json({ error: 'Failed to archive custom action' });
+  }
+});
+
+router.post('/custom-actions/:id/duplicate', requirePermission('settings.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const actionId = req.params.id;
+    const userId = (req as any).user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    await setTenantContext(tenantId);
+
+    const [original] = await db
+      .select()
+      .from(actionConfigurations)
+      .where(and(
+        eq(actionConfigurations.id, actionId),
+        eq(actionConfigurations.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!original) {
+      return res.status(404).json({ error: 'Action not found' });
+    }
+
+    const newCode = `${original.code}_copy_${Date.now().toString(36)}`;
+    const newName = `${original.name} (Copy)`;
+
+    const [duplicated] = await db
+      .insert(actionConfigurations)
+      .values({
+        tenantId,
+        code: newCode,
+        name: newName,
+        description: original.description,
+        department: original.department,
+        isCustomAction: true,
+        mcpActionType: original.mcpActionType,
+        queryTemplateId: original.queryTemplateId,
+        mcpInputSchema: original.mcpInputSchema,
+        flowType: 'none',
+        isActive: true,
+        createdBy: userId,
+      })
+      .returning();
+
+    logger.info(`📋 [MCP-GATEWAY] Custom action duplicated: ${original.code} → ${newCode} by ${userId}`);
+
+    res.status(201).json(duplicated);
+  } catch (error) {
+    logger.error('Error duplicating custom action:', error);
+    res.status(500).json({ error: 'Failed to duplicate custom action' });
   }
 });
 
