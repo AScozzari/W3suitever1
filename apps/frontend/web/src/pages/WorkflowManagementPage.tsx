@@ -61,7 +61,8 @@ import {
   Tags,
   Info,
   Eye,
-  Server
+  Server,
+  Cpu
 } from 'lucide-react';
 import { DEPARTMENT_STYLES, TEAM_TYPES, getDepartmentStyle } from '@/lib/constants/departments';
 
@@ -1515,6 +1516,17 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Action Management
+                </Button>
+                <Button
+                  variant={teamsSubView === 'builder' ? 'default' : 'outline'}
+                  onClick={() => setTeamsSubView('builder')}
+                  className={teamsSubView === 'builder' 
+                    ? 'bg-gradient-to-r from-windtre-purple to-windtre-orange text-white' 
+                    : 'hover:bg-gray-100'}
+                  data-testid="tab-action-builder"
+                >
+                  <Cpu className="h-4 w-4 mr-2" />
+                  Action Builder
                 </Button>
               </div>
 
