@@ -258,6 +258,21 @@ export default function ListiniTabContent() {
   const [changeReason, setChangeReason] = useState('');
   const [pendingUpdate, setPendingUpdate] = useState<any>(null);
 
+  // SKU Mapping prompt state
+  const [skuMappingPrompt, setSkuMappingPrompt] = useState<{
+    open: boolean;
+    product: any;
+    targetType: 'no_promo' | 'promo_device' | 'promo_canvas';
+    supplierSkuInput: string;
+    useInternalSku: boolean;
+  }>({
+    open: false,
+    product: null,
+    targetType: 'no_promo',
+    supplierSkuInput: '',
+    useInternalSku: false
+  });
+
   const { data: priceListsData = [], isLoading: priceListsLoading, refetch: refetchPriceLists } = useQuery<any[]>({
     queryKey: ['/api/wms/price-lists']
   });
@@ -727,7 +742,8 @@ export default function ListiniTabContent() {
     return true;
   };
 
-  const selectPhysicalProduct = (product: any) => {
+  // Direct select without mapping check (used internally)
+  const selectPhysicalProductDirectly = (product: any) => {
     // Se c'è già un Canvas selezionato, salva la coppia automaticamente
     if (currentPair.canvasProductId) {
       const canvasProduct = safeProducts.find((p: any) => p.id === currentPair.canvasProductId);
@@ -744,6 +760,11 @@ export default function ListiniTabContent() {
         physicalProductSku: product.sku
       }));
     }
+  };
+
+  // Public function - checks mapping first
+  const selectPhysicalProduct = (product: any) => {
+    checkAndAddProduct(product, 'promo_canvas');
   };
 
   const selectCanvasProduct = (product: any) => {
@@ -923,7 +944,7 @@ export default function ListiniTabContent() {
 
       // Prepare canvas items for dedicated table
       const canvasItemsPayload = priceListHeader.type === 'canvas'
-        ? canvasProducts.map(p => ({
+        ? canvasProducts.map((p: any) => ({
             productId: p.productId,
             partnerId: priceListHeader.operatorId || null,
             monthlyFee: p.monthlyFee,
@@ -1844,7 +1865,7 @@ export default function ListiniTabContent() {
                           size="sm"
                           className="h-6 px-2 text-xs"
                           onClick={() => {
-                            const allIds = new Set(filteredCanvasWithFee.map((p: any) => p.id));
+                            const allIds = new Set<string>(filteredCanvasWithFee.map((p: any) => p.id));
                             setSelectedCanvasProducts(allIds);
                           }}
                           data-testid="btn-select-all-canvas"
@@ -2466,6 +2487,83 @@ export default function ListiniTabContent() {
     return safeSupplierMappings.find((m: any) => m.productId === productId);
   };
 
+  // Check if product has supplier mapping - if not, show prompt to add it
+  const checkAndAddProduct = (product: any, targetType: 'no_promo' | 'promo_device' | 'promo_canvas') => {
+    if (!priceListHeader.supplierId) {
+      // No supplier selected, add directly without mapping check
+      if (targetType === 'no_promo') addProductToNoPromoDirectly(product);
+      else if (targetType === 'promo_device') addProductToPromoDeviceDirectly(product);
+      else if (targetType === 'promo_canvas') selectPhysicalProductDirectly(product);
+      return;
+    }
+    
+    const mapping = getSupplierMapping(product.id);
+    if (mapping) {
+      // Mapping exists, add directly
+      if (targetType === 'no_promo') addProductToNoPromoDirectly(product);
+      else if (targetType === 'promo_device') addProductToPromoDeviceDirectly(product);
+      else if (targetType === 'promo_canvas') selectPhysicalProductDirectly(product);
+    } else {
+      // No mapping - show prompt
+      setSkuMappingPrompt({
+        open: true,
+        product,
+        targetType,
+        supplierSkuInput: '',
+        useInternalSku: true
+      });
+    }
+  };
+
+  // Confirm SKU mapping and add product
+  const confirmSkuMappingAndAdd = async () => {
+    const { product, targetType, supplierSkuInput, useInternalSku } = skuMappingPrompt;
+    if (!product) return;
+
+    // Save mapping to backend if not using internal SKU
+    if (!useInternalSku && supplierSkuInput.trim() && priceListHeader.supplierId) {
+      try {
+        await apiRequest('/api/wms/product-supplier-mappings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: product.id,
+            supplierId: priceListHeader.supplierId,
+            supplierSku: supplierSkuInput.trim(),
+            useInternalSku: false,
+            isPrimary: true
+          })
+        });
+        // Refresh mappings cache
+        queryClient.invalidateQueries({ queryKey: ['/api/wms/product-supplier-mappings'] });
+        toast({
+          title: "Mapping SKU salvato",
+          description: `${product.sku} → ${supplierSkuInput.trim()}`,
+        });
+      } catch (e) {
+        console.log('Mapping might already exist:', e);
+      }
+    }
+
+    // Add product with the mapping info
+    if (targetType === 'no_promo') {
+      addProductToNoPromoWithMapping(product, useInternalSku ? product.sku : supplierSkuInput.trim(), useInternalSku);
+    } else if (targetType === 'promo_device') {
+      addProductToPromoDeviceWithMapping(product, useInternalSku ? product.sku : supplierSkuInput.trim(), useInternalSku);
+    } else if (targetType === 'promo_canvas') {
+      selectPhysicalProductDirectly(product);
+    }
+
+    // Close prompt
+    setSkuMappingPrompt({
+      open: false,
+      product: null,
+      targetType: 'no_promo',
+      supplierSkuInput: '',
+      useInternalSku: false
+    });
+  };
+
   const getDefaultVatRate = () => {
     return safeVatRates.find((r: any) => r.code === 'STD' || r.ratePercent === '22.00') || safeVatRates[0];
   };
@@ -2522,7 +2620,8 @@ export default function ListiniTabContent() {
     }
   };
 
-  const addProductToNoPromo = (product: any) => {
+  // Direct add without mapping check (used internally)
+  const addProductToNoPromoDirectly = (product: any) => {
     if (noPromoProducts.some(p => p.productId === product.id)) return;
     
     const mapping = getSupplierMapping(product.id);
@@ -2550,6 +2649,41 @@ export default function ListiniTabContent() {
     };
     
     setNoPromoProducts(prev => [...prev, newProduct]);
+  };
+
+  // Add with explicit mapping (used after prompt confirmation)
+  const addProductToNoPromoWithMapping = (product: any, supplierSku: string, useInternalSku: boolean) => {
+    if (noPromoProducts.some(p => p.productId === product.id)) return;
+    
+    const defaultVatRate = getDefaultVatRate();
+    const defaultVatRegime = getDefaultVatRegime();
+    
+    const newProductId = crypto.randomUUID();
+    const newProduct: NoPromoProduct = {
+      id: newProductId,
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku,
+      productBrand: product.brand || '',
+      productCategory: safeCategories.find((c: any) => c.id === product.categoryId)?.name || '',
+      productType: product.type,
+      supplierSku: supplierSku,
+      useInternalSku: useInternalSku,
+      purchaseCost: '',
+      purchaseVatRateId: defaultVatRate?.id || '',
+      purchaseVatRegimeId: defaultVatRegime?.id || '',
+      salesPriceVatIncl: '',
+      salesVatRateId: defaultVatRate?.id || '',
+      salesVatRegimeId: defaultVatRegime?.id || '',
+      discountPercent: ''
+    };
+    
+    setNoPromoProducts(prev => [...prev, newProduct]);
+  };
+
+  // Public function - checks mapping first
+  const addProductToNoPromo = (product: any) => {
+    checkAndAddProduct(product, 'no_promo');
   };
 
   const updateNoPromoProduct = (id: string, field: keyof NoPromoProduct, value: any) => {
@@ -2592,7 +2726,8 @@ export default function ListiniTabContent() {
     return finalPrice > 0 ? finalPrice.toFixed(2) : '0.00';
   };
 
-  const addProductToPromoDevice = (product: any) => {
+  // Direct add without mapping check (used internally)
+  const addProductToPromoDeviceDirectly = (product: any) => {
     if (promoDeviceProducts.some(p => p.productId === product.id)) return;
     
     const mapping = getSupplierMapping(product.id);
@@ -2625,6 +2760,46 @@ export default function ListiniTabContent() {
     };
     
     setPromoDeviceProducts(prev => [...prev, newProduct]);
+  };
+
+  // Add with explicit mapping (used after prompt confirmation)
+  const addProductToPromoDeviceWithMapping = (product: any, supplierSku: string, useInternalSku: boolean) => {
+    if (promoDeviceProducts.some(p => p.productId === product.id)) return;
+    
+    const defaultVatRate = getDefaultVatRate();
+    const defaultVatRegime = getDefaultVatRegime();
+    
+    const newProductId = crypto.randomUUID();
+    const newProduct: PromoDeviceProduct = {
+      id: newProductId,
+      productId: product.id,
+      productName: product.name,
+      productSku: product.sku,
+      productBrand: product.brand || '',
+      productCategory: safeCategories.find((c: any) => c.id === product.categoryId)?.name || '',
+      productType: product.type,
+      supplierSku: supplierSku,
+      useInternalSku: useInternalSku,
+      purchaseCost: '',
+      purchaseVatRateId: defaultVatRate?.id || '',
+      purchaseVatRegimeId: defaultVatRegime?.id || '',
+      salesPriceVatIncl: '',
+      salesVatRateId: defaultVatRate?.id || '',
+      salesVatRegimeId: defaultVatRegime?.id || '',
+      pricingMode: 'discount',
+      ndcAmount: '',
+      discountType: 'euro',
+      discountValue: '',
+      extraMarginPercent: '',
+      publicPrice: ''
+    };
+    
+    setPromoDeviceProducts(prev => [...prev, newProduct]);
+  };
+
+  // Public function - checks mapping first
+  const addProductToPromoDevice = (product: any) => {
+    checkAndAddProduct(product, 'promo_device');
   };
 
   const updatePromoDeviceProduct = (id: string, field: keyof PromoDeviceProduct, value: any) => {
@@ -4847,6 +5022,95 @@ export default function ListiniTabContent() {
               data-testid="button-versioning-cancel"
             >
               Annulla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* SKU Mapping Prompt Dialog */}
+      <Dialog 
+        open={skuMappingPrompt.open} 
+        onOpenChange={(open) => !open && setSkuMappingPrompt(prev => ({ ...prev, open: false }))}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              SKU Fornitore Mancante
+            </DialogTitle>
+            <DialogDescription>
+              Il prodotto selezionato non ha un mapping SKU per il fornitore corrente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {skuMappingPrompt.product && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium">{skuMappingPrompt.product.name}</p>
+                <p className="text-sm text-gray-600">SKU Interno: {skuMappingPrompt.product.sku}</p>
+                {priceListHeader.supplierId && (
+                  <p className="text-sm text-gray-600">
+                    Fornitore: {safeSuppliers.find((s: any) => s.id === priceListHeader.supplierId)?.name || 'N/A'}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="use-internal-sku"
+                    checked={skuMappingPrompt.useInternalSku}
+                    onCheckedChange={(checked) => 
+                      setSkuMappingPrompt(prev => ({ 
+                        ...prev, 
+                        useInternalSku: !!checked,
+                        supplierSkuInput: checked ? '' : prev.supplierSkuInput
+                      }))
+                    }
+                    data-testid="checkbox-use-internal-sku"
+                  />
+                  <label htmlFor="use-internal-sku" className="text-sm cursor-pointer">
+                    Usa SKU interno ({skuMappingPrompt.product.sku})
+                  </label>
+                </div>
+                
+                {!skuMappingPrompt.useInternalSku && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="supplier-sku">SKU Fornitore</Label>
+                    <Input
+                      id="supplier-sku"
+                      placeholder="Inserisci SKU fornitore..."
+                      value={skuMappingPrompt.supplierSkuInput}
+                      onChange={(e) => setSkuMappingPrompt(prev => ({ 
+                        ...prev, 
+                        supplierSkuInput: e.target.value 
+                      }))}
+                      data-testid="input-supplier-sku-prompt"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Questo mapping sarà salvato e disponibile per carico merce, ordini e DDT
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSkuMappingPrompt(prev => ({ ...prev, open: false }))}
+              data-testid="button-sku-mapping-cancel"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={confirmSkuMappingAndAdd}
+              disabled={!skuMappingPrompt.useInternalSku && !skuMappingPrompt.supplierSkuInput.trim()}
+              data-testid="button-sku-mapping-confirm"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Conferma e Aggiungi
             </Button>
           </DialogFooter>
         </DialogContent>
