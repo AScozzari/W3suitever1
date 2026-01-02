@@ -17,6 +17,7 @@ import mcpRoutes from "../routes/mcp";
 import mcpOAuthRoutes from "../routes/mcp-oauth";
 import mcpCredentialsRoutes from "../routes/mcp-credentials";
 import mcpPublicGatewayRoutes from "../routes/mcp-public-gateway";
+import mcpManagementRoutes from "../routes/mcp-management";
 import { aiSettingsRoutes } from "../routes/ai-settings";
 import entitiesRoutes from "../routes/entities";
 import productsRoutes from "../routes/products";
@@ -1475,6 +1476,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PUBLIC API for external integrations - uses API Key auth (not session/JWT)
   // Must be registered WITHOUT tenant/rbac middleware - handles its own auth
   app.use('/api/mcp-public', mcpPublicGatewayRoutes);
+  
+  // ==================== MCP MANAGEMENT ROUTES ====================
+  // UI endpoints for MCP Action Gateway management (API Keys, Tools, Stats)
+  app.use('/api/mcp-gateway', mcpManagementRoutes);
   
   // ==================== AI SETTINGS ROUTES ====================
   // AI configuration and OpenAI connection management
