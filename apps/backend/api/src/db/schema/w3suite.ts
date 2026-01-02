@@ -3982,9 +3982,6 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   actionName: varchar("action_name", { length: 200 }).notNull(), // Nome leggibile: 'Richiesta Ferie'
   description: text("description"), // Descrizione dettagliata dell'azione
   
-  // 🎯 CATEGORIA AZIONE (operative = team+workflow, query = solo MCP)
-  actionCategory: actionCategoryEnum("action_category").default('operative').notNull(),
-  
   // 🎯 CONFIGURAZIONE FLUSSO APPROVAZIONE
   requiresApproval: boolean("requires_approval").default(false).notNull(), // Richiede approvazione?
   flowType: actionFlowTypeEnum("flow_type").default('none').notNull(), // none | default | workflow
@@ -4007,12 +4004,6 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   // 🎯 METADATA
   metadata: jsonb("metadata").default({}), // Metadati aggiuntivi configurabili
   
-  // 🎯 MCP ACTION BUILDER - Campi per azioni custom esposte via MCP Gateway
-  isCustomAction: boolean("is_custom_action").default(false), // true = creata da Action Builder
-  mcpActionType: mcpActionTypeEnum("mcp_action_type"), // read | create | update | delete
-  mcpInputSchema: jsonb("mcp_input_schema"), // JSON Schema parametri accettati da MCP
-  queryTemplateId: uuid("query_template_id"), // Riferimento a template SQL per esecuzione
-  
   // 🎯 AUDIT
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -4023,9 +4014,6 @@ export const actionConfigurations = w3suiteSchema.table("action_configurations",
   index("action_configurations_department_idx").on(table.department),
   index("action_configurations_active_idx").on(table.isActive),
   index("action_configurations_flow_type_idx").on(table.flowType),
-  index("action_configurations_custom_idx").on(table.isCustomAction),
-  index("action_configurations_mcp_type_idx").on(table.mcpActionType),
-  index("action_configurations_category_idx").on(table.actionCategory),
   // 🎯 UNIQUE: Una sola configurazione per azione per dipartimento per tenant
   uniqueIndex("action_configurations_unique").on(table.tenantId, table.department, table.actionId),
 ]);
