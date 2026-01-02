@@ -20,8 +20,9 @@ import { z } from "zod";
 // ==================== SHARED REFERENCE TABLES ====================
 
 // ==================== OPERATORS (Telco Brands: WindTre, VeryMobile) ====================
-// Operators are brand commercial names with embedded Legal Entity info (ragione sociale)
-// Example: WindTre (Operator) belongs to Wind Tre S.p.A. (ragione_sociale)
+// Operators are brand commercial names linked to Legal Entity via FK
+// Example: WindTre (Operator) → legal_entity_id → Wind Tre S.p.A. (legal_entities)
+// BIDIRECTIONAL: Creating operator auto-creates/links legal_entity with is_operator=true
 export const operators = pgTable("operators", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   code: varchar("code", { length: 50 }).unique().notNull(),
@@ -32,33 +33,39 @@ export const operators = pgTable("operators", {
   isActive: boolean("is_active").default(true).notNull(),
   sortOrder: smallint("sort_order").default(0),
   
-  // Legal Entity Info (Ragione Sociale)
-  ragioneSociale: varchar("ragione_sociale", { length: 255 }), // Wind Tre S.p.A.
-  piva: varchar("piva", { length: 20 }), // Partita IVA (IT + 11 cifre)
-  codiceFiscale: varchar("codice_fiscale", { length: 16 }), // Codice Fiscale
-  formaGiuridica: varchar("forma_giuridica", { length: 50 }), // S.p.A., S.r.l., etc.
+  // FK to Legal Entity (REQUIRED for bidirectional architecture)
+  legalEntityId: uuid("legal_entity_id"), // References w3suite.legal_entities(id)
   
-  // Address
+  // Legacy embedded fields - kept for backward compatibility, will be deprecated
+  // These should be read from legal_entities via legalEntityId
+  ragioneSociale: varchar("ragione_sociale", { length: 255 }),
+  piva: varchar("piva", { length: 20 }),
+  codiceFiscale: varchar("codice_fiscale", { length: 16 }),
+  formaGiuridica: varchar("forma_giuridica", { length: 50 }),
+  
+  // Address (legacy - read from legal_entities)
   indirizzo: text("indirizzo"),
   citta: varchar("citta", { length: 100 }),
   provincia: varchar("provincia", { length: 2 }),
   cap: varchar("cap", { length: 5 }),
   
-  // Contacts
+  // Contacts (legacy - read from legal_entities)
   telefono: varchar("telefono", { length: 30 }),
   email: varchar("email", { length: 255 }),
   pec: varchar("pec", { length: 255 }),
   website: varchar("website", { length: 255 }),
   
-  // SDI / Fatturazione
+  // SDI / Fatturazione (legacy - read from legal_entities)
   codiceSDI: varchar("codice_sdi", { length: 7 }),
-  rea: varchar("rea", { length: 50 }), // Numero REA
+  rea: varchar("rea", { length: 50 }),
   registroImprese: varchar("registro_imprese", { length: 100 }),
   capitaleSociale: varchar("capitale_sociale", { length: 50 }),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_operators_legal_entity").on(table.legalEntityId),
+]);
 
 export const insertOperatorSchema = createInsertSchema(operators).omit({ 
   id: true, 
