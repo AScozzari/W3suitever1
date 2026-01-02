@@ -492,6 +492,51 @@ router.post('/custom-actions/:id/duplicate', async (req: Request, res: Response)
   }
 });
 
+// PUT /api/mcp-gateway/custom-actions/:id - Update custom action
+router.put('/custom-actions/:id', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    const { code, name, description, department, actionType, actionCategory, selectedVariables, requiredVariables } = req.body;
+
+    // Build input schema from variables
+    const inputSchema: any = { type: 'object', properties: {}, required: requiredVariables || [] };
+    if (selectedVariables && selectedVariables.length > 0) {
+      for (const varId of selectedVariables) {
+        inputSchema.properties[varId] = { type: 'string', description: `Parameter: ${varId}` };
+      }
+    }
+
+    const [updated] = await db
+      .update(actionDefinitions)
+      .set({
+        actionId: code,
+        actionName: name,
+        description: description || null,
+        department: department || null,
+        actionCategory: actionCategory || 'query',
+        mcpInputSchema: inputSchema,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(actionDefinitions.id, id),
+        eq(actionDefinitions.tenantId, tenantId),
+        eq(actionDefinitions.sourceTable, 'custom')
+      ))
+      .returning();
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Action not found or not editable' });
+    }
+
+    logger.info('[MCP-MGMT] Updated custom action:', { id, tenantId });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error updating custom action:', error);
+    res.status(500).json({ success: false, error: 'Failed to update action' });
+  }
+});
+
 // DELETE /api/mcp-gateway/custom-actions/:id - Delete custom action
 router.delete('/custom-actions/:id', async (req: Request, res: Response) => {
   try {

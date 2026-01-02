@@ -163,6 +163,7 @@ export function ActionBuilderTab() {
   const [actionCode, setActionCode] = useState('');
   const [actionDescription, setActionDescription] = useState('');
   const [actionCategory, setActionCategory] = useState<'operative' | 'query'>('query');
+  const [editingAction, setEditingAction] = useState<CustomAction | null>(null);
   
   // Filtri per la lista azioni
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,6 +204,19 @@ export function ActionBuilderTab() {
     }
   });
 
+  const updateActionMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      apiRequest(`/api/mcp-gateway/custom-actions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'] });
+      toast({ title: 'Azione aggiornata', description: 'L\'azione è stata modificata con successo.' });
+      resetWizard();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Errore', description: error.message || 'Impossibile aggiornare l\'azione.', variant: 'destructive' });
+    }
+  });
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [selectedActionForAction, setSelectedActionForAction] = useState<CustomAction | null>(null);
@@ -240,6 +254,32 @@ export function ActionBuilderTab() {
     setActionCode('');
     setActionDescription('');
     setActionCategory('query');
+    setEditingAction(null);
+  };
+
+  const openEditWizard = (action: CustomAction) => {
+    setEditingAction(action);
+    setActionCode(action.code || '');
+    setActionName(action.name || '');
+    setActionDescription(action.mcpDescription || '');
+    setActionCategory((action as any).actionCategory === 'operative' ? 'operative' : 'query');
+    setSelectedDepartment(action.department || '');
+    setSelectedActionType(action.mcpActionType || '');
+    
+    // Extract variables from inputSchema
+    const inputProps = action.mcpInputSchema?.properties || {};
+    const varIds = Object.keys(inputProps);
+    setSelectedVariables(varIds);
+    
+    const required = action.mcpInputSchema?.required || [];
+    setRequiredVariables(required);
+    
+    // Find matching template if possible
+    const matchingTemplate = queryTemplates.find(t => t.department === action.department);
+    setSelectedTemplate(matchingTemplate || null);
+    
+    setStep(1);
+    setWizardOpen(true);
   };
 
   // Filtra templates per dipartimento (struttura gerarchica)
@@ -248,22 +288,33 @@ export function ActionBuilderTab() {
   // Estrai dipartimenti che hanno almeno un template disponibile
   const availableDepartments = [...new Set(queryTemplates.map(t => t.department))];
 
-  const handleCreateAction = () => {
-    if (!actionCode || !actionName || !selectedTemplate) {
+  const handleSaveAction = () => {
+    if (!actionCode || !actionName) {
       toast({ title: 'Campi obbligatori mancanti', variant: 'destructive' });
       return;
     }
-    createActionMutation.mutate({
+    
+    const actionData = {
       code: actionCode.toUpperCase().replace(/[^A-Z0-9_]/g, '_'),
       name: actionName,
       description: actionDescription,
       department: selectedDepartment,
       actionType: selectedActionType,
-      actionCategory, // operative | query
-      queryTemplateId: selectedTemplate.id,
+      actionCategory,
+      queryTemplateId: selectedTemplate?.id,
       selectedVariables,
       requiredVariables,
-    });
+    };
+
+    if (editingAction) {
+      updateActionMutation.mutate({ id: editingAction.id, data: actionData });
+    } else {
+      if (!selectedTemplate) {
+        toast({ title: 'Seleziona un template', variant: 'destructive' });
+        return;
+      }
+      createActionMutation.mutate(actionData);
+    }
   };
 
   const toggleVariable = (varId: string) => {
@@ -521,7 +572,7 @@ export function ActionBuilderTab() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => toast({ title: 'Modifica', description: 'Funzionalità in arrivo' })}
+                                  onClick={() => openEditWizard(action)}
                                   data-testid={`btn-edit-${action.id}`}
                                 >
                                   <Pencil className="h-4 w-4" />
@@ -579,7 +630,7 @@ export function ActionBuilderTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-orange-500" />
-              Action Builder
+              {editingAction ? 'Modifica Azione' : 'Action Builder'}
             </DialogTitle>
             <DialogDescription>
               Crea una nuova azione custom in {4 - step + 1} passaggi
@@ -974,13 +1025,13 @@ export function ActionBuilderTab() {
                   if (step < 4) {
                     setStep(step + 1);
                   } else {
-                    handleCreateAction();
+                    handleSaveAction();
                   }
                 }}
                 disabled={
                   (step === 1 && (!actionCode || !actionName)) ||
                   (step === 2 && !selectedDepartment) ||
-                  (step === 3 && !selectedTemplate) ||
+                  (step === 3 && !selectedTemplate && !editingAction) ||
                   (step === 4 && selectedVariables.length === 0)
                 }
                 className="gap-2"
@@ -994,7 +1045,7 @@ export function ActionBuilderTab() {
                 ) : (
                   <>
                     <Check className="h-4 w-4" />
-                    Crea Azione
+                    {editingAction ? 'Salva Modifiche' : 'Crea Azione'}
                   </>
                 )}
               </Button>
