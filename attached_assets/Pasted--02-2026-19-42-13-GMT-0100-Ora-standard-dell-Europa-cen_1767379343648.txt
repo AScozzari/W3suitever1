@@ -1,0 +1,179 @@
+ 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+Layout-BI1c2NWz.js:86 No auth token found - login required
+installHook.js:1 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | Not connected.
+overrideMethod @ installHook.js:1
+print @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+error @ Layout-BI1c2NWz.js:58
+onTransportError @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:61
+(anonime) @ Layout-BI1c2NWz.js:61
+Promise.catch
+send @ Layout-BI1c2NWz.js:61
+Ee @ Layout-BI1c2NWz.js:61
+init @ Layout-BI1c2NWz.js:71
+xe @ Layout-BI1c2NWz.js:71
+Cn @ Layout-BI1c2NWz.js:71
+register @ Layout-BI1c2NWz.js:71
+unregister @ Layout-BI1c2NWz.js:58
+(anonime) @ Layout-BI1c2NWz.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request transport error. Generating internal 503 Service Unavailable.
+overrideMethod @ installHook.js:1
+print @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+error @ Layout-BI1c2NWz.js:58
+onTransportError @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:61
+(anonime) @ Layout-BI1c2NWz.js:61
+Promise.catch
+send @ Layout-BI1c2NWz.js:61
+Ee @ Layout-BI1c2NWz.js:61
+init @ Layout-BI1c2NWz.js:71
+xe @ Layout-BI1c2NWz.js:71
+Cn @ Layout-BI1c2NWz.js:71
+register @ Layout-BI1c2NWz.js:71
+unregister @ Layout-BI1c2NWz.js:58
+(anonime) @ Layout-BI1c2NWz.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Unregister rejected with status code 503
+overrideMethod @ installHook.js:1
+print @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+error @ Layout-BI1c2NWz.js:58
+onReject @ Layout-BI1c2NWz.js:58
+receiveResponse @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:71
+onTransportError @ Layout-BI1c2NWz.js:61
+(anonime) @ Layout-BI1c2NWz.js:61
+Promise.catch
+send @ Layout-BI1c2NWz.js:61
+Ee @ Layout-BI1c2NWz.js:61
+init @ Layout-BI1c2NWz.js:71
+xe @ Layout-BI1c2NWz.js:71
+Cn @ Layout-BI1c2NWz.js:71
+register @ Layout-BI1c2NWz.js:71
+unregister @ Layout-BI1c2NWz.js:58
+(anonime) @ Layout-BI1c2NWz.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+Layout-BI1c2NWz.js:58 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+Layout-BI1c2NWz.js:86 📡 Registration state: Unregistered
+Layout-BI1c2NWz.js:58 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+Layout-BI1c2NWz.js:58 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Terminated
+Layout-BI1c2NWz.js:86 📡 Registration state: Terminated
+index-BDshfON0.js:2 🔍 Token expiry check: Current time: 19:42:13, Token expires: 19:53:16
+installHook.js:1 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK4664555 | Not connected.
+overrideMethod @ installHook.js:1
+print @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+error @ Layout-BI1c2NWz.js:58
+logTransportError @ Layout-BI1c2NWz.js:61
+(anonime) @ Layout-BI1c2NWz.js:61
+Promise.catch
+Ee @ Layout-BI1c2NWz.js:61
+init @ Layout-BI1c2NWz.js:71
+xe @ Layout-BI1c2NWz.js:71
+Cn @ Layout-BI1c2NWz.js:71
+register @ Layout-BI1c2NWz.js:71
+unregister @ Layout-BI1c2NWz.js:58
+(anonime) @ Layout-BI1c2NWz.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK4664555 | Transport error occurred in non-INVITE client transaction with id z9hG4bK4664555.
+overrideMethod @ installHook.js:1
+print @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+error @ Layout-BI1c2NWz.js:58
+logTransportError @ Layout-BI1c2NWz.js:61
+(anonime) @ Layout-BI1c2NWz.js:61
+Promise.catch
+Ee @ Layout-BI1c2NWz.js:61
+init @ Layout-BI1c2NWz.js:71
+xe @ Layout-BI1c2NWz.js:71
+Cn @ Layout-BI1c2NWz.js:71
+register @ Layout-BI1c2NWz.js:71
+unregister @ Layout-BI1c2NWz.js:58
+(anonime) @ Layout-BI1c2NWz.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+installHook.js:1 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK4664555 | Failed to send initial outgoing request.
+overrideMethod @ installHook.js:1
+print @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+genericLog @ Layout-BI1c2NWz.js:58
+error @ Layout-BI1c2NWz.js:58
+logTransportError @ Layout-BI1c2NWz.js:61
+(anonime) @ Layout-BI1c2NWz.js:61
+Promise.catch
+Ee @ Layout-BI1c2NWz.js:61
+init @ Layout-BI1c2NWz.js:71
+xe @ Layout-BI1c2NWz.js:71
+Cn @ Layout-BI1c2NWz.js:71
+register @ Layout-BI1c2NWz.js:71
+unregister @ Layout-BI1c2NWz.js:58
+(anonime) @ Layout-BI1c2NWz.js:86
+Oo @ react-core-DamieDW-.js:32
+Lt @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Za @ react-core-DamieDW-.js:32
+E @ react-core-DamieDW-.js:17
+at @ react-core-DamieDW-.js:17Comprendi l'errore
+index-BDshfON0.js:2 🔍 Token expiry check: Current time: 19:42:13, Token expires: 19:53:16
+Layout-BI1c2NWz.js:58 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of sessions
+Layout-BI1c2NWz.js:58 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of subscriptions
+Layout-BI1c2NWz.js:58 Fri Jan 02 2026 19:42:13 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAge
