@@ -443,9 +443,17 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
       conditions.push(eq(products.typeId, type_id));
     }
 
-    // Supplier filter (exact match by ID)
+    // Supplier filter (via product_supplier_mappings table)
     if (supplier_id && typeof supplier_id === "string") {
-      conditions.push(eq(products.supplierId, supplier_id));
+      conditions.push(
+        sql`EXISTS (
+          SELECT 1 FROM w3suite.product_supplier_mappings psm
+          WHERE psm.product_id = ${products.id}
+            AND psm.tenant_id = ${tenantId}
+            AND psm.supplier_id = ${supplier_id}
+            AND psm.is_active = true
+        )`
+      );
     }
 
     if (is_active !== undefined) {
@@ -560,7 +568,26 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
              AND pi.tenant_id = ${tenantId}
              AND ps.tenant_id = ${tenantId}
              AND ps.serial_type = 'imei'
-          ), ARRAY[]::text[])`
+          ), ARRAY[]::text[])`,
+        // Primary supplier from product_supplier_mappings
+        supplierId: sql<string | null>`(
+          SELECT psm.supplier_id::text
+          FROM w3suite.product_supplier_mappings psm
+          WHERE psm.product_id = ${products.id}
+            AND psm.tenant_id = ${tenantId}
+            AND psm.is_primary = true
+            AND psm.is_active = true
+          LIMIT 1
+        )`,
+        supplierSku: sql<string | null>`(
+          SELECT psm.supplier_sku
+          FROM w3suite.product_supplier_mappings psm
+          WHERE psm.product_id = ${products.id}
+            AND psm.tenant_id = ${tenantId}
+            AND psm.is_primary = true
+            AND psm.is_active = true
+          LIMIT 1
+        )`
       })
       .from(products)
       .leftJoin(
