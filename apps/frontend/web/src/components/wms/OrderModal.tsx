@@ -204,6 +204,22 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
   const [pendingVatRegimeId, setPendingVatRegimeId] = useState<string>('');
   const [pendingSupplierSku, setPendingSupplierSku] = useState<string>('');
   const [productRequiresMapping, setProductRequiresMapping] = useState<boolean>(false);
+  
+  // SKU Mapping Prompt Dialog (like in price lists)
+  const [skuMappingPrompt, setSkuMappingPrompt] = useState<{
+    open: boolean;
+    product: any | null;
+    existingMapping: any | null;
+    supplierSkuInput: string;
+    useInternalSku: boolean;
+  }>({
+    open: false,
+    product: null,
+    existingMapping: null,
+    supplierSkuInput: '',
+    useInternalSku: false,
+  });
+  
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -388,8 +404,8 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
     }
   }, [pendingItem, mappingsAllFetched, allSupplierMappings, searchMode, unmappedSupplierSku]);
 
-  // Handle product selection
-  const handleProductSelect = (product: any) => {
+  // Check SKU mapping and show prompt if needed (like in price lists)
+  const checkAndAddProduct = (product: any) => {
     // Check if product already in list
     const existing = items.find(i => i.productId === product.id);
     if (existing) {
@@ -401,16 +417,32 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       return;
     }
 
-    // Check if product has existing mapping with current supplier (only for Flow 1 - internal search)
-    // Flow 2 (supplier SKU) already has unmappedSupplierSku set
-    // Only check mapping requirement if mappings have been fetched to avoid false positives
-    const hasExistingMapping = mappingsAllFetched 
-      ? allSupplierMappings.some(m => m.productId === product.id)
-      : true; // Assume mapping exists if not yet loaded (avoid false requirement)
-    const requiresMapping = searchMode === 'internal' && !hasExistingMapping && !unmappedSupplierSku;
-    setProductRequiresMapping(requiresMapping);
+    // For Flow 2 (supplier SKU search) - mapping already exists via unmappedSupplierSku
+    if (unmappedSupplierSku) {
+      addProductDirectly(product, unmappedSupplierSku);
+      return;
+    }
 
-    // Set pending item for inline quantity/cost entry
+    // Check for existing mapping with current supplier
+    const existingMapping = allSupplierMappings.find(m => m.productId === product.id);
+    
+    if (existingMapping) {
+      // Mapping exists - add product directly with existing SKU
+      addProductDirectly(product, existingMapping.supplierSku);
+    } else {
+      // No mapping - show prompt dialog
+      setSkuMappingPrompt({
+        open: true,
+        product: product,
+        existingMapping: null,
+        supplierSkuInput: '',
+        useInternalSku: false,
+      });
+    }
+  };
+
+  // Add product directly (internal use, after mapping verified)
+  const addProductDirectly = (product: any, supplierSku?: string) => {
     setPendingItem({
       productId: product.id,
       productName: product.name,
@@ -422,21 +454,61 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
       productColor: product.color,
       productMemory: product.memory,
     });
+    if (supplierSku) {
+      setPendingSupplierSku(supplierSku);
+    }
     setPendingQuantity('1');
     setPendingUnitCost('');
     setSearchQuery('');
     setShowSearchResults(false);
-    // Note: Do NOT reset unmappedSupplierSku here - it's needed for addPendingItem to create the mapping
+    setUnmappedSupplierSku('');
+    setProductRequiresMapping(false);
 
-    // Focus quantity input (or SKU input if mapping required)
+    // Focus quantity input
     setTimeout(() => {
-      if (requiresMapping) {
-        // Focus will be on SKU field first
-      } else {
-        quantityInputRef.current?.focus();
-        quantityInputRef.current?.select();
-      }
+      quantityInputRef.current?.focus();
+      quantityInputRef.current?.select();
     }, 100);
+  };
+
+  // Confirm SKU mapping from prompt dialog and add product
+  const confirmSkuMappingAndAdd = async () => {
+    if (!skuMappingPrompt.product || !selectedSupplierId) return;
+    
+    const supplierSku = skuMappingPrompt.useInternalSku 
+      ? skuMappingPrompt.product.sku 
+      : skuMappingPrompt.supplierSkuInput.trim().toUpperCase();
+    
+    if (!supplierSku) {
+      toast({
+        title: 'SKU Fornitore obbligatorio',
+        description: 'Inserisci lo SKU del fornitore o usa quello interno',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Save mapping to backend
+    try {
+      await createMappingMutation.mutateAsync({
+        supplierId: selectedSupplierId,
+        supplierSku: supplierSku,
+        productId: skuMappingPrompt.product.id,
+      });
+    } catch (error) {
+      console.error('Error saving mapping:', error);
+    }
+
+    // Add product with the new SKU
+    addProductDirectly(skuMappingPrompt.product, supplierSku);
+    
+    // Close dialog
+    setSkuMappingPrompt(prev => ({ ...prev, open: false }));
+  };
+
+  // Handle product selection (public function)
+  const handleProductSelect = (product: any) => {
+    checkAndAddProduct(product);
   };
 
   // Create SKU mapping mutation
@@ -1277,23 +1349,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                               )}
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {/* SKU Fornitore - required if no existing mapping, optional otherwise */}
-                              {searchMode === 'internal' && selectedSupplierId && !unmappedSupplierSku && (
-                                <Input
-                                  type="text"
-                                  value={pendingSupplierSku}
-                                  onChange={(e) => setPendingSupplierSku(e.target.value.toUpperCase())}
-                                  className={`h-8 w-36 text-center text-sm ${
-                                    productRequiresMapping 
-                                      ? pendingSupplierSku 
-                                        ? 'border-green-500 focus:border-green-500' 
-                                        : 'border-red-500 focus:border-red-500 bg-red-50'
-                                      : ''
-                                  }`}
-                                  placeholder={productRequiresMapping ? "SKU Forn. *" : "SKU Forn."}
-                                  title={productRequiresMapping ? "SKU Fornitore obbligatorio" : "SKU Fornitore (opzionale)"}
-                                  data-testid="input-pending-supplier-sku"
-                                />
+                              {/* Show mapped SKU badge if available */}
+                              {pendingSupplierSku && (
+                                <span className="h-8 px-3 flex items-center text-xs font-mono bg-blue-100 text-blue-700 rounded border border-blue-200" title="SKU Fornitore mappato">
+                                  {pendingSupplierSku}
+                                </span>
                               )}
                               <Input
                                 ref={quantityInputRef}
@@ -1722,6 +1782,97 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* SKU Mapping Prompt Dialog */}
+      <Dialog 
+        open={skuMappingPrompt.open} 
+        onOpenChange={(open) => !open && setSkuMappingPrompt(prev => ({ ...prev, open: false }))}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              SKU Fornitore Mancante
+            </DialogTitle>
+            <DialogDescription>
+              Il prodotto selezionato non ha un mapping SKU per il fornitore corrente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {skuMappingPrompt.product && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium">{skuMappingPrompt.product.name}</p>
+                <p className="text-sm text-gray-600">SKU Interno: {skuMappingPrompt.product.sku}</p>
+                {selectedSupplierId && (
+                  <p className="text-sm text-gray-600">
+                    Fornitore: {suppliersData.find(s => s.id === selectedSupplierId)?.name || 'N/A'}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="use-internal-sku-order"
+                    checked={skuMappingPrompt.useInternalSku}
+                    onChange={(e) => 
+                      setSkuMappingPrompt(prev => ({ 
+                        ...prev, 
+                        useInternalSku: e.target.checked,
+                        supplierSkuInput: e.target.checked ? '' : prev.supplierSkuInput
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-gray-300"
+                    data-testid="checkbox-use-internal-sku-order"
+                  />
+                  <label htmlFor="use-internal-sku-order" className="text-sm cursor-pointer">
+                    Usa SKU interno ({skuMappingPrompt.product.sku})
+                  </label>
+                </div>
+                
+                {!skuMappingPrompt.useInternalSku && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="supplier-sku-order">SKU Fornitore</Label>
+                    <Input
+                      id="supplier-sku-order"
+                      placeholder="Inserisci SKU fornitore..."
+                      value={skuMappingPrompt.supplierSkuInput}
+                      onChange={(e) => setSkuMappingPrompt(prev => ({ 
+                        ...prev, 
+                        supplierSkuInput: e.target.value.toUpperCase() 
+                      }))}
+                      data-testid="input-supplier-sku-prompt-order"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Questo mapping sarà salvato e riutilizzato per ordini, DDT e carico merce
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSkuMappingPrompt(prev => ({ ...prev, open: false }))}
+              data-testid="button-sku-mapping-cancel-order"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={confirmSkuMappingAndAdd}
+              disabled={!skuMappingPrompt.useInternalSku && !skuMappingPrompt.supplierSkuInput.trim()}
+              data-testid="button-sku-mapping-confirm-order"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Conferma e Aggiungi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
