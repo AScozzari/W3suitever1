@@ -453,7 +453,6 @@ router.delete('/organization-entities/:id', async (req, res) => {
 router.get('/legal-entities', async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
-    const roleFilter = req.query.roleFilter === 'true';
     
     if (!tenantId) {
       return res.status(400).json({
@@ -465,181 +464,138 @@ router.get('/legal-entities', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // ==================== PARTNER ENTITIES ONLY ====================
-    // This endpoint returns ONLY partner entities (Suppliers, Financial Entities, Operators)
-    // Organization's legal entities (ragioni sociali) are managed separately via hub-spoke system
-    // and are NOT included here to avoid duplication
-    // These include:
-    // - Tenant supplier_overrides without legal_entity_id (editable)
-    // - Brand suppliers without legal_entity_id (read-only)
-    // - Brand financial_entities without legal_entity_id (read-only)
-    // - Operators from public schema (read-only, brand-managed)
-    
-    // Get all operators (brands) from public schema - they are always brand-managed
-    // Now includes embedded ragione_sociale and piva from the operator itself
+    // ==================== BIDIRECTIONAL LEGAL ENTITIES ARCHITECTURE ====================
+    // 1. Read from w3suite.legal_entities as the SINGLE SOURCE OF TRUTH
+    // 2. Role flags (is_supplier, is_operator, is_financial_entity) determine badges
+    // 3. Children (operators, suppliers, financial_entities) are nested via FK
+    // 4. ONE entity per P.IVA - no duplicates
+
+    // Step 1: Get all legal entities for the tenant
+    const allLegalEntities = await db
+      .select()
+      .from(legalEntities)
+      .where(eq(legalEntities.tenantId, tenantId))
+      .orderBy(legalEntities.nome);
+
+    // Step 2: Get all operators linked to legal entities
     const allOperators = await db
       .select({ 
         id: operators.id, 
         code: operators.code, 
-        name: operators.name, 
-        ragioneSociale: operators.ragioneSociale,
-        piva: operators.piva,
-        formaGiuridica: operators.formaGiuridica
+        name: operators.name,
+        legalEntityId: operators.legalEntityId,
+        isActive: operators.isActive
       })
       .from(operators)
       .where(eq(operators.isActive, true));
-    
-    // Get ALL TENANT supplier_overrides (these are tenant-created, editable)
-    // Include both those with and without legal_entity_id
-    const tenantSuppliers = await db
-      .select({ id: supplierOverrides.id, code: supplierOverrides.code, name: supplierOverrides.name, vatNumber: supplierOverrides.vatNumber, status: supplierOverrides.status, origin: supplierOverrides.origin })
-      .from(supplierOverrides)
-      .where(eq(supplierOverrides.tenantId, tenantId));
 
-    // Get brand suppliers without legal_entity_id (standalone brand suppliers - read-only)
-    const standaloneBrandSuppliers = await db
-      .select({ id: suppliers.id, code: suppliers.code, name: suppliers.name, vatNumber: suppliers.vatNumber, status: suppliers.status })
+    // Step 3: Get all suppliers linked to legal entities (tenant-specific)
+    const allSuppliers = await db
+      .select({ 
+        id: suppliers.id, 
+        code: suppliers.code, 
+        name: suppliers.name, 
+        legalEntityId: suppliers.legalEntityId,
+        status: suppliers.status,
+        origin: suppliers.origin
+      })
       .from(suppliers)
-      .where(and(eq(suppliers.origin, 'brand'), sql`${suppliers.legalEntityId} IS NULL`));
+      .where(sql`${suppliers.legalEntityId} IS NOT NULL`);
 
-    // Get brand financial entities without legal_entity_id
-    const standaloneBrandFE = await db
-      .select({ id: financialEntities.id, code: financialEntities.code, name: financialEntities.name, vatNumber: financialEntities.vatNumber, status: financialEntities.status })
+    // Step 4: Get tenant supplier_overrides linked to legal entities
+    const tenantSupplierOverrides = await db
+      .select({ 
+        id: supplierOverrides.id, 
+        code: supplierOverrides.code, 
+        name: supplierOverrides.name, 
+        legalEntityId: supplierOverrides.legalEntityId,
+        status: supplierOverrides.status,
+        origin: supplierOverrides.origin
+      })
+      .from(supplierOverrides)
+      .where(and(
+        eq(supplierOverrides.tenantId, tenantId),
+        sql`${supplierOverrides.legalEntityId} IS NOT NULL`
+      ));
+
+    // Step 5: Get all financial entities linked to legal entities
+    const allFinancialEntities = await db
+      .select({ 
+        id: financialEntities.id, 
+        code: financialEntities.code, 
+        name: financialEntities.name, 
+        legalEntityId: financialEntities.legalEntityId,
+        status: financialEntities.status,
+        origin: financialEntities.origin
+      })
       .from(financialEntities)
-      .where(and(eq(financialEntities.origin, 'brand'), sql`${financialEntities.legalEntityId} IS NULL`));
+      .where(sql`${financialEntities.legalEntityId} IS NOT NULL`);
 
-    // All operators from public.operators are standalone (embedded legal info)
-    const standaloneOperators = allOperators;
+    // Step 6: Build the response with children nested under each legal entity
+    const result = allLegalEntities.map((entity) => {
+      // Find children linked to this legal entity
+      const childOperators = allOperators.filter(op => op.legalEntityId === entity.id);
+      const childSuppliers = [
+        ...allSuppliers.filter(sup => sup.legalEntityId === entity.id),
+        ...tenantSupplierOverrides.filter(sup => sup.legalEntityId === entity.id)
+      ];
+      const childFinancialEntities = allFinancialEntities.filter(fe => fe.legalEntityId === entity.id);
 
-    // Build virtual entities for standalone records
-    // Group by code to combine multiple roles for same business
-    const standaloneEntityMap = new Map<string, any>();
-
-    // Add TENANT suppliers (from supplier_overrides - EDITABLE)
-    for (const sup of tenantSuppliers) {
-      const key = `tenant-${sup.code}`;
-      if (!standaloneEntityMap.has(key)) {
-        // Normalize status to Italian labels for frontend
-        const normalizedStato = sup.status === 'active' || !sup.status ? 'Attiva' : 
-                                sup.status === 'suspended' ? 'Sospesa' : 
-                                sup.status === 'inactive' ? 'Inattiva' : sup.status;
-        standaloneEntityMap.set(key, {
-          id: sup.id, // Use real ID for tenant entities
-          codice: sup.code,
-          nome: sup.name,
-          pIva: sup.vatNumber,
-          stato: normalizedStato,
-          roles: [],
-          isEditable: true, // Tenant-created = editable
-          hasDependencies: false,
-          hasBrandManagedChildren: false,
-          _source: 'tenant_supplier' as const,
-          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: false }
-        });
+      // Build roles array based on flags AND actual children
+      const roles = [];
+      if (entity.isSupplier || childSuppliers.length > 0) {
+        roles.push({ type: 'supplier', label: 'Fornitore' });
       }
-      const entity = standaloneEntityMap.get(key);
-      entity.roles.push({ type: 'supplier', origin: 'tenant', label: 'Fornitore' });
-      entity._children.suppliers.push({ ...sup, origin: 'tenant' });
-      entity._children.hasSupplier = true;
-    }
-
-    // Add standalone BRAND suppliers (read-only)
-    for (const sup of standaloneBrandSuppliers) {
-      const key = `brand-${sup.code}`;
-      if (!standaloneEntityMap.has(key)) {
-        // Normalize status to Italian labels for frontend
-        const normalizedStato = sup.status === 'active' || !sup.status ? 'Attiva' : 
-                                sup.status === 'suspended' ? 'Sospesa' : 
-                                sup.status === 'inactive' ? 'Inattiva' : sup.status;
-        standaloneEntityMap.set(key, {
-          id: `brand-${sup.id}`,
-          codice: sup.code,
-          nome: sup.name,
-          pIva: sup.vatNumber,
-          stato: normalizedStato,
-          roles: [],
-          isEditable: false,
-          hasDependencies: true,
-          hasBrandManagedChildren: true,
-          _source: 'brand_supplier' as const,
-          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: true }
-        });
+      if (entity.isOperator || childOperators.length > 0) {
+        roles.push({ type: 'operator', label: 'Operatore' });
       }
-      const entity = standaloneEntityMap.get(key);
-      entity.roles.push({ type: 'supplier', origin: 'brand', label: 'Fornitore (Brand)' });
-      entity._children.suppliers.push({ ...sup, origin: 'brand' });
-      entity._children.hasSupplier = true;
-    }
-
-    // Add standalone financial entities (brand - read-only)
-    for (const fe of standaloneBrandFE) {
-      const key = `brand-${fe.code}`;
-      if (!standaloneEntityMap.has(key)) {
-        // Normalize status to Italian labels for frontend
-        const normalizedStato = fe.status === 'active' || !fe.status ? 'Attiva' : 
-                                fe.status === 'suspended' ? 'Sospesa' : 
-                                fe.status === 'inactive' ? 'Inattiva' : fe.status;
-        standaloneEntityMap.set(key, {
-          id: `brand-${fe.id}`,
-          codice: fe.code,
-          nome: fe.name,
-          pIva: fe.vatNumber,
-          stato: normalizedStato,
-          roles: [],
-          isEditable: false,
-          hasDependencies: true,
-          hasBrandManagedChildren: true,
-          _source: 'brand_financial_entity' as const,
-          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: true }
-        });
+      if (entity.isFinancialEntity || childFinancialEntities.length > 0) {
+        roles.push({ type: 'financial_entity', label: 'Ente Finanziante' });
       }
-      const entity = standaloneEntityMap.get(key);
-      entity.roles.push({ type: 'financial_entity', origin: 'brand', label: 'Ente Fin. (Brand)' });
-      entity._children.financialEntities.push({ ...fe, origin: 'brand' });
-      entity._children.hasFinancialEntity = true;
-    }
 
-    // Add standalone operators (brands - read-only, with embedded ragione_sociale)
-    for (const op of standaloneOperators) {
-      const key = `brand-${op.code}`;
-      if (!standaloneEntityMap.has(key)) {
-        standaloneEntityMap.set(key, {
-          id: `brand-${op.id}`,
-          codice: op.code,
-          nome: op.name,
-          ragioneSociale: op.ragioneSociale || null, // Embedded ragione sociale (es. Wind Tre S.p.A.)
-          pIva: op.piva || null,
-          formaGiuridica: op.formaGiuridica || null,
-          stato: 'Attiva',
-          roles: [],
-          isEditable: false,
-          hasDependencies: true,
-          hasBrandManagedChildren: true,
-          _source: 'brand_operator' as const,
-          _children: { suppliers: [], financialEntities: [], operators: [], hasSupplier: false, hasFinancialEntity: false, hasOperator: false, hasBrandManagedChildren: true }
-        });
-      }
-      const entity = standaloneEntityMap.get(key);
-      entity.roles.push({ type: 'operator', origin: 'brand', label: 'Operatore' });
-      entity._children.operators.push({ ...op, origin: 'brand' });
-      entity._children.hasOperator = true;
-      // Inherit ragioneSociale from operator if entity doesn't have it
-      if (op.ragioneSociale && !entity.ragioneSociale) {
-        entity.ragioneSociale = op.ragioneSociale;
-        entity.pIva = op.piva || entity.pIva;
-        entity.formaGiuridica = op.formaGiuridica || entity.formaGiuridica;
-      }
-    }
+      // Normalize status
+      const normalizedStato = entity.stato === 'active' || entity.stato === 'Attiva' || entity.stato === 'attiva' ? 'Attiva' :
+                              entity.stato === 'suspended' || entity.stato === 'Sospesa' ? 'Sospesa' :
+                              entity.stato === 'inactive' || entity.stato === 'Cessata' ? 'Cessata' :
+                              entity.stato === 'draft' || entity.stato === 'Bozza' ? 'Bozza' : entity.stato || 'Attiva';
 
-    const partnerEntities = Array.from(standaloneEntityMap.values());
-
-    // All partner entities have roles by definition (supplier/operator/financial_entity)
-    // No filtering needed - roleFilter parameter is now deprecated (kept for backward compatibility)
+      return {
+        id: entity.id,
+        codice: entity.codice,
+        nome: entity.nome,
+        pIva: entity.pIva,
+        codiceFiscale: entity.codiceFiscale,
+        formaGiuridica: entity.formaGiuridica,
+        indirizzo: entity.indirizzo,
+        citta: entity.citta,
+        provincia: entity.provincia,
+        cap: entity.cap,
+        telefono: entity.telefono,
+        email: entity.email,
+        pec: entity.pec,
+        website: entity.website,
+        iban: entity.iban,
+        bic: entity.bic,
+        stato: normalizedStato,
+        roles,
+        isEditable: true, // Legal entities owned by tenant are editable
+        hasDependencies: childOperators.length > 0 || childSuppliers.length > 0 || childFinancialEntities.length > 0,
+        _children: {
+          operators: childOperators.map(op => ({ ...op, origin: 'brand' })),
+          suppliers: childSuppliers,
+          financialEntities: childFinancialEntities,
+          hasOperator: childOperators.length > 0,
+          hasSupplier: childSuppliers.length > 0,
+          hasFinancialEntity: childFinancialEntities.length > 0,
+          hasBrandManagedChildren: childOperators.length > 0 // Operators are brand-managed
+        }
+      };
+    });
 
     res.status(200).json({
       success: true,
-      data: partnerEntities,
-      message: 'Partner entities retrieved successfully',
+      data: result,
+      message: 'Legal entities retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
 
