@@ -327,7 +327,12 @@ export default function ListiniTabContent() {
       : [];
   const safeSupplierMappings = Array.isArray(supplierMappingsData) ? supplierMappingsData : [];
   const safeFinancialEntities = Array.isArray(financialEntitiesData) ? financialEntitiesData : [];
-  const safeProducts = Array.isArray(productsData) ? productsData : [];
+  // Products endpoint returns { data: [...], pagination: {...} }
+  const safeProducts = Array.isArray(productsData) 
+    ? productsData 
+    : (productsData as any)?.data && Array.isArray((productsData as any).data) 
+      ? (productsData as any).data 
+      : [];
   // Categories endpoint returns { success: true, data: [...] }
   const safeCategories = Array.isArray(categoriesData) 
     ? categoriesData 
