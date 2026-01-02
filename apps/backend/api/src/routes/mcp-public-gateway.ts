@@ -248,10 +248,15 @@ function getClientIpFromRequest(req: Request): string {
 
 /**
  * Hybrid MCP Authentication Middleware
- * Supports both API Key and OAuth2 JWT authentication
+ * Supports OAuth2 + optional API Key for granular permissions
  * 
- * API Key: sk_live_*, sk_test_* → Validates against mcp_api_keys table
- * OAuth JWT: eyJ* → Validates JWT signature and extracts tenant/user/scopes
+ * PRIORITY ORDER (OAuth first for identity):
+ * 1. Authorization: Bearer eyJ* → OAuth JWT (identity + tenant)
+ * 2. X-MCP-Key or ?api_key → API Key (granular tool permissions)
+ * 
+ * HYBRID MODE: If both OAuth + API Key present:
+ * - OAuth provides: user identity, tenant
+ * - API Key provides: granular tool permissions filter
  */
 async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: NextFunction) {
   const startTime = Date.now();
@@ -261,51 +266,56 @@ async function mcpApiKeyAuth(req: McpAuthenticatedRequest, res: Response, next: 
     const apiKeyHeader = req.headers['x-mcp-key'] as string;
     const queryApiKey = req.query.api_key as string | undefined;
     
-    let apiKey: string | null = null;
     let oauthToken: string | null = null;
+    let apiKey: string | null = null;
     
-    // 1. Try X-MCP-Key header (API key only)
-    if (apiKeyHeader) {
-      apiKey = apiKeyHeader;
-    }
-    // 2. Try api_key query parameter (for Claude Web connectors)
-    else if (queryApiKey) {
-      apiKey = queryApiKey;
-    }
-    // 3. Try Authorization header
-    else if (authHeader) {
-      if (authHeader.startsWith('Api-Key ')) {
-        apiKey = authHeader.substring(8);
-      } else if (authHeader.startsWith('Bearer sk_')) {
-        // API key in Bearer format (sk_live_*, sk_test_*)
-        apiKey = authHeader.substring(7);
-      } else if (authHeader.startsWith('Bearer eyJ')) {
+    // 1. FIRST: Check for OAuth token in Authorization header (PRIORITY)
+    if (authHeader) {
+      if (authHeader.startsWith('Bearer eyJ')) {
         // OAuth2 JWT token (starts with eyJ = base64 of {"alg":...})
         oauthToken = authHeader.substring(7);
       } else if (authHeader.startsWith('Bearer ')) {
-        // Other bearer token - try as JWT first, then API key
         const token = authHeader.substring(7);
         if (token.startsWith('eyJ')) {
           oauthToken = token;
-        } else {
+        } else if (token.startsWith('sk_')) {
+          // API key in Bearer format
           apiKey = token;
         }
+      } else if (authHeader.startsWith('Api-Key ')) {
+        apiKey = authHeader.substring(8);
       }
     }
     
-    // Route to appropriate auth handler
-    if (oauthToken) {
+    // 2. SECOND: Check for API key (header or query param)
+    // This can be ADDITIONAL to OAuth for granular permissions
+    if (!apiKey) {
+      if (apiKeyHeader) {
+        apiKey = apiKeyHeader;
+      } else if (queryApiKey) {
+        apiKey = queryApiKey;
+      }
+    }
+    
+    // 3. Route based on what we found
+    if (oauthToken && apiKey) {
+      // HYBRID MODE: OAuth for identity + API Key for permissions
+      logger.info('🔐 [MCP-GATEWAY] Hybrid auth: OAuth + API Key');
+      return await handleHybridAuth(req, res, next, oauthToken, apiKey);
+    } else if (oauthToken) {
+      // OAuth only - full access based on scopes
       return await handleOAuthAuth(req, res, next, oauthToken);
     } else if (apiKey) {
+      // API Key only - tenant-level access, no user identity
       return await handleApiKeyAuth(req, res, next, apiKey);
     }
     
     // No valid auth provided
     return res.status(401).json({
       error: 'Authentication required',
-      message: 'Provide API key (X-MCP-Key or Bearer sk_live_...) or OAuth token (Bearer eyJ...)',
+      message: 'Provide OAuth token (Bearer eyJ...) and/or API key (X-MCP-Key or ?api_key)',
       docs: '/api/mcp-gateway/docs',
-      supported_auth: ['api_key', 'oauth2']
+      supported_auth: ['oauth2', 'api_key', 'hybrid (oauth2 + api_key)']
     });
     
   } catch (error) {
@@ -498,6 +508,123 @@ async function handleOAuthAuth(
     }
     if (error.name === 'JsonWebTokenError') {
       logger.warn(`🔐 [MCP-GATEWAY] Invalid JWT: ${error.message}`);
+      return res.status(401).json({ error: 'Invalid OAuth token' });
+    }
+    throw error;
+  }
+}
+
+/**
+ * Handle Hybrid Authentication: OAuth for identity + API Key for permissions
+ * 
+ * This mode provides:
+ * - User identity from OAuth token (audit trail, user-specific actions)
+ * - Granular tool permissions from API Key (mcp_tool_permissions table)
+ * 
+ * Use case: Claude/ChatGPT with OAuth login + API Key in URL for tool filtering
+ */
+async function handleHybridAuth(
+  req: McpAuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+  oauthToken: string,
+  apiKey: string
+) {
+  try {
+    // 1. Validate OAuth token for identity
+    const decoded = jwt.verify(oauthToken, JWT_SECRET) as {
+      sub: string;
+      tenant_id: string;
+      scope?: string;
+      scopes?: string[];
+      client_id?: string;
+    };
+    
+    const tenantId = decoded.tenant_id;
+    const userId = decoded.sub;
+    
+    if (!tenantId || !userId) {
+      return res.status(401).json({ error: 'Invalid OAuth token: missing tenant_id or user ID' });
+    }
+    
+    // Parse scopes
+    let scopes: string[] = [];
+    if (decoded.scopes && Array.isArray(decoded.scopes)) {
+      scopes = decoded.scopes;
+    } else if (decoded.scope && typeof decoded.scope === 'string') {
+      scopes = decoded.scope.split(' ').filter(s => s.length > 0);
+    }
+    
+    // 2. Validate API Key for permissions
+    const keyHash = hashApiKey(apiKey);
+    const [keyRecord] = await db
+      .select({
+        id: mcpApiKeys.id,
+        name: mcpApiKeys.name,
+        tenantId: mcpApiKeys.tenantId,
+        allowedDepartments: mcpApiKeys.allowedDepartments,
+        rateLimitPerMinute: mcpApiKeys.rateLimitPerMinute,
+        dailyQuota: mcpApiKeys.dailyQuota,
+        isActive: mcpApiKeys.isActive,
+      })
+      .from(mcpApiKeys)
+      .where(eq(mcpApiKeys.keyHash, keyHash))
+      .limit(1);
+    
+    if (!keyRecord) {
+      logger.warn('🔐 [MCP-GATEWAY] Hybrid auth: Invalid API key');
+      return res.status(401).json({ error: 'Invalid API key in hybrid auth' });
+    }
+    
+    if (!keyRecord.isActive) {
+      return res.status(403).json({ error: 'API key is revoked' });
+    }
+    
+    // 3. Verify tenant match: OAuth tenant must match API Key tenant
+    if (keyRecord.tenantId !== tenantId) {
+      logger.warn(`🔐 [MCP-GATEWAY] Hybrid auth tenant mismatch: OAuth=${tenantId}, Key=${keyRecord.tenantId}`);
+      return res.status(403).json({ 
+        error: 'Tenant mismatch', 
+        message: 'OAuth token tenant does not match API key tenant' 
+      });
+    }
+    
+    // 4. Apply rate limiting from API Key
+    const minuteCheck = checkMinuteRateLimit(keyRecord.id, keyRecord.rateLimitPerMinute);
+    if (!minuteCheck.allowed) {
+      return res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: minuteCheck.error });
+    }
+    
+    // 5. Update API key usage
+    await db
+      .update(mcpApiKeys)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(mcpApiKeys.id, keyRecord.id));
+    
+    // 6. Set tenant context
+    await setTenantContext(tenantId);
+    
+    // 7. Build hybrid auth context
+    req.mcpAuth = {
+      apiKeyId: keyRecord.id,
+      apiKeyName: keyRecord.name,
+      tenantId: tenantId,
+      allowedDepartments: keyRecord.allowedDepartments, // From API Key
+      rateLimitPerMinute: keyRecord.rateLimitPerMinute,
+      dailyQuota: keyRecord.dailyQuota,
+      authMethod: 'oauth', // Primary auth is OAuth (for audit)
+      userId: userId,      // From OAuth
+      scopes: scopes,      // From OAuth
+    };
+    
+    logger.info(`🔐 [MCP-GATEWAY] Hybrid auth: user=${userId}, apiKey=${keyRecord.name}, scopes=${scopes.join(',')}`);
+    next();
+    
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'OAuth token expired' });
+    }
+    if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: 'Invalid OAuth token' });
     }
     throw error;
