@@ -10,7 +10,7 @@ import bcrypt from 'bcryptjs';
 import { storage } from './storage';
 import { db } from './db';
 import { users, tenants } from '../db/schema/w3suite';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { JWT_SECRET, config } from './config';
 
 // OAuth2 Configuration Enterprise
@@ -51,6 +51,70 @@ interface OAuth2Client {
   scopes: string[];
   clientType: 'public' | 'confidential';
   name: string;
+}
+
+// Load dynamic clients from database on startup
+async function loadDynamicClientsFromDB(): Promise<void> {
+  try {
+    const result = await db.execute(sql`
+      SELECT client_id, client_name, redirect_uris, grant_types, response_types, scopes, client_type
+      FROM w3suite.oauth2_dynamic_clients
+    `);
+    
+    const rows = result.rows as any[];
+    for (const row of rows) {
+      const dynamicClient: OAuth2Client = {
+        clientId: row.client_id,
+        clientSecret: undefined,
+        redirectUris: row.redirect_uris || [],
+        grantTypes: row.grant_types || ['authorization_code', 'refresh_token'],
+        responseTypes: row.response_types || ['code'],
+        scopes: row.scopes || ['mcp_read', 'mcp_write', 'tenant_access'],
+        clientType: row.client_type || 'public',
+        name: row.client_name || 'Dynamic MCP Client'
+      };
+      registeredClients.set(row.client_id, dynamicClient);
+    }
+    console.log(`✅ [OAuth2] Loaded ${rows.length} dynamic clients from database`);
+  } catch (error) {
+    console.error('❌ [OAuth2] Failed to load dynamic clients from DB:', error);
+  }
+}
+
+// Save dynamic client to database
+async function saveDynamicClientToDB(client: OAuth2Client): Promise<void> {
+  try {
+    // Convert arrays to PostgreSQL array literal format
+    const redirectUrisArr = `{${client.redirectUris.map(u => `"${u.replace(/"/g, '\\"')}"`).join(',')}}`;
+    const grantTypesArr = `{${client.grantTypes.map(g => `"${g}"`).join(',')}}`;
+    const responseTypesArr = `{${client.responseTypes.map(r => `"${r}"`).join(',')}}`;
+    const scopesArr = `{${client.scopes.map(s => `"${s}"`).join(',')}}`;
+    
+    await db.execute(sql`
+      INSERT INTO w3suite.oauth2_dynamic_clients 
+      (client_id, client_name, redirect_uris, grant_types, response_types, scopes, client_type)
+      VALUES (
+        ${client.clientId}, 
+        ${client.name}, 
+        ${redirectUrisArr}::text[], 
+        ${grantTypesArr}::text[], 
+        ${responseTypesArr}::text[], 
+        ${scopesArr}::text[], 
+        ${client.clientType}
+      )
+      ON CONFLICT (client_id) DO UPDATE SET
+        client_name = EXCLUDED.client_name,
+        redirect_uris = EXCLUDED.redirect_uris,
+        grant_types = EXCLUDED.grant_types,
+        response_types = EXCLUDED.response_types,
+        scopes = EXCLUDED.scopes,
+        client_type = EXCLUDED.client_type
+    `);
+    console.log(`✅ [OAuth2] Saved dynamic client ${client.clientId} to database`);
+  } catch (error) {
+    console.error('❌ [OAuth2] Failed to save dynamic client to DB:', error);
+    throw error;
+  }
 }
 
 const registeredClients: Map<string, OAuth2Client> = new Map([
@@ -1095,7 +1159,7 @@ export function setupOAuth2Server(app: express.Application) {
 
   // ==================== DYNAMIC CLIENT REGISTRATION (DCR) ====================
   // Required by ChatGPT for MCP OAuth2 flow per RFC 7591
-  app.post('/oauth2/register', (req: Request, res: Response) => {
+  app.post('/oauth2/register', async (req: Request, res: Response) => {
     const { 
       redirect_uris, 
       client_name, 
@@ -1116,7 +1180,7 @@ export function setupOAuth2Server(app: express.Application) {
     // Generate a unique client_id for this dynamic registration
     const clientId = `dyn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     
-    // Store the dynamic client (in production: persist to database)
+    // Store the dynamic client with database persistence
     const dynamicClient: OAuth2Client = {
       clientId,
       clientSecret: undefined, // Public client for PKCE
@@ -1128,20 +1192,36 @@ export function setupOAuth2Server(app: express.Application) {
       name: client_name || 'Dynamic MCP Client'
     };
 
-    // Add to clients map
-    registeredClients.set(clientId, dynamicClient);
+    try {
+      // Persist to database for survival across restarts
+      await saveDynamicClientToDB(dynamicClient);
+      
+      // Add to clients map
+      registeredClients.set(clientId, dynamicClient);
 
-    // Return client information per RFC 7591
-    res.status(201).json({
-      client_id: clientId,
-      client_name: dynamicClient.name,
-      redirect_uris: dynamicClient.redirectUris,
-      grant_types: dynamicClient.grantTypes,
-      response_types: dynamicClient.responseTypes,
-      scope: dynamicClient.scopes?.join(' '),
-      token_endpoint_auth_method: 'none',
-      client_id_issued_at: Math.floor(Date.now() / 1000),
-    });
+      // Return client information per RFC 7591
+      res.status(201).json({
+        client_id: clientId,
+        client_name: dynamicClient.name,
+        redirect_uris: dynamicClient.redirectUris,
+        grant_types: dynamicClient.grantTypes,
+        response_types: dynamicClient.responseTypes,
+        scope: dynamicClient.scopes?.join(' '),
+        token_endpoint_auth_method: 'none',
+        client_id_issued_at: Math.floor(Date.now() / 1000),
+      });
+    } catch (error) {
+      console.error('❌ [OAuth2] DCR failed:', error);
+      return res.status(500).json({
+        error: 'server_error',
+        error_description: 'Failed to register client'
+      });
+    }
+  });
+
+  // Load dynamic clients from database on startup
+  loadDynamicClientsFromDB().catch(err => {
+    console.error('❌ [OAuth2] Initial client load failed:', err);
   });
 
   // OAuth2 Authorization Server initialized
