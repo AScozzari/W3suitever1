@@ -194,15 +194,27 @@ function validatePKCE(codeVerifier: string, codeChallenge: string, method: strin
 
 function validateRedirectUri(clientId: string, redirectUri: string): boolean {
   const client = registeredClients.get(clientId);
+  console.log(`🔐 [REDIRECT] Validating redirect_uri for client: ${clientId}`);
+  console.log(`🔐 [REDIRECT] Requested URI: ${redirectUri}`);
+  console.log(`🔐 [REDIRECT] Client found: ${!!client}`);
   if (!client) return false;
   
-  return client.redirectUris.some(uri => {
+  console.log(`🔐 [REDIRECT] Registered URIs: ${JSON.stringify(client.redirectUris)}`);
+  
+  const isValid = client.redirectUris.some(uri => {
     if (uri.includes('*')) {
       const pattern = uri.replace(/\*/g, '.*');
-      return new RegExp(`^${pattern}$`).test(redirectUri);
+      const matches = new RegExp(`^${pattern}$`).test(redirectUri);
+      console.log(`🔐 [REDIRECT] Pattern match: ${uri} -> ${matches}`);
+      return matches;
     }
-    return uri === redirectUri;
+    const matches = uri === redirectUri;
+    console.log(`🔐 [REDIRECT] Exact match: ${uri} === ${redirectUri} -> ${matches}`);
+    return matches;
   });
+  
+  console.log(`🔐 [REDIRECT] Final result: ${isValid}`);
+  return isValid;
 }
 
 async function getUserByCredentials(username: string, password: string) {
