@@ -1,0 +1,205 @@
+ndietro
+w3 suite
+w3 suite
+SVIL.
+
+Scollega
+
+Gestisci
+
+Aggiorna
+Collegato in data
+2 gen 2026
+URL
+https://w3suite.it/api/mcp-public/sse
+Autorizzazione supportata
+OAuth
+Autorizzazione utilizzata
+OAuth
+Modalità sviluppatore
+Azioni
+adjustment
+[OPERATIVE] Correzione quantità dopo inventario
+Metadati
+Visibilità
+public
+crm_list_campaigns
+[QUERY] Elenca le campagne marketing con filtri per stato, tipo e date. Parametri: status (active/paused/completed/draft), type, date_start, date_end, limit.
+Metadati
+Visibilità
+public
+customer_return
+[OPERATIVE] Prodotto restituito dal cliente
+Metadati
+Visibilità
+public
+damage
+[OPERATIVE] Prodotto danneggiato in negozio
+Metadati
+Visibilità
+public
+demo
+[OPERATIVE] Prodotto destinato a esposizione
+Metadati
+Visibilità
+public
+doa
+[OPERATIVE] Prodotto difettoso alla consegna
+Metadati
+Visibilità
+public
+HR_APPROVE_LEAVE
+[QUERY] Approva una richiesta di ferie o permesso per un dipendente. Richiede ID richiesta e eventuale nota.
+Metadati
+Visibilità
+public
+HR_CREATE_SHIFT
+[QUERY] Crea un nuovo turno di lavoro per un dipendente specificando data, orari e sede.
+Metadati
+Visibilità
+public
+HR_DELETE_SHIFT
+[QUERY] Elimina un turno di lavoro esistente. Richiede conferma e motivo cancellazione.
+Metadati
+Visibilità
+public
+internal_use
+[OPERATIVE] Consumo interno aziendale
+Metadati
+Visibilità
+public
+loan
+[OPERATIVE] Prodotto in prestito temporaneo
+Metadati
+Visibilità
+public
+mcp_crm_customer_360
+[QUERY] Query AI per panoramica completa cliente
+Metadati
+Visibilità
+public
+mcp_crm_lead_search
+[QUERY] Query AI per cercare lead per nome, email, telefono
+Metadati
+Visibilità
+public
+mcp_crm_list_leads
+[QUERY] Query AI per elencare tutti i lead con filtri opzionali
+Metadati
+Visibilità
+public
+mcp_crm_pipeline_status
+[QUERY] Query AI per analisi dello stato corrente della pipeline
+Metadati
+Visibilità
+public
+mcp_hr_employee_shifts
+[QUERY] Query AI per recuperare i turni di un dipendente in un periodo specifico
+Metadati
+Visibilità
+public
+mcp_hr_employee_shifts_copy_1767348196537
+[QUERY] Query AI per recuperare i turni di un dipendente in un periodo specifico
+Metadati
+Visibilità
+public
+mcp_hr_list_shifts
+[QUERY] Query AI per elencare tutti i turni pianificati in un periodo
+Metadati
+Visibilità
+public
+mcp_hr_pending_requests
+[QUERY] Query AI per visualizzare tutte le richieste HR pendenti
+Metadati
+Visibilità
+public
+mcp_hr_vacation_balance
+[QUERY] Query AI per calcolare il saldo ferie rimanenti di un dipendente
+Metadati
+Visibilità
+public
+mcp_ops_daily_summary
+[QUERY] Query AI per riepilogo giornaliero operazioni
+Metadati
+Visibilità
+public
+mcp_ops_store_status
+[QUERY] Query AI per panoramica stato operativo negozi
+Metadati
+Visibilità
+public
+mcp_sales_agent_performance
+[QUERY] Query AI per report performance agenti con ranking
+Metadati
+Visibilità
+public
+mcp_sales_by_store
+[QUERY] Query AI per report vendite aggregato per negozio
+Metadati
+Visibilità
+public
+mcp_sales_top_products
+[QUERY] Query AI per classifica prodotti più venduti
+Metadati
+Visibilità
+public
+mcp_wms_low_stock_alert
+[QUERY] Query AI per identificare prodotti con giacenza sotto il punto di riordino
+Metadati
+Visibilità
+public
+mcp_wms_recent_movements
+[QUERY] Query AI per visualizzare i movimenti di magazzino più recenti
+Metadati
+Visibilità
+public
+mcp_wms_serial_lookup
+[QUERY] Query AI per tracciare un prodotto tramite numero seriale
+Metadati
+Visibilità
+public
+mcp_wms_stock_level
+[QUERY] Query AI per recuperare la giacenza attuale di un prodotto nei magazzini
+Metadati
+Visibilità
+public
+pullback
+[OPERATIVE] Ritiro merce per ordine sede/brand
+Metadati
+Visibilità
+public
+purchase
+[OPERATIVE] Merce ricevuta da fornitore
+Metadati
+Visibilità
+public
+sale
+[OPERATIVE] Vendita al cliente finale
+Metadati
+Visibilità
+public
+supplier_return
+[OPERATIVE] Merce restituita al fornitore
+Metadati
+Visibilità
+public
+trade_in
+[OPERATIVE] Dispositivo usato acquisito dal cliente
+Metadati
+Visibilità
+public
+transfer_in
+[OPERATIVE] Merce ricevuta da altro punto vendita
+Metadati
+Visibilità
+public
+transfer_out
+[OPERATIVE] Merce inviata ad altro punto vendita
+Metadati
+Visibilità
+public
+warranty_return
+[OPERATIVE] Prodotto rientrato da riparazione/garanzia
+Metadati
+Visibilità
+public
