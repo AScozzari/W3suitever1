@@ -3916,8 +3916,8 @@ export const actionCategoryEnum = pgEnum('action_category', [
   'query'       // Azioni query MCP per interrogare/modificare dati
 ]);
 
-// ==================== ACTION DEFINITIONS (GLOBAL - No RLS) ====================
-// Template globali per tutte le azioni - disponibili per tutti i tenant
+// ==================== ACTION DEFINITIONS (MIXED RLS) ====================
+// Catalogo unificato azioni - tenant_id NULL = globale, tenant_id UUID = tenant-specific (RLS)
 export const actionDefinitions = w3suiteSchema.table("action_definitions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   actionId: varchar("action_id", { length: 100 }).notNull().unique(),
@@ -3935,6 +3935,22 @@ export const actionDefinitions = w3suiteSchema.table("action_definitions", {
   defaultSlaHours: integer("default_sla_hours").default(24),
   isActive: boolean("is_active").default(true).notNull(),
   displayOrder: integer("display_order").default(100),
+  
+  // 🎯 NEW: Tenant-specific support (NULL = global, UUID = tenant-specific with RLS)
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // 🎯 NEW: MCP exposure control
+  exposedViaMcp: boolean("exposed_via_mcp").default(false).notNull(),
+  
+  // 🎯 NEW: Source tracking (which table/record created this definition)
+  sourceTable: varchar("source_table", { length: 100 }),
+  sourceId: uuid("source_id"),
+  
+  // 🎯 NEW: MCP schema and query template
+  mcpInputSchema: jsonb("mcp_input_schema"),
+  queryTemplateId: uuid("query_template_id"),
+  variableConfig: jsonb("variable_config"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
@@ -3942,6 +3958,9 @@ export const actionDefinitions = w3suiteSchema.table("action_definitions", {
   index("idx_action_definitions_category").on(table.actionCategory),
   index("idx_action_definitions_active").on(table.isActive),
   index("idx_action_definitions_mcp").on(table.isMcpEnabled),
+  index("idx_action_definitions_tenant").on(table.tenantId),
+  index("idx_action_definitions_exposed").on(table.exposedViaMcp),
+  index("idx_action_definitions_source").on(table.sourceTable, table.sourceId),
 ]);
 
 export const insertActionDefinitionSchema = createInsertSchema(actionDefinitions).omit({
@@ -10984,8 +11003,11 @@ export const mcpToolPermissions = w3suiteSchema.table("mcp_tool_permissions", {
   // API Key reference
   apiKeyId: uuid("api_key_id").notNull().references(() => mcpApiKeys.id, { onDelete: 'cascade' }),
   
-  // Action reference (the tool)
-  actionConfigId: uuid("action_config_id").notNull().references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  // Action reference (legacy - points to action_configurations)
+  actionConfigId: uuid("action_config_id").references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  
+  // 🎯 NEW: Action Definition reference (the unified catalog)
+  actionDefinitionId: uuid("action_definition_id").references(() => actionDefinitions.id, { onDelete: 'cascade' }),
   
   // Permission
   isEnabled: boolean("is_enabled").default(true).notNull(),
@@ -11001,6 +11023,7 @@ export const mcpToolPermissions = w3suiteSchema.table("mcp_tool_permissions", {
   index("mcp_tool_permissions_tenant_idx").on(table.tenantId),
   index("mcp_tool_permissions_key_idx").on(table.apiKeyId),
   index("mcp_tool_permissions_action_idx").on(table.actionConfigId),
+  index("mcp_tool_permissions_definition_idx").on(table.actionDefinitionId),
   uniqueIndex("mcp_tool_permissions_unique").on(table.apiKeyId, table.actionConfigId),
 ]);
 
@@ -11065,16 +11088,29 @@ export const insertMcpUsageLogSchema = createInsertSchema(mcpUsageLogs).omit({
 export type InsertMcpUsageLog = z.infer<typeof insertMcpUsageLogSchema>;
 export type McpUsageLog = typeof mcpUsageLogs.$inferSelect;
 
-// MCP Tool Exposure Settings - Controls which actions are exposed as MCP tools
+// MCP Tool Settings - Abbinamento query template + variabili per creare tool MCP tenant-specific
 export const mcpToolSettings = w3suiteSchema.table("mcp_tool_settings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   
-  // Action reference
-  actionConfigId: uuid("action_config_id").notNull().references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  // Action reference (legacy - for operative actions)
+  actionConfigId: uuid("action_config_id").references(() => actionConfigurations.id, { onDelete: 'cascade' }),
+  
+  // 🎯 NEW: Query Template reference (for MCP query tools)
+  queryTemplateId: uuid("query_template_id").references(() => mcpQueryTemplates.id),
+  
+  // 🎯 NEW: Variable configuration (selected variables and their defaults)
+  variableConfig: jsonb("variable_config"),
   
   // Exposure settings
   exposedViaMcp: boolean("exposed_via_mcp").default(false).notNull(),
+  
+  // 🎯 NEW: Tool name/description (for query tools created from templates)
+  toolName: varchar("tool_name", { length: 200 }),
+  toolDescription: text("tool_description"),
+  
+  // 🎯 NEW: Input schema (JSON Schema for tool parameters)
+  inputSchema: jsonb("input_schema"),
   
   // Custom tool name/description for MCP (optional overrides)
   customToolName: varchar("custom_tool_name", { length: 100 }),
@@ -11093,6 +11129,7 @@ export const mcpToolSettings = w3suiteSchema.table("mcp_tool_settings", {
 }, (table) => [
   index("mcp_tool_settings_tenant_idx").on(table.tenantId),
   index("mcp_tool_settings_action_idx").on(table.actionConfigId),
+  index("mcp_tool_settings_template_idx").on(table.queryTemplateId),
   index("mcp_tool_settings_exposed_idx").on(table.exposedViaMcp),
   uniqueIndex("mcp_tool_settings_unique").on(table.tenantId, table.actionConfigId),
 ]);
