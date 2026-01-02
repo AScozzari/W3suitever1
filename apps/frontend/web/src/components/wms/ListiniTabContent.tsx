@@ -43,7 +43,6 @@ interface PriceListHeader {
   operatorId: string;
   channelId: string;
   customerScope: string;
-  supplierIds: string[];
   validFrom: Date;
   validTo: Date | null;
 }
@@ -190,7 +189,6 @@ export default function ListiniTabContent() {
     operatorId: '',
     channelId: '',
     customerScope: '',
-    supplierIds: [],
     validFrom: new Date(),
     validTo: addMonths(new Date(), 12)
   });
@@ -362,21 +360,14 @@ export default function ListiniTabContent() {
     return `${prefix}${nextNumber}`;
   };
 
-  // Products filtered by type for Canvas Device physical section - filtered by selected suppliers
+  // Products filtered by type for Canvas Device physical section - NO supplier filtering
+  // Supplier is only used for SKU mapping validation, not for filtering products
   const physicalProducts = useMemo(() => 
     safeProducts.filter((p: any) => {
       if (p.type !== physicalTypeFilter) return false;
-      
-      // Filtro per Fornitori (per listini promo_canvas)
-      if (priceListHeader.type === 'promo_canvas' && priceListHeader.supplierIds?.length > 0) {
-        if (!p.supplierId || !priceListHeader.supplierIds.includes(p.supplierId)) {
-          return false;
-        }
-      }
-      
       return true;
     }),
-    [safeProducts, physicalTypeFilter, priceListHeader.type, priceListHeader.supplierIds]
+    [safeProducts, physicalTypeFilter]
   );
 
   // Canvas products for Canvas/Canvas Device canvas section - filtered by price list targeting
@@ -661,7 +652,6 @@ export default function ListiniTabContent() {
       operatorId: '',
       channelId: '',
       customerScope: '',
-      supplierIds: [],
       validFrom: new Date(),
       validTo: addMonths(new Date(), 12)
     });
@@ -889,8 +879,8 @@ export default function ListiniTabContent() {
         }
       }
       if (priceListHeader.type === 'promo_canvas') {
-        if (!priceListHeader.supplierIds || priceListHeader.supplierIds.length === 0) {
-          alert('Errore: seleziona almeno un fornitore per i listini Device+Canvas');
+        if (!priceListHeader.supplierId) {
+          alert('Errore: seleziona un fornitore per i listini Device+Canvas');
           return;
         }
       }
@@ -968,8 +958,7 @@ export default function ListiniTabContent() {
           // Targeting fields for CANVAS/promo_canvas
           operatorId: priceListHeader.operatorId || null,
           channelId: priceListHeader.channelId || null,
-          customerScope: priceListHeader.customerScope || null,
-          supplierIds: priceListHeader.supplierIds?.length > 0 ? priceListHeader.supplierIds : null
+          customerScope: priceListHeader.customerScope || null
         },
         pairs: priceListHeader.type === 'promo_canvas' ? savedPairs : [],
         items: items,
@@ -1117,7 +1106,7 @@ export default function ListiniTabContent() {
           return baseValid && !!priceListHeader.operatorId;
         }
         if (priceListHeader.type === 'promo_canvas') {
-          return baseValid && !!priceListHeader.operatorId && priceListHeader.supplierIds?.length > 0;
+          return baseValid && !!priceListHeader.operatorId && !!priceListHeader.supplierId;
         }
         return baseValid;
       case 3: 
@@ -1368,75 +1357,25 @@ export default function ListiniTabContent() {
           </>
         )}
 
-        {/* Fornitori multipli per listini Device+Canvas (promo_canvas) */}
+        {/* Fornitore singolo per listini Device+Canvas (promo_canvas) */}
         {priceListHeader.type === 'promo_canvas' && (
           <div className="space-y-1.5">
             <Label>
-              Fornitori Device <span className="text-red-500">*</span>
+              Fornitore Device <span className="text-red-500">*</span>
             </Label>
-            <div className="relative mb-2">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <Input
-                value={step2SupplierSearch}
-                onChange={(e) => setStep2SupplierSearch(e.target.value)}
-                placeholder="Cerca fornitore..."
-                className="pl-9"
-                data-testid="input-step2-supplier-search"
-              />
-            </div>
-            <div className="border rounded-md">
-              <ScrollArea className="h-48">
-                <div className="p-3 space-y-2">
-                  {safeSuppliers
-                    .filter((s: any) => s.id)
-                    .filter((s: any) => {
-                      if (!step2SupplierSearch.trim()) return true;
-                      const search = step2SupplierSearch.toLowerCase();
-                      return s.name?.toLowerCase().includes(search) || 
-                             s.code?.toLowerCase().includes(search);
-                    })
-                    .map((s: any) => (
-                    <div key={s.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`supplier-${s.id}`}
-                        checked={priceListHeader.supplierIds?.includes(s.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setPriceListHeader(prev => ({
-                              ...prev,
-                              supplierIds: [...(prev.supplierIds || []), s.id]
-                            }));
-                          } else {
-                            setPriceListHeader(prev => ({
-                              ...prev,
-                              supplierIds: (prev.supplierIds || []).filter(id => id !== s.id)
-                            }));
-                          }
-                        }}
-                        data-testid={`checkbox-supplier-${s.id}`}
-                      />
-                      <label htmlFor={`supplier-${s.id}`} className="text-sm cursor-pointer">
-                        {s.name}
-                      </label>
-                    </div>
-                  ))}
-                  {safeSuppliers.filter((s: any) => s.id).filter((s: any) => {
-                    if (!step2SupplierSearch.trim()) return true;
-                    const search = step2SupplierSearch.toLowerCase();
-                    return s.name?.toLowerCase().includes(search) || s.code?.toLowerCase().includes(search);
-                  }).length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-2">Nessun fornitore trovato</p>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
+            <SupplierCombobox
+              suppliers={safeSuppliers.filter((s: any) => s.id).map((s: any) => ({ id: s.id, name: s.name, code: s.code }))}
+              value={priceListHeader.supplierId || ''}
+              onValueChange={(val) => setPriceListHeader(prev => ({ ...prev, supplierId: val }))}
+              placeholder="Seleziona fornitore..."
+              searchPlaceholder="Cerca fornitore..."
+              emptyMessage="Nessun fornitore trovato"
+              required
+              portalContainer={wizardModalContainer}
+              data-testid="select-promo-canvas-supplier"
+            />
             <p className="text-xs text-gray-500">
-              Seleziona i fornitori per filtrare i prodotti Device disponibili
-              {priceListHeader.supplierIds?.length > 0 && (
-                <span className="ml-1 text-green-600 font-medium">
-                  ({priceListHeader.supplierIds.length} selezionati)
-                </span>
-              )}
+              Il fornitore è usato per verificare/creare i mapping SKU dei prodotti
             </p>
           </div>
         )}
