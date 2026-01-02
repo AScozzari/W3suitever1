@@ -9,7 +9,8 @@ import {
   mcpApiKeys, 
   mcpToolPermissions, 
   mcpUsageLogs,
-  actionDefinitions 
+  actionDefinitions,
+  mcpQueryTemplates
 } from '../db/schema/w3suite';
 import { eq, and, desc, sql, count, isNull, gte, lte } from 'drizzle-orm';
 import { logger } from '../core/logger';
@@ -363,6 +364,203 @@ router.get('/usage-logs', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('[MCP-MGMT] Error fetching usage logs:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch usage logs' });
+  }
+});
+
+// ==================== CUSTOM ACTIONS (ACTION BUILDER) ====================
+
+// GET /api/mcp-gateway/custom-actions - List custom actions from action_definitions
+router.get('/custom-actions', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const showAll = req.query.showAll === 'true';
+    
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'MISSING_TENANT_ID' });
+    }
+
+    const actions = await db
+      .select({
+        id: actionDefinitions.id,
+        actionId: actionDefinitions.actionId,
+        actionName: actionDefinitions.actionName,
+        description: actionDefinitions.description,
+        department: actionDefinitions.department,
+        actionCategory: actionDefinitions.actionCategory,
+        sourceTable: actionDefinitions.sourceTable,
+        isMcpEnabled: actionDefinitions.isMcpEnabled,
+        exposedViaMcp: actionDefinitions.exposedViaMcp,
+        mcpInputSchema: actionDefinitions.mcpInputSchema,
+        isActive: actionDefinitions.isActive,
+        createdAt: actionDefinitions.createdAt,
+        updatedAt: actionDefinitions.updatedAt,
+      })
+      .from(actionDefinitions)
+      .where(showAll 
+        ? sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`
+        : and(
+            sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+            eq(actionDefinitions.isActive, true)
+          )
+      )
+      .orderBy(actionDefinitions.department, actionDefinitions.actionName);
+
+    res.json({ success: true, data: actions });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error fetching custom actions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch custom actions' });
+  }
+});
+
+// POST /api/mcp-gateway/custom-actions - Create custom action
+router.post('/custom-actions', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.headers['x-user-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ success: false, error: 'MISSING_TENANT_ID' });
+    }
+
+    const { actionName, description, department, actionCategory, mcpInputSchema, exposedViaMcp } = req.body;
+    
+    const actionId = `custom_${department}_${Date.now()}`;
+    
+    const [newAction] = await db
+      .insert(actionDefinitions)
+      .values({
+        tenantId,
+        actionId,
+        actionName,
+        description,
+        department,
+        actionCategory: actionCategory || 'query',
+        sourceTable: 'custom',
+        isMcpEnabled: true,
+        exposedViaMcp: exposedViaMcp ?? true,
+        mcpInputSchema: mcpInputSchema || {},
+        isActive: true,
+      })
+      .returning();
+
+    res.json({ success: true, data: newAction });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error creating custom action:', error);
+    res.status(500).json({ success: false, error: 'Failed to create custom action' });
+  }
+});
+
+// POST /api/mcp-gateway/custom-actions/:id/duplicate - Duplicate custom action
+router.post('/custom-actions/:id/duplicate', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    
+    // Get original action
+    const [original] = await db
+      .select()
+      .from(actionDefinitions)
+      .where(eq(actionDefinitions.id, id));
+    
+    if (!original) {
+      return res.status(404).json({ success: false, error: 'Action not found' });
+    }
+
+    // Create duplicate
+    const newActionId = `${original.actionId}_copy_${Date.now()}`;
+    const [duplicate] = await db
+      .insert(actionDefinitions)
+      .values({
+        tenantId,
+        actionId: newActionId,
+        actionName: `${original.actionName} (Copy)`,
+        description: original.description,
+        department: original.department,
+        actionCategory: original.actionCategory,
+        sourceTable: 'custom',
+        isMcpEnabled: original.isMcpEnabled,
+        exposedViaMcp: original.exposedViaMcp,
+        mcpInputSchema: original.mcpInputSchema,
+        isActive: true,
+      })
+      .returning();
+
+    res.json({ success: true, data: duplicate });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error duplicating custom action:', error);
+    res.status(500).json({ success: false, error: 'Failed to duplicate action' });
+  }
+});
+
+// DELETE /api/mcp-gateway/custom-actions/:id - Delete custom action
+router.delete('/custom-actions/:id', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+
+    await db
+      .delete(actionDefinitions)
+      .where(and(
+        eq(actionDefinitions.id, id),
+        eq(actionDefinitions.tenantId, tenantId),
+        eq(actionDefinitions.sourceTable, 'custom') // Only allow deleting custom actions
+      ));
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error deleting custom action:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete action' });
+  }
+});
+
+// ==================== QUERY TEMPLATES ====================
+
+// GET /api/mcp-gateway/query-templates - List query templates
+router.get('/query-templates', async (req: Request, res: Response) => {
+  try {
+    const templates = await db
+      .select({
+        id: mcpQueryTemplates.id,
+        code: mcpQueryTemplates.code,
+        name: mcpQueryTemplates.name,
+        description: mcpQueryTemplates.description,
+        department: mcpQueryTemplates.department,
+        actionType: mcpQueryTemplates.actionType,
+        availableVariables: mcpQueryTemplates.availableVariables,
+        requiredVariables: mcpQueryTemplates.requiredVariables,
+        isActive: mcpQueryTemplates.isActive,
+        isSystemTemplate: mcpQueryTemplates.isSystemTemplate,
+      })
+      .from(mcpQueryTemplates)
+      .where(eq(mcpQueryTemplates.isActive, true))
+      .orderBy(mcpQueryTemplates.department, mcpQueryTemplates.name);
+
+    res.json({ success: true, data: templates });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error fetching query templates:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch query templates' });
+  }
+});
+
+// GET /api/mcp-gateway/variable-categories - Get variable categories
+router.get('/variable-categories', async (req: Request, res: Response) => {
+  try {
+    // Return predefined variable categories for the Action Builder
+    const categories = [
+      { id: 'employee', name: 'Dipendente', icon: 'User', variables: ['employeeName', 'employeeId', 'email'] },
+      { id: 'date', name: 'Date', icon: 'Calendar', variables: ['dateFrom', 'dateTo', 'year', 'month'] },
+      { id: 'store', name: 'Punto Vendita', icon: 'Store', variables: ['storeId', 'storeName', 'storeCode'] },
+      { id: 'product', name: 'Prodotto', icon: 'Package', variables: ['productId', 'productCode', 'productName', 'sku'] },
+      { id: 'customer', name: 'Cliente', icon: 'Users', variables: ['customerId', 'customerName', 'customerEmail'] },
+      { id: 'department', name: 'Dipartimento', icon: 'Building', variables: ['departmentId', 'departmentCode'] },
+      { id: 'status', name: 'Stato', icon: 'CheckCircle', variables: ['status', 'logisticStatus', 'orderStatus'] },
+      { id: 'amount', name: 'Importi', icon: 'DollarSign', variables: ['minAmount', 'maxAmount', 'amount'] },
+    ];
+
+    res.json({ success: true, data: categories });
+  } catch (error) {
+    logger.error('[MCP-MGMT] Error fetching variable categories:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch variable categories' });
   }
 });
 
