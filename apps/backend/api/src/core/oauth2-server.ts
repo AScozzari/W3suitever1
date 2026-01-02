@@ -600,12 +600,12 @@ export function setupOAuth2Server(app: express.Application) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>W3 Suite - Autorizzazione MCP</title>
+  <title>W3 Suite - Autorizzazione OAuth</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f8fafc;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -613,126 +613,283 @@ export function setupOAuth2Server(app: express.Application) {
       padding: 20px;
     }
     .container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
+      background: #ffffff;
       border-radius: 16px;
-      padding: 40px;
+      padding: 48px 40px;
       width: 100%;
-      max-width: 420px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      max-width: 440px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
     }
-    .logo { text-align: center; margin-bottom: 24px; }
-    .logo h1 { font-size: 28px; color: #1a1a2e; font-weight: 700; }
-    .logo p { color: #666; font-size: 14px; margin-top: 8px; }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    }
+    .logo-icon svg { width: 32px; height: 32px; fill: white; }
+    .logo h1 { font-size: 24px; color: #0f172a; font-weight: 700; letter-spacing: -0.5px; }
+    .logo p { color: #64748b; font-size: 15px; margin-top: 6px; font-weight: 500; }
     .client-info {
-      background: #f8f9ff;
-      border: 1px solid #e0e5ff;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 24px;
-      text-align: center;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
-    .client-info strong { color: #4f46e5; }
-    .client-info .scopes {
-      font-size: 12px;
-      color: #666;
-      margin-top: 8px;
+    .client-icon {
+      width: 48px;
+      height: 48px;
+      background: #0ea5e9;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
-    .form-group { margin-bottom: 20px; }
+    .client-icon svg { width: 24px; height: 24px; fill: white; }
+    .client-text { flex: 1; }
+    .client-text strong { color: #0c4a6e; font-size: 15px; display: block; }
+    .client-text .scopes {
+      font-size: 13px;
+      color: #0369a1;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .scope-badge {
+      background: #0ea5e9;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .form-group { margin-bottom: 24px; }
+    .form-group.org-group { margin-bottom: 28px; }
+    .label-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
     label {
-      display: block;
       font-size: 14px;
-      font-weight: 500;
-      color: #374151;
-      margin-bottom: 6px;
+      font-weight: 600;
+      color: #334155;
     }
-    input[type="email"], input[type="password"] {
+    .info-icon {
+      width: 18px;
+      height: 18px;
+      background: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: help;
+      position: relative;
+    }
+    .info-icon svg { width: 12px; height: 12px; fill: #64748b; }
+    .info-icon:hover .tooltip { display: block; }
+    .tooltip {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 400;
+      width: 200px;
+      text-align: center;
+      margin-bottom: 8px;
+      z-index: 10;
+    }
+    .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1e293b;
+    }
+    .input-wrapper {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      fill: #94a3b8;
+      pointer-events: none;
+    }
+    input {
       width: 100%;
-      padding: 12px 16px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      padding: 14px 16px 14px 48px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
       font-size: 16px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
+      background: #f8fafc;
     }
+    input::placeholder { color: #94a3b8; }
+    input:hover { border-color: #cbd5e1; background: #ffffff; }
     input:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      border-color: #3b82f6;
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    .org-input {
+      font-size: 18px;
+      font-weight: 500;
+      padding: 16px 16px 16px 52px;
     }
     button {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      padding: 16px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
     button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px -10px rgba(79, 70, 229, 0.5);
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      box-shadow: 0 8px 20px -8px rgba(37, 99, 235, 0.5);
     }
     button:disabled {
-      opacity: 0.7;
+      opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
+      box-shadow: none;
     }
+    button svg { width: 20px; height: 20px; fill: currentColor; }
     .error {
       background: #fef2f2;
       border: 1px solid #fecaca;
       color: #dc2626;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-bottom: 24px;
       font-size: 14px;
       display: none;
+      align-items: center;
+      gap: 10px;
     }
+    .error svg { width: 20px; height: 20px; fill: #dc2626; flex-shrink: 0; }
     .footer {
       text-align: center;
-      margin-top: 24px;
-      font-size: 12px;
-      color: #9ca3af;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
     }
+    .footer p { font-size: 13px; color: #64748b; line-height: 1.5; }
+    .footer a { color: #3b82f6; text-decoration: none; font-weight: 500; }
+    .footer a:hover { text-decoration: underline; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+    .divider span { color: #94a3b8; font-size: 13px; white-space: nowrap; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
       <h1>W3 Suite</h1>
-      <p>Autorizzazione MCP Gateway</p>
+      <p>Autorizzazione OAuth Client</p>
     </div>
     
     <div class="client-info">
-      <strong>ChatGPT</strong> richiede accesso al tuo account
-      <div class="scopes">Permessi: ${scope || 'mcp_read mcp_write'}</div>
+      <div class="client-icon">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z"/></svg>
+      </div>
+      <div class="client-text">
+        <strong>Applicazione esterna richiede accesso</strong>
+        <div class="scopes">
+          Permessi richiesti: 
+          <span class="scope-badge">lettura</span>
+          <span class="scope-badge">scrittura</span>
+        </div>
+      </div>
     </div>
     
-    <div class="error" id="error"></div>
+    <div class="error" id="error">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span id="errorText"></span>
+    </div>
     
     <form id="loginForm">
+      <div class="form-group org-group">
+        <div class="label-row">
+          <label for="tenant">Organizzazione</label>
+          <div class="info-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v4z"/></svg>
+            <div class="tooltip">Inserisci il codice della tua organizzazione (es. staging, windtre)</div>
+          </div>
+        </div>
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+          <input type="text" id="tenant" name="tenant" class="org-input" required autocomplete="organization" placeholder="Codice organizzazione">
+        </div>
+      </div>
+      
+      <div class="divider"><span>Credenziali di accesso</span></div>
+      
       <div class="form-group">
-        <label for="tenant">Organizzazione</label>
-        <input type="text" id="tenant" name="tenant" required autocomplete="organization" placeholder="es. staging, windtre...">
+        <div class="label-row">
+          <label for="email">Email</label>
+        </div>
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          <input type="email" id="email" name="email" required autocomplete="email" placeholder="nome@azienda.it">
+        </div>
       </div>
       
       <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required autocomplete="email" placeholder="nome@azienda.it">
+        <div class="label-row">
+          <label for="password">Password</label>
+        </div>
+        <div class="input-wrapper">
+          <svg class="input-icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Password">
+        </div>
       </div>
       
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
-      </div>
-      
-      <button type="submit" id="submitBtn">Autorizza e Accedi</button>
+      <button type="submit" id="submitBtn">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Autorizza e Accedi
+      </button>
     </form>
     
     <div class="footer">
-      Accedendo autorizzi ChatGPT ad accedere ai tuoi dati W3 Suite
+      <p>Accedendo autorizzi l'applicazione ad accedere ai tuoi dati W3 Suite.<br>
+      <a href="https://w3suite.it/privacy">Informativa Privacy</a></p>
     </div>
   </div>
   
@@ -742,9 +899,10 @@ export function setupOAuth2Server(app: express.Application) {
       
       const btn = document.getElementById('submitBtn');
       const errorDiv = document.getElementById('error');
+      const errorText = document.getElementById('errorText');
       
       btn.disabled = true;
-      btn.textContent = 'Autenticazione...';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="animation: spin 1s linear infinite;"><path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/></svg> Autenticazione...';
       errorDiv.style.display = 'none';
       
       const tenant = document.getElementById('tenant').value.trim().toLowerCase();
@@ -778,19 +936,22 @@ export function setupOAuth2Server(app: express.Application) {
           if (data.state) redirectUrl.searchParams.set('state', data.state);
           window.location.href = redirectUrl.toString();
         } else {
-          errorDiv.textContent = data.message || 'Credenziali non valide';
-          errorDiv.style.display = 'block';
+          errorText.textContent = data.message || 'Credenziali non valide';
+          errorDiv.style.display = 'flex';
           btn.disabled = false;
-          btn.textContent = 'Autorizza e Accedi';
+          btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Autorizza e Accedi';
         }
       } catch (err) {
-        errorDiv.textContent = 'Errore di connessione. Riprova.';
-        errorDiv.style.display = 'block';
+        errorText.textContent = 'Errore di connessione. Riprova.';
+        errorDiv.style.display = 'flex';
         btn.disabled = false;
-        btn.textContent = 'Autorizza e Accedi';
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Autorizza e Accedi';
       }
     });
   </script>
+  <style>
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
 </body>
 </html>
     `;
