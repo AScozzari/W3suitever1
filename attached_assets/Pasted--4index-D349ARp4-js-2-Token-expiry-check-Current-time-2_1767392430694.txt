@@ -1,0 +1,77 @@
+
+
+4index-D349ARp4.js:2 🔍 Token expiry check: Current time: 23:20:00, Token expires: 23:32:22
+4index-D349ARp4.js:2 🔍 Token expiry check: Current time: 23:20:03, Token expires: 23:32:22
+index-D349ARp4.js:2  GET https://w3suite.it/api/wms/documents/next-number/order 500 (Internal Server Error)
+queryFn @ index-D349ARp4.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+setOptions @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Ln @ react-core-DamieDW-.js:32
+ge.flushSync @ react-core-DamieDW-.js:32
+hr @ radix-ui-kZTbUbCN.js:9
+d @ radix-ui-kZTbUbCN.js:59
+(anonime) @ radix-ui-kZTbUbCN.js:9
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+index-D349ARp4.js:2 🔍 Token expiry check: Current time: 23:20:05, Token expires: 23:32:22
+index-D349ARp4.js:2  GET https://w3suite.it/api/wms/documents/next-number/order 500 (Internal Server Error)
+queryFn @ index-D349ARp4.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+setOptions @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+Ln @ react-core-DamieDW-.js:32
+ge.flushSync @ react-core-DamieDW-.js:32
+hr @ radix-ui-kZTbUbCN.js:9
+d @ radix-ui-kZTbUbCN.js:59
+(anonime) @ radix-ui-kZTbUbCN.js:9
+Gc @ react-core-DamieDW-.js:29
+Jc @ react-core-DamieDW-.js:29
+qc @ react-core-DamieDW-.js:29
+di @ react-core-DamieDW-.js:29
+ta @ react-core-DamieDW-.js:29
+(anonime) @ react-core-DamieDW-.js:29
+Pu @ react-core-DamieDW-.js:32
+Ps @ react-core-DamieDW-.js:29
+Il @ react-core-DamieDW-.js:29
+eu @ react-core-DamieDW-.js:29
+hf @ react-core-DamieDW-.js:29Comprendi l'errore
+index-D349ARp4.js:2 🔍 Token expiry check: Current time: 23:20:07, Token expires: 23:32:22
+index-D349ARp4.js:2 🔍 Token expiry check: Current time: 23:20:12, Token expires: 23:32:22
+index-D349ARp4.js:2 🔍 Token expiry check: Current time: 23:20:17, Token expires: 23:32:22
