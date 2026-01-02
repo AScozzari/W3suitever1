@@ -126,6 +126,54 @@ Example JWT payload:
 
 ---
 
+### Session-Based Login (for External OAuth2 Clients)
+
+When using external OAuth2 clients (ChatGPT, Claude Desktop) and the user's session expires, the system provides a streamlined login experience:
+
+1. **User visits** `/oauth2/authorize?client_id=chatgpt-mcp-client&...`
+2. **Backend checks session** - if no valid session exists, redirects to `/login?returnTo=<encoded_oauth2_url>`
+3. **User sees styled login page** (not a raw HTML form)
+4. **After successful login**, user is redirected back to the OAuth2 authorize endpoint
+5. **Backend auto-generates auth code** and redirects to the client's callback
+
+#### Session Login Endpoint
+
+For programmatic session creation (used internally by the login page):
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "tenantId": "tenant-uuid"
+  }
+}
+```
+
+**Response (Error):**
+```json
+{
+  "error": "invalid_credentials",
+  "message": "Credenziali non valide"
+}
+```
+
+**Note:** This endpoint is used internally by the login page for external OAuth2 client flows. Backend-to-backend integrations should continue using API Keys or Client Credentials.
+
+---
+
 ### ChatGPT Custom MCP Server Configuration
 
 In ChatGPT settings, add a new MCP connector:

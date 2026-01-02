@@ -232,7 +232,7 @@ interface MCPApiKey {
 
 interface MCPToolPermission {
   apiKeyId: string;
-  actionConfigId: string;
+  actionDefinitionId: string; // Changed from actionConfigId to match backend
   canExecute: boolean;
   customParameters?: Record<string, any>;
 }
@@ -1022,13 +1022,13 @@ function PermissionsMatrixTab({
     updatePermissionMutation.mutate({ keyId: selectedKeyId, permissions: localPermissions });
   };
 
-  const toggleLocalPermission = (actionConfigId: string, currentlyEnabled: boolean) => {
-    const existingPerm = localPermissions.find(p => p.actionConfigId === actionConfigId);
+  const toggleLocalPermission = (actionDefinitionId: string, currentlyEnabled: boolean) => {
+    const existingPerm = localPermissions.find(p => p.actionDefinitionId === actionDefinitionId);
     const newPermissions = existingPerm
       ? localPermissions.map(p => 
-          p.actionConfigId === actionConfigId ? { ...p, isEnabled: !currentlyEnabled } : p
+          p.actionDefinitionId === actionDefinitionId ? { ...p, isEnabled: !currentlyEnabled } : p
         )
-      : [...localPermissions, { actionConfigId, isEnabled: true, rateLimitOverride: null }];
+      : [...localPermissions, { actionDefinitionId, isEnabled: true, rateLimitOverride: null }];
     
     setLocalPermissions(newPermissions);
     setHasChanges(true);
@@ -1138,7 +1138,7 @@ function PermissionsMatrixTab({
                   const style = DEPARTMENT_STYLES[dept] || { label: dept, color: '#666' };
                   const deptActions = groupedByDepartment[dept] || [];
                   const enabledCount = deptActions.filter(a => {
-                    const perm = localPermissions.find(p => p.actionConfigId === a.id);
+                    const perm = localPermissions.find(p => p.actionDefinitionId === a.id);
                     return perm?.isEnabled;
                   }).length;
                   const isExpanded = expandedDepts[dept];
@@ -1178,7 +1178,7 @@ function PermissionsMatrixTab({
                           ) : (
                             <div className="space-y-2">
                               {deptActions.map(action => {
-                                const permission = localPermissions.find(p => p.actionConfigId === action.id);
+                                const permission = localPermissions.find(p => p.actionDefinitionId === action.id);
                                 const isEnabled = permission?.isEnabled ?? false;
                                 return (
                                   <div
@@ -1269,7 +1269,7 @@ function PermissionsMatrixTab({
 
 interface ToolPermission {
   id?: string;
-  actionConfigId: string;
+  actionDefinitionId: string; // Changed from actionConfigId to match backend
   isEnabled: boolean;
   rateLimitOverride?: number | null;
 }
