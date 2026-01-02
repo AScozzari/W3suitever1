@@ -494,17 +494,9 @@ router.get('/legal-entities', async (req, res) => {
       ))
       .orderBy(legalEntities.nome);
 
-    // Step 2: Get all operators linked to legal entities
-    const allOperators = await db
-      .select({ 
-        id: operators.id, 
-        code: operators.code, 
-        name: operators.name,
-        legalEntityId: operators.legalEntityId,
-        isActive: operators.isActive
-      })
-      .from(operators)
-      .where(eq(operators.isActive, true));
+    // Step 2: Operators are in public schema WITHOUT legal_entity_id FK
+    // They don't link to legal_entities, so we skip this query
+    const allOperators: any[] = [];
 
     // Step 3: Get all suppliers linked to legal entities (tenant-specific)
     const allSuppliers = await db
