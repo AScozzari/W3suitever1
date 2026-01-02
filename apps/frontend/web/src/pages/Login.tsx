@@ -21,15 +21,46 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const params = new URLSearchParams(window.location.search);
   const returnTo = params.get('returnTo') || params.get('return');
   
-  // If returnTo is an OAuth2 authorize URL, we need to decode it and extract useful info
-  // After login, we'll go to dashboard since the login already handles OAuth2 flow
+  // Parse OAuth2 parameters from returnTo URL if it's an OAuth2 authorize URL
   const isOAuth2Return = returnTo?.includes('/oauth2/authorize');
   
-  // For OAuth2 returns, redirect to dashboard after login (login already does OAuth2)
-  // Otherwise use the provided return URL
-  const returnUrl = isOAuth2Return 
-    ? `/${propTenantCode || 'staging'}/dashboard` 
-    : (returnTo || `/${propTenantCode || 'staging'}/dashboard`);
+  // Extract OAuth2 params from the returnTo URL for external OAuth2 clients
+  const getOAuth2ParamsFromReturnTo = (): { clientId: string; redirectUri: string; scope: string; state?: string } | null => {
+    if (!isOAuth2Return || !returnTo) return null;
+    
+    try {
+      const decodedUrl = decodeURIComponent(returnTo);
+      const url = new URL(decodedUrl, window.location.origin);
+      const clientId = url.searchParams.get('client_id');
+      const redirectUri = url.searchParams.get('redirect_uri');
+      const scope = url.searchParams.get('scope');
+      const state = url.searchParams.get('state');
+      
+      if (clientId && redirectUri) {
+        console.log('🔐 Detected OAuth2 return flow for client:', clientId);
+        return { 
+          clientId, 
+          redirectUri: decodeURIComponent(redirectUri), 
+          scope: scope || 'openid',
+          state: state || undefined
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to parse OAuth2 returnTo URL:', e);
+    }
+    return null;
+  };
+  
+  const oauth2ReturnParams = getOAuth2ParamsFromReturnTo();
+  
+  // Determine if this is an external OAuth2 client (not w3suite-frontend)
+  const isExternalOAuth2Client = oauth2ReturnParams && oauth2ReturnParams.clientId !== 'w3suite-frontend';
+  
+  // For external clients, after login we redirect back to the OAuth2 authorize URL
+  // For internal SPA client or no OAuth2, go to dashboard
+  const returnUrl = isExternalOAuth2Client && returnTo
+    ? decodeURIComponent(returnTo) 
+    : (isOAuth2Return ? `/${propTenantCode || 'staging'}/dashboard` : (returnTo || `/${propTenantCode || 'staging'}/dashboard`));
   
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
@@ -110,7 +141,38 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     }
     
     try {
-      // OAuth2 Authorization Code Flow with PKCE (only for production)
+      console.log(`🔐 External OAuth2 client: ${isExternalOAuth2Client ? 'YES' : 'NO'}`);
+      
+      // For external OAuth2 clients, use simple session login
+      if (isExternalOAuth2Client && returnTo) {
+        console.log('🔐 Using session login for external OAuth2 client');
+        
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Ensure session cookie is set
+          body: JSON.stringify({ username, password }),
+        });
+        
+        console.log('🔍 Session Login Response Status:', loginResponse.status);
+        
+        if (loginResponse.ok) {
+          console.log('✅ Session created, redirecting to original OAuth2 authorize URL');
+          console.log('🔄 Redirecting to:', returnUrl);
+          window.location.href = returnUrl;
+          return;
+        } else {
+          const error = await loginResponse.json();
+          console.error('Session login failed:', error);
+          alert(error.message || 'Credenziali non valide');
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // For internal SPA client, use full OAuth2 Authorization Code Flow with PKCE
       const codeVerifier = generateCodeVerifier();
       const { challenge: codeChallenge, method: challengeMethod } = await generateCodeChallenge(codeVerifier);
       
@@ -122,6 +184,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
+        credentials: 'include', // Ensure session cookie is set
         body: new URLSearchParams({
           client_id: 'w3suite-frontend',
           redirect_uri: `${window.location.origin}/auth/callback`,
@@ -138,7 +201,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       console.log('🔍 Auth Response URL:', authResponse.url);
 
       if (authResponse.ok) {
-        // In development mode, we get a JSON response with the code
+        // For internal SPA client, complete the full OAuth2 flow
         const authData = await authResponse.json();
         const authCode = authData.code;
         console.log('🔑 Authorization code from response:', authCode ? 'YES' : 'NO');

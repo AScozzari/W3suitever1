@@ -64,7 +64,9 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
       'https://w3suite.it/auth/callback',
       'https://*.w3suite.it/auth/callback',
       'https://*.w3suite.com/auth/callback',
-      'https://*.replit.dev/auth/callback'
+      'https://*.replit.dev/auth/callback',
+      'https://w3suite.online/auth/callback',
+      'https://*.w3suite.online/auth/callback'
     ],
     grantTypes: ['authorization_code', 'refresh_token'],
     responseTypes: ['code'],
@@ -390,6 +392,67 @@ export function setupOAuth2Server(app: express.Application) {
     console.log('🔐 [OAuth2] Redirecting to:', loginUrl);
     
     return res.redirect(loginUrl);
+  });
+
+  // ==================== SIMPLE SESSION LOGIN (for external OAuth2 clients) ====================
+  // This endpoint creates a session without doing the full OAuth2 flow
+  // Used when external OAuth2 clients (ChatGPT, Claude) need to authenticate users
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    
+    console.log('🔐 [Session Login] Attempting login for:', username);
+    
+    if (!username || !password) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        message: 'Username and password are required'
+      });
+    }
+    
+    try {
+      const user = await getUserByCredentials(username, password);
+      
+      if (!user) {
+        console.log('❌ [Session Login] Invalid credentials for:', username);
+        return res.status(401).json({
+          error: 'invalid_credentials',
+          message: 'Credenziali non valide'
+        });
+      }
+      
+      // Create session
+      const session = req.session as any;
+      session.userId = user.id;
+      session.tenantId = user.tenantId;
+      session.email = user.email;
+      session.roles = user.roles;
+      
+      // Force session save
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      console.log('✅ [Session Login] Session created for user:', user.id);
+      console.log('✅ [Session Login] Session ID:', req.sessionID);
+      
+      return res.status(200).json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          tenantId: user.tenantId
+        }
+      });
+    } catch (error) {
+      console.error('❌ [Session Login] Error:', error);
+      return res.status(500).json({
+        error: 'server_error',
+        message: 'Errore interno del server'
+      });
+    }
   });
 
   // ==================== AUTHORIZATION PROCESSING ====================
