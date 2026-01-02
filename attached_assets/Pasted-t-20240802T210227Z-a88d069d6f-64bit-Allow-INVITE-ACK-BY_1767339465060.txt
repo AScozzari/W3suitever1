@@ -1,0 +1,203 @@
+t~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+installHook.js:1 Fri Jan 02 2026 08:36:04 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-core | Discarding unmatched 200 response to REGISTER z9hG4bK810666REGISTER.
+overrideMethod @ installHook.js:1
+print @ Layout-eR0MDmdE.js:58
+genericLog @ Layout-eR0MDmdE.js:58
+genericLog @ Layout-eR0MDmdE.js:58
+warn @ Layout-eR0MDmdE.js:58
+receiveResponseFromTransport @ Layout-eR0MDmdE.js:71
+receiveIncomingResponseFromTransport @ Layout-eR0MDmdE.js:71
+onTransportMessage @ Layout-eR0MDmdE.js:86
+transport.onMessage @ Layout-eR0MDmdE.js:86
+onWebSocketMessage @ Layout-eR0MDmdE.js:84
+(anonime) @ Layout-eR0MDmdE.js:75Comprendi l'avviso
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:36:23, Token expires: 08:48:53
+4index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:36:23, Token expires: 08:48:53
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/tools 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/keys 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/stats 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/usage-logs 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+3index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:36:24, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:36:25, Token expires: 08:48:53
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/tools 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/stats 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/keys 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2  GET https://w3suite.it/api/mcp-gateway/usage-logs 404 (Not Found)
+queryFn @ index-B_zwtnSs.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:23, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:32, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:33, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:33, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:33, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:33, Token expires: 08:48:53
+index-B_zwtnSs.js:2 🔍 Token expiry check: Current time: 08:37:33, Token expires: 08:48:53
+2index-B_zwtnSs.js:2 🔍 Token expiry check: Current time
