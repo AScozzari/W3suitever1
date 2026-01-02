@@ -42,7 +42,8 @@ import {
   Eye,
   Edit,
   Filter,
-  Link
+  Link,
+  Tag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -1351,9 +1352,11 @@ export function OrderModal({ open, onOpenChange, onSuccess, draftToResume }: Ord
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {/* Show mapped SKU badge if available */}
                               {pendingSupplierSku && (
-                                <span className="h-8 px-3 flex items-center text-xs font-mono bg-blue-100 text-blue-700 rounded border border-blue-200" title="SKU Fornitore mappato">
-                                  {pendingSupplierSku}
-                                </span>
+                                <div className="h-8 px-2.5 flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 rounded border border-amber-200" title="SKU Fornitore mappato">
+                                  <Tag className="h-3.5 w-3.5" />
+                                  <span className="text-amber-500 font-medium">SKU Forn:</span>
+                                  <span className="font-mono font-semibold">{pendingSupplierSku}</span>
+                                </div>
                               )}
                               <Input
                                 ref={quantityInputRef}
