@@ -1,0 +1,132 @@
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+3index-LKXVCDyU.js:2 🔍 Token expiry check: Current time: 18:28:58, Token expires: 18:43:14
+index-LKXVCDyU.js:2 [API-REQUEST] 📖 Public endpoint: /api/action-definitions
+index-LKXVCDyU.js:2 🔍 Token expiry check: Current time: 18:29:00, Token expires: 18:43:14
+index-LKXVCDyU.js:2 🔍 Token expiry check: Current time: 18:29:00, Token expires: 18:43:14
+index-LKXVCDyU.js:2 🔍 Token expiry check: Current time: 18:29:00, Token expires: 18:43:14
+index-LKXVCDyU.js:21 [APP-ROUTER] 🚀 Router component rendered
+index-LKXVCDyU.js:21 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 TypeError: Cannot read properties of undefined (reading 'icon')
+    at ActionManagementPage-D6IYHbU-.js:1:11189
+    at Array.map (<anonymous>)
+    at Ge (ActionManagementPage-D6IYHbU-.js:1:11020)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+overrideMethod @ installHook.js:1
+Po @ react-core-DamieDW-.js:32
+Da.t.callback @ react-core-DamieDW-.js:32
+Ci @ react-core-DamieDW-.js:30
+$i @ react-core-DamieDW-.js:32
+Ga @ react-core-DamieDW-.js:32
+Pd @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-e3VqoBtK.js:1
+u @ query-e3VqoBtK.js:1
+batch @ query-e3VqoBtK.js:1
+W @ query-e3VqoBtK.js:1
+setData @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+await in fetch
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+react-core-DamieDW-.js:30 Uncaught TypeError: Cannot read properties of undefined (reading 'icon')
+    at ActionManagementPage-D6IYHbU-.js:1:11189
+    at Array.map (<anonymous>)
+    at Ge (ActionManagementPage-D6IYHbU-.js:1:11020)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+(anonime) @ ActionManagementPage-D6IYHbU-.js:1
+Ge @ ActionManagementPage-D6IYHbU-.js:1
+gu @ react-core-DamieDW-.js:30
+No @ react-core-DamieDW-.js:32
+tc @ react-core-DamieDW-.js:32
+ba @ react-core-DamieDW-.js:32
+Ld @ react-core-DamieDW-.js:32
+el @ react-core-DamieDW-.js:32
+Uo @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-e3VqoBtK.js:1
+u @ query-e3VqoBtK.js:1
+batch @ query-e3VqoBtK.js:1
+W @ query-e3VqoBtK.js:1
+setData @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+await in fetch
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-LKXVCDyU.js:15 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+Layout-CF8oW_LY.js:58 Fri Jan 02 2026 18:29:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+Layout-CF8oW_LY.js:58 Fri Jan 02 2026 18:29:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS iu0et8d1os8e.invalid;branch=z9hG4bK8967160
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=ik9ft3i35m
+CSeq: 4 REGISTER
+Call-ID: vh89hsqqsf69222osg4g
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="59c852ad-9450-4a4f-b61b-51c9d9ba5290", uri="sip:demo.edgvoip.it", response="c17ce25e34c1b74ffdb223f3c5bf156d", qop=auth, cnonce="qk868c0823nl", nc=00000001
+Contact: <sip:i7oafqeh@iu0et8d1os8e.invalid;transport=ws>;expires=0
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+Layout-CF8oW_LY.js:58 Fri Jan 02 2026 18:29:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Stopping sip:2000@demo.edgvoip.it
+Layout-CF8oW_LY.js:58 Fri Jan 02 2026 18:29:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of registerers
+Layout-CF8oW_LY.js:58 Fri Jan 02 2026 18:29:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registerer vh89hsqqsf69222osg4gik9ft3i35m in state Registered is being disposed
+Layout-CF8oW_LY.js:58 Fri Jan 02 2026 18:29:00 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS iu0et8d1os8e.invalid;branch=z9hG4bK8967160;received=127.0.0.1;rport=34802
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=ik9ft3i35m
+To: <sip:2000@demo.edgvoip.it>;tag=BvpaDUcK7y62e
+Call-ID: vh89hsqqsf69222osg4g
+CSeq: 4 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="2cc85f36-90fd-41b5-93b4-6324b3c38d57", stale=true, algorithm=MD5, qop="auth"
