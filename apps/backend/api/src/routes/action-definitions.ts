@@ -1,14 +1,19 @@
 /**
  * 🎯 ACTION DEFINITIONS API
  * 
- * API per leggere le definizioni globali delle azioni (evergreen).
- * Queste azioni sono disponibili per tutti i tenant e definiscono
- * quali azioni esistono per ogni dipartimento.
+ * API per il catalogo unificato action_definitions.
+ * Supporta mixed RLS: tenant_id NULL = globale, UUID = tenant-specific.
+ * 
+ * ARCHITETTURA (Jan 2026):
+ * - action_definitions è la FONTE UNICA per MCP Gateway
+ * - Contiene sia operative (WMS workflows) che query (MCP tools)
+ * - exposed_via_mcp controlla visibilità via MCP Gateway
+ * - source_table + source_id traccia origine dati
  */
 
 import { Router } from 'express';
 import { db } from '../core/db';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, or, isNull, sql } from 'drizzle-orm';
 import { actionDefinitions } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 
@@ -17,7 +22,7 @@ const router = Router();
 // ==================== GET ALL ACTION DEFINITIONS ====================
 router.get('/', async (req, res) => {
   try {
-    const { department, activeOnly, category, includeMcp } = req.query;
+    const { department, activeOnly, category, includeMcp, exposedViaMcp, tenantId } = req.query;
 
     let query = db
       .select()
@@ -26,15 +31,28 @@ router.get('/', async (req, res) => {
 
     const allActions = await query;
 
-    // Filter by department if specified
+    // Filter by tenant: include global (tenant_id IS NULL) + tenant-specific
     let filteredActions = allActions;
+    if (tenantId && tenantId !== 'all') {
+      filteredActions = allActions.filter(a => 
+        a.tenantId === null || a.tenantId === tenantId
+      );
+    }
+
+    // Filter by department if specified
     if (department && department !== 'all') {
-      filteredActions = allActions.filter(a => a.department === department);
+      filteredActions = filteredActions.filter(a => a.department === department);
+    }
+
+    // Filter by exposed_via_mcp (for MCP Gateway views)
+    if (exposedViaMcp === 'true') {
+      filteredActions = filteredActions.filter(a => a.exposedViaMcp === true);
     }
 
     // Filter by action category (operative, query, etc.)
     // - category=operative → solo azioni operative (per Action Management)
-    // - category=all or includeMcp=true → tutte le azioni (per Action Builder / MCP Catalog)
+    // - category=query → solo MCP query tools (per Action Builder)
+    // - category=all or includeMcp=true → tutte le azioni (per MCP Catalog)
     // - Default: solo operative per retrocompatibilità
     if (category && category !== 'all') {
       filteredActions = filteredActions.filter(a => a.actionCategory === category);

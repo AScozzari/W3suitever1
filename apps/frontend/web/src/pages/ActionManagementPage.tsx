@@ -109,18 +109,15 @@ interface ActionConfiguration {
   description?: string;
   requiresApproval: boolean;
   isActive: boolean;
-  // Legacy fields (for backward compatibility)
   flowType?: 'none' | 'default' | 'workflow';
   workflowTemplateId?: string;
   teamScope?: 'all' | 'specific';
   specificTeamIds?: string[];
-  // New: Multiple assignments per action
-  assignments?: Array<{
+  defaultTeamIds?: string[];
+  workflowConfigs?: Array<{
     id: string;
-    flowType: 'default' | 'workflow';
-    workflowTemplateId: string;
-    teamScope: 'all' | 'specific';
-    teamIds: string[];
+    teamId: string;
+    workflowId: string;
   }>;
   slaHours: number;
   escalationEnabled: boolean;
@@ -211,7 +208,7 @@ export function ActionManagementContent() {
     mutationFn: async ({ department, actionId, isActive }: { department: string; actionId: string; isActive: boolean }) => {
       return await apiRequest(`/api/action-configurations/toggle/${department}/${actionId}`, { 
         method: 'PATCH',
-        body: { isActive }
+        body: JSON.stringify({ isActive })
       });
     },
     onSuccess: (_, variables) => {
@@ -531,7 +528,9 @@ export function ActionManagementContent() {
                               <Clock className="h-3 w-3 text-gray-400" />
                               {configuration?.slaHours || 24}h
                               {configuration?.escalationEnabled && (
-                                <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" title="Escalation attiva" />
+                                <span title="Escalation attiva">
+                                  <AlertTriangle className="h-3 w-3 text-amber-500 ml-1" />
+                                </span>
                               )}
                             </div>
                           </TableCell>
@@ -811,7 +810,7 @@ function ActionFormModal({ open, onOpenChange, action, onSuccess }: ActionFormMo
               <Label>Dipartimento *</Label>
               <Select 
                 value={formData.department} 
-                onValueChange={(v) => setFormData({...formData, department: v as any, workflowTemplateId: ''})}
+                onValueChange={(v) => setFormData({...formData, department: v as any})}
                 disabled={isEditing}
               >
                 <SelectTrigger data-testid="select-form-department">
