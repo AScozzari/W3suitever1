@@ -741,5 +741,56 @@ export function setupOAuth2Server(app: express.Application) {
     res.status(200).json({});
   });
 
+  // ==================== DYNAMIC CLIENT REGISTRATION (DCR) ====================
+  // Required by ChatGPT for MCP OAuth2 flow per RFC 7591
+  app.post('/oauth2/register', (req: Request, res: Response) => {
+    const { 
+      redirect_uris, 
+      client_name, 
+      grant_types = ['authorization_code', 'refresh_token'],
+      response_types = ['code'],
+      scope,
+      token_endpoint_auth_method = 'none'
+    } = req.body;
+
+    // Validate required fields
+    if (!redirect_uris || !Array.isArray(redirect_uris) || redirect_uris.length === 0) {
+      return res.status(400).json({
+        error: 'invalid_client_metadata',
+        error_description: 'redirect_uris is required and must be a non-empty array'
+      });
+    }
+
+    // Generate a unique client_id for this dynamic registration
+    const clientId = `dyn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    
+    // Store the dynamic client (in production: persist to database)
+    const dynamicClient: OAuthClient = {
+      clientId,
+      clientSecret: undefined, // Public client for PKCE
+      redirectUris: redirect_uris,
+      grantTypes: grant_types,
+      responseTypes: response_types,
+      scopes: scope ? scope.split(' ') : ['mcp_read', 'mcp_write', 'tenant_access'],
+      clientType: 'public',
+      name: client_name || 'Dynamic MCP Client'
+    };
+
+    // Add to clients map
+    oauthClients.set(clientId, dynamicClient);
+
+    // Return client information per RFC 7591
+    res.status(201).json({
+      client_id: clientId,
+      client_name: dynamicClient.name,
+      redirect_uris: dynamicClient.redirectUris,
+      grant_types: dynamicClient.grantTypes,
+      response_types: dynamicClient.responseTypes,
+      scope: dynamicClient.scopes?.join(' '),
+      token_endpoint_auth_method: 'none',
+      client_id_issued_at: Math.floor(Date.now() / 1000),
+    });
+  });
+
   // OAuth2 Authorization Server initialized
 }

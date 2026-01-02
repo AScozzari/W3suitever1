@@ -763,8 +763,21 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
   }
 });
 
-// ==================== OAuth2 Discovery Endpoint for ChatGPT/Claude ====================
-// ChatGPT and other AI platforms look for this endpoint to discover OAuth configuration
+// ==================== OAuth2 Discovery Endpoints for ChatGPT/Claude ====================
+// ChatGPT requires these endpoints to discover OAuth configuration per MCP spec
+
+// 1. Protected Resource Metadata - ChatGPT looks for this FIRST
+router.get('/.well-known/oauth-protected-resource', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
+  res.json({
+    resource: `${baseUrl}/api/mcp-public`,
+    authorization_servers: [baseUrl],
+    scopes_supported: ['mcp_read', 'mcp_write', 'tenant_access'],
+  });
+});
+
+// 2. Authorization Server Metadata - Standard OAuth2 discovery
 router.get('/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   
@@ -772,10 +785,11 @@ router.get('/.well-known/oauth-authorization-server', (req: Request, res: Respon
     issuer: baseUrl,
     authorization_endpoint: `${baseUrl}/oauth2/authorize`,
     token_endpoint: `${baseUrl}/oauth2/token`,
+    registration_endpoint: `${baseUrl}/oauth2/register`,
     revocation_endpoint: `${baseUrl}/oauth2/revoke`,
     response_types_supported: ['code'],
     grant_types_supported: ['authorization_code', 'refresh_token'],
-    code_challenge_methods_supported: ['S256', 'plain'],
+    code_challenge_methods_supported: ['S256'],
     token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
     scopes_supported: ['openid', 'profile', 'tenant_access', 'mcp_read', 'mcp_write'],
     service_documentation: `${baseUrl}/api/mcp-public/docs`,
