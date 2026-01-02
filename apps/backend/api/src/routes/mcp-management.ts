@@ -44,7 +44,10 @@ router.get('/keys', async (req: Request, res: Response) => {
         revokedAt: mcpApiKeys.revokedAt,
       })
       .from(mcpApiKeys)
-      .where(eq(mcpApiKeys.tenantId, tenantId))
+      .where(and(
+        eq(mcpApiKeys.tenantId, tenantId),
+        isNull(mcpApiKeys.revokedAt) // Only show non-revoked keys
+      ))
       .orderBy(desc(mcpApiKeys.createdAt));
 
     res.json({ success: true, data: keys });
@@ -88,10 +91,8 @@ router.post('/keys', async (req: Request, res: Response) => {
     // Return key with raw value (only shown once)
     res.json({ 
       success: true, 
-      data: { 
-        ...newKey, 
-        rawKey // Only returned on creation
-      } 
+      data: newKey,
+      apiKey: rawKey // Only returned on creation - for copy modal
     });
   } catch (error) {
     logger.error('[MCP-MGMT] Error creating key:', error);
