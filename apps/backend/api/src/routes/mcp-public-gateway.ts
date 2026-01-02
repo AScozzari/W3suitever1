@@ -909,10 +909,10 @@ router.get('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Resp
 });
 
 router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Response) => {
-  const { tenantId, apiKeyId } = req.mcpAuth!;
+  const { tenantId, apiKeyId, authMethod, scopes } = req.mcpAuth!;
   const { id, method, params } = req.body;
   
-  logger.info(`[MCP-SSE] RPC: ${method}`, { id, params });
+  logger.info(`[MCP-SSE] RPC: ${method}`, { id, params, authMethod });
   
   try {
     if (method === 'initialize') {
@@ -927,26 +927,53 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
     }
     
     if (method === 'tools/list') {
-      // NEW ARCHITECTURE: Read from action_definitions (unified catalog)
-      const actions = await db
-        .select({
-          actionId: actionDefinitions.actionId,
-          actionName: actionDefinitions.actionName,
-          description: actionDefinitions.description,
-          mcpInputSchema: actionDefinitions.mcpInputSchema,
-          actionCategory: actionDefinitions.actionCategory,
-        })
-        .from(actionDefinitions)
-        .innerJoin(mcpToolPermissions, and(
-          eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
-          eq(mcpToolPermissions.apiKeyId, apiKeyId),
-          eq(mcpToolPermissions.isEnabled, true)
-        ))
-        .where(and(
-          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
-          eq(actionDefinitions.isActive, true),
-          eq(actionDefinitions.exposedViaMcp, true)
-        ));
+      let actions;
+      
+      if (authMethod === 'oauth') {
+        // OAuth2: Bypass API key permissions, use scope-based filtering
+        // mcp_read → all query tools, mcp_write → also operative tools
+        const hasMcpWrite = scopes?.includes('mcp_write') || false;
+        
+        actions = await db
+          .select({
+            actionId: actionDefinitions.actionId,
+            actionName: actionDefinitions.actionName,
+            description: actionDefinitions.description,
+            mcpInputSchema: actionDefinitions.mcpInputSchema,
+            actionCategory: actionDefinitions.actionCategory,
+          })
+          .from(actionDefinitions)
+          .where(and(
+            sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+            eq(actionDefinitions.isActive, true),
+            eq(actionDefinitions.exposedViaMcp, true),
+            // If only mcp_read, filter to query tools only
+            hasMcpWrite ? sql`TRUE` : sql`${actionDefinitions.actionCategory} = 'query'`
+          ));
+        
+        logger.info(`[MCP-SSE] OAuth tools/list: ${actions.length} tools (scopes: ${scopes?.join(',')})`);
+      } else {
+        // API Key: Use mcp_tool_permissions for granular control
+        actions = await db
+          .select({
+            actionId: actionDefinitions.actionId,
+            actionName: actionDefinitions.actionName,
+            description: actionDefinitions.description,
+            mcpInputSchema: actionDefinitions.mcpInputSchema,
+            actionCategory: actionDefinitions.actionCategory,
+          })
+          .from(actionDefinitions)
+          .innerJoin(mcpToolPermissions, and(
+            eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
+            eq(mcpToolPermissions.apiKeyId, apiKeyId),
+            eq(mcpToolPermissions.isEnabled, true)
+          ))
+          .where(and(
+            sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+            eq(actionDefinitions.isActive, true),
+            eq(actionDefinitions.exposedViaMcp, true)
+          ));
+      }
       
       return res.json({
         jsonrpc: '2.0', id,
@@ -961,27 +988,59 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
     if (method === 'tools/call') {
       const { name: toolName, arguments: toolArgs } = params;
       
-      // NEW ARCHITECTURE: Read from action_definitions (unified catalog)
-      const [action] = await db
-        .select({ 
-          queryTemplateId: actionDefinitions.queryTemplateId,
-          actionCategory: actionDefinitions.actionCategory,
-          actionName: actionDefinitions.actionName,
-          actionId: actionDefinitions.actionId,
-        })
-        .from(actionDefinitions)
-        .innerJoin(mcpToolPermissions, and(
-          eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
-          eq(mcpToolPermissions.apiKeyId, apiKeyId),
-          eq(mcpToolPermissions.isEnabled, true)
-        ))
-        .where(and(
-          eq(actionDefinitions.actionId, toolName), 
-          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`, 
-          eq(actionDefinitions.isActive, true),
-          eq(actionDefinitions.exposedViaMcp, true)
-        ))
-        .limit(1);
+      let action;
+      
+      if (authMethod === 'oauth') {
+        // OAuth2: Bypass API key permissions, check scope for operative actions
+        const hasMcpWrite = scopes?.includes('mcp_write') || false;
+        
+        const [foundAction] = await db
+          .select({ 
+            queryTemplateId: actionDefinitions.queryTemplateId,
+            actionCategory: actionDefinitions.actionCategory,
+            actionName: actionDefinitions.actionName,
+            actionId: actionDefinitions.actionId,
+          })
+          .from(actionDefinitions)
+          .where(and(
+            eq(actionDefinitions.actionId, toolName), 
+            sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`, 
+            eq(actionDefinitions.isActive, true),
+            eq(actionDefinitions.exposedViaMcp, true)
+          ))
+          .limit(1);
+        
+        // Check scope for operative actions
+        if (foundAction && foundAction.actionCategory === 'operative' && !hasMcpWrite) {
+          return res.json({ jsonrpc: '2.0', id, error: { code: -32603, message: `Operative action requires mcp_write scope: ${toolName}` } });
+        }
+        
+        action = foundAction;
+      } else {
+        // API Key: Use mcp_tool_permissions for authorization
+        const [foundAction] = await db
+          .select({ 
+            queryTemplateId: actionDefinitions.queryTemplateId,
+            actionCategory: actionDefinitions.actionCategory,
+            actionName: actionDefinitions.actionName,
+            actionId: actionDefinitions.actionId,
+          })
+          .from(actionDefinitions)
+          .innerJoin(mcpToolPermissions, and(
+            eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
+            eq(mcpToolPermissions.apiKeyId, apiKeyId),
+            eq(mcpToolPermissions.isEnabled, true)
+          ))
+          .where(and(
+            eq(actionDefinitions.actionId, toolName), 
+            sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`, 
+            eq(actionDefinitions.isActive, true),
+            eq(actionDefinitions.exposedViaMcp, true)
+          ))
+          .limit(1);
+        
+        action = foundAction;
+      }
       
       if (!action) {
         return res.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Tool not found or not authorized: ${toolName}` } });
