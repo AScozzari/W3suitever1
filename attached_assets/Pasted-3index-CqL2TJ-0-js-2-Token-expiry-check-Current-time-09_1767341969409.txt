@@ -1,0 +1,109 @@
+3index-CqL2TJ_0.js:2 🔍 Token expiry check: Current time: 09:19:14, Token expires: 09:34:07
+3index-CqL2TJ_0.js:2 🔍 Token expiry check: Current time: 09:19:16, Token expires: 09:34:07
+index-CqL2TJ_0.js:2  GET https://w3suite.it/api/mcp-gateway/custom-actions?showAll=true 404 (Not Found)
+queryFn @ index-CqL2TJ_0.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CqL2TJ_0.js:2  GET https://w3suite.it/api/mcp-gateway/variable-categories 404 (Not Found)
+queryFn @ index-CqL2TJ_0.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CqL2TJ_0.js:2  GET https://w3suite.it/api/mcp-gateway/query-templates 404 (Not Found)
+queryFn @ index-CqL2TJ_0.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+3index-CqL2TJ_0.js:2 🔍 Token expiry check: Current time: 09:19:17, Token expires: 09:34:07
+index-CqL2TJ_0.js:2  GET https://w3suite.it/api/mcp-gateway/custom-actions?showAll=true 404 (Not Found)
+queryFn @ index-CqL2TJ_0.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CqL2TJ_0.js:2  GET https://w3suite.it/api/mcp-gateway/variable-categories 404 (Not Found)
+queryFn @ index-CqL2TJ_0.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CqL2TJ_0.js:2  GET https://w3suite.it/api/mcp-gateway/query-templates 404 (Not Found)
