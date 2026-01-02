@@ -51,8 +51,10 @@ import {
   Save,
   X,
   Loader2,
-  GitBranch
+  GitBranch,
+  Info
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -406,9 +408,45 @@ export function ActionManagementContent() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Configurazione Azioni</CardTitle>
-                  <CardDescription>Gestisci le azioni e i flussi operativi per ogni dipartimento</CardDescription>
+                <div className="flex items-start gap-2">
+                  <div>
+                    <CardTitle>Configurazione Azioni</CardTitle>
+                    <CardDescription>Gestisci le azioni e i flussi operativi per ogni dipartimento</CardDescription>
+                  </div>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="mt-1 p-1 rounded-full hover:bg-gray-100 transition-colors" data-testid="info-action-flows">
+                          <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-sm p-4 text-left">
+                        <p className="font-semibold mb-2">Come funzionano le azioni</p>
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <span className="font-medium text-red-600">● Disattivata:</span>
+                            <span className="text-gray-600 ml-1">Azione non disponibile nel sistema</span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-600">● Attiva (Nessun flusso):</span>
+                            <span className="text-gray-600 ml-1">Esecuzione diretta senza approvazioni</span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-600">● Attiva (Flusso Default):</span>
+                            <span className="text-gray-600 ml-1">Richiede approvazione supervisore</span>
+                            <div className="ml-3 mt-1 text-gray-500">
+                              Stati: Pending → Approved / Rejected / Suspended
+                              <br />+ Escalation automatica se supera SLA
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-purple-600">● Attiva (Workflow):</span>
+                            <span className="text-gray-600 ml-1">Flusso personalizzato dal Workflow Builder</span>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="relative">
