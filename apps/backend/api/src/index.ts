@@ -388,6 +388,9 @@ async function startNginxAndBackend() {
 async function startBackendOnly() {
   const app = express();
 
+  // Trust proxy for correct HTTPS protocol detection behind Nginx
+  app.set('trust proxy', true);
+
   // W3 Suite backend in Pure Backend mode
 
   // CORS configuration - accept requests from external nginx proxy
@@ -518,6 +521,9 @@ async function startBackendOnly() {
 
 async function startBackend() {
   const app = express();
+
+  // Trust proxy for correct HTTPS protocol detection behind Nginx
+  app.set('trust proxy', true);
 
   // W3 Suite backend standalone
 
