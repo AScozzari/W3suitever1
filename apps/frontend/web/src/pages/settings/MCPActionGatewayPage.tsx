@@ -252,11 +252,13 @@ interface ActionConfiguration {
   id: string;
   actionCode: string;
   actionName: string;
+  description?: string;
   departmentId: string;
   flowType: 'none' | 'default' | 'workflow';
   isActive: boolean;
   mcpExposed: boolean;
   actionCategory?: 'operative' | 'query';
+  mcpInputSchema?: any;
 }
 
 interface GatewayStats {
@@ -296,6 +298,21 @@ export default function MCPActionGatewayPage() {
 
   const { data: actions = [], isLoading: isLoadingActions } = useQuery<ActionConfiguration[]>({
     queryKey: ['/api/mcp-gateway/tools'],
+    select: (response: any) => {
+      const rawTools = response?.data || response || [];
+      return rawTools.map((tool: any) => ({
+        id: tool.id,
+        actionCode: tool.actionId || tool.actionCode,
+        actionName: tool.actionName || tool.name || tool.actionId,
+        description: tool.description || '',
+        departmentId: tool.department || tool.departmentId || 'Operations',
+        flowType: tool.flowType || 'none',
+        isActive: tool.isActive !== false,
+        mcpExposed: tool.exposedViaMcp ?? tool.mcpExposed ?? false,
+        actionCategory: tool.actionCategory || 'query',
+        mcpInputSchema: tool.mcpInputSchema,
+      }));
+    }
   });
 
   const { data: stats } = useQuery<GatewayStats>({
@@ -859,15 +876,27 @@ function ToolsCatalogTab({
                                     : 'bg-white border-gray-200 hover:border-gray-300'
                                 }`}
                               >
-                                <div className="flex items-center gap-3 flex-1">
-                                  <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-700">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-700 shrink-0">
                                     {action.actionCode}
                                   </code>
-                                  <span className="text-sm font-medium text-gray-900">{action.actionName}</span>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-semibold text-gray-900">{action.actionName}</span>
+                                      {action.mcpInputSchema && (
+                                        <Badge variant="outline" className="text-xs shrink-0">
+                                          {Object.keys(action.mcpInputSchema.properties || {}).length} parametri
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    {action.description && (
+                                      <p className="text-xs text-gray-500 truncate mt-0.5">{action.description}</p>
+                                    )}
+                                  </div>
                                   <TooltipProvider delayDuration={100}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <button className="text-gray-400 hover:text-[#FF6900] transition-colors p-0.5 rounded hover:bg-[#FF6900]/10">
+                                        <button className="text-gray-400 hover:text-[#FF6900] transition-colors p-0.5 rounded hover:bg-[#FF6900]/10 shrink-0">
                                           <Info className="h-4 w-4" />
                                         </button>
                                       </TooltipTrigger>
@@ -875,10 +904,10 @@ function ToolsCatalogTab({
                                         <div className="space-y-2">
                                           <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-[#FF6900]" />
-                                            <p className="font-semibold text-gray-900">{getActionDescription(action.actionCode).purpose}</p>
+                                            <p className="font-semibold text-gray-900">{action.actionName}</p>
                                           </div>
                                           <p className="text-sm text-gray-600 leading-relaxed">
-                                            {getActionDescription(action.actionCode).details}
+                                            {action.description || getActionDescription(action.actionCode).details}
                                           </p>
                                           <div className="pt-1 border-t border-gray-100">
                                             <p className="text-xs text-gray-400">
@@ -894,14 +923,9 @@ function ToolsCatalogTab({
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
-                                  <Badge className={`text-xs border-0 ${action.actionCategory === 'operative' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
+                                  <Badge className={`text-xs border-0 shrink-0 ${action.actionCategory === 'operative' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
                                     {action.actionCategory === 'operative' ? 'Operativa' : 'MCP Query'}
                                   </Badge>
-                                  {action.flowType !== 'none' && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {action.flowType === 'workflow' ? 'Workflow' : 'Approvazione'}
-                                    </Badge>
-                                  )}
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <span className={`text-xs ${action.mcpExposed ? 'text-green-600' : 'text-gray-400'}`}>
