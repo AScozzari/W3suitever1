@@ -11,7 +11,7 @@ import { createHash } from 'crypto';
 import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
-import { eq, and, sql, desc, inArray } from 'drizzle-orm';
+import { eq, and, sql, desc, inArray, or, isNull } from 'drizzle-orm';
 import { legalEntities, organizationEntities, stores, users, tenants, roles, userAssignments, rolePerms, voipExtensions, insertVoipExtensionSchema, storeTrackingConfig, insertStoreTrackingConfigSchema, storeOpeningRules, drivers, supplierOverrides, financialEntities, suppliers, insertOrganizationEntitySchema, userOrganizationEntities, userTeams, userStores } from '../db/schema/w3suite';
 import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
@@ -470,11 +470,11 @@ router.get('/legal-entities', async (req, res) => {
     // 3. Children (operators, suppliers, financial_entities) are nested via FK
     // 4. ONE entity per P.IVA - no duplicates
 
-    // Step 1: Get all legal entities for the tenant
+    // Step 1: Get all legal entities for the tenant + brand-pushed (tenant_id IS NULL)
     const allLegalEntities = await db
       .select()
       .from(legalEntities)
-      .where(eq(legalEntities.tenantId, tenantId))
+      .where(or(eq(legalEntities.tenantId, tenantId), isNull(legalEntities.tenantId)))
       .orderBy(legalEntities.nome);
 
     // Step 2: Get all operators linked to legal entities
@@ -576,9 +576,18 @@ router.get('/legal-entities', async (req, res) => {
         website: entity.website,
         iban: entity.iban,
         bic: entity.bic,
+        rea: entity.rea,
+        registroImprese: entity.registroImprese,
+        codiceSDI: entity.codiceSDI,
+        capitaleSociale: entity.capitaleSociale,
+        note: entity.note,
+        isSupplier: entity.isSupplier,
+        isOperator: entity.isOperator,
+        isFinancialEntity: entity.isFinancialEntity,
         stato: normalizedStato,
         roles,
-        isEditable: true, // Legal entities owned by tenant are editable
+        isBrandPushed: entity.tenantId === null, // Brand-pushed entities (tenant_id = NULL)
+        isEditable: entity.tenantId !== null, // Only tenant-owned entities are editable
         hasDependencies: childOperators.length > 0 || childSuppliers.length > 0 || childFinancialEntities.length > 0,
         _children: {
           operators: childOperators.map(op => ({ ...op, origin: 'brand' })),
@@ -844,15 +853,25 @@ router.put('/legal-entities/:id', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // Verify entity exists and belongs to tenant
+    // Verify entity exists (tenant-owned OR brand-pushed)
     const existingEntity = await db.query.legalEntities.findFirst({
-      where: and(eq(legalEntities.id, id), eq(legalEntities.tenantId, tenantId))
+      where: and(eq(legalEntities.id, id), or(eq(legalEntities.tenantId, tenantId), isNull(legalEntities.tenantId)))
     });
 
     if (!existingEntity) {
       return res.status(404).json({
         success: false,
         error: 'Legal entity not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Brand-pushed entities (tenant_id = NULL) are read-only for tenants
+    if (existingEntity.tenantId === null) {
+      return res.status(403).json({
+        success: false,
+        error: 'Cannot modify brand-pushed entity',
+        message: 'Le entità pushed dal brand sono di sola lettura. Contatta l\'amministratore del brand per modifiche.',
         timestamp: new Date().toISOString()
       } as ApiErrorResponse);
     }

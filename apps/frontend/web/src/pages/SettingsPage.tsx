@@ -4071,7 +4071,22 @@ export default function SettingsPage() {
             <tbody>
               {legalEntitiesList.map((entity: any) => (
                 <tr key={entity.id} data-testid={`row-legal-entity-${entity.id}`} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: '14px 16px', fontWeight: '500', color: '#111827' }}>{entity.codice}</td>
+                  <td style={{ padding: '14px 16px', fontWeight: '500', color: '#111827' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {entity.codice}
+                      {entity.isBrandPushed && (
+                        <span title="Entità gestita dal Brand - sola lettura" style={{
+                          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                          color: 'white',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          fontSize: '9px',
+                          fontWeight: '600',
+                          textTransform: 'uppercase'
+                        }}>Brand</span>
+                      )}
+                    </div>
+                  </td>
                   <td style={{ padding: '14px 16px', color: '#374151' }}>{entity.nome}</td>
                   <td style={{ padding: '14px 16px', color: '#6b7280' }}>{entity.ragioneSociale || entity.nome || '-'}</td>
                   <td style={{ padding: '14px 16px', color: '#6b7280', fontFamily: 'monospace' }}>{entity.pIva || '-'}</td>
