@@ -1,0 +1,234 @@
+	Apple Italia S.r.l.	Apple Italia S.r.l.	IT09556680969	
+Fornitore
+Attiva	
+
+
+
+
+
+8000012	Bozza Società Test	Bozza Società Test	IT22222222222	
+-
+Inattiva	
+
+
+
+
+
+8000003	Digital Operations Snc	Digital Operations Snc	IT09876543210	
+-
+Attiva	
+
+
+
+
+
+DSI001	Digital Services Italia Spa	Digital Services Italia Spa	IT98765432101	
+-
+Attiva	
+
+
+
+
+
+SUPP002	Elettronica Italia SpA	Elettronica Italia SpA	IT02345678901	
+Fornitore
+Attiva	
+
+
+
+
+
+8000001	Innovation Services Srl	Innovation Services Srl	IT33445566778	
+-
+Inattiva	
+
+
+
+
+
+SUPP003	Mobile Solutions Srl	Mobile Solutions Srl	IT03456789012	
+Fornitore
+Attiva	
+
+
+
+
+
+8000005	Mobile Store Network Srl	Mobile Store Network Srl	IT55667788990	
+-
+Attiva	
+
+
+
+
+
+TEST_NEW	Nuovo Fornitore Test	Nuovo Fornitore Test	-	
+Fornitore
+Attiva	
+
+
+
+
+
+SBS S.p.A.	SBS S.p.A.	IT00000000001	
+Fornitore
+Attiva	
+
+
+
+
+
+8000013	Società Cessata Spa	Società Cessata Spa	IT33333333333	
+-
+Inattiva	
+
+
+
+
+
+8000011	Società Test Sospesa	Società Test Sospesa	IT11111111111	
+-
+Inattiva	
+
+
+
+
+
+SUPP001	TechnoDistribuzione Srl	TechnoDistribuzione Srl	IT01234567890	
+Fornitore
+Attiva	
+
+
+
+
+
+8000006	Tech Solutions Group Spa	Tech Solutions Group Spa	IT99887766554	
+-
+Attiva	
+
+
+
+
+
+LE003	Telecom Solutions Sas	Telecom Solutions Sas	IT11223344556	
+-
+Inattiva	
+
+
+
+
+
+TEST2025-001	Test Azienda SRL	Test Azienda SRL	-	
+-
+Attiva	
+
+
+
+
+
+TEST001	Test Company SRL	Test Company SRL	-	
+-
+Attiva	
+
+
+
+
+
+8000004	Test Company SRL	Test Company SRL	IT98765432109	
+-
+Attiva	
+
+
+
+
+
+8000014	Test Complete Enterprise Srl	Test Complete Enterprise Srl	IT88888888888	
+-
+Attiva	
+
+
+
+
+
+TEST_SUPP	Test Fornitore Bidirezionale	Test Fornitore Bidirezionale	-	
+Fornitore
+Attiva	
+
+
+
+
+
+TEST_BIDIR	Test Fornitore Bidirezionale	Test Fornitore Bidirezionale	-	
+Fornitore
+Attiva	
+
+
+
+
+
+8435304	Test Modal API Srl	Test Modal API Srl	IT12345678999	
+-
+Attiva	
+
+
+
+
+
+8000007	Test OAuth2 Company Srl	Test OAuth2 Company Srl	IT99999999999	
+-
+Attiva	
+
+
+
+
+
+8000010	W3 Dealer Napoli S.r.l.	W3 Dealer Napoli S.r.l.	IT36925814703	
+-
+Attiva	
+
+
+
+
+
+8000009	W3 Franchising Milano S.r.l.	W3 Franchising Milano S.r.l.	IT13579246801	
+-
+Attiva	
+
+
+
+
+
+8000008	W3 Top Dealer Roma S.p.A.	W3 Top Dealer Roma S.p.A.	IT24681357902	
+-
+Attiva	
+
+
+
+
+
+8000002	WindTre Franchising Srl	WindTre Franchising Srl	IT12345678901	
+-
+Attiva	
+
+
+
+
+
+WTR001	WindTre Retail Milano Srl	WindTre Retail Milano Srl	-	
+-
+Attiva	
+
+
+
+
+
+Wind Tre S.p.A.	Wind Tre S.p.A.	IT13378520152	
+Fornitore
+Operatore
+Ente Finanziante
+Attiva	
+
+
+
+
+
