@@ -469,12 +469,29 @@ router.get('/legal-entities', async (req, res) => {
     // 2. Role flags (is_supplier, is_operator, is_financial_entity) determine badges
     // 3. Children (operators, suppliers, financial_entities) are nested via FK
     // 4. ONE entity per P.IVA - no duplicates
+    // 5. CRITICAL: Only show PARTNER entities (at least one role flag = true)
+    //    Organization entities (all flags false) belong in organization_entities page
 
-    // Step 1: Get all legal entities for the tenant + brand-pushed (tenant_id IS NULL)
+    // Step 1: Get ONLY PARTNER legal entities (is_supplier OR is_operator OR is_financial_entity = true)
+    // Plus brand-pushed (tenant_id = '00000000-0000-0000-0000-000000000000') or tenant-specific
+    const BRAND_SCOPE_TENANT_ID = '00000000-0000-0000-0000-000000000000';
+    
     const allLegalEntities = await db
       .select()
       .from(legalEntities)
-      .where(or(eq(legalEntities.tenantId, tenantId), isNull(legalEntities.tenantId)))
+      .where(and(
+        // Tenant-specific OR brand-pushed (brand scope tenant_id)
+        or(
+          eq(legalEntities.tenantId, tenantId),
+          eq(legalEntities.tenantId, BRAND_SCOPE_TENANT_ID)
+        ),
+        // CRITICAL FILTER: Must have at least one partner role
+        or(
+          eq(legalEntities.isSupplier, true),
+          eq(legalEntities.isOperator, true),
+          eq(legalEntities.isFinancialEntity, true)
+        )
+      ))
       .orderBy(legalEntities.nome);
 
     // Step 2: Get all operators linked to legal entities
@@ -586,8 +603,8 @@ router.get('/legal-entities', async (req, res) => {
         isFinancialEntity: entity.isFinancialEntity,
         stato: normalizedStato,
         roles,
-        isBrandPushed: entity.tenantId === null, // Brand-pushed entities (tenant_id = NULL)
-        isEditable: entity.tenantId !== null, // Only tenant-owned entities are editable
+        isBrandPushed: entity.tenantId === BRAND_SCOPE_TENANT_ID, // Brand-pushed entities (shared across all tenants)
+        isEditable: entity.tenantId !== BRAND_SCOPE_TENANT_ID, // Only tenant-owned entities are editable
         hasDependencies: childOperators.length > 0 || childSuppliers.length > 0 || childFinancialEntities.length > 0,
         _children: {
           operators: childOperators.map(op => ({ ...op, origin: 'brand' })),
