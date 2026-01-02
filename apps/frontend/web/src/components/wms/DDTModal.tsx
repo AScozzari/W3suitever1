@@ -1181,8 +1181,8 @@ export function DDTModal({ open, onOpenChange, onSubmit }: DDTModalProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 pr-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex-1 flex flex-col min-h-0">
+            <ScrollArea className="flex-1 pr-4 max-h-[calc(90vh-280px)]">
               <div className="space-y-6 pb-4">
 
                 {/* ==================== STEP 1: Document Data ==================== */}
