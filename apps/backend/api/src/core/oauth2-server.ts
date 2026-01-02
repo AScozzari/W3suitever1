@@ -777,7 +777,7 @@ export function setupOAuth2Server(app: express.Application) {
     const clientId = `dyn_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     
     // Store the dynamic client (in production: persist to database)
-    const dynamicClient: OAuthClient = {
+    const dynamicClient: OAuth2Client = {
       clientId,
       clientSecret: undefined, // Public client for PKCE
       redirectUris: redirect_uris,
@@ -789,7 +789,7 @@ export function setupOAuth2Server(app: express.Application) {
     };
 
     // Add to clients map
-    oauthClients.set(clientId, dynamicClient);
+    registeredClients.set(clientId, dynamicClient);
 
     // Return client information per RFC 7591
     res.status(201).json({
