@@ -9,16 +9,101 @@ The MCP Public Gateway provides external JSON-RPC 2.0 endpoints for Claude Deskt
 
 ## Authentication
 
-The MCP Public Gateway supports **hybrid authentication** - you can use either API Keys or OAuth2 tokens:
+The MCP Public Gateway supports multiple authentication methods:
 
-| Method | Token Format | Use Case |
-|--------|--------------|----------|
-| **API Key** | `sk_live_*`, `sk_test_*` | n8n, Zapier, scripts, automation |
-| **OAuth2 JWT** | `eyJ*` (JWT) | ChatGPT, Claude Desktop, browser apps |
+| Method | Use Case | Complexity |
+|--------|----------|------------|
+| **API Key in URL** | ChatGPT, Claude Desktop (Recommended) | Simple |
+| **API Key in Header** | n8n, Zapier, scripts, automation | Simple |
+| **OAuth2 JWT** | Browser apps, advanced integrations | Complex |
+| **Hybrid (OAuth2 + API Key)** | Audit trail + granular permissions | Advanced |
 
-### API Key Authentication
+---
 
-Provide API key via `Authorization` header or `X-MCP-Key` header:
+## ChatGPT Setup (Recommended)
+
+The simplest way to connect ChatGPT to W3 Suite MCP Gateway:
+
+### Step 1: Create API Key in W3 Suite
+
+1. Go to **Impostazioni → MCP Gateway → API Keys**
+2. Click **"Nuova API Key"**
+3. Name it (e.g., "ChatGPT Production")
+4. **Copy the key immediately** (shown only once!)
+5. Go to **Permissions** tab and enable the tools you want ChatGPT to use
+
+### Step 2: Configure ChatGPT
+
+1. Go to **ChatGPT → Settings → Connected Apps → MCP**
+2. Click **"Add MCP Server"**
+3. Enter the URL with your API key:
+
+```
+https://w3suite.it/api/mcp-public/sse?api_key=sk_live_YOUR_KEY_HERE
+```
+
+4. **Authorization:** Select **"None"** (No authentication required - the API key in the URL handles it)
+5. Click **Connect**
+
+### Step 3: Verify Connection
+
+ChatGPT will show:
+- ✅ **Connected** status
+- List of available tools (based on your API Key permissions)
+
+### How It Works
+
+```
+┌─────────────┐     API Key in URL      ┌─────────────────┐
+│   ChatGPT   │ ────────────────────────▶ │  MCP Gateway    │
+└─────────────┘   ?api_key=sk_live_xxx   └─────────────────┘
+                                                  │
+                                                  ▼
+                                         ┌─────────────────┐
+                                         │  Lookup Key     │
+                                         │  → tenant_id    │
+                                         │  → permissions  │
+                                         │  → rate limits  │
+                                         └─────────────────┘
+```
+
+The API Key contains all the context needed:
+- **Tenant identification** (which W3 Suite instance)
+- **Tool permissions** (which MCP tools can be called)
+- **Rate limiting** (requests per minute/day)
+
+---
+
+## Claude Desktop Setup
+
+Claude Desktop also works with API Key in URL:
+
+### Using mcp-remote (Recommended)
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "w3suite": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://w3suite.it/api/mcp-public/sse?api_key=sk_live_YOUR_KEY_HERE"
+      ]
+    }
+  }
+}
+```
+
+Restart Claude Desktop and the tools will appear automatically.
+
+---
+
+## API Key Authentication (Headers)
+
+For n8n, Zapier, and scripts, provide API key via headers:
 
 ```bash
 # Using Bearer token
