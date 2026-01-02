@@ -763,6 +763,25 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
   }
 });
 
+// ==================== OAuth2 Discovery Endpoint for ChatGPT/Claude ====================
+// ChatGPT and other AI platforms look for this endpoint to discover OAuth configuration
+router.get('/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
+  res.json({
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/oauth2/authorize`,
+    token_endpoint: `${baseUrl}/oauth2/token`,
+    revocation_endpoint: `${baseUrl}/oauth2/revoke`,
+    response_types_supported: ['code'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256', 'plain'],
+    token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
+    scopes_supported: ['openid', 'profile', 'tenant_access', 'mcp_read', 'mcp_write'],
+    service_documentation: `${baseUrl}/api/mcp-public/docs`,
+  });
+});
+
 router.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
