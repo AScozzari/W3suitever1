@@ -462,8 +462,69 @@ export function setupOAuth2Server(app: express.Application) {
       }
     }
 
-    // No valid session - show OAuth2 login page directly
-    console.log('🔐 [OAuth2] No valid session, showing OAuth2 login page');
+    // No valid session - differentiate between internal (frontend) and external (ChatGPT) flows
+    console.log('🔐 [OAuth2] No valid session, checking client type');
+    
+    // INTERNAL FLOW: w3suite-frontend should redirect to tenant-specific login
+    if (client_id === 'w3suite-frontend') {
+      // Extract tenant from: tenant_hint query param, cookie, or Referer header
+      const tenantHint = req.query.tenant_hint as string;
+      const referer = req.get('Referer') || '';
+      const tenantFromReferer = referer.match(/\/([a-zA-Z0-9_-]+)\//)?.[1];
+      const tenantFromCookie = req.cookies?.tenant_slug;
+      
+      // Candidate tenant slug (will be validated)
+      const candidateTenant = tenantHint || tenantFromCookie || tenantFromReferer;
+      
+      console.log('🔐 [OAuth2] Internal client detected, validating tenant');
+      console.log(`🔐 [OAuth2] Candidate tenant: ${candidateTenant} (hint: ${tenantHint}, cookie: ${tenantFromCookie}, referer: ${tenantFromReferer})`);
+      
+      // SECURITY: Validate tenant slug format (alphanumeric, hyphen, underscore only)
+      const validSlugPattern = /^[a-zA-Z0-9_-]{1,50}$/;
+      if (!candidateTenant || !validSlugPattern.test(candidateTenant)) {
+        console.log('❌ [OAuth2] Invalid tenant slug format, returning error');
+        return res.status(400).json({
+          error: 'invalid_request',
+          error_description: 'Invalid or missing tenant identifier'
+        });
+      }
+      
+      // SECURITY: Validate tenant exists in database
+      try {
+        const [validTenant] = await db
+          .select({ slug: tenants.slug })
+          .from(tenants)
+          .where(eq(tenants.slug, candidateTenant.toLowerCase()))
+          .limit(1);
+        
+        if (!validTenant) {
+          console.log('❌ [OAuth2] Tenant not found in database:', candidateTenant);
+          return res.status(400).json({
+            error: 'invalid_request',
+            error_description: 'Unknown organization'
+          });
+        }
+        
+        const tenantSlug = validTenant.slug;
+        console.log('✅ [OAuth2] Tenant validated, redirecting to tenant login:', tenantSlug);
+        
+        // Build returnTo with all OAuth2 params
+        const returnToUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
+        const encodedReturnTo = encodeURIComponent(returnToUrl.toString());
+        
+        // Redirect to tenant-specific login page (using validated slug from DB)
+        return res.redirect(`/${tenantSlug}/login?returnTo=${encodedReturnTo}`);
+      } catch (err) {
+        console.error('❌ [OAuth2] Error validating tenant:', err);
+        return res.status(500).json({
+          error: 'server_error',
+          error_description: 'Failed to validate organization'
+        });
+      }
+    }
+    
+    // EXTERNAL FLOW: Show OAuth2 login page with Organization field
+    console.log('🔐 [OAuth2] External client, showing OAuth2 login page');
     
     // Build the returnTo URL with all OAuth2 parameters
     const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
