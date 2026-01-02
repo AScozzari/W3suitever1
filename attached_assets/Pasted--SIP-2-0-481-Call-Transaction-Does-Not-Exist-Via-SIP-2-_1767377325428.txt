@@ -1,0 +1,71 @@
+
+SIP/2.0 481 Call/Transaction Does Not Exist
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bK0XpDD71HgSeyK
+From: <sip:2000@demo.edgvoip.it>;tag=Nr5mgDBrHjQar
+To: <sip:2000@demo.edgvoip.it>;tag=erp0crlsgl
+CSeq: 109134757 NOTIFY
+Call-ID: 6412977c-62a8-123f-2c82-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-uDatBfoG.js:2 🔍 Token expiry check: Current time: 19:05:02, Token expires: 19:16:22
+index-uDatBfoG.js:2  GET https://w3suite.it/api/wms/price-lists 500 (Internal Server Error)
+queryFn @ index-uDatBfoG.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-uDatBfoG.js:2 🔍 Token expiry check: Current time: 19:05:03, Token expires: 19:16:22
+index-uDatBfoG.js:2  GET https://w3suite.it/api/wms/price-lists 500 (Internal Server Error)
+queryFn @ index-uDatBfoG.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-uDatBfoG.js:2 🔍 Token expiry check: Current time: 19:05:09, Token expires: 19:16:22
+installHook.js:1 Fri Jan 02 2026 19:07:06 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed unexpectedly
+overrideMethod @ installHook.js:1
+print @ Layout-ZmU_AjLQ.js:58
+genericLog @ Layout-ZmU_AjLQ.js:58
+genericLog @ Layout-ZmU_AjLQ.js:58
+warn @ Layout-ZmU_AjLQ.js:58
+onWebSocketClose @ Layout-ZmU_AjLQ.js:78
+(anonime) @ Layout-ZmU_AjLQ.js:75Comprendi l'avviso
+Layout-ZmU_AjLQ.js:58 Fri Jan 02 2026 19:07:06 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket closed wss://demo.edgvoip.it/ws (code: 1006)
+Layout-ZmU_AjLQ.js:58 Fri Jan 02 2026 19:07:06 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connected to Disconnected
+2index-uDatBfoG.js:2 🔍 Token expiry check: Current time: 19:07:37, Token expires: 19:16:22
+index-uDatBfoG.js:2 🔍 Token expiry check: Current time: 19:08:17, Token expires: 19:16:22
