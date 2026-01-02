@@ -632,7 +632,7 @@ function ApiKeysTab({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm font-medium">{key.totalCalls.toLocaleString()}</div>
+                    <div className="text-sm font-medium">{(key.totalCalls || 0).toLocaleString()}</div>
                   </TableCell>
                   <TableCell>
                     <Switch

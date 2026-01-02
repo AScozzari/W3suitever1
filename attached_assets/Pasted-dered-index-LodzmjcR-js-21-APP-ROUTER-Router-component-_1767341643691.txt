@@ -1,0 +1,93 @@
+dered
+index-LodzmjcR.js:21 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 TypeError: Cannot read properties of undefined (reading 'toLocaleString')
+    at WorkflowManagementPage-DTrWE7Jc.js:31:111811
+    at Array.map (<anonymous>)
+    at _g (WorkflowManagementPage-DTrWE7Jc.js:31:110674)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+overrideMethod @ installHook.js:1
+Po @ react-core-DamieDW-.js:32
+Da.t.callback @ react-core-DamieDW-.js:32
+Ci @ react-core-DamieDW-.js:30
+$i @ react-core-DamieDW-.js:32
+Ga @ react-core-DamieDW-.js:32
+Pd @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-e3VqoBtK.js:1
+u @ query-e3VqoBtK.js:1
+batch @ query-e3VqoBtK.js:1
+W @ query-e3VqoBtK.js:1
+setData @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+await in fetch
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+react-core-DamieDW-.js:30 Uncaught TypeError: Cannot read properties of undefined (reading 'toLocaleString')
+    at WorkflowManagementPage-DTrWE7Jc.js:31:111811
+    at Array.map (<anonymous>)
+    at _g (WorkflowManagementPage-DTrWE7Jc.js:31:110674)
+    at gu (react-core-DamieDW-.js:30:16959)
+    at No (react-core-DamieDW-.js:32:3134)
+    at tc (react-core-DamieDW-.js:32:44467)
+    at ba (react-core-DamieDW-.js:32:39499)
+    at Ld (react-core-DamieDW-.js:32:39430)
+    at el (react-core-DamieDW-.js:32:39289)
+    at Uo (react-core-DamieDW-.js:32:35710)
+(anonime) @ WorkflowManagementPage-DTrWE7Jc.js:31
+_g @ WorkflowManagementPage-DTrWE7Jc.js:31
+gu @ react-core-DamieDW-.js:30
+No @ react-core-DamieDW-.js:32
+tc @ react-core-DamieDW-.js:32
+ba @ react-core-DamieDW-.js:32
+Ld @ react-core-DamieDW-.js:32
+el @ react-core-DamieDW-.js:32
+Uo @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32
+setTimeout
+ss @ query-e3VqoBtK.js:1
+u @ query-e3VqoBtK.js:1
+batch @ query-e3VqoBtK.js:1
+W @ query-e3VqoBtK.js:1
+setData @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+await in fetch
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-LodzmjcR.js:15 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+Layout-RGfG4Y1a.js:86 [SIP] Skipping unregister - state: Initial
+Layout-RGfG4Y1a.js:58 Fri Jan 02 2026 09:13:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Stopping sip:2000@demo.edgvoip.it
+Layout-RGfG4Y1a.js:58 Fri Jan 02 2026 09:13:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Dispose of registerers
+Layout-RGfG4Y1a.js:58 Fri Jan 02 2026 09:13:52 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registerer bsmi4q51ad5juo6uer6totvm1i8a8j in state Initial is being disposed
