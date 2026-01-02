@@ -5736,8 +5736,22 @@ router.get("/suppliers", rbacMiddleware, async (req, res) => {
         )
       );
 
-    // Merge and sort by name
-    const allSuppliers = [...brandSuppliersList, ...tenantSuppliersList]
+    // Merge with deduplication - tenant overrides take precedence over brand
+    // Use code as unique key to avoid duplicates when same supplier exists in both tables
+    const supplierMap = new Map<string, typeof brandSuppliersList[0]>();
+    
+    // First add brand suppliers
+    for (const supplier of brandSuppliersList) {
+      supplierMap.set(supplier.code, supplier);
+    }
+    
+    // Then override with tenant-specific (if they have same code, tenant version wins)
+    for (const supplier of tenantSuppliersList) {
+      supplierMap.set(supplier.code, supplier);
+    }
+    
+    // Convert to array and sort by name
+    const allSuppliers = Array.from(supplierMap.values())
       .sort((a, b) => a.name.localeCompare(b.name));
 
     res.json(allSuppliers);
