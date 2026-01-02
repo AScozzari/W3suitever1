@@ -444,16 +444,30 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
     }
 
     // Supplier filter (via product_supplier_mappings table)
+    // Supports comma-separated supplier IDs for multi-supplier filtering
     if (supplier_id && typeof supplier_id === "string") {
-      conditions.push(
-        sql`EXISTS (
-          SELECT 1 FROM w3suite.product_supplier_mappings psm
-          WHERE psm.product_id = ${products.id}
-            AND psm.tenant_id = ${tenantId}
-            AND psm.supplier_id = ${supplier_id}
-            AND psm.is_active = true
-        )`
-      );
+      const supplierIds = supplier_id.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      if (supplierIds.length === 1) {
+        conditions.push(
+          sql`EXISTS (
+            SELECT 1 FROM w3suite.product_supplier_mappings psm
+            WHERE psm.product_id = ${products.id}
+              AND psm.tenant_id = ${tenantId}
+              AND psm.supplier_id = ${supplierIds[0]}
+              AND psm.is_active = true
+          )`
+        );
+      } else if (supplierIds.length > 1) {
+        conditions.push(
+          sql`EXISTS (
+            SELECT 1 FROM w3suite.product_supplier_mappings psm
+            WHERE psm.product_id = ${products.id}
+              AND psm.tenant_id = ${tenantId}
+              AND psm.supplier_id = ANY(${supplierIds}::uuid[])
+              AND psm.is_active = true
+          )`
+        );
+      }
     }
 
     if (is_active !== undefined) {
@@ -569,14 +583,14 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
              AND ps.tenant_id = ${tenantId}
              AND ps.serial_type = 'imei'
           ), ARRAY[]::text[])`,
-        // Primary supplier from product_supplier_mappings
+        // Supplier from product_supplier_mappings (prefer primary, fallback to any active)
         supplierId: sql<string | null>`(
           SELECT psm.supplier_id::text
           FROM w3suite.product_supplier_mappings psm
           WHERE psm.product_id = ${products.id}
             AND psm.tenant_id = ${tenantId}
-            AND psm.is_primary = true
             AND psm.is_active = true
+          ORDER BY psm.is_primary DESC NULLS LAST
           LIMIT 1
         )`,
         supplierSku: sql<string | null>`(
@@ -584,8 +598,8 @@ router.get("/products", rbacMiddleware, requirePermission('wms.product.read'), a
           FROM w3suite.product_supplier_mappings psm
           WHERE psm.product_id = ${products.id}
             AND psm.tenant_id = ${tenantId}
-            AND psm.is_primary = true
             AND psm.is_active = true
+          ORDER BY psm.is_primary DESC NULLS LAST
           LIMIT 1
         )`
       })

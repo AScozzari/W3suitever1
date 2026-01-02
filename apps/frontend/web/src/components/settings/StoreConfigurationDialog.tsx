@@ -96,20 +96,13 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   const { data: trackingConfig, isLoading: isLoadingTracking } = useQuery({
     queryKey: ['/api/stores', storeId, 'tracking-config'],
     queryFn: async () => {
-      const response = await fetch(`/api/stores/${storeId}/tracking-config`, {
-        headers: {
-          'X-Tenant-ID': tenantId,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': 'admin-user',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        if (response.status === 404) return null;
-        throw new Error('Failed to fetch tracking config');
+      try {
+        const response = await apiRequest('GET', `/api/stores/${storeId}/tracking-config`);
+        return response.data;
+      } catch (error: any) {
+        if (error.message?.includes('404')) return null;
+        throw error;
       }
-      const json = await response.json();
-      return json.data;
     },
     enabled: open && !!storeId,
   });
@@ -118,45 +111,31 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
   const { data: gtmSnippet, isLoading: isLoadingSnippet } = useQuery({
     queryKey: ['/api/crm/stores', storeId, 'gtm-snippet'],
     queryFn: async () => {
-      const response = await fetch(`/api/crm/stores/${storeId}/gtm-snippet`, {
-        headers: {
-          'X-Tenant-ID': tenantId,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': 'admin-user',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        if (response.status === 404) return null; // No config yet
-        throw new Error('Failed to fetch GTM snippet');
+      try {
+        const response = await apiRequest('GET', `/api/crm/stores/${storeId}/gtm-snippet`);
+        return response.data;
+      } catch (error: any) {
+        if (error.message?.includes('404')) return null;
+        throw error;
       }
-      const json = await response.json();
-      return json.data;
     },
-    enabled: open && !!storeId && !!trackingConfig, // Only fetch if tracking config exists
+    enabled: open && !!storeId && !!trackingConfig,
   });
 
   // Check GTM MCP Server status
   const { data: gtmMcpStatus, isLoading: isLoadingGtmMcp } = useQuery({
     queryKey: ['/api/mcp/servers', 'google-tag-manager-mcp', 'status'],
     queryFn: async () => {
-      const response = await fetch('/api/mcp/servers', {
-        headers: {
-          'X-Tenant-ID': tenantId,
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': 'admin-user',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        return { configured: false };
+      try {
+        const json = await apiRequest('GET', '/api/mcp/servers');
+        const gtmServer = (json as any[])?.find((s: any) => s.name === 'google-tag-manager-mcp');
+        return {
+          configured: !!gtmServer && gtmServer.status === 'active',
+          server: gtmServer || null
+        };
+      } catch {
+        return { configured: false, server: null };
       }
-      const json = await response.json();
-      const gtmServer = json.data?.find((s: any) => s.name === 'google-tag-manager-mcp');
-      return {
-        configured: !!gtmServer && gtmServer.status === 'active',
-        server: gtmServer || null
-      };
     },
     enabled: open,
   });
