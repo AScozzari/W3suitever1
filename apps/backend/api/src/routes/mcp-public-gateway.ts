@@ -153,6 +153,7 @@ import {
   mcpUsageLogs, 
   mcpToolSettings,
   actionConfigurations,
+  actionDefinitions,
   tenants,
   mcpQueryTemplates
 } from '../db/schema/w3suite';
@@ -545,143 +546,90 @@ router.get('/tools', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Re
   try {
     const { tenantId, apiKeyId, allowedDepartments } = req.mcpAuth!;
     
-    let whereCondition = and(
-      eq(mcpToolSettings.tenantId, tenantId),
-      eq(mcpToolSettings.exposedViaMcp, true)
-    );
-    
-    const exposedSettings = await db
-      .select({
-        actionConfigId: mcpToolSettings.actionConfigId,
-        customToolName: mcpToolSettings.customToolName,
-        customToolDescription: mcpToolSettings.customToolDescription,
-        parametersSchema: mcpToolSettings.parametersSchema,
-      })
-      .from(mcpToolSettings)
-      .where(whereCondition);
-    
-    const customActions = await db
-      .select({
-        id: actionConfigurations.id,
-        code: actionConfigurations.code,
-        name: actionConfigurations.name,
-        description: actionConfigurations.description,
-        department: actionConfigurations.department,
-        mcpActionType: actionConfigurations.mcpActionType,
-        mcpInputSchema: actionConfigurations.mcpInputSchema,
-      })
-      .from(actionConfigurations)
-      .where(and(
-        eq(actionConfigurations.tenantId, tenantId),
-        eq(actionConfigurations.isActive, true),
-        eq(actionConfigurations.isCustomAction, true)
-      ));
-    
-    const actionIds = exposedSettings.map(s => s.actionConfigId);
-    
+    // NEW ARCHITECTURE: Read directly from action_definitions (unified catalog)
+    // Filter: exposed_via_mcp = true AND (tenant's tools OR global tools)
     const permissions = await db
-      .select({ actionConfigId: mcpToolPermissions.actionConfigId })
+      .select({ actionDefinitionId: mcpToolPermissions.actionDefinitionId })
       .from(mcpToolPermissions)
       .where(and(
         eq(mcpToolPermissions.apiKeyId, apiKeyId),
         eq(mcpToolPermissions.isEnabled, true)
       ));
     
-    const allowedActionIds = new Set(permissions.map(p => p.actionConfigId));
-    
-    const standardActions = actionIds.length > 0 ? await db
-      .select({
-        id: actionConfigurations.id,
-        code: actionConfigurations.code,
-        name: actionConfigurations.name,
-        description: actionConfigurations.description,
-        department: actionConfigurations.department,
-        flowType: actionConfigurations.flowType,
-      })
-      .from(actionConfigurations)
-      .where(and(
-        eq(actionConfigurations.tenantId, tenantId),
-        eq(actionConfigurations.isActive, true),
-        inArray(actionConfigurations.id, actionIds)
-      )) : [];
-    
-    const settingsMap = new Map(exposedSettings.map(s => [s.actionConfigId, s]));
-    
-    const standardTools = standardActions
-      .filter(action => {
-        if (permissions.length > 0 && !allowedActionIds.has(action.id)) {
-          return false;
-        }
-        if (allowedDepartments && allowedDepartments.length > 0) {
-          if (!allowedDepartments.includes(action.department)) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .map(action => {
-        const settings = settingsMap.get(action.id);
-        return {
-          name: settings?.customToolName || action.code,
-          description: settings?.customToolDescription || action.description || action.name,
-          department: action.department,
-          flowType: action.flowType,
-          isCustomAction: false,
-          inputSchema: settings?.parametersSchema || {
-            type: 'object',
-            properties: {
-              payload: { type: 'object', description: 'Action payload data' }
-            }
-          }
-        };
-      });
+    const allowedDefinitionIds = new Set(permissions.map(p => p.actionDefinitionId).filter(Boolean));
     
     const [apiKeySettings] = await db
-      .select({
-        allowedActionTypes: mcpApiKeys.allowedActionTypes,
-      })
+      .select({ allowedActionTypes: mcpApiKeys.allowedActionTypes })
       .from(mcpApiKeys)
       .where(eq(mcpApiKeys.id, apiKeyId))
       .limit(1);
     
     const allowedActionTypes = apiKeySettings?.allowedActionTypes || ['read', 'create', 'update', 'delete'];
     
-    const customTools = customActions
-      .filter(action => {
-        if (permissions.length > 0 && !allowedActionIds.has(action.id)) {
+    // Query all exposed action definitions (global + tenant-specific)
+    const allDefinitions = await db
+      .select({
+        id: actionDefinitions.id,
+        actionId: actionDefinitions.actionId,
+        actionName: actionDefinitions.actionName,
+        description: actionDefinitions.description,
+        department: actionDefinitions.department,
+        actionCategory: actionDefinitions.actionCategory,
+        mcpActionType: actionDefinitions.mcpActionType,
+        mcpInputSchema: actionDefinitions.mcpInputSchema,
+        flowType: actionDefinitions.flowType,
+        tenantId: actionDefinitions.tenantId,
+      })
+      .from(actionDefinitions)
+      .where(and(
+        sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+        eq(actionDefinitions.isActive, true),
+        eq(actionDefinitions.exposedViaMcp, true)
+      ));
+    
+    // Filter by permissions and department restrictions
+    const tools = allDefinitions
+      .filter(def => {
+        // Check permissions if any are defined
+        if (permissions.length > 0 && !allowedDefinitionIds.has(def.id)) {
           return false;
         }
+        // Check department restrictions
         if (allowedDepartments && allowedDepartments.length > 0) {
-          if (!allowedDepartments.includes(action.department)) {
+          if (!allowedDepartments.includes(def.department)) {
             return false;
           }
         }
-        if (action.mcpActionType && !allowedActionTypes.includes(action.mcpActionType)) {
+        // Check action type restrictions
+        if (def.mcpActionType && !allowedActionTypes.includes(def.mcpActionType)) {
           return false;
         }
         return true;
       })
-      .map(action => ({
-        name: action.code,
-        description: action.description || action.name,
-        department: action.department,
-        actionType: action.mcpActionType,
-        isCustomAction: true,
-        inputSchema: action.mcpInputSchema || {
+      .map(def => ({
+        name: def.actionId,
+        description: def.description || def.actionName,
+        department: def.department,
+        actionCategory: def.actionCategory,
+        actionType: def.mcpActionType,
+        flowType: def.flowType,
+        isGlobal: def.tenantId === null,
+        inputSchema: def.mcpInputSchema || {
           type: 'object',
           properties: {}
         }
       }));
     
-    const tools = [...standardTools, ...customTools];
-    
     await logMcpUsage(req, 'discovery', null, 'tools', 200, true, Date.now() - startTime);
+    
+    const globalCount = tools.filter(t => t.isGlobal).length;
+    const tenantCount = tools.filter(t => !t.isGlobal).length;
     
     res.json({
       tools,
       count: tools.length,
-      standardCount: standardTools.length,
-      customCount: customTools.length,
+      globalCount,
+      tenantCount,
       tenant: tenantId,
     });
   } catch (error) {
@@ -699,42 +647,30 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
     const { tenantId, apiKeyId, apiKeyName, allowedDepartments } = req.mcpAuth!;
     const { payload, entityType, entityId, dryRun } = req.body;
     
-    const [action] = await db
+    // NEW ARCHITECTURE: Read from action_definitions (unified catalog)
+    const [actionDef] = await db
       .select()
-      .from(actionConfigurations)
+      .from(actionDefinitions)
       .where(and(
-        eq(actionConfigurations.tenantId, tenantId),
-        eq(actionConfigurations.code, actionCode),
-        eq(actionConfigurations.isActive, true)
+        sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+        eq(actionDefinitions.actionId, actionCode),
+        eq(actionDefinitions.isActive, true),
+        eq(actionDefinitions.exposedViaMcp, true)
       ))
       .limit(1);
     
-    if (!action) {
-      await logMcpUsage(req, actionCode, null, 'execute', 404, false, Date.now() - startTime, 'NOT_FOUND', 'Action not found');
-      return res.status(404).json({ error: 'Action not found', code: actionCode });
+    if (!actionDef) {
+      await logMcpUsage(req, actionCode, null, 'execute', 404, false, Date.now() - startTime, 'NOT_FOUND', 'Action not found or not exposed via MCP');
+      return res.status(404).json({ error: 'Action not found or not exposed via MCP', code: actionCode });
     }
     
-    const [toolSettings] = await db
-      .select()
-      .from(mcpToolSettings)
-      .where(and(
-        eq(mcpToolSettings.tenantId, tenantId),
-        eq(mcpToolSettings.actionConfigId, action.id),
-        eq(mcpToolSettings.exposedViaMcp, true)
-      ))
-      .limit(1);
-    
-    if (!toolSettings) {
-      await logMcpUsage(req, actionCode, action.department, 'execute', 403, false, Date.now() - startTime, 'NOT_EXPOSED', 'Action not exposed via MCP');
-      return res.status(403).json({ error: 'Action not exposed via MCP', code: actionCode });
-    }
-    
+    // Check permissions using action_definition_id
     const [permission] = await db
       .select()
       .from(mcpToolPermissions)
       .where(and(
         eq(mcpToolPermissions.apiKeyId, apiKeyId),
-        eq(mcpToolPermissions.actionConfigId, action.id),
+        eq(mcpToolPermissions.actionDefinitionId, actionDef.id),
         eq(mcpToolPermissions.isEnabled, true)
       ))
       .limit(1);
@@ -746,27 +682,27 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
       .limit(1);
     
     if (hasAnyPermissions.length > 0 && !permission) {
-      await logMcpUsage(req, actionCode, action.department, 'execute', 403, false, Date.now() - startTime, 'PERMISSION_DENIED', 'API key does not have permission for this action');
+      await logMcpUsage(req, actionCode, actionDef.department, 'execute', 403, false, Date.now() - startTime, 'PERMISSION_DENIED', 'API key does not have permission for this action');
       return res.status(403).json({ error: 'API key does not have permission for this action' });
     }
     
     if (allowedDepartments && allowedDepartments.length > 0) {
-      if (!allowedDepartments.includes(action.department)) {
-        await logMcpUsage(req, actionCode, action.department, 'execute', 403, false, Date.now() - startTime, 'DEPARTMENT_DENIED', 'API key cannot access this department');
+      if (!allowedDepartments.includes(actionDef.department)) {
+        await logMcpUsage(req, actionCode, actionDef.department, 'execute', 403, false, Date.now() - startTime, 'DEPARTMENT_DENIED', 'API key cannot access this department');
         return res.status(403).json({ error: 'API key cannot access this department' });
       }
     }
     
     if (dryRun) {
-      await logMcpUsage(req, actionCode, action.department, 'execute', 200, true, Date.now() - startTime);
+      await logMcpUsage(req, actionCode, actionDef.department, 'execute', 200, true, Date.now() - startTime);
       return res.json({
         dryRun: true,
         action: {
-          code: action.code,
-          name: action.name,
-          department: action.department,
-          flowType: action.flowType,
-          requiresApproval: action.flowType !== 'none',
+          code: actionDef.actionId,
+          name: actionDef.actionName,
+          department: actionDef.department,
+          flowType: actionDef.flowType,
+          requiresApproval: actionDef.flowType !== 'none',
         },
         message: 'Dry run successful - action would be triggered'
       });
@@ -774,10 +710,16 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
     
     const triggerService = new UnifiedTriggerService();
     
+    // CRITICAL: triggerAction expects action_configurations.id, not action_definitions.id
+    // For actions sourced from action_configurations, use sourceId; otherwise use the definition id
+    const actionIdForTrigger = actionDef.sourceTable === 'action_configurations' && actionDef.sourceId 
+      ? actionDef.sourceId 
+      : actionDef.id;
+    
     const result = await triggerService.triggerAction({
       tenantId,
-      department: action.department as any,
-      actionId: action.id,
+      department: actionDef.department as any,
+      actionId: actionIdForTrigger,
       entityType: entityType || 'mcp_request',
       entityId: entityId || `mcp_${Date.now()}`,
       payload: payload || {},
@@ -788,7 +730,7 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
     await logMcpUsage(
       req, 
       actionCode, 
-      action.department, 
+      actionDef.department, 
       'execute', 
       200, 
       true, 
@@ -801,10 +743,10 @@ router.post('/execute/:actionCode', mcpApiKeyAuth, async (req: McpAuthenticatedR
     res.json({
       success: true,
       action: {
-        code: action.code,
-        name: action.name,
-        department: action.department,
-        flowType: action.flowType,
+        code: actionDef.actionId,
+        name: actionDef.actionName,
+        department: actionDef.department,
+        flowType: actionDef.flowType,
       },
       result: {
         status: result.status,
@@ -914,24 +856,26 @@ router.get('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Resp
   
   logger.info(`[MCP-SSE] New connection: ${connectionId} for tenant ${tenantId}`);
   
+  // NEW ARCHITECTURE: Read from action_definitions (unified catalog) with exposed_via_mcp flag
+  // Filter: tenant's tools OR global tools (tenant_id IS NULL)
   const actions = await db
     .select({
-      id: actionConfigurations.id,
-      actionId: actionConfigurations.actionId,
-      actionName: actionConfigurations.actionName,
-      description: actionConfigurations.description,
-      mcpInputSchema: actionConfigurations.mcpInputSchema,
+      id: actionDefinitions.id,
+      actionId: actionDefinitions.actionId,
+      actionName: actionDefinitions.actionName,
+      description: actionDefinitions.description,
+      mcpInputSchema: actionDefinitions.mcpInputSchema,
     })
-    .from(actionConfigurations)
+    .from(actionDefinitions)
     .innerJoin(mcpToolPermissions, and(
-      eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
+      eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
       eq(mcpToolPermissions.apiKeyId, apiKeyId),
       eq(mcpToolPermissions.isEnabled, true)
     ))
     .where(and(
-      eq(actionConfigurations.tenantId, tenantId),
-      eq(actionConfigurations.isActive, true),
-      eq(actionConfigurations.actionCategory, 'query')
+      sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+      eq(actionDefinitions.isActive, true),
+      eq(actionDefinitions.exposedViaMcp, true)
     ));
   
   const tools = actions.map(action => ({
@@ -983,23 +927,25 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
     }
     
     if (method === 'tools/list') {
+      // NEW ARCHITECTURE: Read from action_definitions (unified catalog)
       const actions = await db
         .select({
-          actionId: actionConfigurations.actionId,
-          actionName: actionConfigurations.actionName,
-          description: actionConfigurations.description,
-          mcpInputSchema: actionConfigurations.mcpInputSchema,
-          actionCategory: actionConfigurations.actionCategory,
+          actionId: actionDefinitions.actionId,
+          actionName: actionDefinitions.actionName,
+          description: actionDefinitions.description,
+          mcpInputSchema: actionDefinitions.mcpInputSchema,
+          actionCategory: actionDefinitions.actionCategory,
         })
-        .from(actionConfigurations)
+        .from(actionDefinitions)
         .innerJoin(mcpToolPermissions, and(
-          eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
+          eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
           eq(mcpToolPermissions.apiKeyId, apiKeyId),
           eq(mcpToolPermissions.isEnabled, true)
         ))
         .where(and(
-          eq(actionConfigurations.tenantId, tenantId),
-          eq(actionConfigurations.isActive, true)
+          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+          eq(actionDefinitions.isActive, true),
+          eq(actionDefinitions.exposedViaMcp, true)
         ));
       
       return res.json({
@@ -1015,20 +961,26 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
     if (method === 'tools/call') {
       const { name: toolName, arguments: toolArgs } = params;
       
+      // NEW ARCHITECTURE: Read from action_definitions (unified catalog)
       const [action] = await db
         .select({ 
-          queryTemplateId: actionConfigurations.queryTemplateId,
-          actionCategory: actionConfigurations.actionCategory,
-          actionName: actionConfigurations.actionName,
-          actionId: actionConfigurations.actionId,
+          queryTemplateId: actionDefinitions.queryTemplateId,
+          actionCategory: actionDefinitions.actionCategory,
+          actionName: actionDefinitions.actionName,
+          actionId: actionDefinitions.actionId,
         })
-        .from(actionConfigurations)
+        .from(actionDefinitions)
         .innerJoin(mcpToolPermissions, and(
-          eq(mcpToolPermissions.actionConfigId, actionConfigurations.id),
+          eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
           eq(mcpToolPermissions.apiKeyId, apiKeyId),
           eq(mcpToolPermissions.isEnabled, true)
         ))
-        .where(and(eq(actionConfigurations.actionId, toolName), eq(actionConfigurations.tenantId, tenantId), eq(actionConfigurations.isActive, true)))
+        .where(and(
+          eq(actionDefinitions.actionId, toolName), 
+          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`, 
+          eq(actionDefinitions.isActive, true),
+          eq(actionDefinitions.exposedViaMcp, true)
+        ))
         .limit(1);
       
       if (!action) {
