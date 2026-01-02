@@ -979,7 +979,9 @@ function PermissionsMatrixTab({
   const { data: keyPermissions = [], isLoading: loadingPermissions, refetch: refetchPermissions } = useQuery<ToolPermission[]>({
     queryKey: ['/api/mcp-gateway/keys', selectedKeyId, 'permissions'],
     queryFn: async () => {
-      return await apiRequest(`/api/mcp-gateway/keys/${selectedKeyId}/permissions`);
+      const response = await apiRequest(`/api/mcp-gateway/keys/${selectedKeyId}/permissions`);
+      // Backend returns { success: true, data: [...] } - extract the data array
+      return response?.data || [];
     },
     enabled: !!selectedKeyId && isModalOpen,
   });
