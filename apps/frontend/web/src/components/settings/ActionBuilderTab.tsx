@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DEPARTMENT_STYLES, getDepartmentStyle } from '@/lib/constants/departments';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -172,6 +173,14 @@ export function ActionBuilderTab() {
 
   const { data: customActions = [], isLoading: isLoadingActions } = useQuery<CustomAction[]>({
     queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'],
+    select: (response: any) => {
+      const rawActions = response?.data || response || [];
+      return rawActions.map((action: any) => ({
+        ...action,
+        code: action.actionId || action.code,
+        name: action.actionName || action.name,
+      }));
+    }
   });
 
   const { data: variableCategories = [] } = useQuery<VariableCategory[]>({
@@ -194,11 +203,19 @@ export function ActionBuilderTab() {
     }
   });
 
-  const duplicateActionMutation = useMutation({
-    mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}/duplicate`, { method: 'POST' }),
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [selectedActionForAction, setSelectedActionForAction] = useState<CustomAction | null>(null);
+
+  const archiveActionMutation = useMutation({
+    mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}`, { 
+      method: 'PATCH', 
+      body: JSON.stringify({ isActive: false }) 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'] });
-      toast({ title: 'Azione duplicata', description: 'L\'azione è stata duplicata con successo.' });
+      toast({ title: 'Azione archiviata', description: 'L\'azione è stata archiviata con successo.' });
+      setArchiveDialogOpen(false);
     }
   });
 
@@ -206,7 +223,8 @@ export function ActionBuilderTab() {
     mutationFn: (actionId: string) => apiRequest(`/api/mcp-gateway/custom-actions/${actionId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/custom-actions?showAll=true'] });
-      toast({ title: 'Azione archiviata', description: 'L\'azione è stata archiviata con successo.' });
+      toast({ title: 'Azione eliminata', description: 'L\'azione è stata eliminata definitivamente.' });
+      setDeleteDialogOpen(false);
     }
   });
 
@@ -503,13 +521,29 @@ export function ActionBuilderTab() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => duplicateActionMutation.mutate(action.id)}
-                                  data-testid={`btn-duplicate-${action.id}`}
+                                  onClick={() => toast({ title: 'Modifica', description: 'Funzionalità in arrivo' })}
+                                  data-testid={`btn-edit-${action.id}`}
                                 >
-                                  <Copy className="h-4 w-4" />
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Duplica</TooltipContent>
+                              <TooltipContent>Modifica</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                  onClick={() => { setSelectedActionForAction(action); setArchiveDialogOpen(true); }}
+                                  data-testid={`btn-archive-${action.id}`}
+                                >
+                                  <Archive className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Archivia</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                           <TooltipProvider>
@@ -519,13 +553,13 @@ export function ActionBuilderTab() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => deleteActionMutation.mutate(action.id)}
+                                  onClick={() => { setSelectedActionForAction(action); setDeleteDialogOpen(true); }}
                                   data-testid={`btn-delete-${action.id}`}
                                 >
-                                  <Archive className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Archivia</TooltipContent>
+                              <TooltipContent>Elimina</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
@@ -968,6 +1002,50 @@ export function ActionBuilderTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archiviare questa azione?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'azione "{selectedActionForAction?.name}" verrà archiviata e non sarà più visibile nel catalogo MCP. 
+              Potrai riattivarla in qualsiasi momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => selectedActionForAction && archiveActionMutation.mutate(selectedActionForAction.id)}
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              Archivia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare definitivamente questa azione?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'azione "{selectedActionForAction?.name}" verrà eliminata definitivamente. 
+              Questa operazione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => selectedActionForAction && deleteActionMutation.mutate(selectedActionForAction.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
