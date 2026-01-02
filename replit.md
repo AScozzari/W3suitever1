@@ -13,18 +13,23 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
 - **BACKGROUND RULE**: Tutte le pagine devono avere sfondo bianco (#ffffff) con header e sidebar
 - **DATABASE ARCHITECTURE**: Always use 3-schema structure (w3suite, public, brand_interface)
-- **MCP/ACTION RLS ARCHITECTURE (OBBLIGATORIO)**:
-  - **🌐 TABELLE GLOBALI (RLS DISABILITATO)** - Disponibili per TUTTI i tenant attuali e futuri:
-    - `action_definitions` - TUTTE le azioni come template (15 operative WMS + 17 MCP query)
+- **MCP/ACTION RLS ARCHITECTURE (OBBLIGATORIO - REFACTORED Jan 2026)**:
+  - **📋 CATALOGO UNIFICATO**: `action_definitions` è la FONTE UNICA per il MCP Gateway
+    - Contiene sia **operative** (15 azioni WMS workflow) che **query** (17 tool MCP)
+    - **Mixed RLS**: `tenant_id NULL` = globale (tutti i tenant), `tenant_id UUID` = tenant-specific
+    - **exposed_via_mcp**: Flag booleano che controlla visibilità via MCP Gateway
+    - **source_table + source_id**: Traccia origine (action_configurations o mcp_tool_settings)
+    - Query pattern: `(tenant_id = ? OR tenant_id IS NULL) AND exposed_via_mcp = true`
+  - **🌐 TABELLE GLOBALI (TEMPLATES)**:
     - `mcp_query_templates` - Template SQL parametrizzati per dipartimento (25 templates)
     - `mcp_query_template_variables` - Variabili con tipo, validazione, tooltip (45 variabili)
   - **🔒 TABELLE TENANT (RLS ABILITATO)** - Configurazioni specifiche per tenant:
-    - `action_configurations` - Workflow, team assignments, SLA per TUTTE le azioni
-    - `mcp_tool_settings` - Configurazioni MCP specifiche (abilitazione, permessi, query)
-    - `mcp_tool_permissions` - Permessi ruoli MCP per tenant
-  - **⚠️ REGOLA CHIAVE**: action_definitions contiene i TEMPLATE globali, action_configurations/mcp_tool_settings contengono le CONFIGURAZIONI tenant-specific
+    - `action_configurations` - Workflow, team assignments, SLA per azioni OPERATIVE
+    - `mcp_tool_settings` - Configurazioni MCP (query_template_id + variable_config per query tool)
+    - `mcp_tool_permissions` - Permessi MCP ora referenziano `action_definition_id` (non più action_config_id)
+  - **⚠️ REGOLA CHIAVE**: MCP Gateway legge SOLO da `action_definitions`. Per operative, `sourceId` passa a `triggerAction` per backwards compatibility
   - **Policy RLS**: `USING (tenant_id = current_setting('app.tenant_id')::uuid)`
-  - **Nuovo Tenant**: Eredita automaticamente tabelle globali (templates, variabili, definizioni azioni), deve creare configurazioni tenant
+  - **Nuovo Tenant**: Eredita tool globali automaticamente (tenant_id IS NULL), può aggiungere tool tenant-specific
 - **COMPONENT-FIRST APPROACH (OBBLIGATORIO)**:
   1. **SEMPRE shadcn/ui FIRST** - Check 48 componenti disponibili prima di creare custom
   2. **Copy & Paste workflow** - `npx shadcn@latest add [component-name]`
