@@ -245,6 +245,50 @@ LIMIT {{limit}};
     isActive: true,
     isSystemTemplate: true
   },
+  {
+    code: 'WMS_SEARCH_STORES',
+    name: 'Cerca Magazzini e Punti Vendita',
+    description: 'Cerca magazzini, punti vendita o uffici per nome, città o codice. Restituisce ID e dettagli completi.',
+    department: 'wms' as const,
+    actionType: 'read' as const,
+    sqlTemplate: `
+SELECT 
+  s.id AS store_id,
+  s.nome AS store_name,
+  s.code AS store_code,
+  s.category,
+  s.status,
+  s.indirizzo AS address,
+  s.citta AS city,
+  s.provincia AS province,
+  s.cap AS postal_code,
+  s.telefono AS phone,
+  s.email,
+  s.has_warehouse,
+  ca.name AS commercial_area_name,
+  oe.name AS organization_entity_name
+FROM w3suite.stores s
+LEFT JOIN public.commercial_areas ca ON ca.id = s.commercial_area_id
+LEFT JOIN w3suite.organization_entities oe ON oe.id = s.organization_entity_id
+WHERE s.tenant_id = '{{tenantId}}'::uuid
+  AND s.status = 'active'
+  AND (
+    s.nome ILIKE '%{{searchTerm}}%'
+    OR s.code ILIKE '%{{searchTerm}}%'
+    OR s.citta ILIKE '%{{searchTerm}}%'
+    OR s.indirizzo ILIKE '%{{searchTerm}}%'
+  )
+ORDER BY 
+  CASE WHEN s.nome ILIKE '{{searchTerm}}%' THEN 0 ELSE 1 END,
+  s.nome ASC
+LIMIT {{limit}};
+`,
+    availableVariables: ['tenantId', 'searchTerm', 'category', 'limit'],
+    requiredVariables: ['tenantId', 'searchTerm'],
+    involvedTables: ['stores', 'commercial_areas', 'organization_entities'],
+    isActive: true,
+    isSystemTemplate: true
+  },
   
   // ==================== CRM DEPARTMENT ====================
   {

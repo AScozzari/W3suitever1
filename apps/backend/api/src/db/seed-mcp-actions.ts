@@ -137,6 +137,22 @@ const MCP_ACTIONS = [
       required: ['serialNumber']
     }
   },
+  {
+    actionId: 'mcp_wms_search_stores',
+    actionName: 'Cerca Magazzini e Punti Vendita',
+    description: 'Query AI per cercare magazzini, punti vendita o uffici per nome, città o codice. Restituisce ID, indirizzo e dettagli completi. Usa questo tool per trovare l\'ID di un magazzino quando conosci solo il nome.',
+    department: 'wms',
+    queryTemplateCode: 'WMS_SEARCH_STORES',
+    mcpInputSchema: {
+      type: 'object',
+      properties: {
+        searchTerm: { type: 'string', description: 'Nome, città o codice del magazzino/punto vendita da cercare (es. "Bologna", "Milano Centrale", "MAG001")' },
+        category: { type: 'string', enum: ['warehouse', 'sales_point', 'office'], description: 'Tipo: warehouse, sales_point, office' },
+        limit: { type: 'integer', default: 10, description: 'Numero massimo risultati' }
+      },
+      required: ['searchTerm']
+    }
+  },
 
   // ==================== CRM DEPARTMENT ====================
   {
