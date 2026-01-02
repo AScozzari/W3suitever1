@@ -387,6 +387,7 @@ router.get('/custom-actions', async (req: Request, res: Response) => {
         description: actionDefinitions.description,
         department: actionDefinitions.department,
         actionCategory: actionDefinitions.actionCategory,
+        mcpActionType: actionDefinitions.mcpActionType,
         sourceTable: actionDefinitions.sourceTable,
         isMcpEnabled: actionDefinitions.isMcpEnabled,
         exposedViaMcp: actionDefinitions.exposedViaMcp,
@@ -422,7 +423,7 @@ router.post('/custom-actions', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'MISSING_TENANT_ID' });
     }
 
-    const { actionName, description, department, actionCategory, mcpInputSchema, exposedViaMcp } = req.body;
+    const { actionName, description, department, actionCategory, mcpActionType, mcpInputSchema, exposedViaMcp } = req.body;
     
     const actionId = `custom_${department}_${Date.now()}`;
     
@@ -435,6 +436,7 @@ router.post('/custom-actions', async (req: Request, res: Response) => {
         description,
         department,
         actionCategory: actionCategory || 'query',
+        mcpActionType: mcpActionType || 'read',
         sourceTable: 'custom',
         isMcpEnabled: true,
         exposedViaMcp: exposedViaMcp ?? true,
@@ -477,6 +479,7 @@ router.post('/custom-actions/:id/duplicate', async (req: Request, res: Response)
         description: original.description,
         department: original.department,
         actionCategory: original.actionCategory,
+        mcpActionType: original.mcpActionType || 'read',
         sourceTable: 'custom',
         isMcpEnabled: original.isMcpEnabled,
         exposedViaMcp: original.exposedViaMcp,
@@ -515,6 +518,7 @@ router.put('/custom-actions/:id', async (req: Request, res: Response) => {
         description: description || null,
         department: department || null,
         actionCategory: actionCategory || 'query',
+        mcpActionType: actionType || 'read',
         mcpInputSchema: inputSchema,
         updatedAt: new Date(),
       })

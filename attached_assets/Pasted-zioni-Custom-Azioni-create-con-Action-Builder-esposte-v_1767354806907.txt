@@ -1,0 +1,230 @@
+zioni Custom
+Azioni create con Action Builder esposte via MCP Gateway
+
+36 di 36 azioni
+Cerca per codice, nome...
+
+Tutti i Dipartimenti
+
+Tutti i Tipi
+
+Tutte le Categorie
+
+Tutti gli Stati
+Codice	Nome	Dipartimento	Tipo	Categoria	Variabili	Stato	Azioni
+HR_APPROVE_LEAVE	
+Approva Richiesta Ferie
+HR	-	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_hr_employee_shifts	
+Consulta Turni Dipendente
+HR	-	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_hr_employee_shifts_copy_1767348196537	
+Consulta Turni Dipendente (Copy)
+HR	-	MCP Query	4 parametri	Attiva	
+
+
+
+HR_CREATE_SHIFT	
+Crea Turno di Lavoro
+HR	-	MCP Query	5 parametri	Attiva	
+
+
+
+HR_DELETE_SHIFT	
+Elimina Turno di Lavoro
+HR	-	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_hr_list_shifts	
+Lista Turni
+HR	-	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_hr_pending_requests	
+Richieste HR in Attesa
+HR	-	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_hr_vacation_balance	
+Verifica Saldo Ferie
+HR	-	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_ops_daily_summary	
+Riepilogo Giornaliero
+Operations	-	MCP Query	1 parametri	Attiva	
+
+
+
+mcp_ops_store_status	
+Stato Operativo Negozi
+Operations	-	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_crm_list_leads	
+Lista Lead
+CRM	-	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_crm_lead_search	
+Ricerca Lead
+CRM	-	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_crm_pipeline_status	
+Stato Pipeline Vendite
+CRM	-	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_crm_customer_360	
+Vista 360° Cliente
+CRM	-	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_sales_agent_performance	
+Performance Agenti Vendita
+Sales	-	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_sales_top_products	
+Prodotti Più Venduti
+Sales	-	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_sales_by_store	
+Vendite per Negozio
+Sales	-	MCP Query	3 parametri	Attiva	
+
+
+
+purchase	
+Acquisto
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+mcp_wms_low_stock_alert	
+Alert Prodotti Sotto Scorta
+WMS	-	MCP Query	3 parametri	Attiva	
+
+
+
+loan	
+Comodato d'uso
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+damage	
+Danneggiamento
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+doa	
+DOA (Dead on Arrival)
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+mcp_wms_recent_movements	
+Movimenti Magazzino Recenti
+WMS	-	MCP Query	5 parametri	Attiva	
+
+
+
+trade_in	
+Permuta (Trade-in)
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+pullback	
+Pullback
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+supplier_return	
+Reso a Fornitore
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+customer_return	
+Reso Cliente
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+adjustment	
+Rettifica Inventario
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+mcp_wms_serial_lookup	
+Ricerca Seriale
+WMS	-	MCP Query	1 parametri	Attiva	
+
+
+
+warranty_return	
+Rientro Garanzia
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+transfer_in	
+Trasferimento Entrata
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+transfer_out	
+Trasferimento Uscita
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+demo	
+Uso Demo
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+internal_use	
+Uso Interno
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+sale	
+Vendita
+WMS	-	Operativa	0 parametri	Attiva	
+
+
+
+mcp_wms_stock_level	
+Verifica Giacenza Prodotto
+WMS	-	MCP Query	3 parametri	Attiva	
+
+
+
