@@ -1143,15 +1143,27 @@ router.post('/supplier-overrides', async (req, res) => {
     let linkedLegalEntityId = data.legalEntityId;
 
     // BIDIRECTIONAL: Create legal entity if not linking to existing one
+    // Search by P.IVA (vatNumber) - this is the unique business identifier
     if (!linkedLegalEntityId && data.createLegalEntity) {
-      const legalEntityId = codeToUUID(data.code);
+      let existingLE = null;
       
-      // Check if legal entity with this code already exists
-      const existingLE = await db.query.legalEntities.findFirst({
-        where: and(eq(legalEntities.codice, data.code), eq(legalEntities.tenantId, tenantId))
-      });
+      // Step 1: Search by P.IVA first (primary identifier)
+      if (data.vatNumber) {
+        existingLE = await db.query.legalEntities.findFirst({
+          where: and(eq(legalEntities.pIva, data.vatNumber), eq(legalEntities.tenantId, tenantId))
+        });
+      }
+      
+      // Step 2: Fallback to search by code if no P.IVA match
+      if (!existingLE) {
+        existingLE = await db.query.legalEntities.findFirst({
+          where: and(eq(legalEntities.codice, data.code), eq(legalEntities.tenantId, tenantId))
+        });
+      }
 
       if (!existingLE) {
+        // Create new legal entity
+        const legalEntityId = codeToUUID(data.code);
         const [newLegalEntity] = await db
           .insert(legalEntities)
           .values({
@@ -1175,18 +1187,20 @@ router.post('/supplier-overrides', async (req, res) => {
             cap: data.cap,
             stato: 'Attiva',
             isSupplier: true,
-            isFinancialEntity: false
+            isFinancialEntity: false,
+            isOperator: false
           } as any)
           .returning();
         
         linkedLegalEntityId = newLegalEntity.id;
-        logger.info('Legal entity created from supplier (bidirectional)', { legalEntityId: newLegalEntity.id, code: data.code });
+        logger.info('Legal entity created from supplier (bidirectional)', { legalEntityId: newLegalEntity.id, code: data.code, vatNumber: data.vatNumber });
       } else {
+        // Link to existing legal entity and update role flag
         linkedLegalEntityId = existingLE.id;
-        // Update existing legal entity to mark as supplier
         await db.update(legalEntities)
           .set({ isSupplier: true, updatedAt: new Date() })
           .where(eq(legalEntities.id, existingLE.id));
+        logger.info('Supplier linked to existing legal entity (bidirectional)', { legalEntityId: existingLE.id, code: data.code, vatNumber: data.vatNumber });
       }
     }
 
@@ -1306,15 +1320,27 @@ router.post('/financial-entities', async (req, res) => {
     let linkedLegalEntityId = data.legalEntityId;
 
     // BIDIRECTIONAL: Create legal entity if not linking to existing one
+    // Search by P.IVA (vatNumber) - this is the unique business identifier
     if (!linkedLegalEntityId && data.createLegalEntity) {
-      const legalEntityId = codeToUUID(data.code);
+      let existingLE = null;
       
-      // Check if legal entity with this code already exists
-      const existingLE = await db.query.legalEntities.findFirst({
-        where: and(eq(legalEntities.codice, data.code), eq(legalEntities.tenantId, tenantId))
-      });
+      // Step 1: Search by P.IVA first (primary identifier)
+      if (data.vatNumber) {
+        existingLE = await db.query.legalEntities.findFirst({
+          where: and(eq(legalEntities.pIva, data.vatNumber), eq(legalEntities.tenantId, tenantId))
+        });
+      }
+      
+      // Step 2: Fallback to search by code if no P.IVA match
+      if (!existingLE) {
+        existingLE = await db.query.legalEntities.findFirst({
+          where: and(eq(legalEntities.codice, data.code), eq(legalEntities.tenantId, tenantId))
+        });
+      }
 
       if (!existingLE) {
+        // Create new legal entity
+        const legalEntityId = codeToUUID(data.code);
         const [newLegalEntity] = await db
           .insert(legalEntities)
           .values({
@@ -1338,18 +1364,20 @@ router.post('/financial-entities', async (req, res) => {
             capitaleSociale: data.capitalStock,
             stato: 'Attiva',
             isSupplier: false,
-            isFinancialEntity: true
+            isFinancialEntity: true,
+            isOperator: false
           } as any)
           .returning();
         
         linkedLegalEntityId = newLegalEntity.id;
-        logger.info('Legal entity created from financial entity (bidirectional)', { legalEntityId: newLegalEntity.id, code: data.code });
+        logger.info('Legal entity created from financial entity (bidirectional)', { legalEntityId: newLegalEntity.id, code: data.code, vatNumber: data.vatNumber });
       } else {
+        // Link to existing legal entity and update role flag
         linkedLegalEntityId = existingLE.id;
-        // Update existing legal entity to mark as financial entity
         await db.update(legalEntities)
           .set({ isFinancialEntity: true, updatedAt: new Date() })
           .where(eq(legalEntities.id, existingLE.id));
+        logger.info('Financial entity linked to existing legal entity (bidirectional)', { legalEntityId: existingLE.id, code: data.code, vatNumber: data.vatNumber });
       }
     }
 
