@@ -22,7 +22,14 @@ const router = Router();
 // ==================== GET ALL ACTION DEFINITIONS ====================
 router.get('/', async (req, res) => {
   try {
-    const { department, activeOnly, category, includeMcp, exposedViaMcp, tenantId } = req.query;
+    const { department, activeOnly, category, includeMcp, exposedViaMcp } = req.query;
+    
+    // SECURITY: Get tenant ONLY from authenticated session, never from headers/query
+    // This prevents cross-tenant data leakage via header spoofing
+    const authTenantId = (req as any).user?.tenantId;
+    
+    // If no authenticated tenant, only return global definitions
+    // This is safe because global definitions (tenant_id IS NULL) are public templates
 
     let query = db
       .select()
@@ -31,13 +38,12 @@ router.get('/', async (req, res) => {
 
     const allActions = await query;
 
-    // Filter by tenant: include global (tenant_id IS NULL) + tenant-specific
-    let filteredActions = allActions;
-    if (tenantId && tenantId !== 'all') {
-      filteredActions = allActions.filter(a => 
-        a.tenantId === null || a.tenantId === tenantId
-      );
-    }
+    // SECURITY: Filter by authenticated tenant only
+    // - Global definitions (tenant_id IS NULL) are always visible
+    // - Tenant-specific definitions require matching tenant
+    let filteredActions = allActions.filter(a => 
+      a.tenantId === null || (authTenantId && a.tenantId === authTenantId)
+    );
 
     // Filter by department if specified
     if (department && department !== 'all') {
