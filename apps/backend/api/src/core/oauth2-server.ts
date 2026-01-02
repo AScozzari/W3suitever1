@@ -9,8 +9,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { storage } from './storage';
 import { db } from './db';
-import { users } from '../db/schema/w3suite';
-import { eq } from 'drizzle-orm';
+import { users, tenants } from '../db/schema/w3suite';
+import { eq, and } from 'drizzle-orm';
 import { JWT_SECRET, config } from './config';
 
 // OAuth2 Configuration Enterprise
@@ -215,6 +215,76 @@ function validateRedirectUri(clientId: string, redirectUri: string): boolean {
   
   console.log(`🔐 [REDIRECT] Final result: ${isValid}`);
   return isValid;
+}
+
+async function getUserByCredentialsWithTenant(tenantSlug: string, username: string, password: string) {
+  try {
+    // First, resolve tenant by slug
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.slug, tenantSlug.toLowerCase()))
+      .limit(1);
+    
+    if (!tenant) {
+      console.log('❌ Tenant not found:', tenantSlug);
+      return null;
+    }
+    
+    // Query user by email AND tenant
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.email, username),
+        eq(users.tenantId, tenant.id)
+      ))
+      .limit(1);
+    
+    if (!user) {
+      console.log('❌ User not found in tenant:', username, tenantSlug);
+      return null;
+    }
+    
+    // Verify password
+    if (!user.passwordHash) {
+      console.log('❌ No password hash for user:', username);
+      return null;
+    }
+    
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      console.log('❌ Invalid password for user:', username);
+      return null;
+    }
+    
+    // Check user status
+    if (user.status === 'sospeso') {
+      throw new Error('Il tuo account è stato sospeso.');
+    }
+    if (user.status === 'off-boarding') {
+      throw new Error('Il tuo account è in fase di off-boarding.');
+    }
+    if (user.status !== 'attivo') {
+      throw new Error('Il tuo account non è attivo.');
+    }
+    
+    console.log('✅ User authenticated with tenant:', username, tenantSlug);
+    return {
+      id: user.id,
+      email: user.email || username,
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      roles: user.role ? [user.role] : ['user'],
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      status: user.status
+    };
+  } catch (error: any) {
+    console.error('❌ Authentication error:', error);
+    if (error.message) throw error;
+    return null;
+  }
 }
 
 async function getUserByCredentials(username: string, password: string) {
@@ -519,6 +589,11 @@ export function setupOAuth2Server(app: express.Application) {
     
     <form id="loginForm">
       <div class="form-group">
+        <label for="tenant">Organizzazione</label>
+        <input type="text" id="tenant" name="tenant" required autocomplete="organization" placeholder="es. staging, windtre...">
+      </div>
+      
+      <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required autocomplete="email" placeholder="nome@azienda.it">
       </div>
@@ -547,6 +622,7 @@ export function setupOAuth2Server(app: express.Application) {
       btn.textContent = 'Autenticazione...';
       errorDiv.style.display = 'none';
       
+      const tenant = document.getElementById('tenant').value.trim().toLowerCase();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       
@@ -555,6 +631,7 @@ export function setupOAuth2Server(app: express.Application) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            tenant_slug: tenant,
             username: email,
             password: password,
             client_id: '${client_id}',
@@ -668,16 +745,27 @@ export function setupOAuth2Server(app: express.Application) {
       state,
       code_challenge,
       code_challenge_method,
+      tenant_slug,
       username,
       password
     } = req.body;
 
     try {
-      // Authenticate user
-      const user = await getUserByCredentials(username, password);
+      // Authenticate user with tenant context
+      let user;
+      if (tenant_slug) {
+        // OAuth2 external flow: requires tenant_slug
+        user = await getUserByCredentialsWithTenant(tenant_slug, username, password);
+      } else {
+        // Legacy fallback (internal use only)
+        user = await getUserByCredentials(username, password);
+      }
       
       if (!user) {
-        return res.status(401).send('Invalid credentials');
+        return res.status(401).json({
+          error: 'invalid_credentials',
+          message: 'Credenziali non valide o organizzazione errata'
+        });
       }
 
       // Generate authorization code
