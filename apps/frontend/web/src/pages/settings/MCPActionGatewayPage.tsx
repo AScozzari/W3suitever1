@@ -449,6 +449,7 @@ export default function MCPActionGatewayPage() {
         onClose={() => setCreateKeyDialogOpen(false)}
         onKeyCreated={(key) => {
           setNewApiKey(key);
+          setActiveTab('keys'); // Force switch to keys tab to show the copy alert
           queryClient.invalidateQueries({ queryKey: ['/api/mcp-gateway/keys'] });
         }}
       />
