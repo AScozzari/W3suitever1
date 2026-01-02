@@ -1,0 +1,52 @@
+
+
+SettingsPage-BL9VEyfx.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-BL9VEyfx.js:15 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: true, isError: false, error: null, activeTab: 'Legal Entity'}
+SettingsPage-BL9VEyfx.js:1 ⏭️ SettingsPage: Skipping data load (not on Entity Management tab)
+SettingsPage-BL9VEyfx.js:15 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+index-CqL2TJ_0.js:2 🔍 Token expiry check: Current time: 10:41:09, Token expires: 10:56:04
+SettingsPage-BL9VEyfx.js:1  GET https://w3suite.it/api/legal-entities?roleFilter=true 500 (Internal Server Error)
+kt @ SettingsPage-BL9VEyfx.js:1
+await in kt
+queryFn @ SettingsPage-BL9VEyfx.js:15
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+setOptions @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CqL2TJ_0.js:2 🔍 Token expiry check: Current time: 10:41:10, Token expires: 10:56:04
+SettingsPage-BL9VEyfx.js:1  GET https://w3suite.it/api/legal-entities?roleFilter=true 500 (Internal Server Error)
+kt @ SettingsPage-BL9VEyfx.js:1
+await in kt
+queryFn @ SettingsPage-BL9VEyfx.js:15
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+setOptions @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+SettingsPage-BL9VEyfx.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-BL9VEyfx.js:15 [LEGAL-ENTITY] Query state: {data: undefined, isLoading: false, isError: true, error: Error: Failed to fetch legal entities
+    at queryFn (https://w3suite.it/assets/SettingsPage-BL9VEy…, activeTab: 'Legal Entity'}
