@@ -11039,7 +11039,80 @@ router.post("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
       return res.status(400).json({ error: "productId and supplierId are required" });
     }
 
-    // Check if mapping exists
+    // Verify supplier exists in tenant - if not, check if it's a brand supplier and sync it
+    let actualSupplierId = supplierId;
+    const [tenantSupplier] = await db
+      .select()
+      .from(suppliers)
+      .where(
+        and(
+          eq(suppliers.id, supplierId),
+          eq(suppliers.tenantId, tenantId)
+        )
+      );
+
+    if (!tenantSupplier) {
+      // Check if it's a brand supplier (tenant_id = 00000000-0000-0000-0000-000000000000)
+      const brandTenantId = '00000000-0000-0000-0000-000000000000';
+      const [brandSupplier] = await db
+        .select()
+        .from(suppliers)
+        .where(
+          and(
+            eq(suppliers.id, supplierId),
+            eq(suppliers.tenantId, brandTenantId)
+          )
+        );
+
+      if (brandSupplier) {
+        // Check if tenant already has a supplier with same code
+        const [existingTenantSupplier] = await db
+          .select()
+          .from(suppliers)
+          .where(
+            and(
+              eq(suppliers.code, brandSupplier.code),
+              eq(suppliers.tenantId, tenantId)
+            )
+          );
+
+        if (existingTenantSupplier) {
+          // Use existing tenant supplier
+          actualSupplierId = existingTenantSupplier.id;
+          console.log(`[MAPPING] Using existing tenant supplier ${existingTenantSupplier.code} (${actualSupplierId}) instead of brand supplier`);
+        } else {
+          // Sync brand supplier to tenant
+          const [newTenantSupplier] = await db
+            .insert(suppliers)
+            .values({
+              tenantId: tenantId,
+              code: brandSupplier.code,
+              name: brandSupplier.name,
+              legalName: brandSupplier.legalName,
+              vatNumber: brandSupplier.vatNumber,
+              taxCode: brandSupplier.taxCode,
+              supplierType: brandSupplier.supplierType,
+              status: brandSupplier.status,
+              legalEntityId: brandSupplier.legalEntityId,
+              origin: 'brand',
+              parentSupplierId: brandSupplier.id,
+              createdBy: userId,
+              updatedBy: userId
+            })
+            .returning();
+
+          actualSupplierId = newTenantSupplier.id;
+          console.log(`[MAPPING] Synced brand supplier ${brandSupplier.code} to tenant as ${actualSupplierId}`);
+        }
+      } else {
+        return res.status(400).json({ 
+          error: "Supplier not found",
+          details: `Supplier ID ${supplierId} does not exist in tenant or brand catalog`
+        });
+      }
+    }
+
+    // Check if mapping exists (use actualSupplierId which may have been resolved from brand)
     const [existing] = await db
       .select()
       .from(productSupplierMappings)
@@ -11047,7 +11120,7 @@ router.post("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
         and(
           eq(productSupplierMappings.tenantId, tenantId),
           eq(productSupplierMappings.productId, productId),
-          eq(productSupplierMappings.supplierId, supplierId)
+          eq(productSupplierMappings.supplierId, actualSupplierId)
         )
       );
 
@@ -11070,13 +11143,13 @@ router.post("/product-supplier-mappings", rbacMiddleware, async (req, res) => {
 
       res.json({ success: true, data: updated, message: "Mapping updated" });
     } else {
-      // Create new
+      // Create new (use actualSupplierId which is guaranteed to exist in tenant's suppliers table)
       const [created] = await db
         .insert(productSupplierMappings)
         .values({
           tenantId,
           productId,
-          supplierId,
+          supplierId: actualSupplierId,
           supplierSku: supplierSku || null,
           supplierSkuNormalized,
           useInternalSku: useInternalSku || false,
