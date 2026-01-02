@@ -536,17 +536,71 @@ export function ActionBuilderTab() {
                   return (
                     <TableRow key={action.id} data-testid={`row-action-${action.id}`}>
                       <TableCell className="font-mono text-sm">{action.code}</TableCell>
-                      <TableCell className="font-medium">{action.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2 cursor-help">
+                                {action.name}
+                                <Info className="h-3 w-3 text-gray-400" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-md p-4 bg-white shadow-lg border">
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{action.name}</p>
+                                  <p className="text-xs text-gray-500 font-mono">{action.code}</p>
+                                </div>
+                                {action.description && (
+                                  <p className="text-sm text-gray-600">{action.description}</p>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-500">Tipo:</span>
+                                  {typeConfig ? (
+                                    <Badge className={`${typeConfig.color} text-white text-xs`}>
+                                      {typeConfig.label}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">Non definito</span>
+                                  )}
+                                </div>
+                                {action.mcpInputSchema?.properties && Object.keys(action.mcpInputSchema.properties).length > 0 && (
+                                  <div className="pt-2 border-t">
+                                    <p className="text-xs font-medium text-gray-500 mb-2">Variabili ({Object.keys(action.mcpInputSchema.properties).length}):</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {Object.entries(action.mcpInputSchema.properties).slice(0, 6).map(([key, val]: [string, any]) => (
+                                        <Badge key={key} variant="outline" className="text-xs font-mono">
+                                          {key}
+                                          {action.mcpInputSchema.required?.includes(key) && <span className="text-red-500 ml-1">*</span>}
+                                        </Badge>
+                                      ))}
+                                      {Object.keys(action.mcpInputSchema.properties).length > 6 && (
+                                        <Badge variant="outline" className="text-xs text-gray-400">
+                                          +{Object.keys(action.mcpInputSchema.properties).length - 6} altre
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>
                         <Badge className={`${deptStyle.color} ${deptStyle.textColor} border-0`}>
                           {deptStyle.label}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="gap-1">
-                          {typeConfig?.icon && <typeConfig.icon className="h-3 w-3" />}
-                          {typeConfig?.label}
-                        </Badge>
+                        {typeConfig ? (
+                          <Badge className={`${typeConfig.color} text-white gap-1`}>
+                            {typeConfig.icon && <typeConfig.icon className="h-3 w-3" />}
+                            {typeConfig.label}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-400">-</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={`${(action as any).actionCategory === 'operative' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'} border-0`}>
@@ -633,28 +687,29 @@ export function ActionBuilderTab() {
               {editingAction ? 'Modifica Azione' : 'Action Builder'}
             </DialogTitle>
             <DialogDescription>
-              Crea una nuova azione custom in {4 - step + 1} passaggi
+              Crea una nuova azione custom in {5 - step + 1} passaggi
             </DialogDescription>
           </DialogHeader>
 
-          {/* Progress Steps - Nuovo ordine: Info → Dipartimento → Template → Variabili */}
-          <div className="flex items-center justify-center gap-2 py-4 border-b">
-            {[1, 2, 3, 4].map((s) => (
+          {/* Progress Steps - 5 step: Info → Dipartimento → Template → Tipo Azione → Variabili */}
+          <div className="flex items-center justify-center gap-1 py-4 border-b">
+            {[1, 2, 3, 4, 5].map((s) => (
               <div key={s} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                   s < step ? 'bg-green-500 text-white' :
                   s === step ? 'bg-orange-500 text-white' :
                   'bg-gray-200 text-gray-500'
                 }`}>
-                  {s < step ? <Check className="h-4 w-4" /> : s}
+                  {s < step ? <Check className="h-3 w-3" /> : s}
                 </div>
-                <span className={`ml-2 text-sm ${s === step ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
-                  {s === 1 && 'Info Azione'}
+                <span className={`ml-1 text-xs ${s === step ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                  {s === 1 && 'Info'}
                   {s === 2 && 'Dipartimento'}
                   {s === 3 && 'Template'}
-                  {s === 4 && 'Variabili'}
+                  {s === 4 && 'Tipo Azione'}
+                  {s === 5 && 'Variabili'}
                 </span>
-                {s < 4 && <ArrowRight className="h-4 w-4 mx-4 text-gray-300" />}
+                {s < 5 && <ArrowRight className="h-3 w-3 mx-2 text-gray-300" />}
               </div>
             ))}
           </div>
@@ -818,7 +873,6 @@ export function ActionBuilderTab() {
                   ) : (
                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                     {filteredTemplates.map((template) => {
-                      const typeConfig = ACTION_TYPE_CONFIG[template.actionType as keyof typeof ACTION_TYPE_CONFIG];
                       return (
                         <Card 
                           key={template.id}
@@ -827,7 +881,6 @@ export function ActionBuilderTab() {
                           }`}
                           onClick={() => {
                             setSelectedTemplate(template);
-                            setSelectedActionType(template.actionType);
                             setSelectedVariables([...template.requiredVariables]);
                             setRequiredVariables([...template.requiredVariables]);
                           }}
@@ -838,11 +891,6 @@ export function ActionBuilderTab() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                   <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                                  {typeConfig && (
-                                    <Badge className={`${typeConfig.color} text-white text-xs`}>
-                                      {typeConfig.label}
-                                    </Badge>
-                                  )}
                                   <TooltipProvider delayDuration={100}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -901,10 +949,58 @@ export function ActionBuilderTab() {
                 </motion.div>
               )}
 
-              {/* Step 4: Variabili (figlie del template) */}
+              {/* Step 4: Tipo Azione */}
               {step === 4 && selectedTemplate && (
                 <motion.div
                   key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6 p-4"
+                >
+                  <p className="text-sm text-gray-600 mb-4">
+                    Seleziona il tipo di operazione per questa azione
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {(['read', 'create', 'update', 'delete'] as const).map((type) => {
+                      const config = {
+                        read: { label: 'READ', desc: 'Query/lettura dati', icon: '📖', color: 'bg-blue-500' },
+                        create: { label: 'CREATE', desc: 'Inserimento nuovi record', icon: '➕', color: 'bg-green-500' },
+                        update: { label: 'UPDATE', desc: 'Modifica record esistenti', icon: '✏️', color: 'bg-yellow-500' },
+                        delete: { label: 'DELETE', desc: 'Eliminazione record', icon: '🗑️', color: 'bg-red-500' }
+                      }[type];
+                      return (
+                        <Card 
+                          key={type}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedActionType === type ? 'ring-2 ring-orange-500 shadow-md' : ''
+                          }`}
+                          onClick={() => setSelectedActionType(type)}
+                          data-testid={`action-type-${type}`}
+                        >
+                          <CardContent className="p-4 flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-xl ${config.color} flex items-center justify-center text-white text-xl`}>
+                              {config.icon}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900">{config.label}</h3>
+                              <p className="text-sm text-gray-500">{config.desc}</p>
+                            </div>
+                            {selectedActionType === type && (
+                              <Check className="h-5 w-5 text-orange-500" />
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 5: Variabili (figlie del template) */}
+              {step === 5 && selectedTemplate && (
+                <motion.div
+                  key="step5"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
@@ -1022,7 +1118,7 @@ export function ActionBuilderTab() {
               </Button>
               <Button
                 onClick={() => {
-                  if (step < 4) {
+                  if (step < 5) {
                     setStep(step + 1);
                   } else {
                     handleSaveAction();
@@ -1032,12 +1128,13 @@ export function ActionBuilderTab() {
                   (step === 1 && (!actionCode || !actionName)) ||
                   (step === 2 && !selectedDepartment) ||
                   (step === 3 && !selectedTemplate && !editingAction) ||
-                  (step === 4 && selectedVariables.length === 0)
+                  (step === 4 && !selectedActionType) ||
+                  (step === 5 && selectedVariables.length === 0)
                 }
                 className="gap-2"
                 data-testid="btn-wizard-next"
               >
-                {step < 4 ? (
+                {step < 5 ? (
                   <>
                     Avanti
                     <ArrowRight className="h-4 w-4" />
