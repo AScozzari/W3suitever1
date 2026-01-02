@@ -875,6 +875,59 @@ router.get('/docs', (req: Request, res: Response) => {
 
 const sseConnections = new Map<string, Response>();
 
+// ==================== OAuth2 Discovery Endpoints UNDER /sse for ChatGPT ====================
+// ChatGPT resolves .well-known relative to the MCP server URL (/api/mcp-public/sse)
+// These MUST be accessible without authentication to allow OAuth discovery
+
+router.get('/sse/.well-known/oauth-protected-resource', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
+  res.json({
+    resource: `${baseUrl}/api/mcp-public/sse`,
+    authorization_servers: [baseUrl],
+    scopes_supported: ['mcp_read', 'mcp_write', 'tenant_access'],
+  });
+});
+
+router.get('/sse/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
+  res.json({
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/oauth2/authorize`,
+    token_endpoint: `${baseUrl}/oauth2/token`,
+    registration_endpoint: `${baseUrl}/oauth2/register`,
+    revocation_endpoint: `${baseUrl}/oauth2/revoke`,
+    response_types_supported: ['code'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256'],
+    token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
+    scopes_supported: ['openid', 'profile', 'tenant_access', 'mcp_read', 'mcp_write'],
+    service_documentation: `${baseUrl}/api/mcp-public/docs`,
+  });
+});
+
+router.get('/sse/.well-known/openid-configuration', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  
+  res.json({
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/oauth2/authorize`,
+    token_endpoint: `${baseUrl}/oauth2/token`,
+    registration_endpoint: `${baseUrl}/oauth2/register`,
+    revocation_endpoint: `${baseUrl}/oauth2/revoke`,
+    userinfo_endpoint: `${baseUrl}/oauth2/userinfo`,
+    jwks_uri: `${baseUrl}/.well-known/jwks.json`,
+    response_types_supported: ['code'],
+    subject_types_supported: ['public'],
+    id_token_signing_alg_values_supported: ['RS256', 'HS256'],
+    scopes_supported: ['openid', 'profile', 'email', 'tenant_access', 'mcp_read', 'mcp_write'],
+    token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
+    claims_supported: ['sub', 'iss', 'aud', 'exp', 'iat', 'tenant_id'],
+    code_challenge_methods_supported: ['S256'],
+  });
+});
+
 router.get('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Response) => {
   const { tenantId, apiKeyId } = req.mcpAuth!;
   
