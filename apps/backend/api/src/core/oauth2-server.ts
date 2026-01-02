@@ -392,18 +392,209 @@ export function setupOAuth2Server(app: express.Application) {
       }
     }
 
-    // No valid session - redirect to frontend /login page with OAuth2 parameters
-    console.log('🔐 [OAuth2] No valid session, redirecting to /login');
+    // No valid session - show OAuth2 login page directly
+    console.log('🔐 [OAuth2] No valid session, showing OAuth2 login page');
     
     // Build the returnTo URL with all OAuth2 parameters
     const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
-    const returnTo = encodeURIComponent(currentUrl.toString());
     
-    // Redirect to frontend login page
-    const loginUrl = `/login?returnTo=${returnTo}`;
-    console.log('🔐 [OAuth2] Redirecting to:', loginUrl);
+    // Serve HTML login page for OAuth2 flow
+    const loginPageHtml = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>W3 Suite - Autorizzazione MCP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .logo { text-align: center; margin-bottom: 24px; }
+    .logo h1 { font-size: 28px; color: #1a1a2e; font-weight: 700; }
+    .logo p { color: #666; font-size: 14px; margin-top: 8px; }
+    .client-info {
+      background: #f8f9ff;
+      border: 1px solid #e0e5ff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .client-info strong { color: #4f46e5; }
+    .client-info .scopes {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px -10px rgba(79, 70, 229, 0.5);
+    }
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>W3 Suite</h1>
+      <p>Autorizzazione MCP Gateway</p>
+    </div>
     
-    return res.redirect(loginUrl);
+    <div class="client-info">
+      <strong>ChatGPT</strong> richiede accesso al tuo account
+      <div class="scopes">Permessi: ${scope || 'mcp_read mcp_write'}</div>
+    </div>
+    
+    <div class="error" id="error"></div>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="nome@azienda.it">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      
+      <button type="submit" id="submitBtn">Autorizza e Accedi</button>
+    </form>
+    
+    <div class="footer">
+      Accedendo autorizzi ChatGPT ad accedere ai tuoi dati W3 Suite
+    </div>
+  </div>
+  
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      const errorDiv = document.getElementById('error');
+      
+      btn.disabled = true;
+      btn.textContent = 'Autenticazione...';
+      errorDiv.style.display = 'none';
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch('/oauth2/authorize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: email,
+            password: password,
+            client_id: '${client_id}',
+            redirect_uri: '${redirect_uri}',
+            response_type: '${response_type}',
+            scope: '${scope || ''}',
+            state: '${state || ''}',
+            code_challenge: '${code_challenge || ''}',
+            code_challenge_method: '${code_challenge_method || ''}'
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.code) {
+          // Success! Redirect to callback with authorization code
+          const redirectUrl = new URL(data.redirect_uri);
+          redirectUrl.searchParams.set('code', data.code);
+          if (data.state) redirectUrl.searchParams.set('state', data.state);
+          window.location.href = redirectUrl.toString();
+        } else {
+          errorDiv.textContent = data.message || 'Credenziali non valide';
+          errorDiv.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Autorizza e Accedi';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Errore di connessione. Riprova.';
+        errorDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Autorizza e Accedi';
+      }
+    });
+  </script>
+</body>
+</html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(loginPageHtml);
   });
 
   // ==================== SIMPLE SESSION LOGIN (for external OAuth2 clients) ====================
