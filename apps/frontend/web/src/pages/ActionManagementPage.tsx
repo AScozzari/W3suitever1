@@ -254,12 +254,12 @@ export function ActionManagementContent() {
   const isLoading = definitionsLoading || actionsLoading;
 
   const getFlowTypeBadge = (action: ActionConfiguration) => {
-    const flowConfig = FLOW_TYPES[action.flowType];
-    const Icon = flowConfig.icon;
+    const flowConfig = FLOW_TYPES[action.flowType as keyof typeof FLOW_TYPES] || FLOW_TYPES.none;
+    const Icon = flowConfig?.icon || Settings;
     return (
-      <Badge className={`${flowConfig.color} gap-1`} variant="secondary">
+      <Badge className={`${flowConfig?.color || 'bg-gray-100 text-gray-700'} gap-1`} variant="secondary">
         <Icon className="h-3 w-3" />
-        {flowConfig.label}
+        {flowConfig?.label || 'N/A'}
       </Badge>
     );
   };
@@ -465,9 +465,9 @@ export function ActionManagementContent() {
                       const { definition, configuration, isConfigured } = merged;
                       const dept = DEPARTMENTS[definition.department as keyof typeof DEPARTMENTS];
                       const Icon = dept?.icon || Settings;
-                      const flowType = configuration?.flowType || definition.defaultFlowType;
-                      const flowConfig = FLOW_TYPES[flowType];
-                      const FlowIcon = flowConfig.icon;
+                      const flowType = configuration?.flowType || definition.defaultFlowType || 'none';
+                      const flowConfig = FLOW_TYPES[flowType as keyof typeof FLOW_TYPES] || FLOW_TYPES.none;
+                      const FlowIcon = flowConfig?.icon || Settings;
                       
                       return (
                         <TableRow 
