@@ -1,0 +1,109 @@
+🔍 Token expiry check: Current time: 08:50:10, Token expires: 09:04:55
+index-CbMhA0sS.js:2  GET https://w3suite.it/api/mcp-gateway/keys 500 (Internal Server Error)
+queryFn @ index-CbMhA0sS.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CbMhA0sS.js:2  GET https://w3suite.it/api/mcp-gateway/usage-logs 500 (Internal Server Error)
+queryFn @ index-CbMhA0sS.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CbMhA0sS.js:2  GET https://w3suite.it/api/mcp-gateway/stats 500 (Internal Server Error)
+queryFn @ index-CbMhA0sS.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CbMhA0sS.js:2 🔍 Token expiry check: Current time: 08:50:10, Token expires: 09:04:55
+3index-CbMhA0sS.js:2 🔍 Token expiry check: Current time: 08:50:11, Token expires: 09:04:55
+index-CbMhA0sS.js:2  GET https://w3suite.it/api/mcp-gateway/keys 500 (Internal Server Error)
+queryFn @ index-CbMhA0sS.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CbMhA0sS.js:2  GET https://w3suite.it/api/mcp-gateway/usage-logs 500 (Internal Server Error)
+queryFn @ index-CbMhA0sS.js:2
+await in queryFn
+a @ query-e3VqoBtK.js:1
+M @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+Promise.then
+(anonime) @ query-e3VqoBtK.js:1
+Promise.catch
+M @ query-e3VqoBtK.js:1
+start @ query-e3VqoBtK.js:1
+fetch @ query-e3VqoBtK.js:1
+Lt @ query-e3VqoBtK.js:1
+onSubscribe @ query-e3VqoBtK.js:1
+subscribe @ query-e3VqoBtK.js:1
+(anonime) @ query-e3VqoBtK.js:1
+ga @ react-core-DamieDW-.js:30
+cl @ react-core-DamieDW-.js:32
+Zn @ react-core-DamieDW-.js:32
+Rd @ react-core-DamieDW-.js:32
+wn @ react-core-DamieDW-.js:32
+Bi @ react-core-DamieDW-.js:32
+hn @ react-core-DamieDW-.js:30
+(anonime) @ react-core-DamieDW-.js:32Comprendi l'errore
+index-CbMhA0sS.js:2  GET https://w3suite.it/api/mcp-gateway/stats 500 (Internal Server Error)

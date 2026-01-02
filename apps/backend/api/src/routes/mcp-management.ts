@@ -33,8 +33,9 @@ router.get('/keys', async (req: Request, res: Response) => {
         id: mcpApiKeys.id,
         name: mcpApiKeys.name,
         keyPrefix: mcpApiKeys.keyPrefix,
-        scopes: mcpApiKeys.scopes,
-        rateLimit: mcpApiKeys.rateLimit,
+        allowedDepartments: mcpApiKeys.allowedDepartments,
+        rateLimitPerMinute: mcpApiKeys.rateLimitPerMinute,
+        dailyQuota: mcpApiKeys.dailyQuota,
         isActive: mcpApiKeys.isActive,
         lastUsedAt: mcpApiKeys.lastUsedAt,
         expiresAt: mcpApiKeys.expiresAt,
@@ -61,7 +62,7 @@ router.post('/keys', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'MISSING_TENANT_ID' });
     }
 
-    const { name, scopes, rateLimit, expiresAt } = req.body;
+    const { name, allowedDepartments, rateLimitPerMinute, dailyQuota, expiresAt } = req.body;
     
     // Generate secure API key
     const rawKey = `sk_live_${crypto.randomBytes(32).toString('hex')}`;
@@ -75,8 +76,9 @@ router.post('/keys', async (req: Request, res: Response) => {
         name: name || 'New API Key',
         keyHash,
         keyPrefix,
-        scopes: scopes || ['mcp_read'],
-        rateLimit: rateLimit || 100,
+        allowedDepartments: allowedDepartments || null,
+        rateLimitPerMinute: rateLimitPerMinute || 60,
+        dailyQuota: dailyQuota || 10000,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         createdBy: userId,
       })
@@ -101,13 +103,14 @@ router.patch('/keys/:id', async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const { id } = req.params;
-    const { name, isActive, rateLimit, scopes } = req.body;
+    const { name, isActive, rateLimitPerMinute, dailyQuota, allowedDepartments } = req.body;
 
     const updates: any = { updatedAt: new Date() };
     if (name !== undefined) updates.name = name;
     if (isActive !== undefined) updates.isActive = isActive;
-    if (rateLimit !== undefined) updates.rateLimit = rateLimit;
-    if (scopes !== undefined) updates.scopes = scopes;
+    if (rateLimitPerMinute !== undefined) updates.rateLimitPerMinute = rateLimitPerMinute;
+    if (dailyQuota !== undefined) updates.dailyQuota = dailyQuota;
+    if (allowedDepartments !== undefined) updates.allowedDepartments = allowedDepartments;
 
     const [updated] = await db
       .update(mcpApiKeys)
@@ -313,7 +316,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       .from(mcpUsageLogs)
       .where(and(
         eq(mcpUsageLogs.tenantId, tenantId),
-        gte(mcpUsageLogs.timestamp, today)
+        gte(mcpUsageLogs.executedAt, today)
       ));
 
     res.json({
@@ -341,17 +344,19 @@ router.get('/usage-logs', async (req: Request, res: Response) => {
         id: mcpUsageLogs.id,
         apiKeyId: mcpUsageLogs.apiKeyId,
         apiKeyName: mcpUsageLogs.apiKeyName,
-        toolName: mcpUsageLogs.toolName,
-        requestMethod: mcpUsageLogs.requestMethod,
-        requestPath: mcpUsageLogs.requestPath,
-        responseStatus: mcpUsageLogs.responseStatus,
-        executionTimeMs: mcpUsageLogs.executionTimeMs,
-        timestamp: mcpUsageLogs.timestamp,
+        actionCode: mcpUsageLogs.actionCode,
+        department: mcpUsageLogs.department,
+        method: mcpUsageLogs.method,
+        endpoint: mcpUsageLogs.endpoint,
+        statusCode: mcpUsageLogs.statusCode,
+        responseTime: mcpUsageLogs.responseTime,
+        executedAt: mcpUsageLogs.executedAt,
+        success: mcpUsageLogs.success,
         errorMessage: mcpUsageLogs.errorMessage,
       })
       .from(mcpUsageLogs)
       .where(eq(mcpUsageLogs.tenantId, tenantId))
-      .orderBy(desc(mcpUsageLogs.timestamp))
+      .orderBy(desc(mcpUsageLogs.executedAt))
       .limit(limit);
 
     res.json({ success: true, data: logs });
