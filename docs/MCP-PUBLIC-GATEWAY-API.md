@@ -126,6 +126,96 @@ Example JWT payload:
 
 ---
 
+### Hybrid Authentication (OAuth2 + API Key)
+
+The MCP Gateway supports a powerful **hybrid authentication** mode that combines OAuth2 for user identity with API Keys for granular tool permissions.
+
+#### How It Works
+
+| Layer | Source | Provides |
+|-------|--------|----------|
+| **OAuth2 Token** | `Authorization: Bearer eyJ...` | User identity, tenant, audit trail |
+| **API Key** | `?api_key=sk_live_xxx` or `X-MCP-Key` header | Granular tool permissions, rate limits |
+
+When **both** are present, the gateway:
+1. Validates OAuth2 token for user identity and tenant
+2. Validates API Key for tool-level permissions (from `mcp_tool_permissions` table)
+3. Verifies tenant match (OAuth tenant must equal API Key tenant)
+4. Applies API Key rate limits and department restrictions
+5. Logs actions with full user identity (from OAuth)
+
+#### Use Cases
+
+| Scenario | Configuration |
+|----------|---------------|
+| **Same user, different tool sets** | Create multiple API Keys with different `mcp_tool_permissions` |
+| **Department-specific access** | API Key with `allowed_departments: ['hr']` limits to HR tools only |
+| **Read-only integrations** | API Key with `allowed_action_types: ['read']` |
+| **Audit trail required** | Hybrid mode captures WHO did WHAT |
+
+#### Example: Claude/ChatGPT with Hybrid Auth
+
+```
+MCP Server URL: https://w3suite.it/api/mcp-public/sse?api_key=sk_live_staging_abc123
+Authentication: OAuth 2.0
+```
+
+The user logs in via OAuth (identity), but the API Key controls which tools they can see/use.
+
+#### Example: curl with Hybrid Auth
+
+```bash
+curl -X POST "https://w3suite.it/api/mcp-public/sse?api_key=sk_live_staging_abc123" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp_hr_list_shifts"}}'
+```
+
+#### Security Considerations
+
+- **Tenant Mismatch Protection**: If OAuth token's tenant doesn't match API Key's tenant, request is rejected with `403 Tenant mismatch`
+- **API Key in URL**: While less secure than headers, acceptable for OAuth-authenticated sessions since the API Key only controls permissions (not identity)
+- **Audit Trail**: All actions are logged with the OAuth user ID, not just the API Key
+
+---
+
+### Dynamic Client Registration (DCR)
+
+External OAuth2 clients (ChatGPT, Claude) can register dynamically via the `/oauth2/register` endpoint.
+
+#### Registration Request
+
+```bash
+curl -X POST https://w3suite.it/oauth2/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "redirect_uris": ["https://chatgpt.com/connector_platform_oauth_redirect"],
+    "client_name": "My ChatGPT Integration",
+    "scope": "mcp_read mcp_write tenant_access"
+  }'
+```
+
+#### Registration Response
+
+```json
+{
+  "client_id": "dyn_1767366172891_abc123",
+  "client_name": "My ChatGPT Integration",
+  "redirect_uris": ["https://chatgpt.com/connector_platform_oauth_redirect"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "scope": "mcp_read mcp_write tenant_access",
+  "token_endpoint_auth_method": "none",
+  "client_id_issued_at": 1767366172
+}
+```
+
+#### Persistence
+
+Dynamic clients are persisted in the `w3suite.oauth2_dynamic_clients` table and survive server restarts.
+
+---
+
 ### Session-Based Login (for External OAuth2 Clients)
 
 When using external OAuth2 clients (ChatGPT, Claude Desktop) and the user's session expires, the system provides a streamlined login experience:
@@ -185,10 +275,26 @@ In ChatGPT settings, add a new MCP connector:
 | Authentication | OAuth 2.0 |
 | Authorization URL | `https://w3suite.it/oauth2/authorize` |
 | Token URL | `https://w3suite.it/oauth2/token` |
-| Client ID | `chatgpt-mcp-client` |
+| Client ID | (leave empty - ChatGPT uses DCR) |
 | Scopes | `openid tenant_access mcp_read mcp_write` |
 
-**Note:** ChatGPT uses PKCE (Proof Key for Code Exchange) automatically. The redirect URI pattern `https://chatgpt.com/aip/*/oauth/callback` is pre-registered.
+**Notes:**
+- ChatGPT uses PKCE (Proof Key for Code Exchange) automatically
+- ChatGPT registers dynamically via DCR (Dynamic Client Registration)
+- The redirect URI `https://chatgpt.com/connector_platform_oauth_redirect` is auto-registered
+
+#### ChatGPT with Hybrid Auth (Optional)
+
+To use granular tool permissions with ChatGPT, append an API Key to the MCP Server URL:
+
+```
+MCP Server URL: https://w3suite.it/api/mcp-public/sse?api_key=sk_live_staging_abc123
+```
+
+This enables:
+- OAuth2 for user identity and tenant
+- API Key for filtering which tools ChatGPT can see/use
+- Full audit trail with user identity
 
 ---
 
