@@ -282,7 +282,7 @@ export function setupOAuth2Server(app: express.Application) {
   });
 
   // ==================== AUTHORIZATION ENDPOINT ====================
-  app.get('/oauth2/authorize', (req: Request, res: Response) => {
+  app.get('/oauth2/authorize', async (req: Request, res: Response) => {
     const {
       client_id,
       redirect_uri,
@@ -334,48 +334,62 @@ export function setupOAuth2Server(app: express.Application) {
       });
     }
 
-    // Render login form (in produzione: redirect to login page)
-    const loginFormHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>W3 Suite OAuth2 Login</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui; max-width: 400px; margin: 100px auto; padding: 20px; }
-          .form { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-          .logo { text-align: center; margin-bottom: 30px; color: #FF6900; font-size: 24px; font-weight: bold; }
-          input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-          button { width: 100%; padding: 12px; background: linear-gradient(135deg, #FF6900, #ff8533); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
-          button:hover { background: linear-gradient(135deg, #e55a00, #ff7020); }
-          .client-info { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="form">
-          <div class="logo">🔐 W3 Suite</div>
-          <div class="client-info">
-            <strong>${client.name}</strong> wants to access your account
-            <br><small>Scopes: ${scope || client.scopes.join(', ')}</small>
-          </div>
-          <form method="POST" action="/oauth2/authorize">
-            <input type="hidden" name="client_id" value="${client_id}">
-            <input type="hidden" name="redirect_uri" value="${redirect_uri}">
-            <input type="hidden" name="response_type" value="${response_type}">
-            <input type="hidden" name="scope" value="${scope || ''}">
-            <input type="hidden" name="state" value="${state || ''}">
-            <input type="hidden" name="code_challenge" value="${code_challenge || ''}">
-            <input type="hidden" name="code_challenge_method" value="${code_challenge_method || ''}">
-            
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Authorize</button>
-          </form>
-        </div>
-      </body>
-      </html>
-    `;
+    // Check if user has valid session - if so, auto-generate auth code
+    const session = req.session as any;
+    if (session?.userId && session?.tenantId) {
+      console.log('🔐 [OAuth2] User has valid session, auto-generating auth code');
+      
+      // Fetch user data for the auth code
+      try {
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, session.userId))
+          .limit(1);
+        
+        if (user) {
+          // Generate authorization code automatically
+          const authCode = generateSecureToken(32);
+          
+          authorizationCodes.set(authCode, {
+            code: authCode,
+            clientId: client_id as string,
+            redirectUri: redirect_uri as string,
+            scopes: scope ? (scope as string).split(' ') : ['openid'],
+            userId: user.id,
+            tenantId: session.tenantId,
+            roles: user.roles,
+            email: user.email,
+            codeChallenge: code_challenge as string,
+            codeChallengeMethod: code_challenge_method as string,
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+          });
 
-    res.send(loginFormHtml);
+          // Redirect back to callback with auth code
+          const callbackUrl = new URL(redirect_uri as string);
+          callbackUrl.searchParams.set('code', authCode);
+          if (state) callbackUrl.searchParams.set('state', state as string);
+          
+          console.log('✅ [OAuth2] Auto-authorized, redirecting to callback');
+          return res.redirect(callbackUrl.toString());
+        }
+      } catch (err) {
+        console.error('❌ [OAuth2] Error fetching user from session:', err);
+      }
+    }
+
+    // No valid session - redirect to frontend /login page with OAuth2 parameters
+    console.log('🔐 [OAuth2] No valid session, redirecting to /login');
+    
+    // Build the returnTo URL with all OAuth2 parameters
+    const currentUrl = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
+    const returnTo = encodeURIComponent(currentUrl.toString());
+    
+    // Redirect to frontend login page
+    const loginUrl = `/login?returnTo=${returnTo}`;
+    console.log('🔐 [OAuth2] Redirecting to:', loginUrl);
+    
+    return res.redirect(loginUrl);
   });
 
   // ==================== AUTHORIZATION PROCESSING ====================

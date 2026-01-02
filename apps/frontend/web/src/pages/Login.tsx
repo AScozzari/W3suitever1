@@ -17,9 +17,19 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  // Get return URL from query params
+  // Get return URL from query params (supports both 'return' and 'returnTo')
   const params = new URLSearchParams(window.location.search);
-  const returnUrl = params.get('return') || `/${propTenantCode || 'staging'}/dashboard`;
+  const returnTo = params.get('returnTo') || params.get('return');
+  
+  // If returnTo is an OAuth2 authorize URL, we need to decode it and extract useful info
+  // After login, we'll go to dashboard since the login already handles OAuth2 flow
+  const isOAuth2Return = returnTo?.includes('/oauth2/authorize');
+  
+  // For OAuth2 returns, redirect to dashboard after login (login already does OAuth2)
+  // Otherwise use the provided return URL
+  const returnUrl = isOAuth2Return 
+    ? `/${propTenantCode || 'staging'}/dashboard` 
+    : (returnTo || `/${propTenantCode || 'staging'}/dashboard`);
   
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
