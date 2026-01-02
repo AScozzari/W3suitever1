@@ -4060,6 +4060,7 @@ export default function SettingsPage() {
             <thead>
               <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Codice</th>
+                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Origine</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Nome</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ragione Sociale</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>P.IVA</th>
@@ -4072,20 +4073,19 @@ export default function SettingsPage() {
               {legalEntitiesList.map((entity: any) => (
                 <tr key={entity.id} data-testid={`row-legal-entity-${entity.id}`} style={{ borderBottom: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '14px 16px', fontWeight: '500', color: '#111827' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {entity.codice}
-                      {entity.isBrandPushed && (
-                        <span title="Entità gestita dal Brand - sola lettura" style={{
-                          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                          color: 'white',
-                          padding: '2px 6px',
-                          borderRadius: '6px',
-                          fontSize: '9px',
-                          fontWeight: '600',
-                          textTransform: 'uppercase'
-                        }}>Brand</span>
-                      )}
-                    </div>
+                    {entity.codice || '-'}
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                    <span style={{
+                      background: entity.isBrandPushed ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'linear-gradient(135deg, #FF6900, #FF8533)',
+                      color: 'white',
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: '600'
+                    }}>
+                      {entity.isBrandPushed ? 'Brand' : 'Custom'}
+                    </span>
                   </td>
                   <td style={{ padding: '14px 16px', color: '#374151' }}>{entity.nome}</td>
                   <td style={{ padding: '14px 16px', color: '#6b7280' }}>{entity.ragioneSociale || entity.nome || '-'}</td>
