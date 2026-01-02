@@ -1,0 +1,138 @@
+HR_APPROVE_LEAVE	
+Approva Richiesta Ferie
+HR	UPDATE	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_hr_employee_shifts	
+Consulta Turni Dipendente
+HR	READ	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_hr_employee_shifts_copy_1767348196537	
+Consulta Turni Dipendente (Copy)
+HR	READ	MCP Query	4 parametri	Attiva	
+
+
+
+HR_CREATE_SHIFT	
+Crea Turno di Lavoro
+HR	CREATE	MCP Query	5 parametri	Attiva	
+
+
+
+HR_DELETE_SHIFT	
+Elimina Turno di Lavoro
+HR	DELETE	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_hr_list_shifts	
+Lista Turni
+HR	READ	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_hr_pending_requests	
+Richieste HR in Attesa
+HR	READ	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_hr_vacation_balance	
+Verifica Saldo Ferie
+HR	READ	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_ops_daily_summary	
+Riepilogo Giornaliero
+Operations	READ	MCP Query	1 parametri	Attiva	
+
+
+
+mcp_ops_store_status	
+Stato Operativo Negozi
+Operations	READ	MCP Query	2 parametri	Attiva	
+
+
+
+crm_list_campaigns	
+Lista Campagne Marketing
+CRM	READ	MCP Query	0 parametri	Attiva	
+
+
+
+mcp_crm_list_leads	
+Lista Lead
+CRM	READ	MCP Query	5 parametri	Attiva	
+
+
+
+mcp_crm_lead_search	
+Ricerca Lead
+CRM	READ	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_crm_pipeline_status	
+Stato Pipeline Vendite
+CRM	READ	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_crm_customer_360	
+Vista 360° Cliente
+CRM	READ	MCP Query	2 parametri	Attiva	
+
+
+
+mcp_sales_agent_performance	
+Performance Agenti Vendita
+Sales	READ	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_sales_top_products	
+Prodotti Più Venduti
+Sales	READ	MCP Query	4 parametri	Attiva	
+
+
+
+mcp_sales_by_store	
+Vendite per Negozio
+Sales	READ	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_wms_low_stock_alert	
+Alert Prodotti Sotto Scorta
+WMS	READ	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_wms_search_stores	
+Cerca Magazzini e Punti Vendita
+WMS	READ	MCP Query	3 parametri	Attiva	
+
+
+
+mcp_wms_recent_movements	
+Movimenti Magazzino Recenti
+WMS	READ	MCP Query	5 parametri	Attiva	
+
+
+
+mcp_wms_serial_lookup	
+Ricerca Seriale
+WMS	READ	MCP Query	1 parametri	Attiva	
+
+
+
+mcp_wms_stock_level	
+Verifica Giacenza Prodotto
+WMS	READ	MCP Query	3 parametri	Attiva	
+
+
+
