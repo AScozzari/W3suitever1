@@ -16,6 +16,7 @@ import { legalEntities, organizationEntities, stores, users, tenants, roles, use
 import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMethods, paymentMethodsConditions, operators } from '../db/schema/public';
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
+import { bidirectionalSyncService } from '../core/bidirectional-sync';
 
 const router = express.Router();
 
