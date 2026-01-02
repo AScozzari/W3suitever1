@@ -233,6 +233,15 @@ class OAuth2Client {
       authUrl.searchParams.set('state', state);
       authUrl.searchParams.set('code_challenge', codeChallenge);
       authUrl.searchParams.set('code_challenge_method', 'S256');
+      
+      // Extract tenant from current path (e.g., /staging/dashboard → staging)
+      // This ensures the OAuth server can redirect back to the correct tenant login
+      const tenantMatch = window.location.pathname.match(/^\/([a-zA-Z0-9_-]+)\//);
+      if (tenantMatch) {
+        const tenantHint = tenantMatch[1];
+        authUrl.searchParams.set('tenant_hint', tenantHint);
+        console.log('🔐 [OAuth2] Added tenant_hint:', tenantHint);
+      }
 
       // Starting OAuth2 flow
 
