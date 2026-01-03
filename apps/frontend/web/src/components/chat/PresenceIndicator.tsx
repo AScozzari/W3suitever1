@@ -66,23 +66,43 @@ interface AvatarWithPresenceProps {
   avatarUrl?: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  showPresence?: boolean;
 }
 
 const avatarSizes = {
-  sm: { container: 32, text: 12 },
-  md: { container: 40, text: 14 },
-  lg: { container: 48, text: 16 }
+  sm: { container: 32, text: 11 },
+  md: { container: 40, text: 13 },
+  lg: { container: 48, text: 15 }
 };
+
+function getInitials(name: string): string {
+  if (!name || name.trim() === '') return '??';
+  
+  const parts = name.trim().split(/\s+/);
+  
+  if (parts.length >= 2) {
+    const first = parts[0]?.[0] || '';
+    const last = parts[parts.length - 1]?.[0] || '';
+    return (first + last).toUpperCase();
+  }
+  
+  if (parts[0] && parts[0].length >= 2) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  
+  return (parts[0]?.[0] || '?').toUpperCase();
+}
 
 export function AvatarWithPresence({
   userId,
   name,
   avatarUrl,
   size = 'md',
-  className = ''
+  className = '',
+  showPresence = true
 }: AvatarWithPresenceProps) {
   const dimensions = avatarSizes[size];
-  const initial = name?.[0]?.toUpperCase() || '?';
+  const initials = getInitials(name);
 
   return (
     <div 
@@ -97,21 +117,23 @@ export function AvatarWithPresence({
         />
       ) : (
         <div
-          className="w-full h-full rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-medium"
+          className="w-full h-full rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-semibold"
           style={{ fontSize: dimensions.text }}
         >
-          {initial}
+          {initials}
         </div>
       )}
-      <div 
-        className="absolute"
-        style={{ 
-          bottom: -2, 
-          right: -2
-        }}
-      >
-        <PresenceIndicator userId={userId} size={size} />
-      </div>
+      {showPresence && (
+        <div 
+          className="absolute"
+          style={{ 
+            bottom: -2, 
+            right: -2
+          }}
+        >
+          <PresenceIndicator userId={userId} size={size} />
+        </div>
+      )}
     </div>
   );
 }
