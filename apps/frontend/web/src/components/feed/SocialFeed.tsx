@@ -1374,63 +1374,144 @@ function EmbeddedComposer() {
   );
 }
 
-function LeaderboardCard() {
-  const { data: leaderboard, isLoading } = useQuery<any[]>({
-    queryKey: ['/api/feed/badges/leaderboard']
+function BadgeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'my-badges' | 'badge-types'>('leaderboard');
+  
+  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery<any[]>({
+    queryKey: ['/api/feed/badges/leaderboard'],
+    enabled: open
   });
 
-  if (isLoading) {
-    return (
-      <Card className="p-4">
-        <Skeleton className="h-4 w-24 mb-3" />
-        {[1, 2, 3].map(i => (
-          <div key={i} className="flex items-center gap-2 mb-2">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <Skeleton className="h-4 flex-1" />
-          </div>
-        ))}
-      </Card>
-    );
-  }
+  const { data: myBadges, isLoading: myBadgesLoading } = useQuery<any[]>({
+    queryKey: ['/api/feed/badges/my'],
+    enabled: open && activeTab === 'my-badges'
+  });
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Trophy className="h-5 w-5 text-yellow-500" />
-        <h3 className="font-semibold">Classifica Badge</h3>
-      </div>
-      {leaderboard && leaderboard.length > 0 ? (
-        <div className="space-y-2">
-          {leaderboard.slice(0, 5).map((user, index) => (
-            <div key={user.userId} className="flex items-center gap-2">
-              <span className={`text-sm font-bold w-5 ${index < 3 ? 'text-yellow-500' : 'text-muted-foreground'}`}>
-                {index + 1}
-              </span>
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={user.userAvatar ? `/api/avatars/serve/${user.userAvatar}` : undefined} />
-                <AvatarFallback className="text-xs">
-                  {getInitials(user.userName || 'U')}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm flex-1 truncate">{user.userName}</span>
-              <Badge variant="secondary" className="text-xs">
-                {user.badgeCount}
-              </Badge>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            Badge e Riconoscimenti
+          </DialogTitle>
+        </DialogHeader>
+        
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="leaderboard" data-testid="tab-leaderboard">
+              <Trophy className="h-4 w-4 mr-1" />
+              Classifica
+            </TabsTrigger>
+            <TabsTrigger value="my-badges" data-testid="tab-my-badges">
+              <Medal className="h-4 w-4 mr-1" />
+              I miei badge
+            </TabsTrigger>
+            <TabsTrigger value="badge-types" data-testid="tab-badge-types">
+              <Award className="h-4 w-4 mr-1" />
+              Tipi
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="leaderboard" className="mt-4">
+            {leaderboardLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 flex-1" />
+                    <Skeleton className="h-5 w-8" />
+                  </div>
+                ))}
+              </div>
+            ) : leaderboard && leaderboard.length > 0 ? (
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {leaderboard.map((user, index) => (
+                  <div key={user.userId} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                    <span className={`text-lg font-bold w-6 text-center ${index < 3 ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    </span>
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.userAvatar ? `/api/avatars/serve/${user.userAvatar}` : undefined} />
+                      <AvatarFallback className="text-sm">
+                        {getInitials(user.userName || 'U')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="flex-1 font-medium truncate">{user.userName}</span>
+                    <Badge variant="secondary" className="text-sm px-3">
+                      {user.badgeCount} badge
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Trophy className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>Nessun badge assegnato ancora</p>
+                <p className="text-sm mt-1">Inizia a riconoscere i tuoi colleghi!</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="my-badges" className="mt-4">
+            {myBadgesLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <Skeleton key={i} className="h-24 rounded-lg" />
+                ))}
+              </div>
+            ) : myBadges && myBadges.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                {myBadges.map((badge) => {
+                  const badgeInfo = BADGE_TYPES[badge.badgeType as keyof typeof BADGE_TYPES];
+                  const BadgeIcon = badgeInfo?.icon || Award;
+                  return (
+                    <div key={badge.id} className={`p-3 rounded-lg border ${badgeInfo?.bgColor || 'bg-gray-100'}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <BadgeIcon className={`h-5 w-5 ${badgeInfo?.color || 'text-gray-600'}`} />
+                        <span className="font-medium text-sm">{badgeInfo?.label || badge.badgeType}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Ricevuto {badge.count || 1} volta
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Medal className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>Non hai ancora ricevuto badge</p>
+                <p className="text-sm mt-1">Continua così, arriveranno!</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="badge-types" className="mt-4">
+            <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
+              {Object.entries(BADGE_TYPES).map(([key, badge]) => {
+                const BadgeIcon = badge.icon;
+                return (
+                  <div key={key} className={`p-3 rounded-lg border ${badge.bgColor}`}>
+                    <div className="flex items-center gap-2">
+                      <BadgeIcon className={`h-5 w-5 ${badge.color}`} />
+                      <span className="font-medium text-sm">{badge.label}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Nessun badge assegnato
-        </p>
-      )}
-    </Card>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function SocialFeed() {
   const { toast } = useToast();
   const [filter, setFilter] = useState<'all' | 'announcements' | 'polls' | 'appreciation' | 'favorites'>('all');
+  const [badgeModalOpen, setBadgeModalOpen] = useState(false);
 
   const { data: feedData, isLoading, fetchNextPage, hasNextPage } = useInfiniteQuery({
     queryKey: ['/api/feed/posts', filter],
@@ -1524,117 +1605,126 @@ export function SocialFeed() {
   const posts = feedData?.pages.flatMap(page => page.posts) || [];
 
   return (
-    <div className="flex gap-6 h-full">
-      <div className="flex-1 flex flex-col">
-        <EmbeddedComposer />
+    <div className="flex flex-col h-full w-full">
+      <EmbeddedComposer />
 
-        <div className="flex items-center justify-between mb-4 px-1">
-          <span className="text-sm font-semibold text-muted-foreground">Feed</span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('all')}
-              data-testid="button-filter-all"
-            >
-              Tutti
-            </Button>
-            <Button
-              variant={filter === 'announcements' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('announcements')}
-              data-testid="button-filter-announcements"
-            >
-              <Megaphone className="h-4 w-4 mr-1" />
-              Annunci
-            </Button>
-            <Button
-              variant={filter === 'polls' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('polls')}
-              data-testid="button-filter-polls"
-            >
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Sondaggi
-            </Button>
-            <Button
-              variant={filter === 'appreciation' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('appreciation')}
-              data-testid="button-filter-appreciation"
-            >
-              <Award className="h-4 w-4 mr-1" />
-              Riconoscimenti
-            </Button>
-            <Button
-              variant={filter === 'favorites' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('favorites')}
-              data-testid="button-filter-favorites"
-            >
-              <Star className="h-4 w-4 mr-1" />
-              Preferiti
-            </Button>
-          </div>
+      <div className="flex items-center justify-between mb-4 px-1">
+        <span className="text-sm font-semibold text-muted-foreground">Feed</span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+            data-testid="button-filter-all"
+          >
+            Tutti
+          </Button>
+          <Button
+            variant={filter === 'announcements' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('announcements')}
+            data-testid="button-filter-announcements"
+          >
+            <Megaphone className="h-4 w-4 mr-1" />
+            Annunci
+          </Button>
+          <Button
+            variant={filter === 'polls' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('polls')}
+            data-testid="button-filter-polls"
+          >
+            <BarChart3 className="h-4 w-4 mr-1" />
+            Sondaggi
+          </Button>
+          <Button
+            variant={filter === 'appreciation' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('appreciation')}
+            data-testid="button-filter-appreciation"
+          >
+            <Award className="h-4 w-4 mr-1" />
+            Riconoscimenti
+          </Button>
+          <Button
+            variant={filter === 'favorites' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('favorites')}
+            data-testid="button-filter-favorites"
+          >
+            <Star className="h-4 w-4 mr-1" />
+            Preferiti
+          </Button>
+          
+          <Separator orientation="vertical" className="h-6 mx-1" />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setBadgeModalOpen(true)}
+            className="gap-1"
+            data-testid="button-open-badges"
+          >
+            <Trophy className="h-4 w-4 text-yellow-500" />
+            Badge
+          </Button>
         </div>
+      </div>
 
-        <ScrollArea className="flex-1">
-          <div className="pr-4">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <Card key={i} className="p-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
+      <ScrollArea className="flex-1">
+        <div className="pr-4">
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
                     </div>
-                    <Skeleton className="h-20 w-full" />
-                  </Card>
-                ))}
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                <p className="text-lg font-medium">Nessun post trovato</p>
-                <p className="text-sm mt-1">Crea il primo post per iniziare!</p>
-              </div>
-            ) : (
-              <>
-                {posts.map(post => (
-                  <FeedPostCard
-                    key={post.id}
-                    post={post}
-                    onReaction={(postId, type) => reactionMutation.mutate({ postId, reactionType: type })}
-                    onComment={(postId, content, parentCommentId) => commentMutation.mutate({ postId, content, parentCommentId })}
-                    onCommentReaction={(commentId, type) => commentReactionMutation.mutate({ commentId, reactionType: type })}
-                    onFavorite={(postId) => favoriteMutation.mutate(postId)}
-                    onUnfollow={(postId) => unfollowMutation.mutate(postId)}
-                    onVote={(postId, optionIds) => voteMutation.mutate({ postId, optionIds })}
-                  />
-                ))}
-                {hasNextPage && (
-                  <Button
-                    variant="outline"
-                    className="w-full mb-4"
-                    onClick={() => fetchNextPage()}
-                    data-testid="button-load-more"
-                  >
-                    <ChevronDown className="h-4 w-4 mr-1" />
-                    Carica altri post
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-
-      <div className="w-72 shrink-0 space-y-4">
-        <LeaderboardCard />
-      </div>
+                  </div>
+                  <Skeleton className="h-20 w-full" />
+                </Card>
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-medium">Nessun post trovato</p>
+              <p className="text-sm mt-1">Crea il primo post per iniziare!</p>
+            </div>
+          ) : (
+            <>
+              {posts.map(post => (
+                <FeedPostCard
+                  key={post.id}
+                  post={post}
+                  onReaction={(postId, type) => reactionMutation.mutate({ postId, reactionType: type })}
+                  onComment={(postId, content, parentCommentId) => commentMutation.mutate({ postId, content, parentCommentId })}
+                  onCommentReaction={(commentId, type) => commentReactionMutation.mutate({ commentId, reactionType: type })}
+                  onFavorite={(postId) => favoriteMutation.mutate(postId)}
+                  onUnfollow={(postId) => unfollowMutation.mutate(postId)}
+                  onVote={(postId, optionIds) => voteMutation.mutate({ postId, optionIds })}
+                />
+              ))}
+              {hasNextPage && (
+                <Button
+                  variant="outline"
+                  className="w-full mb-4"
+                  onClick={() => fetchNextPage()}
+                  data-testid="button-load-more"
+                >
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Carica altri post
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </ScrollArea>
+      
+      <BadgeModal open={badgeModalOpen} onOpenChange={setBadgeModalOpen} />
     </div>
   );
 }
