@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules like CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform provides a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules like CRM, POS, WMS, Analytics, HR, and CMS to enhance efficiency, market responsiveness, and strategic decision-making through integrated workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive solution for managing complex business processes and data to drive growth across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -136,17 +136,17 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **HR Module (Shifts, Leaves, Tracking)**: Manages shifts, leave requests, and time tracking. Features a comprehensive shift state system (15 states), various leave categories, and a `HrImpactService` for real-time shift impact analysis. Includes an approval flow for leave requests that updates resource availability and an API for previewing impacts.
-    - **WMS Module (CQRS)**: Uses Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. Manages complex relationships between movements and documents, with distinct classifications and rules for generating logistic movements.
+    - **HR Module (Shifts, Leaves, Tracking)**: Manages shifts, leave requests, and time tracking.
+    - **WMS Module (CQRS)**: Uses Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway (External API)**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations. Supports Hybrid Authentication (API Key or OAuth2 JWT) and session-based OAuth2.
+    - **MCP Public Gateway (External API)**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers within `w3suite.drivers` using RLS.
-    - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) for data access and request routing.
-    - **Entity Architecture**: Differentiates between internal `organization_entities` and external `legal_entities` with specific propagation rules.
+    - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
+    - **Entity Architecture**: Differentiates between internal `organization_entities` and external `legal_entities`.
     - **Cross-Store Architecture**: Default tenant-wide data views with role-based access control, allowing optional filters, explicitly forbidding auto-selection of stores.
-    - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing" based on operational shifts and user location.
-    - **Action Management System**: Centralized configuration for department actions using `action_configurations`. `UnifiedTriggerService` routes actions through supervisors with "First Wins" and 24h escalation.
+    - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing".
+    - **Action Management System**: Centralized configuration for department actions using `action_configurations`. `UnifiedTriggerService` routes actions through supervisors.
     - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections to `wss://{extension.sipServer}/ws`.
     - **Price List Architecture**: Detailed structure for `price_list_items`, `price_list_items_canvas`, and `price_list_item_compositions`.
 
