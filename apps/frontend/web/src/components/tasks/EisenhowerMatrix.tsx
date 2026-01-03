@@ -568,11 +568,11 @@ export function EisenhowerMatrix({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="mb-4">
+      <div className="mb-3 shrink-0">
         <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-xl font-bold text-gray-900">Matrice di Eisenhower</h2>
+          <h2 className="text-lg font-bold text-gray-900">Matrice di Eisenhower</h2>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

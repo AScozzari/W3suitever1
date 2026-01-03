@@ -387,8 +387,8 @@ export default function TasksPage() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 px-6 overflow-y-auto min-w-0">
+        {/* Main Content - overflow only for non-matrix views */}
+        <div className={`flex-1 px-6 min-w-0 ${activeTab === 'matrix' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           {activeTab === 'list' && (
             <div className="pb-6">
             {isLoading ? (
@@ -487,7 +487,7 @@ export default function TasksPage() {
           )}
 
           {activeTab === 'matrix' && (
-            <div className="h-full min-h-[calc(100vh-16rem)]">
+            <div className="h-[calc(100vh-14rem)]">
             {isLoading ? (
               <LoadingState variant="spinner" message="Caricamento matrix..." />
             ) : (

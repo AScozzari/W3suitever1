@@ -1053,9 +1053,20 @@ export class TaskService {
             THEN json_build_object('completed', ${checklistStatsSq.completed}, 'total', ${checklistStatsSq.total})
             ELSE NULL
           END
+        `,
+        createdBy: sql<any>`
+          CASE 
+            WHEN ${users.id} IS NOT NULL 
+            THEN json_build_object(
+              'id', ${users.id},
+              'name', COALESCE(NULLIF(CONCAT(${users.firstName}, ' ', ${users.lastName}), ' '), ${users.email}, 'Utente')
+            )
+            ELSE NULL
+          END
         `
       })
       .from(tasks)
+      .leftJoin(users, eq(tasks.creatorId, users.id))
       .leftJoin(assigneeCountSq, eq(tasks.id, assigneeCountSq.taskId))
       .leftJoin(commentCountSq, eq(tasks.id, commentCountSq.taskId))
       .leftJoin(attachmentCountSq, eq(tasks.id, attachmentCountSq.taskId))
