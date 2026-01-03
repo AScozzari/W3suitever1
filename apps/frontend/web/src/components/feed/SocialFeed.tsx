@@ -51,7 +51,8 @@ interface FeedPost {
   updatedAt: string;
   author: {
     id: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     avatar?: string;
   } | null;
@@ -67,7 +68,7 @@ interface FeedPost {
     totalVotes: number;
     hasVoted: boolean;
   };
-  badgeAwardees: { id: string; name: string; avatar?: string }[];
+  badgeAwardees: { id: string; firstName?: string; lastName?: string; avatar?: string }[];
 }
 
 interface FeedComment {
@@ -81,7 +82,8 @@ interface FeedComment {
   createdAt: string;
   user?: {
     id: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     avatar?: string;
   };
@@ -138,19 +140,27 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
 }
 
-function getAvatarUrl(user: { id: string; name: string; avatar?: string } | null): string | undefined {
+function getAvatarUrl(user: { avatar?: string } | null | undefined): string | undefined {
   if (!user?.avatar) return undefined;
   if (user.avatar.startsWith('http')) return user.avatar;
   return `/api/avatars/serve/${user.avatar}`;
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+function getDisplayName(user: { firstName?: string; lastName?: string; email?: string } | null | undefined): string {
+  if (!user) return 'Utente';
+  if (user.firstName || user.lastName) {
+    return [user.firstName, user.lastName].filter(Boolean).join(' ');
+  }
+  return user.email?.split('@')[0] || 'Utente';
+}
+
+function getInitials(user: { firstName?: string; lastName?: string; email?: string } | null | undefined): string {
+  if (!user) return '?';
+  if (user.firstName || user.lastName) {
+    const parts = [user.firstName, user.lastName].filter(Boolean);
+    return parts.map(n => n![0]).join('').toUpperCase().slice(0, 2);
+  }
+  return (user.email?.[0] || '?').toUpperCase();
 }
 
 function FeedPostCard({ 
@@ -192,12 +202,12 @@ function FeedPostCard({
             <Avatar className="h-10 w-10">
               <AvatarImage src={getAvatarUrl(post.author)} />
               <AvatarFallback className="bg-primary/10 text-primary">
-                {post.author ? getInitials(post.author.name) : '?'}
+                {getInitials(post.author)}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">{post.author?.name || 'Utente'}</span>
+                <span className="font-semibold text-sm">{getDisplayName(post.author)}</span>
                 {post.isPinned && (
                   <Badge variant="secondary" className="text-xs py-0">
                     <Pin className="h-3 w-3 mr-1" />
@@ -266,9 +276,9 @@ function FeedPostCard({
                 <div key={user.id} className="flex items-center gap-2 bg-white rounded-full px-3 py-1 border">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={getAvatarUrl(user)} />
-                    <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+                    <AvatarFallback className="text-xs">{getInitials(user)}</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">{user.name}</span>
+                  <span className="text-sm font-medium">{getDisplayName(user)}</span>
                 </div>
               ))}
             </div>
@@ -380,11 +390,11 @@ function FeedPostCard({
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={getAvatarUrl(comment.user || null)} />
                   <AvatarFallback className="text-xs">
-                    {comment.user ? getInitials(comment.user.name) : '?'}
+                    {getInitials(comment.user)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 bg-muted/50 rounded-lg px-3 py-1.5">
-                  <span className="font-medium text-xs">{comment.user?.name}</span>
+                  <span className="font-medium text-xs">{getDisplayName(comment.user)}</span>
                   <p className="text-xs">{comment.content}</p>
                 </div>
               </div>
