@@ -406,20 +406,62 @@ export class ChatService {
   }
 
   static async sendMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
-    const [message] = await db
-      .insert(chatMessages)
-      .values(messageData)
-      .returning();
+    try {
+      // Use raw SQL to match actual DB columns
+      const result = await db.execute(sql`
+        INSERT INTO w3suite.chat_messages (
+          channel_id, tenant_id, user_id, content, 
+          mentioned_user_ids, attachments, parent_message_id,
+          is_voice_message, voice_duration_seconds, voice_url
+        ) VALUES (
+          ${messageData.channelId}::uuid,
+          ${messageData.tenantId}::uuid,
+          ${messageData.userId},
+          ${messageData.content},
+          ${messageData.mentionedUserIds ? sql`ARRAY[${sql.join(messageData.mentionedUserIds.map(id => sql`${id}`), sql`, `)}]::text[]` : sql`'{}'::text[]`},
+          ${messageData.attachments ? JSON.stringify(messageData.attachments) : '[]'}::jsonb,
+          ${(messageData as any).replyToMessageId || null}::uuid,
+          ${(messageData as any).isVoiceMessage || false},
+          ${(messageData as any).voiceDurationSeconds || null},
+          ${(messageData as any).voiceUrl || null}
+        )
+        RETURNING id, channel_id, tenant_id, user_id, content, 
+                  mentioned_user_ids, attachments, parent_message_id,
+                  is_voice_message, voice_duration_seconds, voice_url,
+                  is_edited, created_at, updated_at
+      `);
+      
+      const row = result.rows?.[0] as any;
+      const message = {
+        id: row.id,
+        channelId: row.channel_id,
+        tenantId: row.tenant_id,
+        userId: row.user_id,
+        content: row.content,
+        mentionedUserIds: row.mentioned_user_ids,
+        attachments: row.attachments,
+        replyToMessageId: row.parent_message_id,
+        isVoiceMessage: row.is_voice_message,
+        voiceDurationSeconds: row.voice_duration_seconds,
+        voiceUrl: row.voice_url,
+        isEdited: row.is_edited,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      } as ChatMessage;
 
-    await this.clearTypingIndicator(messageData.channelId, messageData.userId);
+      await this.clearTypingIndicator(messageData.channelId, messageData.userId);
 
-    logger.info('💬 Message sent', { 
-      channelId: messageData.channelId, 
-      messageId: message.id,
-      userId: messageData.userId 
-    });
+      logger.info('💬 Message sent', { 
+        channelId: messageData.channelId, 
+        messageId: message.id,
+        userId: messageData.userId 
+      });
 
-    return message;
+      return message;
+    } catch (error) {
+      logger.error('Failed to send message', { error, messageData });
+      throw error;
+    }
   }
 
   static async editMessage(
@@ -483,9 +525,10 @@ export class ChatService {
       
       const result = await db.execute(sql`
         SELECT 
-          id, channel_id, tenant_id, user_id, content, message_type,
-          attachments, mentioned_user_ids, reactions, reply_to_message_id,
-          thread_id, is_edited, edited_at, metadata, created_at, deleted_at
+          id, channel_id, tenant_id, user_id, content,
+          attachments, mentioned_user_ids, reactions, parent_message_id,
+          is_edited, is_voice_message, voice_duration_seconds, voice_url,
+          created_at, updated_at, deleted_at
         FROM w3suite.chat_messages
         WHERE channel_id = ${channelId}
           AND tenant_id = ${tenantId}::uuid
@@ -501,16 +544,17 @@ export class ChatService {
         tenantId: row.tenant_id,
         userId: row.user_id,
         content: row.content,
-        messageType: row.message_type,
+        messageType: row.is_voice_message ? 'voice' : 'text',
         attachments: row.attachments,
         mentionedUserIds: row.mentioned_user_ids,
         reactions: row.reactions,
-        replyToMessageId: row.reply_to_message_id,
-        threadId: row.thread_id,
+        replyToMessageId: row.parent_message_id,
         isEdited: row.is_edited,
-        editedAt: row.edited_at,
-        metadata: row.metadata,
+        isVoiceMessage: row.is_voice_message,
+        voiceDurationSeconds: row.voice_duration_seconds,
+        voiceUrl: row.voice_url,
         createdAt: row.created_at,
+        updatedAt: row.updated_at,
         deletedAt: row.deleted_at
       })) as ChatMessage[];
     } catch (error) {
@@ -966,20 +1010,20 @@ export class ChatService {
       const result = await db.execute(sql`
         SELECT 
           p.pinned_at,
-          p.pinned_by_user_id,
+          p.pinned_by,
           m.id as message_id,
           m.content as message_content,
           m.user_id as message_user_id,
           m.created_at as message_created_at
         FROM w3suite.chat_pinned_messages p
         INNER JOIN w3suite.chat_messages m ON p.message_id = m.id
-        WHERE p.channel_id = ${channelId}
+        WHERE p.channel_id = ${channelId}::uuid
         ORDER BY p.pinned_at DESC
       `);
       
       return (result.rows || []).map((row: any) => ({
         pinnedAt: row.pinned_at,
-        pinnedByUserId: row.pinned_by_user_id,
+        pinnedByUserId: row.pinned_by,
         message: {
           id: row.message_id,
           content: row.message_content,
@@ -1068,17 +1112,13 @@ export class ChatService {
     teamIds?: string[]
   ): Promise<ChatSavedReply[]> {
     try {
-      // Get personal replies + team replies using raw SQL
-      const teamCondition = teamIds && teamIds.length > 0 
-        ? sql`OR (is_personal = false AND team_id = ANY(${teamIds}::uuid[]))`
-        : sql``;
-      
+      // Get personal replies + global replies using raw SQL
       const result = await db.execute(sql`
-        SELECT id, tenant_id, user_id, team_id, title, content, shortcut, 
-               is_personal, usage_count, created_at, updated_at
+        SELECT id, tenant_id, user_id, title, content, category,
+               is_global, usage_count, created_at, updated_at
         FROM w3suite.chat_saved_replies
         WHERE tenant_id = ${tenantId}::uuid
-          AND (user_id = ${userId} ${teamCondition})
+          AND (user_id = ${userId} OR is_global = true)
         ORDER BY usage_count DESC
       `);
       
@@ -1086,11 +1126,10 @@ export class ChatService {
         id: row.id,
         tenantId: row.tenant_id,
         userId: row.user_id,
-        teamId: row.team_id,
         title: row.title,
         content: row.content,
-        shortcut: row.shortcut,
-        isPersonal: row.is_personal,
+        category: row.category,
+        isGlobal: row.is_global,
         usageCount: row.usage_count,
         createdAt: row.created_at,
         updatedAt: row.updated_at

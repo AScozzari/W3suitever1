@@ -297,20 +297,22 @@ export function QuickChatBar({ onChatCreated, placeholder = "Cerca colleghi...",
                     {/* Click area per DM diretto */}
                     <button
                       onClick={(e) => handleDirectChat(u.id, e)}
-                      className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                      className="flex items-center gap-2 flex-1 min-w-0 text-left"
                       disabled={selectedUsers.length > 0}
                     >
-                      <AvatarWithPresence
-                        userId={u.id}
-                        name={`${u.firstName} ${u.lastName}`}
-                        size="sm"
-                        showPresence={true}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                      <div className="shrink-0">
+                        <AvatarWithPresence
+                          userId={u.id}
+                          name={`${u.firstName} ${u.lastName}`}
+                          size="sm"
+                          showPresence={false}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <p className="text-sm font-medium text-gray-900 truncate leading-tight">
                           {u.firstName} {u.lastName}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                        <p className="text-xs text-gray-500 truncate leading-tight">{u.email}</p>
                       </div>
                     </button>
                     
