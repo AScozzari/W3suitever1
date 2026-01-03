@@ -179,13 +179,20 @@ export class ChatService {
               .limit(1);
             
             if (otherUser) {
+              // Build proper avatar URL from object storage path
+              let avatarUrl: string | null = null;
+              if (otherUser.avatarObjectPath) {
+                const filename = otherUser.avatarObjectPath.split('/').pop();
+                avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+              }
+              
               dmUserInfo = {
                 id: otherUser.id,
                 email: otherUser.email,
                 name: otherUser.firstName && otherUser.lastName 
                   ? `${otherUser.firstName} ${otherUser.lastName}`
                   : otherUser.firstName || otherUser.lastName || otherUser.email,
-                avatarUrl: otherUser.avatarObjectPath || null
+                avatarUrl
               };
             }
           }

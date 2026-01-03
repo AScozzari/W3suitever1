@@ -387,6 +387,7 @@ export default function CommunicationCenterPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {/* Icona membri - nascosta per DM (non ha senso per chat 1-a-1) */}
                         {selectedChannel.channelType !== 'dm' && (
                           <button
                             onClick={() => setMembersDialogOpen(true)}
@@ -396,15 +397,14 @@ export default function CommunicationCenterPage() {
                             <Users className="h-4 w-4" />
                           </button>
                         )}
-                        {selectedChannel.channelType !== 'dm' && (
-                          <button
-                            onClick={() => setEditDialogOpen(true)}
-                            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-                            data-testid="button-edit-channel"
-                          >
-                            <Settings className="h-4 w-4" />
-                          </button>
-                        )}
+                        {/* Icona impostazioni - SEMPRE visibile (anche per DM per customizzazioni) */}
+                        <button
+                          onClick={() => setEditDialogOpen(true)}
+                          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                          data-testid="button-edit-channel"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                     
