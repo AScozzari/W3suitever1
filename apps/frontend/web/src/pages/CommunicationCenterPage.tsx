@@ -282,19 +282,22 @@ export default function CommunicationCenterPage() {
                           onMouseLeave={() => setHoveredChannelId(null)}
                           data-testid={`channel-${channel.id}`}
                         >
-                          <div className="flex items-start gap-3">
-                            {channel.channelType === 'dm' && channel.dmUser?.id ? (
-                              <AvatarWithPresence
-                                userId={channel.dmUser.id}
-                                name={channel.dmUser.name || 'Utente'}
-                                size="md"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-medium shrink-0">
-                                {channel.name?.[0]?.toUpperCase() || '#'}
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="shrink-0">
+                              {channel.channelType === 'dm' && channel.dmUser?.id ? (
+                                <AvatarWithPresence
+                                  userId={channel.dmUser.id}
+                                  name={channel.dmUser.name || 'Utente'}
+                                  avatarUrl={channel.dmUser.avatarUrl}
+                                  size="md"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-medium">
+                                  {channel.name?.[0]?.toUpperCase() || '#'}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col justify-center">
                               <div className="flex items-center gap-1.5">
                                 {channel.visibility === 'private' && <Lock className="h-3 w-3 text-gray-400" />}
                                 <span className="font-medium text-sm text-gray-900 truncate">
@@ -360,6 +363,7 @@ export default function CommunicationCenterPage() {
                           <AvatarWithPresence
                             userId={selectedChannel.dmUser.id}
                             name={selectedChannel.dmUser.name || 'Utente'}
+                            avatarUrl={selectedChannel.dmUser.avatarUrl}
                             size="sm"
                           />
                         ) : (

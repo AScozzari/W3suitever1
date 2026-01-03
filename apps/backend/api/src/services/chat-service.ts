@@ -171,7 +171,8 @@ export class ChatService {
                 id: users.id,
                 email: users.email,
                 firstName: users.firstName,
-                lastName: users.lastName
+                lastName: users.lastName,
+                avatarObjectPath: users.avatarObjectPath
               })
               .from(users)
               .where(eq(users.id, otherUserId))
@@ -183,7 +184,8 @@ export class ChatService {
                 email: otherUser.email,
                 name: otherUser.firstName && otherUser.lastName 
                   ? `${otherUser.firstName} ${otherUser.lastName}`
-                  : otherUser.firstName || otherUser.lastName || otherUser.email
+                  : otherUser.firstName || otherUser.lastName || otherUser.email,
+                avatarUrl: otherUser.avatarObjectPath || null
               };
             }
           }
