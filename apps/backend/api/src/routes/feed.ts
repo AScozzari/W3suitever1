@@ -290,7 +290,7 @@ router.get('/posts', requirePermission('communication.read'), async (req: Reques
         : null
     });
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -323,7 +323,7 @@ router.get('/posts/:postId', requirePermission('communication.read'), async (req
     
     res.json(enrichedPost);
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -409,7 +409,7 @@ router.post('/posts', requirePermission('communication.write'), async (req: Requ
     
     res.status(201).json(enrichedPost);
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -454,7 +454,7 @@ router.patch('/posts/:postId', requirePermission('communication.write'), async (
     
     res.json(enrichedPost);
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -484,7 +484,7 @@ router.delete('/posts/:postId', requirePermission('communication.write'), async 
     
     res.status(204).send();
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -529,7 +529,7 @@ router.post('/posts/:postId/reactions', requirePermission('communication.write')
       res.json({ action: 'added', reactionType });
     }
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -558,7 +558,7 @@ router.get('/posts/:postId/comments', requirePermission('communication.read'), a
     
     res.json(formattedComments);
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -593,7 +593,7 @@ router.post('/posts/:postId/comments', requirePermission('communication.write'),
       user
     });
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -624,7 +624,7 @@ router.delete('/posts/:postId/comments/:commentId', requirePermission('communica
     
     res.status(204).send();
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -699,7 +699,7 @@ router.post('/posts/:postId/vote', requirePermission('communication.write'), asy
       hasVoted: true
     });
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -731,7 +731,7 @@ router.post('/posts/:postId/favorite', requirePermission('communication.write'),
       res.json({ action: 'added', isFavorited: true });
     }
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -763,7 +763,7 @@ router.post('/posts/:postId/unfollow', requirePermission('communication.write'),
       res.json({ action: 'unfollowed', isUnfollowed: true });
     }
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -789,7 +789,7 @@ router.post('/posts/:postId/pin', requirePermission('communication.manage'), asy
     
     res.json({ isPinned: updatedPost.isPinned });
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -812,7 +812,7 @@ router.get('/badges/leaderboard', requirePermission('communication.read'), async
     
     res.json(leaderboard);
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -851,7 +851,7 @@ router.get('/badges/user/:userId', requirePermission('communication.read'), asyn
       totalBadges: badges.length
     });
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
@@ -895,7 +895,7 @@ router.get('/stats', requirePermission('communication.read'), async (req: Reques
       myBadges: myBadgesCount?.count || 0
     });
   } catch (error) {
-    handleApiError(res, error);
+    handleApiError(error, res);
   }
 });
 
