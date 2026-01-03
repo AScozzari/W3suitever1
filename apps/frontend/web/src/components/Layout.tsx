@@ -559,7 +559,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Menu items con path normalizzati - SOLUZIONE CLEAN
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
-    { id: 'tasks', label: 'Tasks', icon: ListTodo, path: '/tasks' },
+    { id: 'tasks', label: 'Attività', icon: ListTodo, path: '/tasks' },
     { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
     { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai-tools' },
     { 
