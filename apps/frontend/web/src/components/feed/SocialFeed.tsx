@@ -57,13 +57,14 @@ import {
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
-// Emoji categories for picker
+// Emoji categories for picker (no duplicates)
 const EMOJI_CATEGORIES = {
-  'Faccine': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕'],
+  'Faccine': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕'],
   'Gesti': ['👍', '👎', '👌', '🤌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '🦾', '🦿'],
   'Simboli': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💯', '✅', '❌', '⭐', '🌟', '💫', '⚡', '🔥', '💥', '🎉', '🎊', '🏆', '🥇', '🥈', '🥉', '🏅', '🎯', '💡', '📌', '📍'],
   'Oggetti': ['💼', '📁', '📂', '🗂️', '📋', '📄', '📃', '📑', '📊', '📈', '📉', '🗒️', '🗓️', '📆', '📅', '📇', '🗃️', '🗳️', '🗄️', '📬', '📭', '📮', '📯', '📨', '📩', '📧', '💻', '🖥️', '🖨️', '⌨️', '🖱️', '💾', '💿', '📱', '☎️', '📞', '📠', '📺', '📻']
 };
+
 
 interface FeedAttachment {
   id: string;
@@ -180,11 +181,14 @@ interface PollSettings {
   allowVoteChange: boolean;
 }
 
-const REACTION_TYPES = [
+// Reaction types with icons for feed interactions (Bitrix24 style)
+const REACTION_ICONS = [
   { type: 'like', icon: ThumbsUp, label: 'Mi piace', color: 'text-blue-500' },
   { type: 'love', icon: Heart, label: 'Love', color: 'text-red-500' },
-  { type: 'celebrate', icon: PartyPopper, label: 'Celebra', color: 'text-yellow-500' },
+  { type: 'celebrate', icon: PartyPopper, label: 'Festeggia', color: 'text-yellow-500' },
   { type: 'support', icon: Sparkles, label: 'Supporto', color: 'text-purple-500' },
+  { type: 'insightful', icon: Award, label: 'Interessante', color: 'text-green-500' },
+  { type: 'funny', icon: Smile, label: 'Divertente', color: 'text-orange-500' },
 ];
 
 const BADGE_INFO: Record<string, { icon: any; label: string; color: string; bgColor: string }> = {
@@ -401,34 +405,61 @@ function FeedPostCard({
       </CardContent>
 
       <CardFooter className="flex flex-col pt-0">
+        {/* Reactions summary */}
+        {post.reactionsCount > 0 && (
+          <div className="w-full py-2 border-t flex items-center gap-2">
+            <div className="flex -space-x-1">
+              {Object.entries(post.reactions || {}).slice(0, 3).map(([type, count]) => {
+                const reactionInfo = REACTION_ICONS.find(r => r.type === type);
+                if (!reactionInfo || count === 0) return null;
+                return (
+                  <span key={type} className={`inline-flex items-center justify-center h-5 w-5 rounded-full bg-white border ${reactionInfo.color}`}>
+                    <reactionInfo.icon className="h-3 w-3" />
+                  </span>
+                );
+              })}
+            </div>
+            <span className="text-xs text-muted-foreground">{post.reactionsCount}</span>
+            {post.commentsCount > 0 && (
+              <span className="text-xs text-muted-foreground ml-auto">{post.commentsCount} commenti</span>
+            )}
+          </div>
+        )}
+        
+        {/* Action buttons - Bitrix24 style */}
         <div className="flex items-center justify-between w-full py-2 border-t">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            {/* Mi piace with reactions hover */}
             <div className="relative">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="text-muted-foreground gap-1"
+                className={`text-muted-foreground gap-1.5 h-8 px-3 ${post.userReactions.length > 0 ? 'text-blue-600' : ''}`}
                 onMouseEnter={() => setShowReactions(true)}
                 onMouseLeave={() => setShowReactions(false)}
                 onClick={() => onReaction(post.id, 'like')}
+                data-testid={`button-like-${post.id}`}
               >
-                <ThumbsUp className={`h-4 w-4 ${post.userReactions.includes('like') ? 'fill-blue-500 text-blue-500' : ''}`} />
-                {post.reactionsCount > 0 && <span>{post.reactionsCount}</span>}
+                <ThumbsUp className={`h-4 w-4 ${post.userReactions.includes('like') ? 'fill-current' : ''}`} />
+                <span className="text-xs font-medium">Mi piace</span>
               </Button>
               
               {showReactions && (
                 <div 
-                  className="absolute bottom-full left-0 mb-1 bg-white border rounded-full shadow-lg p-1 flex gap-1 z-50"
+                  className="absolute bottom-full left-0 mb-1 bg-white border rounded-full shadow-lg p-1.5 flex gap-0.5 z-50"
                   onMouseEnter={() => setShowReactions(true)}
                   onMouseLeave={() => setShowReactions(false)}
+                  data-testid={`reaction-picker-${post.id}`}
                 >
-                  {REACTION_TYPES.map(reaction => (
+                  {REACTION_ICONS.map(reaction => (
                     <Button
                       key={reaction.type}
                       variant="ghost"
                       size="icon"
                       className={`h-8 w-8 rounded-full hover:scale-125 transition-transform ${post.userReactions.includes(reaction.type) ? reaction.color : ''}`}
                       onClick={() => onReaction(post.id, reaction.type)}
+                      title={reaction.label}
+                      data-testid={`reaction-${reaction.type}-${post.id}`}
                     >
                       <reaction.icon className={`h-4 w-4 ${post.userReactions.includes(reaction.type) ? 'fill-current' : ''}`} />
                     </Button>
@@ -437,26 +468,65 @@ function FeedPostCard({
               )}
             </div>
             
+            {/* Commenta */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-muted-foreground gap-1"
+              className="text-muted-foreground gap-1.5 h-8 px-3"
               onClick={() => setShowCommentInput(!showCommentInput)}
+              data-testid={`button-comment-${post.id}`}
             >
               <MessageCircle className="h-4 w-4" />
-              {post.commentsCount > 0 && <span>{post.commentsCount}</span>}
+              <span className="text-xs font-medium">Commenta</span>
+              {post.commentsCount > 0 && <span className="text-xs text-muted-foreground">({post.commentsCount})</span>}
+            </Button>
+            
+            {/* Non seguire più */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`text-muted-foreground gap-1.5 h-8 px-3 ${post.isUnfollowed ? 'text-orange-600' : ''}`}
+              onClick={() => onUnfollow(post.id)}
+              data-testid={`button-unfollow-${post.id}`}
+            >
+              <BellOff className={`h-4 w-4 ${post.isUnfollowed ? 'text-orange-600' : ''}`} />
+              <span className="text-xs font-medium">{post.isUnfollowed ? 'Segui' : 'Non seguire'}</span>
             </Button>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            {/* Preferiti */}
             <Button 
               variant="ghost" 
-              size="icon" 
-              className={`h-8 w-8 ${post.isFavorited ? 'text-yellow-500' : 'text-muted-foreground'}`}
+              size="sm" 
+              className={`h-8 px-2 ${post.isFavorited ? 'text-yellow-500' : 'text-muted-foreground'}`}
               onClick={() => onFavorite(post.id)}
+              title={post.isFavorited ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
+              data-testid={`button-favorite-${post.id}`}
             >
               <Star className={`h-4 w-4 ${post.isFavorited ? 'fill-current' : ''}`} />
             </Button>
+            
+            {/* Altro */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground" data-testid={`button-more-${post.id}`}>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                <div className="space-y-0.5">
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8" data-testid={`button-pin-${post.id}`}>
+                    <Pin className="h-4 w-4" />
+                    <span className="text-xs">{post.isPinned ? 'Rimuovi pin' : 'Fissa in alto'}</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8" onClick={() => onFavorite(post.id)} data-testid={`button-save-favorite-${post.id}`}>
+                    <BookmarkPlus className="h-4 w-4" />
+                    <span className="text-xs">{post.isFavorited ? 'Rimuovi da preferiti' : 'Salva nei preferiti'}</span>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
