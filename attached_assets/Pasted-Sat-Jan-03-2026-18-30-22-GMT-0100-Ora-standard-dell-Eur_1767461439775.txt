@@ -1,0 +1,154 @@
+Sat Jan 03 2026 18:30:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | · viaHost: "i5i6ulghgff7.invalid"
+useSIPRegistration.ts:196 Sat Jan 03 2026 18:30:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Starting sip:2000@demo.edgvoip.it
+useSIPRegistration.ts:196 Sat Jan 03 2026 18:30:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.UserAgent | Transitioned from Stopped to Started
+useSIPRegistration.ts:196 Sat Jan 03 2026 18:30:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Connecting wss://demo.edgvoip.it/ws
+useSIPRegistration.ts:196 Sat Jan 03 2026 18:30:22 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Disconnected to Connecting
+queryClient.ts:219  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/feed/badges/leaderboard 500 (Internal Server Error)
+queryFn @ queryClient.ts:219
+fetchFn @ @tanstack_react-query.js?v=b56a477b:1097
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+fetch @ @tanstack_react-query.js?v=b56a477b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | WebSocket opened wss://demo.edgvoip.it/ws
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Transitioned from Connecting to Connected
+useSIPRegistration.ts:197 ✅ SIP UserAgent started
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Configuration:
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · expires: 600
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraContactHeaderParams: []
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · extraHeaders: []
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · logConfiguration: true
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · instanceId: ""
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · params: {}
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · regId: 0
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · registrar: sip:demo.edgvoip.it
+useSIPRegistration.ts:200 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | · refreshFrequency: 99
+useSIPRegistration.ts:218 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+useSIPRegistration.ts:218 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS i5i6ulghgff7.invalid;branch=z9hG4bK3969915
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=vcb9hb19gl
+CSeq: 2 REGISTER
+Call-ID: aajgm91nki4gqlhltd8i
+Max-Forwards: 70
+Contact: <sip:fv5elvnv@i5i6ulghgff7.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 401 Unauthorized
+Via: SIP/2.0/WSS i5i6ulghgff7.invalid;branch=z9hG4bK3969915;received=127.0.0.1;rport=55190
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=vcb9hb19gl
+To: <sip:2000@demo.edgvoip.it>;tag=mmgagNaQ9BBma
+Call-ID: aajgm91nki4gqlhltd8i
+CSeq: 2 REGISTER
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+WWW-Authenticate: Digest realm="demo.edgvoip.it", nonce="fd76c790-0bf4-47ab-912a-c2b208eda336", algorithm=MD5, qop="auth"
+Content-Length: 0
+
+
+
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS i5i6ulghgff7.invalid;branch=z9hG4bK9490232
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=vcb9hb19gl
+CSeq: 3 REGISTER
+Call-ID: aajgm91nki4gqlhltd8i
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="fd76c790-0bf4-47ab-912a-c2b208eda336", uri="sip:demo.edgvoip.it", response="1f83af2deb4e7c8dd2cab104354a0a99", qop=auth, cnonce="4k0t3hmv93dp", nc=00000001
+Contact: <sip:fv5elvnv@i5i6ulghgff7.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+SIP/2.0 200 OK
+Via: SIP/2.0/WSS i5i6ulghgff7.invalid;branch=z9hG4bK9490232;received=127.0.0.1;rport=55190
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=vcb9hb19gl
+To: <sip:2000@demo.edgvoip.it>;tag=NX92HgUt6m16N
+Call-ID: aajgm91nki4gqlhltd8i
+CSeq: 3 REGISTER
+Contact: <sip:fv5elvnv@i5i6ulghgff7.invalid;transport=ws>;expires=600
+Date: Sat, 03 Jan 2026 17:30:20 GMT
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Content-Length: 0
+
+
+
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Registered
+useSIPRegistration.ts:204 📡 Registration state: Registered
+useSIPRegistration.ts:210 ✅ SIP Registered successfully
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Received WebSocket text message:
+
+NOTIFY sip:fv5elvnv@i5i6ulghgff7.invalid;transport=ws SIP/2.0
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bKrr7j9Kc8H9pBF
+Route: <sip:fv5elvnv@127.0.0.1:55190>;transport=wss
+Max-Forwards: 70
+From: <sip:2000@demo.edgvoip.it>;tag=p62UKBcy3XQSH
+To: <sip:2000@demo.edgvoip.it>
+Call-ID: b82e6d2d-636c-123f-2c82-0050560ce942
+CSeq: 109176918 NOTIFY
+Contact: <sip:mod_sofia@82.165.21.122:5060>
+User-Agent: FreeSWITCH-mod_sofia/1.10.12-release+git~20240802T210227Z~a88d069d6f~64bit
+Allow: INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO, UPDATE, REGISTER, REFER, NOTIFY, PUBLISH, SUBSCRIBE
+Supported: timer, path, replaces
+Event: message-summary
+Allow-Events: talk, hold, conference, presence, as-feature-event, dialog, line-seize, call-info, sla, include-session-description, presence.winfo, message-summary, refer
+Subscription-State: terminated;reason=noresource
+Content-Type: application/simple-message-summary
+Content-Length: 67
+
+Messages-Waiting: no
+Message-Account: sip:2000@demo.edgvoip.it
+
+
+
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 18:30:23 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+SIP/2.0 481 Call/Transaction Does Not Exist
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bKrr7j9Kc8H9pBF
+From: <sip:2000@demo.edgvoip.it>;tag=p62UKBcy3XQSH
+To: <sip:2000@demo.edgvoip.it>;tag=bp7hm11mca
+CSeq: 109176918 NOTIFY
+Call-ID: b82e6d2d-636c-123f-2c82-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+queryClient.ts:219  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/feed/badges/leaderboard 500 (Internal Server Error)

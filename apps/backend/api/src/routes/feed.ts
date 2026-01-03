@@ -100,7 +100,8 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
   ] = await Promise.all([
     db.select({
       id: users.id,
-      name: users.name,
+      firstName: users.firstName,
+      lastName: users.lastName,
       email: users.email,
       avatar: users.profileImageUrl
     }).from(users).where(eq(users.id, post.authorId)).limit(1),
@@ -178,7 +179,8 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
   if (post.postType === 'appreciation' && post.awardeeUserIds && post.awardeeUserIds.length > 0) {
     badgeAwardees = await db.select({
       id: users.id,
-      name: users.name,
+      firstName: users.firstName,
+      lastName: users.lastName,
       email: users.email,
       avatar: users.profileImageUrl
     }).from(users).where(inArray(users.id, post.awardeeUserIds));
@@ -541,7 +543,8 @@ router.get('/posts/:postId/comments', requirePermission('communication.read'), a
       comment: feedComments,
       user: {
         id: users.id,
-        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
         email: users.email,
         avatar: users.profileImageUrl
       }
@@ -583,7 +586,8 @@ router.post('/posts/:postId/comments', requirePermission('communication.write'),
     
     const [user] = await db.select({
       id: users.id,
-      name: users.name,
+      firstName: users.firstName,
+      lastName: users.lastName,
       email: users.email,
       avatar: users.profileImageUrl
     }).from(users).where(eq(users.id, userId));
@@ -801,13 +805,13 @@ router.get('/badges/leaderboard', requirePermission('communication.read'), async
     const leaderboard = await db.execute(sql`
       SELECT 
         ub.user_id as "userId",
-        u.name as "userName", 
+        COALESCE(u.first_name || ' ' || u.last_name, u.email) as "userName", 
         u.profile_image_url as "userAvatar",
         count(*)::int as "badgeCount"
       FROM w3suite.user_badges ub
       LEFT JOIN w3suite.users u ON ub.user_id = u.id
       WHERE ub.tenant_id = ${tenantId}
-      GROUP BY ub.user_id, u.name, u.profile_image_url
+      GROUP BY ub.user_id, u.first_name, u.last_name, u.email, u.profile_image_url
       ORDER BY count(*) DESC
       LIMIT 10
     `);
@@ -828,7 +832,7 @@ router.get('/badges/user/:userId', requirePermission('communication.read'), asyn
       SELECT 
         ub.*,
         u.id as "awardedById",
-        u.name as "awardedByName",
+        COALESCE(u.first_name || ' ' || u.last_name, u.email) as "awardedByName",
         u.profile_image_url as "awardedByAvatar"
       FROM w3suite.user_badges ub
       LEFT JOIN w3suite.users u ON ub.awarded_by_user_id = u.id
