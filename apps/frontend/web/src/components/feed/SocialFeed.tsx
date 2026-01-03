@@ -19,14 +19,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   Heart, MessageCircle, Star, BookmarkPlus, BellOff, Pin, MoreHorizontal,
   ThumbsUp, Smile, PartyPopper, Megaphone, BarChart3, Award, Send,
   Users, UserPlus, Trophy, Medal, Sparkles, ChevronDown, Filter,
@@ -430,8 +422,9 @@ function FeedPostCard({
   );
 }
 
-function CreatePostDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function EmbeddedComposer() {
   const { toast } = useToast();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [postType, setPostType] = useState<'message' | 'announcement' | 'poll' | 'appreciation'>('message');
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
@@ -450,8 +443,8 @@ function CreatePostDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/feed/posts'] });
       toast({ title: 'Post pubblicato!' });
-      onOpenChange(false);
       resetForm();
+      setIsExpanded(false);
     },
     onError: () => {
       toast({ title: 'Errore nella pubblicazione', variant: 'destructive' });
@@ -494,141 +487,206 @@ function CreatePostDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     createPostMutation.mutate(data);
   };
 
+  const getPlaceholder = () => {
+    switch (postType) {
+      case 'message': return 'Invia messaggio...';
+      case 'announcement': return 'Scrivi un annuncio...';
+      case 'poll': return 'Crea un sondaggio...';
+      case 'appreciation': return 'Assegna un riconoscimento...';
+      default: return 'Invia messaggio...';
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Crea nuovo post</DialogTitle>
-          <DialogDescription>
-            Condividi un messaggio, annuncio, sondaggio o riconoscimento con il team.
-          </DialogDescription>
-        </DialogHeader>
+    <Card className="mb-4 border shadow-sm">
+      <Tabs value={postType} onValueChange={(v) => setPostType(v as any)}>
+        <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+          <TabsTrigger 
+            value="message" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
+          >
+            MESSAGGIO
+          </TabsTrigger>
+          <TabsTrigger 
+            value="poll" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
+          >
+            SONDAGGIO
+          </TabsTrigger>
+          <TabsTrigger 
+            value="announcement" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
+          >
+            ANNUNCIO
+          </TabsTrigger>
+          <TabsTrigger 
+            value="appreciation" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
+          >
+            APPREZZAMENTO
+          </TabsTrigger>
+        </TabsList>
 
-        <Tabs value={postType} onValueChange={(v) => setPostType(v as any)}>
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="message" className="text-xs">
-              <MessageCircle className="h-4 w-4 mr-1" />
-              Messaggio
-            </TabsTrigger>
-            <TabsTrigger value="announcement" className="text-xs">
-              <Megaphone className="h-4 w-4 mr-1" />
-              Annuncio
-            </TabsTrigger>
-            <TabsTrigger value="poll" className="text-xs">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Sondaggio
-            </TabsTrigger>
-            <TabsTrigger value="appreciation" className="text-xs">
-              <Award className="h-4 w-4 mr-1" />
-              Apprezza
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="space-y-4">
-            {(postType === 'announcement' || postType === 'poll') && (
-              <Input
-                placeholder="Titolo (opzionale)"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                data-testid="input-post-title"
-              />
-            )}
-
-            <Textarea
-              placeholder={
-                postType === 'message' ? 'Cosa vuoi condividere?' :
-                postType === 'announcement' ? 'Scrivi il tuo annuncio...' :
-                postType === 'poll' ? 'Descrivi il sondaggio...' :
-                'Perché questa persona merita un riconoscimento?'
-              }
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={4}
-              data-testid="input-post-content"
-            />
-
-            {postType === 'announcement' && (
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={isHighlighted}
-                  onChange={(e) => setIsHighlighted(e.target.checked)}
-                  className="rounded"
-                />
-                <span className="text-muted-foreground">Evidenzia annuncio (sfondo verde)</span>
-              </label>
-            )}
-
-            {postType === 'poll' && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Opzioni sondaggio:</p>
-                {pollOptions.map((option, index) => (
-                  <Input
-                    key={index}
-                    placeholder={`Opzione ${index + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...pollOptions];
-                      newOptions[index] = e.target.value;
-                      setPollOptions(newOptions);
-                    }}
-                    data-testid={`input-poll-option-${index}`}
-                  />
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPollOptions([...pollOptions, ''])}
-                  className="w-full"
-                  data-testid="button-add-poll-option"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Aggiungi opzione
-                </Button>
+        <CardContent className="p-4">
+          {!isExpanded ? (
+            <div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => setIsExpanded(true)}
+              data-testid="composer-collapsed"
+            >
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm">TU</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 py-2.5 px-4 bg-muted/50 rounded-full text-muted-foreground text-sm hover:bg-muted transition-colors">
+                {getPlaceholder()}
               </div>
-            )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {(postType === 'announcement' || postType === 'poll') && (
+                <Input
+                  placeholder="Titolo (opzionale)"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="font-medium"
+                  data-testid="input-post-title"
+                />
+              )}
 
-            {postType === 'appreciation' && (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium mb-2">Tipo di riconoscimento:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(BADGE_INFO).slice(0, 6).map(([key, info]) => (
+              <Textarea
+                autoFocus
+                placeholder={getPlaceholder()}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={postType === 'message' ? 3 : 4}
+                className="resize-none"
+                data-testid="input-post-content"
+              />
+
+              {postType === 'announcement' && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isHighlighted}
+                    onChange={(e) => setIsHighlighted(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-muted-foreground">Evidenzia annuncio (sfondo verde)</span>
+                </label>
+              )}
+
+              {postType === 'poll' && (
+                <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Opzioni sondaggio
+                  </p>
+                  {pollOptions.map((option, index) => (
+                    <Input
+                      key={index}
+                      placeholder={`Opzione ${index + 1}`}
+                      value={option}
+                      onChange={(e) => {
+                        const newOptions = [...pollOptions];
+                        newOptions[index] = e.target.value;
+                        setPollOptions(newOptions);
+                      }}
+                      className="bg-white"
+                      data-testid={`input-poll-option-${index}`}
+                    />
+                  ))}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPollOptions([...pollOptions, ''])}
+                    className="w-full text-primary hover:text-primary"
+                    data-testid="button-add-poll-option"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Aggiungi opzione
+                  </Button>
+                </div>
+              )}
+
+              {postType === 'appreciation' && (
+                <div className="space-y-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-100">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Award className="h-4 w-4 text-yellow-600" />
+                    Tipo di riconoscimento
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(BADGE_INFO).map(([key, info]) => (
                       <Button
                         key={key}
                         type="button"
                         variant={badgeType === key ? 'default' : 'outline'}
                         size="sm"
-                        className="justify-start"
+                        className={`justify-start text-xs ${badgeType === key ? '' : 'bg-white hover:bg-gray-50'}`}
                         onClick={() => setBadgeType(key)}
                         data-testid={`button-badge-${key}`}
                       >
-                        <info.icon className="h-4 w-4 mr-2" />
+                        <info.icon className="h-3.5 w-3.5 mr-1.5" />
                         {info.label}
                       </Button>
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </Tabs>
+              )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annulla
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={!content.trim() || createPostMutation.isPending}
-            data-testid="button-publish-post"
-          >
-            {createPostMutation.isPending ? 'Pubblicando...' : 'Pubblica'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-attach-image">
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-attach-file">
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-mention-user">
+                    <AtSign className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-add-tag">
+                    <Hash className="h-4 w-4" />
+                  </Button>
+                  <Separator orientation="vertical" className="h-5 mx-1" />
+                  <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground gap-1" data-testid="button-select-recipients">
+                    <Users className="h-3.5 w-3.5" />
+                    Tutti
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      resetForm();
+                      setIsExpanded(false);
+                    }}
+                    data-testid="button-cancel-post"
+                  >
+                    Annulla
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={handleSubmit}
+                    disabled={!content.trim() || createPostMutation.isPending}
+                    className="gap-1"
+                    data-testid="button-publish-post"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    {createPostMutation.isPending ? 'Invio...' : 'Invia'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Tabs>
+    </Card>
   );
 }
 
@@ -688,7 +746,6 @@ function LeaderboardCard() {
 
 export function SocialFeed() {
   const { toast } = useToast();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'announcements' | 'polls' | 'appreciation' | 'favorites'>('all');
 
   const { data: feedData, isLoading, fetchNextPage, hasNextPage } = useInfiniteQuery({
@@ -773,7 +830,10 @@ export function SocialFeed() {
   return (
     <div className="flex gap-6 h-full">
       <div className="flex-1 flex flex-col">
+        <EmbeddedComposer />
+
         <div className="flex items-center justify-between mb-4 px-1">
+          <span className="text-sm font-semibold text-muted-foreground">Feed</span>
           <div className="flex items-center gap-2">
             <Button
               variant={filter === 'all' ? 'default' : 'outline'}
@@ -820,14 +880,6 @@ export function SocialFeed() {
               Preferiti
             </Button>
           </div>
-          
-          <Button 
-            onClick={() => setCreateDialogOpen(true)}
-            data-testid="button-create-post"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Nuovo Post
-          </Button>
         </div>
 
         <ScrollArea className="flex-1">
@@ -886,11 +938,6 @@ export function SocialFeed() {
       <div className="w-72 shrink-0 space-y-4">
         <LeaderboardCard />
       </div>
-
-      <CreatePostDialog 
-        open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
-      />
     </div>
   );
 }
