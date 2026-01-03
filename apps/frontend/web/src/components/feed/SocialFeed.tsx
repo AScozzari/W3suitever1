@@ -596,6 +596,7 @@ function EmbeddedComposer() {
   const [mentionedUsers, setMentionedUsers] = useState<FeedUser[]>([]);
   const [showMentionPopover, setShowMentionPopover] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionStartPos, setMentionStartPos] = useState<number | null>(null);
   const [recipientSelection, setRecipientSelection] = useState<RecipientSelection>({
     mode: 'all', userIds: [], teamIds: [], departmentId: undefined
   });
@@ -703,19 +704,12 @@ function EmbeddedComposer() {
       formData.append('file', file);
       
       try {
-        const response = await fetch('/api/feed/attachments/upload', {
+        const attachment = await apiRequest('/api/feed/attachments/upload', {
           method: 'POST',
-          body: formData,
-          credentials: 'include'
+          body: formData
         });
-        
-        if (response.ok) {
-          const attachment = await response.json();
-          setAttachments(prev => [...prev, attachment]);
-          toast({ title: `File "${file.name}" caricato` });
-        } else {
-          toast({ title: `Errore caricamento ${file.name}`, variant: 'destructive' });
-        }
+        setAttachments(prev => [...prev, attachment]);
+        toast({ title: `File "${file.name}" caricato` });
       } catch (error) {
         toast({ title: `Errore caricamento ${file.name}`, variant: 'destructive' });
       }
@@ -744,14 +738,60 @@ function EmbeddedComposer() {
     setShowEmojiPicker(false);
   };
 
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    setContent(newContent);
+    
+    // Detect @ mention trigger
+    const textBeforeCursor = newContent.slice(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (atIndex !== -1) {
+      const textAfterAt = textBeforeCursor.slice(atIndex + 1);
+      // Check if there's no space after @ (still typing mention)
+      if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n')) {
+        setMentionStartPos(atIndex);
+        setMentionSearch(textAfterAt);
+        setShowMentionPopover(true);
+        return;
+      }
+    }
+    
+    // Close popover if no active mention
+    setShowMentionPopover(false);
+    setMentionStartPos(null);
+    setMentionSearch('');
+  };
+
   const insertMention = (user: FeedUser) => {
-    const mention = `@${user.displayName || user.firstName || user.email.split('@')[0]} `;
-    setContent(content + mention);
+    const displayName = user.displayName || user.firstName || user.email.split('@')[0];
+    
+    if (mentionStartPos !== null) {
+      // Replace @search with @displayName
+      const beforeMention = content.slice(0, mentionStartPos);
+      const cursorPos = textareaRef.current?.selectionStart || content.length;
+      const afterMention = content.slice(cursorPos);
+      const newContent = `${beforeMention}@${displayName} ${afterMention}`;
+      setContent(newContent);
+      
+      // Move cursor after the mention
+      setTimeout(() => {
+        const newPos = mentionStartPos + displayName.length + 2;
+        textareaRef.current?.setSelectionRange(newPos, newPos);
+        textareaRef.current?.focus();
+      }, 0);
+    } else {
+      // Fallback: append mention at end
+      setContent(content + `@${displayName} `);
+    }
+    
     if (!mentionedUsers.find(u => u.id === user.id)) {
       setMentionedUsers([...mentionedUsers, user]);
     }
     setShowMentionPopover(false);
     setMentionSearch('');
+    setMentionStartPos(null);
   };
 
   const applyFormatting = (format: string) => {
@@ -918,7 +958,33 @@ function EmbeddedComposer() {
                 <Input placeholder="Titolo (opzionale)" value={title} onChange={(e) => setTitle(e.target.value)} className="font-medium" data-testid="input-post-title" />
               )}
 
-              <Textarea ref={textareaRef} autoFocus placeholder={getPlaceholder()} value={content} onChange={(e) => setContent(e.target.value)} rows={postType === 'message' ? 4 : 5} className="resize-none min-h-[100px]" data-testid="input-post-content" />
+              <div className="relative">
+                <Textarea ref={textareaRef} autoFocus placeholder={getPlaceholder()} value={content} onChange={handleContentChange} rows={postType === 'message' ? 4 : 5} className="resize-none min-h-[100px]" data-testid="input-post-content" />
+                
+                {/* Inline @mention autocomplete */}
+                {showMentionPopover && usersData && usersData.length > 0 && (
+                  <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-white rounded-lg border shadow-lg p-1 max-h-48 overflow-auto">
+                    <p className="text-xs text-muted-foreground px-2 py-1">Menziona utente</p>
+                    {usersData.map(user => (
+                      <button
+                        key={user.id}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left"
+                        onClick={() => insertMention(user)}
+                        data-testid={`mention-user-${user.id}`}
+                      >
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={user.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">{(user.firstName?.[0] || user.email[0]).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{user.displayName || `${user.firstName} ${user.lastName}`}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Character count */}
               <div className="flex justify-end">
@@ -940,23 +1006,44 @@ function EmbeddedComposer() {
                 </div>
               )}
 
-              {/* File attachments */}
+              {/* File attachments with preview */}
               {attachments.length > 0 && (
-                <div className="space-y-2 p-2 bg-muted/30 rounded-lg">
+                <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-dashed">
                   <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                     <Paperclip className="h-3 w-3" />
                     File allegati ({attachments.length})
                   </p>
-                  {attachments.map(file => (
-                    <div key={file.id} className="flex items-center gap-2 p-2 bg-white rounded border">
-                      <File className="h-4 w-4 text-muted-foreground" />
-                      <span className="flex-1 text-sm truncate">{file.fileName}</span>
-                      <span className="text-xs text-muted-foreground">{formatFileSize(file.fileSize)}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.id)}>
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {attachments.map(file => (
+                      <div key={file.id} className="relative group bg-white rounded-lg border overflow-hidden">
+                        {file.contentType.startsWith('image/') ? (
+                          <div className="aspect-square relative">
+                            <img 
+                              src={file.previewUrl || file.downloadUrl} 
+                              alt={file.fileName}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => removeAttachment(file.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                              <FileText className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <span className="text-xs text-center truncate w-full">{file.fileName}</span>
+                            <span className="text-[10px] text-muted-foreground">{formatFileSize(file.fileSize)}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 absolute top-1 right-1" onClick={() => removeAttachment(file.id)}>
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
