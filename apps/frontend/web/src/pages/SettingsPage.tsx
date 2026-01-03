@@ -959,37 +959,37 @@ export default function SettingsPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '500px',
+          minHeight: '31.25rem',
           textAlign: 'center',
-          padding: '40px',
+          padding: '2.5rem',
           background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '16px',
+          backdropFilter: 'blur(0.625rem)',
+          borderRadius: '1rem',
           border: '1px solid rgba(239, 68, 68, 0.2)'
         }}>
-          <AlertTriangle size={56} style={{ color: '#ef4444', marginBottom: '20px' }} />
-          <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>
+          <AlertTriangle size={56} style={{ color: '#ef4444', marginBottom: '1.25rem' }} />
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#111827', margin: '0 0 0.5rem 0' }}>
             Errore Sistema Audit Trail
           </h3>
-          <p style={{ fontSize: '16px', color: '#6b7280', margin: '0 0 24px 0', maxWidth: '500px', lineHeight: '1.5' }}>
+          <p style={{ fontSize: '1rem', color: '#6b7280', margin: '0 0 1.5rem 0', maxWidth: '31.25rem', lineHeight: '1.5' }}>
             Impossibile accedere ai dati dell'audit trail enterprise. Il sistema potrebbe essere temporaneamente non disponibile.
           </p>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button
               onClick={() => refetchAudit()}
               style={{
                 background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '10px',
-                padding: '14px 28px',
-                fontSize: '15px',
+                borderRadius: '0.625rem',
+                padding: '0.875rem 1.75rem',
+                fontSize: '0.9375rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                gap: '0.625rem',
+                boxShadow: '0 0.25rem 0.75rem rgba(239, 68, 68, 0.3)',
                 transition: 'all 0.2s ease'
               }}
               data-testid="button-retry-audit"
@@ -1003,14 +1003,14 @@ export default function SettingsPage() {
                 background: 'rgba(255, 255, 255, 0.8)',
                 color: '#374151',
                 border: '1px solid rgba(55, 65, 81, 0.2)',
-                borderRadius: '10px',
-                padding: '14px 28px',
-                fontSize: '15px',
+                borderRadius: '0.625rem',
+                padding: '0.875rem 1.75rem',
+                fontSize: '0.9375rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px'
+                gap: '0.625rem'
               }}
               data-testid="button-reset-filters"
             >
@@ -1025,66 +1025,66 @@ export default function SettingsPage() {
     // ✅ PROFESSIONAL: Enhanced loading state with enterprise analytics
     if (auditLoading) {
       return (
-        <div style={{ padding: '24px 32px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '1.5rem 2rem', width: '100%', boxSizing: 'border-box' }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-            backdropFilter: 'blur(15px)',
-            borderRadius: '16px',
-            padding: '32px',
+            backdropFilter: 'blur(10.3125rem)',
+            borderRadius: '1rem',
+            padding: '2rem',
             border: '1px solid rgba(255, 255, 255, 0.3)',
-            marginBottom: '28px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            marginBottom: '1.75rem',
+            boxShadow: '0 0.5rem 2rem rgba(0, 0, 0, 0.1)'
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '16px',
-              marginBottom: '24px'
+              gap: '1rem',
+              marginBottom: '1.5rem'
             }}>
               <div style={{
-                width: '40px',
-                height: '40px',
+                width: '2.5rem',
+                height: '2.5rem',
                 borderRadius: '50%',
                 background: 'linear-gradient(90deg, rgba(255,105,0,0.2) 0%, rgba(255,105,0,0.4) 50%, rgba(255,105,0,0.2) 100%)',
                 animation: 'spin 2s linear infinite'
               }} />
               <div>
                 <div style={{
-                  height: '28px',
-                  width: '280px',
+                  height: '1.75rem',
+                  width: '17.5rem',
                   background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 100%)',
-                  borderRadius: '6px',
-                  marginBottom: '8px',
+                  borderRadius: '0.375rem',
+                  marginBottom: '0.5rem',
                   animation: 'shimmer 2s infinite'
                 }} />
                 <div style={{
-                  height: '16px',
-                  width: '400px',
+                  height: '1rem',
+                  width: '25rem',
                   background: 'linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.2) 100%)',
-                  borderRadius: '4px',
+                  borderRadius: '0.25rem',
                   animation: 'shimmer 2s infinite'
                 }} />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12.5rem, 1fr))', gap: '1rem' }}>
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} style={{
                   background: 'rgba(255, 255, 255, 0.5)',
-                  borderRadius: '12px',
-                  padding: '20px',
+                  borderRadius: '0.75rem',
+                  padding: '1.25rem',
                   border: '1px solid rgba(255, 255, 255, 0.3)'
                 }}>
                   <div style={{
-                    height: '16px',
+                    height: '1rem',
                     background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.3) 100%)',
-                    borderRadius: '4px',
-                    marginBottom: '12px',
+                    borderRadius: '0.25rem',
+                    marginBottom: '0.75rem',
                     animation: 'shimmer 2s infinite'
                   }} />
                   <div style={{
-                    height: '24px',
+                    height: '1.5rem',
                     background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.4) 100%)',
-                    borderRadius: '6px',
+                    borderRadius: '0.375rem',
                     animation: 'shimmer 2s infinite'
                   }} />
                 </div>
@@ -1093,8 +1093,8 @@ export default function SettingsPage() {
           </div>
           <style>{`
             @keyframes shimmer {
-              0% { background-position: -200px 0; }
-              100% { background-position: calc(200px + 100%) 0; }
+              0% { background-position: -12.5rem 0; }
+              100% { background-position: calc(12.5rem + 100%) 0; }
             }
             @keyframes spin {
               0% { transform: rotate(0deg); }
@@ -1126,36 +1126,36 @@ export default function SettingsPage() {
     const periodLabel = statsTimeRange === 24 ? 'ultime 24h' : statsTimeRange === 168 ? 'ultimi 7gg' : 'ultimi 30gg';
 
     return (
-      <div style={{ padding: '24px 32px', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ padding: '1.5rem 2rem', width: '100%', boxSizing: 'border-box' }}>
         
         {/* ✅ ENTERPRISE HEADER */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '24px',
+          marginBottom: '1.5rem',
           flexWrap: 'wrap',
-          gap: '16px'
+          gap: '1rem'
         }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#111827', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Shield size={32} style={{ color: '#ff6900' }} />
               Enterprise Audit Trail
             </h1>
-            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
+            <p style={{ fontSize: '1rem', color: '#6b7280', margin: 0 }}>
               Chi ha fatto cosa, quando e su quale microservizio
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(34, 197, 94, 0.1)', padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#059669' }}>Sistema Operativo</span>
-            <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>Query: {metadata.duration}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+            <div style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+            <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#059669' }}>Sistema Operativo</span>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280', marginLeft: '0.5rem' }}>Query: {metadata.duration}</span>
           </div>
         </div>
 
         {/* ✅ TIME RANGE SELECTOR FOR STATS CARDS */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Periodo Statistiche:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#374151' }}>Periodo Statistiche:</span>
           {[
             { value: 24, label: 'Ultime 24h' },
             { value: 168, label: 'Ultimi 7gg' },
@@ -1165,13 +1165,13 @@ export default function SettingsPage() {
               key={opt.value}
               onClick={() => setStatsTimeRange(opt.value as 24 | 168 | 720)}
               style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.5rem',
                 border: statsTimeRange === opt.value ? '2px solid #ff6900' : '1px solid rgba(0,0,0,0.1)',
                 background: statsTimeRange === opt.value ? 'rgba(255, 105, 0, 0.1)' : 'white',
                 color: statsTimeRange === opt.value ? '#ff6900' : '#6b7280',
                 fontWeight: statsTimeRange === opt.value ? '600' : '400',
-                fontSize: '13px',
+                fontSize: '0.8125rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
@@ -1180,100 +1180,100 @@ export default function SettingsPage() {
               {opt.label}
             </button>
           ))}
-          {summaryLoading && <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>Caricamento...</span>}
+          {summaryLoading && <span style={{ fontSize: '0.75rem', color: '#6b7280', marginLeft: '0.5rem' }}>Caricamento...</span>}
         </div>
 
         {/* ✅ STATS CARDS - 6 cards con più info */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(11.25rem, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05))', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <Database size={24} style={{ color: '#3b82f6' }} />
-              <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600', background: 'rgba(59, 130, 246, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>TOTALI</span>
+              <span style={{ fontSize: '0.6875rem', color: '#3b82f6', fontWeight: '600', background: 'rgba(59, 130, 246, 0.2)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>TOTALI</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#111827' }}>{totalLogs}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Log nelle {periodLabel}</div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#111827' }}>{totalLogs}</div>
+            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>Log nelle {periodLabel}</div>
           </div>
           
-          <div style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <XCircle size={24} style={{ color: '#ef4444' }} />
-              <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '600', background: 'rgba(239, 68, 68, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>ERRORI</span>
+              <span style={{ fontSize: '0.6875rem', color: '#ef4444', fontWeight: '600', background: 'rgba(239, 68, 68, 0.2)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>ERRORI</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#ef4444' }}>{errorCount}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Errori rilevati</div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ef4444' }}>{errorCount}</div>
+            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>Errori rilevati</div>
           </div>
           
-          <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <AlertTriangle size={24} style={{ color: '#f59e0b' }} />
-              <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: '600', background: 'rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>WARNING</span>
+              <span style={{ fontSize: '0.6875rem', color: '#f59e0b', fontWeight: '600', background: 'rgba(245, 158, 11, 0.2)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>WARNING</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#f59e0b' }}>{warnCount}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Avvisi sistema</div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#f59e0b' }}>{warnCount}</div>
+            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>Avvisi sistema</div>
           </div>
           
-          <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <CheckCircle size={24} style={{ color: '#10b981' }} />
-              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '600', background: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>INFO</span>
+              <span style={{ fontSize: '0.6875rem', color: '#10b981', fontWeight: '600', background: 'rgba(16, 185, 129, 0.2)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>INFO</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#10b981' }}>{infoCount}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Operazioni normali</div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#10b981' }}>{infoCount}</div>
+            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>Operazioni normali</div>
           </div>
           
-          <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05))', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <Clock size={24} style={{ color: '#8b5cf6' }} />
-              <span style={{ fontSize: '11px', color: '#8b5cf6', fontWeight: '600', background: 'rgba(139, 92, 246, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>PERF</span>
+              <span style={{ fontSize: '0.6875rem', color: '#8b5cf6', fontWeight: '600', background: 'rgba(139, 92, 246, 0.2)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>PERF</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#8b5cf6' }}>{analytics.queryPerformance}ms</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Latenza query</div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#8b5cf6' }}>{analytics.queryPerformance}ms</div>
+            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>Latenza query</div>
           </div>
           
-          <div style={{ background: 'linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(107, 114, 128, 0.05))', borderRadius: '12px', padding: '20px', border: '1px solid rgba(107, 114, 128, 0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(107, 114, 128, 0.05))', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(107, 114, 128, 0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <Activity size={24} style={{ color: '#6b7280' }} />
-              <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600', background: 'rgba(107, 114, 128, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>DEBUG</span>
+              <span style={{ fontSize: '0.6875rem', color: '#6b7280', fontWeight: '600', background: 'rgba(107, 114, 128, 0.2)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>DEBUG</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#6b7280' }}>{debugCount}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>Log debug</div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#6b7280' }}>{debugCount}</div>
+            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>Log debug</div>
           </div>
         </div>
 
         {/* ✅ CHARTS ROW - Distribution by Level & Top Components */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(18.75rem, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
           {/* Level Distribution */}
-          <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Distribuzione per Livello</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '1rem' }}>Distribuzione per Livello</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {[
                 { label: 'ERROR', count: errorCount, color: '#ef4444', percent: totalLogs > 0 ? (errorCount / totalLogs * 100).toFixed(1) : 0 },
                 { label: 'WARN', count: warnCount, color: '#f59e0b', percent: totalLogs > 0 ? (warnCount / totalLogs * 100).toFixed(1) : 0 },
                 { label: 'INFO', count: infoCount, color: '#3b82f6', percent: totalLogs > 0 ? (infoCount / totalLogs * 100).toFixed(1) : 0 },
                 { label: 'DEBUG', count: debugCount, color: '#6b7280', percent: totalLogs > 0 ? (debugCount / totalLogs * 100).toFixed(1) : 0 },
               ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ width: '50px', fontSize: '12px', fontWeight: '600', color: item.color }}>{item.label}</span>
-                  <div style={{ flex: 1, height: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${item.percent}%`, height: '100%', background: item.color, borderRadius: '4px', transition: 'width 0.3s' }} />
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ width: '3.125rem', fontSize: '0.75rem', fontWeight: '600', color: item.color }}>{item.label}</span>
+                  <div style={{ flex: 1, height: '0.5rem', background: 'rgba(0,0,0,0.05)', borderRadius: '0.25rem', overflow: 'hidden' }}>
+                    <div style={{ width: `${item.percent}%`, height: '100%', background: item.color, borderRadius: '0.25rem', transition: 'width 0.3s' }} />
                   </div>
-                  <span style={{ width: '60px', fontSize: '12px', color: '#6b7280', textAlign: 'right' }}>{item.count} ({item.percent}%)</span>
+                  <span style={{ width: '3.75rem', fontSize: '0.75rem', color: '#6b7280', textAlign: 'right' }}>{item.count} ({item.percent}%)</span>
                 </div>
               ))}
             </div>
           </div>
           
           {/* Top Microservizi */}
-          <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Top Microservizi</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid rgba(0,0,0,0.05)' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '1rem' }}>Top Microservizi</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {topServices.length === 0 ? (
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>Nessuna attività registrata</div>
+                <div style={{ color: '#6b7280', fontSize: '0.8125rem' }}>Nessuna attività registrata</div>
               ) : topServices.map(([svc, count]: any, idx) => (
-                <div key={svc} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ width: '20px', fontSize: '12px', fontWeight: '600', color: '#ff6900' }}>#{idx + 1}</span>
-                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '500', color: '#374151' }}>{svc}</span>
-                  <span style={{ fontSize: '12px', color: '#6b7280', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px' }}>{count} attività</span>
+                <div key={svc} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ width: '1.25rem', fontSize: '0.75rem', fontWeight: '600', color: '#ff6900' }}>#{idx + 1}</span>
+                  <span style={{ flex: 1, fontSize: '0.8125rem', fontWeight: '500', color: '#374151' }}>{svc}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', background: 'rgba(0,0,0,0.05)', padding: '2px 0.5rem', borderRadius: '0.25rem' }}>{count} attività</span>
                 </div>
               ))}
             </div>
@@ -1281,15 +1281,15 @@ export default function SettingsPage() {
         </div>
 
         {/* ✅ FILTERS BAR */}
-        <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '12px', padding: '16px', marginBottom: '20px', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.8)', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1.25rem', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Filter size={16} style={{ color: '#6b7280' }} />
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Filtri:</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#374151' }}>Filtri:</span>
           </div>
           <select
             value={enterpriseAuditLevel}
             onChange={(e) => setEnterpriseAuditLevel(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer' }}
+            style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.8125rem', background: 'white', cursor: 'pointer' }}
             data-testid="select-audit-level"
           >
             {availableLevels.map(level => (
@@ -1299,7 +1299,7 @@ export default function SettingsPage() {
           <select
             value={enterpriseAuditComponent}
             onChange={(e) => setEnterpriseAuditComponent(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer' }}
+            style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.8125rem', background: 'white', cursor: 'pointer' }}
             data-testid="select-audit-service"
           >
             {availableServices.map(svc => (
@@ -1311,30 +1311,30 @@ export default function SettingsPage() {
             placeholder="Cerca utente o azione..."
             value={enterpriseAuditSearch}
             onChange={(e) => setEnterpriseAuditSearch(e.target.value)}
-            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', minWidth: '200px' }}
+            style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.8125rem', minWidth: '12.5rem' }}
             data-testid="input-audit-search"
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '8px' }}>
-            <span style={{ fontSize: '12px', color: '#6b7280' }}>Dal:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginLeft: '0.5rem' }}>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Dal:</span>
             <input
               type="date"
               value={enterpriseAuditDateFrom}
               onChange={(e) => setEnterpriseAuditDateFrom(e.target.value)}
-              style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px', background: 'white' }}
+              style={{ padding: '0.375rem 0.625rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.75rem', background: 'white' }}
               data-testid="input-audit-date-from"
             />
-            <span style={{ fontSize: '12px', color: '#6b7280' }}>Al:</span>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Al:</span>
             <input
               type="date"
               value={enterpriseAuditDateTo}
               onChange={(e) => setEnterpriseAuditDateTo(e.target.value)}
-              style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px', background: 'white' }}
+              style={{ padding: '0.375rem 0.625rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.75rem', background: 'white' }}
               data-testid="input-audit-date-to"
             />
           </div>
           <button
             onClick={() => { setEnterpriseAuditLevel('ALL'); setEnterpriseAuditComponent('ALL'); setEnterpriseAuditSearch(''); setEnterpriseAuditDateFrom(''); setEnterpriseAuditDateTo(''); }}
-            style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.1)', fontSize: '0.8125rem', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
             data-testid="button-reset-audit-filters"
           >
             <RotateCcw size={14} />
@@ -1345,14 +1345,14 @@ export default function SettingsPage() {
         {/* ✅ ENTERPRISE LOGS TABLE - Real Data */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
-          backdropFilter: 'blur(15px)',
-          borderRadius: '16px',
-          padding: '24px',
+          backdropFilter: 'blur(10.3125rem)',
+          borderRadius: '1rem',
+          padding: '1.5rem',
           border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 0.5rem 2rem rgba(0, 0, 0, 0.1)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#111827', margin: 0 }}>
               Log Attività Recenti ({logs.length} di {metadata.total})
             </h2>
             <button
@@ -1361,14 +1361,14 @@ export default function SettingsPage() {
                 background: 'linear-gradient(135deg, #ff6900, #ff8533)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
-                padding: '10px 20px',
-                fontSize: '14px',
+                borderRadius: '0.5rem',
+                padding: '0.625rem 1.25rem',
+                fontSize: '0.875rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '0.5rem'
               }}
               data-testid="button-refresh-logs"
             >
@@ -1378,23 +1378,23 @@ export default function SettingsPage() {
           </div>
           
           {logs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280' }}>
-              <Database size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-              <p style={{ fontSize: '16px', margin: '0 0 8px 0' }}>Nessuna attività registrata</p>
-              <p style={{ fontSize: '14px', margin: 0, opacity: 0.7 }}>Le attività degli utenti verranno tracciate automaticamente</p>
+            <div style={{ textAlign: 'center', padding: '3.75rem 1.25rem', color: '#6b7280' }}>
+              <Database size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+              <p style={{ fontSize: '1rem', margin: '0 0 0.5rem 0' }}>Nessuna attività registrata</p>
+              <p style={{ fontSize: '0.875rem', margin: 0, opacity: 0.7 }}>Le attività degli utenti verranno tracciate automaticamente</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Quando</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Livello</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Microservizio</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Chi</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Cosa</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Entità</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Stato</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Quando</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Livello</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Microservizio</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Chi</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Cosa</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Entità</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Stato</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1406,15 +1406,15 @@ export default function SettingsPage() {
                         background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)'
                       }}
                     >
-                      <td style={{ padding: '10px 8px', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '0.625rem 0.5rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
                         {formatLogTimestamp(log.created_at)}
                       </td>
-                      <td style={{ padding: '10px 8px' }}>
+                      <td style={{ padding: '0.625rem 0.5rem' }}>
                         <span style={{
                           display: 'inline-block',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
+                          padding: '3px 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.6875rem',
                           fontWeight: '600',
                           color: 'white',
                           background: log.level === 'ERROR' ? '#ef4444' : 
@@ -1425,12 +1425,12 @@ export default function SettingsPage() {
                           {log.level || 'INFO'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 8px' }}>
+                      <td style={{ padding: '0.625rem 0.5rem' }}>
                         <span style={{
                           display: 'inline-block',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
+                          padding: '3px 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.6875rem',
                           fontWeight: '600',
                           color: 'white',
                           background: log.service === 'WMS' ? '#3b82f6' : 
@@ -1443,22 +1443,22 @@ export default function SettingsPage() {
                           {log.service || 'SYSTEM'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#374151', fontWeight: '500' }}>
+                      <td style={{ padding: '0.625rem 0.5rem', color: '#374151', fontWeight: '500' }}>
                         {log.actor_email || log.actor_role || 'sistema'}
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#111827', fontWeight: '500' }}>
+                      <td style={{ padding: '0.625rem 0.5rem', color: '#111827', fontWeight: '500' }}>
                         {log.action || '-'}
                       </td>
-                      <td style={{ padding: '10px 8px', color: '#6b7280', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <td style={{ padding: '0.625rem 0.5rem', color: '#6b7280', maxWidth: '12.5rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {log.entity_name || log.entity_type || '-'}
-                        {log.entity_id && <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '4px' }}>#{log.entity_id.slice(0, 8)}</span>}
+                        {log.entity_id && <span style={{ fontSize: '0.6875rem', color: '#9ca3af', marginLeft: '0.25rem' }}>#{log.entity_id.slice(0, 8)}</span>}
                       </td>
-                      <td style={{ padding: '10px 8px' }}>
+                      <td style={{ padding: '0.625rem 0.5rem' }}>
                         <span style={{
                           display: 'inline-block',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
+                          padding: '3px 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.6875rem',
                           fontWeight: '600',
                           color: log.status === 'success' ? '#059669' : log.status === 'failure' ? '#dc2626' : '#d97706',
                           background: log.status === 'success' ? 'rgba(16, 185, 129, 0.1)' : 
@@ -1476,8 +1476,8 @@ export default function SettingsPage() {
           
           {/* Pagination */}
           {metadata.totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '20px' }}>
-              <span style={{ fontSize: '13px', color: '#6b7280' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
                 Pagina {metadata.page} di {metadata.totalPages}
               </span>
             </div>
@@ -2239,17 +2239,17 @@ export default function SettingsPage() {
 
   const renderEntityManagement = () => (
     <div>
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '2rem' }}>
         <h2 style={{
-          fontSize: '20px',
+          fontSize: '1.25rem',
           fontWeight: '600',
           color: '#111827',
-          margin: '0 0 4px 0'
+          margin: '0 0 0.25rem 0'
         }}>
           Configurazione Entità
         </h2>
         <p style={{
-          fontSize: '14px',
+          fontSize: '0.875rem',
           color: '#6b7280',
           margin: 0
         }}>
@@ -2260,19 +2260,19 @@ export default function SettingsPage() {
       {/* Sezione Icone Configurazione - Barra con tutte le entità */}
       <div style={{
         background: 'hsla(255, 255, 255, 0.08)',
-        backdropFilter: 'blur(24px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+        backdropFilter: 'blur(1.5rem) saturate(140%)',
+        WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
         border: '1px solid hsla(255, 255, 255, 0.12)',
-        borderRadius: '16px',
-        padding: '20px',
-        marginBottom: '32px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        borderRadius: '1rem',
+        padding: '1.25rem',
+        marginBottom: '2rem',
+        boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)'
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(11.25rem, 1fr))',
           alignItems: 'center',
-          gap: '16px'
+          gap: '1rem'
         }}>
           {[
             { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
@@ -2292,15 +2292,15 @@ export default function SettingsPage() {
                   border: selectedEntity === item.id 
                     ? `1px solid ${item.color}30`
                     : '1px solid transparent',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
+                  borderRadius: '0.75rem',
+                  padding: '0.75rem 1rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '0.5rem',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)'
+                  backdropFilter: 'blur(0.5rem)',
+                  WebkitBackdropFilter: 'blur(0.5rem)'
                 }}
                 onMouseOver={(e) => {
                   if (selectedEntity !== item.id) {
@@ -2319,7 +2319,7 @@ export default function SettingsPage() {
               >
                 <Icon size={16} style={{ color: selectedEntity === item.id ? item.color : '#6b7280' }} />
                 <span style={{
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: selectedEntity === item.id ? '600' : '500',
                   color: selectedEntity === item.id ? item.color : '#6b7280'
                 }}>
@@ -2333,15 +2333,15 @@ export default function SettingsPage() {
 
       {/* Ragioni Sociali Section */}
       {selectedEntity === 'ragione-sociale' && (
-        <div style={{ marginBottom: '48px' }}>
+        <div style={{ marginBottom: '3rem' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '20px'
+          marginBottom: '1.25rem'
         }}>
           <h3 style={{
-            fontSize: '18px',
+            fontSize: '1.125rem',
             fontWeight: '600',
             color: '#111827',
             margin: 0
@@ -2352,15 +2352,15 @@ export default function SettingsPage() {
             background: 'linear-gradient(135deg, #FF6900, #ff8533)',
             color: 'white',
             border: 'none',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            fontSize: '14px',
+            borderRadius: '0.75rem',
+            padding: '0.625rem 1.25rem',
+            fontSize: '0.875rem',
             fontWeight: '600',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+            gap: '0.5rem',
+            boxShadow: '0 0.25rem 0.75rem rgba(255, 105, 0, 0.3)',
             transition: 'all 0.2s ease'
           }}
           onClick={() => {
@@ -2407,20 +2407,20 @@ export default function SettingsPage() {
 
         <div style={{
           background: 'white',
-          borderRadius: '16px',
+          borderRadius: '1rem',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
           border: '1px solid #e5e7eb'
         }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ragione Sociale</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ragione Sociale</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -2431,30 +2431,30 @@ export default function SettingsPage() {
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#111827', fontWeight: '600' }}>
                     {item.codice}
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td style={{ padding: '1rem' }}>
                     <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formaGiuridica}</div>
+                      <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{item.formaGiuridica}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                     <div>
                       <div>P.IVA: {item.pIva}</div>
                       <div>C.F.: {item.codiceFiscale}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                     {item.citta} ({item.provincia})
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td style={{ padding: '1rem' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
+                      gap: '0.375rem',
+                      padding: '0.25rem 0.75rem',
                       background: item.stato === 'Attiva' 
                         ? '#dcfce7'
                         : item.stato === 'Sospesa'
@@ -2488,29 +2488,29 @@ export default function SettingsPage() {
                         : item.stato === 'Trasferita'
                         ? '#fdba74'
                         : '#e2e8f0'}`,
-                      borderRadius: '20px',
-                      fontSize: '12px',
+                      borderRadius: '1.25rem',
+                      fontSize: '0.75rem',
                       fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      boxShadow: '0 2px 0.25rem rgba(0, 0, 0, 0.1)'
                     }}>
                       <div style={{
-                        width: '6px',
-                        height: '6px',
+                        width: '0.375rem',
+                        height: '0.375rem',
                         borderRadius: '50%',
                         background: 'white'
                       }} />
                       {item.stato}
                     </span>
                   </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       <button
                         onClick={() => setLegalEntityModal({ open: true, data: item })}
                         style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2532,8 +2532,8 @@ export default function SettingsPage() {
                         style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2567,10 +2567,10 @@ export default function SettingsPage() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '20px'
+              marginBottom: '1.25rem'
             }}>
               <h3 style={{
-                fontSize: '18px',
+                fontSize: '1.125rem',
                 fontWeight: '600',
                 color: '#111827',
                 margin: 0
@@ -2581,15 +2581,15 @@ export default function SettingsPage() {
                 background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '12px',
-                padding: '10px 20px',
-                fontSize: '14px',
+                borderRadius: '0.75rem',
+                padding: '0.625rem 1.25rem',
+                fontSize: '0.875rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
+                gap: '0.5rem',
+                boxShadow: '0 0.25rem 0.75rem rgba(123, 44, 191, 0.3)',
                 transition: 'all 0.2s ease'
               }}
               onClick={() => setStoreModal({ open: true, data: null })}>
@@ -2600,22 +2600,22 @@ export default function SettingsPage() {
 
         <div style={{
           background: 'white',
-          borderRadius: '16px',
+          borderRadius: '1rem',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
           border: '1px solid #e5e7eb'
         }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Categoria</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Area</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Canale</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Categoria</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Area</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Canale</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -2626,15 +2626,15 @@ export default function SettingsPage() {
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#111827', fontWeight: '600' }}>
                     {item.code}
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td style={{ padding: '1rem' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
+                      gap: '0.375rem',
+                      padding: '0.25rem 0.75rem',
                       background: item.category === 'sales_point' 
                         ? '#fef3f0'   // Orange for sales
                         : item.category === 'office'
@@ -2656,8 +2656,8 @@ export default function SettingsPage() {
                         : item.category === 'warehouse'
                         ? '#bbf7d0'
                         : '#e2e8f0'}`,
-                      borderRadius: '20px',
-                      fontSize: '11px',
+                      borderRadius: '1.25rem',
+                      fontSize: '0.6875rem',
                       fontWeight: '600'
                     }}>
                       {item.category === 'sales_point' && '🏪 Vendita'}
@@ -2666,32 +2666,32 @@ export default function SettingsPage() {
                       {!item.category && '🏪 Vendita'} {/* Default fallback */}
                     </span>
                   </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.address}</td>
-                  <td style={{ padding: '16px' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>{item.address}</td>
+                  <td style={{ padding: '1rem' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
+                      gap: '0.375rem',
+                      padding: '0.25rem 0.75rem',
                       background: '#f0f9ff',
                       color: '#0369a1',
-                      borderRadius: '20px',
-                      fontSize: '12px',
+                      borderRadius: '1.25rem',
+                      fontSize: '0.75rem',
                       fontWeight: '600',
                       border: '1px solid #e0f2fe'
                     }}>
                       {item.commercial_area_name || 'Non assegnata'}
                     </span>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td style={{ padding: '1rem' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
+                      gap: '0.375rem',
+                      padding: '0.25rem 0.75rem',
                       background: item.channel_name === 'Franchising' 
                         ? '#fef3f0'
                         : item.channel_name === 'Top Dealer'
@@ -2713,26 +2713,26 @@ export default function SettingsPage() {
                         : item.channel_name === 'Dealer'
                         ? '#e9d5ff'
                         : '#e2e8f0'}`,
-                      borderRadius: '20px',
-                      fontSize: '12px',
+                      borderRadius: '1.25rem',
+                      fontSize: '0.75rem',
                       fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      boxShadow: '0 2px 0.25rem rgba(0, 0, 0, 0.1)'
                     }}>
                       <div style={{
-                        width: '6px',
-                        height: '6px',
+                        width: '0.375rem',
+                        height: '0.375rem',
                         borderRadius: '50%',
                         background: 'white'
                       }} />
                       {item.channel_name || 'N/A'}
                     </span>
                   </td>
-                  <td style={{ padding: '16px' }}>
+                  <td style={{ padding: '1rem' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
+                      gap: '0.375rem',
+                      padding: '0.25rem 0.75rem',
                       background: (item.status === 'Attivo' || item.status === 'active')
                         ? '#dcfce7'
                         : (item.status === 'Sospeso' || item.status === 'suspended')
@@ -2766,29 +2766,29 @@ export default function SettingsPage() {
                         : item.status === 'Trasferito'
                         ? '#fdba74'
                         : '#e2e8f0'}`,
-                      borderRadius: '20px',
-                      fontSize: '12px',
+                      borderRadius: '1.25rem',
+                      fontSize: '0.75rem',
                       fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      boxShadow: '0 2px 0.25rem rgba(0, 0, 0, 0.1)'
                     }}>
                       <div style={{
-                        width: '6px',
-                        height: '6px',
+                        width: '0.375rem',
+                        height: '0.375rem',
                         borderRadius: '50%',
                         background: 'white'
                       }} />
                       {item.status === 'active' ? 'Attivo' : item.status}
                     </span>
                   </td>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       <button
                         onClick={() => setSelectedStoreId(item.id)}
                         style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2811,8 +2811,8 @@ export default function SettingsPage() {
                         style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2836,8 +2836,8 @@ export default function SettingsPage() {
                         style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2859,8 +2859,8 @@ export default function SettingsPage() {
                         style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2889,15 +2889,15 @@ export default function SettingsPage() {
       
       {/* Placeholder per altre sezioni */}
       {selectedEntity === 'utenti' && (
-        <div style={{ marginBottom: '48px' }}>
+        <div style={{ marginBottom: '3rem' }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '20px'
+            marginBottom: '1.25rem'
           }}>
             <h3 style={{
-              fontSize: '18px',
+              fontSize: '1.125rem',
               fontWeight: '600',
               color: '#111827',
               margin: 0
@@ -2908,15 +2908,15 @@ export default function SettingsPage() {
               background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
               color: 'white',
               border: 'none',
-              borderRadius: '12px',
-              padding: '10px 20px',
-              fontSize: '14px',
+              borderRadius: '0.75rem',
+              padding: '0.625rem 1.25rem',
+              fontSize: '0.875rem',
               fontWeight: '600',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+              gap: '0.5rem',
+              boxShadow: '0 0.25rem 0.75rem rgba(59, 130, 246, 0.3)',
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
@@ -2982,24 +2982,24 @@ export default function SettingsPage() {
           {/* Tabella Utenti */}
           <div style={{
             background: 'white',
-            borderRadius: '12px',
+            borderRadius: '0.75rem',
             overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
             border: '1px solid #e5e7eb'
           }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Posizione</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Telefono</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contratto</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                  <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Posizione</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Telefono</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contratto</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                  <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
                 </tr>
               </thead>
               <tbody>
@@ -3010,80 +3010,80 @@ export default function SettingsPage() {
                   }}
                   onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
-                    <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#111827', fontWeight: '500' }}>
                       {user.firstName || user.first_name || ''} {user.lastName || user.last_name || ''}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
                       {user.email || 'N/A'}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '14px' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
+                        gap: '0.375rem',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '1.25rem',
+                        fontSize: '0.75rem',
                         fontWeight: '600',
                         backgroundColor: getRoleColor(user.role_name || user.role) + '20',
                         color: getRoleColor(user.role_name || user.role),
                         border: `1px solid ${getRoleColor(user.role_name || user.role)}40`
                       }}>
                         <div style={{
-                          width: '8px',
-                          height: '8px',
+                          width: '0.5rem',
+                          height: '0.5rem',
                           borderRadius: '50%',
                           backgroundColor: getRoleColor(user.role_name || user.role)
                         }}></div>
                         {user.role_name || user.role || 'Operatore'}
                       </span>
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
                       {user.position || 'N/A'}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                       {user.department || 'N/A'}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
                       {user.store_name || 'Sede Centrale'}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                       {user.phone || 'N/A'}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
                       {user.contract_type || 'N/A'}
                     </td>
-                    <td style={{ padding: '16px' }}>
+                    <td style={{ padding: '1rem' }}>
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
+                        gap: '0.375rem',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '1.25rem',
+                        fontSize: '0.75rem',
                         fontWeight: '600',
                         backgroundColor: getStatusColor(user.status).bg,
                         color: getStatusColor(user.status).color,
                         border: `1px solid ${getStatusColor(user.status).border}`
                       }}>
                         <div style={{
-                          width: '8px',
-                          height: '8px',
+                          width: '0.5rem',
+                          height: '0.5rem',
                           borderRadius: '50%',
                           backgroundColor: getStatusColor(user.status).color
                         }}></div>
                         {user.status === 'Active' ? 'Attivo' : (user.status === 'Suspended' ? 'Sospeso' : user.status || 'Inattivo')}
                       </span>
                     </td>
-                    <td style={{ padding: '16px' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                         <button
                           onClick={() => setUserModal({ open: true, data: user })}
                           style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -3106,8 +3106,8 @@ export default function SettingsPage() {
                           style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '6px',
-                          padding: '6px',
+                          borderRadius: '0.375rem',
+                          padding: '0.375rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -3141,32 +3141,32 @@ export default function SettingsPage() {
           {/* Header sezione */}
           <div style={{
             background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            backdropFilter: 'blur(1.5rem) saturate(140%)',
+            WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
             border: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '32px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+            borderRadius: '0.75rem',
+            padding: '1.5rem',
+            marginBottom: '2rem',
+            boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)'
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '20px'
+              marginBottom: '1.25rem'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{
                   background: 'linear-gradient(135deg, #8339ff, #6b2cbf)',
-                  borderRadius: '12px',
-                  padding: '10px',
-                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)'
+                  borderRadius: '0.75rem',
+                  padding: '0.625rem',
+                  boxShadow: '0 0.25rem 0.75rem rgba(131, 57, 255, 0.3)'
                 }}>
                   <UserCog size={20} style={{ color: 'white' }} />
                 </div>
                 <div>
                   <h3 style={{
-                    fontSize: '18px',
+                    fontSize: '1.125rem',
                     fontWeight: '600',
                     color: '#111827',
                     margin: 0
@@ -3174,9 +3174,9 @@ export default function SettingsPage() {
                     Gestione Ruoli e Permessi
                   </h3>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     color: '#6b7280',
-                    margin: '4px 0 0 0'
+                    margin: '0.25rem 0 0 0'
                   }}>
                     Configura template di ruoli e gestisci capability per tenant
                   </p>
@@ -3191,26 +3191,26 @@ export default function SettingsPage() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
+                  gap: '0.5rem',
+                  padding: '0.625rem 1.25rem',
                   background: 'linear-gradient(135deg, #8339ff, #6b2cbf)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)',
+                  boxShadow: '0 0.25rem 0.75rem rgba(131, 57, 255, 0.3)',
                   zIndex: 10
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(131, 57, 255, 0.4)';
+                  e.currentTarget.style.boxShadow = '0 0.5rem 1.25rem rgba(131, 57, 255, 0.4)';
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(131, 57, 255, 0.3)';
+                  e.currentTarget.style.boxShadow = '0 0.25rem 0.75rem rgba(131, 57, 255, 0.3)';
                 }}
               >
                 <Plus size={16} />
@@ -3221,8 +3221,8 @@ export default function SettingsPage() {
             {/* Template di Ruoli */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-              gap: '16px'
+              gridTemplateColumns: 'repeat(auto-fill, minmax(23.125rem, 1fr))',
+              gap: '1rem'
             }}>
               {rolesLoading ? (
                 // Loading skeleton for roles
@@ -3230,16 +3230,16 @@ export default function SettingsPage() {
                   <div key={index} style={{
                     background: 'hsla(255, 255, 255, 0.05)',
                     border: '1px solid hsla(255, 255, 255, 0.08)',
-                    borderRadius: '12px',
-                    padding: '20px',
+                    borderRadius: '0.75rem',
+                    padding: '1.25rem',
                     position: 'relative',
                     cursor: 'pointer',
                     animation: 'pulse 2s infinite'
                   }}>
-                    <div style={{ height: '3px', background: '#e5e7eb', borderRadius: '2px', marginBottom: '12px' }} />
-                    <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '4px', width: '60%' }} />
-                    <div style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '12px', width: '80%' }} />
-                    <div style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', width: '40%' }} />
+                    <div style={{ height: '3px', background: '#e5e7eb', borderRadius: '2px', marginBottom: '0.75rem' }} />
+                    <div style={{ height: '1rem', background: '#e5e7eb', borderRadius: '0.25rem', marginBottom: '0.25rem', width: '60%' }} />
+                    <div style={{ height: '0.75rem', background: '#e5e7eb', borderRadius: '0.25rem', marginBottom: '0.75rem', width: '80%' }} />
+                    <div style={{ height: '0.75rem', background: '#e5e7eb', borderRadius: '0.25rem', width: '40%' }} />
                   </div>
                 ))
               ) : rolesError ? (
@@ -3247,13 +3247,13 @@ export default function SettingsPage() {
                   gridColumn: '1 / -1',
                   background: '#fef2f2',
                   border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                  padding: '16px',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
                   textAlign: 'center',
                   color: '#dc2626'
                 }}>
-                  <AlertTriangle size={20} style={{ marginBottom: '8px' }} />
-                  <p style={{ margin: 0, fontSize: '14px' }}>
+                  <AlertTriangle size={20} style={{ marginBottom: '0.5rem' }} />
+                  <p style={{ margin: 0, fontSize: '0.875rem' }}>
                     Errore nel caricamento dei ruoli. <button onClick={() => refetchRoles()} style={{ color: '#dc2626', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Riprova</button>
                   </p>
                 </div>
@@ -3280,18 +3280,18 @@ export default function SettingsPage() {
                     border: selectedRole === r.id
                       ? `2px solid ${r.color}40`
                       : '1px solid hsla(255, 255, 255, 0.08)',
-                    borderRadius: '12px',
-                    padding: '16px',
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
                     cursor: 'pointer',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     position: 'relative',
                     overflow: 'hidden',
                     transform: 'translateY(0) scale(1) rotateX(0deg)',
                     transformStyle: 'preserve-3d',
-                    perspective: '1000px',
+                    perspective: '62.5rem',
                     boxShadow: selectedRole === r.id
-                      ? `0 8px 24px ${r.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
-                      : '0 2px 8px rgba(0, 0, 0, 0.05)'
+                      ? `0 0.5rem 1.5rem ${r.color}20, 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1)`
+                      : '0 2px 0.5rem rgba(0, 0, 0, 0.05)'
                   }}
                   onMouseEnter={(e) => {
                     const card = e.currentTarget;
@@ -3302,14 +3302,14 @@ export default function SettingsPage() {
                     // Card animations
                     card.style.background = `linear-gradient(135deg, ${r.color}18, ${r.color}10)`;
                     card.style.borderColor = `${r.color}40`;
-                    card.style.transform = 'translateY(-8px) scale(1.03) rotateX(-2deg)';
-                    card.style.boxShadow = `0 16px 32px ${r.color}25, 0 8px 16px rgba(0, 0, 0, 0.15)`;
+                    card.style.transform = 'translateY(-0.5rem) scale(1.03) rotateX(-2deg)';
+                    card.style.boxShadow = `0 1rem 2rem ${r.color}25, 0 0.5rem 1rem rgba(0, 0, 0, 0.15)`;
                     
                     // Color bar animation
                     if (colorBar) {
-                      colorBar.style.height = '5px';
+                      colorBar.style.height = '0.3125rem';
                       colorBar.style.background = `linear-gradient(90deg, ${r.color}, ${r.color}dd, ${r.color})`;
-                      colorBar.style.boxShadow = `0 2px 8px ${r.color}60`;
+                      colorBar.style.boxShadow = `0 2px 0.5rem ${r.color}60`;
                     }
                     
                     // Icon animation
@@ -3320,7 +3320,7 @@ export default function SettingsPage() {
                     
                     // Users count animation
                     if (users) {
-                      users.style.transform = 'translateX(4px)';
+                      users.style.transform = 'translateX(0.25rem)';
                       users.style.color = r.color;
                     }
                   }}
@@ -3339,8 +3339,8 @@ export default function SettingsPage() {
                       : 'hsla(255, 255, 255, 0.08)';
                     card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
                     card.style.boxShadow = selectedRole === r.id
-                      ? `0 8px 24px ${r.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
-                      : '0 2px 8px rgba(0, 0, 0, 0.05)';
+                      ? `0 0.5rem 1.5rem ${r.color}20, 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1)`
+                      : '0 2px 0.5rem rgba(0, 0, 0, 0.05)';
                     
                     // Reset color bar
                     if (colorBar) {
@@ -3396,28 +3396,28 @@ export default function SettingsPage() {
                     display: 'flex',
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
-                    marginBottom: '12px',
+                    marginBottom: '0.75rem',
                     position: 'relative',
                     zIndex: 1
                   }}>
                     <div>
                       <h4 style={{
-                        fontSize: '16px',
+                        fontSize: '1rem',
                         fontWeight: '600',
                         color: '#111827',
-                        margin: '0 0 4px 0'
+                        margin: '0 0 0.25rem 0'
                       }}>
                         {r.name}
                       </h4>
                       <p style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#6b7280',
                         margin: 0
                       }}>
                         {r.description}
                       </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {r.name === 'Amministratore' && (
                         <Star 
                           size={16} 
@@ -3440,8 +3440,8 @@ export default function SettingsPage() {
                             border: 'none',
                             cursor: 'pointer',
                             color: '#dc2626',
-                            padding: '4px',
-                            borderRadius: '4px',
+                            padding: '0.25rem',
+                            borderRadius: '0.25rem',
                             transition: 'all 0.2s ease',
                             opacity: 0.6
                           }}
@@ -3471,11 +3471,11 @@ export default function SettingsPage() {
                     <span 
                       className="users-count"
                       style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#6b7280',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '0.25rem',
                         transition: 'all 0.3s ease',
                         transform: 'translateX(0)'
                       }}
@@ -3502,36 +3502,36 @@ export default function SettingsPage() {
           {selectedRole && (
             <div style={{
               background: 'hsla(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(24px) saturate(140%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+              backdropFilter: 'blur(1.5rem) saturate(140%)',
+              WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
               border: '1px solid hsla(255, 255, 255, 0.12)',
-              borderRadius: '12px',
-              padding: '24px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)'
             }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '24px'
+                marginBottom: '1.5rem'
               }}>
                 <h4 style={{
-                  fontSize: '18px',
+                  fontSize: '1.125rem',
                   fontWeight: '600',
                   color: '#111827',
                   margin: 0
                 }}>
                   Permessi del Ruolo: {selectedRole ? selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1).replace('_', ' ') : 'Nessun ruolo selezionato'}
                 </h4>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <button
                     style={{
-                      padding: '8px 16px',
+                      padding: '0.5rem 1rem',
                       background: 'transparent',
                       color: '#6b7280',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease'
                     }}
@@ -3542,14 +3542,14 @@ export default function SettingsPage() {
                     onClick={saveRolePermissions}
                     disabled={!isPermissionsDirty || rolePermissionsLoading}
                     style={{
-                      padding: '8px 16px',
+                      padding: '0.5rem 1rem',
                       background: isPermissionsDirty 
                         ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
                         : '#e5e7eb',
                       color: isPermissionsDirty ? 'white' : '#6b7280',
                       border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       cursor: isPermissionsDirty ? 'pointer' : 'not-allowed',
                       transition: 'all 0.2s ease',
@@ -3557,7 +3557,7 @@ export default function SettingsPage() {
                     }}
                   >
                     {rolePermissionsLoading ? 'Salvando...' : 'Salva Modifiche'}
-                    {isPermissionsDirty && <span style={{ marginLeft: '4px' }}>•</span>}
+                    {isPermissionsDirty && <span style={{ marginLeft: '0.25rem' }}>•</span>}
                   </button>
                 </div>
               </div>
@@ -3565,8 +3565,8 @@ export default function SettingsPage() {
               {/* Categorie di Permessi */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '20px'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(18.75rem, 1fr))',
+                gap: '1.25rem'
               }}>
                 {permissionsLoading ? (
                   // Loading skeleton for permissions
@@ -3574,13 +3574,13 @@ export default function SettingsPage() {
                     <div key={index} style={{
                       background: 'hsla(255, 255, 255, 0.05)',
                       border: '1px solid hsla(255, 255, 255, 0.08)',
-                      borderRadius: '8px',
-                      padding: '16px',
+                      borderRadius: '0.5rem',
+                      padding: '1rem',
                       animation: 'pulse 2s infinite'
                     }}>
-                      <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '12px', width: '60%' }} />
+                      <div style={{ height: '1rem', background: '#e5e7eb', borderRadius: '0.25rem', marginBottom: '0.75rem', width: '60%' }} />
                       {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px', width: `${60 + Math.random() * 30}%` }} />
+                        <div key={i} style={{ height: '0.75rem', background: '#e5e7eb', borderRadius: '0.25rem', marginBottom: '0.5rem', width: `${60 + Math.random() * 30}%` }} />
                       ))}
                     </div>
                   ))
@@ -3591,26 +3591,26 @@ export default function SettingsPage() {
                     style={{
                       background: 'hsla(255, 255, 255, 0.05)',
                       border: '1px solid hsla(255, 255, 255, 0.08)',
-                      borderRadius: '8px',
-                      padding: '16px'
+                      borderRadius: '0.5rem',
+                      padding: '1rem'
                     }}
                   >
                     <h5 style={{
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#111827',
-                      marginBottom: '12px',
+                      marginBottom: '0.75rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px'
+                      gap: '0.75rem'
                     }}>
                       {cat.category}
                       {/* Switch Toggle */}
                       <label style={{
                         position: 'relative',
                         display: 'inline-block',
-                        width: '44px',
-                        height: '24px',
+                        width: '2.75rem',
+                        height: '1.5rem',
                         cursor: 'pointer'
                       }}>
                         <input
@@ -3630,27 +3630,27 @@ export default function SettingsPage() {
                           right: 0,
                           bottom: 0,
                           background: isCategoryEnabled(cat.category) ? 'linear-gradient(135deg, #FF6900, #ff8533)' : '#e5e7eb',
-                          borderRadius: '24px',
+                          borderRadius: '1.5rem',
                           transition: 'all 0.3s ease',
                           boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.12)'
                         }}>
                           <span style={{
                             position: 'absolute',
                             content: '""',
-                            height: '18px',
-                            width: '18px',
+                            height: '1.125rem',
+                            width: '1.125rem',
                             left: '3px',
                             bottom: '3px',
                             backgroundColor: 'white',
                             borderRadius: '50%',
                             transition: 'all 0.3s ease',
-                            transform: isCategoryEnabled(cat.category) ? 'translateX(20px)' : 'translateX(0)',
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                            transform: isCategoryEnabled(cat.category) ? 'translateX(1.25rem)' : 'translateX(0)',
+                            boxShadow: '0 2px 0.25rem rgba(0, 0, 0, 0.2)'
                           }} />
                         </span>
                       </label>
                     </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {cat.permissions.map((permObj) => {
                         const categoryEnabled = isCategoryEnabled(cat.category);
                         const { permission, description } = permObj;
@@ -3660,9 +3660,9 @@ export default function SettingsPage() {
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '10px',
-                              padding: '6px 8px',
-                              borderRadius: '4px',
+                              gap: '0.625rem',
+                              padding: '0.375rem 0.5rem',
+                              borderRadius: '0.25rem',
                               transition: 'all 0.2s ease',
                               background: 'transparent'
                             }}
@@ -3679,8 +3679,8 @@ export default function SettingsPage() {
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '10px',
-                                fontSize: '13px',
+                                gap: '0.625rem',
+                                fontSize: '0.8125rem',
                                 color: categoryEnabled ? '#6b7280' : '#9ca3af',
                                 cursor: categoryEnabled ? 'pointer' : 'not-allowed',
                                 opacity: categoryEnabled ? 1 : 0.5,
@@ -3699,8 +3699,8 @@ export default function SettingsPage() {
                                 }}
                                 style={{ 
                                   cursor: categoryEnabled ? 'pointer' : 'not-allowed',
-                                  width: '16px',
-                                  height: '16px',
+                                  width: '1rem',
+                                  height: '1rem',
                                   accentColor: '#FF6900',
                                   flexShrink: 0
                                 }}
@@ -3750,18 +3750,18 @@ export default function SettingsPage() {
                                   position: 'absolute',
                                   bottom: '100%',
                                   left: '50%',
-                                  transform: 'translateX(-50%) translateY(-8px)',
-                                  marginBottom: '4px',
-                                  padding: '12px 16px',
-                                  minWidth: '280px',
-                                  maxWidth: '400px',
+                                  transform: 'translateX(-50%) translateY(-0.5rem)',
+                                  marginBottom: '0.25rem',
+                                  padding: '0.75rem 1rem',
+                                  minWidth: '17.5rem',
+                                  maxWidth: '25rem',
                                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
-                                  backdropFilter: 'blur(20px)',
-                                  WebkitBackdropFilter: 'blur(20px)',
+                                  backdropFilter: 'blur(1.25rem)',
+                                  WebkitBackdropFilter: 'blur(1.25rem)',
                                   border: '1px solid rgba(255, 105, 0, 0.2)',
-                                  borderRadius: '12px',
-                                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(255, 105, 0, 0.15)',
-                                  fontSize: '12px',
+                                  borderRadius: '0.75rem',
+                                  boxShadow: '0 0.5rem 2rem rgba(0, 0, 0, 0.1), 0 2px 0.5rem rgba(255, 105, 0, 0.15)',
+                                  fontSize: '0.75rem',
                                   lineHeight: '1.5',
                                   color: '#374151',
                                   fontWeight: '500',
@@ -3775,10 +3775,10 @@ export default function SettingsPage() {
                               >
                                 <div style={{
                                   position: 'absolute',
-                                  bottom: '-6px',
+                                  bottom: '-0.375rem',
                                   left: '50%',
-                                  width: '12px',
-                                  height: '12px',
+                                  width: '0.75rem',
+                                  height: '0.75rem',
                                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
                                   border: '1px solid rgba(255, 105, 0, 0.2)',
                                   borderTop: 'none',
@@ -4009,12 +4009,12 @@ export default function SettingsPage() {
 
   const renderLegalEntityTab = () => (
     <div>
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: '0 0 4px 0' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', margin: '0 0 0.25rem 0' }}>
             Entità Legali
           </h2>
-          <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
             Gestisci le entità legali e propaga i dati a fornitori ed enti finanzianti
           </p>
         </div>
@@ -4031,10 +4031,10 @@ export default function SettingsPage() {
             setLegalEntityModalOpen(true);
           }}
           style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
             background: 'linear-gradient(135deg, #FF6900, #FF8533)',
-            color: 'white', border: 'none', borderRadius: '10px',
-            padding: '10px 20px', cursor: 'pointer', fontWeight: '600'
+            color: 'white', border: 'none', borderRadius: '0.625rem',
+            padding: '0.625rem 1.25rem', cursor: 'pointer', fontWeight: '600'
           }}
         >
           <Plus size={18} />
@@ -4044,54 +4044,54 @@ export default function SettingsPage() {
 
       {/* Data Table */}
       <div style={{
-        background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb',
-        overflow: 'hidden', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+        background: 'white', borderRadius: '1rem', border: '1px solid #e5e7eb',
+        overflow: 'hidden', boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.05)'
       }}>
         {legalEntitiesLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Caricamento...</div>
+          <div style={{ padding: '2.5rem', textAlign: 'center', color: '#6b7280' }}>Caricamento...</div>
         ) : legalEntitiesList.length === 0 ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
-            <Building2 size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-            <p style={{ margin: 0, fontSize: '16px' }}>Nessuna entità legale trovata</p>
-            <p style={{ margin: '8px 0 0', fontSize: '14px' }}>Clicca su "Nuova Entità Legale" per iniziare</p>
+          <div style={{ padding: '3.75rem', textAlign: 'center', color: '#6b7280' }}>
+            <Building2 size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+            <p style={{ margin: 0, fontSize: '1rem' }}>Nessuna entità legale trovata</p>
+            <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem' }}>Clicca su "Nuova Entità Legale" per iniziare</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Codice</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Origine</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Nome</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ragione Sociale</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>P.IVA</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Ruoli</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Stato</th>
-                <th style={{ padding: '14px 16px', textAlign: 'right', fontWeight: '600', color: '#374151', fontSize: '13px' }}>Azioni</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Codice</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Origine</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Nome</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Ragione Sociale</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>P.IVA</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Ruoli</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Stato</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: '600', color: '#374151', fontSize: '0.8125rem' }}>Azioni</th>
               </tr>
             </thead>
             <tbody>
               {legalEntitiesList.map((entity: any) => (
                 <tr key={entity.id} data-testid={`row-legal-entity-${entity.id}`} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: '14px 16px', fontWeight: '500', color: '#111827' }}>
+                  <td style={{ padding: '0.875rem 1rem', fontWeight: '500', color: '#111827' }}>
                     {entity.codice || '-'}
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                  <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
                     <span style={{
                       background: entity.isBrandPushed ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'linear-gradient(135deg, #FF6900, #FF8533)',
                       color: 'white',
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      fontSize: '11px',
+                      padding: '0.25rem 0.625rem',
+                      borderRadius: '0.75rem',
+                      fontSize: '0.6875rem',
                       fontWeight: '600'
                     }}>
                       {entity.isBrandPushed ? 'Brand' : 'Custom'}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 16px', color: '#374151' }}>{entity.nome}</td>
-                  <td style={{ padding: '14px 16px', color: '#6b7280' }}>{entity.ragioneSociale || entity.nome || '-'}</td>
-                  <td style={{ padding: '14px 16px', color: '#6b7280', fontFamily: 'monospace' }}>{entity.pIva || '-'}</td>
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <td style={{ padding: '0.875rem 1rem', color: '#374151' }}>{entity.nome}</td>
+                  <td style={{ padding: '0.875rem 1rem', color: '#6b7280' }}>{entity.ragioneSociale || entity.nome || '-'}</td>
+                  <td style={{ padding: '0.875rem 1rem', color: '#6b7280', fontFamily: 'monospace' }}>{entity.pIva || '-'}</td>
+                  <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                       {entity.roles && entity.roles.length > 0 ? (
                         entity.roles.map((role: { type: string; origin: string; label: string }, idx: number) => {
                           // Define colors based on role type and origin
@@ -4123,10 +4123,10 @@ export default function SettingsPage() {
                                 ...style,
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                fontSize: '11px',
+                                gap: '0.25rem',
+                                padding: '2px 0.5rem',
+                                borderRadius: '0.75rem',
+                                fontSize: '0.6875rem',
                                 fontWeight: '600',
                                 cursor: 'help'
                               }}
@@ -4139,11 +4139,11 @@ export default function SettingsPage() {
                           );
                         })
                       ) : (
-                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
+                        <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: '14px 16px' }}>
+                  <td style={{ padding: '0.875rem 1rem' }}>
                     {(() => {
                       const normalizedStatus = (entity.stato === 'Attiva' || entity.status === 'active') ? 'Attiva' : 'Inattiva';
                       const isActive = normalizedStatus === 'Attiva';
@@ -4151,15 +4151,15 @@ export default function SettingsPage() {
                         <span style={{
                           background: isActive ? '#d1fae5' : '#fee2e2',
                           color: isActive ? '#059669' : '#dc2626',
-                          padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '500'
+                          padding: '0.25rem 0.625rem', borderRadius: '0.75rem', fontSize: '0.75rem', fontWeight: '500'
                         }}>
                           {normalizedStatus}
                         </span>
                       );
                     })()}
                   </td>
-                  <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                       {/* View button - always enabled for all entities */}
                       <button
                         data-testid={`button-view-legal-entity-${entity.id}`}
@@ -4195,8 +4195,8 @@ export default function SettingsPage() {
                         title="Visualizza dettagli"
                         style={{
                           background: '#e0f2fe',
-                          border: 'none', borderRadius: '8px',
-                          padding: '8px',
+                          border: 'none', borderRadius: '0.5rem',
+                          padding: '0.5rem',
                           cursor: 'pointer',
                           color: '#0284c7'
                         }}
@@ -4211,8 +4211,8 @@ export default function SettingsPage() {
                         title={!entity.isEditable ? 'Non modificabile: gestito da Brand' : 'Modifica'}
                         style={{
                           background: entity.isEditable ? '#f3f4f6' : '#f9fafb',
-                          border: 'none', borderRadius: '8px',
-                          padding: '8px',
+                          border: 'none', borderRadius: '0.5rem',
+                          padding: '0.5rem',
                           cursor: entity.isEditable ? 'pointer' : 'not-allowed',
                           color: entity.isEditable ? '#374151' : '#9ca3af',
                           opacity: entity.isEditable ? 1 : 0.6
@@ -4228,8 +4228,8 @@ export default function SettingsPage() {
                         title={!entity.isEditable ? 'Non modificabile: gestito da Brand' : entity.stato === 'Archiviata' ? 'Già archiviata' : 'Archivia'}
                         style={{
                           background: entity.isEditable && entity.stato !== 'Archiviata' ? '#fef3c7' : '#f9fafb',
-                          border: 'none', borderRadius: '8px',
-                          padding: '8px',
+                          border: 'none', borderRadius: '0.5rem',
+                          padding: '0.5rem',
                           cursor: entity.isEditable && entity.stato !== 'Archiviata' ? 'pointer' : 'not-allowed',
                           color: entity.isEditable && entity.stato !== 'Archiviata' ? '#d97706' : '#9ca3af',
                           opacity: entity.isEditable && entity.stato !== 'Archiviata' ? 1 : 0.6
@@ -4245,8 +4245,8 @@ export default function SettingsPage() {
                         title={!entity.isEditable ? 'Non modificabile: gestito da Brand' : entity.stato === 'Sospesa' ? 'Riattiva' : 'Sospendi'}
                         style={{
                           background: entity.isEditable ? (entity.stato === 'Sospesa' ? '#d1fae5' : '#fef3c7') : '#f9fafb',
-                          border: 'none', borderRadius: '8px',
-                          padding: '8px',
+                          border: 'none', borderRadius: '0.5rem',
+                          padding: '0.5rem',
                           cursor: entity.isEditable ? 'pointer' : 'not-allowed',
                           color: entity.isEditable ? (entity.stato === 'Sospesa' ? '#059669' : '#d97706') : '#9ca3af',
                           opacity: entity.isEditable ? 1 : 0.6
@@ -4262,8 +4262,8 @@ export default function SettingsPage() {
                         title={entity.hasDependencies ? 'Non eliminabile: ha dipendenze (negozi, brand, etc.)' : 'Elimina'}
                         style={{
                           background: entity.hasDependencies ? '#f3f4f6' : '#fee2e2',
-                          border: 'none', borderRadius: '8px',
-                          padding: '8px',
+                          border: 'none', borderRadius: '0.5rem',
+                          padding: '0.5rem',
                           cursor: entity.hasDependencies ? 'not-allowed' : 'pointer',
                           color: entity.hasDependencies ? '#9ca3af' : '#dc2626',
                           opacity: entity.hasDependencies ? 0.6 : 1
@@ -4288,11 +4288,11 @@ export default function SettingsPage() {
           zIndex: 1000
         }}>
           <div style={{
-            background: 'white', borderRadius: '16px', width: '90%', maxWidth: '800px',
-            maxHeight: '90vh', overflow: 'auto', padding: '32px'
+            background: 'white', borderRadius: '1rem', width: '90%', maxWidth: '50rem',
+            maxHeight: '90vh', overflow: 'auto', padding: '2rem'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
                 {editingLegalEntity ? 'Modifica Entità Legale' : 'Nuova Entità Legale'}
               </h3>
               <button onClick={() => setLegalEntityModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -4301,33 +4301,33 @@ export default function SettingsPage() {
             </div>
 
             {/* Form Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Codice *</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Codice *</label>
                 <input
                   data-testid="input-legal-entity-codice"
                   value={legalEntityForm.codice}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codice: e.target.value.toUpperCase() }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="ES. LE001"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Ragione Sociale *</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Ragione Sociale *</label>
                 <input
                   data-testid="input-legal-entity-ragione-sociale"
                   value={legalEntityForm.ragioneSociale}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, ragioneSociale: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="Nome della società"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Forma Giuridica</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Forma Giuridica</label>
                 <select
                   value={legalEntityForm.formaGiuridica}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, formaGiuridica: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                 >
                   <option value="">Seleziona...</option>
                   <option value="S.r.l.">S.r.l.</option>
@@ -4338,159 +4338,159 @@ export default function SettingsPage() {
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Partita IVA</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Partita IVA</label>
                 <input
                   data-testid="input-legal-entity-partita-iva"
                   value={legalEntityForm.partitaIva}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, partitaIva: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="IT12345678901"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Codice Fiscale</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Codice Fiscale</label>
                 <input
                   value={legalEntityForm.codiceFiscale}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Codice SDI</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Codice SDI</label>
                 <input
                   value={legalEntityForm.codiceSDI}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codiceSDI: e.target.value.toUpperCase() }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="0000000"
                   maxLength={7}
                 />
               </div>
               <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Indirizzo</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Indirizzo</label>
                 <input
                   value={legalEntityForm.indirizzo}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, indirizzo: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="Via Roma, 1"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Città</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Città</label>
                 <input
                   value={legalEntityForm.citta}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, citta: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Provincia</label>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Provincia</label>
                   <input
                     value={legalEntityForm.provincia}
                     onChange={(e) => setLegalEntityForm(prev => ({ ...prev, provincia: e.target.value.toUpperCase() }))}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                     maxLength={2}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>CAP</label>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>CAP</label>
                   <input
                     value={legalEntityForm.cap}
                     onChange={(e) => setLegalEntityForm(prev => ({ ...prev, cap: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                     maxLength={5}
                   />
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Telefono</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Telefono</label>
                 <input
                   value={legalEntityForm.telefono}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, telefono: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Email</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Email</label>
                 <input
                   value={legalEntityForm.email}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, email: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   type="email"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>PEC</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>PEC</label>
                 <input
                   value={legalEntityForm.pec}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, pec: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Sito Web</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Sito Web</label>
                 <input
                   value={legalEntityForm.website}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, website: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="https://www.example.com"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>IBAN</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>IBAN</label>
                 <input
                   value={legalEntityForm.iban}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, iban: e.target.value.toUpperCase() }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   placeholder="IT60X0542811101000000123456"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>BIC/SWIFT</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>BIC/SWIFT</label>
                 <input
                   value={legalEntityForm.bic}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, bic: e.target.value.toUpperCase() }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                   maxLength={11}
                 />
               </div>
 
               {/* Role Checkboxes */}
-              <div style={{ gridColumn: 'span 2', marginTop: '16px', padding: '16px', background: '#f9fafb', borderRadius: '12px' }}>
-                <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+              <div style={{ gridColumn: 'span 2', marginTop: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '0.75rem' }}>
+                <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
                   Ruoli dell'Entità (Propagazione Automatica)
                 </h4>
-                <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#6b7280' }}>
+                <p style={{ margin: '0 0 1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                   Selezionando questi ruoli, l'entità verrà automaticamente creata anche nelle tabelle specifiche
                 </p>
-                <div style={{ display: 'flex', gap: '24px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={legalEntityForm.isSupplier}
                       onChange={(e) => setLegalEntityForm(prev => ({ ...prev, isSupplier: e.target.checked }))}
-                      style={{ width: '18px', height: '18px' }}
+                      style={{ width: '1.125rem', height: '1.125rem' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>È un Fornitore</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>È un Fornitore</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={legalEntityForm.isFinancialEntity}
                       onChange={(e) => setLegalEntityForm(prev => ({ ...prev, isFinancialEntity: e.target.checked }))}
-                      style={{ width: '18px', height: '18px' }}
+                      style={{ width: '1.125rem', height: '1.125rem' }}
                     />
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>È un Ente Finanziante</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>È un Ente Finanziante</span>
                   </label>
                 </div>
 
                 {legalEntityForm.isSupplier && (
-                  <div style={{ marginTop: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Tipo Fornitore</label>
+                  <div style={{ marginTop: '1rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Tipo Fornitore</label>
                     <select
                       value={legalEntityForm.supplierType}
                       onChange={(e) => setLegalEntityForm(prev => ({ ...prev, supplierType: e.target.value as any }))}
-                      style={{ width: '200px', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                      style={{ width: '12.5rem', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem' }}
                     >
                       <option value="products">Prodotti</option>
                       <option value="services">Servizi</option>
@@ -4503,20 +4503,20 @@ export default function SettingsPage() {
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>Note</label>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: '500', color: '#374151', marginBottom: '0.375rem' }}>Note</label>
                 <textarea
                   value={legalEntityForm.note}
                   onChange={(e) => setLegalEntityForm(prev => ({ ...prev, note: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', minHeight: '80px', resize: 'vertical' }}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.875rem', minHeight: '5rem', resize: 'vertical' }}
                 />
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
               <button
                 onClick={() => setLegalEntityModalOpen(false)}
-                style={{ padding: '10px 20px', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontWeight: '500' }}
+                style={{ padding: '0.625rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', background: 'white', cursor: 'pointer', fontWeight: '500' }}
               >
                 Annulla
               </button>
@@ -4525,7 +4525,7 @@ export default function SettingsPage() {
                 onClick={handleSaveLegalEntity}
                 disabled={!legalEntityForm.codice || !legalEntityForm.ragioneSociale}
                 style={{
-                  padding: '10px 20px', border: 'none', borderRadius: '8px',
+                  padding: '0.625rem 1.25rem', border: 'none', borderRadius: '0.5rem',
                   background: (!legalEntityForm.codice || !legalEntityForm.ragioneSociale) ? '#d1d5db' : 'linear-gradient(135deg, #FF6900, #FF8533)',
                   color: 'white', cursor: (!legalEntityForm.codice || !legalEntityForm.ragioneSociale) ? 'not-allowed' : 'pointer', fontWeight: '600'
                 }}
@@ -4564,17 +4564,17 @@ export default function SettingsPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '400px',
+          minHeight: '25rem',
           background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '16px',
+          borderRadius: '1rem',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '40px'
+          padding: '2.5rem'
         }}>
-          <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+          <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '1rem' }} />
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>
             Error Loading Logs
           </h3>
-          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem', textAlign: 'center' }}>
             {logsError.message || 'Failed to load system logs. Please try again.'}
           </p>
           <button
@@ -4584,14 +4584,14 @@ export default function SettingsPage() {
               background: 'linear-gradient(135deg, #ef4444, #dc2626)',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
-              padding: '10px 20px',
-              fontSize: '14px',
+              borderRadius: '0.5rem',
+              padding: '0.625rem 1.25rem',
+              fontSize: '0.875rem',
               fontWeight: '600',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '0.5rem'
             }}
             data-testid="button-retry-logs"
           >
@@ -4607,44 +4607,44 @@ export default function SettingsPage() {
       return (
         <div style={{
           background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '16px',
+          borderRadius: '1rem',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '24px'
+          padding: '1.5rem'
         }}>
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
             <div style={{
-              height: '20px',
+              height: '1.25rem',
               background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
-              borderRadius: '4px',
+              borderRadius: '0.25rem',
               animation: 'shimmer 2s infinite',
-              marginBottom: '8px'
+              marginBottom: '0.5rem'
             }} />
             <div style={{
-              height: '14px',
+              height: '0.875rem',
               background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
-              borderRadius: '4px',
+              borderRadius: '0.25rem',
               width: '60%',
               animation: 'shimmer 2s infinite'
             }} />
           </div>
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} style={{
-              padding: '16px',
+              padding: '1rem',
               border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              marginBottom: '8px'
+              borderRadius: '0.5rem',
+              marginBottom: '0.5rem'
             }}>
               <div style={{
-                height: '16px',
+                height: '1rem',
                 background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
-                borderRadius: '4px',
-                marginBottom: '8px',
+                borderRadius: '0.25rem',
+                marginBottom: '0.5rem',
                 animation: 'shimmer 2s infinite'
               }} />
               <div style={{
-                height: '12px',
+                height: '0.75rem',
                 background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
-                borderRadius: '4px',
+                borderRadius: '0.25rem',
                 width: '80%',
                 animation: 'shimmer 2s infinite'
               }} />
@@ -4652,8 +4652,8 @@ export default function SettingsPage() {
           ))}
           <style>{`
             @keyframes shimmer {
-              0% { background-position: -200px 0; }
-              100% { background-position: calc(200px + 100%) 0; }
+              0% { background-position: -12.5rem 0; }
+              100% { background-position: calc(12.5rem + 100%) 0; }
             }
           `}</style>
         </div>
@@ -4668,17 +4668,17 @@ export default function SettingsPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '400px',
+          minHeight: '25rem',
           background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '16px',
+          borderRadius: '1rem',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '40px'
+          padding: '2.5rem'
         }}>
-          <FileText size={48} style={{ color: '#6b7280', marginBottom: '16px' }} />
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+          <FileText size={48} style={{ color: '#6b7280', marginBottom: '1rem' }} />
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>
             No Logs Found
           </h3>
-          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem', textAlign: 'center' }}>
             No logs match your current filters. Try adjusting your search criteria or check back later.
           </p>
           <button
@@ -4687,15 +4687,15 @@ export default function SettingsPage() {
             style={{
               background: 'rgba(255, 255, 255, 0.1)',
               border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              padding: '10px 20px',
+              borderRadius: '0.5rem',
+              padding: '0.625rem 1.25rem',
               color: '#6b7280',
-              fontSize: '14px',
+              fontSize: '0.875rem',
               fontWeight: '500',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '0.5rem'
             }}
             data-testid="button-clear-filters-empty"
           >
@@ -4711,24 +4711,24 @@ export default function SettingsPage() {
 
     return (
       <div>
-        <div style={{ marginBottom: '32px' }}>
+        <div style={{ marginBottom: '2rem' }}>
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '16px'
+            marginBottom: '1rem'
           }}>
             <div>
               <h2 style={{
-                fontSize: '20px',
+                fontSize: '1.25rem',
                 fontWeight: '600',
                 color: '#111827',
-                margin: '0 0 4px 0'
+                margin: '0 0 0.25rem 0'
               }}>
                 Logs Sistema
               </h2>
               <p style={{
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 color: '#6b7280',
                 margin: 0
               }}>
@@ -4737,23 +4737,23 @@ export default function SettingsPage() {
             </div>
             
             {/* Auto-refresh and manual refresh controls */}
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               {newLogsAvailable && (
                 <div style={{
                   background: 'linear-gradient(135deg, #10b981, #059669)',
                   color: 'white',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.75rem',
                   fontWeight: '600',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '0.375rem',
                   animation: 'pulse 2s infinite'
                 }}>
                   <div style={{
-                    width: '6px',
-                    height: '6px',
+                    width: '0.375rem',
+                    height: '0.375rem',
                     background: 'white',
                     borderRadius: '50%'
                   }} />
@@ -4767,17 +4767,17 @@ export default function SettingsPage() {
                   background: autoRefreshEnabled 
                     ? 'linear-gradient(135deg, #10b981, #059669)' 
                     : 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
+                  backdropFilter: 'blur(0.625rem)',
                   border: `1px solid ${autoRefreshEnabled ? '#10b981' : 'rgba(255, 255, 255, 0.2)'}`,
-                  borderRadius: '8px',
-                  padding: '8px 12px',
+                  borderRadius: '0.5rem',
+                  padding: '0.5rem 0.75rem',
                   color: autoRefreshEnabled ? 'white' : '#6b7280',
-                  fontSize: '12px',
+                  fontSize: '0.75rem',
                   fontWeight: '500',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '0.375rem',
                   transition: 'all 0.2s ease'
                 }}
                 data-testid="button-toggle-auto-refresh"
@@ -4793,10 +4793,10 @@ export default function SettingsPage() {
                 }}
                 style={{
                   background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(10px)',
+                  backdropFilter: 'blur(0.625rem)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  padding: '8px',
+                  borderRadius: '0.5rem',
+                  padding: '0.5rem',
                   color: '#6b7280',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
@@ -4811,25 +4811,25 @@ export default function SettingsPage() {
           {/* SEARCH & FILTERING UI - Glassmorphism Design */}
           <div style={{
             background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            backdropFilter: 'blur(1.5rem) saturate(140%)',
+            WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
             border: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '24px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+            borderRadius: '1rem',
+            padding: '1.25rem',
+            marginBottom: '1.5rem',
+            boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)'
           }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '16px',
-              marginBottom: '16px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(23.125rem, 1fr))',
+              gap: '1rem',
+              marginBottom: '1rem'
             }}>
               {/* Search Bar */}
               <div style={{ position: 'relative' }}>
                 <Search size={16} style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '0.75rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: '#6b7280'
@@ -4841,13 +4841,13 @@ export default function SettingsPage() {
                   onChange={(e) => setLogsSearchTerm(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 12px 10px 36px',
+                    padding: '0.625rem 0.75rem 0.625rem 2.25rem',
                     background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(0.5rem)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     color: '#111827',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     outline: 'none',
                     transition: 'all 0.2s ease'
                   }}
@@ -4860,13 +4860,13 @@ export default function SettingsPage() {
                 value={logsLevelFilter}
                 onChange={(e) => setLogsLevelFilter(e.target.value)}
                 style={{
-                  padding: '10px 12px',
+                  padding: '0.625rem 0.75rem',
                   background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: 'blur(0.5rem)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   color: '#111827',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   cursor: 'pointer',
                   outline: 'none'
                 }}
@@ -4884,13 +4884,13 @@ export default function SettingsPage() {
                 value={logsComponentFilter}
                 onChange={(e) => setLogsComponentFilter(e.target.value)}
                 style={{
-                  padding: '10px 12px',
+                  padding: '0.625rem 0.75rem',
                   background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: 'blur(0.5rem)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   color: '#111827',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   cursor: 'pointer',
                   outline: 'none'
                 }}
@@ -4907,18 +4907,18 @@ export default function SettingsPage() {
             {/* Date Range and Additional Filters */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
-              marginBottom: '16px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(12.5rem, 1fr))',
+              gap: '1rem',
+              marginBottom: '1rem'
             }}>
               {/* From Date */}
               <div>
                 <label style={{
                   display: 'block',
-                  fontSize: '12px',
+                  fontSize: '0.75rem',
                   fontWeight: '500',
                   color: '#6b7280',
-                  marginBottom: '4px'
+                  marginBottom: '0.25rem'
                 }}>
                   From Date
                 </label>
@@ -4928,13 +4928,13 @@ export default function SettingsPage() {
                   onChange={(e) => setLogsFromDate(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '8px 12px',
+                    padding: '0.5rem 0.75rem',
                     background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(0.5rem)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     color: '#111827',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     outline: 'none'
                   }}
                   data-testid="input-from-date"
@@ -4945,10 +4945,10 @@ export default function SettingsPage() {
               <div>
                 <label style={{
                   display: 'block',
-                  fontSize: '12px',
+                  fontSize: '0.75rem',
                   fontWeight: '500',
                   color: '#6b7280',
-                  marginBottom: '4px'
+                  marginBottom: '0.25rem'
                 }}>
                   To Date
                 </label>
@@ -4958,13 +4958,13 @@ export default function SettingsPage() {
                   onChange={(e) => setLogsToDate(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '8px 12px',
+                    padding: '0.5rem 0.75rem',
                     background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: 'blur(0.5rem)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     color: '#111827',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     outline: 'none'
                   }}
                   data-testid="input-to-date"
@@ -4978,13 +4978,13 @@ export default function SettingsPage() {
                 value={logsUserFilter}
                 onChange={(e) => setLogsUserFilter(e.target.value)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '0.5rem 0.75rem',
                   background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: 'blur(0.5rem)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   color: '#111827',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   outline: 'none'
                 }}
                 data-testid="input-user-filter"
@@ -4997,13 +4997,13 @@ export default function SettingsPage() {
                 value={logsCorrelationIdFilter}
                 onChange={(e) => setLogsCorrelationIdFilter(e.target.value)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '0.5rem 0.75rem',
                   background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: 'blur(0.5rem)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   color: '#111827',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   outline: 'none'
                 }}
                 data-testid="input-correlation-filter"
@@ -5017,15 +5017,15 @@ export default function SettingsPage() {
               style={{
                 background: 'rgba(255, 105, 0, 0.1)',
                 border: '1px solid rgba(255, 105, 0, 0.3)',
-                borderRadius: '8px',
-                padding: '8px 16px',
+                borderRadius: '0.5rem',
+                padding: '0.5rem 1rem',
                 color: '#FF6900',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: '500',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '0.375rem',
                 transition: 'all 0.2s ease'
               }}
               data-testid="button-reset-filters"
@@ -5038,21 +5038,21 @@ export default function SettingsPage() {
           {/* LOGS TABLE/LIST VIEW */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.7)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '16px',
+            backdropFilter: 'blur(0.625rem)',
+            borderRadius: '1rem',
             overflow: 'hidden',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
             border: '1px solid rgba(255, 255, 255, 0.2)'
           }}>
             {logsLoading ? (
               // Loading skeleton
-              <div style={{ padding: '24px' }}>
+              <div style={{ padding: '1.5rem' }}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} style={{
                     background: 'rgba(0, 0, 0, 0.05)',
-                    height: '60px',
-                    borderRadius: '8px',
-                    marginBottom: '12px',
+                    height: '3.75rem',
+                    borderRadius: '0.5rem',
+                    marginBottom: '0.75rem',
                     animation: 'pulse 1.5s ease-in-out infinite'
                   }} />
                 ))}
@@ -5060,15 +5060,15 @@ export default function SettingsPage() {
             ) : logsError ? (
               // Error state
               <div style={{
-                padding: '48px 24px',
+                padding: '40.5rem 1.5rem',
                 textAlign: 'center',
                 color: '#ef4444'
               }}>
-                <XCircle size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px' }}>
+                <XCircle size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: '0 0 0.5rem' }}>
                   Error loading logs
                 </h3>
-                <p style={{ fontSize: '14px', margin: '0 0 16px', opacity: 0.7 }}>
+                <p style={{ fontSize: '0.875rem', margin: '0 0 1rem', opacity: 0.7 }}>
                   {(logsError as any)?.message || 'Failed to fetch logs data'}
                 </p>
                 <button
@@ -5077,9 +5077,9 @@ export default function SettingsPage() {
                     background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '14px',
+                    borderRadius: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer'
                   }}
@@ -5091,15 +5091,15 @@ export default function SettingsPage() {
             ) : (logsData?.logs?.length || 0) === 0 ? (
               // Empty state
               <div style={{
-                padding: '48px 24px',
+                padding: '40.5rem 1.5rem',
                 textAlign: 'center',
                 color: '#6b7280'
               }}>
-                <FileText size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px' }}>
+                <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', margin: '0 0 0.5rem' }}>
                   No logs found
                 </h3>
-                <p style={{ fontSize: '14px', margin: 0, opacity: 0.7 }}>
+                <p style={{ fontSize: '0.875rem', margin: 0, opacity: 0.7 }}>
                   Try adjusting your filters or check back later
                 </p>
               </div>
@@ -5109,12 +5109,12 @@ export default function SettingsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '140px' }}>Timestamp</th>
-                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '80px' }}>Level</th>
-                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '120px' }}>Component</th>
-                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Message</th>
-                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '100px' }}>User</th>
-                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '120px' }}>Correlation ID</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '8.75rem' }}>Timestamp</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '5rem' }}>Level</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '7.5rem' }}>Component</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Message</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '6.25rem' }}>User</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '7.5rem' }}>Correlation ID</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5131,55 +5131,55 @@ export default function SettingsPage() {
                         onMouseOut={(e) => e.currentTarget.style.background = 'white'}
                         data-testid={`row-log-${log.id}`}
                       >
-                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#6b7280' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#6b7280' }}>
                           {formatLogTimestamp(log.timestamp)}
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '0.75rem 1rem' }}>
                           <div style={{
                             background: `${getLevelColor(log.level)}15`,
                             color: getLevelColor(log.level),
                             border: `1px solid ${getLevelColor(log.level)}30`,
-                            borderRadius: '6px',
-                            padding: '4px 8px',
-                            fontSize: '11px',
+                            borderRadius: '0.375rem',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.6875rem',
                             fontWeight: '600',
                             display: 'inline-block',
-                            minWidth: '50px',
+                            minWidth: '3.125rem',
                             textAlign: 'center'
                           }}>
                             {log.level}
                           </div>
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#111827', fontWeight: '500' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.8125rem', color: '#111827', fontWeight: '500' }}>
                           {log.component}
                         </td>
                         <td style={{
-                          padding: '12px 16px',
-                          fontSize: '14px',
+                          padding: '0.75rem 1rem',
+                          fontSize: '0.875rem',
                           color: '#111827',
-                          maxWidth: '300px',
+                          maxWidth: '18.75rem',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}>
                           {log.message}
                         </td>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#6b7280' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                           {log.user || '-'}
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '0.75rem 1rem' }}>
                           {log.correlationId ? (
                             <div style={{
                               background: 'rgba(59, 130, 246, 0.1)',
                               color: '#3b82f6',
                               border: '1px solid rgba(59, 130, 246, 0.2)',
-                              borderRadius: '6px',
-                              padding: '4px 8px',
-                              fontSize: '11px',
+                              borderRadius: '0.375rem',
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '0.6875rem',
                               fontFamily: 'monospace',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px',
+                              gap: '0.25rem',
                               cursor: 'pointer'
                             }}
                             onClick={(e) => {
@@ -5191,7 +5191,7 @@ export default function SettingsPage() {
                             <Copy size={10} />
                           </div>
                           ) : (
-                            <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
+                            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>-</span>
                           )}
                         </td>
                       </tr>
@@ -5205,33 +5205,33 @@ export default function SettingsPage() {
             {logs.length > 0 && (
               <div style={{
                 background: 'rgba(249, 250, 251, 0.8)',
-                backdropFilter: 'blur(8px)',
+                backdropFilter: 'blur(0.5rem)',
                 borderTop: '1px solid #e5e7eb',
-                padding: '16px 24px',
+                padding: '1rem 1.5rem',
                 display: 'flex',
                 justifyContent: 'between',
                 alignItems: 'center',
-                gap: '16px'
+                gap: '1rem'
               }}>
-                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                   Showing {((metadata.page - 1) * metadata.limit) + 1} to {Math.min(metadata.page * metadata.limit, metadata.total)} of {metadata.total} logs
                 </div>
                 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <button
                     onClick={() => setLogsCurrentPage(Math.max(1, logsCurrentPage - 1))}
                     disabled={logsCurrentPage <= 1}
                     style={{
                       background: logsCurrentPage <= 1 ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.8)',
                       border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      padding: '0.375rem 0.75rem',
+                      fontSize: '0.875rem',
                       color: logsCurrentPage <= 1 ? '#9ca3af' : '#374151',
                       cursor: logsCurrentPage <= 1 ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '0.25rem'
                     }}
                     data-testid="button-previous-page"
                   >
@@ -5240,11 +5240,11 @@ export default function SettingsPage() {
                   </button>
                   
                   <div style={{
-                    padding: '6px 12px',
+                    padding: '0.375rem 0.75rem',
                     background: 'rgba(255, 105, 0, 0.1)',
                     border: '1px solid rgba(255, 105, 0, 0.2)',
-                    borderRadius: '6px',
-                    fontSize: '14px',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#FF6900'
                   }}>
@@ -5257,14 +5257,14 @@ export default function SettingsPage() {
                     style={{
                       background: logsCurrentPage >= metadata.totalPages ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.8)',
                       border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      padding: '0.375rem 0.75rem',
+                      fontSize: '0.875rem',
                       color: logsCurrentPage >= metadata.totalPages ? '#9ca3af' : '#374151',
                       cursor: logsCurrentPage >= metadata.totalPages ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '0.25rem'
                     }}
                     data-testid="button-next-page"
                   >
@@ -5286,22 +5286,22 @@ export default function SettingsPage() {
             right: 0,
             bottom: 0,
             background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(0.5rem)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '20px'
+            padding: '1.25rem'
           }}>
             <div style={{
               background: 'white',
-              borderRadius: '16px',
-              padding: '24px',
-              maxWidth: '800px',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              maxWidth: '50rem',
               width: '100%',
               maxHeight: '90vh',
               overflow: 'auto',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+              boxShadow: '0 1.25rem 20.3125rem -0.3125rem rgba(0, 0, 0, 0.1), 0 0.625rem 0.625rem -0.3125rem rgba(0, 0, 0, 0.04)'
             }}
             data-testid="modal-log-details"
             >
@@ -5309,14 +5309,14 @@ export default function SettingsPage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                marginBottom: '24px'
+                marginBottom: '1.5rem'
               }}>
                 <div>
                   <h3 style={{
-                    fontSize: '20px',
+                    fontSize: '1.25rem',
                     fontWeight: '700',
                     color: '#111827',
-                    margin: '0 0 8px 0'
+                    margin: '0 0 0.5rem 0'
                   }}>
                     Log Details
                   </h3>
@@ -5324,9 +5324,9 @@ export default function SettingsPage() {
                     background: `${getLevelColor(logDetailsModal.data.level)}15`,
                     color: getLevelColor(logDetailsModal.data.level),
                     border: `1px solid ${getLevelColor(logDetailsModal.data.level)}30`,
-                    borderRadius: '8px',
-                    padding: '6px 12px',
-                    fontSize: '12px',
+                    borderRadius: '0.5rem',
+                    padding: '0.375rem 0.75rem',
+                    fontSize: '0.75rem',
                     fontWeight: '600',
                     display: 'inline-block'
                   }}>
@@ -5339,8 +5339,8 @@ export default function SettingsPage() {
                   style={{
                     background: 'rgba(0, 0, 0, 0.05)',
                     border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px',
+                    borderRadius: '0.5rem',
+                    padding: '0.5rem',
                     cursor: 'pointer',
                     color: '#6b7280'
                   }}
@@ -5350,58 +5350,58 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gap: '20px' }}>
+              <div style={{ display: 'grid', gap: '1.25rem' }}>
                 {/* Basic Information */}
                 <div style={{
                   background: 'rgba(249, 250, 251, 0.5)',
-                  borderRadius: '12px',
-                  padding: '16px'
+                  borderRadius: '0.75rem',
+                  padding: '1rem'
                 }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', margin: '0 0 0.75rem 0' }}>
                     Basic Information
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(23.125rem, 1fr))', gap: '0.75rem' }}>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>
                         Timestamp
                       </label>
-                      <div style={{ fontSize: '14px', color: '#111827', fontFamily: 'monospace' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#111827', fontFamily: 'monospace' }}>
                         {formatLogTimestamp(logDetailsModal.data.timestamp)}
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>
                         Component
                       </label>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '500' }}>
+                      <div style={{ fontSize: '0.875rem', color: '#111827', fontWeight: '500' }}>
                         {logDetailsModal.data.component}
                       </div>
                     </div>
                     {logDetailsModal.data.user && (
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>
                           User
                         </label>
-                        <div style={{ fontSize: '14px', color: '#111827' }}>
+                        <div style={{ fontSize: '0.875rem', color: '#111827' }}>
                           {logDetailsModal.data.user}
                         </div>
                       </div>
                     )}
                     {logDetailsModal.data.correlationId && (
                       <div>
-                        <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>
                           Correlation ID
                         </label>
                         <div style={{
-                          fontSize: '12px',
+                          fontSize: '0.75rem',
                           color: '#3b82f6',
                           fontFamily: 'monospace',
                           background: 'rgba(59, 130, 246, 0.1)',
-                          padding: '6px 8px',
-                          borderRadius: '6px',
+                          padding: '0.375rem 0.5rem',
+                          borderRadius: '0.375rem',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '0.375rem',
                           cursor: 'pointer'
                         }}
                         onClick={() => copyToClipboard(logDetailsModal.data.correlationId)}
@@ -5417,14 +5417,14 @@ export default function SettingsPage() {
                 {/* Message */}
                 <div style={{
                   background: 'rgba(249, 250, 251, 0.5)',
-                  borderRadius: '12px',
-                  padding: '16px'
+                  borderRadius: '0.75rem',
+                  padding: '1rem'
                 }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', margin: '0 0 0.75rem 0' }}>
                     Message
                   </h4>
                   <div style={{
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     color: '#111827',
                     lineHeight: '1.6',
                     whiteSpace: 'pre-wrap',
@@ -5438,22 +5438,22 @@ export default function SettingsPage() {
                 {logDetailsModal.data.metadata && (
                   <div style={{
                     background: 'rgba(249, 250, 251, 0.5)',
-                    borderRadius: '12px',
-                    padding: '16px'
+                    borderRadius: '0.75rem',
+                    padding: '1rem'
                   }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', margin: '0 0 0.75rem 0' }}>
                       Metadata
                     </h4>
                     <pre style={{
-                      fontSize: '12px',
+                      fontSize: '0.75rem',
                       color: '#111827',
                       fontFamily: 'monospace',
                       background: 'white',
-                      padding: '12px',
-                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      borderRadius: '0.5rem',
                       border: '1px solid #e5e7eb',
                       overflow: 'auto',
-                      maxHeight: '200px',
+                      maxHeight: '12.5rem',
                       margin: 0
                     }}>
                       {JSON.stringify(logDetailsModal.data.metadata, null, 2)}
@@ -5466,22 +5466,22 @@ export default function SettingsPage() {
                   <div style={{
                     background: 'rgba(239, 68, 68, 0.05)',
                     border: '1px solid rgba(239, 68, 68, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px'
+                    borderRadius: '0.75rem',
+                    padding: '1rem'
                   }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#ef4444', margin: '0 0 12px 0' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#ef4444', margin: '0 0 0.75rem 0' }}>
                       Stack Trace
                     </h4>
                     <pre style={{
-                      fontSize: '11px',
+                      fontSize: '0.6875rem',
                       color: '#374151',
                       fontFamily: 'monospace',
                       background: 'white',
-                      padding: '12px',
-                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      borderRadius: '0.5rem',
                       border: '1px solid #fecaca',
                       overflow: 'auto',
-                      maxHeight: '300px',
+                      maxHeight: '18.75rem',
                       margin: 0,
                       whiteSpace: 'pre-wrap'
                     }}>
@@ -5494,22 +5494,22 @@ export default function SettingsPage() {
                 {logDetailsModal.data.requestContext && (
                   <div style={{
                     background: 'rgba(249, 250, 251, 0.5)',
-                    borderRadius: '12px',
-                    padding: '16px'
+                    borderRadius: '0.75rem',
+                    padding: '1rem'
                   }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', margin: '0 0 0.75rem 0' }}>
                       Request Context
                     </h4>
                     <pre style={{
-                      fontSize: '12px',
+                      fontSize: '0.75rem',
                       color: '#111827',
                       fontFamily: 'monospace',
                       background: 'white',
-                      padding: '12px',
-                      borderRadius: '8px',
+                      padding: '0.75rem',
+                      borderRadius: '0.5rem',
                       border: '1px solid #e5e7eb',
                       overflow: 'auto',
-                      maxHeight: '200px',
+                      maxHeight: '12.5rem',
                       margin: 0
                     }}>
                       {JSON.stringify(logDetailsModal.data.requestContext, null, 2)}
@@ -5520,25 +5520,25 @@ export default function SettingsPage() {
 
               {/* Modal Actions */}
               <div style={{
-                marginTop: '24px',
+                marginTop: '1.5rem',
                 display: 'flex',
                 justifyContent: 'flex-end',
-                gap: '12px'
+                gap: '0.75rem'
               }}>
                 <button
                   onClick={() => copyToClipboard(JSON.stringify(logDetailsModal.data, null, 2))}
                   style={{
                     background: 'rgba(59, 130, 246, 0.1)',
                     border: '1px solid rgba(59, 130, 246, 0.2)',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
+                    borderRadius: '0.5rem',
+                    padding: '0.5rem 1rem',
                     color: '#3b82f6',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '500',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '0.375rem'
                   }}
                   data-testid="button-copy-log"
                 >
@@ -5552,9 +5552,9 @@ export default function SettingsPage() {
                     background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '14px',
+                    borderRadius: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer'
                   }}
@@ -5571,18 +5571,18 @@ export default function SettingsPage() {
         {notification && (
           <div style={{
             position: 'fixed',
-            top: '20px',
-            right: '20px',
+            top: '1.25rem',
+            right: '1.25rem',
             background: notification.type === 'success' ? '#10b981' : '#dc2626',
             color: 'white',
-            padding: '16px 20px',
-            borderRadius: '8px',
-            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
+            padding: '1rem 1.25rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 0.5rem 1.25rem rgba(0, 0, 0, 0.15)',
             zIndex: 2000,
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            maxWidth: '400px',
+            gap: '0.75rem',
+            maxWidth: '25rem',
             animation: 'slideIn 0.3s ease'
           }}>
             {notification.type === 'success' ? (
@@ -5590,7 +5590,7 @@ export default function SettingsPage() {
             ) : (
               <AlertCircle size={20} />
             )}
-            <span style={{ fontSize: '14px', fontWeight: '600' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
               {notification.message}
             </span>
             <button
@@ -5601,7 +5601,7 @@ export default function SettingsPage() {
                 color: 'white',
                 cursor: 'pointer',
                 marginLeft: 'auto',
-                padding: '4px'
+                padding: '0.25rem'
               }}
             >
               <X size={16} />
@@ -6373,7 +6373,7 @@ export default function SettingsPage() {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(0.25rem)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -6382,19 +6382,19 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '12px',
+            borderRadius: '0.75rem',
             width: '90%',
-            maxWidth: '600px',
+            maxWidth: '37.5rem',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 20.3125rem 3.125rem -0.75rem rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
             borderTop: '3px solid transparent',
             borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
             animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
-              padding: '24px 32px',
+              padding: '1.5rem 2rem',
               background: '#ffffff',
               borderBottom: '1px solid #e5e7eb'
             }}>
@@ -6407,13 +6407,13 @@ export default function SettingsPage() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '8px'
+                    gap: '0.75rem',
+                    marginBottom: '0.5rem'
                   }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '0.625rem',
                       background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                       display: 'flex',
                       alignItems: 'center',
@@ -6425,7 +6425,7 @@ export default function SettingsPage() {
                       </svg>
                     </div>
                     <h2 style={{
-                      fontSize: '20px',
+                      fontSize: '1.25rem',
                       fontWeight: '600',
                       color: '#111827',
                       margin: 0,
@@ -6438,7 +6438,7 @@ export default function SettingsPage() {
                     </h2>
                   </div>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     color: '#6b7280',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -6452,12 +6452,12 @@ export default function SettingsPage() {
                   style={{
                     background: 'rgba(255, 255, 255, 0.8)',
                     border: '1px solid rgba(226, 232, 240, 0.8)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     cursor: 'pointer',
-                    padding: '8px',
+                    padding: '0.5rem',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     color: '#64748b',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(0.5rem)'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
@@ -6476,16 +6476,16 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ padding: '2rem', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 {/* Codice */}
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice Ragione Sociale
@@ -6497,10 +6497,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6526,10 +6526,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
@@ -6541,10 +6541,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6570,10 +6570,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
@@ -6583,10 +6583,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, formaGiuridica: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       cursor: 'pointer',
@@ -6595,7 +6595,7 @@ export default function SettingsPage() {
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
                       e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.boxShadow = '0 0.25rem 1.25rem rgba(255, 105, 0, 0.2)';
                       e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
@@ -6629,10 +6629,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Partita IVA <span style={{ color: '#ef4444' }}>*</span>
@@ -6660,7 +6660,7 @@ export default function SettingsPage() {
                               e.target.parentElement?.appendChild(errorDiv);
                             }
                             errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
-                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;';
                           } else {
                             e.target.style.borderColor = '#10b981';
                             e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
@@ -6683,10 +6683,10 @@ export default function SettingsPage() {
                     )}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       fontFamily: 'monospace',
@@ -6695,7 +6695,7 @@ export default function SettingsPage() {
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
                       e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.boxShadow = '0 0.25rem 1.25rem rgba(255, 105, 0, 0.2)';
                       e.target.style.transform = 'translateY(-1px)';
                     }}
                   />
@@ -6705,10 +6705,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice Fiscale
@@ -6720,10 +6720,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceFiscale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       fontFamily: 'monospace',
@@ -6733,7 +6733,7 @@ export default function SettingsPage() {
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
                       e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.boxShadow = '0 0.25rem 1.25rem rgba(255, 105, 0, 0.2)';
                       e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
@@ -6749,10 +6749,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Capitale Sociale
@@ -6764,10 +6764,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, capitaleSociale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6793,10 +6793,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Data Costituzione
@@ -6807,10 +6807,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, dataCostituzione: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6836,10 +6836,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     R.E.A.
@@ -6851,10 +6851,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, rea: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6880,10 +6880,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Registro Imprese
@@ -6895,10 +6895,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, registroImprese: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6924,15 +6924,15 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Logo Aziendale 
-                    <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px', cursor: 'help' }} 
-                          title="File PNG, dimensioni consigliate: 300x150px, max 2MB">
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '0.25rem', cursor: 'help' }} 
+                          title="File PNG, dimensioni consigliate: 300x13.125rem, max 2MB">
                       ⓘ
                     </span>
                   </label>
@@ -6953,10 +6953,10 @@ export default function SettingsPage() {
                     }}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -6982,14 +6982,14 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice SDI
-                    <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '0.25rem' }}>
                       (Sistema di Interscambio)
                     </span>
                   </label>
@@ -7001,10 +7001,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceSDI: e.target.value.toUpperCase() })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       fontFamily: 'monospace',
@@ -7014,7 +7014,7 @@ export default function SettingsPage() {
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
                       e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.boxShadow = '0 0.25rem 1.25rem rgba(255, 105, 0, 0.2)';
                       e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
@@ -7030,10 +7030,10 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
@@ -7045,10 +7045,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -7074,10 +7074,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
@@ -7095,10 +7095,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     CAP
@@ -7111,10 +7111,10 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -7139,10 +7139,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Provincia
@@ -7156,10 +7156,10 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       textTransform: 'uppercase',
@@ -7185,10 +7185,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Telefono
@@ -7200,10 +7200,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -7229,10 +7229,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Email
@@ -7259,7 +7259,7 @@ export default function SettingsPage() {
                             e.target.parentElement?.appendChild(errorDiv);
                           }
                           errorDiv.textContent = 'Formato email non valido';
-                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          errorDiv.style.cssText = 'color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;';
                         } else {
                           e.target.style.borderColor = '#10b981';
                           e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
@@ -7276,10 +7276,10 @@ export default function SettingsPage() {
                     data-testid="input-legal-entity-email"
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -7300,10 +7300,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     PEC <span style={{ color: '#ef4444' }}>*</span>
@@ -7331,7 +7331,7 @@ export default function SettingsPage() {
                               e.target.parentElement?.appendChild(errorDiv);
                             }
                             errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
-                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;';
                           } else {
                             e.target.style.borderColor = '#10b981';
                             e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
@@ -7356,10 +7356,10 @@ export default function SettingsPage() {
                     data-testid="input-legal-entity-pec"
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -7380,10 +7380,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Stato
@@ -7393,10 +7393,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, stato: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       cursor: 'pointer',
@@ -7405,7 +7405,7 @@ export default function SettingsPage() {
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
                       e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.boxShadow = '0 0.25rem 1.25rem rgba(255, 105, 0, 0.2)';
                       e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
@@ -7424,27 +7424,27 @@ export default function SettingsPage() {
 
 
                 {/* Sezione Referente Amministrativo */}
-                <div style={{ gridColumn: 'span 2', marginTop: '24px' }}>
+                <div style={{ gridColumn: 'span 2', marginTop: '1.5rem' }}>
                   <h3 style={{
-                    fontSize: '16px',
+                    fontSize: '1rem',
                     fontWeight: '600',
                     color: '#111827',
-                    marginBottom: '16px',
-                    paddingBottom: '8px',
+                    marginBottom: '1rem',
+                    paddingBottom: '0.5rem',
                     borderBottom: '1px solid #e5e7eb',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Referente Amministrativo
                   </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     {/* Nome Referente */}
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Nome <span style={{ color: '#ef4444' }}>*</span>
@@ -7457,10 +7457,10 @@ export default function SettingsPage() {
                         onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminNome: e.target.value })}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           outline: 'none',
@@ -7486,10 +7486,10 @@ export default function SettingsPage() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Cognome <span style={{ color: '#ef4444' }}>*</span>
@@ -7502,10 +7502,10 @@ export default function SettingsPage() {
                         onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCognome: e.target.value })}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           outline: 'none',
@@ -7531,10 +7531,10 @@ export default function SettingsPage() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Email <span style={{ color: '#ef4444' }}>*</span>
@@ -7554,10 +7554,10 @@ export default function SettingsPage() {
                         }}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           outline: 'none',
@@ -7578,10 +7578,10 @@ export default function SettingsPage() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Codice Fiscale <span style={{ color: '#ef4444' }}>*</span>
@@ -7601,10 +7601,10 @@ export default function SettingsPage() {
                         }}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           fontFamily: 'monospace',
@@ -7614,7 +7614,7 @@ export default function SettingsPage() {
                         onFocus={(e) => {
                           e.target.style.borderColor = '#FF6900';
                           e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                          e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                          e.target.style.boxShadow = '0 0.25rem 1.25rem rgba(255, 105, 0, 0.2)';
                         }}
                       />
                     </div>
@@ -7623,10 +7623,10 @@ export default function SettingsPage() {
                     <div style={{ gridColumn: 'span 2' }}>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Indirizzo
@@ -7639,10 +7639,10 @@ export default function SettingsPage() {
                         onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminIndirizzo: e.target.value })}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           outline: 'none',
@@ -7668,10 +7668,10 @@ export default function SettingsPage() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Città
@@ -7689,10 +7689,10 @@ export default function SettingsPage() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         CAP
@@ -7705,10 +7705,10 @@ export default function SettingsPage() {
                         onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCap: e.target.value })}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           outline: 'none',
@@ -7721,10 +7721,10 @@ export default function SettingsPage() {
                     <div style={{ gridColumn: 'span 2' }}>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px',
+                        marginBottom: '0.5rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         Paese
@@ -7737,10 +7737,10 @@ export default function SettingsPage() {
                         onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminPaese: e.target.value })}
                         style={{
                           width: '100%',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           transition: 'all 0.2s ease',
                           outline: 'none',
@@ -7765,13 +7765,13 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Campo Note - full width */}
-                <div style={{ gridColumn: 'span 2', marginTop: '16px' }}>
+                <div style={{ gridColumn: 'span 2', marginTop: '1rem' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Note
@@ -7784,10 +7784,10 @@ export default function SettingsPage() {
                     rows={4}
                     style={{
                       width: '100%',
-                      padding: '8px 12px',
+                      padding: '0.5rem 0.75rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -7815,20 +7815,20 @@ export default function SettingsPage() {
               <div style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '32px',
-                paddingTop: '20px',
+                gap: '0.75rem',
+                marginTop: '2rem',
+                paddingTop: '1.25rem',
                 borderTop: '1px solid #e5e7eb'
               }}>
                 <button
                   onClick={() => setLegalEntityModal({ open: false, data: null })}
                   style={{
-                    padding: '10px 20px',
+                    padding: '0.625rem 1.25rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '6px',
+                    borderRadius: '0.375rem',
                     background: '#ffffff',
                     color: '#6b7280',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -7848,12 +7848,12 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSaveRagioneSociale}
                   style={{
-                    padding: '10px 24px',
+                    padding: '0.625rem 1.5rem',
                     background: '#FF6900',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '14px',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -7862,7 +7862,7 @@ export default function SettingsPage() {
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.background = '#e55a00';
-                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 2px 0.375rem 0 rgba(255, 105, 0, 0.4)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.background = '#FF6900';
@@ -7886,7 +7886,7 @@ export default function SettingsPage() {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(0.25rem)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -7895,19 +7895,19 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '12px',
+            borderRadius: '0.75rem',
             width: '90%',
-            maxWidth: '600px',
+            maxWidth: '37.5rem',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 20.3125rem 3.125rem -0.75rem rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
             borderTop: '3px solid transparent',
             borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
             animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
-              padding: '24px 32px',
+              padding: '1.5rem 2rem',
               background: '#ffffff',
               borderBottom: '1px solid #e5e7eb'
             }}>
@@ -7920,18 +7920,18 @@ export default function SettingsPage() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '8px'
+                    gap: '0.75rem',
+                    marginBottom: '0.5rem'
                   }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '0.625rem',
                       background: 'linear-gradient(135deg, #10b981, #059669)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                      boxShadow: '0 0.25rem 0.75rem rgba(16, 185, 129, 0.25)'
                     }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -7939,7 +7939,7 @@ export default function SettingsPage() {
                       </svg>
                     </div>
                     <h2 style={{
-                      fontSize: '20px',
+                      fontSize: '1.25rem',
                       fontWeight: '600',
                       color: '#111827',
                       margin: 0,
@@ -7952,7 +7952,7 @@ export default function SettingsPage() {
                     </h2>
                   </div>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     color: '#6b7280',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -7966,12 +7966,12 @@ export default function SettingsPage() {
                   style={{
                     background: 'rgba(255, 255, 255, 0.8)',
                     border: '1px solid rgba(226, 232, 240, 0.8)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     cursor: 'pointer',
-                    padding: '8px',
+                    padding: '0.5rem',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     color: '#64748b',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(0.5rem)'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
@@ -7990,16 +7990,16 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ padding: '2rem', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 {/* ✅ CATEGORIA - PRIMO CAMPO (span 2 colonne) */}
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Tipologia Sede <span style={{ color: '#ef4444' }}>*</span>
@@ -8014,10 +8014,10 @@ export default function SettingsPage() {
                     }}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8040,9 +8040,9 @@ export default function SettingsPage() {
                     <option value="warehouse">📦 Magazzino</option>
                   </select>
                   <div style={{
-                    fontSize: '12px',
+                    fontSize: '0.75rem',
                     color: '#6b7280',
-                    marginTop: '4px',
+                    marginTop: '0.25rem',
                     fontStyle: 'italic'
                   }}>
                     {newStore.category === 'sales_point' && 'Codice auto: 9xxxxxxx'}
@@ -8057,16 +8057,16 @@ export default function SettingsPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '12px 16px',
+                    padding: '0.75rem 1rem',
                     background: newStore.hasWarehouse ? 'rgba(16, 185, 129, 0.08)' : 'rgba(156, 163, 175, 0.08)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     border: `1px solid ${newStore.hasWarehouse ? 'rgba(16, 185, 129, 0.3)' : 'rgba(156, 163, 175, 0.3)'}`,
                     transition: 'all 0.2s ease'
                   }}>
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
@@ -8074,7 +8074,7 @@ export default function SettingsPage() {
                         📦 Gestione Magazzino
                       </label>
                       <span style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#6b7280',
                         fontStyle: 'italic'
                       }}>
@@ -8087,9 +8087,9 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setNewStore({ ...newStore, hasWarehouse: !newStore.hasWarehouse })}
                       style={{
-                        width: '48px',
-                        height: '26px',
-                        borderRadius: '13px',
+                        width: '3rem',
+                        height: '20.375rem',
+                        borderRadius: '0.8125rem',
                         background: newStore.hasWarehouse 
                           ? 'linear-gradient(135deg, #10b981, #059669)' 
                           : '#d1d5db',
@@ -8098,7 +8098,7 @@ export default function SettingsPage() {
                         position: 'relative',
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         boxShadow: newStore.hasWarehouse 
-                          ? '0 2px 8px rgba(16, 185, 129, 0.3)' 
+                          ? '0 2px 0.5rem rgba(16, 185, 129, 0.3)' 
                           : 'inset 0 1px 2px rgba(0, 0, 0, 0.1)'
                       }}
                       data-testid="toggle-has-warehouse"
@@ -8106,9 +8106,9 @@ export default function SettingsPage() {
                       <span style={{
                         position: 'absolute',
                         top: '3px',
-                        left: newStore.hasWarehouse ? '25px' : '3px',
-                        width: '20px',
-                        height: '20px',
+                        left: newStore.hasWarehouse ? '1.5625rem' : '3px',
+                        width: '1.25rem',
+                        height: '1.25rem',
                         borderRadius: '50%',
                         background: 'white',
                         transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -8122,10 +8122,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice Sede Operativa
@@ -8141,10 +8141,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, code: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
@@ -8170,10 +8170,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Nome Sede Operativa <span style={{ color: '#ef4444' }}>*</span>
@@ -8185,10 +8185,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8211,10 +8211,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
@@ -8224,10 +8224,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, organization_entity_id: e.target.value || null })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8258,10 +8258,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Canale {newStore.category === 'sales_point' && <span style={{ color: '#ef4444' }}>*</span>}
@@ -8271,10 +8271,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, channel_id: e.target.value || null })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8302,10 +8302,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
@@ -8315,10 +8315,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, commercial_area_id: e.target.value || null })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8349,10 +8349,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Stato <span style={{ color: '#ef4444' }}>*</span>
@@ -8362,10 +8362,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, status: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8393,18 +8393,18 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Brand Gestiti {newStore.category === 'sales_point' && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
                   <p style={{
-                    fontSize: '12px',
+                    fontSize: '0.75rem',
                     color: newStore.category === 'sales_point' ? '#ef4444' : '#6b7280',
-                    margin: '0 0 12px 0',
+                    margin: '0 0 0.75rem 0',
                     fontStyle: 'italic'
                   }}>
                     {newStore.category === 'sales_point' 
@@ -8412,15 +8412,15 @@ export default function SettingsPage() {
                       : 'ℹ️ Opzionale per uffici e magazzini'
                     }
                   </p>
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
                     {operatorsData.length === 0 ? (
                       <span style={{ 
-                        fontSize: '14px', 
+                        fontSize: '0.875rem', 
                         color: '#9ca3af',
                         fontStyle: 'italic',
-                        padding: '8px 12px',
+                        padding: '0.5rem 0.75rem',
                         background: '#f3f4f6',
-                        borderRadius: '8px'
+                        borderRadius: '0.5rem'
                       }}>
                         Nessun brand disponibile
                       </span>
@@ -8432,11 +8432,11 @@ export default function SettingsPage() {
                         <label key={operator.id} style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
-                          gap: '12px', 
+                          gap: '0.75rem', 
                           cursor: 'pointer',
-                          padding: '6px 10px',
+                          padding: '0.375rem 0.625rem',
                           background: isSelected ? `${brandColor}15` : '#f8fafc',
-                          borderRadius: '8px',
+                          borderRadius: '0.5rem',
                           border: `2px solid ${isSelected ? brandColor : 'transparent'}`,
                           transition: 'all 0.2s ease'
                         }}>
@@ -8451,14 +8451,14 @@ export default function SettingsPage() {
                               }
                             }}
                             style={{ 
-                              width: '20px', 
-                              height: '20px', 
+                              width: '1.25rem', 
+                              height: '1.25rem', 
                               cursor: 'pointer',
                               accentColor: brandColor
                             }}
                           />
                           <span style={{ 
-                            fontSize: '14px', 
+                            fontSize: '0.875rem', 
                             color: isSelected ? brandColor : '#374151',
                             fontWeight: '600'
                           }}>
@@ -8474,10 +8474,10 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Indirizzo <span style={{ color: '#ef4444' }}>*</span>
@@ -8489,10 +8489,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8515,10 +8515,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
@@ -8536,10 +8536,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     CAP
@@ -8552,10 +8552,10 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8583,10 +8583,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px',
+                    marginBottom: '0.5rem',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Provincia
@@ -8599,10 +8599,10 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '6px 10px',
+                      padding: '0.375rem 0.625rem',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#fafbfc',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8631,20 +8631,20 @@ export default function SettingsPage() {
               <div style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '32px',
-                paddingTop: '20px',
+                gap: '0.75rem',
+                marginTop: '2rem',
+                paddingTop: '1.25rem',
                 borderTop: '1px solid #e5e7eb'
               }}>
                 <button
                   onClick={() => setStoreModal({ open: false, data: null })}
                   style={{
-                    padding: '10px 20px',
+                    padding: '0.625rem 1.25rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '6px',
+                    borderRadius: '0.375rem',
                     background: '#ffffff',
                     color: '#6b7280',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -8664,12 +8664,12 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSaveStore}
                   style={{
-                    padding: '10px 24px',
+                    padding: '0.625rem 1.5rem',
                     background: '#FF6900',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '14px',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -8678,7 +8678,7 @@ export default function SettingsPage() {
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.background = '#e55a00';
-                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 2px 0.375rem 0 rgba(255, 105, 0, 0.4)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.background = '#FF6900';
@@ -8702,7 +8702,7 @@ export default function SettingsPage() {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(0.25rem)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -8713,21 +8713,21 @@ export default function SettingsPage() {
             data-testid="modal-nuovo-utente"
             style={{
             background: 'white',
-            borderRadius: '12px',
+            borderRadius: '0.75rem',
             width: '90%',
-            maxWidth: '900px',
+            maxWidth: '56.25rem',
             maxHeight: '90vh',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 20.3125rem 3.125rem -0.75rem rgba(0, 0, 0, 0.25)',
             borderTop: '3px solid transparent',
             borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
             zIndex: 10001
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
-              padding: '24px 32px',
+              padding: '1.5rem 2rem',
               background: '#ffffff',
               borderBottom: '1px solid #e5e7eb'
             }}>
@@ -8741,13 +8741,13 @@ export default function SettingsPage() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '8px'
+                    gap: '0.75rem',
+                    marginBottom: '0.5rem'
                   }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '0.625rem',
                       background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                       display: 'flex',
                       alignItems: 'center',
@@ -8757,7 +8757,7 @@ export default function SettingsPage() {
                       <User size={20} style={{ color: 'white' }} />
                     </div>
                     <h2 style={{
-                      fontSize: '20px',
+                      fontSize: '1.25rem',
                       fontWeight: '600',
                       color: '#111827',
                       margin: 0,
@@ -8770,7 +8770,7 @@ export default function SettingsPage() {
                     </h2>
                   </div>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     color: '#6b7280',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -8784,9 +8784,9 @@ export default function SettingsPage() {
                   style={{
                     background: 'transparent',
                     border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    width: '36px',
-                    height: '36px',
+                    borderRadius: '0.5rem',
+                    width: '2.25rem',
+                    height: '2.25rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -8809,30 +8809,30 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal con sezioni */}
-            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+            <div style={{ padding: '2rem', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
 
               {/* SEZIONE DATI DI ACCESSO */}
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   color: '#111827',
-                  marginBottom: '16px',
+                  marginBottom: '1rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  letterSpacing: '0.0.3125rem'
                 }}>
                   Dati di Accesso
                 </h3>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   {/* Username e Ruolo */}
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Username <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -8843,10 +8843,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -8857,10 +8857,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Ruolo <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -8869,10 +8869,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, ruolo: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
                         outline: 'none',
@@ -8890,10 +8890,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Status <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -8902,10 +8902,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, stato: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
                         outline: 'none',
@@ -8923,10 +8923,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Password <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -8937,10 +8937,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -8951,10 +8951,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Conferma Password <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -8965,10 +8965,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -8979,21 +8979,21 @@ export default function SettingsPage() {
               </div>
 
               {/* SEZIONE INFORMAZIONI PERSONALI */}
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   color: '#111827',
-                  marginBottom: '16px',
+                  marginBottom: '1rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  letterSpacing: '0.0.3125rem'
                 }}>
                   Informazioni Personali
                 </h3>
 
                 {/* Avatar Selector */}
                 <div style={{ 
-                  marginBottom: '24px', 
+                  marginBottom: '1.5rem', 
                   display: 'flex', 
                   justifyContent: 'center'
                 }}>
@@ -9008,14 +9008,14 @@ export default function SettingsPage() {
                   />
                 </div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Nome <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -9026,10 +9026,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -9040,10 +9040,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Cognome <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -9054,10 +9054,10 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, cognome: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -9068,10 +9068,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Email <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -9083,10 +9083,10 @@ export default function SettingsPage() {
                       onBlur={(e) => handleUserFieldValidation('email', e.target.value)}
                       style={getUserFieldStyle('email', {
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -9094,9 +9094,9 @@ export default function SettingsPage() {
                     />
                     {userValidationErrors.email && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#ef4444',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         {userValidationErrors.email}
@@ -9104,9 +9104,9 @@ export default function SettingsPage() {
                     )}
                     {userValidationState.email === 'valid' && newUser.email && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#10b981',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         ✓ Email valida
@@ -9117,10 +9117,10 @@ export default function SettingsPage() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px'
+                      marginBottom: '0.5rem'
                     }}>
                       Telefono <span style={{ color: '#ef4444' }}>*</span>
                     </label>
@@ -9132,10 +9132,10 @@ export default function SettingsPage() {
                       onBlur={(e) => handleUserFieldValidation('telefono', e.target.value)}
                       style={getUserFieldStyle('telefono', {
                         width: '100%',
-                        padding: '10px 12px',
+                        padding: '0.625rem 0.75rem',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
@@ -9143,9 +9143,9 @@ export default function SettingsPage() {
                     />
                     {userValidationErrors.telefono && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#ef4444',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         {userValidationErrors.telefono}
@@ -9153,9 +9153,9 @@ export default function SettingsPage() {
                     )}
                     {userValidationState.telefono === 'valid' && newUser.telefono && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#10b981',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         ✓ Telefono valido
@@ -9166,17 +9166,17 @@ export default function SettingsPage() {
               </div>
 
               {/* SEZIONE CONFIGURAZIONE VoIP (ENTERPRISE APPROACH) */}
-              <div style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   color: '#111827',
-                  marginBottom: '16px',
+                  marginBottom: '1rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
+                  letterSpacing: '0.0.3125rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '0.5rem'
                 }}>
                   <Phone size={16} style={{ color: '#FF6900' }} />
                   VoIP Extension (Opzionale)
@@ -9184,13 +9184,13 @@ export default function SettingsPage() {
 
                 {/* Info banner */}
                 <div style={{
-                  padding: '12px',
+                  padding: '0.75rem',
                   background: '#f0f9ff',
                   border: '1px solid #bae6fd',
-                  borderRadius: '8px',
-                  marginBottom: '16px'
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem'
                 }}>
-                  <p style={{ fontSize: '13px', color: '#0369a1', margin: 0 }}>
+                  <p style={{ fontSize: '0.8125rem', color: '#0369a1', margin: 0 }}>
                     💡 <strong>Nota:</strong> Le extensions devono essere create prima in <em>Settings → Channels → Phone/VoIP</em>. 
                     Qui puoi solo assegnare un'extension già esistente all'utente.
                   </p>
@@ -9199,10 +9199,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '8px'
+                    marginBottom: '0.5rem'
                   }}>
                     Assegna Extension
                   </label>
@@ -9211,10 +9211,10 @@ export default function SettingsPage() {
                     onChange={(e) => setNewUser({ ...newUser, extensionId: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
+                      padding: '0.625rem 0.75rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       background: '#ffffff',
                       cursor: 'pointer',
                       outline: 'none'
@@ -9254,7 +9254,7 @@ export default function SettingsPage() {
                       <option value="" disabled>Nessuna extension configurata. Crea prima le extensions in Settings → Channels.</option>
                     )}
                   </select>
-                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.375rem' }}>
                     <span style={{ color: '#16a34a' }}>🟢 Libera</span> | 
                     <span style={{ color: '#dc2626' }}> 🔴 Assegnata</span> | 
                     <span style={{ color: '#374151' }}> 🔵 Assegnata a questo utente</span>
@@ -9263,28 +9263,28 @@ export default function SettingsPage() {
               </div>
 
               {/* ✅ NUOVO SISTEMA SCOPE PIRAMIDALE - ALLA FINE */}
-              <div style={{ marginBottom: '28px' }}>
+              <div style={{ marginBottom: '1.75rem' }}>
                 <h3 style={{
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   color: '#111827',
-                  marginBottom: '16px',
+                  marginBottom: '1rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  letterSpacing: '0.0.3125rem'
                 }}>
                   🎯 Scope di Accesso Piramidale
                 </h3>
                 
                 {/* 📋 PRIMO LIVELLO: Checkbox "Seleziona tutto ragioni sociali" */}
-                <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '1.25rem' }}>
                   <label style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    padding: '16px',
+                    gap: '0.75rem',
+                    padding: '1rem',
                     background: newUser.selectAllLegalEntities ? '#ecfdf5' : '#f9fafb',
                     border: `2px solid ${newUser.selectAllLegalEntities ? '#10b981' : '#e5e7eb'}`,
-                    borderRadius: '12px',
+                    borderRadius: '0.75rem',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease'
                   }}>
@@ -9307,9 +9307,9 @@ export default function SettingsPage() {
                       }}
                     />
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '0.625rem',
                       background: newUser.selectAllLegalEntities ? 'linear-gradient(135deg, #10b981, #047857)' : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                       display: 'flex',
                       alignItems: 'center',
@@ -9320,15 +9320,15 @@ export default function SettingsPage() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{
-                        fontSize: '16px',
+                        fontSize: '1rem',
                         fontWeight: '600',
                         color: '#111827',
-                        marginBottom: '4px'
+                        marginBottom: '0.25rem'
                       }}>
                         {newUser.selectAllLegalEntities ? '🌟 Accesso Completo Organizzazione' : 'Accesso Completo'}
                       </div>
                       <div style={{
-                        fontSize: '13px',
+                        fontSize: '0.8125rem',
                         color: '#6b7280'
                       }}>
                         {newUser.selectAllLegalEntities 
@@ -9338,11 +9338,11 @@ export default function SettingsPage() {
                     </div>
                     {newUser.selectAllLegalEntities && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#059669',
                         background: '#d1fae5',
-                        padding: '6px 12px',
-                        borderRadius: '20px',
+                        padding: '0.375rem 0.75rem',
+                        borderRadius: '1.25rem',
                         fontWeight: '600'
                       }}>
                         COMPLETO
@@ -9353,20 +9353,20 @@ export default function SettingsPage() {
 
                 {/* 📍 PRIMO LIVELLO PIRAMIDALE: Selezione Aree Commerciali */}
                 {!newUser.selectAllLegalEntities && (
-                  <div style={{ marginBottom: '20px' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '12px'
+                      marginBottom: '0.75rem'
                     }}>
                       📍 Filtra per Area Commerciale
                       <span style={{ 
-                        fontSize: '12px', 
+                        fontSize: '0.75rem', 
                         fontWeight: '400', 
                         color: '#6b7280',
-                        marginLeft: '8px'
+                        marginLeft: '0.5rem'
                       }}>
                         (Opzionale - filtra i punti vendita per area)
                       </span>
@@ -9374,24 +9374,24 @@ export default function SettingsPage() {
                     <div style={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '8px',
-                      padding: '12px',
+                      gap: '0.5rem',
+                      padding: '0.75rem',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
+                      borderRadius: '0.75rem',
                       background: '#f9fafb'
                     }}>
                       {(commercialAreas as any[]).map((area: any) => (
                         <label key={area.id} style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
-                          padding: '8px 14px',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.875rem',
                           cursor: 'pointer',
-                          borderRadius: '20px',
+                          borderRadius: '1.25rem',
                           transition: 'all 0.2s ease',
                           background: newUser.selectedAreas.includes(area.id) ? '#dbeafe' : '#ffffff',
                           border: `2px solid ${newUser.selectedAreas.includes(area.id) ? '#3b82f6' : '#e5e7eb'}`,
-                          fontSize: '13px',
+                          fontSize: '0.8125rem',
                           fontWeight: newUser.selectedAreas.includes(area.id) ? '600' : '400',
                           color: newUser.selectedAreas.includes(area.id) ? '#1d4ed8' : '#374151'
                         }}>
@@ -9420,24 +9420,24 @@ export default function SettingsPage() {
                           <MapPin size={14} />
                           {area.name || area.code}
                           {newUser.selectedAreas.includes(area.id) && (
-                            <span style={{ marginLeft: '4px' }}>✓</span>
+                            <span style={{ marginLeft: '0.25rem' }}>✓</span>
                           )}
                         </label>
                       ))}
                       {(commercialAreas as any[]).length === 0 && (
-                        <span style={{ color: '#9ca3af', fontSize: '13px' }}>
+                        <span style={{ color: '#9ca3af', fontSize: '0.8125rem' }}>
                           Nessuna area commerciale configurata
                         </span>
                       )}
                     </div>
                     {newUser.selectedAreas.length > 0 && (
                       <div style={{
-                        marginTop: '8px',
-                        fontSize: '12px',
+                        marginTop: '0.5rem',
+                        fontSize: '0.75rem',
                         color: '#3b82f6',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px'
+                        gap: '0.25rem'
                       }}>
                         <Filter size={12} />
                         {newUser.selectedAreas.length} area/e selezionate - i punti vendita saranno filtrati
@@ -9448,30 +9448,30 @@ export default function SettingsPage() {
 
                 {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
                 {!newUser.selectAllLegalEntities && (
-                  <div style={{ marginBottom: '20px' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '12px'
+                      marginBottom: '0.75rem'
                     }}>
                       📋 Seleziona Ragioni Sociali Specifiche <span style={{ color: '#ef4444' }}>*</span>
                       <span style={{ 
-                        fontSize: '12px', 
+                        fontSize: '0.75rem', 
                         fontWeight: '400', 
                         color: '#6b7280',
-                        marginLeft: '8px'
+                        marginLeft: '0.5rem'
                       }}>
                         (Secondo livello - filtra i punti vendita)
                       </span>
                     </label>
                     <div style={{
-                      maxHeight: '200px',
+                      maxHeight: '12.5rem',
                       overflowY: 'auto',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      padding: '12px',
+                      borderRadius: '0.75rem',
+                      padding: '0.75rem',
                       background: '#ffffff'
                     }}>
                       {ragioneSocialiList
@@ -9480,14 +9480,14 @@ export default function SettingsPage() {
                         <label key={rs.id} style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px',
-                          padding: '12px',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
                           cursor: 'pointer',
-                          borderRadius: '8px',
+                          borderRadius: '0.5rem',
                           transition: 'all 0.2s ease',
                           background: newUser.selectedLegalEntities.includes(rs.id) ? '#e0f2fe' : 'transparent',
                           border: `1px solid ${newUser.selectedLegalEntities.includes(rs.id) ? '#0ea5e9' : 'transparent'}`,
-                          marginBottom: '4px'
+                          marginBottom: '0.25rem'
                         }}>
                           <input
                             type="checkbox"
@@ -9516,22 +9516,22 @@ export default function SettingsPage() {
                             }}
                           />
                           <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
+                            width: '2rem',
+                            height: '2rem',
+                            borderRadius: '0.5rem',
                             background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
-                            fontSize: '12px',
+                            fontSize: '0.75rem',
                             fontWeight: '600'
                           }}>
                             {rs.nome ? rs.nome.charAt(0) : '?'}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{
-                              fontSize: '14px',
+                              fontSize: '0.875rem',
                               fontWeight: '600',
                               color: '#111827',
                               marginBottom: '2px'
@@ -9539,18 +9539,18 @@ export default function SettingsPage() {
                               {rs.nome || 'Denominazione non disponibile'}
                             </div>
                             <div style={{
-                              fontSize: '12px',
+                              fontSize: '0.75rem',
                               color: '#6b7280'
                             }}>
                               P.IVA: {rs.pIva || 'N/A'}
                             </div>
                           </div>
                           <div style={{
-                            fontSize: '11px',
+                            fontSize: '0.6875rem',
                             color: '#0369a1',
                             background: '#e0f2fe',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.75rem',
                             fontWeight: '500'
                           }}>
                             {puntiVenditaList.filter(pv => pv.organizationEntityId === rs.id && (pv.status === 'active' || pv.status === 'Attivo')).length} negozi
@@ -9563,30 +9563,30 @@ export default function SettingsPage() {
 
                 {/* 🏪 TERZO LIVELLO: Multi-select punti vendita filtrati */}
                 {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length > 0 && (
-                  <div style={{ marginBottom: '20px' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '12px'
+                      marginBottom: '0.75rem'
                     }}>
                       🏪 Seleziona Punti Vendita Specifici 
                       <span style={{ 
-                        fontSize: '12px', 
+                        fontSize: '0.75rem', 
                         fontWeight: '400', 
                         color: '#6b7280',
-                        marginLeft: '8px'
+                        marginLeft: '0.5rem'
                       }}>
                         ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && (pv.status === 'active' || pv.status === 'Attivo')).length} disponibili dalle ragioni sociali selezionate)
                       </span>
                     </label>
                     <div style={{
-                      maxHeight: '300px',
+                      maxHeight: '18.75rem',
                       overflowY: 'auto',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      padding: '12px',
+                      borderRadius: '0.75rem',
+                      padding: '0.75rem',
                       background: '#ffffff'
                     }}>
                       {puntiVenditaList
@@ -9596,14 +9596,14 @@ export default function SettingsPage() {
                         <label key={pv.id} style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px',
-                          padding: '12px',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
                           cursor: 'pointer',
-                          borderRadius: '8px',
+                          borderRadius: '0.5rem',
                           transition: 'all 0.2s ease',
                           background: newUser.selectedStores.includes(pv.id) ? '#fef3c7' : 'transparent',
                           border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#f59e0b' : 'transparent'}`,
-                          marginBottom: '4px'
+                          marginBottom: '0.25rem'
                         }}>
                           <input
                             type="checkbox"
@@ -9627,22 +9627,22 @@ export default function SettingsPage() {
                             }}
                           />
                           <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
+                            width: '2rem',
+                            height: '2rem',
+                            borderRadius: '0.5rem',
                             background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
-                            fontSize: '11px',
+                            fontSize: '0.6875rem',
                             fontWeight: '600'
                           }}>
                             {pv.code}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{
-                              fontSize: '14px',
+                              fontSize: '0.875rem',
                               fontWeight: '600',
                               color: '#111827',
                               marginBottom: '2px'
@@ -9650,18 +9650,18 @@ export default function SettingsPage() {
                               {pv.nome}
                             </div>
                             <div style={{
-                              fontSize: '12px',
+                              fontSize: '0.75rem',
                               color: '#6b7280'
                             }}>
                               {pv.citta} • {ragioneSocialiList.find(rs => rs.id === pv.ragioneSociale_id)?.denominazione}
                             </div>
                           </div>
                           <div style={{
-                            fontSize: '11px',
+                            fontSize: '0.6875rem',
                             color: pv.status === 'active' ? '#059669' : '#dc2626',
                             background: pv.status === 'active' ? '#d1fae5' : '#fee2e2',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.75rem',
                             fontWeight: '500'
                           }}>
                             {pv.status === 'active' ? 'Attivo' : 'Inattivo'}
@@ -9677,17 +9677,17 @@ export default function SettingsPage() {
                   <div style={{
                     background: '#fef2f2',
                     border: '1px solid #fca5a5',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginTop: '16px'
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
+                    marginTop: '1rem'
                   }}>
                     <p style={{
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: '#991b1b',
                       margin: 0,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '0.5rem'
                     }}>
                       <AlertCircle size={16} />
                       ⚠️ Seleziona almeno una ragione sociale o attiva "Seleziona tutto"
@@ -9700,25 +9700,25 @@ export default function SettingsPage() {
                   <div style={{
                     background: '#f0f9ff',
                     border: '1px solid #0ea5e9',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginTop: '16px'
+                    borderRadius: '0.75rem',
+                    padding: '1rem',
+                    marginTop: '1rem'
                   }}>
                     <div style={{
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#0369a1',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '0.5rem'
                     }}>
                       <CheckCircle size={16} />
                       ✅ Riepilogo Accesso
                     </div>
                     {newUser.selectAllLegalEntities ? (
                       <p style={{
-                        fontSize: '13px',
+                        fontSize: '0.8125rem',
                         color: '#0369a1',
                         margin: 0
                       }}>
@@ -9726,11 +9726,11 @@ export default function SettingsPage() {
                       </p>
                     ) : (
                       <div style={{
-                        fontSize: '13px',
+                        fontSize: '0.8125rem',
                         color: '#0369a1',
                         margin: 0
                       }}>
-                        <p style={{ margin: '0 0 4px 0' }}>
+                        <p style={{ margin: '0 0 0.25rem 0' }}>
                           📋 <strong>Ragioni Sociali:</strong> {newUser.selectedLegalEntities.length} selezionate
                         </p>
                         <p style={{ margin: 0 }}>
@@ -9746,20 +9746,20 @@ export default function SettingsPage() {
               <div style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '24px',
-                paddingTop: '20px',
+                gap: '0.75rem',
+                marginTop: '1.5rem',
+                paddingTop: '1.25rem',
                 borderTop: '1px solid #e5e7eb'
               }}>
                 <button
                   onClick={() => setUserModal({ open: false, data: null })}
                   style={{
-                    padding: '10px 20px',
+                    padding: '0.625rem 1.25rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '6px',
+                    borderRadius: '0.375rem',
                     background: '#ffffff',
                     color: '#6b7280',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -9995,29 +9995,29 @@ export default function SettingsPage() {
                     createUser();
                   }}
                   style={{
-                    padding: '10px 24px',
+                    padding: '0.625rem 1.5rem',
                     background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '14px',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    boxShadow: '0 4px 15px -3px rgba(255, 105, 0, 0.3)',
+                    boxShadow: '0 0.25rem 0.9375rem -3px rgba(255, 105, 0, 0.3)',
                     position: 'relative',
                     overflow: 'hidden'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.background = 'linear-gradient(135deg, #ff7a1f, #ff9547)';
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(255, 105, 0, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 0.625rem 20.3125rem -0.3125rem rgba(255, 105, 0, 0.4)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px -3px rgba(255, 105, 0, 0.3)';
+                    e.currentTarget.style.boxShadow = '0 0.25rem 0.9375rem -3px rgba(255, 105, 0, 0.3)';
                   }}
                 >
                   Salva Utente
@@ -10031,18 +10031,18 @@ export default function SettingsPage() {
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header - Direttamente sullo sfondo */}
         <div style={{
-          marginBottom: '24px'
+          marginBottom: '1.5rem'
         }}>
           <h1 style={{
-            fontSize: '28px',
+            fontSize: '1.75rem',
             fontWeight: '700',
             color: '#111827',
-            margin: '0 0 8px 0'
+            margin: '0 0 0.5rem 0'
           }}>
             Configurazioni Sistema
           </h1>
           <p style={{
-            fontSize: '15px',
+            fontSize: '0.9375rem',
             color: '#6b7280',
             margin: 0
           }}>
@@ -10053,19 +10053,19 @@ export default function SettingsPage() {
         {/* Tabs Container */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '16px',
-          padding: '20px',
-          marginBottom: '24px',
+          backdropFilter: 'blur(0.625rem)',
+          borderRadius: '1rem',
+          padding: '1.25rem',
+          marginBottom: '1.5rem',
           border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          boxShadow: '0 0.25rem 0.375rem rgba(0, 0, 0, 0.05)'
         }}>
           <div style={{
             display: 'flex',
             background: 'rgba(243, 244, 246, 0.5)',
-            borderRadius: '12px',
-            padding: '4px',
-            gap: '4px'
+            borderRadius: '0.75rem',
+            padding: '0.25rem',
+            gap: '0.25rem'
           }}>
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -10081,22 +10081,22 @@ export default function SettingsPage() {
                       : 'transparent',
                     color: isActive ? 'white' : '#6b7280',
                     border: 'none',
-                    borderRadius: '12px',
-                    padding: '14px 20px',
-                    fontSize: '14px',
+                    borderRadius: '0.75rem',
+                    padding: '0.875rem 1.25rem',
+                    fontSize: '0.875rem',
                     fontWeight: isActive ? '600' : '500',
                     cursor: 'pointer',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: isActive 
-                      ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                      ? '0 0.25rem 1rem rgba(255, 105, 0, 0.3)' 
                       : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
+                    gap: '0.5rem',
                     textAlign: 'center',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(0.5rem)',
+                    WebkitBackdropFilter: 'blur(0.5rem)'
                   }}
                   onMouseOver={(e) => {
                     if (!isActive) {
@@ -10155,7 +10155,7 @@ export default function SettingsPage() {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(0.5rem)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -10163,20 +10163,20 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '16px',
-            padding: '32px',
-            maxWidth: '500px',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '31.25rem',
             width: '90%',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
+            boxShadow: '0 1.25rem 2.5rem rgba(0, 0, 0, 0.15)'
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '24px'
+              marginBottom: '1.5rem'
             }}>
               <h3 style={{
-                fontSize: '20px',
+                fontSize: '1.25rem',
                 fontWeight: '600',
                 color: '#111827',
                 margin: 0
@@ -10188,7 +10188,7 @@ export default function SettingsPage() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  fontSize: '20px',
+                  fontSize: '1.25rem',
                   cursor: 'pointer',
                   color: '#6b7280'
                 }}
@@ -10197,8 +10197,8 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
                 Codice Ruolo
               </label>
               <input
@@ -10208,18 +10208,18 @@ export default function SettingsPage() {
                 placeholder="es. custom_role"
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   outline: 'none',
                   transition: 'border-color 0.2s'
                 }}
               />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
                 Nome Ruolo
               </label>
               <input
@@ -10229,18 +10229,18 @@ export default function SettingsPage() {
                 placeholder="es. Custom Role"
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   outline: 'none',
                   transition: 'border-color 0.2s'
                 }}
               />
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
                 Descrizione
               </label>
               <textarea
@@ -10250,10 +10250,10 @@ export default function SettingsPage() {
                 rows={3}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   outline: 'none',
                   transition: 'border-color 0.2s',
                   resize: 'vertical'
@@ -10263,18 +10263,18 @@ export default function SettingsPage() {
 
             <div style={{
               display: 'flex',
-              gap: '12px',
+              gap: '0.75rem',
               justifyContent: 'flex-end'
             }}>
               <button
                 onClick={() => setCreateRoleModalOpen(false)}
                 style={{
-                  padding: '10px 20px',
+                  padding: '0.625rem 1.25rem',
                   background: '#f3f4f6',
                   color: '#374151',
                   border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
@@ -10286,14 +10286,14 @@ export default function SettingsPage() {
                 onClick={createCustomRole}
                 disabled={!newRoleData.code || !newRoleData.name}
                 style={{
-                  padding: '10px 20px',
+                  padding: '0.625rem 1.25rem',
                   background: newRoleData.code && newRoleData.name 
                     ? 'linear-gradient(135deg, #8339ff, #6b2cbf)' 
                     : '#e5e7eb',
                   color: newRoleData.code && newRoleData.name ? 'white' : '#6b7280',
                   border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   fontWeight: '600',
                   cursor: newRoleData.code && newRoleData.name ? 'pointer' : 'not-allowed',
                   transition: 'all 0.2s ease'
