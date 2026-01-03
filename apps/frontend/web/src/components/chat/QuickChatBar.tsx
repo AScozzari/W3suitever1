@@ -35,7 +35,9 @@ export function QuickChatBar({ onChatCreated, placeholder = "Cerca un collega pe
     queryFn: async () => {
       if (search.length < 2) return [];
       const res = await apiRequest(`/api/users?search=${encodeURIComponent(search)}&limit=8`, { method: 'GET' });
-      return (res as QuickChatUser[]).filter(u => u.id !== user?.id);
+      // API returns { success, data } wrapper or direct array - handle both
+      const usersArray = Array.isArray(res) ? res : (res as any)?.data || [];
+      return usersArray.filter((u: QuickChatUser) => u.id !== user?.id);
     },
     enabled: search.length >= 2
   });

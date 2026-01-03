@@ -233,9 +233,9 @@ export default function CommunicationCenterPage() {
         </div>
 
         {/* Container principale che occupa tutto lo spazio rimanente */}
-        <div className="flex-1 px-6 pb-4 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0">
           {activeTab === 'messenger' && (
-            <div className="h-full bg-white rounded-xl border shadow-sm overflow-hidden flex min-h-0">
+            <div className="flex-1 mx-6 mb-4 bg-white rounded-xl border shadow-sm overflow-hidden flex min-h-0">
               {/* Sidebar conversazioni con scroll indipendente */}
               <div className="w-80 border-r flex flex-col bg-gray-50/50 min-h-0">
                 <div className="shrink-0 p-3 border-b bg-white space-y-2">
@@ -428,7 +428,7 @@ export default function CommunicationCenterPage() {
           )}
 
           {activeTab === 'feeds' && (
-            <div className="h-full bg-white rounded-xl border shadow-sm flex items-center justify-center">
+            <div className="flex-1 mx-6 mb-4 bg-white rounded-xl border shadow-sm flex items-center justify-center">
               <div className="text-center text-gray-500 p-8">
                 <Rss className="h-16 w-16 mx-auto mb-4 opacity-20" />
                 <p className="text-lg font-medium">Feed in arrivo</p>
@@ -438,7 +438,7 @@ export default function CommunicationCenterPage() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="h-full bg-white rounded-xl border shadow-sm flex items-center justify-center">
+            <div className="flex-1 mx-6 mb-4 bg-white rounded-xl border shadow-sm flex items-center justify-center">
               <div className="text-center text-gray-500 p-8">
                 <Settings className="h-16 w-16 mx-auto mb-4 opacity-20" />
                 <p className="text-lg font-medium">Impostazioni Comunicazione</p>

@@ -1220,8 +1220,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
           padding: isMobile ? '16px' : '24px',
           transition: 'all 0.3s ease',
-          minHeight: isMobile ? 'calc(100vh - 120px)' : 'auto',
-          boxSizing: 'border-box'
+          height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 64px)',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          overflow: 'hidden'
         }}>
           {children}
         </main>
