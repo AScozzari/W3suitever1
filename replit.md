@@ -119,14 +119,13 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
-- **CSS UNITS RULE (OBBLIGATORIO - Jan 2026)**:
-  - **✅ SEMPRE `rem`**: Usare rem per TUTTE le dimensioni (font-size, padding, margin, width, height, gap)
-  - **Formula**: `rem = px / 16` (es. 16px = 1rem, 14px = 0.875rem, 24px = 1.5rem, 48px = 3rem)
-  - **✅ Eccezione `px`**: Solo per border-width (1px, 2px, 3px) che non necessitano scaling
-  - **📁 File convertiti**: Login.tsx, ForgotPassword.tsx, ResetPassword.tsx, SettingsPage.tsx
-  - **📋 Strategia**: Convertire gradualmente i file rimanenti quando vengono modificati
-  - **❌ NEVER**: Usare px per padding, margin, font-size, width, height, gap
-  - **✅ ALWAYS**: Verificare che i nuovi componenti usino rem per scalabilità con VITE_FONT_SCALE
+- **CSS UNITS RULE (OBBLIGATORIO da Gen 2026)**:
+  - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius
+  - **✅ px OK**: border-width (1-2px), box-shadow offset/blur (piccoli valori)
+  - **Formula**: `rem = px / 16` (es: 16px = 1rem, 14px = 0.875rem)
+  - **Motivo**: VITE_FONT_SCALE=80 scala solo rem/em, non px
+  - **Pagine convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
+  - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE=80`). Content integrates into existing dashboards using `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
