@@ -5974,7 +5974,7 @@ export default function SettingsPage() {
         nome: user.nome || user.firstName || '',
         cognome: user.cognome || user.lastName || '',
         avatar: {
-          url: user.avatar?.url || user.avatarUrl || user.profileImageUrl || null,
+          url: user.avatarUrl || user.avatar?.url || user.profileImageUrl || null,
           blob: null,
           type: 'upload' as 'upload' | 'generated'
         },

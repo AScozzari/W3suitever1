@@ -1801,9 +1801,36 @@ router.get('/users', async (req, res) => {
       );
     }
 
+    // ✅ Build avatar URLs from avatar_object_path
+    const usersWithAvatarUrl = usersList.map(user => {
+      let avatarUrl: string | null = null;
+      if (user.avatarObjectPath) {
+        const filename = user.avatarObjectPath.split('/').pop();
+        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+      }
+      return {
+        ...user,
+        avatarUrl,
+        // Add convenient aliases for frontend compatibility
+        nome: user.firstName,
+        cognome: user.lastName,
+        telefono: user.phone,
+        dataNascita: user.dateOfBirth,
+        codiceFiscale: user.fiscalCode,
+        sesso: user.gender,
+        citta: user.city,
+        provincia: user.province,
+        cap: user.postalCode,
+        paese: user.country,
+        dataAssunzione: user.hireDate,
+        tipoContratto: user.contractType,
+        livello: user.level
+      };
+    });
+
     res.status(200).json({
       success: true,
-      data: usersList,
+      data: usersWithAvatarUrl,
       message: 'Users retrieved successfully',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);

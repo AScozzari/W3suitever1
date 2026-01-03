@@ -1564,7 +1564,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/action-definitions', actionDefinitionsRoutes);
 
   // ==================== AVATAR ROUTES ====================
-  // Avatar upload/serve endpoints - tenant-scoped
+  // Public avatar serve endpoint - no auth required (tenantId in path for security)
+  app.get('/api/avatars/serve/:tenantId/:filename', async (req, res) => {
+    try {
+      const { tenantId, filename } = req.params;
+      const objectKey = `avatars/${tenantId}/${filename}`;
+      const { Client } = await import('@replit/object-storage');
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      const client = bucketId ? new Client({ bucketId }) : new Client();
+      const { value, ok } = await client.downloadAsBytes(objectKey);
+      if (!ok || !value) {
+        return res.status(404).json({ error: 'Avatar non trovato' });
+      }
+      // SDK returns array containing Buffer, extract first element
+      const buffer = Array.isArray(value) ? value[0] : value;
+      if (!buffer) {
+        return res.status(404).json({ error: 'Avatar non trovato' });
+      }
+      const extension = filename.split('.').pop()?.toLowerCase();
+      const contentType = extension === 'png' ? 'image/png' : extension === 'webp' ? 'image/webp' : 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buffer);
+    } catch (error) {
+      console.error('Avatar serve error:', error);
+      res.status(500).json({ error: 'Errore nel recupero avatar' });
+    }
+  });
+  // Avatar upload/delete endpoints - tenant-scoped (require auth)
   app.use('/api/avatars', tenantMiddleware, rbacMiddleware, avatarRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
