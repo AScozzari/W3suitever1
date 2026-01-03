@@ -1,9 +1,12 @@
 import express, { Request, Response } from 'express';
+import multer from 'multer';
 import { db } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { handleApiError } from '../core/error-utils';
 import { z } from 'zod';
-import { eq, and, or, desc, asc, sql, isNull, inArray, lt, gt } from 'drizzle-orm';
+import { eq, and, or, desc, asc, sql, isNull, inArray, lt, gt, ilike } from 'drizzle-orm';
+import { Client } from '@replit/object-storage';
+import { v4 as uuidv4 } from 'uuid';
 import {
   feedPosts,
   feedPostRecipients,
@@ -19,12 +22,15 @@ import {
   users,
   teams,
   userTeams,
+  departments,
+  teamDepartments,
   insertFeedPostSchema,
   insertFeedCommentSchema,
   type FeedPost,
   type FeedComment,
   type FeedPollOption,
 } from '../db/schema/w3suite';
+import { structuredLogger } from '../core/logger';
 
 const router = express.Router();
 
@@ -907,6 +913,275 @@ router.get('/stats', requirePermission('communication.read'), async (req: Reques
       unreadPosts: unreadCount?.count || 0,
       myBadges: myBadgesCount?.count || 0
     });
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
+// File upload configuration
+const FEED_FILE_CONSTRAINTS = {
+  maxSize: 10 * 1024 * 1024, // 10MB
+  allowedTypes: [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain', 'text/csv'
+  ]
+};
+
+const feedUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: FEED_FILE_CONSTRAINTS.maxSize },
+  fileFilter: (req, file, cb) => {
+    if (FEED_FILE_CONSTRAINTS.allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo file non supportato'));
+    }
+  }
+});
+
+// Upload file for feed attachment
+router.post('/attachments/upload', feedUpload.single('file'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user!.id;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nessun file caricato' });
+    }
+
+    const extension = req.file.originalname.split('.').pop()?.toLowerCase() || 'bin';
+    const fileId = uuidv4();
+    const objectKey = `feed/${tenantId}/${fileId}.${extension}`;
+
+    try {
+      const client = new Client();
+      await client.uploadFromBytes(objectKey, req.file.buffer);
+
+      structuredLogger.info('Feed file uploaded', {
+        component: 'feed-upload',
+        metadata: { userId, tenantId, objectKey, size: req.file.size, originalName: req.file.originalname }
+      });
+
+      res.json({
+        id: fileId,
+        objectKey,
+        fileName: req.file.originalname,
+        contentType: req.file.mimetype,
+        fileSize: req.file.size,
+        downloadUrl: `/api/feed/attachments/download/${fileId}`,
+        previewUrl: req.file.mimetype.startsWith('image/') ? `/api/feed/attachments/preview/${fileId}` : null
+      });
+    } catch (uploadError) {
+      structuredLogger.error('Feed file upload failed', {
+        component: 'feed-upload',
+        error: uploadError instanceof Error ? uploadError : new Error(String(uploadError))
+      });
+      return res.status(500).json({ error: 'Errore durante il caricamento' });
+    }
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
+// Download/serve feed attachment
+router.get('/attachments/download/:fileId', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { fileId } = req.params;
+
+    // Find the file in object storage
+    const client = new Client();
+    const prefix = `feed/${tenantId}/${fileId}`;
+    const files = await client.list({ prefix });
+    
+    if (!files.objects || files.objects.length === 0) {
+      return res.status(404).json({ error: 'File non trovato' });
+    }
+
+    const objectKey = files.objects[0].name;
+    const fileBuffer = await client.downloadAsBytes(objectKey);
+    
+    const extension = objectKey.split('.').pop() || '';
+    const mimeTypes: Record<string, string> = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'txt': 'text/plain',
+      'csv': 'text/csv'
+    };
+
+    res.setHeader('Content-Type', mimeTypes[extension] || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileId}.${extension}"`);
+    res.send(Buffer.from(fileBuffer));
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
+// Preview feed attachment (images only)
+router.get('/attachments/preview/:fileId', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { fileId } = req.params;
+
+    const client = new Client();
+    const prefix = `feed/${tenantId}/${fileId}`;
+    const files = await client.list({ prefix });
+    
+    if (!files.objects || files.objects.length === 0) {
+      return res.status(404).json({ error: 'File non trovato' });
+    }
+
+    const objectKey = files.objects[0].name;
+    const extension = objectKey.split('.').pop()?.toLowerCase() || '';
+    
+    if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      return res.status(400).json({ error: 'Preview disponibile solo per immagini' });
+    }
+
+    const fileBuffer = await client.downloadAsBytes(objectKey);
+    
+    const mimeTypes: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp'
+    };
+
+    res.setHeader('Content-Type', mimeTypes[extension]);
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(Buffer.from(fileBuffer));
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
+// Search users for @mentions and recipient selection
+router.get('/users/search', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { q, limit = '20' } = req.query;
+    const searchTerm = String(q || '').trim();
+    const maxResults = Math.min(parseInt(String(limit)), 50);
+
+    const conditions = [eq(users.tenantId, tenantId), eq(users.isActive, true)];
+    
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(users.firstName, `%${searchTerm}%`),
+          ilike(users.lastName, `%${searchTerm}%`),
+          ilike(users.email, `%${searchTerm}%`)
+        )!
+      );
+    }
+
+    const usersData = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      avatar: users.profileImageUrl
+    })
+    .from(users)
+    .where(and(...conditions))
+    .limit(maxResults)
+    .orderBy(users.firstName);
+
+    res.json(usersData.map(u => ({
+      ...u,
+      displayName: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email.split('@')[0]
+    })));
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
+// Get teams with department filter
+router.get('/teams/search', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { departmentId, q } = req.query;
+    const searchTerm = String(q || '').trim();
+
+    let query = db.select({
+      id: teams.id,
+      name: teams.name,
+      description: teams.description
+    })
+    .from(teams)
+    .where(and(
+      eq(teams.tenantId, tenantId),
+      eq(teams.isActive, true),
+      searchTerm ? ilike(teams.name, `%${searchTerm}%`) : undefined
+    ))
+    .orderBy(teams.name);
+
+    // If departmentId provided, filter by department
+    if (departmentId) {
+      const teamIdsInDept = await db.select({ teamId: teamDepartments.teamId })
+        .from(teamDepartments)
+        .where(and(
+          eq(teamDepartments.tenantId, tenantId),
+          eq(teamDepartments.departmentId, String(departmentId))
+        ));
+      
+      const teamIdList = teamIdsInDept.map(t => t.teamId);
+      if (teamIdList.length > 0) {
+        query = db.select({
+          id: teams.id,
+          name: teams.name,
+          description: teams.description
+        })
+        .from(teams)
+        .where(and(
+          eq(teams.tenantId, tenantId),
+          eq(teams.isActive, true),
+          inArray(teams.id, teamIdList),
+          searchTerm ? ilike(teams.name, `%${searchTerm}%`) : undefined
+        ))
+        .orderBy(teams.name);
+      }
+    }
+
+    const teamsData = await query;
+    res.json(teamsData);
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
+// Get departments for filtering
+router.get('/departments', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+
+    const depts = await db.select({
+      id: departments.id,
+      name: departments.name,
+      code: departments.code,
+      description: departments.description
+    })
+    .from(departments)
+    .where(and(
+      eq(departments.tenantId, tenantId),
+      eq(departments.isActive, true)
+    ))
+    .orderBy(departments.name);
+
+    res.json(depts);
   } catch (error) {
     handleApiError(error, res);
   }
