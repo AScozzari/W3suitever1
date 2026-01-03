@@ -5,7 +5,7 @@ VPS_HOST="root@82.165.16.223"
 VPS_APP_DIR="/var/www/w3suite"
 VPS_RELEASES_DIR="/var/www/w3suite/releases"
 VPS_CURRENT_LINK="/var/www/w3suite/current"
-SSH_KEY="$HOME/.ssh/vps_key"
+SSH_KEY="$(dirname "$0")/keys/vps_key"
 EXCLUDE_FILE="deploy/rsync-exclude.txt"
 
 echo "🚀 W3Suite Incremental Deploy"
