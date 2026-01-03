@@ -11251,3 +11251,306 @@ export const insertMcpToolSettingSchema = createInsertSchema(mcpToolSettings).om
 });
 export type InsertMcpToolSetting = z.infer<typeof insertMcpToolSettingSchema>;
 export type McpToolSetting = typeof mcpToolSettings.$inferSelect;
+
+// ==================== SOCIAL FEED SYSTEM (Bitrix24 Style) ====================
+
+// Feed Post Type Enum
+export const feedPostTypeEnum = pgEnum('feed_post_type', [
+  'message',        // Standard message
+  'announcement',   // Highlighted announcement with expiration
+  'poll',          // Survey/poll
+  'appreciation',   // Badge/recognition post
+]);
+
+// Poll Visibility Mode (who sees votes)
+export const pollVisibilityModeEnum = pgEnum('poll_visibility_mode', [
+  'public',         // All votes visible with names
+  'anonymous',      // Votes hidden
+  'user_defined',   // User chooses visibility when voting
+]);
+
+// Badge Types for Appreciation
+export const badgeTypeEnum = pgEnum('badge_type', [
+  'star_performer',
+  'team_player',
+  'innovation',
+  'customer_hero',
+  'mentor',
+  'problem_solver',
+  'dedication',
+  'leadership',
+  'collaboration',
+  'creativity',
+]);
+
+// ==================== FEED POSTS ====================
+export const feedPosts = w3suiteSchema.table("feed_posts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Post Content
+  postType: feedPostTypeEnum("post_type").notNull(),
+  title: varchar("title", { length: 500 }),
+  content: text("content").notNull(),
+  
+  // Rich content
+  attachments: jsonb("attachments").default([]), // [{type, url, name, size}]
+  mentionedUserIds: varchar("mentioned_user_ids").array().default([]),
+  tags: varchar("tags").array().default([]), // #hashtags
+  
+  // Author
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  
+  // Visibility - if null, all tenant users
+  teamId: uuid("team_id").references(() => teams.id),
+  department: departmentEnum("department"),
+  
+  // Announcement specific
+  isHighlighted: boolean("is_highlighted").default(false), // Green background like Bitrix
+  expiresAt: timestamp("expires_at"), // Auto-hide after date
+  
+  // Appreciation specific
+  badgeType: badgeTypeEnum("badge_type"),
+  awardeeUserIds: varchar("awardee_user_ids").array().default([]), // Users receiving badge
+  
+  // Status
+  isPinned: boolean("is_pinned").default(false),
+  isActive: boolean("is_active").default(true),
+  
+  // Counters (denormalized for performance)
+  reactionsCount: integer("reactions_count").default(0),
+  commentsCount: integer("comments_count").default(0),
+  viewsCount: integer("views_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("feed_posts_tenant_idx").on(table.tenantId, table.createdAt),
+  index("feed_posts_author_idx").on(table.authorId),
+  index("feed_posts_type_idx").on(table.postType),
+  index("feed_posts_team_idx").on(table.teamId),
+  index("feed_posts_department_idx").on(table.department),
+  index("feed_posts_pinned_idx").on(table.tenantId, table.isPinned),
+]);
+
+// ==================== FEED POST RECIPIENTS ====================
+// Explicit recipients (when not broadcasting to all)
+export const feedPostRecipients = w3suiteSchema.table("feed_post_recipients", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  
+  // Recipient (user, team, or department)
+  userId: varchar("user_id").references(() => users.id),
+  teamId: uuid("team_id").references(() => teams.id),
+  department: departmentEnum("department"),
+  
+  // For "all users" broadcasts
+  isAllUsers: boolean("is_all_users").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("feed_recipients_post_idx").on(table.postId),
+  index("feed_recipients_user_idx").on(table.userId),
+  index("feed_recipients_team_idx").on(table.teamId),
+]);
+
+// ==================== FEED REACTIONS ====================
+export const feedReactions = w3suiteSchema.table("feed_reactions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  reactionType: varchar("reaction_type", { length: 50 }).notNull(), // like, love, laugh, wow, sad, angry
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("feed_reactions_unique").on(table.postId, table.userId, table.reactionType),
+  index("feed_reactions_post_idx").on(table.postId),
+  index("feed_reactions_user_idx").on(table.userId),
+]);
+
+// ==================== FEED COMMENTS ====================
+export const feedComments = w3suiteSchema.table("feed_comments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  content: text("content").notNull(),
+  mentionedUserIds: varchar("mentioned_user_ids").array().default([]),
+  
+  // Threading
+  parentCommentId: uuid("parent_comment_id"),
+  
+  // Reactions on comments
+  reactions: jsonb("reactions").default({}), // {like: 5, love: 2}
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isEdited: boolean("is_edited").default(false),
+}, (table) => [
+  index("feed_comments_post_idx").on(table.postId, table.createdAt),
+  index("feed_comments_user_idx").on(table.userId),
+  index("feed_comments_parent_idx").on(table.parentCommentId),
+]);
+
+// ==================== FEED READ TRACKING ====================
+export const feedPostReads = w3suiteSchema.table("feed_post_reads", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  readAt: timestamp("read_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("feed_reads_unique").on(table.postId, table.userId),
+  index("feed_reads_post_idx").on(table.postId),
+  index("feed_reads_user_idx").on(table.userId),
+]);
+
+// ==================== FEED USER FAVORITES ====================
+export const feedUserFavorites = w3suiteSchema.table("feed_user_favorites", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("feed_favorites_unique").on(table.userId, table.postId),
+  index("feed_favorites_user_idx").on(table.userId),
+]);
+
+// ==================== FEED SMART FOLLOW ====================
+// Track which posts user has unfollowed (stops notifications)
+export const feedUserUnfollows = w3suiteSchema.table("feed_user_unfollows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("feed_unfollows_unique").on(table.userId, table.postId),
+  index("feed_unfollows_user_idx").on(table.userId),
+]);
+
+// ==================== POLL OPTIONS ====================
+export const feedPollOptions = w3suiteSchema.table("feed_poll_options", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  
+  optionText: varchar("option_text", { length: 500 }).notNull(),
+  sortOrder: integer("sort_order").default(0),
+  
+  voteCount: integer("vote_count").default(0), // Denormalized for performance
+}, (table) => [
+  index("poll_options_post_idx").on(table.postId),
+]);
+
+// ==================== POLL VOTES ====================
+export const feedPollVotes = w3suiteSchema.table("feed_poll_votes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
+  optionId: uuid("option_id").notNull().references(() => feedPollOptions.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  isAnonymous: boolean("is_anonymous").default(false), // User chose to hide name
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("poll_votes_unique").on(table.postId, table.userId, table.optionId),
+  index("poll_votes_option_idx").on(table.optionId),
+  index("poll_votes_user_idx").on(table.userId),
+]);
+
+// ==================== POLL SETTINGS ====================
+export const feedPollSettings = w3suiteSchema.table("feed_poll_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }).unique(),
+  
+  visibilityMode: pollVisibilityModeEnum("visibility_mode").default('public').notNull(),
+  allowMultipleChoices: boolean("allow_multiple_choices").default(false),
+  allowVoteChange: boolean("allow_vote_change").default(true),
+  
+  isClosed: boolean("is_closed").default(false),
+  closedAt: timestamp("closed_at"),
+  closedByUserId: varchar("closed_by_user_id").references(() => users.id),
+}, (table) => [
+  index("poll_settings_post_idx").on(table.postId),
+]);
+
+// ==================== USER BADGES (Gamification) ====================
+export const userBadges = w3suiteSchema.table("user_badges", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  badgeType: badgeTypeEnum("badge_type").notNull(),
+  postId: uuid("post_id").references(() => feedPosts.id, { onDelete: 'set null' }), // Reference to appreciation post
+  
+  awardedByUserId: varchar("awarded_by_user_id").notNull().references(() => users.id),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("user_badges_user_idx").on(table.userId),
+  index("user_badges_tenant_idx").on(table.tenantId),
+  index("user_badges_type_idx").on(table.badgeType),
+]);
+
+// ==================== INSERT SCHEMAS AND TYPES ====================
+export const insertFeedPostSchema = createInsertSchema(feedPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  reactionsCount: true,
+  commentsCount: true,
+  viewsCount: true,
+});
+export type InsertFeedPost = z.infer<typeof insertFeedPostSchema>;
+export type FeedPost = typeof feedPosts.$inferSelect;
+
+export const insertFeedPostRecipientSchema = createInsertSchema(feedPostRecipients).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertFeedPostRecipient = z.infer<typeof insertFeedPostRecipientSchema>;
+export type FeedPostRecipient = typeof feedPostRecipients.$inferSelect;
+
+export const insertFeedReactionSchema = createInsertSchema(feedReactions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertFeedReaction = z.infer<typeof insertFeedReactionSchema>;
+export type FeedReaction = typeof feedReactions.$inferSelect;
+
+export const insertFeedCommentSchema = createInsertSchema(feedComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertFeedComment = z.infer<typeof insertFeedCommentSchema>;
+export type FeedComment = typeof feedComments.$inferSelect;
+
+export const insertFeedPollOptionSchema = createInsertSchema(feedPollOptions).omit({
+  id: true,
+  voteCount: true,
+});
+export type InsertFeedPollOption = z.infer<typeof insertFeedPollOptionSchema>;
+export type FeedPollOption = typeof feedPollOptions.$inferSelect;
+
+export const insertFeedPollVoteSchema = createInsertSchema(feedPollVotes).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertFeedPollVote = z.infer<typeof insertFeedPollVoteSchema>;
+export type FeedPollVote = typeof feedPollVotes.$inferSelect;
+
+export const insertFeedPollSettingsSchema = createInsertSchema(feedPollSettings).omit({
+  id: true,
+});
+export type InsertFeedPollSettings = z.infer<typeof insertFeedPollSettingsSchema>;
+export type FeedPollSettings = typeof feedPollSettings.$inferSelect;
+
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type UserBadge = typeof userBadges.$inferSelect;

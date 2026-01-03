@@ -13,6 +13,7 @@ import triggerWebhookRoutes from "../routes/trigger-webhooks";
 import triggerManualRoutes from "../routes/trigger-manual";
 import taskRoutes from "../routes/tasks";
 import chatRoutes from "../routes/chat";
+import feedRoutes from "../routes/feed";
 import mcpRoutes from "../routes/mcp";
 import mcpOAuthRoutes from "../routes/mcp-oauth";
 import mcpCredentialsRoutes from "../routes/mcp-credentials";
@@ -1460,6 +1461,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== CHAT SYSTEM ROUTES ====================
   // Register chat system API routes with authentication and tenant middleware
   app.use('/api/chat', chatRoutes);
+  
+  // ==================== SOCIAL FEED SYSTEM ROUTES ====================
+  // Social feed, polls, appreciation badges, gamification (Bitrix24-style)
+  app.use('/api/feed', feedRoutes);
   
   // ==================== MCP (MODEL CONTEXT PROTOCOL) ROUTES ====================
   // Register MCP integration API routes for external service connections

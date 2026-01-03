@@ -25,6 +25,7 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EditChannelDialog } from '@/components/chat/EditChannelDialog';
 import { QuickChatBar } from '@/components/chat/QuickChatBar';
 import { MessageSearchDialog } from '@/components/chat/MessageSearchDialog';
+import { SocialFeed } from '@/components/feed/SocialFeed';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -439,12 +440,8 @@ export default function CommunicationCenterPage() {
           )}
 
           {activeTab === 'feeds' && (
-            <div className="flex-1 mx-6 mb-4 bg-white rounded-xl border shadow-sm flex items-center justify-center">
-              <div className="text-center text-gray-500 p-8">
-                <Rss className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                <p className="text-lg font-medium">Feed in arrivo</p>
-                <p className="text-sm mt-1">Questa funzionalità sarà disponibile presto</p>
-              </div>
+            <div className="flex-1 mx-6 mb-4 bg-white rounded-xl border shadow-sm p-6 overflow-hidden">
+              <SocialFeed />
             </div>
           )}
 
