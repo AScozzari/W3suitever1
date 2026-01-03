@@ -264,7 +264,7 @@ export default function ShiftAssignmentDashboard({
           firstName: user.firstName || 'Nome',
           lastName: user.lastName || 'Cognome',
           email: user.email || 'email@example.com',
-          avatar: user.profileImageUrl,
+          avatar: user.avatarUrl,
           role: user.role || user.role_name || user.position || 'Dipendente',
           skills: user.skills || [],
           weeklyHours: user.weeklyHours || 40,

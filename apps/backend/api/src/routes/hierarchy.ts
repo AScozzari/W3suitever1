@@ -79,7 +79,7 @@ router.get('/organizational-structure', requirePermission('hierarchy.read'), asy
         userLastName: users.lastName,
         userEmail: users.email,
         userRole: users.role,
-        userProfileImage: users.profileImageUrl,
+        avatarObjectPath: users.avatarObjectPath,
       })
       .from(organizationalStructure)
       .leftJoin(users, eq(organizationalStructure.userId, users.id))
@@ -95,10 +95,17 @@ router.get('/organizational-structure', requirePermission('hierarchy.read'), asy
     const hierarchyMap = new Map();
     const rootNodes: any[] = [];
 
-    // First pass: create all nodes
+    // First pass: create all nodes with avatar URLs
     orgData.forEach(item => {
+      let avatarUrl: string | null = null;
+      if (item.avatarObjectPath) {
+        const filename = item.avatarObjectPath.split('/').pop();
+        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+      }
       hierarchyMap.set(item.userId, {
         ...item,
+        userProfileImage: avatarUrl,
+        avatarUrl,
         children: []
       });
     });

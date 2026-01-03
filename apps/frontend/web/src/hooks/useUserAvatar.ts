@@ -19,6 +19,8 @@ interface UserData {
   username?: string;
   email?: string;
   profileImageUrl?: string;
+  avatarUrl?: string;
+  avatarObjectPath?: string;
 }
 
 interface UseUserAvatarOptions {
@@ -156,7 +158,12 @@ export function useUserAvatar(
 
   // Determine final avatar URL and loading state
   const avatarUrl = useMemo(() => {
-    // If we have profile image URL from user data and no API error, use it
+    // If we have avatarUrl from user data and no API error, use it first
+    if (userData?.avatarUrl && !imageError) {
+      return userData.avatarUrl;
+    }
+    
+    // Fallback to legacy profileImageUrl for backwards compatibility
     if (userData?.profileImageUrl && !imageError) {
       return userData.profileImageUrl;
     }
@@ -167,9 +174,9 @@ export function useUserAvatar(
     }
     
     return undefined;
-  }, [userData?.profileImageUrl, avatarData, imageLoaded, imageError]);
+  }, [userData?.avatarUrl, userData?.profileImageUrl, avatarData, imageLoaded, imageError]);
 
-  const hasImage = !!(avatarUrl && !imageError && (imageLoaded || !!userData?.profileImageUrl));
+  const hasImage = !!(avatarUrl && !imageError && (imageLoaded || !!userData?.avatarUrl || !!userData?.profileImageUrl));
   const isLoading = enabled && !!userData?.id && (isQueryLoading || (!!avatarData && !imageLoaded && !imageError));
 
   return {
