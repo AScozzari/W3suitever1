@@ -31,6 +31,13 @@ interface EditChannelDialogProps {
     headerColor?: string;
     backgroundPattern?: string;
   };
+  channelType?: 'dm' | 'team' | 'task_thread' | 'general';
+  dmUser?: {
+    id: string;
+    name: string;
+    email?: string;
+    avatarUrl?: string;
+  } | null;
 }
 
 const headerColors = [
@@ -54,8 +61,11 @@ export function EditChannelDialog({
   onOpenChange, 
   channelId,
   currentName,
-  currentMetadata 
+  currentMetadata,
+  channelType,
+  dmUser
 }: EditChannelDialogProps) {
+  const isDm = channelType === 'dm';
   const { toast } = useToast();
   const [name, setName] = useState(currentName);
   const [headerColor, setHeaderColor] = useState(currentMetadata?.headerColor || '#FF6900');
@@ -204,24 +214,75 @@ export function EditChannelDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-edit-channel">
         <DialogHeader>
-          <DialogTitle>Modifica Chat di Gruppo</DialogTitle>
+          <DialogTitle>{isDm ? 'Impostazioni Chat Diretta' : 'Modifica Chat di Gruppo'}</DialogTitle>
           <DialogDescription>
-            Personalizza il nome, i colori e i membri di questa conversazione di gruppo
+            {isDm 
+              ? 'Personalizza i colori e lo sfondo di questa conversazione'
+              : 'Personalizza il nome, i colori e i membri di questa conversazione di gruppo'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Nome canale */}
-          <div>
-            <Label htmlFor="channel-name">Nome Canale</Label>
-            <Input
-              id="channel-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nome del canale"
-              data-testid="input-channel-name"
-            />
-          </div>
+          {/* Per DM: mostra info interlocutore (read-only) */}
+          {isDm && dmUser && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              padding: '12px 16px',
+              background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb'
+            }}>
+              {dmUser.avatarUrl ? (
+                <img 
+                  src={dmUser.avatarUrl} 
+                  alt={dmUser.name}
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '16px',
+                  fontWeight: 600
+                }}>
+                  {dmUser.name?.[0]?.toUpperCase() || '?'}
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>
+                  {dmUser.name}
+                </div>
+                {dmUser.email && (
+                  <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                    {dmUser.email}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Nome canale - solo per gruppi */}
+          {!isDm && (
+            <div>
+              <Label htmlFor="channel-name">Nome Canale</Label>
+              <Input
+                id="channel-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome del canale"
+                data-testid="input-channel-name"
+              />
+            </div>
+          )}
 
           {/* Customizzazioni */}
           <div>
@@ -272,100 +333,102 @@ export function EditChannelDialog({
             </div>
           </div>
 
-          {/* Membri */}
-          <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
-              Membri ({members.length})
-            </h3>
+          {/* Membri - solo per gruppi, nascosto per DM */}
+          {!isDm && (
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+                Membri ({members.length})
+              </h3>
 
-            {/* Aggiungi membro */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="flex-1" data-testid="select-add-member">
-                  <SelectValue placeholder="Seleziona utente da aggiungere" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id} data-testid={`option-user-${user.id}`}>
-                      {user.firstName && user.lastName 
-                        ? `${user.firstName} ${user.lastName}`
-                        : user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                onClick={handleAddMember} 
-                disabled={!selectedUserId || addMemberMutation.isPending}
-                data-testid="button-add-member"
-              >
-                <UserPlus size={16} />
-              </Button>
-            </div>
-
-            {/* Lista membri */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '8px',
-              maxHeight: '200px',
-              overflowY: 'auto'
-            }}>
-              {members.map((member) => (
-                <div 
-                  key={member.userId}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: '#f9fafb',
-                    borderRadius: '8px'
-                  }}
-                  data-testid={`member-${member.userId}`}
+              {/* Aggiungi membro */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="flex-1" data-testid="select-add-member">
+                    <SelectValue placeholder="Seleziona utente da aggiungere" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id} data-testid={`option-user-${user.id}`}>
+                        {user.firstName && user.lastName 
+                          ? `${user.firstName} ${user.lastName}`
+                          : user.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={handleAddMember} 
+                  disabled={!selectedUserId || addMemberMutation.isPending}
+                  data-testid="button-add-member"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                  <UserPlus size={16} />
+                </Button>
+              </div>
+
+              {/* Lista membri */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '8px',
+                maxHeight: '200px',
+                overflowY: 'auto'
+              }}>
+                {members.map((member) => (
+                  <div 
+                    key={member.userId}
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: 600
-                    }}>
-                      {member.user?.firstName?.[0] || member.user?.email?.[0] || '?'}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 500 }}>
-                        {member.user?.firstName && member.user?.lastName
-                          ? `${member.user.firstName} ${member.user.lastName}`
-                          : member.user?.email || member.userId}
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: '#f9fafb',
+                      borderRadius: '8px'
+                    }}
+                    data-testid={`member-${member.userId}`}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '12px',
+                        fontWeight: 600
+                      }}>
+                        {member.user?.firstName?.[0] || member.user?.email?.[0] || '?'}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                        {member.role === 'owner' ? 'Proprietario' : member.role === 'admin' ? 'Admin' : 'Membro'}
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 500 }}>
+                          {member.user?.firstName && member.user?.lastName
+                            ? `${member.user.firstName} ${member.user.lastName}`
+                            : member.user?.email || member.userId}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {member.role === 'owner' ? 'Proprietario' : member.role === 'admin' ? 'Admin' : 'Membro'}
+                        </div>
                       </div>
                     </div>
+                    
+                    {member.role !== 'owner' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveMember(member.userId)}
+                        disabled={removeMemberMutation.isPending}
+                        data-testid={`button-remove-${member.userId}`}
+                      >
+                        <Trash2 size={16} className="text-red-500" />
+                      </Button>
+                    )}
                   </div>
-                  
-                  {member.role !== 'owner' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveMember(member.userId)}
-                      disabled={removeMemberMutation.isPending}
-                      data-testid={`button-remove-${member.userId}`}
-                    >
-                      <Trash2 size={16} className="text-red-500" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Pulsanti azione */}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

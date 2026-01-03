@@ -481,8 +481,10 @@ export default function CommunicationCenterPage() {
             open={editDialogOpen}
             onOpenChange={setEditDialogOpen}
             channelId={selectedChannel.id}
-            currentName={selectedChannel.name || ''}
+            currentName={selectedChannel.channelType === 'dm' ? selectedChannel.dmUser?.name || '' : selectedChannel.name || ''}
             currentMetadata={selectedChannel.metadata}
+            channelType={selectedChannel.channelType}
+            dmUser={selectedChannel.dmUser}
           />
         </>
       )}

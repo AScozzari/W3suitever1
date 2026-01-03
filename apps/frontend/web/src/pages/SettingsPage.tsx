@@ -10102,37 +10102,46 @@ export default function SettingsPage() {
       )}
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-        {/* Header - Direttamente sullo sfondo */}
+        {/* Main container con scroll indipendente */}
         <div style={{
-          marginBottom: '1.5rem'
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 4rem)',
+          overflow: 'hidden'
         }}>
-          <h1 style={{
-            fontSize: '1.75rem',
-            fontWeight: '700',
-            color: '#111827',
-            margin: '0 0 0.5rem 0'
+          {/* Header - fisso in alto */}
+          <div style={{
+            flexShrink: 0,
+            marginBottom: '1rem'
           }}>
-            Configurazioni Sistema
-          </h1>
-          <p style={{
-            fontSize: '0.9375rem',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Gestisci AI, canali di comunicazione, backup e configurazioni sistema
-          </p>
-        </div>
+            <h1 style={{
+              fontSize: '1.75rem',
+              fontWeight: '700',
+              color: '#111827',
+              margin: '0 0 0.5rem 0'
+            }}>
+              Configurazioni Sistema
+            </h1>
+            <p style={{
+              fontSize: '0.9375rem',
+              color: '#6b7280',
+              margin: 0
+            }}>
+              Gestisci AI, canali di comunicazione, backup e configurazioni sistema
+            </p>
+          </div>
 
-        {/* Tabs Container */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(0.625rem)',
-          borderRadius: '1rem',
-          padding: '1.25rem',
-          marginBottom: '1.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 0.25rem 0.375rem rgba(0, 0, 0, 0.05)'
-        }}>
+          {/* Tabs Container - fisso */}
+          <div style={{
+            flexShrink: 0,
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(0.625rem)',
+            borderRadius: '1rem',
+            padding: '1.25rem',
+            marginBottom: '1rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 0.25rem 0.375rem rgba(0, 0, 0, 0.05)'
+          }}>
           <div style={{
             display: 'flex',
             background: 'rgba(243, 244, 246, 0.5)',
@@ -10192,11 +10201,18 @@ export default function SettingsPage() {
               );
             })}
           </div>
-        </div>
+          </div>
 
-        {/* Content Area - Direttamente sullo sfondo */}
-        <div>
-          {renderContent()}
+          {/* Content Area - scrollabile indipendentemente */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: '0.5rem',
+            paddingBottom: '2rem'
+          }}>
+            {renderContent()}
+          </div>
         </div>
       </Layout>
 
