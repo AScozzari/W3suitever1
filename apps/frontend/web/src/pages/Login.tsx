@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Lock, Eye, EyeOff, Bot, Phone, BarChart3, Zap, Building2 } from 'lucide-react';
 import { sha256 } from 'js-sha256';
 import { Link } from 'wouter';
+import w3LogoOfficial from '../assets/w3-logo-official.png';
 
 interface LoginProps {
   tenantCode?: string;
@@ -254,19 +255,24 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           padding: '3rem 4rem',
           maxWidth: '45rem'
         }}>
-          {/* Logo - Centered */}
+          {/* Logo W3 Suite - Centered */}
           <div style={{ marginBottom: '2.5rem', textAlign: 'center', width: '100%', maxWidth: '32.5rem' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.75rem',
-              background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
-              padding: '0.875rem 1.5rem',
-              borderRadius: '0.875rem',
-              boxShadow: '0 0.375rem 1.25rem rgba(255, 105, 0, 0.3)'
+              gap: '0.75rem'
             }}>
-              <span style={{ fontSize: '2rem', fontWeight: '700', color: '#fff', letterSpacing: '-0.03rem' }}>W3</span>
-              <span style={{ fontSize: '2rem', fontWeight: '400', color: '#fff' }}>Suite</span>
+              <img 
+                src={w3LogoOfficial} 
+                alt="W3 Logo" 
+                style={{ height: '3.5rem', width: 'auto' }}
+              />
+              <span style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: '300', 
+                color: '#1F2937',
+                letterSpacing: '-0.02rem'
+              }}>Suite</span>
             </div>
             <p style={{ 
               marginTop: '1rem', 
@@ -384,13 +390,14 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
-                padding: '0.625rem 1rem',
-                borderRadius: '0.625rem'
+                gap: '0.5rem'
               }}>
-                <span style={{ fontSize: '1.375rem', fontWeight: '700', color: '#fff' }}>W3</span>
-                <span style={{ fontSize: '1.375rem', fontWeight: '400', color: '#fff' }}>Suite</span>
+                <img 
+                  src={w3LogoOfficial} 
+                  alt="W3 Logo" 
+                  style={{ height: '2.5rem', width: 'auto' }}
+                />
+                <span style={{ fontSize: '1.5rem', fontWeight: '300', color: '#1F2937' }}>Suite</span>
               </div>
             </div>
           )}
@@ -399,17 +406,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           <div style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
               {!isMobile && (
-                <div style={{
-                  width: '2.5rem',
-                  height: '2.5rem',
-                  borderRadius: '0.625rem',
-                  background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ fontSize: '1rem', fontWeight: '700', color: '#fff' }}>W3</span>
-                </div>
+                <img 
+                  src={w3LogoOfficial} 
+                  alt="W3 Logo" 
+                  style={{ height: '2.5rem', width: 'auto' }}
+                />
               )}
               <h1 style={{ 
                 margin: 0, 
