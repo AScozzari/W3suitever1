@@ -62,9 +62,11 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
   const { isIdle } = useIdleDetection();
 
   const { data: messages = [], isLoading } = useQuery<Message[]>({
-    queryKey: [`/api/chat/channels/${channelId}/messages`],
+    queryKey: ['/api/chat/channels', channelId, 'messages'],
     enabled: !!channelId,
-    refetchInterval: isIdle ? false : 3000
+    refetchInterval: isIdle ? false : 3000,
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000
   });
 
   useEffect(() => {

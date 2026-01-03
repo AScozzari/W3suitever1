@@ -379,25 +379,32 @@ export default function CommunicationCenterPage() {
                             }
                           </h3>
                           <p className="text-xs text-gray-500">
-                            {selectedChannel.memberCount || 0} membri
+                            {selectedChannel.channelType === 'dm' 
+                              ? 'Chat diretta'
+                              : `${selectedChannel.memberCount || 0} membri`
+                            }
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setMembersDialogOpen(true)}
-                          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-                          data-testid="button-show-members"
-                        >
-                          <Users className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditDialogOpen(true)}
-                          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-                          data-testid="button-edit-channel"
-                        >
-                          <Settings className="h-4 w-4" />
-                        </button>
+                        {selectedChannel.channelType !== 'dm' && (
+                          <button
+                            onClick={() => setMembersDialogOpen(true)}
+                            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                            data-testid="button-show-members"
+                          >
+                            <Users className="h-4 w-4" />
+                          </button>
+                        )}
+                        {selectedChannel.channelType !== 'dm' && (
+                          <button
+                            onClick={() => setEditDialogOpen(true)}
+                            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                            data-testid="button-edit-channel"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                     
