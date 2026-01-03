@@ -561,6 +561,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
     { id: 'tasks', label: 'Attività', icon: ListTodo, path: '/tasks' },
     { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
+    { id: 'communication-center', label: 'Communication Center', icon: MessageCircle, path: '/communication-center' },
     { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai-tools' },
     { 
       id: 'magazzino', 
@@ -609,6 +610,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     
     // Per workflow-management 
     if (section === 'workflow-management') return 'workflow-management';
+    
+    // Per communication-center
+    if (section === 'communication-center') return 'communication-center';
     
     // Trova item corrispondente al path
     const matchedItem = menuItems.find(item => 

@@ -22,6 +22,7 @@ const NotificationCenter = lazy(() => import('../pages/NotificationCenter'));
 const TenantVerificationTest = lazy(() => import('../pages/TenantVerificationTest'));
 const TasksPage = lazy(() => import('../pages/TasksPage'));
 const ChatPage = lazy(() => import('../pages/ChatPage'));
+const CommunicationCenterPage = lazy(() => import('../pages/CommunicationCenterPage'));
 const AIToolsDashboardPage = lazy(() => import('../pages/AIToolsDashboardPage'));
 const PDCAnalyzerPage = lazy(() => import('../pages/PDCAnalyzerPage'));
 const CRMPage = lazy(() => import('../pages/CRMPage'));
@@ -420,6 +421,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/chat`}>
         <AuthenticatedRoute>
           <ChatPage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/communication-center`}>
+        <AuthenticatedRoute>
+          <CommunicationCenterPage />
         </AuthenticatedRoute>
       </Route>
       
