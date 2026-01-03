@@ -109,7 +109,7 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
       firstName: users.firstName,
       lastName: users.lastName,
       email: users.email,
-      avatar: users.profileImageUrl
+      avatar: users.avatarObjectPath
     }).from(users).where(eq(users.id, post.authorId)).limit(1),
     
     db.select({
@@ -127,7 +127,7 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
         firstName: users.firstName,
         lastName: users.lastName,
         email: users.email,
-        avatar: users.profileImageUrl
+        avatar: users.avatarObjectPath
       }
     }).from(feedComments)
       .leftJoin(users, eq(feedComments.userId, users.id))
@@ -206,7 +206,7 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
       firstName: users.firstName,
       lastName: users.lastName,
       email: users.email,
-      avatar: users.profileImageUrl
+      avatar: users.avatarObjectPath
     }).from(users).where(inArray(users.id, post.awardeeUserIds));
   }
 
@@ -570,7 +570,7 @@ router.get('/posts/:postId/comments', requirePermission('communication.read'), a
         firstName: users.firstName,
         lastName: users.lastName,
         email: users.email,
-        avatar: users.profileImageUrl
+        avatar: users.avatarObjectPath
       }
     })
     .from(feedComments)
@@ -613,7 +613,7 @@ router.post('/posts/:postId/comments', requirePermission('communication.write'),
       firstName: users.firstName,
       lastName: users.lastName,
       email: users.email,
-      avatar: users.profileImageUrl
+      avatar: users.avatarObjectPath
     }).from(users).where(eq(users.id, userId));
     
     res.status(201).json({
@@ -1165,7 +1165,7 @@ router.get('/users/search', async (req: Request, res: Response) => {
       firstName: users.firstName,
       lastName: users.lastName,
       email: users.email,
-      avatar: users.profileImageUrl
+      avatar: users.avatarObjectPath
     })
     .from(users)
     .where(and(...conditions))
