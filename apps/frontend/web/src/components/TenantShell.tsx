@@ -7,6 +7,8 @@ import { useAuth } from '../hooks/useAuth';
 // 🚀 PERFORMANCE: Lazy load all pages for code splitting
 // Critical pages (Login, NotFound) loaded immediately for UX
 import Login from '../pages/Login';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import NotFound from '../pages/NotFound';
 
 // All other pages lazy loaded to reduce initial bundle size
@@ -252,6 +254,16 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         {/* Login route - no auth required */}
         <Route path={`/${tenantSlug}/login`}>
           <Login tenantCode={tenantSlug} />
+        </Route>
+        
+        {/* Forgot Password route - no auth required */}
+        <Route path={`/${tenantSlug}/forgot-password`}>
+          <ForgotPassword />
+        </Route>
+        
+        {/* Reset Password route - no auth required */}
+        <Route path={`/${tenantSlug}/reset-password`}>
+          <ResetPassword />
         </Route>
         
         {/* QR Check-in route - no auth required */}

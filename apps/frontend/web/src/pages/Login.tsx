@@ -1,33 +1,63 @@
 import { useState, useEffect } from 'react';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Bot, Phone, BarChart3, Zap, Building2 } from 'lucide-react';
 import { sha256 } from 'js-sha256';
+import { Link } from 'wouter';
 
 interface LoginProps {
   tenantCode?: string;
 }
 
-/**
- * W3 Suite OAuth2 Enterprise Login
- * Direct integration with OAuth2 Authorization Server
- */
+const FEATURES = [
+  {
+    icon: Bot,
+    title: 'AI Nativa',
+    description: 'La tua piattaforma con intelligenza artificiale integrata che ti supporta ogni giorno',
+    color: '#8B5CF6',
+    bgColor: 'rgba(139, 92, 246, 0.1)'
+  },
+  {
+    icon: Phone,
+    title: 'CRM Intelligente',
+    description: 'Rimani connesso con i tuoi clienti grazie ad un Agent AI integrato',
+    color: '#FF6900',
+    bgColor: 'rgba(255, 105, 0, 0.1)'
+  },
+  {
+    icon: BarChart3,
+    title: 'Analytics Predittive',
+    description: 'Report e analisi per decisioni strategiche in tempo reale',
+    color: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.1)'
+  },
+  {
+    icon: Zap,
+    title: 'Automazione Smart',
+    description: 'Workflow intelligenti che ottimizzano i processi e riducono gli errori',
+    color: '#3B82F6',
+    bgColor: 'rgba(59, 130, 246, 0.1)'
+  },
+  {
+    icon: Building2,
+    title: 'Tutto in Uno',
+    description: 'CRM, WMS, HR, Finance - una sola piattaforma per ogni esigenza',
+    color: '#F59E0B',
+    bgColor: 'rgba(245, 158, 11, 0.1)'
+  }
+];
+
 export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
-  const [username, setUsername] = useState('admin@w3suite.com');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  // Get return URL from query params (supports both 'return' and 'returnTo')
   const params = new URLSearchParams(window.location.search);
   const returnTo = params.get('returnTo') || params.get('return');
-  
-  // Parse OAuth2 parameters from returnTo URL if it's an OAuth2 authorize URL
   const isOAuth2Return = returnTo?.includes('/oauth2/authorize');
   
-  // Extract OAuth2 params from the returnTo URL for external OAuth2 clients
   const getOAuth2ParamsFromReturnTo = (): { clientId: string; redirectUri: string; scope: string; state?: string } | null => {
     if (!isOAuth2Return || !returnTo) return null;
-    
     try {
       const decodedUrl = decodeURIComponent(returnTo);
       const url = new URL(decodedUrl, window.location.origin);
@@ -35,9 +65,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       const redirectUri = url.searchParams.get('redirect_uri');
       const scope = url.searchParams.get('scope');
       const state = url.searchParams.get('state');
-      
       if (clientId && redirectUri) {
-        console.log('🔐 Detected OAuth2 return flow for client:', clientId);
         return { 
           clientId, 
           redirectUri: decodeURIComponent(redirectUri), 
@@ -52,34 +80,18 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   };
   
   const oauth2ReturnParams = getOAuth2ParamsFromReturnTo();
-  
-  // Determine if this is an external OAuth2 client (not w3suite-frontend)
   const isExternalOAuth2Client = oauth2ReturnParams && oauth2ReturnParams.clientId !== 'w3suite-frontend';
-  
-  // For external clients, after login we redirect back to the OAuth2 authorize URL
-  // For internal SPA client or no OAuth2, go to dashboard
   const returnUrl = isExternalOAuth2Client && returnTo
     ? decodeURIComponent(returnTo) 
     : (isOAuth2Return ? `/${propTenantCode || 'staging'}/dashboard` : (returnTo || `/${propTenantCode || 'staging'}/dashboard`));
-  
-  // Tenant information
-  const tenantInfo: Record<string, { name: string, color: string }> = {
-    'w3suite': { name: 'W3 Suite Enterprise', color: '#FF6900' },
-    'demo': { name: 'Demo Organization', color: '#FF6900' },
-    'acme': { name: 'Acme Corporation', color: '#0066CC' },
-    'tech': { name: 'Tech Solutions Ltd', color: '#10B981' }
-  };
-  
-  const currentTenant = tenantInfo[propTenantCode || 'w3suite'] || tenantInfo['w3suite'];
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // OAuth2 PKCE helpers
   const generateCodeVerifier = (): string => {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
@@ -89,24 +101,12 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       .replace(/=/g, '');
   };
 
-  /**
-   * Generate PKCE code challenge using js-sha256 library
-   * This works in both HTTP and HTTPS environments
-   */
   const generateCodeChallenge = async (verifier: string): Promise<{ challenge: string; method: string }> => {
-    console.log('🔐 Generating PKCE code challenge with js-sha256');
-    
-    // Use js-sha256 library which works in all environments (HTTP and HTTPS)
     const hashArray = sha256.array(verifier);
-    
-    // Convert to base64url
     const challenge = btoa(String.fromCharCode.apply(null, hashArray))
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=/g, '');
-    
-    console.log('🔐 Code challenge generated:', challenge.substring(0, 20) + '...');
-    
     return { challenge, method: 'S256' };
   };
 
@@ -118,18 +118,13 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     
     setIsLoading(true);
     
-    // DEVELOPMENT MODE BYPASS - Skip OAuth2 for development
-    // Use ONLY VITE_AUTH_MODE env var (set in .env.production for VPS)
     const isDevelopmentAuth = import.meta.env.VITE_AUTH_MODE === 'development';
     if (isDevelopmentAuth) {
       try {
-        // Set development token directly
         const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
         localStorage.setItem('auth_token', demoToken);
         localStorage.setItem('currentTenant', propTenantCode || 'staging');
         localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
-        
-        // Redirect to return URL or dashboard
         window.location.href = returnUrl;
         return;
       } catch (error) {
@@ -141,231 +136,315 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     }
     
     try {
-      console.log(`🔐 External OAuth2 client: ${isExternalOAuth2Client ? 'YES' : 'NO'}`);
-      
-      // For external OAuth2 clients, use simple session login
       if (isExternalOAuth2Client && returnTo) {
-        console.log('🔐 Using session login for external OAuth2 client');
-        
         const loginResponse = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include', // Ensure session cookie is set
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ username, password }),
         });
         
-        console.log('🔍 Session Login Response Status:', loginResponse.status);
-        
         if (loginResponse.ok) {
-          console.log('✅ Session created, redirecting to original OAuth2 authorize URL');
-          console.log('🔄 Redirecting to:', returnUrl);
           window.location.href = returnUrl;
           return;
         } else {
           const error = await loginResponse.json();
-          console.error('Session login failed:', error);
           alert(error.message || 'Credenziali non valide');
           setIsLoading(false);
           return;
         }
       }
       
-      // For internal SPA client, use full OAuth2 Authorization Code Flow with PKCE
       const codeVerifier = generateCodeVerifier();
-      const { challenge: codeChallenge, method: challengeMethod } = await generateCodeChallenge(codeVerifier);
+      const { challenge, method } = await generateCodeChallenge(codeVerifier);
+      sessionStorage.setItem('oauth2_code_verifier', codeVerifier);
       
-      console.log(`🔐 PKCE method: ${challengeMethod}`);
-      
-      // Step 1: Get authorization code
       const authResponse = await fetch('/oauth2/authorize', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        credentials: 'include', // Ensure session cookie is set
-        body: new URLSearchParams({
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           client_id: 'w3suite-frontend',
-          redirect_uri: `${window.location.origin}/auth/callback`,
+          redirect_uri: window.location.origin + '/oauth2/callback',
           response_type: 'code',
-          scope: 'openid profile email tenant_access',
-          code_challenge: codeChallenge,
-          code_challenge_method: challengeMethod,
-          username: username,
-          password: password
+          scope: 'openid profile email tenant_access admin',
+          code_challenge: challenge,
+          code_challenge_method: method,
+          tenant_slug: propTenantCode || 'staging',
+          username,
+          password
         }),
       });
 
-      console.log('🔍 Auth Response Status:', authResponse.status);
-      console.log('🔍 Auth Response URL:', authResponse.url);
-
-      if (authResponse.ok) {
-        // For internal SPA client, complete the full OAuth2 flow
-        const authData = await authResponse.json();
-        const authCode = authData.code;
-        console.log('🔑 Authorization code from response:', authCode ? 'YES' : 'NO');
-        
-        if (authCode) {
-          // Step 2: Exchange authorization code for access token
-          const tokenResponse = await fetch('/oauth2/token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code: authCode,
-              redirect_uri: `${window.location.origin}/auth/callback`,
-              client_id: 'w3suite-frontend',
-              code_verifier: codeVerifier
-            }),
-          });
-
-          console.log('🎫 Token Response Status:', tokenResponse.status);
-          
-          if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            console.log('🎫 Token Data:', tokenData);
-            
-            // Add expires_at timestamp for OAuth2Client compatibility
-            const expiresAt = Date.now() + (tokenData.expires_in * 1000);
-            const tokensWithExpiry = {
-              ...tokenData,
-              expires_at: expiresAt
-            };
-            
-            // Store OAuth2 tokens using OAuth2Client format
-            localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
-            console.log('💾 Tokens stored in localStorage');
-            
-            console.log('✅ OAuth2 Enterprise Login Successful:', {
-              tokenType: tokenData.token_type,
-              expiresIn: tokenData.expires_in,
-              expiresAt: new Date(expiresAt).toLocaleString(),
-              scope: tokenData.scope
-            });
-            
-            console.log('🔄 Redirecting to:', returnUrl);
-            // Redirect to return URL or dashboard
-            window.location.href = returnUrl;
-          } else {
-            const errorData = await tokenResponse.json();
-            console.error('Token exchange failed:', errorData);
-            throw new Error(`Token exchange failed: ${errorData.error || 'Unknown error'}`);
-          }
-        } else {
-          throw new Error('No authorization code received in redirect');
-        }
-      } else {
-        // Handle different error cases
-        if (authResponse.status === 0) {
-          console.error('Network error or CORS issue');
-          alert('Errore di rete. Verifica la connessione.');
-        } else {
-          try {
-            const error = await authResponse.json();
-            alert(error.message || 'Credenziali non valide');
-          } catch (e) {
-            console.error('Error parsing response:', e);
-            alert(`Errore del server (${authResponse.status})`);
-          }
-        }
+      if (!authResponse.ok) {
+        const error = await authResponse.json();
+        alert(error.message || 'Credenziali non valide');
         setIsLoading(false);
+        return;
       }
+
+      const authData = await authResponse.json();
+      
+      const tokenResponse = await fetch('/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: authData.code,
+          redirect_uri: window.location.origin + '/oauth2/callback',
+          client_id: 'w3suite-frontend',
+          code_verifier: codeVerifier
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        const error = await tokenResponse.json();
+        alert(error.message || 'Errore durante l\'autenticazione');
+        setIsLoading(false);
+        return;
+      }
+
+      const tokens = await tokenResponse.json();
+      localStorage.setItem('auth_token', tokens.access_token);
+      if (tokens.refresh_token) localStorage.setItem('refresh_token', tokens.refresh_token);
+      localStorage.setItem('currentTenant', propTenantCode || 'staging');
+      
+      window.location.href = returnUrl;
+      
     } catch (error) {
       console.error('OAuth2 Login error:', error);
-      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       alert('Errore durante il login. Riprova.');
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading) {
+      handleOAuth2Login();
     }
   };
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#ffffff',
+      background: '#F8F9FA',
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
     }}>
       
-      {/* Main Login Container */}
-      <div style={{
-        width: '100%',
-        maxWidth: '400px',
-        background: '#ffffff',
-        borderRadius: '12px',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e5e7eb',
-        overflow: 'hidden'
-      }}>
-        {/* Header Section */}
-        <div style={{ 
-          padding: '32px',
-          textAlign: 'center',
-          borderBottom: '1px solid #f3f4f6'
+      {/* Left Panel - Features (hidden on mobile) */}
+      {!isMobile && (
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '48px',
+          maxWidth: '560px'
         }}>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#FF6900',
-            marginBottom: '8px',
-            letterSpacing: '-0.5px'
-          }}>
-            W3 Suite
-          </h1>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: '0 0 12px 0'
-          }}>
-            Enterprise Multi-Tenant Platform
-          </p>
+          {/* Logo */}
+          <div style={{ marginBottom: '48px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
+              padding: '12px 20px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 16px rgba(255, 105, 0, 0.25)'
+            }}>
+              <span style={{ fontSize: '28px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>W3</span>
+              <span style={{ fontSize: '28px', fontWeight: '400', color: '#fff' }}>Suite</span>
+            </div>
+            <p style={{ 
+              marginTop: '16px', 
+              fontSize: '15px', 
+              color: '#6B7280',
+              maxWidth: '320px'
+            }}>
+              La piattaforma enterprise che trasforma il tuo business con intelligenza artificiale
+            </p>
+          </div>
+          
+          {/* Feature Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {FEATURES.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '16px',
+                    padding: '20px',
+                    background: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.4)',
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 24px rgba(0, 0, 0, 0.04)';
+                  }}
+                >
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: feature.bgColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <Icon style={{ width: '22px', height: '22px', color: feature.color }} />
+                  </div>
+                  <div>
+                    <h3 style={{ 
+                      margin: '0 0 4px 0', 
+                      fontSize: '15px', 
+                      fontWeight: '600', 
+                      color: '#1F2937' 
+                    }}>
+                      {feature.title}
+                    </h3>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '13px', 
+                      color: '#6B7280',
+                      lineHeight: '1.5'
+                    }}>
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Footer left */}
+          <div style={{ marginTop: '48px' }}>
+            <p style={{ fontSize: '13px', color: '#9CA3AF' }}>
+              © {new Date().getFullYear()} W3 Suite - Enterprise Platform
+            </p>
+          </div>
         </div>
-
-        {/* Login Form */}
-        <div style={{ padding: '32px' }}>
-          <div style={{ marginBottom: '24px' }}>
+      )}
+      
+      {/* Right Panel - Login Form */}
+      <div style={{
+        flex: isMobile ? 1 : 'none',
+        width: isMobile ? '100%' : '480px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: isMobile ? '32px 24px' : '48px',
+        background: '#FFFFFF',
+        boxShadow: isMobile ? 'none' : '-8px 0 48px rgba(0, 0, 0, 0.06)'
+      }}>
+        <div style={{ width: '100%', maxWidth: '360px' }}>
+          
+          {/* Mobile Logo */}
+          {isMobile && (
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
+                padding: '10px 16px',
+                borderRadius: '10px'
+              }}>
+                <span style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>W3</span>
+                <span style={{ fontSize: '22px', fontWeight: '400', color: '#fff' }}>Suite</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Form Header */}
+          <div style={{ marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              {!isMobile && (
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>W3</span>
+                </div>
+              )}
+              <h1 style={{ 
+                margin: 0, 
+                fontSize: '26px', 
+                fontWeight: '600', 
+                color: '#1F2937' 
+              }}>
+                Bentornato
+              </h1>
+            </div>
+            <p style={{ 
+              margin: 0, 
+              fontSize: '15px', 
+              color: '#6B7280' 
+            }}>
+              Accedi alla tua piattaforma aziendale
+            </p>
+          </div>
+          
+          {/* Login Form */}
+          <div onKeyPress={handleKeyPress}>
             {/* Username Field */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '14px',
-                fontWeight: '600',
+                fontWeight: '500',
                 color: '#374151',
                 marginBottom: '8px'
-              }}>Username</label>
+              }}>
+                Username o Email
+              </label>
               <div style={{
                 position: 'relative',
-                background: '#f9fafb',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db'
+                background: '#F9FAFB',
+                borderRadius: '10px',
+                border: '1px solid #E5E7EB',
+                transition: 'all 0.2s ease'
               }}>
                 <User style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '14px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   width: '18px',
                   height: '18px',
-                  color: '#9ca3af'
+                  color: '#9CA3AF'
                 }} />
                 <input
                   type="text"
-                  placeholder="Inserisci username"
+                  placeholder="Inserisci username o email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={isLoading}
+                  data-testid="input-username"
                   style={{
                     width: '100%',
-                    padding: '12px 12px 12px 40px',
+                    padding: '14px 14px 14px 44px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     fontSize: '14px',
                     color: '#111827',
                     outline: 'none'
@@ -379,37 +458,40 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               <label style={{
                 display: 'block',
                 fontSize: '14px',
-                fontWeight: '600',
+                fontWeight: '500',
                 color: '#374151',
                 marginBottom: '8px'
-              }}>Password</label>
+              }}>
+                Password
+              </label>
               <div style={{
                 position: 'relative',
-                background: '#f9fafb',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db'
+                background: '#F9FAFB',
+                borderRadius: '10px',
+                border: '1px solid #E5E7EB'
               }}>
                 <Lock style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '14px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   width: '18px',
                   height: '18px',
-                  color: '#9ca3af'
+                  color: '#9CA3AF'
                 }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Inserisci password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
+                  data-testid="input-password"
                   style={{
                     width: '100%',
-                    padding: '12px 40px 12px 40px',
+                    padding: '14px 44px 14px 44px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     fontSize: '14px',
                     color: '#111827',
                     outline: 'none'
@@ -418,6 +500,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  data-testid="button-toggle-password"
                   style={{
                     position: 'absolute',
                     right: '12px',
@@ -429,14 +512,13 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '4px'
+                    justifyContent: 'center'
                   }}
                 >
                   {showPassword ? (
-                    <EyeOff style={{ width: '18px', height: '18px', color: '#9ca3af' }} />
+                    <EyeOff style={{ width: '18px', height: '18px', color: '#9CA3AF' }} />
                   ) : (
-                    <Eye style={{ width: '18px', height: '18px', color: '#9ca3af' }} />
+                    <Eye style={{ width: '18px', height: '18px', color: '#9CA3AF' }} />
                   )}
                 </button>
               </div>
@@ -444,118 +526,86 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
 
             {/* Forgot Password Link */}
             <div style={{ textAlign: 'right', marginBottom: '24px' }}>
-              <a 
-                href="#forgot-password"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Contatta l\'amministratore per il reset della password');
-                }}
+              <Link 
+                href={`/${propTenantCode || 'staging'}/forgot-password`}
                 style={{
                   fontSize: '13px',
-                  color: '#6b7280',
+                  color: '#6B7280',
                   textDecoration: 'none',
                   transition: 'color 0.2s ease'
                 }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = '#FF6900';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#6b7280';
-                }}
+                data-testid="link-forgot-password"
               >
                 Password dimenticata?
-              </a>
+              </Link>
             </div>
 
             {/* Login Button */}
             <button
               onClick={handleOAuth2Login}
               disabled={isLoading}
+              data-testid="button-login"
               style={{
                 width: '100%',
                 padding: '14px',
                 background: isLoading 
-                  ? '#d1d5db' 
-                  : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                  ? '#D1D5DB' 
+                  : 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
                 border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
+                borderRadius: '10px',
+                fontSize: '15px',
                 fontWeight: '600',
                 color: 'white',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: isLoading ? 'none' : '0 2px 8px rgba(255, 105, 0, 0.3)'
-              }}
-              onMouseOver={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.4)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(0px)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 105, 0, 0.3)';
-                }
+                boxShadow: isLoading ? 'none' : '0 4px 16px rgba(255, 105, 0, 0.3)'
               }}
             >
-              {isLoading ? 'Autenticazione in corso...' : 'Accedi alla Suite'}
+              {isLoading ? 'Autenticazione in corso...' : 'Accedi'}
             </button>
           </div>
 
           {/* Security Info */}
           <div style={{ 
+            marginTop: '24px',
             textAlign: 'center', 
-            padding: '12px',
-            background: '#f9fafb',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb'
+            padding: '12px 16px',
+            background: '#F9FAFB',
+            borderRadius: '10px',
+            border: '1px solid #E5E7EB'
           }}>
             <p style={{
               fontSize: '12px',
-              color: '#6b7280',
+              color: '#9CA3AF',
               margin: 0
             }}>
-              Autenticazione OAuth2 Enterprise • RFC 6749 • PKCE
+              🔒 Connessione sicura OAuth2 Enterprise
             </p>
           </div>
+          
+          {/* Footer - crafted by */}
+          <div style={{
+            marginTop: '48px',
+            textAlign: 'center'
+          }}>
+            <span style={{ fontSize: '12px', color: '#D1D5DB' }}>
+              crafted by{' '}
+              <a 
+                href="https://www.easydigitalgroup.it" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  color: '#9CA3AF',
+                  textDecoration: 'none',
+                  transition: 'color 0.2s ease'
+                }}
+                data-testid="link-easydigitalgroup"
+              >
+                easydigitalgroup
+              </a>
+            </span>
+          </div>
         </div>
-      </div>
-      
-      {/* Footer */}
-      <div style={{
-        marginTop: '40px',
-        textAlign: 'center'
-      }}>
-        <span style={{
-          fontSize: '13px',
-          color: '#6b7280',
-          fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
-        }}>
-          Powered by{' '}
-        </span>
-        <a 
-          href="https://www.easydigitalgroup.it" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{
-            fontSize: '13px',
-            color: '#3B82F6',
-            textDecoration: 'none',
-            fontWeight: '500',
-            fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
-            letterSpacing: '0.5px',
-            transition: 'color 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = '#1D4ED8';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = '#3B82F6';
-          }}
-        >
-          Easydigitalgroup srl
-        </a>
       </div>
     </div>
   );
