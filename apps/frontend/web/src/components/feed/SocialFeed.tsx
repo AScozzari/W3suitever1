@@ -47,8 +47,8 @@ import {
 } from '@/components/ui/command';
 import {
   Heart, MessageCircle, Star, BookmarkPlus, BellOff, Pin, MoreHorizontal,
-  ThumbsUp, Smile, PartyPopper, Megaphone, BarChart3, Award, Send,
-  Users, UserPlus, Trophy, Medal, Sparkles, ChevronDown, Filter,
+  ThumbsUp, ThumbsDown, Smile, PartyPopper, Megaphone, BarChart3, Award, Send,
+  Users, UserPlus, Trophy, Medal, Sparkles, ChevronDown, Filter, CornerDownRight,
   Image as ImageIcon, Paperclip, AtSign, Hash, Check, Plus, X, Upload,
   Bold, Italic, Underline, Strikethrough, List, ListOrdered, Link2, Quote,
   Type, Palette, Undo, Redo, Table, Video, FileText, Building2, File,
@@ -248,13 +248,15 @@ function FeedPostCard({
   post, 
   onReaction, 
   onComment, 
+  onCommentReaction,
   onFavorite, 
   onUnfollow, 
   onVote 
 }: { 
   post: FeedPost;
   onReaction: (postId: string, type: string) => void;
-  onComment: (postId: string, content: string) => void;
+  onComment: (postId: string, content: string, parentCommentId?: string) => void;
+  onCommentReaction: (commentId: string, type: 'like' | 'dislike') => void;
   onFavorite: (postId: string) => void;
   onUnfollow: (postId: string) => void;
   onVote: (postId: string, optionIds: string[]) => void;
@@ -262,14 +264,33 @@ function FeedPostCard({
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showReactions, setShowReactions] = useState(false);
+  const [replyToComment, setReplyToComment] = useState<FeedComment | null>(null);
+  const [showAllComments, setShowAllComments] = useState(false);
 
   const handleSubmitComment = () => {
     if (commentText.trim()) {
-      onComment(post.id, commentText);
+      onComment(post.id, commentText, replyToComment?.id);
       setCommentText('');
       setShowCommentInput(false);
+      setReplyToComment(null);
     }
   };
+
+  const handleReplyToComment = (comment: FeedComment) => {
+    setReplyToComment(comment);
+    setShowCommentInput(true);
+    setCommentText('');
+  };
+
+  // Organize comments into parent-child structure
+  const parentComments = post.recentComments.filter(c => !c.parentCommentId);
+  const repliesMap = post.recentComments.reduce((acc, c) => {
+    if (c.parentCommentId) {
+      if (!acc[c.parentCommentId]) acc[c.parentCommentId] = [];
+      acc[c.parentCommentId].push(c);
+    }
+    return acc;
+  }, {} as Record<string, FeedComment[]>);
 
   const isAnnouncement = post.postType === 'announcement';
   const isPoll = post.postType === 'poll';
@@ -532,22 +553,103 @@ function FeedPostCard({
 
         {post.recentComments.length > 0 && (
           <div className="w-full space-y-2 pt-2">
-            {post.recentComments.slice(0, 2).map(comment => (
-              <div key={comment.id} className="flex gap-2 text-sm">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={getAvatarUrl(comment.user || null)} />
-                  <AvatarFallback className="text-xs">
-                    {getInitials(comment.user)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 bg-muted/50 rounded-lg px-3 py-1.5">
-                  <span className="font-medium text-xs">{getDisplayName(comment.user)}</span>
-                  <p className="text-xs">{comment.content}</p>
+            {(showAllComments ? parentComments : parentComments.slice(0, 2)).map(comment => (
+              <div key={comment.id} className="space-y-2">
+                {/* Parent comment */}
+                <div className="flex gap-2 text-sm group">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={getAvatarUrl(comment.user || null)} />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(comment.user)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-muted/50 rounded-lg px-3 py-1.5">
+                      <span className="font-medium text-xs">{getDisplayName(comment.user)}</span>
+                      <p className="text-xs">{comment.content}</p>
+                    </div>
+                    {/* Comment actions: reactions and reply */}
+                    <div className="flex items-center gap-3 mt-1 ml-1">
+                      <button 
+                        className={`text-xs flex items-center gap-1 ${(comment.reactions?.like || 0) > 0 ? 'text-blue-600' : 'text-muted-foreground hover:text-blue-600'}`}
+                        onClick={() => onCommentReaction(comment.id, 'like')}
+                        data-testid={`button-like-comment-${comment.id}`}
+                      >
+                        <ThumbsUp className="h-3 w-3" />
+                        {(comment.reactions?.like || 0) > 0 && <span>{comment.reactions.like}</span>}
+                        <span>Mi piace</span>
+                      </button>
+                      <button 
+                        className={`text-xs flex items-center gap-1 ${(comment.reactions?.dislike || 0) > 0 ? 'text-red-600' : 'text-muted-foreground hover:text-red-600'}`}
+                        onClick={() => onCommentReaction(comment.id, 'dislike')}
+                        data-testid={`button-dislike-comment-${comment.id}`}
+                      >
+                        <ThumbsDown className="h-3 w-3" />
+                        {(comment.reactions?.dislike || 0) > 0 && <span>{comment.reactions.dislike}</span>}
+                      </button>
+                      <button 
+                        className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                        onClick={() => handleReplyToComment(comment)}
+                        data-testid={`button-reply-comment-${comment.id}`}
+                      >
+                        <CornerDownRight className="h-3 w-3" />
+                        <span>Rispondi</span>
+                      </button>
+                      <span className="text-xs text-muted-foreground">
+                        {formatRelativeTime(comment.createdAt)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                
+                {/* Nested replies */}
+                {repliesMap[comment.id]?.map(reply => (
+                  <div key={reply.id} className="flex gap-2 text-sm ml-8 group">
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={getAvatarUrl(reply.user || null)} />
+                      <AvatarFallback className="text-xs">
+                        {getInitials(reply.user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="bg-muted/30 rounded-lg px-3 py-1.5">
+                        <span className="font-medium text-xs">{getDisplayName(reply.user)}</span>
+                        <p className="text-xs">{reply.content}</p>
+                      </div>
+                      {/* Reply actions */}
+                      <div className="flex items-center gap-3 mt-1 ml-1">
+                        <button 
+                          className={`text-xs flex items-center gap-1 ${(reply.reactions?.like || 0) > 0 ? 'text-blue-600' : 'text-muted-foreground hover:text-blue-600'}`}
+                          onClick={() => onCommentReaction(reply.id, 'like')}
+                          data-testid={`button-like-reply-${reply.id}`}
+                        >
+                          <ThumbsUp className="h-3 w-3" />
+                          {(reply.reactions?.like || 0) > 0 && <span>{reply.reactions.like}</span>}
+                        </button>
+                        <button 
+                          className={`text-xs flex items-center gap-1 ${(reply.reactions?.dislike || 0) > 0 ? 'text-red-600' : 'text-muted-foreground hover:text-red-600'}`}
+                          onClick={() => onCommentReaction(reply.id, 'dislike')}
+                          data-testid={`button-dislike-reply-${reply.id}`}
+                        >
+                          <ThumbsDown className="h-3 w-3" />
+                          {(reply.reactions?.dislike || 0) > 0 && <span>{reply.reactions.dislike}</span>}
+                        </button>
+                        <span className="text-xs text-muted-foreground">
+                          {formatRelativeTime(reply.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
-            {post.commentsCount > 2 && (
-              <Button variant="link" size="sm" className="text-xs p-0 h-auto">
+            {post.commentsCount > 2 && !showAllComments && (
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="text-xs p-0 h-auto"
+                onClick={() => setShowAllComments(true)}
+              >
                 Vedi tutti i {post.commentsCount} commenti
               </Button>
             )}
@@ -555,23 +657,40 @@ function FeedPostCard({
         )}
 
         {showCommentInput && (
-          <div className="w-full pt-2 flex gap-2">
-            <Input
-              placeholder="Scrivi un commento..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
-              className="flex-1 h-9"
-              data-testid="input-comment"
-            />
-            <Button 
-              size="sm" 
-              onClick={handleSubmitComment}
-              disabled={!commentText.trim()}
-              data-testid="button-submit-comment"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="w-full pt-2 space-y-2">
+            {replyToComment && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                <CornerDownRight className="h-3 w-3" />
+                <span>Rispondi a <strong>{getDisplayName(replyToComment.user)}</strong></span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-5 w-5 p-0 ml-auto"
+                  onClick={() => setReplyToComment(null)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input
+                placeholder={replyToComment ? `Rispondi a ${getDisplayName(replyToComment.user)}...` : "Scrivi un commento..."}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
+                className="flex-1 h-9"
+                data-testid="input-comment"
+                autoFocus
+              />
+              <Button 
+                size="sm" 
+                onClick={handleSubmitComment}
+                disabled={!commentText.trim()}
+                data-testid="button-submit-comment"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </CardFooter>
@@ -1343,15 +1462,27 @@ export function SocialFeed() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+    mutationFn: async ({ postId, content, parentCommentId }: { postId: string; content: string; parentCommentId?: string }) => {
       return apiRequest(`/api/feed/posts/${postId}/comments`, {
         method: 'POST',
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content, parentCommentId })
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/feed/posts'] });
       toast({ title: 'Commento aggiunto' });
+    }
+  });
+
+  const commentReactionMutation = useMutation({
+    mutationFn: async ({ commentId, reactionType }: { commentId: string; reactionType: 'like' | 'dislike' }) => {
+      return apiRequest(`/api/feed/comments/${commentId}/reactions`, {
+        method: 'POST',
+        body: JSON.stringify({ reactionType })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/feed/posts'] });
     }
   });
 
@@ -1477,7 +1608,8 @@ export function SocialFeed() {
                     key={post.id}
                     post={post}
                     onReaction={(postId, type) => reactionMutation.mutate({ postId, reactionType: type })}
-                    onComment={(postId, content) => commentMutation.mutate({ postId, content })}
+                    onComment={(postId, content, parentCommentId) => commentMutation.mutate({ postId, content, parentCommentId })}
+                    onCommentReaction={(commentId, type) => commentReactionMutation.mutate({ commentId, reactionType: type })}
                     onFavorite={(postId) => favoriteMutation.mutate(postId)}
                     onUnfollow={(postId) => unfollowMutation.mutate(postId)}
                     onVote={(postId, optionIds) => voteMutation.mutate({ postId, optionIds })}

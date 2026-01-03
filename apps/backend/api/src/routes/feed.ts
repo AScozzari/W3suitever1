@@ -638,6 +638,60 @@ router.delete('/posts/:postId/comments/:commentId', requirePermission('communica
   }
 });
 
+// Comment reactions (like/dislike)
+router.post('/comments/:commentId/reactions', requirePermission('communication.write'), async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { commentId } = req.params;
+    const { reactionType } = req.body as { reactionType: 'like' | 'dislike' };
+    
+    if (!['like', 'dislike'].includes(reactionType)) {
+      return res.status(400).json({ error: 'Tipo reazione non valido' });
+    }
+    
+    const [comment] = await db.select().from(feedComments)
+      .where(eq(feedComments.id, commentId));
+    
+    if (!comment) {
+      return res.status(404).json({ error: 'Commento non trovato' });
+    }
+    
+    // Get current reactions
+    const currentReactions = (comment.reactions || {}) as Record<string, number>;
+    const userReactionsKey = `${reactionType}_users`;
+    const userReactions = (currentReactions[userReactionsKey] || []) as string[];
+    
+    let updatedReactions = { ...currentReactions };
+    
+    if (userReactions.includes(userId)) {
+      // Remove reaction (toggle off)
+      updatedReactions[reactionType] = Math.max((updatedReactions[reactionType] || 1) - 1, 0);
+      updatedReactions[userReactionsKey] = userReactions.filter(id => id !== userId);
+    } else {
+      // Add reaction
+      updatedReactions[reactionType] = (updatedReactions[reactionType] || 0) + 1;
+      updatedReactions[userReactionsKey] = [...userReactions, userId];
+      
+      // Remove opposite reaction if exists
+      const oppositeType = reactionType === 'like' ? 'dislike' : 'like';
+      const oppositeUsersKey = `${oppositeType}_users`;
+      const oppositeUsers = (updatedReactions[oppositeUsersKey] || []) as string[];
+      if (oppositeUsers.includes(userId)) {
+        updatedReactions[oppositeType] = Math.max((updatedReactions[oppositeType] || 1) - 1, 0);
+        updatedReactions[oppositeUsersKey] = oppositeUsers.filter(id => id !== userId);
+      }
+    }
+    
+    await db.update(feedComments)
+      .set({ reactions: updatedReactions })
+      .where(eq(feedComments.id, commentId));
+    
+    res.json({ reactions: updatedReactions });
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
 router.post('/posts/:postId/vote', requirePermission('communication.write'), async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
