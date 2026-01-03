@@ -322,7 +322,7 @@ export default function TasksPage() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                   <CheckSquare className="h-6 w-6 text-windtre-orange" />
-                  Task Management
+                  Gestione Attività
                 </h1>
                 <p className="text-gray-600 mt-1">Gestisci tutte le tue attività in un'unica vista unificata</p>
               </div>

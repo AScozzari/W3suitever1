@@ -12,10 +12,14 @@ import {
   ChevronUp,
   Calendar,
   User,
-  Info
+  Info,
+  Tag,
+  Timer,
+  ListChecks
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Tooltip,
   TooltipContent,
@@ -23,7 +27,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, differenceInDays, differenceInHours } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 export interface MatrixTask {
@@ -35,7 +39,9 @@ export interface MatrixTask {
   urgency?: 'low' | 'medium' | 'high' | 'critical';
   dueDate?: Date | string | null;
   createdAt: Date | string;
+  creatorName?: string;
   assigneeCount?: number;
+  assigneeNames?: string[];
   commentCount?: number;
   attachmentCount?: number;
   checklistProgress?: { completed: number; total: number };
@@ -121,193 +127,217 @@ interface TaskCardCompactProps {
 function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantColor }: TaskCardCompactProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Calcola timing dalla creazione
+  const taskAge = formatDistanceToNow(new Date(task.createdAt), { locale: it });
+  
+  // Calcola stato scadenza
+  const getDueDateStatus = () => {
+    if (!task.dueDate || task.status === 'done') return null;
+    const dueDate = new Date(task.dueDate);
+    const now = new Date();
+    const daysUntilDue = differenceInDays(dueDate, now);
+    const hoursUntilDue = differenceInHours(dueDate, now);
+    
+    if (hoursUntilDue < 0) {
+      return { status: 'overdue', label: 'Scaduta', color: 'text-red-600 bg-red-50', icon: '🔴' };
+    } else if (daysUntilDue <= 1) {
+      return { status: 'urgent', label: 'Oggi/Domani', color: 'text-amber-600 bg-amber-50', icon: '🟡' };
+    } else if (daysUntilDue <= 3) {
+      return { status: 'soon', label: `${daysUntilDue}g`, color: 'text-orange-500 bg-orange-50', icon: '🟠' };
+    }
+    return { status: 'ok', label: `${daysUntilDue}g`, color: 'text-gray-500', icon: '' };
+  };
+  
+  const dueDateStatus = getDueDateStatus();
   const formattedDueDate = task.dueDate
     ? formatDistanceToNow(new Date(task.dueDate), { addSuffix: true, locale: it })
     : null;
 
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
+  // Calcola progresso checklist
+  const checklistPercent = task.checklistProgress 
+    ? Math.round((task.checklistProgress.completed / task.checklistProgress.total) * 100)
+    : 0;
+
+  const handleCardClick = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   return (
     <div
       className={cn(
-        'bg-white rounded-lg border shadow-sm transition-all duration-200',
-        'hover:shadow-md cursor-pointer',
-        isExpanded ? 'ring-2 ring-offset-1' : '',
+        'bg-white rounded-xl border-2 shadow-sm transition-all duration-200',
+        'hover:shadow-lg cursor-pointer group',
+        isExpanded ? 'ring-2 ring-blue-400 ring-offset-2 shadow-md' : 'hover:border-gray-300',
         quadrantColor
       )}
+      onClick={handleCardClick}
       data-testid={`matrix-task-${task.id}`}
     >
-      {/* Header compatto - sempre visibile */}
-      <div
-        className="p-3 flex items-start justify-between gap-2"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm text-gray-900 truncate leading-tight">
+      {/* Card principale - sempre visibile */}
+      <div className="p-4">
+        {/* Titolo e chevron */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h4 className="font-semibold text-sm text-gray-900 leading-snug line-clamp-2 flex-1">
             {task.title}
           </h4>
-          <div className="flex items-center gap-2 mt-1">
-            {formattedDueDate && (
-              <span className={cn(
-                'text-xs flex items-center gap-0.5',
-                isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'
-              )}>
-                <Calendar className="h-3 w-3" />
-                {formattedDueDate}
-              </span>
-            )}
-            {task.assigneeCount && task.assigneeCount > 0 && (
-              <span className="text-xs text-gray-500 flex items-center gap-0.5">
-                <User className="h-3 w-3" />
-                {task.assigneeCount}
-              </span>
-            )}
+          <div className={cn(
+            'shrink-0 transition-transform duration-200',
+            isExpanded ? 'rotate-180' : ''
+          )}>
+            <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 shrink-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
-          }}
-          data-testid={`toggle-expand-${task.id}`}
-        >
-          {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
-          )}
-        </Button>
-      </div>
 
-      {/* Dettagli espansi */}
-      {isExpanded && (
-        <div className="px-3 pb-3 border-t border-gray-100">
-          {/* Descrizione */}
-          {task.description && (
-            <p className="text-xs text-gray-600 mt-2 line-clamp-2">
-              {task.description}
-            </p>
-          )}
-
-          {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {task.tags.slice(0, 3).map((tag, idx) => (
-                <Badge key={idx} variant="secondary" className="text-[0.625rem] px-1.5 py-0">
-                  {tag}
-                </Badge>
-              ))}
-              {task.tags.length > 3 && (
-                <Badge variant="outline" className="text-[0.625rem] px-1.5 py-0">
-                  +{task.tags.length - 3}
-                </Badge>
-              )}
+        {/* Info row 1: Creatore e Assegnati */}
+        <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+          {task.creatorName && (
+            <div className="flex items-center gap-1">
+              <User className="h-3.5 w-3.5 text-gray-400" />
+              <span className="truncate max-w-[5rem]">{task.creatorName}</span>
             </div>
           )}
-
-          {/* Azioni shortcut */}
-          <div className="flex items-center gap-1 mt-3 pt-2 border-t border-gray-100">
+          {task.assigneeCount && task.assigneeCount > 0 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs gap-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onView();
-                    }}
-                    data-testid={`view-task-${task.id}`}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                    Vedi
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3.5 w-3.5 text-gray-400" />
+                    <span>{task.assigneeCount} assegnati</span>
+                  </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  Apri dettagli completi
-                </TooltipContent>
+                {task.assigneeNames && task.assigneeNames.length > 0 && (
+                  <TooltipContent side="top" className="text-xs">
+                    {task.assigneeNames.join(', ')}
+                  </TooltipContent>
+                )}
               </Tooltip>
             </TooltipProvider>
+          )}
+        </div>
 
-            {onEdit && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs gap-1 text-gray-600 hover:text-amber-600 hover:bg-amber-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit();
-                      }}
-                      data-testid={`edit-task-${task.id}`}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Modifica
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    Modifica attività
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+        {/* Info row 2: Timing e Scadenza */}
+        <div className="flex items-center gap-4 text-xs mb-3">
+          <div className="flex items-center gap-1 text-gray-500">
+            <Timer className="h-3.5 w-3.5" />
+            <span>Da {taskAge}</span>
+          </div>
+          {formattedDueDate && dueDateStatus && (
+            <div className={cn(
+              'flex items-center gap-1 px-2 py-0.5 rounded-full font-medium',
+              dueDateStatus.color
+            )}>
+              <Calendar className="h-3.5 w-3.5" />
+              <span>{formattedDueDate}</span>
+              {dueDateStatus.icon && <span>{dueDateStatus.icon}</span>}
+            </div>
+          )}
+        </div>
 
-            {onComplete && task.status !== 'done' && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs gap-1 text-gray-600 hover:text-green-600 hover:bg-green-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onComplete();
-                      }}
-                      data-testid={`complete-task-${task.id}`}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Fatto
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    Segna come completato
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+        {/* Checklist progress bar */}
+        {task.checklistProgress && task.checklistProgress.total > 0 && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+              <div className="flex items-center gap-1">
+                <ListChecks className="h-3.5 w-3.5" />
+                <span>Checklist</span>
+              </div>
+              <span className="font-medium">
+                {task.checklistProgress.completed}/{task.checklistProgress.total}
+              </span>
+            </div>
+            <Progress value={checklistPercent} className="h-1.5" />
+          </div>
+        )}
 
-            {onDelete && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs gap-1 text-gray-600 hover:text-red-600 hover:bg-red-50 ml-auto"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm('Sei sicuro di voler eliminare questa attività?')) {
-                          onDelete();
-                        }
-                      }}
-                      data-testid={`delete-task-${task.id}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    Elimina attività
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+        {/* Tags */}
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            <Tag className="h-3 w-3 text-gray-400" />
+            {task.tags.slice(0, 3).map((tag, idx) => (
+              <Badge key={idx} variant="secondary" className="text-[0.625rem] px-1.5 py-0 bg-gray-100">
+                {tag}
+              </Badge>
+            ))}
+            {task.tags.length > 3 && (
+              <Badge variant="outline" className="text-[0.625rem] px-1.5 py-0">
+                +{task.tags.length - 3}
+              </Badge>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Dropdown espanso con azioni */}
+      {isExpanded && (
+        <div className="border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
+          {/* Descrizione */}
+          {task.description && (
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-xs text-gray-600 line-clamp-3">
+                {task.description}
+              </p>
+            </div>
+          )}
+
+          {/* Azioni - stile link cliccabile */}
+          <div className="px-4 py-3 flex items-center justify-between gap-2">
+            <button
+              className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-center gap-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onView();
+              }}
+              data-testid={`view-task-${task.id}`}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Dettagli completi
+            </button>
+
+            <div className="flex items-center gap-3">
+              {onEdit && (
+                <button
+                  className="text-xs text-gray-500 hover:text-amber-600 hover:underline flex items-center gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  data-testid={`edit-task-${task.id}`}
+                >
+                  <Pencil className="h-3 w-3" />
+                  Modifica
+                </button>
+              )}
+
+              {onComplete && task.status !== 'done' && (
+                <button
+                  className="text-xs text-gray-500 hover:text-green-600 hover:underline flex items-center gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onComplete();
+                  }}
+                  data-testid={`complete-task-${task.id}`}
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  Completa
+                </button>
+              )}
+
+              {onDelete && (
+                <button
+                  className="text-xs text-gray-500 hover:text-red-600 hover:underline flex items-center gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Sei sicuro di voler eliminare questa attività?')) {
+                      onDelete();
+                    }
+                  }}
+                  data-testid={`delete-task-${task.id}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Elimina
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
