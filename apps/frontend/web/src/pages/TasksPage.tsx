@@ -487,7 +487,7 @@ export default function TasksPage() {
           )}
 
           {activeTab === 'matrix' && (
-            <div className="pb-6">
+            <div className="h-full min-h-[calc(100vh-16rem)]">
             {isLoading ? (
               <LoadingState variant="spinner" message="Caricamento matrix..." />
             ) : (

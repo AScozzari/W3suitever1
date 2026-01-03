@@ -42,6 +42,8 @@ export interface MatrixTask {
   dueDate?: Date | string | null;
   createdAt: Date | string;
   creatorName?: string;
+  createdBy?: { id: string; name: string };
+  assignees?: Array<{ id: string; name: string; role: string }>;
   assigneeCount?: number;
   assigneeNames?: string[];
   commentCount?: number;
@@ -192,10 +194,10 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
 
         {/* Info row 1: Creatore con data creazione */}
         <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
-          {task.creatorName && (
+          {(task.creatorName || task.createdBy?.name) && (
             <div className="flex items-center gap-1">
               <User className="h-3.5 w-3.5 text-blue-500" />
-              <span className="font-medium text-gray-700">{task.creatorName}</span>
+              <span className="font-medium text-gray-700">{task.creatorName || task.createdBy?.name}</span>
             </div>
           )}
           <span className="text-gray-400">•</span>
@@ -224,18 +226,18 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
               </div>
             )}
           </div>
-          {task.assigneeCount && task.assigneeCount > 0 && (
+          {((task.assigneeCount && task.assigneeCount > 0) || (task.assignees && task.assignees.length > 0)) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 text-gray-500">
                     <Users className="h-3.5 w-3.5" />
-                    <span>{task.assigneeCount}</span>
+                    <span>{task.assigneeCount || task.assignees?.length || 0}</span>
                   </div>
                 </TooltipTrigger>
-                {task.assigneeNames && task.assigneeNames.length > 0 && (
+                {((task.assigneeNames && task.assigneeNames.length > 0) || (task.assignees && task.assignees.length > 0)) && (
                   <TooltipContent side="top" className="text-xs">
-                    {task.assigneeNames.join(', ')}
+                    {task.assigneeNames?.join(', ') || task.assignees?.map(a => a.name).join(', ')}
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -478,7 +480,7 @@ export function EisenhowerMatrix({
           config.bgColor,
           config.borderColor,
           isDragOver && 'ring-4 ring-blue-400/50 scale-[1.01] shadow-lg',
-          isMobile ? 'h-full' : 'h-full min-h-[18.75rem]'
+          isMobile ? 'h-full' : 'h-full min-h-[20rem]'
         )}
         onDragOver={(e) => handleDragOver(e, quadrant)}
         onDragLeave={handleDragLeave}
@@ -532,8 +534,8 @@ export function EisenhowerMatrix({
           <p className="text-xs opacity-90 mt-1">{config.subtitle}</p>
         </div>
 
-        {/* Lista task con scroll indipendente - max-height per garantire scroll */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight: isMobile ? 'calc(100vh - 20rem)' : '25rem' }}>
+        {/* Lista task con scroll indipendente - altezza responsive */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-[12rem]" style={{ maxHeight: isMobile ? 'calc(100vh - 18rem)' : 'calc(50vh - 8rem)' }}>
           {quadrantTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 py-8">
               <Icon className="h-8 w-8 mb-2 opacity-50" />
@@ -592,8 +594,8 @@ export function EisenhowerMatrix({
         </p>
       </div>
 
-      {/* Desktop: Griglia 2x2 */}
-      <div className="hidden md:grid md:grid-cols-2 gap-4 flex-1 min-h-0">
+      {/* Desktop: Griglia 2x2 - occupa tutto lo spazio disponibile */}
+      <div className="hidden md:grid md:grid-cols-2 md:grid-rows-2 gap-4 flex-1 min-h-0">
         {renderQuadrant('do-first')}
         {renderQuadrant('schedule')}
         {renderQuadrant('delegate')}

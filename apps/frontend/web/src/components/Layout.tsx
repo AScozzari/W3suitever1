@@ -83,7 +83,7 @@ function ChatIconButton({ isMobile, isIdle }: { isMobile: boolean; isIdle: boole
 
   return (
     <button
-      onClick={() => navigate('chat')}
+      onClick={() => navigate('communication-center')}
       data-testid="button-chat"
       style={{
         position: 'relative',
@@ -561,7 +561,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard' },
     { id: 'tasks', label: 'Attività', icon: ListTodo, path: '/tasks' },
     { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
-    { id: 'communication-center', label: 'Communication Center', icon: MessageCircle, path: '/communication-center' },
+    { id: 'communication-center', label: 'Com Center', icon: MessageCircle, path: '/communication-center' },
     { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai-tools' },
     { 
       id: 'magazzino', 
