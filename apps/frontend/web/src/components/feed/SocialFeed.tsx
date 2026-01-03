@@ -65,6 +65,20 @@ const EMOJI_CATEGORIES = {
   'Oggetti': ['💼', '📁', '📂', '🗂️', '📋', '📄', '📃', '📑', '📊', '📈', '📉', '🗒️', '🗓️', '📆', '📅', '📇', '🗃️', '🗳️', '🗄️', '📬', '📭', '📮', '📯', '📨', '📩', '📧', '💻', '🖥️', '🖨️', '⌨️', '🖱️', '💾', '💿', '📱', '☎️', '📞', '📠', '📺', '📻']
 };
 
+// Badge types for appreciation posts
+const BADGE_TYPES = {
+  'star_performer': { icon: Star, label: 'Star Performer', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+  'team_player': { icon: Users, label: 'Team Player', color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  'innovator': { icon: Sparkles, label: 'Innovatore', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+  'problem_solver': { icon: Trophy, label: 'Problem Solver', color: 'text-green-600', bgColor: 'bg-green-50' },
+  'mentor': { icon: UserPlus, label: 'Mentor', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+  'go_getter': { icon: Award, label: 'Go Getter', color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  'customer_champion': { icon: Heart, label: 'Customer Champion', color: 'text-red-600', bgColor: 'bg-red-50' },
+  'rising_star': { icon: Medal, label: 'Rising Star', color: 'text-amber-600', bgColor: 'bg-amber-50' },
+  'excellence': { icon: Trophy, label: 'Eccellenza', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  'dedication': { icon: Star, label: 'Dedizione', color: 'text-cyan-600', bgColor: 'bg-cyan-50' }
+};
+
 
 interface FeedAttachment {
   id: string;

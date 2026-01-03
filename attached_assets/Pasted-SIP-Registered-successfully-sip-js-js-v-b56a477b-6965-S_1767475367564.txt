@@ -1,0 +1,123 @@
+SIP Registered successfully
+sip__js.js?v=b56a477b:6965 Sat Jan 03 2026 22:21:59 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+useTenantSafety.tsx:178 [TENANT-NAV] Navigating to: /staging/communication-center
+SocialFeed.tsx:1492 Uncaught ReferenceError: BADGE_TYPES is not defined
+    at BadgeModal (SocialFeed.tsx:1492:31)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=b56a477b:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=b56a477b:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=b56a477b:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=b56a477b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=b56a477b:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=b56a477b:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=b56a477b:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=b56a477b:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=b56a477b:19137:13)
+BadgeModal @ SocialFeed.tsx:1492
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=b56a477b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=b56a477b:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=b56a477b:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=b56a477b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+SocialFeed.tsx:1492 Uncaught ReferenceError: BADGE_TYPES is not defined
+    at BadgeModal (SocialFeed.tsx:1492:31)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=b56a477b:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=b56a477b:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=b56a477b:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=b56a477b:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=b56a477b:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=b56a477b:3733:39)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=b56a477b:19765:15)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=b56a477b:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=b56a477b:19137:13)
+BadgeModal @ SocialFeed.tsx:1492
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=b56a477b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=b56a477b:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=b56a477b:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=b56a477b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=b56a477b:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+installHook.js:1 The above error occurred in the <BadgeModal> component:
+
+    at BadgeModal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/feed/SocialFeed.tsx:2464:23)
+    at div
+    at SocialFeed (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/feed/SocialFeed.tsx:2756:21)
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:208:34)
+    at CommunicationCenterPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/CommunicationCenterPage.tsx:96:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:995:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=b56a477b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=b56a477b:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:270:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:128:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=b56a477b:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=b56a477b:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=b56a477b:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=b56a477b:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=b56a477b:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=b56a477b:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+chunk-ZHRYBLGQ.js?v=b56a477b:9129 Uncaught ReferenceError: BADGE_TYPES is not defined
+    at BadgeModal (SocialFeed.tsx:1492:31)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=b56a477b:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=b56a477b:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=b56a477b:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=b56a477b:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=b56a477b:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=b56a477b:19137:13)
+    at renderRootSync (chunk-ZHRYBLGQ.js?v=b56a477b:19116:15)
+    at recoverFromConcurrentError (chunk-ZHRYBLGQ.js?v=b56a477b:18736:28)
+    at performSyncWorkOnRoot (chunk-ZHRYBLGQ.js?v=b56a477b:18879:28)
+BadgeModal @ SocialFeed.tsx:1492
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=b56a477b:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=b56a477b:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=b56a477b:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=b56a477b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=b56a477b:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
