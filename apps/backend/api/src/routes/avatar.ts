@@ -8,8 +8,84 @@ import { structuredLogger } from '../core/logger';
 import { avatarService } from '../core/objectStorage';
 import { Client } from '@replit/object-storage';
 import { createHash } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const router = Router();
+
+// RUNTIME check for Object Storage (use bracket syntax to avoid esbuild inlining)
+function hasObjectStorage(): boolean {
+  const envKey = 'DEFAULT_OBJECT_STORAGE_BUCKET_ID';
+  const bucketId = process.env[envKey];
+  return Boolean(bucketId && bucketId.length > 0);
+}
+
+// Local avatar directory for VPS (fallback)
+function getLocalAvatarDir(): string {
+  const envKey = 'LOCAL_AVATAR_DIR';
+  return process.env[envKey] || '/var/www/w3suite/public/avatars';
+}
+
+// Helper to get Object Storage client with bucket ID (ONLY call if hasObjectStorage() is true)
+function getStorageClient(): Client | null {
+  const envKey = 'DEFAULT_OBJECT_STORAGE_BUCKET_ID';
+  const bucketId = process.env[envKey];
+  if (bucketId && bucketId.length > 0) {
+    return new Client({ bucketId });
+  }
+  return null;
+}
+
+// Check if running on Replit (has internal Object Storage service)
+function isReplitEnvironment(): boolean {
+  // Replit sets REPL_ID and REPLIT_DB_URL in its environment
+  const replId = process.env['REPL_ID'];
+  const replitDb = process.env['REPLIT_DB_URL'];
+  return Boolean(replId || replitDb);
+}
+
+// Helper to download avatar bytes (Object Storage or local file)
+async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buffer?: Buffer }> {
+  // ONLY try Object Storage on Replit (has internal service on port 1106)
+  // VPS doesn't have this service, so skip entirely to avoid ECONNREFUSED
+  if (isReplitEnvironment() && hasObjectStorage()) {
+    try {
+      const client = getStorageClient();
+      if (client) {
+        const paths = [`avatars/${filename}`, filename];
+        for (const objectKey of paths) {
+          const result = await client.downloadAsBytes(objectKey);
+          if (result.ok && result.value) {
+            return { ok: true, buffer: Buffer.from(result.value) };
+          }
+        }
+      }
+    } catch (err) {
+      structuredLogger.warn('Object Storage failed, trying local files', {
+        component: 'avatar-fallback',
+        metadata: { filename }
+      });
+    }
+  }
+  
+  // Local file system (VPS mode or Object Storage failure)
+  const localDir = getLocalAvatarDir();
+  const filePath = path.join(localDir, filename);
+  
+  try {
+    if (fs.existsSync(filePath)) {
+      const buffer = fs.readFileSync(filePath);
+      return { ok: true, buffer };
+    }
+  } catch (err) {
+    structuredLogger.error('Local avatar read failed', {
+      component: 'avatar-local',
+      error: err instanceof Error ? err : new Error(String(err)),
+      metadata: { filePath }
+    });
+  }
+  return { ok: false };
+}
 
 function generateStableId(path: string): string {
   return createHash('sha256').update(path).digest('hex').substring(0, 32);
@@ -87,15 +163,26 @@ router.post(
       const objectKey = `avatars/${tenantId}/${userId}.${extension}`;
 
       try {
-        const client = new Client();
-        await client.uploadFromBytes(objectKey, req.file.buffer);
-
-        structuredLogger.info('Avatar uploaded to object storage', {
-          component: 'avatar-upload',
-          metadata: { userId, tenantId, objectKey, size: req.file.size }
-        });
+        const client = getStorageClient();
+        if (client) {
+          await client.uploadFromBytes(objectKey, req.file.buffer);
+          structuredLogger.info('Avatar uploaded to object storage', {
+            component: 'avatar-upload',
+            metadata: { userId, tenantId, objectKey, size: req.file.size }
+          });
+        } else {
+          // VPS mode: save to local filesystem
+          const localDir = getLocalAvatarDir();
+          const localPath = path.join(localDir, `${userId}.${extension}`);
+          fs.mkdirSync(localDir, { recursive: true });
+          fs.writeFileSync(localPath, req.file.buffer);
+          structuredLogger.info('Avatar saved to local filesystem', {
+            component: 'avatar-upload-local',
+            metadata: { userId, tenantId, localPath, size: req.file.size }
+          });
+        }
       } catch (uploadError) {
-        structuredLogger.error('Failed to upload avatar to object storage', {
+        structuredLogger.error('Failed to upload avatar', {
           component: 'avatar-upload',
           error: uploadError instanceof Error ? uploadError : new Error(String(uploadError)),
           metadata: { userId, tenantId }
@@ -174,12 +261,11 @@ router.post(
 router.get('/serve/:tenantId/:filename', async (req: Request, res: Response) => {
   try {
     const { tenantId, filename } = req.params;
-    const objectKey = `avatars/${tenantId}/${filename}`;
+    
+    // Use helper that works with both Object Storage (Replit) and local files (VPS)
+    const result = await downloadAvatarBytes(filename);
 
-    const client = new Client();
-    const { value: buffer, ok } = await client.downloadAsBytes(objectKey);
-
-    if (!ok || !buffer) {
+    if (!result.ok || !result.buffer) {
       return res.status(404).json({ error: 'Avatar non trovato' });
     }
 
@@ -190,7 +276,7 @@ router.get('/serve/:tenantId/:filename', async (req: Request, res: Response) => 
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(Buffer.from(buffer));
+    res.send(result.buffer);
 
   } catch (error) {
     structuredLogger.error('Avatar serve failed', {
@@ -225,8 +311,17 @@ router.delete(
 
       if (targetUser.avatarObjectPath) {
         try {
-          const client = new Client();
-          await client.delete(targetUser.avatarObjectPath);
+          const client = getStorageClient();
+          if (client) {
+            await client.delete(targetUser.avatarObjectPath);
+          } else {
+            // VPS mode: delete from local filesystem
+            const filename = targetUser.avatarObjectPath.split('/').pop() || '';
+            const localPath = path.join(getLocalAvatarDir(), filename);
+            if (fs.existsSync(localPath)) {
+              fs.unlinkSync(localPath);
+            }
+          }
           
           await db.delete(objectMetadata)
             .where(eq(objectMetadata.objectPath, targetUser.avatarObjectPath));
@@ -284,6 +379,8 @@ router.get('/users/:userId/avatar', async (req: Request, res: Response) => {
 
     let avatarUrl: string | null = null;
     if (user.avatarObjectPath) {
+      // Use tenant-scoped serve endpoint for RLS compliance
+      // Format: /api/avatars/serve/{tenantId}/{filename}
       const filename = user.avatarObjectPath.split('/').pop();
       avatarUrl = `/api/avatars/serve/${user.tenantId}/${filename}`;
     }
@@ -294,6 +391,33 @@ router.get('/users/:userId/avatar', async (req: Request, res: Response) => {
       objectPath: user.avatarObjectPath,
       initials: `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || '??'
     });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Errore interno del server' });
+  }
+});
+
+// Serve avatar by direct object path (supports legacy paths like /avatars/filename.png)
+router.get('/serve-path/:objectPath(*)', async (req: Request, res: Response) => {
+  try {
+    const objectPath = decodeURIComponent(req.params.objectPath);
+    const filename = objectPath.split('/').pop() || objectPath;
+    
+    // Use the unified download helper that works on both Replit and VPS
+    const result = await downloadAvatarBytes(filename);
+
+    if (!result.ok || !result.buffer) {
+      return res.status(404).json({ error: 'Avatar non trovato' });
+    }
+
+    const extension = objectPath.split('.').pop()?.toLowerCase();
+    const contentType = extension === 'png' ? 'image/png' 
+      : extension === 'webp' ? 'image/webp' 
+      : 'image/jpeg';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(result.buffer);
 
   } catch (error) {
     res.status(500).json({ error: 'Errore interno del server' });
