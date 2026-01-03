@@ -112,10 +112,28 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
       avatar: users.profileImageUrl
     }).from(users).where(eq(users.id, post.authorId)).limit(1),
     
-    db.select().from(feedComments)
+    db.select({
+      id: feedComments.id,
+      postId: feedComments.postId,
+      userId: feedComments.userId,
+      content: feedComments.content,
+      mentionedUserIds: feedComments.mentionedUserIds,
+      parentCommentId: feedComments.parentCommentId,
+      reactions: feedComments.reactions,
+      createdAt: feedComments.createdAt,
+      updatedAt: feedComments.updatedAt,
+      user: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        avatar: users.profileImageUrl
+      }
+    }).from(feedComments)
+      .leftJoin(users, eq(feedComments.userId, users.id))
       .where(eq(feedComments.postId, post.id))
       .orderBy(asc(feedComments.createdAt))
-      .limit(3),
+      .limit(20),
     
     db.select({
       reactionType: feedReactions.reactionType,
