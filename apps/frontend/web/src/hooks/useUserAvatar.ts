@@ -92,15 +92,15 @@ export function useUserAvatar(
     return `linear-gradient(135deg, ${colorSet[0]}, ${colorSet[1]})`;
   }, [userData]);
 
-  // Query for user avatar image
+  // Query for user avatar image - uses new Object Storage endpoint
   const { data: avatarData, isLoading: isQueryLoading, error: queryError } = useQuery({
-    queryKey: ['/api/users', userData?.id, 'avatar'],
+    queryKey: ['/api/avatars/users', userData?.id, 'avatar'],
     queryFn: async () => {
       if (!userData?.id) throw new Error('User ID not available');
       
       // Try to fetch from API, but gracefully handle failures
       try {
-        const response = await fetch(`/api/users/${userData.id}/avatar`, {
+        const response = await fetch(`/api/avatars/users/${userData.id}/avatar`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
@@ -116,7 +116,8 @@ export function useUserAvatar(
         }
         
         const result = await response.json();
-        return result?.profileImageUrl || null;
+        // Support both old profileImageUrl and new avatarUrl formats
+        return result?.avatarUrl || result?.profileImageUrl || null;
       } catch (error) {
         // For network errors or server errors, log but don't throw
         console.warn('Avatar fetch failed, using fallback:', error);
