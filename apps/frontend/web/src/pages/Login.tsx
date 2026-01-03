@@ -345,23 +345,25 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       
       {/* Right Panel - Login Form */}
       <div style={{
-        flex: isMobile ? 1 : '0 0 440px',
-        width: isMobile ? '100%' : '440px',
+        flex: isMobile ? 1 : 1,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: isMobile ? '32px 24px' : '40px',
-        background: '#FFFFFF',
-        boxShadow: isMobile ? 'none' : '-8px 0 48px rgba(0, 0, 0, 0.06)',
-        minHeight: isMobile ? '100vh' : 'auto',
-        maxHeight: isMobile ? 'none' : '100vh',
-        overflowY: 'auto'
+        padding: isMobile ? '32px 24px' : '48px 64px',
+        background: '#FFFFFF'
       }}>
+        {/* Form Card Container - Fixed Height */}
         <div style={{ 
           width: '100%', 
-          maxWidth: '340px',
-          padding: '32px 0'
+          maxWidth: '380px',
+          height: 'auto',
+          maxHeight: '580px',
+          padding: '40px 36px',
+          background: '#FFFFFF',
+          borderRadius: '20px',
+          boxShadow: '0 8px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)',
+          border: '1px solid rgba(0, 0, 0, 0.06)'
         }}>
           
           {/* Mobile Logo */}
