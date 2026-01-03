@@ -44,8 +44,8 @@ function isReplitEnvironment(): boolean {
   return Boolean(replId || replitDb);
 }
 
-// Helper to download avatar bytes (Object Storage or local file)
-async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buffer?: Buffer }> {
+// Helper to download avatar (Object Storage or local file) - returns buffer and content type
+async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buffer?: Buffer; isSvg?: boolean }> {
   // ONLY try Object Storage on Replit (has internal service on port 1106)
   // VPS doesn't have this service, so skip entirely to avoid ECONNREFUSED
   if (isReplitEnvironment() && hasObjectStorage()) {
@@ -54,9 +54,12 @@ async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buf
       if (client) {
         const paths = [`avatars/${filename}`, filename];
         for (const objectKey of paths) {
-          const result = await client.downloadAsBytes(objectKey);
-          if (result.ok && result.value) {
-            return { ok: true, buffer: Buffer.from(result.value) };
+          // Use downloadAsText to properly retrieve content (fixes 1-byte issue with downloadAsBytes)
+          const result = await client.downloadAsText(objectKey);
+          if (result.ok && result.value && result.value.length > 10) {
+            const content = result.value;
+            const isSvg = content.startsWith('<svg') || content.includes('xmlns="http://www.w3.org/2000/svg"');
+            return { ok: true, buffer: Buffer.from(content), isSvg };
           }
         }
       }
@@ -75,7 +78,8 @@ async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buf
   try {
     if (fs.existsSync(filePath)) {
       const buffer = fs.readFileSync(filePath);
-      return { ok: true, buffer };
+      const isSvg = buffer.toString().startsWith('<svg');
+      return { ok: true, buffer, isSvg };
     }
   } catch (err) {
     structuredLogger.error('Local avatar read failed', {
@@ -274,18 +278,19 @@ router.get('/serve/:tenantId/:filename', async (req: Request, res: Response) => 
       if (!legacyResult.ok || !legacyResult.buffer) {
         return res.status(404).json({ error: 'Avatar non trovato' });
       }
-      const extension = filename.split('.').pop()?.toLowerCase();
-      const contentType = extension === 'png' ? 'image/png' 
-        : extension === 'webp' ? 'image/webp' 
+      const contentType = legacyResult.isSvg ? 'image/svg+xml' 
+        : filename.endsWith('.png') ? 'image/png' 
+        : filename.endsWith('.webp') ? 'image/webp' 
         : 'image/jpeg';
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.send(legacyResult.buffer);
     }
 
-    const extension = filename.split('.').pop()?.toLowerCase();
-    const contentType = extension === 'png' ? 'image/png' 
-      : extension === 'webp' ? 'image/webp' 
+    // Determine content type - SVG if detected, otherwise by extension
+    const contentType = result.isSvg ? 'image/svg+xml' 
+      : filename.endsWith('.png') ? 'image/png' 
+      : filename.endsWith('.webp') ? 'image/webp' 
       : 'image/jpeg';
 
     res.setHeader('Content-Type', contentType);
