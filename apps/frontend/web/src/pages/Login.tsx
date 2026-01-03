@@ -260,18 +260,23 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.75rem'
+              gap: '0.5rem'
             }}>
               <img 
                 src={w3LogoOfficial} 
                 alt="W3 Logo" 
-                style={{ height: '3.5rem', width: 'auto' }}
+                style={{ 
+                  height: '4rem', 
+                  width: 'auto',
+                  mixBlendMode: 'multiply'
+                }}
               />
               <span style={{ 
-                fontSize: '2.5rem', 
-                fontWeight: '300', 
-                color: '#1F2937',
-                letterSpacing: '-0.02rem'
+                fontSize: '2.75rem', 
+                fontWeight: '700', 
+                color: '#FF6900',
+                letterSpacing: '-0.02rem',
+                fontFamily: 'Inter, system-ui, sans-serif'
               }}>Suite</span>
             </div>
             <p style={{ 
@@ -390,14 +395,23 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem'
+                gap: '0.25rem'
               }}>
                 <img 
                   src={w3LogoOfficial} 
                   alt="W3 Logo" 
-                  style={{ height: '2.5rem', width: 'auto' }}
+                  style={{ 
+                    height: '2.5rem', 
+                    width: 'auto',
+                    mixBlendMode: 'multiply'
+                  }}
                 />
-                <span style={{ fontSize: '1.5rem', fontWeight: '300', color: '#1F2937' }}>Suite</span>
+                <span style={{ 
+                  fontSize: '1.75rem', 
+                  fontWeight: '700', 
+                  color: '#FF6900',
+                  fontFamily: 'Inter, system-ui, sans-serif'
+                }}>Suite</span>
               </div>
             </div>
           )}
@@ -409,7 +423,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                 <img 
                   src={w3LogoOfficial} 
                   alt="W3 Logo" 
-                  style={{ height: '2.5rem', width: 'auto' }}
+                  style={{ 
+                    height: '2.25rem', 
+                    width: 'auto',
+                    mixBlendMode: 'multiply'
+                  }}
                 />
               )}
               <h1 style={{ 
