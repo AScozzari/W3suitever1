@@ -9,10 +9,22 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 import { startWorkflowWorker, stopWorkflowWorker, startActivityLogWorker, stopActivityLogWorker } from "./queue/index.js";
 import { emailService } from "./services/email-service.js";
 
-const __filename = typeof import.meta?.url === 'string' 
-  ? fileURLToPath(import.meta.url) 
-  : process.cwd() + '/server.js';
-const __dirname = path.dirname(__filename);
+// CommonJS/ESM compatible __dirname/__filename
+// Use try/catch to handle both formats at runtime
+let __filename_compat: string;
+let __dirname_compat: string;
+try {
+  // ESM environment
+  if (typeof (globalThis as any).import?.meta?.url === 'string') {
+    __filename_compat = fileURLToPath((globalThis as any).import.meta.url);
+  } else {
+    __filename_compat = process.cwd() + '/server.cjs';
+  }
+} catch {
+  __filename_compat = process.cwd() + '/server.cjs';
+}
+__dirname_compat = path.dirname(__filename_compat);
+const __dirname = __dirname_compat;
 
 // Global process references for lifecycle management
 let brandFrontendProcess: ChildProcess | null = null;
