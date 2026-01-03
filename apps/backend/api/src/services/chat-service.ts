@@ -477,8 +477,26 @@ export class ChatService {
       afterMessageId?: string;
     }
   ): Promise<ChatMessage[]> {
+    // Select only columns that exist in the database (avoid is_voice_message etc. that may not be migrated)
     let query = db
-      .select()
+      .select({
+        id: chatMessages.id,
+        channelId: chatMessages.channelId,
+        tenantId: chatMessages.tenantId,
+        userId: chatMessages.userId,
+        content: chatMessages.content,
+        messageType: chatMessages.messageType,
+        attachments: chatMessages.attachments,
+        mentionedUserIds: chatMessages.mentionedUserIds,
+        reactions: chatMessages.reactions,
+        replyToMessageId: chatMessages.replyToMessageId,
+        threadId: chatMessages.threadId,
+        isEdited: chatMessages.isEdited,
+        editedAt: chatMessages.editedAt,
+        metadata: chatMessages.metadata,
+        createdAt: chatMessages.createdAt,
+        deletedAt: chatMessages.deletedAt
+      })
       .from(chatMessages)
       .where(and(
         eq(chatMessages.channelId, channelId),
@@ -491,7 +509,7 @@ export class ChatService {
       query = query.limit(options.limit);
     }
 
-    return query;
+    return query as unknown as ChatMessage[];
   }
 
   static async addReaction(

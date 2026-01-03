@@ -188,37 +188,37 @@ export default function CommunicationCenterPage() {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="h-full flex flex-col">
-        <div className="windtre-glass-panel border-b border-white/20 mb-6">
-          <div className="px-6 py-4">
+      <div className="h-full flex flex-col min-h-0">
+        {/* Header compatto */}
+        <div className="shrink-0 windtre-glass-panel border-b border-white/20 mb-4">
+          <div className="px-6 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <MessageCircle className="h-6 w-6 text-windtre-orange" />
+                <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-windtre-orange" />
                   Communication Center
                 </h1>
-                <p className="text-gray-600 mt-1">Gestisci tutte le comunicazioni in un'unica piattaforma</p>
               </div>
               
               {activeTab === 'messenger' && (
                 <Button 
                   onClick={() => setCreateDialogOpen(true)}
-                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white h-8 text-sm"
                   data-testid="button-new-chat"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-1" />
                   Nuova Chat
                 </Button>
               )}
             </div>
             
-            <div className="flex gap-1 mt-4">
+            <div className="flex gap-1 mt-2">
               {tabs.map((tab) => (
                 <Button
                   key={tab.id}
                   variant={activeTab === tab.id ? 'default' : 'ghost'}
                   onClick={() => setActiveTab(tab.id)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 h-8 text-sm"
                   data-testid={`tab-${tab.id}`}
                 >
                   <tab.icon className="h-4 w-4" />
@@ -229,11 +229,13 @@ export default function CommunicationCenterPage() {
           </div>
         </div>
 
-        <div className="flex-1 px-6 overflow-hidden">
+        {/* Container principale che occupa tutto lo spazio rimanente */}
+        <div className="flex-1 px-6 pb-4 min-h-0 overflow-hidden">
           {activeTab === 'messenger' && (
-            <div className="h-full bg-white rounded-xl border shadow-sm overflow-hidden flex">
-              <div className="w-80 border-r flex flex-col bg-gray-50/50">
-                <div className="p-4 border-b bg-white">
+            <div className="h-full bg-white rounded-xl border shadow-sm overflow-hidden flex min-h-0">
+              {/* Sidebar conversazioni con scroll indipendente */}
+              <div className="w-80 border-r flex flex-col bg-gray-50/50 min-h-0">
+                <div className="shrink-0 p-4 border-b bg-white">
                   <h3 className="font-semibold text-gray-900">Conversazioni</h3>
                   <p className="text-xs text-gray-500 mt-0.5">{channels.length} chat attive</p>
                 </div>
@@ -331,10 +333,12 @@ export default function CommunicationCenterPage() {
                 </div>
               </div>
 
-              <div className="flex-1 flex flex-col">
+              {/* Area messaggi con scroll indipendente */}
+              <div className="flex-1 flex flex-col min-h-0">
                 {selectedChannel ? (
                   <>
-                    <div className="h-14 px-4 border-b flex items-center justify-between bg-white">
+                    {/* Header chat fisso */}
+                    <div className="shrink-0 h-14 px-4 border-b flex items-center justify-between bg-white">
                       <div className="flex items-center gap-3">
                         {selectedChannel.channelType === 'dm' && selectedChannel.dmUser?.id ? (
                           <AvatarWithPresence
@@ -380,15 +384,17 @@ export default function CommunicationCenterPage() {
                     {/* Barra messaggi fissati */}
                     <PinnedMessagesBar channelId={selectedChannel.id} canUnpin={true} />
                     
+                    {/* Area messaggi scrollabile */}
                     <div 
-                      className="flex-1 overflow-y-auto p-4"
+                      className="flex-1 overflow-y-auto p-4 min-h-0"
                       style={getBackgroundStyle(selectedChannel.metadata?.backgroundPattern)}
                     >
                       <MessageList channelId={selectedChannel.id} currentUserId={user?.id || ''} />
                       <TypingIndicator channelId={selectedChannel.id} currentUserId={user?.id || ''} />
                     </div>
                     
-                    <div className="border-t bg-white p-4">
+                    {/* Composer fisso in basso */}
+                    <div className="shrink-0 border-t bg-white p-4">
                       <MessageComposer channelId={selectedChannel.id} />
                     </div>
                   </>

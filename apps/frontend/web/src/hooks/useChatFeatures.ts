@@ -31,9 +31,12 @@ export function useReadReceipts(messageId: string) {
   return useQuery<ReadReceipt[]>({
     queryKey: ['/api/chat/messages', messageId, 'read-receipts'],
     queryFn: async () => {
-      const res = await fetch(`/api/chat/messages/${messageId}/read-receipts`);
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const res = await apiRequest(`/api/chat/messages/${messageId}/read-receipts`, { method: 'GET' });
+        return res as ReadReceipt[];
+      } catch {
+        return [];
+      }
     },
     enabled: !!messageId,
     staleTime: 30000
@@ -65,9 +68,12 @@ export function usePinnedMessages(channelId: string) {
   return useQuery<PinnedMessage[]>({
     queryKey: ['/api/chat/channels', channelId, 'pinned'],
     queryFn: async () => {
-      const res = await fetch(`/api/chat/channels/${channelId}/pinned`);
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const res = await apiRequest(`/api/chat/channels/${channelId}/pinned`, { method: 'GET' });
+        return res as PinnedMessage[];
+      } catch {
+        return [];
+      }
     },
     enabled: !!channelId,
     staleTime: 30000
@@ -146,9 +152,12 @@ export function useSearchMessages(query: string, filters?: {
   return useQuery({
     queryKey: ['/api/chat/search', query, filters],
     queryFn: async () => {
-      const res = await fetch(`/api/chat/search?${params.toString()}`);
-      if (!res.ok) return [];
-      return res.json();
+      try {
+        const res = await apiRequest(`/api/chat/search?${params.toString()}`, { method: 'GET' });
+        return res;
+      } catch {
+        return [];
+      }
     },
     enabled: query.length >= 2,
     staleTime: 30000

@@ -73,9 +73,12 @@ export function useUserPresence(userId: string) {
   return useQuery<UserPresence | { status: 'offline' }>({
     queryKey: ['/api/chat/presence', userId],
     queryFn: async () => {
-      const res = await fetch(`/api/chat/presence/${userId}`);
-      if (!res.ok) return { status: 'offline' as const };
-      return res.json();
+      try {
+        const res = await apiRequest(`/api/chat/presence/${userId}`, { method: 'GET' });
+        return res as UserPresence;
+      } catch {
+        return { status: 'offline' as const };
+      }
     },
     enabled: !!userId,
     staleTime: PRESENCE_STALE_TIME,
