@@ -23,6 +23,8 @@ import { MessageComposer } from '@/components/chat/MessageComposer';
 import { ChannelMembersDialog } from '@/components/chat/ChannelMembersDialog';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EditChannelDialog } from '@/components/chat/EditChannelDialog';
+import { QuickChatBar } from '@/components/chat/QuickChatBar';
+import { MessageSearchDialog } from '@/components/chat/MessageSearchDialog';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -122,6 +124,7 @@ export default function CommunicationCenterPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
   const [hoveredChannelId, setHoveredChannelId] = useState<string | null>(null);
@@ -235,12 +238,25 @@ export default function CommunicationCenterPage() {
             <div className="h-full bg-white rounded-xl border shadow-sm overflow-hidden flex min-h-0">
               {/* Sidebar conversazioni con scroll indipendente */}
               <div className="w-80 border-r flex flex-col bg-gray-50/50 min-h-0">
-                <div className="shrink-0 p-4 border-b bg-white">
-                  <h3 className="font-semibold text-gray-900">Conversazioni</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">{channels.length} chat attive</p>
+                <div className="shrink-0 p-3 border-b bg-white space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 text-sm">Conversazioni</h3>
+                    <button
+                      onClick={() => setSearchDialogOpen(true)}
+                      className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
+                      title="Cerca messaggi"
+                      data-testid="button-search-messages"
+                    >
+                      <Search className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <QuickChatBar 
+                    onChatCreated={(channelId) => setSelectedChannelId(channelId)}
+                    placeholder="Avvia chat rapida..."
+                  />
                 </div>
                 
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0">
                   {isLoading ? (
                     <div className="flex items-center justify-center h-32">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-windtre-orange" />
@@ -476,6 +492,15 @@ export default function CommunicationCenterPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MessageSearchDialog
+        open={searchDialogOpen}
+        onOpenChange={setSearchDialogOpen}
+        onSelectResult={(channelId, _messageId) => {
+          setSelectedChannelId(channelId);
+          setSearchDialogOpen(false);
+        }}
+      />
     </Layout>
   );
 }
