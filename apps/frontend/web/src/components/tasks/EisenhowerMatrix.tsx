@@ -15,7 +15,9 @@ import {
   Info,
   Tag,
   Timer,
-  ListChecks
+  ListChecks,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -130,7 +132,7 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
   // Calcola timing dalla creazione
   const taskAge = formatDistanceToNow(new Date(task.createdAt), { locale: it });
   
-  // Calcola stato scadenza
+  // Calcola stato scadenza con colori: rosso scaduta, arancione 2-3gg, verde >3gg
   const getDueDateStatus = () => {
     if (!task.dueDate || task.status === 'done') return null;
     const dueDate = new Date(task.dueDate);
@@ -139,13 +141,13 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
     const hoursUntilDue = differenceInHours(dueDate, now);
     
     if (hoursUntilDue < 0) {
-      return { status: 'overdue', label: 'Scaduta', color: 'text-red-600 bg-red-50', icon: '🔴' };
+      return { status: 'overdue', label: 'Scaduta', color: 'text-red-600 bg-red-100', icon: '🔴' };
     } else if (daysUntilDue <= 1) {
-      return { status: 'urgent', label: 'Oggi/Domani', color: 'text-amber-600 bg-amber-50', icon: '🟡' };
+      return { status: 'urgent', label: 'Oggi/Domani', color: 'text-amber-600 bg-amber-100', icon: '🟠' };
     } else if (daysUntilDue <= 3) {
-      return { status: 'soon', label: `${daysUntilDue}g`, color: 'text-orange-500 bg-orange-50', icon: '🟠' };
+      return { status: 'soon', label: `${daysUntilDue}g`, color: 'text-orange-500 bg-orange-100', icon: '🟠' };
     }
-    return { status: 'ok', label: `${daysUntilDue}g`, color: 'text-gray-500', icon: '' };
+    return { status: 'ok', label: `${daysUntilDue}g`, color: 'text-green-600 bg-green-100', icon: '🟢' };
   };
   
   const dueDateStatus = getDueDateStatus();
@@ -188,21 +190,47 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
           </div>
         </div>
 
-        {/* Info row 1: Creatore e Assegnati */}
-        <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+        {/* Info row 1: Creatore con data creazione */}
+        <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
           {task.creatorName && (
             <div className="flex items-center gap-1">
-              <User className="h-3.5 w-3.5 text-gray-400" />
-              <span className="truncate max-w-[5rem]">{task.creatorName}</span>
+              <User className="h-3.5 w-3.5 text-blue-500" />
+              <span className="font-medium text-gray-700">{task.creatorName}</span>
             </div>
           )}
+          <span className="text-gray-400">•</span>
+          <div className="flex items-center gap-1 text-gray-500">
+            <Calendar className="h-3 w-3" />
+            <span>{new Date(task.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</span>
+          </div>
+        </div>
+
+        {/* Info row 2: Scadenza con alert colorato + Assegnati */}
+        <div className="flex items-center justify-between text-xs mb-3">
+          <div className="flex items-center gap-3">
+            {dueDateStatus && (
+              <div className={cn(
+                'flex items-center gap-1.5 px-2 py-1 rounded-md font-medium',
+                dueDateStatus.color
+              )}>
+                <span className="text-sm">{dueDateStatus.icon}</span>
+                <span>Scade {formattedDueDate}</span>
+              </div>
+            )}
+            {!dueDateStatus && task.dueDate && (
+              <div className="flex items-center gap-1 text-gray-500">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Scade {formattedDueDate}</span>
+              </div>
+            )}
+          </div>
           {task.assigneeCount && task.assigneeCount > 0 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-gray-400" />
-                    <span>{task.assigneeCount} assegnati</span>
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{task.assigneeCount}</span>
                   </div>
                 </TooltipTrigger>
                 {task.assigneeNames && task.assigneeNames.length > 0 && (
@@ -212,24 +240,6 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
                 )}
               </Tooltip>
             </TooltipProvider>
-          )}
-        </div>
-
-        {/* Info row 2: Timing e Scadenza */}
-        <div className="flex items-center gap-4 text-xs mb-3">
-          <div className="flex items-center gap-1 text-gray-500">
-            <Timer className="h-3.5 w-3.5" />
-            <span>Da {taskAge}</span>
-          </div>
-          {formattedDueDate && dueDateStatus && (
-            <div className={cn(
-              'flex items-center gap-1 px-2 py-0.5 rounded-full font-medium',
-              dueDateStatus.color
-            )}>
-              <Calendar className="h-3.5 w-3.5" />
-              <span>{formattedDueDate}</span>
-              {dueDateStatus.icon && <span>{dueDateStatus.icon}</span>}
-            </div>
           )}
         </div>
 
@@ -249,20 +259,31 @@ function TaskCardCompact({ task, onView, onEdit, onComplete, onDelete, quadrantC
           </div>
         )}
 
-        {/* Tags */}
+        {/* Tags - sempre visibili con colori */}
         {task.tags && task.tags.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            <Tag className="h-3 w-3 text-gray-400" />
-            {task.tags.slice(0, 3).map((tag, idx) => (
-              <Badge key={idx} variant="secondary" className="text-[0.625rem] px-1.5 py-0 bg-gray-100">
-                {tag}
-              </Badge>
-            ))}
-            {task.tags.length > 3 && (
-              <Badge variant="outline" className="text-[0.625rem] px-1.5 py-0">
-                +{task.tags.length - 3}
-              </Badge>
-            )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {task.tags.map((tag, idx) => {
+              const tagColors = [
+                'bg-blue-100 text-blue-700 border-blue-200',
+                'bg-purple-100 text-purple-700 border-purple-200',
+                'bg-green-100 text-green-700 border-green-200',
+                'bg-pink-100 text-pink-700 border-pink-200',
+                'bg-orange-100 text-orange-700 border-orange-200',
+                'bg-teal-100 text-teal-700 border-teal-200',
+              ];
+              const colorClass = tagColors[idx % tagColors.length];
+              return (
+                <span 
+                  key={idx} 
+                  className={cn(
+                    'text-[0.625rem] px-2 py-0.5 rounded-full font-medium border',
+                    colorClass
+                  )}
+                >
+                  {tag}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -356,6 +377,21 @@ export function EisenhowerMatrix({
   const [draggedTask, setDraggedTask] = useState<MatrixTask | null>(null);
   const [dragOverQuadrant, setDragOverQuadrant] = useState<Quadrant | null>(null);
   const [mobileActiveQuadrant, setMobileActiveQuadrant] = useState<Quadrant>('do-first');
+  
+  // Stato ordinamento per quadrante: 'desc' = più recenti prima, 'asc' = più vecchie prima
+  const [sortOrder, setSortOrder] = useState<Record<Quadrant, 'asc' | 'desc'>>({
+    'do-first': 'desc',
+    'schedule': 'desc',
+    'delegate': 'desc',
+    'eliminate': 'desc'
+  });
+  
+  const toggleSortOrder = (quadrant: Quadrant) => {
+    setSortOrder(prev => ({
+      ...prev,
+      [quadrant]: prev[quadrant] === 'desc' ? 'asc' : 'desc'
+    }));
+  };
 
   const categorizeTask = (task: MatrixTask): Quadrant => {
     const priority = task.priority || 'medium';
@@ -422,9 +458,17 @@ export function EisenhowerMatrix({
 
   const renderQuadrant = (quadrant: Quadrant, isMobile = false) => {
     const config = quadrantConfig[quadrant];
-    const quadrantTasks = tasksByQuadrant[quadrant] || [];
+    const rawTasks = tasksByQuadrant[quadrant] || [];
     const Icon = config.icon;
     const isDragOver = dragOverQuadrant === quadrant;
+    const currentSortOrder = sortOrder[quadrant];
+    
+    // Ordina task per data creazione
+    const quadrantTasks = [...rawTasks].sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return currentSortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
     return (
       <div
@@ -441,7 +485,7 @@ export function EisenhowerMatrix({
         onDrop={(e) => handleDrop(e, quadrant)}
         data-testid={`quadrant-${quadrant}`}
       >
-        {/* Header del quadrante */}
+        {/* Header del quadrante con toggle ordinamento */}
         <div className={cn('px-4 py-3 text-white', config.headerBg)}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -449,6 +493,26 @@ export function EisenhowerMatrix({
               <h3 className="font-bold text-sm tracking-wide">{config.title}</h3>
             </div>
             <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => toggleSortOrder(quadrant)}
+                      className="p-1 rounded hover:bg-white/20 transition-colors"
+                      data-testid={`sort-${quadrant}`}
+                    >
+                      {currentSortOrder === 'desc' ? (
+                        <ArrowDown className="h-4 w-4" />
+                      ) : (
+                        <ArrowUp className="h-4 w-4" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {currentSortOrder === 'desc' ? 'Più recenti prima' : 'Più vecchie prima'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Badge className="bg-white/20 text-white hover:bg-white/30 text-xs">
                 {quadrantTasks.length}
               </Badge>
@@ -468,8 +532,8 @@ export function EisenhowerMatrix({
           <p className="text-xs opacity-90 mt-1">{config.subtitle}</p>
         </div>
 
-        {/* Lista task con scroll indipendente */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {/* Lista task con scroll indipendente - max-height per garantire scroll */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ maxHeight: isMobile ? 'calc(100vh - 20rem)' : '25rem' }}>
           {quadrantTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 py-8">
               <Icon className="h-8 w-8 mb-2 opacity-50" />
