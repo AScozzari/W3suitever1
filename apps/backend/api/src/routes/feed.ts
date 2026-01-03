@@ -797,20 +797,22 @@ router.get('/badges/leaderboard', requirePermission('communication.read'), async
   try {
     const tenantId = req.tenant!.id;
     
-    const leaderboard = await db.select({
-      userId: userBadges.userId,
-      userName: users.name,
-      userAvatar: users.profileImageUrl,
-      badgeCount: sql<number>`count(*)::int`
-    })
-    .from(userBadges)
-    .leftJoin(users, eq(userBadges.userId, users.id))
-    .where(eq(userBadges.tenantId, tenantId))
-    .groupBy(userBadges.userId, users.name, users.profileImageUrl)
-    .orderBy(desc(sql`count(*)`))
-    .limit(10);
+    // Simple query using raw SQL to avoid Drizzle nested select issues
+    const leaderboard = await db.execute(sql`
+      SELECT 
+        ub.user_id as "userId",
+        u.name as "userName", 
+        u.profile_image_url as "userAvatar",
+        count(*)::int as "badgeCount"
+      FROM w3suite.user_badges ub
+      LEFT JOIN w3suite.users u ON ub.user_id = u.id
+      WHERE ub.tenant_id = ${tenantId}
+      GROUP BY ub.user_id, u.name, u.profile_image_url
+      ORDER BY count(*) DESC
+      LIMIT 10
+    `);
     
-    res.json(leaderboard);
+    res.json(leaderboard.rows || []);
   } catch (error) {
     handleApiError(error, res);
   }
@@ -821,31 +823,38 @@ router.get('/badges/user/:userId', requirePermission('communication.read'), asyn
     const tenantId = req.tenant!.id;
     const { userId } = req.params;
     
-    const badges = await db.select({
-      badge: userBadges,
-      awardedBy: {
-        id: users.id,
-        name: users.name,
-        avatar: users.profileImageUrl
-      }
-    })
-    .from(userBadges)
-    .leftJoin(users, eq(userBadges.awardedByUserId, users.id))
-    .where(and(
-      eq(userBadges.tenantId, tenantId),
-      eq(userBadges.userId, userId)
-    ))
-    .orderBy(desc(userBadges.createdAt));
+    // Raw SQL query to avoid Drizzle nested select issues
+    const badgesResult = await db.execute(sql`
+      SELECT 
+        ub.*,
+        u.id as "awardedById",
+        u.name as "awardedByName",
+        u.profile_image_url as "awardedByAvatar"
+      FROM w3suite.user_badges ub
+      LEFT JOIN w3suite.users u ON ub.awarded_by_user_id = u.id
+      WHERE ub.tenant_id = ${tenantId} AND ub.user_id = ${userId}
+      ORDER BY ub.created_at DESC
+    `);
     
-    const badgeCounts = badges.reduce((acc: any, { badge }) => {
-      acc[badge.badgeType] = (acc[badge.badgeType] || 0) + 1;
+    const badges = (badgesResult.rows || []) as any[];
+    
+    const badgeCounts = badges.reduce((acc: any, badge: any) => {
+      acc[badge.badge_type] = (acc[badge.badge_type] || 0) + 1;
       return acc;
     }, {});
     
     res.json({
-      badges: badges.map(b => ({
-        ...b.badge,
-        awardedBy: b.awardedBy
+      badges: badges.map((b: any) => ({
+        id: b.id,
+        userId: b.user_id,
+        badgeType: b.badge_type,
+        message: b.message,
+        createdAt: b.created_at,
+        awardedBy: b.awardedById ? {
+          id: b.awardedById,
+          name: b.awardedByName,
+          avatar: b.awardedByAvatar
+        } : null
       })),
       counts: badgeCounts,
       totalBadges: badges.length
