@@ -681,11 +681,16 @@ export const users = w3suiteSchema.table("users", {
   
   // Notes
   notes: text("notes"), // Note interne HR
+  
+  // Password Reset
+  resetPasswordToken: varchar("reset_password_token", { length: 255 }),
+  resetPasswordExpires: timestamp("reset_password_expires"),
 }, (table) => [
   index("users_tenant_idx").on(table.tenantId),
   index("users_store_idx").on(table.storeId),
   index("users_manager_idx").on(table.managerId),
   index("users_employee_number_idx").on(table.employeeNumber),
+  index("users_reset_token_idx").on(table.resetPasswordToken),
 ]);
 
 export const insertUserSchema = createInsertSchema(users).omit({ 

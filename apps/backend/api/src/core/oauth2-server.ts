@@ -10,8 +10,9 @@ import bcrypt from 'bcryptjs';
 import { storage } from './storage';
 import { db } from './db';
 import { users, tenants } from '../db/schema/w3suite';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, or, isNull } from 'drizzle-orm';
 import { JWT_SECRET, config } from './config';
+import { emailService } from '../services/email-service';
 
 // OAuth2 Configuration Enterprise
 const OAUTH2_CONFIG = {
@@ -1014,6 +1015,227 @@ export function setupOAuth2Server(app: express.Application) {
       });
     } catch (error) {
       console.error('❌ [Session Login] Error:', error);
+      return res.status(500).json({
+        error: 'server_error',
+        message: 'Errore interno del server'
+      });
+    }
+  });
+
+  // ==================== PASSWORD RESET ====================
+  /**
+   * Forgot Password endpoint
+   * 3-level tenant matching: 1) URL+Email 2) URL only 3) Email cross-tenant
+   */
+  app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
+    const { identifier, tenantSlug, recoveryEmail } = req.body;
+    
+    console.log('🔐 [Forgot Password] Request for:', identifier, 'tenant:', tenantSlug);
+    
+    if (!identifier) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        message: 'Username o email richiesti'
+      });
+    }
+    
+    try {
+      let user: any = null;
+      let matchedTenantId: string | null = null;
+      
+      // LEVEL 1: URL + Email/Username match
+      if (tenantSlug) {
+        // Get tenant ID from slug
+        const [tenant] = await db
+          .select({ id: tenants.id })
+          .from(tenants)
+          .where(eq(tenants.slug, tenantSlug))
+          .limit(1);
+        
+        if (tenant) {
+          matchedTenantId = tenant.id;
+          
+          // Search by email or username (id field contains username)
+          const [foundUser] = await db
+            .select()
+            .from(users)
+            .where(and(
+              eq(users.tenantId, tenant.id),
+              or(
+                eq(users.email, identifier.toLowerCase()),
+                eq(users.id, identifier)
+              )
+            ))
+            .limit(1);
+          
+          user = foundUser;
+        }
+      }
+      
+      // LEVEL 2: URL only (fallback with username)
+      if (!user && tenantSlug && matchedTenantId) {
+        const [foundUser] = await db
+          .select()
+          .from(users)
+          .where(and(
+            eq(users.tenantId, matchedTenantId),
+            eq(users.id, identifier) // Username match
+          ))
+          .limit(1);
+        
+        user = foundUser;
+      }
+      
+      // LEVEL 3: Email cross-tenant (most risky)
+      if (!user && identifier.includes('@')) {
+        const foundUsers = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, identifier.toLowerCase()))
+          .limit(5);
+        
+        if (foundUsers.length === 1) {
+          user = foundUsers[0];
+        } else if (foundUsers.length > 1) {
+          // Email exists in multiple tenants - require tenant specification
+          return res.status(400).json({
+            error: 'multiple_tenants',
+            message: 'Questa email esiste in più organizzazioni. Accedi dalla pagina specifica della tua organizzazione.'
+          });
+        }
+      }
+      
+      // User not found - return generic message for security
+      if (!user) {
+        console.log('⚠️ [Forgot Password] User not found:', identifier);
+        return res.status(200).json({
+          success: true,
+          message: 'Se l\'account esiste, riceverai un\'email con le istruzioni.'
+        });
+      }
+      
+      // Determine email to use
+      const targetEmail = user.email || recoveryEmail;
+      
+      if (!targetEmail) {
+        return res.status(200).json({
+          success: true,
+          requiresEmail: true,
+          message: 'Nessuna email associata all\'account. Inserisci un\'email di recupero.'
+        });
+      }
+      
+      // Generate secure reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      
+      // Save token to database
+      await db
+        .update(users)
+        .set({
+          resetPasswordToken: resetToken,
+          resetPasswordExpires: resetExpires
+        })
+        .where(eq(users.id, user.id));
+      
+      // Build reset link
+      const baseUrl = process.env.APP_URL || 'https://w3suite.it';
+      const resetLink = `${baseUrl}/${tenantSlug || 'staging'}/reset-password?token=${resetToken}`;
+      
+      // Send email
+      const emailSent = await emailService.sendPasswordResetEmail({
+        to: targetEmail,
+        firstName: user.firstName || user.id,
+        resetLink,
+        expiresInMinutes: 60
+      });
+      
+      if (!emailSent) {
+        console.error('❌ [Forgot Password] Failed to send email to:', targetEmail);
+      } else {
+        console.log('✅ [Forgot Password] Reset email sent to:', targetEmail);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Se l\'account esiste, riceverai un\'email con le istruzioni.'
+      });
+      
+    } catch (error) {
+      console.error('❌ [Forgot Password] Error:', error);
+      return res.status(500).json({
+        error: 'server_error',
+        message: 'Errore interno del server'
+      });
+    }
+  });
+
+  /**
+   * Reset Password endpoint
+   * Validates token and updates password
+   */
+  app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+    
+    console.log('🔐 [Reset Password] Attempting reset with token');
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        message: 'Token e nuova password richiesti'
+      });
+    }
+    
+    // Password validation
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: 'weak_password',
+        message: 'La password deve essere di almeno 8 caratteri'
+      });
+    }
+    
+    try {
+      // Find user by token
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(and(
+          eq(users.resetPasswordToken, token),
+          sql`${users.resetPasswordExpires} > NOW()`
+        ))
+        .limit(1);
+      
+      if (!user) {
+        console.log('⚠️ [Reset Password] Invalid or expired token');
+        return res.status(400).json({
+          error: 'invalid_token',
+          message: 'Il link di reset non è valido o è scaduto. Richiedi un nuovo link.'
+        });
+      }
+      
+      // Hash new password
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      
+      // Update password and clear reset token
+      await db
+        .update(users)
+        .set({
+          passwordHash,
+          resetPasswordToken: null,
+          resetPasswordExpires: null,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id));
+      
+      console.log('✅ [Reset Password] Password updated for user:', user.id);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Password aggiornata con successo. Puoi effettuare il login.'
+      });
+      
+    } catch (error) {
+      console.error('❌ [Reset Password] Error:', error);
       return res.status(500).json({
         error: 'server_error',
         message: 'Errore interno del server'

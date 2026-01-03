@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { registerRoutes } from "./core/routes.js";
 import { seedCommercialAreas } from "./core/seed-areas.js";
 import { startWorkflowWorker, stopWorkflowWorker, startActivityLogWorker, stopActivityLogWorker } from "./queue/index.js";
+import { emailService } from "./services/email-service.js";
 
 const __filename = typeof import.meta?.url === 'string' 
   ? fileURLToPath(import.meta.url) 
@@ -409,6 +410,9 @@ async function startBackendOnly() {
 
   // Seed dati di riferimento
   await seedCommercialAreas();
+
+  // Initialize email service
+  emailService.initialize();
 
   // Crea il server HTTP
   const httpServer = await registerRoutes(app);
