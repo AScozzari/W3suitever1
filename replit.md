@@ -119,6 +119,14 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
+- **CSS UNITS RULE (OBBLIGATORIO - Jan 2026)**:
+  - **✅ SEMPRE `rem`**: Usare rem per TUTTE le dimensioni (font-size, padding, margin, width, height, gap)
+  - **Formula**: `rem = px / 16` (es. 16px = 1rem, 14px = 0.875rem, 24px = 1.5rem, 48px = 3rem)
+  - **✅ Eccezione `px`**: Solo per border-width (1px, 2px, 3px) che non necessitano scaling
+  - **📁 File convertiti**: Login.tsx, ForgotPassword.tsx, ResetPassword.tsx, SettingsPage.tsx
+  - **📋 Strategia**: Convertire gradualmente i file rimanenti quando vengono modificati
+  - **❌ NEVER**: Usare px per padding, margin, font-size, width, height, gap
+  - **✅ ALWAYS**: Verificare che i nuovi componenti usino rem per scalabilità con VITE_FONT_SCALE
 
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE=80`). Content integrates into existing dashboards using `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
@@ -131,7 +139,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **HR Module (Shifts, Leaves, Tracking)**: Manages shifts, leave requests, and time tracking. Features a comprehensive shift state system (15 states), various leave categories, and a `HrImpactService` for real-time shift impact analysis. Includes an approval flow for leave requests that updates resource availability and an API for previewing impacts.
     - **WMS Module (CQRS)**: Uses Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables. Manages complex relationships between movements and documents, with distinct classifications and rules for generating logistic movements.
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway (External API)**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations. **Hybrid Authentication**: API Key (`sk_live_*`) for n8n/Zapier/scripts OR OAuth2 JWT (`eyJ*`) for ChatGPT/Claude Desktop. OAuth2 clients: `chatgpt-mcp-client`, `claude-mcp-client`, `n8n-mcp-client`, `zapier-mcp-client`. MCP scopes: `mcp_read`, `mcp_write`. **Session-based OAuth2**: External clients redirect to styled `/login` page when session expires, then auto-generate auth codes. Full docs: `docs/MCP-PUBLIC-GATEWAY-API.md`.
+    - **MCP Public Gateway (External API)**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations. Supports Hybrid Authentication (API Key or OAuth2 JWT) and session-based OAuth2.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers within `w3suite.drivers` using RLS.
     - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User) for data access and request routing.
