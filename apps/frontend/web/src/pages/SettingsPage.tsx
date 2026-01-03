@@ -9731,13 +9731,13 @@ export default function SettingsPage() {
                           </div>
                           <div style={{
                             fontSize: '0.6875rem',
-                            color: pv.status === 'active' ? '#059669' : '#dc2626',
-                            background: pv.status === 'active' ? '#d1fae5' : '#fee2e2',
+                            color: (pv.status === 'active' || pv.status === 'Attivo') ? '#059669' : '#dc2626',
+                            background: (pv.status === 'active' || pv.status === 'Attivo') ? '#d1fae5' : '#fee2e2',
                             padding: '0.25rem 0.5rem',
                             borderRadius: '0.75rem',
                             fontWeight: '500'
                           }}>
-                            {pv.status === 'active' ? 'Attivo' : 'Inattivo'}
+                            {(pv.status === 'active' || pv.status === 'Attivo') ? 'Attivo' : 'Inattivo'}
                           </div>
                         </label>
                       ))}
