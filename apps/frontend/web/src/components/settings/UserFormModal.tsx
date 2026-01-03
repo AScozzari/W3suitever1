@@ -104,9 +104,20 @@ export default function UserFormModal({
 
   useEffect(() => {
     if (isOpen && data && (mode === 'edit' || mode === 'view')) {
-      // Extract organization entities and stores from data
-      const orgEntities = data.selectedOrganizationEntities || [];
-      const storeEntities = data.selectedStores || [];
+      // Extract organization entities and stores from data - normalize objects to IDs
+      const rawOrgEntities = data.selectedOrganizationEntities || [];
+      const rawStoreEntities = data.selectedStores || [];
+      
+      // Normalize to ID arrays - handle both string IDs and object shapes
+      const orgEntities: string[] = rawOrgEntities.map((item: any) => {
+        if (typeof item === 'string') return item;
+        return item?.organizationEntityId || item?.id || item;
+      }).filter((id: any) => typeof id === 'string' && id.length > 0);
+      
+      const storeEntities: string[] = rawStoreEntities.map((item: any) => {
+        if (typeof item === 'string') return item;
+        return item?.storeId || item?.id || item;
+      }).filter((id: any) => typeof id === 'string' && id.length > 0);
       
       // Determine scope level from existing data
       let scopeLevel: 'tenant' | 'organization_entity' | 'store' = 'tenant';
@@ -116,9 +127,16 @@ export default function UserFormModal({
         scopeLevel = 'organization_entity';
       }
       
-      // Default primary to first selection if not set (API requires primaryId when selections exist)
-      const primaryOrgId = data.primaryOrganizationEntityId || (orgEntities.length > 0 ? orgEntities[0] : null);
-      const primaryStoreId = data.primaryStoreId || (storeEntities.length > 0 ? storeEntities[0] : null);
+      // Normalize primary IDs - handle object shapes
+      const normalizePrimaryId = (value: any): string | null => {
+        if (!value) return null;
+        if (typeof value === 'string') return value;
+        return value?.organizationEntityId || value?.storeId || value?.id || null;
+      };
+      
+      // Default primary to first selection if not set
+      const primaryOrgId = normalizePrimaryId(data.primaryOrganizationEntityId) || (orgEntities.length > 0 ? orgEntities[0] : null);
+      const primaryStoreId = normalizePrimaryId(data.primaryStoreId) || (storeEntities.length > 0 ? storeEntities[0] : null);
 
       setFormData({
         username: data.username || '',
