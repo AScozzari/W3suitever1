@@ -234,41 +234,46 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       {/* Left Panel - Features (hidden on mobile) */}
       {!isMobile && (
         <div style={{
-          flex: 1,
+          flex: 1.3,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: '48px',
-          maxWidth: '560px'
+          alignItems: 'center',
+          padding: '48px 64px',
+          maxWidth: '720px'
         }}>
-          {/* Logo */}
-          <div style={{ marginBottom: '48px' }}>
+          {/* Logo - Centered */}
+          <div style={{ marginBottom: '40px', textAlign: 'center', width: '100%', maxWidth: '520px' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '12px',
               background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
-              padding: '12px 20px',
-              borderRadius: '12px',
-              boxShadow: '0 4px 16px rgba(255, 105, 0, 0.25)'
+              padding: '14px 24px',
+              borderRadius: '14px',
+              boxShadow: '0 6px 20px rgba(255, 105, 0, 0.3)'
             }}>
-              <span style={{ fontSize: '28px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>W3</span>
-              <span style={{ fontSize: '28px', fontWeight: '400', color: '#fff' }}>Suite</span>
+              <span style={{ fontSize: '32px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>W3</span>
+              <span style={{ fontSize: '32px', fontWeight: '400', color: '#fff' }}>Suite</span>
             </div>
             <p style={{ 
               marginTop: '16px', 
               fontSize: '15px', 
               color: '#6B7280',
-              maxWidth: '320px'
+              textAlign: 'center'
             }}>
               La piattaforma enterprise che trasforma il tuo business con intelligenza artificiale
             </p>
           </div>
           
           {/* Feature Cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: '520px' }}>
             {FEATURES.map((feature, index) => {
               const Icon = feature.icon;
+              const colorRgb = feature.color.replace('#', '');
+              const r = parseInt(colorRgb.slice(0, 2), 16);
+              const g = parseInt(colorRgb.slice(2, 4), 16);
+              const b = parseInt(colorRgb.slice(4, 6), 16);
               return (
                 <div
                   key={index}
@@ -276,22 +281,22 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '16px',
-                    padding: '20px',
-                    background: 'rgba(255, 255, 255, 0.7)',
+                    padding: '18px 20px',
+                    background: `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.12) 0%, rgba(255, 255, 255, 0.85) 70%)`,
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.4)',
-                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+                    borderRadius: '14px',
+                    border: `1px solid rgba(${r}, ${g}, ${b}, 0.2)`,
+                    boxShadow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.08)`,
                     transition: 'all 0.3s ease'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.boxShadow = `0 8px 28px rgba(${r}, ${g}, ${b}, 0.15)`;
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 24px rgba(0, 0, 0, 0.04)';
+                    e.currentTarget.style.boxShadow = `0 4px 20px rgba(${r}, ${g}, ${b}, 0.08)`;
                   }}
                 >
                   <div style={{
@@ -340,17 +345,24 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       
       {/* Right Panel - Login Form */}
       <div style={{
-        flex: isMobile ? 1 : 'none',
-        width: isMobile ? '100%' : '480px',
+        flex: isMobile ? 1 : '0 0 440px',
+        width: isMobile ? '100%' : '440px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: isMobile ? '32px 24px' : '48px',
+        padding: isMobile ? '32px 24px' : '40px',
         background: '#FFFFFF',
-        boxShadow: isMobile ? 'none' : '-8px 0 48px rgba(0, 0, 0, 0.06)'
+        boxShadow: isMobile ? 'none' : '-8px 0 48px rgba(0, 0, 0, 0.06)',
+        minHeight: isMobile ? '100vh' : 'auto',
+        maxHeight: isMobile ? 'none' : '100vh',
+        overflowY: 'auto'
       }}>
-        <div style={{ width: '100%', maxWidth: '360px' }}>
+        <div style={{ 
+          width: '100%', 
+          maxWidth: '340px',
+          padding: '32px 0'
+        }}>
           
           {/* Mobile Logo */}
           {isMobile && (
