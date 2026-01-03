@@ -117,8 +117,14 @@ export function AvatarWithPresence({
         />
       ) : (
         <div
-          className="w-full h-full rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-semibold"
-          style={{ fontSize: dimensions.text }}
+          className="w-full h-full rounded-full flex items-center justify-center font-bold shadow-md"
+          style={{ 
+            fontSize: dimensions.text,
+            background: 'linear-gradient(135deg, #FF6900 0%, #e85d00 100%)',
+            color: '#ffffff',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+            border: '2px solid rgba(255,255,255,0.9)'
+          }}
         >
           {initials}
         </div>

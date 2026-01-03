@@ -721,54 +721,56 @@ export class ChatService {
     tenantId: string, 
     status: 'online' | 'away' | 'busy' | 'offline'
   ): Promise<UserPresence> {
-    const now = new Date();
-    
-    const [presence] = await db
-      .insert(userPresence)
-      .values({
-        userId,
-        tenantId,
-        status,
-        lastSeenAt: now,
-        lastHeartbeatAt: now
-      })
-      .onConflictDoUpdate({
-        target: userPresence.userId,
-        set: {
-          status,
-          lastSeenAt: now,
-          lastHeartbeatAt: now
-        }
-      })
-      .returning();
-    
-    logger.debug('🟢 Presence updated', { userId, status });
-    return presence;
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO w3suite.user_presence (user_id, tenant_id, status, last_seen_at, updated_at)
+        VALUES (${userId}, ${tenantId}::uuid, ${status}, NOW(), NOW())
+        ON CONFLICT (tenant_id, user_id) DO UPDATE SET
+          status = EXCLUDED.status,
+          last_seen_at = NOW(),
+          updated_at = NOW()
+        RETURNING id, user_id, tenant_id, status, custom_status, emoji,
+                  last_seen_at, expires_at, manual_override, created_at, updated_at
+      `);
+      
+      const row = result.rows?.[0] as any;
+      logger.debug('🟢 Presence updated', { userId, status });
+      return {
+        id: row?.id,
+        userId: row?.user_id,
+        tenantId: row?.tenant_id,
+        status: row?.status || status,
+        customStatus: row?.custom_status,
+        customEmoji: row?.emoji,
+        lastSeenAt: row?.last_seen_at,
+        statusExpiresAt: row?.expires_at
+      } as UserPresence;
+    } catch (error) {
+      logger.error('Failed to update presence', { error, userId, status });
+      return { userId, tenantId, status } as UserPresence;
+    }
   }
 
   static async heartbeat(userId: string, tenantId: string): Promise<void> {
-    await db
-      .insert(userPresence)
-      .values({
-        userId,
-        tenantId,
-        status: 'online',
-        lastHeartbeatAt: new Date()
-      })
-      .onConflictDoUpdate({
-        target: userPresence.userId,
-        set: {
-          status: 'online',
-          lastHeartbeatAt: new Date()
-        }
-      });
+    try {
+      await db.execute(sql`
+        INSERT INTO w3suite.user_presence (user_id, tenant_id, status, last_seen_at, updated_at)
+        VALUES (${userId}, ${tenantId}::uuid, 'online', NOW(), NOW())
+        ON CONFLICT (tenant_id, user_id) DO UPDATE SET
+          status = 'online',
+          last_seen_at = NOW(),
+          updated_at = NOW()
+      `);
+    } catch (error) {
+      logger.error('Failed to update heartbeat', { error, userId });
+    }
   }
 
   static async getUserPresence(userId: string, tenantId: string): Promise<UserPresence | null> {
     try {
       const result = await db.execute(sql`
-        SELECT id, user_id, tenant_id, status, custom_status, custom_emoji,
-               last_seen_at, device_info, status_expires_at, created_at, updated_at
+        SELECT id, user_id, tenant_id, status, custom_status, emoji,
+               last_seen_at, expires_at, manual_override, created_at, updated_at
         FROM w3suite.user_presence
         WHERE user_id = ${userId}
           AND tenant_id = ${tenantId}::uuid
@@ -784,12 +786,12 @@ export class ChatService {
         id: row.id,
         userId: row.user_id,
         tenantId: row.tenant_id,
-        status: row.status,
+        status: row.status || 'offline',
         customStatus: row.custom_status,
-        customEmoji: row.custom_emoji,
+        customEmoji: row.emoji,
         lastSeenAt: row.last_seen_at,
-        deviceInfo: row.device_info,
-        statusExpiresAt: row.status_expires_at,
+        statusExpiresAt: row.expires_at,
+        manualOverride: row.manual_override,
         createdAt: row.created_at,
         updatedAt: row.updated_at
       } as UserPresence;
@@ -804,8 +806,8 @@ export class ChatService {
     
     try {
       const result = await db.execute(sql`
-        SELECT id, user_id, tenant_id, status, custom_status, custom_emoji,
-               last_seen_at, device_info, status_expires_at, created_at, updated_at
+        SELECT id, user_id, tenant_id, status, custom_status, emoji,
+               last_seen_at, expires_at, manual_override, created_at, updated_at
         FROM w3suite.user_presence
         WHERE user_id = ANY(${userIds}::text[])
           AND tenant_id = ${tenantId}::uuid
@@ -815,12 +817,12 @@ export class ChatService {
         id: row.id,
         userId: row.user_id,
         tenantId: row.tenant_id,
-        status: row.status,
+        status: row.status || 'offline',
         customStatus: row.custom_status,
-        customEmoji: row.custom_emoji,
+        customEmoji: row.emoji,
         lastSeenAt: row.last_seen_at,
-        deviceInfo: row.device_info,
-        statusExpiresAt: row.status_expires_at,
+        statusExpiresAt: row.expires_at,
+        manualOverride: row.manual_override,
         createdAt: row.created_at,
         updatedAt: row.updated_at
       })) as UserPresence[];
@@ -837,26 +839,35 @@ export class ChatService {
     emoji?: string,
     expiresAt?: Date
   ): Promise<UserPresence> {
-    const [presence] = await db
-      .insert(userPresence)
-      .values({
-        userId,
-        tenantId,
-        customStatus,
-        customStatusEmoji: emoji,
-        customStatusExpiresAt: expiresAt
-      })
-      .onConflictDoUpdate({
-        target: userPresence.userId,
-        set: {
-          customStatus,
-          customStatusEmoji: emoji,
-          customStatusExpiresAt: expiresAt
-        }
-      })
-      .returning();
-    
-    return presence;
+    try {
+      const expiresAtValue = expiresAt ? expiresAt.toISOString() : null;
+      const result = await db.execute(sql`
+        INSERT INTO w3suite.user_presence (user_id, tenant_id, custom_status, emoji, expires_at, updated_at)
+        VALUES (${userId}, ${tenantId}::uuid, ${customStatus}, ${emoji || null}, ${expiresAtValue}::timestamp, NOW())
+        ON CONFLICT (tenant_id, user_id) DO UPDATE SET
+          custom_status = EXCLUDED.custom_status,
+          emoji = EXCLUDED.emoji,
+          expires_at = EXCLUDED.expires_at,
+          updated_at = NOW()
+        RETURNING id, user_id, tenant_id, status, custom_status, emoji,
+                  last_seen_at, expires_at, manual_override, created_at, updated_at
+      `);
+      
+      const row = result.rows?.[0] as any;
+      return {
+        id: row?.id,
+        userId: row?.user_id,
+        tenantId: row?.tenant_id,
+        status: row?.status || 'online',
+        customStatus: row?.custom_status,
+        customEmoji: row?.emoji,
+        lastSeenAt: row?.last_seen_at,
+        statusExpiresAt: row?.expires_at
+      } as UserPresence;
+    } catch (error) {
+      logger.error('Failed to set custom status', { error, userId });
+      return { userId, tenantId, customStatus } as UserPresence;
+    }
   }
 
   // ==================== READ RECEIPTS ====================
