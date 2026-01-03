@@ -204,6 +204,18 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       }
 
       const tokens = await tokenResponse.json();
+      
+      // Save tokens in the format OAuth2Client expects
+      const tokensWithExpiry = {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_type: tokens.token_type || 'Bearer',
+        expires_in: tokens.expires_in || 3600,
+        expires_at: Date.now() + ((tokens.expires_in || 3600) * 1000)
+      };
+      localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
+      
+      // Also save legacy keys for backwards compatibility
       localStorage.setItem('auth_token', tokens.access_token);
       if (tokens.refresh_token) localStorage.setItem('refresh_token', tokens.refresh_token);
       localStorage.setItem('currentTenant', propTenantCode || 'staging');
