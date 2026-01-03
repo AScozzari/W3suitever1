@@ -9,9 +9,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SavedRepliesPicker } from './SavedRepliesPicker';
+import { MentionAutocomplete } from './MentionAutocomplete';
 
 interface MessageComposerProps {
   channelId: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export function MessageComposer({ channelId }: MessageComposerProps) {
@@ -22,6 +31,64 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Mention state
+  const [mentionSearch, setMentionSearch] = useState<string | null>(null);
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [mentionedUsers, setMentionedUsers] = useState<string[]>([]);
+
+  // Detect @ mentions in text
+  const handleMessageChange = (newMessage: string) => {
+    setMessage(newMessage);
+    
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = newMessage.substring(0, cursorPos);
+    
+    // Check if we're in a mention context
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      setMentionSearch(mentionMatch[1]);
+      setMentionPosition({ top: 60, left: 16 });
+    } else {
+      setMentionSearch(null);
+    }
+  };
+
+  const handleMentionSelect = (user: User) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = message.substring(0, cursorPos);
+    const textAfterCursor = message.substring(cursorPos);
+    
+    // Find the @ symbol position
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    if (atIndex === -1) return;
+    
+    const displayName = user.firstName && user.lastName 
+      ? `${user.firstName} ${user.lastName}`
+      : user.email.split('@')[0];
+    
+    const newMessage = 
+      message.substring(0, atIndex) + 
+      `@${displayName} ` + 
+      textAfterCursor;
+    
+    setMessage(newMessage);
+    setMentionSearch(null);
+    setMentionedUsers(prev => [...prev, user.id]);
+    
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = atIndex + displayName.length + 2;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  };
 
   // Typing indicator mutation
   const typingMutation = useMutation({
@@ -159,8 +226,18 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
     <div style={{
       padding: '16px',
       borderTop: '1px solid #e5e7eb',
-      background: 'white'
+      background: 'white',
+      position: 'relative'
     }}>
+      {/* Mention Autocomplete */}
+      {mentionSearch !== null && (
+        <MentionAutocomplete
+          searchText={mentionSearch}
+          onSelect={handleMentionSelect}
+          onClose={() => setMentionSearch(null)}
+          position={mentionPosition}
+        />
+      )}
       {selectedFile && (
         <div style={{
           marginBottom: '12px',
@@ -233,7 +310,7 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
             data-testid="textarea-message-composer"
             placeholder="Scrivi un messaggio..."
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => handleMessageChange(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isSending}
             style={{
@@ -366,6 +443,14 @@ export function MessageComposer({ channelId }: MessageComposerProps) {
             >
               <Paperclip size={18} />
             </button>
+            
+            {/* Saved Replies Picker */}
+            <SavedRepliesPicker
+              onSelect={(content) => {
+                setMessage(prev => prev + content);
+                textareaRef.current?.focus();
+              }}
+            />
           </div>
         </div>
 

@@ -4,6 +4,10 @@ import {
   chatChannelMembers,
   chatMessages,
   chatTypingIndicators,
+  userPresence,
+  chatReadReceipts,
+  chatPinnedMessages,
+  chatSavedReplies,
   users,
   type InsertChatChannel,
   type ChatChannel,
@@ -12,9 +16,14 @@ import {
   type InsertChatMessage,
   type ChatMessage,
   type InsertChatTypingIndicator,
-  type ChatTypingIndicator
+  type ChatTypingIndicator,
+  type UserPresence,
+  type InsertUserPresence,
+  type ChatReadReceipt,
+  type ChatPinnedMessage,
+  type ChatSavedReply
 } from '../db/schema/w3suite.js';
-import { eq, and, desc, isNull, lt, inArray, sql } from 'drizzle-orm';
+import { eq, and, desc, isNull, lt, inArray, sql, gte, like, or, asc } from 'drizzle-orm';
 import { logger } from '../core/logger';
 
 export class ChatService {
@@ -678,5 +687,394 @@ export class ChatService {
 
     logger.info('💬 Task thread created', { channelId: channel.id, taskId });
     return channel;
+  }
+
+  // ==================== PRESENCE MANAGEMENT ====================
+
+  static async updatePresence(
+    userId: string, 
+    tenantId: string, 
+    status: 'online' | 'away' | 'busy' | 'offline'
+  ): Promise<UserPresence> {
+    const now = new Date();
+    
+    const [presence] = await db
+      .insert(userPresence)
+      .values({
+        userId,
+        tenantId,
+        status,
+        lastSeenAt: now,
+        lastHeartbeatAt: now
+      })
+      .onConflictDoUpdate({
+        target: userPresence.userId,
+        set: {
+          status,
+          lastSeenAt: now,
+          lastHeartbeatAt: now
+        }
+      })
+      .returning();
+    
+    logger.debug('🟢 Presence updated', { userId, status });
+    return presence;
+  }
+
+  static async heartbeat(userId: string, tenantId: string): Promise<void> {
+    await db
+      .insert(userPresence)
+      .values({
+        userId,
+        tenantId,
+        status: 'online',
+        lastHeartbeatAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: userPresence.userId,
+        set: {
+          status: 'online',
+          lastHeartbeatAt: new Date()
+        }
+      });
+  }
+
+  static async getUserPresence(userId: string, tenantId: string): Promise<UserPresence | null> {
+    const [presence] = await db
+      .select()
+      .from(userPresence)
+      .where(and(
+        eq(userPresence.userId, userId),
+        eq(userPresence.tenantId, tenantId)
+      ))
+      .limit(1);
+    
+    return presence || null;
+  }
+
+  static async getMultipleUserPresence(userIds: string[], tenantId: string): Promise<UserPresence[]> {
+    if (userIds.length === 0) return [];
+    
+    return await db
+      .select()
+      .from(userPresence)
+      .where(and(
+        inArray(userPresence.userId, userIds),
+        eq(userPresence.tenantId, tenantId)
+      ));
+  }
+
+  static async setCustomStatus(
+    userId: string,
+    tenantId: string,
+    customStatus: string,
+    emoji?: string,
+    expiresAt?: Date
+  ): Promise<UserPresence> {
+    const [presence] = await db
+      .insert(userPresence)
+      .values({
+        userId,
+        tenantId,
+        customStatus,
+        customStatusEmoji: emoji,
+        customStatusExpiresAt: expiresAt
+      })
+      .onConflictDoUpdate({
+        target: userPresence.userId,
+        set: {
+          customStatus,
+          customStatusEmoji: emoji,
+          customStatusExpiresAt: expiresAt
+        }
+      })
+      .returning();
+    
+    return presence;
+  }
+
+  // ==================== READ RECEIPTS ====================
+
+  static async markMessageAsRead(messageId: string, userId: string): Promise<void> {
+    await db
+      .insert(chatReadReceipts)
+      .values({ messageId, userId })
+      .onConflictDoNothing();
+  }
+
+  static async markChannelAsRead(channelId: string, userId: string): Promise<void> {
+    // Get all unread messages in channel
+    const messages = await db
+      .select({ id: chatMessages.id })
+      .from(chatMessages)
+      .leftJoin(chatReadReceipts, and(
+        eq(chatReadReceipts.messageId, chatMessages.id),
+        eq(chatReadReceipts.userId, userId)
+      ))
+      .where(and(
+        eq(chatMessages.channelId, channelId),
+        isNull(chatReadReceipts.id)
+      ));
+    
+    if (messages.length > 0) {
+      await db
+        .insert(chatReadReceipts)
+        .values(messages.map(m => ({ messageId: m.id, userId })))
+        .onConflictDoNothing();
+    }
+    
+    // Update lastReadAt in channel membership
+    await db
+      .update(chatChannelMembers)
+      .set({ lastReadAt: new Date() })
+      .where(and(
+        eq(chatChannelMembers.channelId, channelId),
+        eq(chatChannelMembers.userId, userId)
+      ));
+  }
+
+  static async getMessageReadReceipts(messageId: string): Promise<ChatReadReceipt[]> {
+    return await db
+      .select()
+      .from(chatReadReceipts)
+      .where(eq(chatReadReceipts.messageId, messageId));
+  }
+
+  static async getMessageReadBy(messageId: string): Promise<{ userId: string; readAt: Date }[]> {
+    const receipts = await db
+      .select({
+        userId: chatReadReceipts.userId,
+        readAt: chatReadReceipts.readAt
+      })
+      .from(chatReadReceipts)
+      .where(eq(chatReadReceipts.messageId, messageId));
+    
+    return receipts;
+  }
+
+  // ==================== PINNED MESSAGES ====================
+
+  static async pinMessage(
+    channelId: string,
+    messageId: string,
+    userId: string
+  ): Promise<ChatPinnedMessage> {
+    const [pinned] = await db
+      .insert(chatPinnedMessages)
+      .values({
+        channelId,
+        messageId,
+        pinnedByUserId: userId
+      })
+      .onConflictDoNothing()
+      .returning();
+    
+    logger.info('📌 Message pinned', { channelId, messageId, userId });
+    return pinned;
+  }
+
+  static async unpinMessage(channelId: string, messageId: string): Promise<void> {
+    await db
+      .delete(chatPinnedMessages)
+      .where(and(
+        eq(chatPinnedMessages.channelId, channelId),
+        eq(chatPinnedMessages.messageId, messageId)
+      ));
+    
+    logger.info('📌 Message unpinned', { channelId, messageId });
+  }
+
+  static async getPinnedMessages(channelId: string): Promise<any[]> {
+    const pinned = await db
+      .select({
+        pinnedAt: chatPinnedMessages.pinnedAt,
+        pinnedByUserId: chatPinnedMessages.pinnedByUserId,
+        message: chatMessages
+      })
+      .from(chatPinnedMessages)
+      .innerJoin(chatMessages, eq(chatPinnedMessages.messageId, chatMessages.id))
+      .where(eq(chatPinnedMessages.channelId, channelId))
+      .orderBy(desc(chatPinnedMessages.pinnedAt));
+    
+    return pinned;
+  }
+
+  // ==================== MESSAGE SEARCH ====================
+
+  static async searchMessages(
+    tenantId: string,
+    userId: string,
+    query: string,
+    filters?: {
+      channelId?: string;
+      fromUserId?: string;
+      fromDate?: Date;
+      toDate?: Date;
+      hasAttachments?: boolean;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<ChatMessage[]> {
+    // Get user's channels first
+    const userChannels = await db
+      .select({ channelId: chatChannelMembers.channelId })
+      .from(chatChannelMembers)
+      .where(eq(chatChannelMembers.userId, userId));
+    
+    const channelIds = userChannels.map(c => c.channelId);
+    
+    if (channelIds.length === 0) return [];
+    
+    let baseQuery = db
+      .select()
+      .from(chatMessages)
+      .where(and(
+        eq(chatMessages.tenantId, tenantId),
+        inArray(chatMessages.channelId, filters?.channelId ? [filters.channelId] : channelIds),
+        isNull(chatMessages.deletedAt),
+        like(chatMessages.content, `%${query}%`),
+        filters?.fromUserId ? eq(chatMessages.userId, filters.fromUserId) : undefined,
+        filters?.fromDate ? gte(chatMessages.createdAt, filters.fromDate) : undefined,
+        filters?.toDate ? lt(chatMessages.createdAt, filters.toDate) : undefined
+      ))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(filters?.limit || 50)
+      .offset(filters?.offset || 0);
+    
+    return await baseQuery;
+  }
+
+  // ==================== SAVED REPLIES ====================
+
+  static async createSavedReply(
+    tenantId: string,
+    userId: string,
+    data: { title: string; content: string; shortcut?: string; isPersonal?: boolean; teamId?: string }
+  ): Promise<ChatSavedReply> {
+    const [reply] = await db
+      .insert(chatSavedReplies)
+      .values({
+        tenantId,
+        userId,
+        title: data.title,
+        content: data.content,
+        shortcut: data.shortcut,
+        isPersonal: data.isPersonal ?? true,
+        teamId: data.teamId
+      })
+      .returning();
+    
+    logger.info('💾 Saved reply created', { replyId: reply.id, userId });
+    return reply;
+  }
+
+  static async getSavedReplies(
+    tenantId: string,
+    userId: string,
+    teamIds?: string[]
+  ): Promise<ChatSavedReply[]> {
+    // Get personal replies + team replies
+    return await db
+      .select()
+      .from(chatSavedReplies)
+      .where(and(
+        eq(chatSavedReplies.tenantId, tenantId),
+        or(
+          eq(chatSavedReplies.userId, userId),
+          teamIds && teamIds.length > 0 
+            ? and(eq(chatSavedReplies.isPersonal, false), inArray(chatSavedReplies.teamId, teamIds))
+            : undefined
+        )
+      ))
+      .orderBy(desc(chatSavedReplies.usageCount));
+  }
+
+  static async updateSavedReply(
+    replyId: string,
+    userId: string,
+    data: Partial<{ title: string; content: string; shortcut: string }>
+  ): Promise<ChatSavedReply | null> {
+    const [updated] = await db
+      .update(chatSavedReplies)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(
+        eq(chatSavedReplies.id, replyId),
+        eq(chatSavedReplies.userId, userId)
+      ))
+      .returning();
+    
+    return updated || null;
+  }
+
+  static async deleteSavedReply(replyId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(chatSavedReplies)
+      .where(and(
+        eq(chatSavedReplies.id, replyId),
+        eq(chatSavedReplies.userId, userId)
+      ));
+    
+    return true;
+  }
+
+  static async incrementSavedReplyUsage(replyId: string): Promise<void> {
+    await db
+      .update(chatSavedReplies)
+      .set({ usageCount: sql`${chatSavedReplies.usageCount} + 1` })
+      .where(eq(chatSavedReplies.id, replyId));
+  }
+
+  // ==================== MESSAGE EDIT/DELETE ====================
+
+  static async editMessage(
+    messageId: string,
+    userId: string,
+    newContent: string
+  ): Promise<ChatMessage | null> {
+    const [message] = await db
+      .select()
+      .from(chatMessages)
+      .where(and(
+        eq(chatMessages.id, messageId),
+        eq(chatMessages.userId, userId),
+        isNull(chatMessages.deletedAt)
+      ))
+      .limit(1);
+    
+    if (!message) return null;
+    
+    const [updated] = await db
+      .update(chatMessages)
+      .set({
+        content: newContent,
+        isEdited: true,
+        updatedAt: new Date()
+      })
+      .where(eq(chatMessages.id, messageId))
+      .returning();
+    
+    logger.info('✏️ Message edited', { messageId, userId });
+    return updated;
+  }
+
+  static async softDeleteMessage(messageId: string, userId: string): Promise<boolean> {
+    const [message] = await db
+      .select()
+      .from(chatMessages)
+      .where(and(
+        eq(chatMessages.id, messageId),
+        eq(chatMessages.userId, userId)
+      ))
+      .limit(1);
+    
+    if (!message) return false;
+    
+    await db
+      .update(chatMessages)
+      .set({ deletedAt: new Date() })
+      .where(eq(chatMessages.id, messageId));
+    
+    logger.info('🗑️ Message soft deleted', { messageId, userId });
+    return true;
   }
 }

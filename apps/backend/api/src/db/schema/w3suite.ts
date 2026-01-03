@@ -380,6 +380,13 @@ export const chatInviteStatusEnum = pgEnum('chat_invite_status', [
   'declined'
 ]);
 
+export const userPresenceStatusEnum = pgEnum('user_presence_status', [
+  'online',
+  'away',
+  'busy',
+  'offline'
+]);
+
 // ==================== ACTIVITY FEED ENUMS ====================
 export const activityFeedCategoryEnum = pgEnum('activity_feed_category', [
   'TASK', 
@@ -4698,6 +4705,14 @@ export const chatMessages = w3suiteSchema.table("chat_messages", {
   // Attachments
   attachments: jsonb("attachments").default([]),
   
+  // Voice message support
+  isVoiceMessage: boolean("is_voice_message").default(false),
+  voiceDurationSeconds: integer("voice_duration_seconds"),
+  voiceUrl: varchar("voice_url", { length: 500 }),
+  
+  // Link preview data (cached)
+  linkPreview: jsonb("link_preview"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   isEdited: boolean("is_edited").default(false),
@@ -4719,6 +4734,77 @@ export const chatTypingIndicators = w3suiteSchema.table("chat_typing_indicators"
 }, (table) => [
   uniqueIndex("typing_unique").on(table.channelId, table.userId),
   index("typing_expires_idx").on(table.expiresAt),
+]);
+
+// User Presence - Online/Away/Busy status
+export const userPresence = w3suiteSchema.table("user_presence", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  status: userPresenceStatusEnum("status").default('offline').notNull(),
+  customStatus: varchar("custom_status", { length: 200 }),
+  customStatusEmoji: varchar("custom_status_emoji", { length: 10 }),
+  customStatusExpiresAt: timestamp("custom_status_expires_at"),
+  
+  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+  lastHeartbeatAt: timestamp("last_heartbeat_at").defaultNow().notNull(),
+  
+  // Auto-status based on HR shifts
+  autoStatusFromShift: boolean("auto_status_from_shift").default(true),
+}, (table) => [
+  index("presence_tenant_idx").on(table.tenantId),
+  index("presence_status_idx").on(table.status),
+]);
+
+// Chat Read Receipts - Per-message read tracking
+export const chatReadReceipts = w3suiteSchema.table("chat_read_receipts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  messageId: uuid("message_id").notNull().references(() => chatMessages.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  readAt: timestamp("read_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("read_receipt_unique").on(table.messageId, table.userId),
+  index("read_receipt_message_idx").on(table.messageId),
+  index("read_receipt_user_idx").on(table.userId),
+]);
+
+// Chat Pinned Messages - Important messages pinned to channel
+export const chatPinnedMessages = w3suiteSchema.table("chat_pinned_messages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: uuid("channel_id").notNull().references(() => chatChannels.id, { onDelete: 'cascade' }),
+  messageId: uuid("message_id").notNull().references(() => chatMessages.id, { onDelete: 'cascade' }),
+  pinnedByUserId: varchar("pinned_by_user_id").notNull().references(() => users.id),
+  
+  pinnedAt: timestamp("pinned_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("pinned_message_unique").on(table.channelId, table.messageId),
+  index("pinned_channel_idx").on(table.channelId),
+]);
+
+// Chat Saved Replies - Template responses
+export const chatSavedReplies = w3suiteSchema.table("chat_saved_replies", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  title: varchar("title", { length: 100 }).notNull(),
+  content: text("content").notNull(),
+  shortcut: varchar("shortcut", { length: 50 }),
+  
+  // Scope: personal or team-wide
+  isPersonal: boolean("is_personal").default(true).notNull(),
+  teamId: uuid("team_id").references(() => teams.id),
+  
+  usageCount: integer("usage_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("saved_replies_tenant_idx").on(table.tenantId),
+  index("saved_replies_user_idx").on(table.userId),
+  index("saved_replies_shortcut_idx").on(table.shortcut),
 ]);
 
 // ==================== ACTIVITY FEED TABLES ====================
@@ -5803,6 +5889,37 @@ export const insertChatTypingIndicatorSchema = createInsertSchema(chatTypingIndi
 });
 export type InsertChatTypingIndicator = z.infer<typeof insertChatTypingIndicatorSchema>;
 export type ChatTypingIndicator = typeof chatTypingIndicators.$inferSelect;
+
+export const insertUserPresenceSchema = createInsertSchema(userPresence).omit({ 
+  id: true, 
+  lastSeenAt: true,
+  lastHeartbeatAt: true
+});
+export type InsertUserPresence = z.infer<typeof insertUserPresenceSchema>;
+export type UserPresence = typeof userPresence.$inferSelect;
+
+export const insertChatReadReceiptSchema = createInsertSchema(chatReadReceipts).omit({ 
+  id: true, 
+  readAt: true
+});
+export type InsertChatReadReceipt = z.infer<typeof insertChatReadReceiptSchema>;
+export type ChatReadReceipt = typeof chatReadReceipts.$inferSelect;
+
+export const insertChatPinnedMessageSchema = createInsertSchema(chatPinnedMessages).omit({ 
+  id: true, 
+  pinnedAt: true
+});
+export type InsertChatPinnedMessage = z.infer<typeof insertChatPinnedMessageSchema>;
+export type ChatPinnedMessage = typeof chatPinnedMessages.$inferSelect;
+
+export const insertChatSavedReplySchema = createInsertSchema(chatSavedReplies).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true
+});
+export type InsertChatSavedReply = z.infer<typeof insertChatSavedReplySchema>;
+export type ChatSavedReply = typeof chatSavedReplies.$inferSelect;
 
 // ==================== ACTIVITY FEED INSERT SCHEMAS ====================
 

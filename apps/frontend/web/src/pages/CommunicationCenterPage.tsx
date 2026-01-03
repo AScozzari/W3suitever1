@@ -11,9 +11,13 @@ import {
   Users, 
   Archive, 
   Trash2,
-  Hash
+  Hash,
+  Pin,
+  Search
 } from 'lucide-react';
 import { CreateChatDialog } from '@/components/chat/CreateChatDialog';
+import { AvatarWithPresence } from '@/components/chat/PresenceIndicator';
+import { PinnedMessagesBar } from '@/components/chat/PinnedMessagesBar';
 import { MessageList } from '@/components/chat/MessageList';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import { ChannelMembersDialog } from '@/components/chat/ChannelMembersDialog';
@@ -261,12 +265,17 @@ export default function CommunicationCenterPage() {
                           data-testid={`channel-${channel.id}`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-medium shrink-0">
-                              {channel.channelType === 'dm' 
-                                ? (channel.dmUser?.name?.[0] || '?').toUpperCase()
-                                : channel.name?.[0]?.toUpperCase() || '#'
-                              }
-                            </div>
+                            {channel.channelType === 'dm' && channel.dmUser?.id ? (
+                              <AvatarWithPresence
+                                userId={channel.dmUser.id}
+                                name={channel.dmUser.name || 'Utente'}
+                                size="md"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-medium shrink-0">
+                                {channel.name?.[0]?.toUpperCase() || '#'}
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 {channel.visibility === 'private' && <Lock className="h-3 w-3 text-gray-400" />}
@@ -327,12 +336,17 @@ export default function CommunicationCenterPage() {
                   <>
                     <div className="h-14 px-4 border-b flex items-center justify-between bg-white">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white text-sm font-medium">
-                          {selectedChannel.channelType === 'dm' 
-                            ? (selectedChannel.dmUser?.name?.[0] || '?').toUpperCase()
-                            : <Hash className="h-4 w-4" />
-                          }
-                        </div>
+                        {selectedChannel.channelType === 'dm' && selectedChannel.dmUser?.id ? (
+                          <AvatarWithPresence
+                            userId={selectedChannel.dmUser.id}
+                            name={selectedChannel.dmUser.name || 'Utente'}
+                            size="sm"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white text-sm font-medium">
+                            <Hash className="h-4 w-4" />
+                          </div>
+                        )}
                         <div>
                           <h3 className="font-semibold text-sm text-gray-900">
                             {selectedChannel.channelType === 'dm' 
@@ -362,6 +376,9 @@ export default function CommunicationCenterPage() {
                         </button>
                       </div>
                     </div>
+                    
+                    {/* Barra messaggi fissati */}
+                    <PinnedMessagesBar channelId={selectedChannel.id} canUnpin={true} />
                     
                     <div 
                       className="flex-1 overflow-y-auto p-4"

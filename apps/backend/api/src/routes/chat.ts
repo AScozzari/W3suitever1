@@ -77,6 +77,40 @@ const updateMemberBodySchema = z.object({
   inviteStatus: z.enum(['pending', 'accepted', 'declined']).optional()
 });
 
+const updatePresenceBodySchema = z.object({
+  status: z.enum(['online', 'away', 'busy', 'offline'])
+});
+
+const setCustomStatusBodySchema = z.object({
+  customStatus: z.string().max(200),
+  emoji: z.string().max(10).optional(),
+  expiresAt: z.string().datetime().optional()
+});
+
+const searchMessagesQuerySchema = z.object({
+  q: z.string().min(1),
+  channelId: z.string().uuid().optional(),
+  fromUserId: z.string().optional(),
+  fromDate: z.string().datetime().optional(),
+  toDate: z.string().datetime().optional(),
+  limit: z.coerce.number().min(1).max(100).default(50),
+  offset: z.coerce.number().min(0).default(0)
+});
+
+const createSavedReplyBodySchema = z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1),
+  shortcut: z.string().max(50).optional(),
+  isPersonal: z.boolean().default(true),
+  teamId: z.string().uuid().optional()
+});
+
+const updateSavedReplyBodySchema = z.object({
+  title: z.string().min(1).max(100).optional(),
+  content: z.string().min(1).optional(),
+  shortcut: z.string().max(50).optional()
+});
+
 // ==================== CHANNEL ROUTES ====================
 
 // GET /api/chat/channels - List user's channels
@@ -552,6 +586,328 @@ router.delete('/attachments/*', requirePermission('chat.delete'), async (req: Re
     res.status(204).send();
   } catch (error) {
     handleApiError(error, res, 'Failed to delete attachment');
+  }
+});
+
+// ==================== PRESENCE ROUTES ====================
+
+// POST /api/chat/presence/heartbeat - Send heartbeat to maintain online status
+router.post('/presence/heartbeat', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    await ChatService.heartbeat(userId, tenantId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to update heartbeat');
+  }
+});
+
+// PUT /api/chat/presence/status - Update user presence status
+router.put('/presence/status', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const parsed = updatePresenceBodySchema.parse(req.body);
+    const presence = await ChatService.updatePresence(userId, tenantId, parsed.status);
+    
+    res.json(presence);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to update presence status');
+  }
+});
+
+// PUT /api/chat/presence/custom-status - Set custom status
+router.put('/presence/custom-status', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const parsed = setCustomStatusBodySchema.parse(req.body);
+    const presence = await ChatService.setCustomStatus(
+      userId,
+      tenantId,
+      parsed.customStatus,
+      parsed.emoji,
+      parsed.expiresAt ? new Date(parsed.expiresAt) : undefined
+    );
+    
+    res.json(presence);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to set custom status');
+  }
+});
+
+// GET /api/chat/presence/:userId - Get user presence
+router.get('/presence/:userId', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.params.userId;
+    
+    const presence = await ChatService.getUserPresence(userId, tenantId);
+    
+    res.json(presence || { status: 'offline' });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch user presence');
+  }
+});
+
+// POST /api/chat/presence/bulk - Get multiple users presence
+router.post('/presence/bulk', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const { userIds } = req.body;
+    
+    if (!Array.isArray(userIds)) {
+      return res.status(400).json({ error: 'userIds deve essere un array' });
+    }
+    
+    const presences = await ChatService.getMultipleUserPresence(userIds, tenantId);
+    
+    res.json(presences);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch users presence');
+  }
+});
+
+// ==================== READ RECEIPTS ROUTES ====================
+
+// POST /api/chat/messages/:id/read - Mark message as read
+router.post('/messages/:id/read', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const messageId = parseUUIDParam(req.params.id, 'Message ID');
+    const userId = req.user!.id;
+    
+    await ChatService.markMessageAsRead(messageId, userId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to mark message as read');
+  }
+});
+
+// POST /api/chat/channels/:id/read-all - Mark all channel messages as read
+router.post('/channels/:id/read-all', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const channelId = parseUUIDParam(req.params.id, 'Channel ID');
+    const userId = req.user!.id;
+    
+    await ChatService.markChannelAsRead(channelId, userId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to mark channel as read');
+  }
+});
+
+// GET /api/chat/messages/:id/read-receipts - Get read receipts for message
+router.get('/messages/:id/read-receipts', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const messageId = parseUUIDParam(req.params.id, 'Message ID');
+    
+    const readBy = await ChatService.getMessageReadBy(messageId);
+    
+    res.json(readBy);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch read receipts');
+  }
+});
+
+// ==================== PINNED MESSAGES ROUTES ====================
+
+// POST /api/chat/channels/:id/pin/:messageId - Pin a message
+router.post('/channels/:id/pin/:messageId', requirePermission('chat.create'), async (req: Request, res: Response) => {
+  try {
+    const channelId = parseUUIDParam(req.params.id, 'Channel ID');
+    const messageId = parseUUIDParam(req.params.messageId, 'Message ID');
+    const userId = req.user!.id;
+    
+    const pinned = await ChatService.pinMessage(channelId, messageId, userId);
+    
+    res.status(201).json(pinned);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to pin message');
+  }
+});
+
+// DELETE /api/chat/channels/:id/pin/:messageId - Unpin a message
+router.delete('/channels/:id/pin/:messageId', requirePermission('chat.delete'), async (req: Request, res: Response) => {
+  try {
+    const channelId = parseUUIDParam(req.params.id, 'Channel ID');
+    const messageId = parseUUIDParam(req.params.messageId, 'Message ID');
+    
+    await ChatService.unpinMessage(channelId, messageId);
+    
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to unpin message');
+  }
+});
+
+// GET /api/chat/channels/:id/pinned - Get pinned messages
+router.get('/channels/:id/pinned', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const channelId = parseUUIDParam(req.params.id, 'Channel ID');
+    
+    const pinnedMessages = await ChatService.getPinnedMessages(channelId);
+    
+    res.json(pinnedMessages);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch pinned messages');
+  }
+});
+
+// ==================== SEARCH ROUTES ====================
+
+// GET /api/chat/search - Search messages
+router.get('/search', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const parsed = searchMessagesQuerySchema.parse(req.query);
+    
+    const messages = await ChatService.searchMessages(tenantId, userId, parsed.q, {
+      channelId: parsed.channelId,
+      fromUserId: parsed.fromUserId,
+      fromDate: parsed.fromDate ? new Date(parsed.fromDate) : undefined,
+      toDate: parsed.toDate ? new Date(parsed.toDate) : undefined,
+      limit: parsed.limit,
+      offset: parsed.offset
+    });
+    
+    res.json(messages);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to search messages');
+  }
+});
+
+// ==================== SAVED REPLIES ROUTES ====================
+
+// GET /api/chat/saved-replies - Get user's saved replies
+router.get('/saved-replies', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const replies = await ChatService.getSavedReplies(tenantId, userId);
+    
+    res.json(replies);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to fetch saved replies');
+  }
+});
+
+// POST /api/chat/saved-replies - Create saved reply
+router.post('/saved-replies', requirePermission('chat.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const userId = req.user!.id;
+    
+    const parsed = createSavedReplyBodySchema.parse(req.body);
+    const reply = await ChatService.createSavedReply(tenantId, userId, parsed);
+    
+    res.status(201).json(reply);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to create saved reply');
+  }
+});
+
+// PUT /api/chat/saved-replies/:id - Update saved reply
+router.put('/saved-replies/:id', requirePermission('chat.update'), async (req: Request, res: Response) => {
+  try {
+    const replyId = parseUUIDParam(req.params.id, 'Reply ID');
+    const userId = req.user!.id;
+    
+    const parsed = updateSavedReplyBodySchema.parse(req.body);
+    const reply = await ChatService.updateSavedReply(replyId, userId, parsed);
+    
+    if (!reply) {
+      return res.status(404).json({ error: 'Risposta salvata non trovata' });
+    }
+    
+    res.json(reply);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to update saved reply');
+  }
+});
+
+// DELETE /api/chat/saved-replies/:id - Delete saved reply
+router.delete('/saved-replies/:id', requirePermission('chat.delete'), async (req: Request, res: Response) => {
+  try {
+    const replyId = parseUUIDParam(req.params.id, 'Reply ID');
+    const userId = req.user!.id;
+    
+    await ChatService.deleteSavedReply(replyId, userId);
+    
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to delete saved reply');
+  }
+});
+
+// POST /api/chat/saved-replies/:id/use - Increment usage count
+router.post('/saved-replies/:id/use', requirePermission('chat.read'), async (req: Request, res: Response) => {
+  try {
+    const replyId = parseUUIDParam(req.params.id, 'Reply ID');
+    
+    await ChatService.incrementSavedReplyUsage(replyId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    handleApiError(error, res, 'Failed to increment usage count');
+  }
+});
+
+// ==================== MESSAGE EDIT/DELETE ROUTES ====================
+
+// PUT /api/chat/messages/:id - Edit message
+router.put('/messages/:id', requirePermission('chat.update'), async (req: Request, res: Response) => {
+  try {
+    const messageId = parseUUIDParam(req.params.id, 'Message ID');
+    const userId = req.user!.id;
+    
+    const parsed = updateMessageBodySchema.parse(req.body);
+    const message = await ChatService.editMessage(messageId, userId, parsed.content);
+    
+    if (!message) {
+      return res.status(404).json({ error: 'Messaggio non trovato o non autorizzato' });
+    }
+    
+    // Notify via WebSocket
+    webSocketService.broadcastToChannel(message.channelId, {
+      type: 'message_edited',
+      messageId: message.id,
+      content: message.content,
+      isEdited: true,
+      updatedAt: message.updatedAt
+    });
+    
+    res.json(message);
+  } catch (error) {
+    handleApiError(error, res, 'Failed to edit message');
+  }
+});
+
+// DELETE /api/chat/messages/:id - Soft delete message
+router.delete('/messages/:id', requirePermission('chat.delete'), async (req: Request, res: Response) => {
+  try {
+    const messageId = parseUUIDParam(req.params.id, 'Message ID');
+    const userId = req.user!.id;
+    
+    // Get message first to get channelId for broadcast
+    const success = await ChatService.softDeleteMessage(messageId, userId);
+    
+    if (!success) {
+      return res.status(404).json({ error: 'Messaggio non trovato o non autorizzato' });
+    }
+    
+    res.status(204).send();
+  } catch (error) {
+    handleApiError(error, res, 'Failed to delete message');
   }
 });
 

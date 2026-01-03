@@ -3,6 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { MessageCircle, Loader2 } from 'lucide-react';
 import { MessageActions } from './MessageActions';
 import { useIdleDetection } from '@/contexts/IdleDetectionContext';
+import { AvatarWithPresence } from './PresenceIndicator';
+import { ReadReceiptIndicator } from './ReadReceiptIndicator';
+import { useReadReceipts, getReadStatus, ReadStatus } from '@/hooks/useChatFeatures';
 
 interface Message {
   id: string;
@@ -154,24 +157,12 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
               gap: '12px',
               alignItems: 'flex-start'
             }}>
-              {/* Avatar */}
-              <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: isMine 
-                  ? 'linear-gradient(135deg, #FF6900, #ff8533)'
-                  : 'linear-gradient(135deg, #6b7280, #9ca3af)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '12px',
-                fontWeight: 600,
-                flexShrink: 0
-              }}>
-                {isMine ? 'TU' : 'U'}
-              </div>
+              {/* Avatar con indicatore presenza */}
+              <AvatarWithPresence
+                userId={message.userId}
+                name={isMine ? 'Tu' : 'Utente'}
+                size="sm"
+              />
 
               {/* Message Bubble */}
               <div style={{
@@ -216,15 +207,15 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   justifyContent: isMine ? 'flex-start' : 'flex-end'
                 }}>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#9ca3af'
-                  }}>
+                  <span style={{ fontSize: '11px', color: '#9ca3af' }}>
                     {formatMessageTime(messageDate)}
-                  </div>
+                  </span>
+                  {isMine && !isDeleted && (
+                    <ReadReceiptIndicator status="sent" />
+                  )}
                   {!isDeleted && (
                     <MessageActions
                       messageId={message.id}

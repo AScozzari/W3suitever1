@@ -1781,11 +1781,25 @@ router.get('/users', async (req, res) => {
 
     await setTenantContext(tenantId);
 
+    const searchQuery = (req.query.search as string || '').toLowerCase();
+    const limitParam = parseInt(req.query.limit as string) || 100;
+
     // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
-    const usersList = await db.query.users.findMany({
+    let usersList = await db.query.users.findMany({
       where: eq(users.tenantId, tenantId),
-      orderBy: [desc(users.createdAt)]
+      orderBy: [desc(users.createdAt)],
+      limit: limitParam
     });
+
+    // Apply search filter if provided
+    if (searchQuery) {
+      usersList = usersList.filter(user => 
+        user.email?.toLowerCase().includes(searchQuery) ||
+        user.firstName?.toLowerCase().includes(searchQuery) ||
+        user.lastName?.toLowerCase().includes(searchQuery) ||
+        user.username?.toLowerCase().includes(searchQuery)
+      );
+    }
 
     res.status(200).json({
       success: true,
