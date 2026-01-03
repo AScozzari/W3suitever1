@@ -1,0 +1,81 @@
+ontent-Length: 0
+
+
+
+queryClient.ts:219  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/feed/badges/leaderboard 500 (Internal Server Error)
+queryFn @ queryClient.ts:219
+fetchFn @ @tanstack_react-query.js?v=b56a477b:1097
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+fetch @ @tanstack_react-query.js?v=b56a477b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+SocialFeed.tsx:705  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/feed/posts?limit=20 401 (Unauthorized)
+queryFn @ SocialFeed.tsx:705
+fetchPage @ @tanstack_react-query.js?v=b56a477b:1788
+fetchFn @ @tanstack_react-query.js?v=b56a477b:1812
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+fetch @ @tanstack_react-query.js?v=b56a477b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+SocialFeed.tsx:705  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/feed/posts?limit=20 401 (Unauthorized)
+queryFn @ SocialFeed.tsx:705
+fetchPage @ @tanstack_react-query.js?v=b56a477b:1788
+fetchFn @ @tanstack_react-query.js?v=b56a477b:1812
+run @ @tanstack_react-query.js?v=b56a477b:795
+(anonime) @ @tanstack_react-query.js?v=b56a477b:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=b56a477b:816
+Promise.catch
+run @ @tanstack_react-query.js?v=b56a477b:799
+start @ @tanstack_react-query.js?v=b56a477b:838
+fetch @ @tanstack_react-query.js?v=b56a477b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+queryClient.ts:219  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/feed/badges/leaderboard 500 (Internal Server Error)

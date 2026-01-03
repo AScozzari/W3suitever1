@@ -102,7 +102,7 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
       id: users.id,
       name: users.name,
       email: users.email,
-      avatar: users.avatar
+      avatar: users.profileImageUrl
     }).from(users).where(eq(users.id, post.authorId)).limit(1),
     
     db.select().from(feedComments)
@@ -180,7 +180,7 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
       id: users.id,
       name: users.name,
       email: users.email,
-      avatar: users.avatar
+      avatar: users.profileImageUrl
     }).from(users).where(inArray(users.id, post.awardeeUserIds));
   }
 
@@ -543,7 +543,7 @@ router.get('/posts/:postId/comments', requirePermission('communication.read'), a
         id: users.id,
         name: users.name,
         email: users.email,
-        avatar: users.avatar
+        avatar: users.profileImageUrl
       }
     })
     .from(feedComments)
@@ -585,7 +585,7 @@ router.post('/posts/:postId/comments', requirePermission('communication.write'),
       id: users.id,
       name: users.name,
       email: users.email,
-      avatar: users.avatar
+      avatar: users.profileImageUrl
     }).from(users).where(eq(users.id, userId));
     
     res.status(201).json({
@@ -800,13 +800,13 @@ router.get('/badges/leaderboard', requirePermission('communication.read'), async
     const leaderboard = await db.select({
       userId: userBadges.userId,
       userName: users.name,
-      userAvatar: users.avatar,
+      userAvatar: users.profileImageUrl,
       badgeCount: sql<number>`count(*)::int`
     })
     .from(userBadges)
     .leftJoin(users, eq(userBadges.userId, users.id))
     .where(eq(userBadges.tenantId, tenantId))
-    .groupBy(userBadges.userId, users.name, users.avatar)
+    .groupBy(userBadges.userId, users.name, users.profileImageUrl)
     .orderBy(desc(sql`count(*)`))
     .limit(10);
     
@@ -826,7 +826,7 @@ router.get('/badges/user/:userId', requirePermission('communication.read'), asyn
       awardedBy: {
         id: users.id,
         name: users.name,
-        avatar: users.avatar
+        avatar: users.profileImageUrl
       }
     })
     .from(userBadges)

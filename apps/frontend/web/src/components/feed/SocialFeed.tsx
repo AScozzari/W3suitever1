@@ -702,11 +702,9 @@ export function SocialFeed() {
       if (filter === 'appreciation') params.set('postType', 'appreciation');
       if (filter === 'favorites') params.set('favoritesOnly', 'true');
       
-      const response = await fetch(`/api/feed/posts?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch feed');
-      return response.json();
+      return apiRequest(`/api/feed/posts?${params.toString()}`);
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage: any) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined
   });
 
