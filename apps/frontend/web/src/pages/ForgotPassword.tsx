@@ -96,20 +96,20 @@ export default function ForgotPassword() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px',
+      padding: '1.5rem',
       fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '420px',
+        maxWidth: '26.25rem',
         background: '#FFFFFF',
-        borderRadius: '16px',
-        boxShadow: '0 4px 32px rgba(0, 0, 0, 0.08)',
+        borderRadius: '1rem',
+        boxShadow: '0 0.25rem 2rem rgba(0, 0, 0, 0.08)',
         overflow: 'hidden'
       }}>
         {/* Header */}
         <div style={{
-          padding: '32px 32px 24px',
+          padding: '2rem 2rem 1.5rem',
           borderBottom: '1px solid #F3F4F6'
         }}>
           <Link 
@@ -117,34 +117,34 @@ export default function ForgotPassword() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
               color: '#6B7280',
               textDecoration: 'none',
-              marginBottom: '20px',
+              marginBottom: '1.25rem',
               transition: 'color 0.2s'
             }}
             data-testid="link-back-to-login"
           >
-            <ArrowLeft style={{ width: '16px', height: '16px' }} />
+            <ArrowLeft style={{ width: '1rem', height: '1rem' }} />
             Torna al login
           </Link>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
             <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
+              width: '2.75rem',
+              height: '2.75rem',
+              borderRadius: '0.75rem',
               background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>W3</span>
+              <span style={{ fontSize: '1rem', fontWeight: '700', color: '#fff' }}>W3</span>
             </div>
             <h1 style={{ 
               margin: 0, 
-              fontSize: '22px', 
+              fontSize: '1.375rem', 
               fontWeight: '600', 
               color: '#1F2937' 
             }}>
@@ -153,7 +153,7 @@ export default function ForgotPassword() {
           </div>
           <p style={{ 
             margin: 0, 
-            fontSize: '14px', 
+            fontSize: '0.875rem', 
             color: '#6B7280' 
           }}>
             Inserisci i tuoi dati per recuperare l'accesso
@@ -161,37 +161,37 @@ export default function ForgotPassword() {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '32px' }}>
+        <div style={{ padding: '2rem' }}>
           
           {/* Success State */}
           {step === 'success' && (
             <div style={{
               textAlign: 'center',
-              padding: '24px 0'
+              padding: '1.5rem 0'
             }}>
               <div style={{
-                width: '64px',
-                height: '64px',
+                width: '4rem',
+                height: '4rem',
                 borderRadius: '50%',
                 background: 'rgba(16, 185, 129, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '0 auto 20px'
+                margin: '0 auto 1.25rem'
               }}>
-                <CheckCircle style={{ width: '32px', height: '32px', color: '#10B981' }} />
+                <CheckCircle style={{ width: '2rem', height: '2rem', color: '#10B981' }} />
               </div>
               <h2 style={{ 
-                margin: '0 0 12px', 
-                fontSize: '18px', 
+                margin: '0 0 0.75rem', 
+                fontSize: '1.125rem', 
                 fontWeight: '600', 
                 color: '#1F2937' 
               }}>
                 Email inviata!
               </h2>
               <p style={{ 
-                margin: '0 0 24px', 
-                fontSize: '14px', 
+                margin: '0 0 1.5rem', 
+                fontSize: '0.875rem', 
                 color: '#6B7280',
                 lineHeight: '1.6'
               }}>
@@ -201,10 +201,10 @@ export default function ForgotPassword() {
                 href={`/${tenantSlug}/login`}
                 style={{
                   display: 'inline-block',
-                  padding: '12px 24px',
+                  padding: '0.75rem 1.5rem',
                   background: '#F3F4F6',
-                  borderRadius: '10px',
-                  fontSize: '14px',
+                  borderRadius: '0.625rem',
+                  fontSize: '0.875rem',
                   fontWeight: '500',
                   color: '#374151',
                   textDecoration: 'none'
@@ -221,44 +221,44 @@ export default function ForgotPassword() {
             <div style={{
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '12px',
-              padding: '14px 16px',
+              gap: '0.75rem',
+              padding: '0.875rem 1rem',
               background: 'rgba(239, 68, 68, 0.08)',
-              borderRadius: '10px',
-              marginBottom: '20px',
+              borderRadius: '0.625rem',
+              marginBottom: '1.25rem',
               border: '1px solid rgba(239, 68, 68, 0.2)'
             }}>
-              <AlertCircle style={{ width: '18px', height: '18px', color: '#EF4444', flexShrink: 0, marginTop: '1px' }} />
-              <p style={{ margin: 0, fontSize: '14px', color: '#DC2626' }}>{message}</p>
+              <AlertCircle style={{ width: '1.125rem', height: '1.125rem', color: '#EF4444', flexShrink: 0, marginTop: '0.0625rem' }} />
+              <p style={{ margin: 0, fontSize: '0.875rem', color: '#DC2626' }}>{message}</p>
             </div>
           )}
 
           {/* Form State */}
           {(step === 'form' || step === 'error') && (
             <>
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '1.25rem' }}>
                 <label style={{
                   display: 'block',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: '500',
                   color: '#374151',
-                  marginBottom: '8px'
+                  marginBottom: '0.5rem'
                 }}>
                   Username o Email
                 </label>
                 <div style={{
                   position: 'relative',
                   background: '#F9FAFB',
-                  borderRadius: '10px',
+                  borderRadius: '0.625rem',
                   border: '1px solid #E5E7EB'
                 }}>
                   <Mail style={{
                     position: 'absolute',
-                    left: '14px',
+                    left: '0.875rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    width: '18px',
-                    height: '18px',
+                    width: '1.125rem',
+                    height: '1.125rem',
                     color: '#9CA3AF'
                   }} />
                   <input
@@ -273,11 +273,11 @@ export default function ForgotPassword() {
                     data-testid="input-identifier"
                     style={{
                       width: '100%',
-                      padding: '14px 14px 14px 44px',
+                      padding: '0.875rem 0.875rem 0.875rem 2.75rem',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '14px',
+                      borderRadius: '0.625rem',
+                      fontSize: '0.875rem',
                       color: '#111827',
                       outline: 'none'
                     }}
@@ -292,18 +292,18 @@ export default function ForgotPassword() {
                 data-testid="button-submit"
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: '0.875rem',
                   background: isLoading 
                     ? '#D1D5DB' 
                     : 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
                   border: 'none',
-                  borderRadius: '10px',
-                  fontSize: '15px',
+                  borderRadius: '0.625rem',
+                  fontSize: '0.9375rem',
                   fontWeight: '600',
                   color: 'white',
                   cursor: isLoading ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: isLoading ? 'none' : '0 4px 16px rgba(255, 105, 0, 0.3)'
+                  boxShadow: isLoading ? 'none' : '0 0.25rem 1rem rgba(255, 105, 0, 0.3)'
                 }}
               >
                 {isLoading ? 'Invio in corso...' : 'Invia link di recupero'}
@@ -317,42 +317,42 @@ export default function ForgotPassword() {
               <div style={{
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: '12px',
-                padding: '14px 16px',
+                gap: '0.75rem',
+                padding: '0.875rem 1rem',
                 background: 'rgba(245, 158, 11, 0.08)',
-                borderRadius: '10px',
-                marginBottom: '20px',
+                borderRadius: '0.625rem',
+                marginBottom: '1.25rem',
                 border: '1px solid rgba(245, 158, 11, 0.2)'
               }}>
-                <AlertCircle style={{ width: '18px', height: '18px', color: '#F59E0B', flexShrink: 0, marginTop: '1px' }} />
-                <p style={{ margin: 0, fontSize: '14px', color: '#B45309' }}>
+                <AlertCircle style={{ width: '1.125rem', height: '1.125rem', color: '#F59E0B', flexShrink: 0, marginTop: '0.0625rem' }} />
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#B45309' }}>
                   {message || 'Non è presente un indirizzo email nel tuo profilo. Inseriscine uno per ricevere le istruzioni.'}
                 </p>
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '1.25rem' }}>
                 <label style={{
                   display: 'block',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: '500',
                   color: '#374151',
-                  marginBottom: '8px'
+                  marginBottom: '0.5rem'
                 }}>
                   Email di recupero
                 </label>
                 <div style={{
                   position: 'relative',
                   background: '#F9FAFB',
-                  borderRadius: '10px',
+                  borderRadius: '0.625rem',
                   border: '1px solid #E5E7EB'
                 }}>
                   <Mail style={{
                     position: 'absolute',
-                    left: '14px',
+                    left: '0.875rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    width: '18px',
-                    height: '18px',
+                    width: '1.125rem',
+                    height: '1.125rem',
                     color: '#9CA3AF'
                   }} />
                   <input
@@ -364,11 +364,11 @@ export default function ForgotPassword() {
                     data-testid="input-recovery-email"
                     style={{
                       width: '100%',
-                      padding: '14px 14px 14px 44px',
+                      padding: '0.875rem 0.875rem 0.875rem 2.75rem',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '14px',
+                      borderRadius: '0.625rem',
+                      fontSize: '0.875rem',
                       color: '#111827',
                       outline: 'none'
                     }}
@@ -383,18 +383,18 @@ export default function ForgotPassword() {
                 data-testid="button-submit-with-email"
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: '0.875rem',
                   background: isLoading 
                     ? '#D1D5DB' 
                     : 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
                   border: 'none',
-                  borderRadius: '10px',
-                  fontSize: '15px',
+                  borderRadius: '0.625rem',
+                  fontSize: '0.9375rem',
                   fontWeight: '600',
                   color: 'white',
                   cursor: isLoading ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: isLoading ? 'none' : '0 4px 16px rgba(255, 105, 0, 0.3)'
+                  boxShadow: isLoading ? 'none' : '0 0.25rem 1rem rgba(255, 105, 0, 0.3)'
                 }}
               >
                 {isLoading ? 'Invio in corso...' : 'Invia link di recupero'}
@@ -405,11 +405,11 @@ export default function ForgotPassword() {
 
         {/* Footer */}
         <div style={{
-          padding: '16px 32px',
+          padding: '1rem 2rem',
           borderTop: '1px solid #F3F4F6',
           textAlign: 'center'
         }}>
-          <span style={{ fontSize: '12px', color: '#D1D5DB' }}>
+          <span style={{ fontSize: '0.75rem', color: '#D1D5DB' }}>
             crafted by{' '}
             <a 
               href="https://www.easydigitalgroup.it" 
