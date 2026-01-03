@@ -239,26 +239,26 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '48px 64px',
-          maxWidth: '720px'
+          padding: '3rem 4rem',
+          maxWidth: '45rem'
         }}>
           {/* Logo - Centered */}
-          <div style={{ marginBottom: '40px', textAlign: 'center', width: '100%', maxWidth: '520px' }}>
+          <div style={{ marginBottom: '2.5rem', textAlign: 'center', width: '100%', maxWidth: '32.5rem' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: '0.75rem',
               background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
-              padding: '14px 24px',
-              borderRadius: '14px',
-              boxShadow: '0 6px 20px rgba(255, 105, 0, 0.3)'
+              padding: '0.875rem 1.5rem',
+              borderRadius: '0.875rem',
+              boxShadow: '0 0.375rem 1.25rem rgba(255, 105, 0, 0.3)'
             }}>
-              <span style={{ fontSize: '32px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>W3</span>
-              <span style={{ fontSize: '32px', fontWeight: '400', color: '#fff' }}>Suite</span>
+              <span style={{ fontSize: '2rem', fontWeight: '700', color: '#fff', letterSpacing: '-0.03rem' }}>W3</span>
+              <span style={{ fontSize: '2rem', fontWeight: '400', color: '#fff' }}>Suite</span>
             </div>
             <p style={{ 
-              marginTop: '16px', 
-              fontSize: '15px', 
+              marginTop: '1rem', 
+              fontSize: '0.9375rem', 
               color: '#6B7280',
               textAlign: 'center'
             }}>
@@ -267,7 +267,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           </div>
           
           {/* Feature Cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: '520px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', width: '100%', maxWidth: '32.5rem' }}>
             {FEATURES.map((feature, index) => {
               const Icon = feature.icon;
               const colorRgb = feature.color.replace('#', '');
@@ -280,41 +280,41 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '16px',
-                    padding: '18px 20px',
+                    gap: '1rem',
+                    padding: '1.125rem 1.25rem',
                     background: `linear-gradient(135deg, rgba(${r}, ${g}, ${b}, 0.12) 0%, rgba(255, 255, 255, 0.85) 70%)`,
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    borderRadius: '14px',
+                    backdropFilter: 'blur(0.75rem)',
+                    WebkitBackdropFilter: 'blur(0.75rem)',
+                    borderRadius: '0.875rem',
                     border: `1px solid rgba(${r}, ${g}, ${b}, 0.2)`,
-                    boxShadow: `0 4px 20px rgba(${r}, ${g}, ${b}, 0.08)`,
+                    boxShadow: `0 0.25rem 1.25rem rgba(${r}, ${g}, ${b}, 0.08)`,
                     transition: 'all 0.3s ease'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = `0 8px 28px rgba(${r}, ${g}, ${b}, 0.15)`;
+                    e.currentTarget.style.transform = 'translateY(-0.125rem)';
+                    e.currentTarget.style.boxShadow = `0 0.5rem 1.75rem rgba(${r}, ${g}, ${b}, 0.15)`;
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = `0 4px 20px rgba(${r}, ${g}, ${b}, 0.08)`;
+                    e.currentTarget.style.boxShadow = `0 0.25rem 1.25rem rgba(${r}, ${g}, ${b}, 0.08)`;
                   }}
                 >
                   <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
+                    width: '2.75rem',
+                    height: '2.75rem',
+                    borderRadius: '0.75rem',
                     background: feature.bgColor,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0
                   }}>
-                    <Icon style={{ width: '22px', height: '22px', color: feature.color }} />
+                    <Icon style={{ width: '1.375rem', height: '1.375rem', color: feature.color }} />
                   </div>
                   <div>
                     <h3 style={{ 
-                      margin: '0 0 4px 0', 
-                      fontSize: '15px', 
+                      margin: '0 0 0.25rem 0', 
+                      fontSize: '0.9375rem', 
                       fontWeight: '600', 
                       color: '#1F2937' 
                     }}>
@@ -322,7 +322,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     </h3>
                     <p style={{ 
                       margin: 0, 
-                      fontSize: '13px', 
+                      fontSize: '0.8125rem', 
                       color: '#6B7280',
                       lineHeight: '1.5'
                     }}>
@@ -335,8 +335,8 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           </div>
           
           {/* Footer left */}
-          <div style={{ marginTop: '48px' }}>
-            <p style={{ fontSize: '13px', color: '#9CA3AF' }}>
+          <div style={{ marginTop: '3rem' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#9CA3AF' }}>
               © {new Date().getFullYear()} W3 Suite - Enterprise Platform
             </p>
           </div>
@@ -350,58 +350,58 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: isMobile ? '32px 24px' : '48px 64px',
+        padding: isMobile ? '2rem 1.5rem' : '3rem 4rem',
         background: '#FFFFFF'
       }}>
         {/* Form Card Container - Fixed Height */}
         <div style={{ 
           width: '100%', 
-          maxWidth: '380px',
+          maxWidth: '23.75rem',
           height: 'auto',
-          maxHeight: '580px',
-          padding: '40px 36px',
+          maxHeight: '36.25rem',
+          padding: '2.5rem 2.25rem',
           background: '#FFFFFF',
-          borderRadius: '20px',
-          boxShadow: '0 8px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)',
+          borderRadius: '1.25rem',
+          boxShadow: '0 0.5rem 2.5rem rgba(0, 0, 0, 0.08), 0 0.125rem 0.5rem rgba(0, 0, 0, 0.04)',
           border: '1px solid rgba(0, 0, 0, 0.06)'
         }}>
           
           {/* Mobile Logo */}
           {isMobile && (
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '0.5rem',
                 background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
-                padding: '10px 16px',
-                borderRadius: '10px'
+                padding: '0.625rem 1rem',
+                borderRadius: '0.625rem'
               }}>
-                <span style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>W3</span>
-                <span style={{ fontSize: '22px', fontWeight: '400', color: '#fff' }}>Suite</span>
+                <span style={{ fontSize: '1.375rem', fontWeight: '700', color: '#fff' }}>W3</span>
+                <span style={{ fontSize: '1.375rem', fontWeight: '400', color: '#fff' }}>Suite</span>
               </div>
             </div>
           )}
           
           {/* Form Header */}
-          <div style={{ marginBottom: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
               {!isMobile && (
                 <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  borderRadius: '0.625rem',
                   background: 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>W3</span>
+                  <span style={{ fontSize: '1rem', fontWeight: '700', color: '#fff' }}>W3</span>
                 </div>
               )}
               <h1 style={{ 
                 margin: 0, 
-                fontSize: '26px', 
+                fontSize: '1.625rem', 
                 fontWeight: '600', 
                 color: '#1F2937' 
               }}>
@@ -410,7 +410,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             </div>
             <p style={{ 
               margin: 0, 
-              fontSize: '15px', 
+              fontSize: '0.9375rem', 
               color: '#6B7280' 
             }}>
               Accedi alla tua piattaforma aziendale
@@ -420,30 +420,30 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           {/* Login Form */}
           <div onKeyPress={handleKeyPress}>
             {/* Username Field */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: '500',
                 color: '#374151',
-                marginBottom: '8px'
+                marginBottom: '0.5rem'
               }}>
                 Username o Email
               </label>
               <div style={{
                 position: 'relative',
                 background: '#F9FAFB',
-                borderRadius: '10px',
+                borderRadius: '0.625rem',
                 border: '1px solid #E5E7EB',
                 transition: 'all 0.2s ease'
               }}>
                 <User style={{
                   position: 'absolute',
-                  left: '14px',
+                  left: '0.875rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: '18px',
-                  height: '18px',
+                  width: '1.125rem',
+                  height: '1.125rem',
                   color: '#9CA3AF'
                 }} />
                 <input
@@ -455,11 +455,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   data-testid="input-username"
                   style={{
                     width: '100%',
-                    padding: '14px 14px 14px 44px',
+                    padding: '0.875rem 0.875rem 0.875rem 2.75rem',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
+                    borderRadius: '0.625rem',
+                    fontSize: '0.875rem',
                     color: '#111827',
                     outline: 'none'
                   }}
@@ -468,29 +468,29 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             </div>
 
             {/* Password Field */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '1rem' }}>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: '500',
                 color: '#374151',
-                marginBottom: '8px'
+                marginBottom: '0.5rem'
               }}>
                 Password
               </label>
               <div style={{
                 position: 'relative',
                 background: '#F9FAFB',
-                borderRadius: '10px',
+                borderRadius: '0.625rem',
                 border: '1px solid #E5E7EB'
               }}>
                 <Lock style={{
                   position: 'absolute',
-                  left: '14px',
+                  left: '0.875rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  width: '18px',
-                  height: '18px',
+                  width: '1.125rem',
+                  height: '1.125rem',
                   color: '#9CA3AF'
                 }} />
                 <input
@@ -502,11 +502,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   data-testid="input-password"
                   style={{
                     width: '100%',
-                    padding: '14px 44px 14px 44px',
+                    padding: '0.875rem 2.75rem 0.875rem 2.75rem',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
+                    borderRadius: '0.625rem',
+                    fontSize: '0.875rem',
                     color: '#111827',
                     outline: 'none'
                   }}
@@ -517,33 +517,33 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   data-testid="button-toggle-password"
                   style={{
                     position: 'absolute',
-                    right: '12px',
+                    right: '0.75rem',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    padding: '4px',
+                    padding: '0.25rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
                 >
                   {showPassword ? (
-                    <EyeOff style={{ width: '18px', height: '18px', color: '#9CA3AF' }} />
+                    <EyeOff style={{ width: '1.125rem', height: '1.125rem', color: '#9CA3AF' }} />
                   ) : (
-                    <Eye style={{ width: '18px', height: '18px', color: '#9CA3AF' }} />
+                    <Eye style={{ width: '1.125rem', height: '1.125rem', color: '#9CA3AF' }} />
                   )}
                 </button>
               </div>
             </div>
 
             {/* Forgot Password Link */}
-            <div style={{ textAlign: 'right', marginBottom: '24px' }}>
+            <div style={{ textAlign: 'right', marginBottom: '1.5rem' }}>
               <Link 
                 href={`/${propTenantCode || 'staging'}/forgot-password`}
                 style={{
-                  fontSize: '13px',
+                  fontSize: '0.8125rem',
                   color: '#6B7280',
                   textDecoration: 'none',
                   transition: 'color 0.2s ease'
@@ -561,18 +561,18 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               data-testid="button-login"
               style={{
                 width: '100%',
-                padding: '14px',
+                padding: '0.875rem',
                 background: isLoading 
                   ? '#D1D5DB' 
                   : 'linear-gradient(135deg, #FF6900 0%, #FF8533 100%)',
                 border: 'none',
-                borderRadius: '10px',
-                fontSize: '15px',
+                borderRadius: '0.625rem',
+                fontSize: '0.9375rem',
                 fontWeight: '600',
                 color: 'white',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: isLoading ? 'none' : '0 4px 16px rgba(255, 105, 0, 0.3)'
+                boxShadow: isLoading ? 'none' : '0 0.25rem 1rem rgba(255, 105, 0, 0.3)'
               }}
             >
               {isLoading ? 'Autenticazione in corso...' : 'Accedi'}
@@ -581,15 +581,15 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
 
           {/* Security Info */}
           <div style={{ 
-            marginTop: '24px',
+            marginTop: '1.5rem',
             textAlign: 'center', 
-            padding: '12px 16px',
+            padding: '0.75rem 1rem',
             background: '#F9FAFB',
-            borderRadius: '10px',
+            borderRadius: '0.625rem',
             border: '1px solid #E5E7EB'
           }}>
             <p style={{
-              fontSize: '12px',
+              fontSize: '0.75rem',
               color: '#9CA3AF',
               margin: 0
             }}>
@@ -599,10 +599,10 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           
           {/* Footer - crafted by */}
           <div style={{
-            marginTop: '48px',
+            marginTop: '3rem',
             textAlign: 'center'
           }}>
-            <span style={{ fontSize: '12px', color: '#D1D5DB' }}>
+            <span style={{ fontSize: '0.75rem', color: '#D1D5DB' }}>
               crafted by{' '}
               <a 
                 href="https://www.easydigitalgroup.it" 
