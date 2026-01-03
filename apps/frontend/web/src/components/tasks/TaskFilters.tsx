@@ -73,7 +73,7 @@ const statusOptions = [
 ];
 
 const priorityOptions = [
-  { value: 'all', label: 'Tutte le priorità' },
+  { value: 'all', label: 'Tutti i livelli' },
   { value: 'low', label: 'Bassa' },
   { value: 'medium', label: 'Media' },
   { value: 'high', label: 'Alta' },
@@ -347,7 +347,7 @@ export function TaskFilters({
               <div>
                 <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                   <Flag className="h-4 w-4 text-gray-500" />
-                  Priorità
+                  Importanza
                 </h4>
                 <Select
                   value={filters.priority || 'all'}
@@ -360,7 +360,7 @@ export function TaskFilters({
                   }}
                 >
                   <SelectTrigger data-testid="select-priority">
-                    <SelectValue placeholder="Priorità" />
+                    <SelectValue placeholder="Importanza" />
                   </SelectTrigger>
                   <SelectContent>
                     {priorityOptions.map((option) => (
@@ -580,7 +580,7 @@ export function TaskFilters({
 
       {filters.priority && (
         <Badge variant="secondary" className="gap-1" data-testid="badge-active-priority">
-          Priorità: {priorityOptions.find(o => o.value === filters.priority)?.label}
+          Importanza: {priorityOptions.find(o => o.value === filters.priority)?.label}
           <button
             onClick={() => clearFilter('priority')}
             className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
