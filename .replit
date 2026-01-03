@@ -101,3 +101,4 @@ localPort = 24678
 [userenv]
 
 [userenv.development]
+VITE_AUTH_MODE = "development"
