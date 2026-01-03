@@ -15,6 +15,7 @@ import { useTenant } from '../../contexts/TenantContext';
 import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
 import GlobalCustomerSearch from '../GlobalCustomerSearch';
 import { useLocation } from 'wouter';
+import w3LogoOfficial from '../../assets/w3-logo-official.png';
 
 // Palette colori W3 Suite - Consistent con Layout
 const COLORS = {
@@ -226,18 +227,15 @@ export default function Header({
           </button>
         )}
         
-        <div style={{
-          width: '32px',
-          height: '32px',
-          background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: '16px'
-        }}>W</div>
+        <img 
+          src={w3LogoOfficial} 
+          alt="W3 Logo" 
+          style={{
+            height: '32px',
+            width: 'auto',
+            borderRadius: '6px'
+          }}
+        />
         <div>
           <p style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>
             WindTre Suite
