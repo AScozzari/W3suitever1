@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, X, Check, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface AvatarSelectorProps {
@@ -33,6 +33,11 @@ export default function AvatarSelector({
   const [validationError, setValidationError] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync previewUrl when currentAvatarUrl changes (e.g., when opening edit modal)
+  useEffect(() => {
+    setPreviewUrl(currentAvatarUrl || null);
+  }, [currentAvatarUrl]);
 
   // Validate uploaded file
   const validateFile = (file: File): string | null => {

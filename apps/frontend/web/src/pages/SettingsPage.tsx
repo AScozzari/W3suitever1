@@ -9940,6 +9940,7 @@ export default function SettingsPage() {
                         
                         const response = await fetch('/api/users', {
                           method: 'POST',
+                          credentials: 'include',
                           headers: {
                             'Content-Type': 'application/json',
                             'X-Tenant-ID': getCurrentTenantId()
