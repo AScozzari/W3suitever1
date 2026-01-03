@@ -28,6 +28,7 @@ import {
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { getDepartmentOptions } from '@/lib/constants/departments';
 
 interface FilterPreset {
   id: string;
@@ -87,20 +88,8 @@ const urgencyOptions = [
   { value: 'critical', label: 'Critica' },
 ];
 
-const departmentOptions = [
-  { value: 'all', label: 'Tutti i dipartimenti' },
-  { value: 'hr', label: 'HR' },
-  { value: 'operations', label: 'Operations' },
-  { value: 'sales', label: 'Sales' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'it', label: 'IT' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'wms', label: 'WMS' },
-  { value: 'crm', label: 'CRM' },
-  { value: 'support', label: 'Support' },
-  { value: 'customer_service', label: 'Assistenza Clienti' },
-  { value: 'other', label: 'Altro' },
-];
+// Usa dipartimenti centralizzati da @/lib/constants/departments
+const departmentOptions = getDepartmentOptions(true); // includeAll = true
 
 export function TaskFilters({
   filters,

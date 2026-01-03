@@ -96,6 +96,13 @@ export const DEPARTMENT_STYLES: Record<string, DepartmentStyle> = {
     color: 'bg-windtre-orange/10', 
     textColor: 'text-windtre-orange', 
     borderColor: 'border-windtre-orange/20' 
+  },
+  'other': { 
+    icon: Building2, 
+    label: 'Altro', 
+    color: 'bg-gray-100', 
+    textColor: 'text-gray-600', 
+    borderColor: 'border-gray-200' 
   }
 };
 
@@ -137,11 +144,27 @@ export type TeamType = keyof typeof TEAM_TYPES;
 export type DepartmentCode = keyof typeof DEPARTMENT_STYLES;
 
 export const ALL_DEPARTMENT_CODES = [
-  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it', 'wms'
+  'hr', 'finance', 'sales', 'operations', 'support', 'crm', 'marketing', 'customer_service', 'it', 'wms', 'other'
 ] as const;
 
 export const departmentEnum = z.enum(ALL_DEPARTMENT_CODES);
 export type DepartmentEnumType = z.infer<typeof departmentEnum>;
+
+/** 
+ * Genera array di opzioni per select dei dipartimenti
+ * @param includeAll - se true, aggiunge opzione "Tutti i dipartimenti" all'inizio
+ */
+export function getDepartmentOptions(includeAll = false) {
+  const options = ALL_DEPARTMENT_CODES.map(code => ({
+    value: code,
+    label: DEPARTMENT_STYLES[code]?.label || code.charAt(0).toUpperCase() + code.slice(1).replace('_', ' ')
+  }));
+  
+  if (includeAll) {
+    return [{ value: 'all', label: 'Tutti i dipartimenti' }, ...options];
+  }
+  return options;
+}
 
 export function getDepartmentStyle(code: string): DepartmentStyle {
   return DEPARTMENT_STYLES[code] || {

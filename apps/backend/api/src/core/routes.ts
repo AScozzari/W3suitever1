@@ -30,6 +30,7 @@ import edgvoipWebhookRoutes from "../routes/webhooks-edgvoip";
 import activityLogsRoutes from "../routes/activity-logs";
 import actionConfigurationsRoutes from "../routes/action-configurations";
 import actionDefinitionsRoutes from "../routes/action-definitions";
+import avatarRoutes from "../routes/avatar";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1561,6 +1562,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== ACTION DEFINITIONS ROUTES ====================
   // Global action definitions (evergreen actions) - read-only, no tenant middleware needed
   app.use('/api/action-definitions', actionDefinitionsRoutes);
+
+  // ==================== AVATAR ROUTES ====================
+  // Avatar upload/serve endpoints - tenant-scoped
+  app.use('/api/avatars', tenantMiddleware, rbacMiddleware, avatarRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 

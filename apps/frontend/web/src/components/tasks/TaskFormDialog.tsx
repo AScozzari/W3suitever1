@@ -65,6 +65,7 @@ import {
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { getDepartmentOptions, departmentEnum } from '@/lib/constants/departments';
 
 interface ChecklistItem {
   title: string;
@@ -83,7 +84,7 @@ const taskFormSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']),
   priority: z.enum(['low', 'medium', 'high']),
   urgency: z.enum(['low', 'medium', 'high', 'critical']),
-  department: z.enum(['hr', 'operations', 'sales', 'marketing', 'it', 'finance', 'wms', 'crm', 'support', 'customer_service', 'other']).optional(),
+  department: departmentEnum.optional(),
   dueDate: z.date().optional(),
   startDate: z.date().optional(),
   tags: z.string().optional(),
@@ -130,19 +131,8 @@ const urgencyOptions = [
   { value: 'critical', label: 'Critica' },
 ];
 
-const departmentOptions = [
-  { value: 'hr', label: 'HR' },
-  { value: 'operations', label: 'Operations' },
-  { value: 'sales', label: 'Sales' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'it', label: 'IT' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'wms', label: 'WMS' },
-  { value: 'crm', label: 'CRM' },
-  { value: 'support', label: 'Support' },
-  { value: 'customer_service', label: 'Assistenza Clienti' },
-  { value: 'other', label: 'Altro' }
-];
+// Usa dipartimenti centralizzati da @/lib/constants/departments
+const departmentOptions = getDepartmentOptions();
 
 export function TaskFormDialog({
   open,
