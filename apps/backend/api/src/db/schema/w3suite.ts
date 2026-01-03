@@ -11337,6 +11337,7 @@ export const feedPosts = w3suiteSchema.table("feed_posts", {
 // Explicit recipients (when not broadcasting to all)
 export const feedPostRecipients = w3suiteSchema.table("feed_post_recipients", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
   
   // Recipient (user, team, or department)
@@ -11349,6 +11350,7 @@ export const feedPostRecipients = w3suiteSchema.table("feed_post_recipients", {
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
+  index("feed_recipients_tenant_idx").on(table.tenantId),
   index("feed_recipients_post_idx").on(table.postId),
   index("feed_recipients_user_idx").on(table.userId),
   index("feed_recipients_team_idx").on(table.teamId),
@@ -11357,6 +11359,7 @@ export const feedPostRecipients = w3suiteSchema.table("feed_post_recipients", {
 // ==================== FEED REACTIONS ====================
 export const feedReactions = w3suiteSchema.table("feed_reactions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id),
   
@@ -11365,6 +11368,7 @@ export const feedReactions = w3suiteSchema.table("feed_reactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("feed_reactions_unique").on(table.postId, table.userId, table.reactionType),
+  index("feed_reactions_tenant_idx").on(table.tenantId),
   index("feed_reactions_post_idx").on(table.postId),
   index("feed_reactions_user_idx").on(table.userId),
 ]);
@@ -11372,6 +11376,7 @@ export const feedReactions = w3suiteSchema.table("feed_reactions", {
 // ==================== FEED COMMENTS ====================
 export const feedComments = w3suiteSchema.table("feed_comments", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   postId: uuid("post_id").notNull().references(() => feedPosts.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id),
   
@@ -11388,6 +11393,7 @@ export const feedComments = w3suiteSchema.table("feed_comments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   isEdited: boolean("is_edited").default(false),
 }, (table) => [
+  index("feed_comments_tenant_idx").on(table.tenantId),
   index("feed_comments_post_idx").on(table.postId, table.createdAt),
   index("feed_comments_user_idx").on(table.userId),
   index("feed_comments_parent_idx").on(table.parentCommentId),

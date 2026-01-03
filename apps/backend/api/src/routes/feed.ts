@@ -379,6 +379,7 @@ router.post('/posts', requirePermission('communication.write'), async (req: Requ
     
     if (body.recipients.isAllUsers) {
       await db.insert(feedPostRecipients).values({
+        tenantId,
         postId: newPost.id,
         isAllUsers: true
       });
@@ -386,13 +387,13 @@ router.post('/posts', requirePermission('communication.write'), async (req: Requ
       const recipientValues: any[] = [];
       
       body.recipients.userIds.forEach(userId => {
-        recipientValues.push({ postId: newPost.id, userId });
+        recipientValues.push({ tenantId, postId: newPost.id, userId });
       });
       body.recipients.teamIds.forEach(teamId => {
-        recipientValues.push({ postId: newPost.id, teamId });
+        recipientValues.push({ tenantId, postId: newPost.id, teamId });
       });
       body.recipients.departments.forEach(department => {
-        recipientValues.push({ postId: newPost.id, department });
+        recipientValues.push({ tenantId, postId: newPost.id, department });
       });
       
       if (recipientValues.length > 0) {
@@ -542,7 +543,9 @@ router.post('/posts/:postId/reactions', requirePermission('communication.write')
       
       res.json({ action: 'removed', reactionType });
     } else {
+      const tenantId = req.tenant!.id;
       await db.insert(feedReactions).values({
+        tenantId,
         postId,
         userId,
         reactionType
@@ -591,12 +594,14 @@ router.get('/posts/:postId/comments', requirePermission('communication.read'), a
 
 router.post('/posts/:postId/comments', requirePermission('communication.write'), async (req: Request, res: Response) => {
   try {
+    const tenantId = req.tenant!.id;
     const userId = req.user!.id;
     const { postId } = req.params;
     
     const body = createCommentBodySchema.parse(req.body);
     
     const [newComment] = await db.insert(feedComments).values({
+      tenantId,
       postId,
       userId,
       content: body.content,
