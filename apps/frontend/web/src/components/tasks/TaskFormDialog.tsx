@@ -83,7 +83,7 @@ const taskFormSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']),
   priority: z.enum(['low', 'medium', 'high']),
   urgency: z.enum(['low', 'medium', 'high', 'critical']),
-  department: z.enum(['hr', 'operations', 'sales', 'marketing', 'it', 'finance', 'other']).optional(),
+  department: z.enum(['hr', 'operations', 'sales', 'marketing', 'it', 'finance', 'wms', 'crm', 'support', 'customer_service', 'other']).optional(),
   dueDate: z.date().optional(),
   startDate: z.date().optional(),
   tags: z.string().optional(),
@@ -131,12 +131,16 @@ const urgencyOptions = [
 ];
 
 const departmentOptions = [
-  { value: 'hr', label: 'Hr' },
+  { value: 'hr', label: 'HR' },
   { value: 'operations', label: 'Operations' },
   { value: 'sales', label: 'Sales' },
   { value: 'marketing', label: 'Marketing' },
-  { value: 'it', label: 'It' },
+  { value: 'it', label: 'IT' },
   { value: 'finance', label: 'Finance' },
+  { value: 'wms', label: 'WMS' },
+  { value: 'crm', label: 'CRM' },
+  { value: 'support', label: 'Support' },
+  { value: 'customer_service', label: 'Assistenza Clienti' },
   { value: 'other', label: 'Altro' }
 ];
 

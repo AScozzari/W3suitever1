@@ -89,13 +89,17 @@ const urgencyOptions = [
 
 const departmentOptions = [
   { value: 'all', label: 'Tutti i dipartimenti' },
-  { value: 'hr', label: 'Risorse Umane' },
-  { value: 'operations', label: 'Operazioni' },
-  { value: 'support', label: 'Supporto' },
-  { value: 'finance', label: 'Finanza' },
-  { value: 'crm', label: 'CRM' },
-  { value: 'sales', label: 'Vendite' },
+  { value: 'hr', label: 'HR' },
+  { value: 'operations', label: 'Operations' },
+  { value: 'sales', label: 'Sales' },
   { value: 'marketing', label: 'Marketing' },
+  { value: 'it', label: 'IT' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'wms', label: 'WMS' },
+  { value: 'crm', label: 'CRM' },
+  { value: 'support', label: 'Support' },
+  { value: 'customer_service', label: 'Assistenza Clienti' },
+  { value: 'other', label: 'Altro' },
 ];
 
 export function TaskFilters({
