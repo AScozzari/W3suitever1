@@ -1,0 +1,61 @@
+pported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+queryClient.ts:370  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/chat/channels/dm 400 (Bad Request)
+apiRequest @ queryClient.ts:370
+mutationFn @ QuickChatBar.tsx:51
+fn @ @tanstack_react-query.js?v=b56a477b:1998
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+execute @ @tanstack_react-query.js?v=b56a477b:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=b56a477b:2378
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3566
+handleDirectChat @ QuickChatBar.tsx:155
+onClick @ QuickChatBar.tsx:299
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=b56a477b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=b56a477b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=b56a477b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=b56a477b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=b56a477b:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=b56a477b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=b56a477b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=b56a477b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5449Comprendi l'errore
+queryClient.ts:370  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/chat/channels/dm 400 (Bad Request)
+apiRequest @ queryClient.ts:370
+mutationFn @ QuickChatBar.tsx:51
+fn @ @tanstack_react-query.js?v=b56a477b:1998
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+execute @ @tanstack_react-query.js?v=b56a477b:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=b56a477b:2378
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3566
+handleDirectChat @ QuickChatBar.tsx:155
+onClick @ QuickChatBar.tsx:299
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=b56a477b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=b56a477b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=b56a477b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=b56a477b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=b56a477b:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=b56a477b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=b56a477b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=b56a477b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5449Comprendi l'errore
+queryClient.ts:370  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/chat/channels/28160f96-be07-4cc0-b94f-9ca605cade53/messages 500 (Internal Server Error)

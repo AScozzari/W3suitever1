@@ -301,11 +301,14 @@ router.post('/channels/:id/messages', requirePermission('chat.create'), async (r
     });
     
     // Broadcast message to channel members via WebSocket
+    const createdAtString = message.createdAt instanceof Date 
+      ? message.createdAt.toISOString() 
+      : String(message.createdAt);
     await webSocketService.broadcastChatMessage(channelId, tenantId, {
       id: message.id,
       userId: message.userId,
       content: message.content,
-      createdAt: message.createdAt.toISOString(),
+      createdAt: createdAtString,
       attachments: Array.isArray(message.attachments) ? message.attachments : [],
       mentionedUserIds: Array.isArray(message.mentionedUserIds) ? message.mentionedUserIds : []
     });

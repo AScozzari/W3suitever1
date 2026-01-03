@@ -50,7 +50,7 @@ export function QuickChatBar({ onChatCreated, placeholder = "Cerca colleghi...",
     mutationFn: async (targetUserId: string) => {
       const res = await apiRequest('/api/chat/channels/dm', {
         method: 'POST',
-        body: JSON.stringify({ targetUserId })
+        body: JSON.stringify({ userId: targetUserId })
       });
       return res as { id: string };
     },
