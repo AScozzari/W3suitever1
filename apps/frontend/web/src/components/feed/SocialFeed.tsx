@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useInfiniteQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
@@ -11,21 +11,98 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import {
   Heart, MessageCircle, Star, BookmarkPlus, BellOff, Pin, MoreHorizontal,
   ThumbsUp, Smile, PartyPopper, Megaphone, BarChart3, Award, Send,
   Users, UserPlus, Trophy, Medal, Sparkles, ChevronDown, Filter,
-  Image as ImageIcon, Paperclip, AtSign, Hash, Check, Plus
+  Image as ImageIcon, Paperclip, AtSign, Hash, Check, Plus, X, Upload,
+  Bold, Italic, Underline, Strikethrough, List, ListOrdered, Link2, Quote,
+  Type, Palette, Undo, Redo, Table, Video, FileText, Building2, File,
+  Download, Eye, Trash2, RefreshCw
 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+
+// Emoji categories for picker
+const EMOJI_CATEGORIES = {
+  'Faccine': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕'],
+  'Gesti': ['👍', '👎', '👌', '🤌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💪', '🦾', '🦿'],
+  'Simboli': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💯', '✅', '❌', '⭐', '🌟', '💫', '⚡', '🔥', '💥', '🎉', '🎊', '🏆', '🥇', '🥈', '🥉', '🏅', '🎯', '💡', '📌', '📍'],
+  'Oggetti': ['💼', '📁', '📂', '🗂️', '📋', '📄', '📃', '📑', '📊', '📈', '📉', '🗒️', '🗓️', '📆', '📅', '📇', '🗃️', '🗳️', '🗄️', '📬', '📭', '📮', '📯', '📨', '📩', '📧', '💻', '🖥️', '🖨️', '⌨️', '🖱️', '💾', '💿', '📱', '☎️', '📞', '📠', '📺', '📻']
+};
+
+interface FeedAttachment {
+  id: string;
+  objectKey: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  downloadUrl: string;
+  previewUrl?: string | null;
+}
+
+interface FeedUser {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+  avatar?: string;
+  displayName?: string;
+}
+
+interface FeedTeam {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+interface FeedDepartment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+}
+
+interface RecipientSelection {
+  mode: 'all' | 'users' | 'teams';
+  userIds: string[];
+  teamIds: string[];
+  departmentId?: string;
+}
 
 interface FeedPost {
   id: string;
@@ -434,6 +511,8 @@ function FeedPostCard({
 
 function EmbeddedComposer() {
   const { toast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [postType, setPostType] = useState<'message' | 'announcement' | 'poll' | 'appreciation'>('message');
   const [content, setContent] = useState('');
@@ -442,6 +521,46 @@ function EmbeddedComposer() {
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [badgeType, setBadgeType] = useState('star_performer');
   const [awardeeIds, setAwardeeIds] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<FeedAttachment[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [mentionedUsers, setMentionedUsers] = useState<FeedUser[]>([]);
+  const [showMentionPopover, setShowMentionPopover] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [recipientSelection, setRecipientSelection] = useState<RecipientSelection>({
+    mode: 'all', userIds: [], teamIds: [], departmentId: undefined
+  });
+  const [showRecipientDialog, setShowRecipientDialog] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedUsers, setSelectedUsers] = useState<FeedUser[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<FeedTeam[]>([]);
+
+  // Fetch users for mentions and recipient selection
+  const { data: usersData } = useQuery<FeedUser[]>({
+    queryKey: ['/api/feed/users/search', mentionSearch],
+    queryFn: async () => {
+      const res = await apiRequest(`/api/feed/users/search?q=${encodeURIComponent(mentionSearch)}&limit=10`);
+      return res;
+    },
+    enabled: mentionSearch.length > 0 || showRecipientDialog
+  });
+
+  // Fetch departments
+  const { data: departmentsData } = useQuery<FeedDepartment[]>({
+    queryKey: ['/api/feed/departments'],
+    enabled: showRecipientDialog
+  });
+
+  // Fetch teams (filtered by department if selected)
+  const { data: teamsData } = useQuery<FeedTeam[]>({
+    queryKey: ['/api/feed/teams/search', selectedDepartment],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedDepartment) params.set('departmentId', selectedDepartment);
+      return apiRequest(`/api/feed/teams/search?${params.toString()}`);
+    },
+    enabled: showRecipientDialog
+  });
 
   const createPostMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -469,6 +588,11 @@ function EmbeddedComposer() {
     setPollOptions(['', '']);
     setBadgeType('star_performer');
     setAwardeeIds([]);
+    setAttachments([]);
+    setMentionedUsers([]);
+    setRecipientSelection({ mode: 'all', userIds: [], teamIds: [], departmentId: undefined });
+    setSelectedUsers([]);
+    setSelectedTeams([]);
   };
 
   const handleSubmit = () => {
@@ -477,16 +601,19 @@ function EmbeddedComposer() {
       content,
       title: title || undefined,
       isHighlighted,
-      recipients: { isAllUsers: true, userIds: [], teamIds: [], departments: [] }
+      attachments: attachments.map(a => ({ id: a.id, fileName: a.fileName, objectKey: a.objectKey, contentType: a.contentType, fileSize: a.fileSize })),
+      mentionedUserIds: mentionedUsers.map(u => u.id),
+      recipients: {
+        isAllUsers: recipientSelection.mode === 'all',
+        userIds: recipientSelection.mode === 'users' ? selectedUsers.map(u => u.id) : [],
+        teamIds: recipientSelection.mode === 'teams' ? selectedTeams.map(t => t.id) : [],
+        departments: []
+      }
     };
 
     if (postType === 'poll') {
       data.pollOptions = pollOptions.filter(o => o.trim());
-      data.pollSettings = {
-        visibilityMode: 'public',
-        allowMultipleChoices: false,
-        allowVoteChange: true
-      };
+      data.pollSettings = { visibilityMode: 'public', allowMultipleChoices: false, allowVoteChange: true };
     }
 
     if (postType === 'appreciation') {
@@ -495,6 +622,91 @@ function EmbeddedComposer() {
     }
 
     createPostMutation.mutate(data);
+  };
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const response = await fetch('/api/feed/attachments/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const attachment = await response.json();
+          setAttachments(prev => [...prev, attachment]);
+          toast({ title: `File "${file.name}" caricato` });
+        } else {
+          toast({ title: `Errore caricamento ${file.name}`, variant: 'destructive' });
+        }
+      } catch (error) {
+        toast({ title: `Errore caricamento ${file.name}`, variant: 'destructive' });
+      }
+    }
+    setIsUploading(false);
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(prev => prev.filter(a => a.id !== id));
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent = content.slice(0, start) + emoji + content.slice(end);
+      setContent(newContent);
+      setTimeout(() => {
+        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+        textarea.focus();
+      }, 0);
+    } else {
+      setContent(content + emoji);
+    }
+    setShowEmojiPicker(false);
+  };
+
+  const insertMention = (user: FeedUser) => {
+    const mention = `@${user.displayName || user.firstName || user.email.split('@')[0]} `;
+    setContent(content + mention);
+    if (!mentionedUsers.find(u => u.id === user.id)) {
+      setMentionedUsers([...mentionedUsers, user]);
+    }
+    setShowMentionPopover(false);
+    setMentionSearch('');
+  };
+
+  const applyFormatting = (format: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.slice(start, end);
+    
+    let formattedText = '';
+    switch (format) {
+      case 'bold': formattedText = `**${selectedText}**`; break;
+      case 'italic': formattedText = `_${selectedText}_`; break;
+      case 'underline': formattedText = `__${selectedText}__`; break;
+      case 'strike': formattedText = `~~${selectedText}~~`; break;
+      case 'quote': formattedText = `> ${selectedText}`; break;
+      case 'bullet': formattedText = `\n• ${selectedText}`; break;
+      case 'numbered': formattedText = `\n1. ${selectedText}`; break;
+      default: formattedText = selectedText;
+    }
+    
+    const newContent = content.slice(0, start) + formattedText + content.slice(end);
+    setContent(newContent);
+    textarea.focus();
   };
 
   const getPlaceholder = () => {
@@ -507,43 +719,40 @@ function EmbeddedComposer() {
     }
   };
 
+  const getRecipientLabel = () => {
+    if (recipientSelection.mode === 'all') return 'Tutti';
+    if (recipientSelection.mode === 'users') return `${selectedUsers.length} utent${selectedUsers.length === 1 ? 'e' : 'i'}`;
+    if (recipientSelection.mode === 'teams') return `${selectedTeams.length} team`;
+    return 'Tutti';
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   return (
     <Card className="mb-4 border shadow-sm">
       <Tabs value={postType} onValueChange={(v) => setPostType(v as any)}>
         <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
-          <TabsTrigger 
-            value="message" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
-          >
+          <TabsTrigger value="message" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium">
             MESSAGGIO
           </TabsTrigger>
-          <TabsTrigger 
-            value="poll" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
-          >
+          <TabsTrigger value="poll" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium">
             SONDAGGIO
           </TabsTrigger>
-          <TabsTrigger 
-            value="announcement" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
-          >
+          <TabsTrigger value="announcement" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium">
             ANNUNCIO
           </TabsTrigger>
-          <TabsTrigger 
-            value="appreciation" 
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium"
-          >
+          <TabsTrigger value="appreciation" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm font-medium">
             APPREZZAMENTO
           </TabsTrigger>
         </TabsList>
 
         <CardContent className="p-4">
           {!isExpanded ? (
-            <div 
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={() => setIsExpanded(true)}
-              data-testid="composer-collapsed"
-            >
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsExpanded(true)} data-testid="composer-collapsed">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary/10 text-primary text-sm">TU</AvatarFallback>
               </Avatar>
@@ -552,35 +761,145 @@ function EmbeddedComposer() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
+              {/* Rich Text Toolbar */}
+              <div className="flex flex-wrap items-center gap-0.5 p-1 bg-muted/30 rounded-lg border" data-testid="rich-text-toolbar">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('bold')} title="Grassetto" data-testid="button-format-bold">
+                  <Bold className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('italic')} title="Corsivo" data-testid="button-format-italic">
+                  <Italic className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('underline')} title="Sottolineato" data-testid="button-format-underline">
+                  <Underline className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('strike')} title="Barrato" data-testid="button-format-strike">
+                  <Strikethrough className="h-3.5 w-3.5" />
+                </Button>
+                <Separator orientation="vertical" className="h-5 mx-1" />
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('bullet')} title="Elenco puntato" data-testid="button-format-bullet">
+                  <List className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('numbered')} title="Elenco numerato" data-testid="button-format-numbered">
+                  <ListOrdered className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => applyFormatting('quote')} title="Citazione" data-testid="button-format-quote">
+                  <Quote className="h-3.5 w-3.5" />
+                </Button>
+                <Separator orientation="vertical" className="h-5 mx-1" />
+                <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" onChange={(e) => handleFileUpload(e.target.files)} data-testid="input-file-upload" />
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => fileInputRef.current?.click()} title="Allega file" disabled={isUploading} data-testid="button-attach-file">
+                  <Paperclip className="h-3.5 w-3.5" />
+                </Button>
+                <Popover open={showMentionPopover} onOpenChange={setShowMentionPopover}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Menziona utente" data-testid="button-mention-user">
+                      <AtSign className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Cerca utente..." value={mentionSearch} onValueChange={setMentionSearch} />
+                      <CommandList>
+                        <CommandEmpty>Nessun utente trovato</CommandEmpty>
+                        <CommandGroup>
+                          {usersData?.map(user => (
+                            <CommandItem key={user.id} onSelect={() => insertMention(user)}>
+                              <Avatar className="h-6 w-6 mr-2">
+                                <AvatarFallback className="text-xs">{getInitials(user)}</AvatarFallback>
+                              </Avatar>
+                              <span>{user.displayName || user.email}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Emoji" data-testid="button-emoji-picker">
+                      <Smile className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-2" align="start" data-testid="emoji-picker-content">
+                    <ScrollArea className="h-48">
+                      {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
+                        <div key={category} className="mb-2">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">{category}</p>
+                          <div className="flex flex-wrap gap-0.5">
+                            {emojis.map(emoji => (
+                              <button key={emoji} className="text-lg hover:bg-muted rounded p-0.5" onClick={() => insertEmoji(emoji)} data-testid={`emoji-${emoji}`}>
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Aggiungi tag" data-testid="button-add-tag">
+                  <Hash className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
               {(postType === 'announcement' || postType === 'poll') && (
-                <Input
-                  placeholder="Titolo (opzionale)"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="font-medium"
-                  data-testid="input-post-title"
-                />
+                <Input placeholder="Titolo (opzionale)" value={title} onChange={(e) => setTitle(e.target.value)} className="font-medium" data-testid="input-post-title" />
               )}
 
-              <Textarea
-                autoFocus
-                placeholder={getPlaceholder()}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={postType === 'message' ? 3 : 4}
-                className="resize-none"
-                data-testid="input-post-content"
-              />
+              <Textarea ref={textareaRef} autoFocus placeholder={getPlaceholder()} value={content} onChange={(e) => setContent(e.target.value)} rows={postType === 'message' ? 4 : 5} className="resize-none min-h-[100px]" data-testid="input-post-content" />
+
+              {/* Character count */}
+              <div className="flex justify-end">
+                <span className={`text-xs ${content.length > 5000 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  {content.length} / 5000 caratteri
+                </span>
+              </div>
+
+              {/* Mentioned users */}
+              {mentionedUsers.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {mentionedUsers.map(user => (
+                    <Badge key={user.id} variant="secondary" className="gap-1">
+                      <AtSign className="h-3 w-3" />
+                      {user.displayName || user.email}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setMentionedUsers(mentionedUsers.filter(u => u.id !== user.id))} />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* File attachments */}
+              {attachments.length > 0 && (
+                <div className="space-y-2 p-2 bg-muted/30 rounded-lg">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Paperclip className="h-3 w-3" />
+                    File allegati ({attachments.length})
+                  </p>
+                  {attachments.map(file => (
+                    <div key={file.id} className="flex items-center gap-2 p-2 bg-white rounded border">
+                      <File className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex-1 text-sm truncate">{file.fileName}</span>
+                      <span className="text-xs text-muted-foreground">{formatFileSize(file.fileSize)}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.id)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isUploading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Caricamento file in corso...
+                </div>
+              )}
 
               {postType === 'announcement' && (
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={isHighlighted}
-                    onChange={(e) => setIsHighlighted(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
+                  <Checkbox checked={isHighlighted} onCheckedChange={(checked) => setIsHighlighted(checked === true)} />
                   <span className="text-muted-foreground">Evidenzia annuncio (sfondo verde)</span>
                 </label>
               )}
@@ -592,27 +911,16 @@ function EmbeddedComposer() {
                     Opzioni sondaggio
                   </p>
                   {pollOptions.map((option, index) => (
-                    <Input
-                      key={index}
-                      placeholder={`Opzione ${index + 1}`}
-                      value={option}
-                      onChange={(e) => {
-                        const newOptions = [...pollOptions];
-                        newOptions[index] = e.target.value;
-                        setPollOptions(newOptions);
-                      }}
-                      className="bg-white"
-                      data-testid={`input-poll-option-${index}`}
-                    />
+                    <div key={index} className="flex gap-2">
+                      <Input placeholder={`Opzione ${index + 1}`} value={option} onChange={(e) => { const newOptions = [...pollOptions]; newOptions[index] = e.target.value; setPollOptions(newOptions); }} className="bg-white" data-testid={`input-poll-option-${index}`} />
+                      {pollOptions.length > 2 && (
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== index))}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   ))}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPollOptions([...pollOptions, ''])}
-                    className="w-full text-primary hover:text-primary"
-                    data-testid="button-add-poll-option"
-                  >
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setPollOptions([...pollOptions, ''])} className="w-full text-primary" data-testid="button-add-poll-option">
                     <Plus className="h-4 w-4 mr-1" />
                     Aggiungi opzione
                   </Button>
@@ -627,15 +935,7 @@ function EmbeddedComposer() {
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {Object.entries(BADGE_INFO).map(([key, info]) => (
-                      <Button
-                        key={key}
-                        type="button"
-                        variant={badgeType === key ? 'default' : 'outline'}
-                        size="sm"
-                        className={`justify-start text-xs ${badgeType === key ? '' : 'bg-white hover:bg-gray-50'}`}
-                        onClick={() => setBadgeType(key)}
-                        data-testid={`button-badge-${key}`}
-                      >
+                      <Button key={key} type="button" variant={badgeType === key ? 'default' : 'outline'} size="sm" className={`justify-start text-xs ${badgeType === key ? '' : 'bg-white hover:bg-gray-50'}`} onClick={() => setBadgeType(key)} data-testid={`button-badge-${key}`}>
                         <info.icon className="h-3.5 w-3.5 mr-1.5" />
                         {info.label}
                       </Button>
@@ -644,53 +944,151 @@ function EmbeddedComposer() {
                 </div>
               )}
 
+              {/* Recipients Row - Bitrix24 style */}
+              <div className="flex items-center gap-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
+                <span className="text-sm font-medium text-blue-700">A:</span>
+                <Dialog open={showRecipientDialog} onOpenChange={setShowRecipientDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1 text-blue-600 border-blue-200 hover:bg-blue-50">
+                      {recipientSelection.mode === 'all' && <Users className="h-3.5 w-3.5" />}
+                      {recipientSelection.mode === 'users' && <UserPlus className="h-3.5 w-3.5" />}
+                      {recipientSelection.mode === 'teams' && <Building2 className="h-3.5 w-3.5" />}
+                      {getRecipientLabel()}
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Seleziona destinatari</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Chi può vedere questo post?</Label>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                            <input type="radio" name="recipientMode" checked={recipientSelection.mode === 'all'} onChange={() => setRecipientSelection({ ...recipientSelection, mode: 'all' })} />
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span>Tutti gli utenti del tenant</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                            <input type="radio" name="recipientMode" checked={recipientSelection.mode === 'users'} onChange={() => setRecipientSelection({ ...recipientSelection, mode: 'users' })} />
+                            <UserPlus className="h-4 w-4 text-muted-foreground" />
+                            <span>Utenti specifici</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-muted/50">
+                            <input type="radio" name="recipientMode" checked={recipientSelection.mode === 'teams'} onChange={() => setRecipientSelection({ ...recipientSelection, mode: 'teams' })} />
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span>Team (con filtro dipartimento)</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {recipientSelection.mode === 'users' && (
+                        <div className="space-y-2">
+                          <Label>Seleziona utenti</Label>
+                          <Command className="border rounded-lg">
+                            <CommandInput placeholder="Cerca utente..." onValueChange={setMentionSearch} />
+                            <CommandList className="max-h-40">
+                              <CommandEmpty>Nessun utente trovato</CommandEmpty>
+                              <CommandGroup>
+                                {usersData?.map(user => (
+                                  <CommandItem key={user.id} onSelect={() => {
+                                    if (!selectedUsers.find(u => u.id === user.id)) {
+                                      setSelectedUsers([...selectedUsers, user]);
+                                    }
+                                  }}>
+                                    <Avatar className="h-6 w-6 mr-2">
+                                      <AvatarFallback className="text-xs">{getInitials(user)}</AvatarFallback>
+                                    </Avatar>
+                                    {user.displayName}
+                                    {selectedUsers.find(u => u.id === user.id) && <Check className="h-4 w-4 ml-auto" />}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                          {selectedUsers.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {selectedUsers.map(user => (
+                                <Badge key={user.id} variant="secondary" className="gap-1">
+                                  {user.displayName}
+                                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedUsers(selectedUsers.filter(u => u.id !== user.id))} />
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {recipientSelection.mode === 'teams' && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Filtra per dipartimento (opzionale)</Label>
+                            <select className="w-full mt-1 p-2 border rounded-md text-sm" value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)}>
+                              <option value="">Tutti i dipartimenti</option>
+                              {departmentsData?.map(dept => (
+                                <option key={dept.id} value={dept.id}>{dept.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <Label>Seleziona team</Label>
+                            <div className="space-y-1 mt-1 max-h-40 overflow-y-auto border rounded-md p-2">
+                              {teamsData?.map(team => (
+                                <label key={team.id} className="flex items-center gap-2 p-1 rounded hover:bg-muted/50 cursor-pointer">
+                                  <Checkbox checked={selectedTeams.some(t => t.id === team.id)} onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTeams([...selectedTeams, team]);
+                                    } else {
+                                      setSelectedTeams(selectedTeams.filter(t => t.id !== team.id));
+                                    }
+                                  }} />
+                                  <span className="text-sm">{team.name}</span>
+                                </label>
+                              ))}
+                              {(!teamsData || teamsData.length === 0) && (
+                                <p className="text-sm text-muted-foreground text-center py-2">Nessun team trovato</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <Button className="w-full" onClick={() => setShowRecipientDialog(false)}>
+                        Conferma
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Show selected recipients preview */}
+                {recipientSelection.mode !== 'all' && (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedUsers.slice(0, 3).map(user => (
+                      <Badge key={user.id} variant="outline" className="text-xs">{user.displayName}</Badge>
+                    ))}
+                    {selectedTeams.slice(0, 3).map(team => (
+                      <Badge key={team.id} variant="outline" className="text-xs">{team.name}</Badge>
+                    ))}
+                    {(selectedUsers.length > 3 || selectedTeams.length > 3) && (
+                      <Badge variant="outline" className="text-xs">+{selectedUsers.length + selectedTeams.length - 3}</Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <Separator />
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-attach-image">
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-attach-file">
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-mention-user">
-                    <AtSign className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" data-testid="button-add-tag">
-                    <Hash className="h-4 w-4" />
-                  </Button>
-                  <Separator orientation="vertical" className="h-5 mx-1" />
-                  <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground gap-1" data-testid="button-select-recipients">
-                    <Users className="h-3.5 w-3.5" />
-                    Tutti
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </div>
-
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      resetForm();
-                      setIsExpanded(false);
-                    }}
-                    data-testid="button-cancel-post"
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => { resetForm(); setIsExpanded(false); }} data-testid="button-cancel-post">
                     Annulla
                   </Button>
-                  <Button 
-                    size="sm"
-                    onClick={handleSubmit}
-                    disabled={!content.trim() || createPostMutation.isPending}
-                    className="gap-1"
-                    data-testid="button-publish-post"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    {createPostMutation.isPending ? 'Invio...' : 'Invia'}
-                  </Button>
                 </div>
+                <Button size="sm" onClick={handleSubmit} disabled={!content.trim() || createPostMutation.isPending || content.length > 5000} className="gap-1" data-testid="button-publish-post">
+                  <Send className="h-3.5 w-3.5" />
+                  {createPostMutation.isPending ? 'Invio...' : 'INVIA'}
+                </Button>
               </div>
             </div>
           )}
