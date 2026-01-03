@@ -51,8 +51,15 @@ import {
   Check,
   Plus,
   Pencil,
-  CheckSquare
+  CheckSquare,
+  Info
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -473,7 +480,20 @@ export function TaskFormDialog({
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Priorità</FormLabel>
+                      <FormLabel className="flex items-center gap-1">
+                        Importanza
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[16rem] text-xs">
+                              <p className="font-semibold mb-1">Matrice di Eisenhower</p>
+                              <p>Quanto è importante per i tuoi obiettivi a lungo termine? Le attività importanti contribuiscono ai risultati strategici.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-task-priority">
@@ -498,7 +518,20 @@ export function TaskFormDialog({
                   name="urgency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Urgenza</FormLabel>
+                      <FormLabel className="flex items-center gap-1">
+                        Urgenza
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[16rem] text-xs">
+                              <p className="font-semibold mb-1">Matrice di Eisenhower</p>
+                              <p>Quanto è urgente? Le attività urgenti richiedono attenzione immediata, spesso con scadenze ravvicinate.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-task-urgency">
