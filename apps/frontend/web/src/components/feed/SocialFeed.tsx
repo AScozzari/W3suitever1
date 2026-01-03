@@ -238,7 +238,9 @@ function formatRelativeTime(dateString: string): string {
 function getAvatarUrl(user: { avatar?: string } | null | undefined): string | undefined {
   if (!user?.avatar) return undefined;
   if (user.avatar.startsWith('http')) return user.avatar;
-  return `/api/avatars/serve/${user.avatar}`;
+  // Remove 'avatars/' prefix if present - the endpoint expects just tenantId/filename
+  const avatarPath = user.avatar.replace(/^avatars\//, '');
+  return `/api/avatars/serve/${avatarPath}`;
 }
 
 function getDisplayName(user: { firstName?: string; lastName?: string; email?: string } | null | undefined): string {
