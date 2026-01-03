@@ -5968,9 +5968,11 @@ export default function SettingsPage() {
         primaryOrganizationEntityId: user.primaryOrganizationEntityId || null,
         selectedStores: user.selectedStores || [],
         primaryStoreId: user.primaryStoreId || null,
-        selectAllLegalEntities: user.selectAllLegalEntities || false,
+        // Map scope data correctly for UI display
+        selectAllLegalEntities: user.scopeLevel === 'tenant' || user.selectAllLegalEntities || false,
         selectedAreas: user.selectedAreas || [],
-        selectedLegalEntities: user.selectedLegalEntities || [],
+        // Use selectedOrganizationEntities if selectedLegalEntities is empty (backend returns org entities)
+        selectedLegalEntities: (user.selectedLegalEntities?.length > 0 ? user.selectedLegalEntities : user.selectedOrganizationEntities) || [],
         nome: user.nome || user.firstName || '',
         cognome: user.cognome || user.lastName || '',
         avatar: {
@@ -9567,12 +9569,20 @@ export default function SettingsPage() {
                             checked={newUser.selectedLegalEntities.includes(rs.id)}
                             onChange={(e) => {
                               if (e.target.checked) {
+                                // Auto-select all stores for this organization entity
+                                const newLegalEntities = [...newUser.selectedLegalEntities, rs.id];
+                                const storesForNewEntity = puntiVenditaList
+                                  .filter(pv => pv.organizationEntityId === rs.id && (pv.status === 'active' || pv.status === 'Attivo'))
+                                  .map(pv => pv.id);
+                                // Merge with existing stores (keeping already selected stores)
+                                const allStores = [...new Set([...newUser.selectedStores, ...storesForNewEntity])];
                                 setNewUser({
                                   ...newUser,
-                                  selectedLegalEntities: [...newUser.selectedLegalEntities, rs.id],
-                                  selectedStores: [] // Reset punti vendita quando cambiano ragioni sociali
+                                  selectedLegalEntities: newLegalEntities,
+                                  selectedStores: allStores
                                 });
                               } else {
+                                // Remove all stores from this organization entity
                                 setNewUser({
                                   ...newUser,
                                   selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
