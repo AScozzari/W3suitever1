@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
+import multer, { MulterError } from 'multer';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../core/db';
 import { users, objectAcls, objectMetadata } from '../db/schema/w3suite';
@@ -7,12 +7,13 @@ import { requirePermission } from '../middleware/tenant';
 import { structuredLogger } from '../core/logger';
 import { avatarService } from '../core/objectStorage';
 import { Client } from '@replit/object-storage';
-import { v4 as uuidv4 } from 'uuid';
+import { createHash } from 'crypto';
 
 const router = Router();
 
-const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || '';
-const PUBLIC_PATH = process.env.PUBLIC_OBJECT_SEARCH_PATHS?.split(',')[0] || '';
+function generateStableId(path: string): string {
+  return createHash('sha256').update(path).digest('hex').substring(0, 32);
+}
 
 const AVATAR_CONSTRAINTS = {
   maxSize: 512 * 1024,
@@ -84,7 +85,6 @@ router.post(
 
       const extension = req.file.originalname.split('.').pop()?.toLowerCase() || 'png';
       const objectKey = `avatars/${tenantId}/${userId}.${extension}`;
-      const objectPath = `${PUBLIC_PATH}/${objectKey}`;
 
       try {
         const client = new Client();
@@ -92,7 +92,7 @@ router.post(
 
         structuredLogger.info('Avatar uploaded to object storage', {
           component: 'avatar-upload',
-          metadata: { userId, tenantId, objectPath, size: req.file.size }
+          metadata: { userId, tenantId, objectKey, size: req.file.size }
         });
       } catch (uploadError) {
         structuredLogger.error('Failed to upload avatar to object storage', {
@@ -106,57 +106,58 @@ router.post(
       const publicUrl = `/api/avatars/serve/${tenantId}/${userId}.${extension}`;
 
       await db.update(users)
-        .set({ avatarObjectPath: publicUrl })
+        .set({ avatarObjectPath: objectKey })
         .where(eq(users.id, userId));
 
-      const metadataId = uuidv4();
+      const stableMetadataId = generateStableId(`metadata:${objectKey}`);
+      const stableAclId = generateStableId(`acl:${objectKey}`);
+      const now = new Date();
+
       await db.insert(objectMetadata).values({
-        id: metadataId,
-        objectPath,
+        id: stableMetadataId,
+        objectPath: objectKey,
         fileName: `${userId}.${extension}`,
         contentType: req.file.mimetype,
         fileSize: req.file.size,
         visibility: 'public',
         uploadedBy: currentUserId || userId,
         tenantId,
-        createdAt: new Date()
+        createdAt: now
       }).onConflictDoUpdate({
         target: objectMetadata.objectPath,
         set: {
           fileName: `${userId}.${extension}`,
           contentType: req.file.mimetype,
           fileSize: req.file.size,
-          uploadedBy: currentUserId || userId,
-          createdAt: new Date()
+          uploadedBy: currentUserId || userId
         }
       });
 
       await db.insert(objectAcls).values({
-        id: uuidv4(),
-        objectPath,
+        id: stableAclId,
+        objectPath: objectKey,
         tenantId,
         visibility: 'public',
         ownerId: userId,
         ownerTenantId: tenantId,
-        createdAt: new Date()
+        createdAt: now
       }).onConflictDoUpdate({
         target: objectAcls.objectPath,
         set: {
           ownerId: userId,
-          ownerTenantId: tenantId,
-          createdAt: new Date()
+          ownerTenantId: tenantId
         }
       });
 
       structuredLogger.info('Avatar updated successfully', {
         component: 'avatar-upload',
-        metadata: { userId, tenantId, avatarUrl: publicUrl }
+        metadata: { userId, tenantId, objectKey, serveUrl: publicUrl }
       });
 
       res.json({
         success: true,
         avatarUrl: publicUrl,
-        objectPath,
+        objectPath: objectKey,
         message: 'Avatar caricato con successo'
       });
 
@@ -222,6 +223,24 @@ router.delete(
         return res.status(404).json({ error: 'Utente non trovato' });
       }
 
+      if (targetUser.avatarObjectPath) {
+        try {
+          const client = new Client();
+          await client.delete(targetUser.avatarObjectPath);
+          
+          await db.delete(objectMetadata)
+            .where(eq(objectMetadata.objectPath, targetUser.avatarObjectPath));
+          await db.delete(objectAcls)
+            .where(eq(objectAcls.objectPath, targetUser.avatarObjectPath));
+        } catch (deleteErr) {
+          structuredLogger.warn('Failed to delete avatar from storage', {
+            component: 'avatar-delete',
+            error: deleteErr instanceof Error ? deleteErr : new Error(String(deleteErr)),
+            metadata: { userId, objectPath: targetUser.avatarObjectPath }
+          });
+        }
+      }
+
       await db.update(users)
         .set({ avatarObjectPath: null })
         .where(eq(users.id, userId));
@@ -249,7 +268,12 @@ router.get('/users/:userId/avatar', async (req: Request, res: Response) => {
     const tenantId = req.headers['x-tenant-id'] as string;
 
     const [user] = await db
-      .select({ avatarObjectPath: users.avatarObjectPath, firstName: users.firstName, lastName: users.lastName })
+      .select({ 
+        avatarObjectPath: users.avatarObjectPath, 
+        firstName: users.firstName, 
+        lastName: users.lastName,
+        tenantId: users.tenantId
+      })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
@@ -258,9 +282,16 @@ router.get('/users/:userId/avatar', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Utente non trovato' });
     }
 
+    let avatarUrl: string | null = null;
+    if (user.avatarObjectPath) {
+      const filename = user.avatarObjectPath.split('/').pop();
+      avatarUrl = `/api/avatars/serve/${user.tenantId}/${filename}`;
+    }
+
     res.json({
       hasAvatar: !!user.avatarObjectPath,
-      avatarUrl: user.avatarObjectPath,
+      avatarUrl,
+      objectPath: user.avatarObjectPath,
       initials: `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || '??'
     });
 
