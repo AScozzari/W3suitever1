@@ -1801,16 +1801,73 @@ router.get('/users', async (req, res) => {
       );
     }
 
-    // ✅ Build avatar URLs from avatar_object_path
+    // ✅ Fetch user scope assignments (organization entities and stores)
+    const userIds = usersList.map(u => u.id);
+    
+    // Get organization entity assignments
+    const orgEntityAssignments = userIds.length > 0 
+      ? await db.select({
+          userId: userOrganizationEntities.userId,
+          organizationEntityId: userOrganizationEntities.organizationEntityId,
+          isPrimary: userOrganizationEntities.isPrimary
+        }).from(userOrganizationEntities)
+          .where(inArray(userOrganizationEntities.userId, userIds))
+      : [];
+    
+    // Get store assignments  
+    const storeAssignments = userIds.length > 0
+      ? await db.select({
+          userId: userStores.userId,
+          storeId: userStores.storeId,
+          isPrimary: userStores.isPrimary
+        }).from(userStores)
+          .where(inArray(userStores.userId, userIds))
+      : [];
+
+    // Group assignments by userId
+    const orgsByUser = new Map<string, { id: string; isPrimary: boolean }[]>();
+    orgEntityAssignments.forEach(a => {
+      if (!orgsByUser.has(a.userId)) orgsByUser.set(a.userId, []);
+      orgsByUser.get(a.userId)!.push({ id: a.organizationEntityId, isPrimary: a.isPrimary || false });
+    });
+
+    const storesByUser = new Map<string, { id: string; isPrimary: boolean }[]>();
+    storeAssignments.forEach(a => {
+      if (!storesByUser.has(a.userId)) storesByUser.set(a.userId, []);
+      storesByUser.get(a.userId)!.push({ id: a.storeId, isPrimary: a.isPrimary || false });
+    });
+
+    // ✅ Build avatar URLs from avatar_object_path and include scope data
     const usersWithAvatarUrl = usersList.map(user => {
       let avatarUrl: string | null = null;
       if (user.avatarObjectPath) {
         const filename = user.avatarObjectPath.split('/').pop();
         avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
       }
+      
+      // Get user's scope assignments
+      const userOrgs = orgsByUser.get(user.id) || [];
+      const userStoresList = storesByUser.get(user.id) || [];
+      
+      // Determine scope level
+      let scopeLevel: 'tenant' | 'organization_entity' | 'store' = 'tenant';
+      if (userStoresList.length > 0) {
+        scopeLevel = 'store';
+      } else if (userOrgs.length > 0) {
+        scopeLevel = 'organization_entity';
+      }
+      
       return {
         ...user,
         avatarUrl,
+        // ✅ Scope data for frontend
+        scopeLevel,
+        selectedOrganizationEntities: userOrgs.map(o => o.id),
+        selectedLegalEntities: userOrgs.map(o => o.id), // alias for legacy frontend
+        primaryOrganizationEntityId: userOrgs.find(o => o.isPrimary)?.id || userOrgs[0]?.id || null,
+        selectedStores: userStoresList.map(s => s.id),
+        primaryStoreId: userStoresList.find(s => s.isPrimary)?.id || userStoresList[0]?.id || null,
+        selectAllLegalEntities: userOrgs.length === 0 && userStoresList.length === 0, // tenant-wide if no assignments
         // Add convenient aliases for frontend compatibility
         nome: user.firstName,
         cognome: user.lastName,

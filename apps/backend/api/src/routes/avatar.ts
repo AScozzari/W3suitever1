@@ -262,11 +262,25 @@ router.get('/serve/:tenantId/:filename', async (req: Request, res: Response) => 
   try {
     const { tenantId, filename } = req.params;
     
+    // Build the full path including tenant ID for proper isolation
+    const fullPath = `${tenantId}/${filename}`;
+    
     // Use helper that works with both Object Storage (Replit) and local files (VPS)
-    const result = await downloadAvatarBytes(filename);
+    const result = await downloadAvatarBytes(fullPath);
 
     if (!result.ok || !result.buffer) {
-      return res.status(404).json({ error: 'Avatar non trovato' });
+      // Fallback: try without tenant prefix for legacy paths
+      const legacyResult = await downloadAvatarBytes(filename);
+      if (!legacyResult.ok || !legacyResult.buffer) {
+        return res.status(404).json({ error: 'Avatar non trovato' });
+      }
+      const extension = filename.split('.').pop()?.toLowerCase();
+      const contentType = extension === 'png' ? 'image/png' 
+        : extension === 'webp' ? 'image/webp' 
+        : 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.send(legacyResult.buffer);
     }
 
     const extension = filename.split('.').pop()?.toLowerCase();

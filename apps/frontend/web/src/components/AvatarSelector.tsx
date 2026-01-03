@@ -36,6 +36,7 @@ export default function AvatarSelector({
 
   // Sync previewUrl when currentAvatarUrl changes (e.g., when opening edit modal)
   useEffect(() => {
+    console.log('[AvatarSelector] currentAvatarUrl changed:', currentAvatarUrl);
     setPreviewUrl(currentAvatarUrl || null);
   }, [currentAvatarUrl]);
 
@@ -141,9 +142,7 @@ export default function AvatarSelector({
             width: `${size}px`,
             height: `${size}px`,
             borderRadius: '50%',
-            background: previewUrl 
-              ? `url(${previewUrl}) center/cover`
-              : 'linear-gradient(135deg, #e5e7eb, #f3f4f6)',
+            background: 'linear-gradient(135deg, #e5e7eb, #f3f4f6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -155,7 +154,22 @@ export default function AvatarSelector({
           }}
           data-testid="avatar-preview"
         >
-          {!previewUrl && (
+          {previewUrl ? (
+            <img 
+              src={previewUrl} 
+              alt="Avatar preview"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '50%'
+              }}
+              onError={(e) => {
+                console.error('[AvatarSelector] Image load error:', previewUrl);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
