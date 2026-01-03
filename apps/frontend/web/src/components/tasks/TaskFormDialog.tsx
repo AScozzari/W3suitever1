@@ -36,6 +36,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
+import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   CalendarIcon, 
@@ -52,7 +53,8 @@ import {
   Plus,
   Pencil,
   CheckSquare,
-  Info
+  Info,
+  Tag
 } from 'lucide-react';
 import {
   Tooltip,
@@ -455,7 +457,7 @@ export function TaskFormDialog({
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Stato</FormLabel>
+                      <FormLabel className="min-h-[1.25rem] flex items-center">Stato</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-task-status">
@@ -480,7 +482,7 @@ export function TaskFormDialog({
                   name="priority"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-1">
+                      <FormLabel className="min-h-[1.25rem] flex items-center gap-1">
                         Importanza
                         <TooltipProvider>
                           <Tooltip>
@@ -518,7 +520,7 @@ export function TaskFormDialog({
                   name="urgency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-1">
+                      <FormLabel className="min-h-[1.25rem] flex items-center gap-1">
                         Urgenza
                         <TooltipProvider>
                           <Tooltip>
@@ -619,7 +621,7 @@ export function TaskFormDialog({
                             <Button
                               variant="outline"
                               className={cn(
-                                "pl-3 text-left font-normal",
+                                "w-full justify-between pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                               )}
                               data-testid="button-select-start-date"
@@ -629,7 +631,7 @@ export function TaskFormDialog({
                               ) : (
                                 <span>Seleziona data</span>
                               )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              <CalendarIcon className="h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -660,7 +662,7 @@ export function TaskFormDialog({
                             <Button
                               variant="outline"
                               className={cn(
-                                "pl-3 text-left font-normal",
+                                "w-full justify-between pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground"
                               )}
                               data-testid="button-select-due-date"
@@ -670,7 +672,7 @@ export function TaskFormDialog({
                               ) : (
                                 <span>Seleziona data</span>
                               )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              <CalendarIcon className="h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -690,29 +692,66 @@ export function TaskFormDialog({
                 />
               </div>
 
-              {/* Tags */}
+              {/* Tags con preview chip */}
               <FormField
                 control={form.control}
                 name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tags</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Es: urgente, vendite, report"
-                        data-testid="input-task-tags"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const tagColors = [
+                    'bg-blue-100 text-blue-700 border-blue-200',
+                    'bg-purple-100 text-purple-700 border-purple-200',
+                    'bg-green-100 text-green-700 border-green-200',
+                    'bg-pink-100 text-pink-700 border-pink-200',
+                    'bg-orange-100 text-orange-700 border-orange-200',
+                    'bg-teal-100 text-teal-700 border-teal-200',
+                  ];
+                  const parsedTags = field.value 
+                    ? field.value.split(',').map(t => t.trim()).filter(t => t.length > 0)
+                    : [];
+                  return (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5 text-gray-500" />
+                        Tags
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Es: urgente, vendite, report (separati da virgola)"
+                          data-testid="input-task-tags"
+                        />
+                      </FormControl>
+                      {parsedTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {parsedTags.map((tag, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className={cn(
+                                "text-xs font-medium border px-2 py-0.5",
+                                tagColors[index % tagColors.length]
+                              )}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
+
+              <Separator className="my-2" />
 
               {/* Team Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">Team</h3>
+                  <h3 className="text-sm font-medium flex items-center gap-1.5">
+                    <UserCheck className="h-4 w-4 text-gray-500" />
+                    Team
+                  </h3>
                   <Button
                     type="button"
                     variant="outline"
@@ -816,10 +855,15 @@ export function TaskFormDialog({
                 )}
               </div>
 
+              <Separator className="my-2" />
+
               {/* Checklist */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">Checklist</h3>
+                  <h3 className="text-sm font-medium flex items-center gap-1.5">
+                    <CheckSquare className="h-4 w-4 text-gray-500" />
+                    Checklist
+                  </h3>
                   {checklistItems.length > 0 && (
                     <span className="text-xs text-gray-500">
                       {completedCount}/{checklistItems.length}
@@ -941,10 +985,15 @@ export function TaskFormDialog({
                 )}
               </div>
 
+              <Separator className="my-2" />
+
               {/* Allegati */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">Allegati</h3>
+                  <h3 className="text-sm font-medium flex items-center gap-1.5">
+                    <Paperclip className="h-4 w-4 text-gray-500" />
+                    Allegati
+                  </h3>
                   {selectedFiles.length > 0 && (
                     <span className="text-xs text-gray-500">{selectedFiles.length} file</span>
                   )}
