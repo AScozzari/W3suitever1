@@ -477,39 +477,46 @@ export class ChatService {
       afterMessageId?: string;
     }
   ): Promise<ChatMessage[]> {
-    // Select only columns that exist in the database (avoid is_voice_message etc. that may not be migrated)
-    let query = db
-      .select({
-        id: chatMessages.id,
-        channelId: chatMessages.channelId,
-        tenantId: chatMessages.tenantId,
-        userId: chatMessages.userId,
-        content: chatMessages.content,
-        messageType: chatMessages.messageType,
-        attachments: chatMessages.attachments,
-        mentionedUserIds: chatMessages.mentionedUserIds,
-        reactions: chatMessages.reactions,
-        replyToMessageId: chatMessages.replyToMessageId,
-        threadId: chatMessages.threadId,
-        isEdited: chatMessages.isEdited,
-        editedAt: chatMessages.editedAt,
-        metadata: chatMessages.metadata,
-        createdAt: chatMessages.createdAt,
-        deletedAt: chatMessages.deletedAt
-      })
-      .from(chatMessages)
-      .where(and(
-        eq(chatMessages.channelId, channelId),
-        eq(chatMessages.tenantId, tenantId),
-        isNull(chatMessages.deletedAt)
-      ))
-      .orderBy(desc(chatMessages.createdAt));
-
-    if (options?.limit) {
-      query = query.limit(options.limit);
+    try {
+      // Use raw SQL to avoid Drizzle schema mismatch issues with columns that may not exist
+      const limit = options?.limit || 50;
+      
+      const result = await db.execute(sql`
+        SELECT 
+          id, channel_id, tenant_id, user_id, content, message_type,
+          attachments, mentioned_user_ids, reactions, reply_to_message_id,
+          thread_id, is_edited, edited_at, metadata, created_at, deleted_at
+        FROM w3suite.chat_messages
+        WHERE channel_id = ${channelId}
+          AND tenant_id = ${tenantId}::uuid
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `);
+      
+      // Map snake_case to camelCase
+      return (result.rows || []).map((row: any) => ({
+        id: row.id,
+        channelId: row.channel_id,
+        tenantId: row.tenant_id,
+        userId: row.user_id,
+        content: row.content,
+        messageType: row.message_type,
+        attachments: row.attachments,
+        mentionedUserIds: row.mentioned_user_ids,
+        reactions: row.reactions,
+        replyToMessageId: row.reply_to_message_id,
+        threadId: row.thread_id,
+        isEdited: row.is_edited,
+        editedAt: row.edited_at,
+        metadata: row.metadata,
+        createdAt: row.created_at,
+        deletedAt: row.deleted_at
+      })) as ChatMessage[];
+    } catch (error) {
+      logger.error('Failed to fetch messages', { error, channelId, tenantId });
+      throw error;
     }
-
-    return query as unknown as ChatMessage[];
   }
 
   static async addReaction(
@@ -758,28 +765,69 @@ export class ChatService {
   }
 
   static async getUserPresence(userId: string, tenantId: string): Promise<UserPresence | null> {
-    const [presence] = await db
-      .select()
-      .from(userPresence)
-      .where(and(
-        eq(userPresence.userId, userId),
-        eq(userPresence.tenantId, tenantId)
-      ))
-      .limit(1);
-    
-    return presence || null;
+    try {
+      const result = await db.execute(sql`
+        SELECT id, user_id, tenant_id, status, custom_status, custom_emoji,
+               last_seen_at, device_info, status_expires_at, created_at, updated_at
+        FROM w3suite.user_presence
+        WHERE user_id = ${userId}
+          AND tenant_id = ${tenantId}::uuid
+        LIMIT 1
+      `);
+      
+      if (!result.rows || result.rows.length === 0) {
+        return null;
+      }
+      
+      const row = result.rows[0] as any;
+      return {
+        id: row.id,
+        userId: row.user_id,
+        tenantId: row.tenant_id,
+        status: row.status,
+        customStatus: row.custom_status,
+        customEmoji: row.custom_emoji,
+        lastSeenAt: row.last_seen_at,
+        deviceInfo: row.device_info,
+        statusExpiresAt: row.status_expires_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      } as UserPresence;
+    } catch (error) {
+      logger.error('Failed to fetch user presence', { error, userId, tenantId });
+      return null;
+    }
   }
 
   static async getMultipleUserPresence(userIds: string[], tenantId: string): Promise<UserPresence[]> {
     if (userIds.length === 0) return [];
     
-    return await db
-      .select()
-      .from(userPresence)
-      .where(and(
-        inArray(userPresence.userId, userIds),
-        eq(userPresence.tenantId, tenantId)
-      ));
+    try {
+      const result = await db.execute(sql`
+        SELECT id, user_id, tenant_id, status, custom_status, custom_emoji,
+               last_seen_at, device_info, status_expires_at, created_at, updated_at
+        FROM w3suite.user_presence
+        WHERE user_id = ANY(${userIds}::text[])
+          AND tenant_id = ${tenantId}::uuid
+      `);
+      
+      return (result.rows || []).map((row: any) => ({
+        id: row.id,
+        userId: row.user_id,
+        tenantId: row.tenant_id,
+        status: row.status,
+        customStatus: row.custom_status,
+        customEmoji: row.custom_emoji,
+        lastSeenAt: row.last_seen_at,
+        deviceInfo: row.device_info,
+        statusExpiresAt: row.status_expires_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      })) as UserPresence[];
+    } catch (error) {
+      logger.error('Failed to fetch multiple user presence', { error, userIds, tenantId });
+      return [];
+    }
   }
 
   static async setCustomStatus(
@@ -903,18 +951,35 @@ export class ChatService {
   }
 
   static async getPinnedMessages(channelId: string): Promise<any[]> {
-    const pinned = await db
-      .select({
-        pinnedAt: chatPinnedMessages.pinnedAt,
-        pinnedByUserId: chatPinnedMessages.pinnedByUserId,
-        message: chatMessages
-      })
-      .from(chatPinnedMessages)
-      .innerJoin(chatMessages, eq(chatPinnedMessages.messageId, chatMessages.id))
-      .where(eq(chatPinnedMessages.channelId, channelId))
-      .orderBy(desc(chatPinnedMessages.pinnedAt));
-    
-    return pinned;
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          p.pinned_at,
+          p.pinned_by_user_id,
+          m.id as message_id,
+          m.content as message_content,
+          m.user_id as message_user_id,
+          m.created_at as message_created_at
+        FROM w3suite.chat_pinned_messages p
+        INNER JOIN w3suite.chat_messages m ON p.message_id = m.id
+        WHERE p.channel_id = ${channelId}
+        ORDER BY p.pinned_at DESC
+      `);
+      
+      return (result.rows || []).map((row: any) => ({
+        pinnedAt: row.pinned_at,
+        pinnedByUserId: row.pinned_by_user_id,
+        message: {
+          id: row.message_id,
+          content: row.message_content,
+          userId: row.message_user_id,
+          createdAt: row.message_created_at
+        }
+      }));
+    } catch (error) {
+      logger.error('Failed to fetch pinned messages', { error, channelId });
+      return [];
+    }
   }
 
   // ==================== MESSAGE SEARCH ====================
@@ -991,20 +1056,38 @@ export class ChatService {
     userId: string,
     teamIds?: string[]
   ): Promise<ChatSavedReply[]> {
-    // Get personal replies + team replies
-    return await db
-      .select()
-      .from(chatSavedReplies)
-      .where(and(
-        eq(chatSavedReplies.tenantId, tenantId),
-        or(
-          eq(chatSavedReplies.userId, userId),
-          teamIds && teamIds.length > 0 
-            ? and(eq(chatSavedReplies.isPersonal, false), inArray(chatSavedReplies.teamId, teamIds))
-            : undefined
-        )
-      ))
-      .orderBy(desc(chatSavedReplies.usageCount));
+    try {
+      // Get personal replies + team replies using raw SQL
+      const teamCondition = teamIds && teamIds.length > 0 
+        ? sql`OR (is_personal = false AND team_id = ANY(${teamIds}::uuid[]))`
+        : sql``;
+      
+      const result = await db.execute(sql`
+        SELECT id, tenant_id, user_id, team_id, title, content, shortcut, 
+               is_personal, usage_count, created_at, updated_at
+        FROM w3suite.chat_saved_replies
+        WHERE tenant_id = ${tenantId}::uuid
+          AND (user_id = ${userId} ${teamCondition})
+        ORDER BY usage_count DESC
+      `);
+      
+      return (result.rows || []).map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        userId: row.user_id,
+        teamId: row.team_id,
+        title: row.title,
+        content: row.content,
+        shortcut: row.shortcut,
+        isPersonal: row.is_personal,
+        usageCount: row.usage_count,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      })) as ChatSavedReply[];
+    } catch (error) {
+      logger.error('Failed to fetch saved replies', { error, tenantId, userId });
+      return [];
+    }
   }
 
   static async updateSavedReply(
