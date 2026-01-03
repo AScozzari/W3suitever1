@@ -5949,6 +5949,79 @@ export default function SettingsPage() {
     }
   }, [storeModal.open, storeModal.data]);
 
+  // ✅ POPULATE newUser when userModal opens in EDIT mode
+  useEffect(() => {
+    if (userModal.open && userModal.data) {
+      // Modalità EDIT - precompila i campi con i dati esistenti
+      const user = userModal.data;
+      setNewUser({
+        username: user.username || user.email || '',
+        password: '',
+        confirmPassword: '',
+        ruolo: user.ruolo || user.role || '',
+        cambioPasswordObbligatorio: user.cambioPasswordObbligatorio ?? false,
+        ragioneSociale_id: user.ragioneSociale_id || user.legalEntityId || null,
+        puntiVendita_ids: user.puntiVendita_ids || user.storeIds || [],
+        puntoVenditaPreferito_id: user.puntoVenditaPreferito_id || user.primaryStoreId || null,
+        scopeLevel: user.scopeLevel || 'tenant',
+        selectedOrganizationEntities: user.selectedOrganizationEntities || [],
+        primaryOrganizationEntityId: user.primaryOrganizationEntityId || null,
+        selectedStores: user.selectedStores || [],
+        primaryStoreId: user.primaryStoreId || null,
+        selectAllLegalEntities: user.selectAllLegalEntities || false,
+        selectedAreas: user.selectedAreas || [],
+        selectedLegalEntities: user.selectedLegalEntities || [],
+        nome: user.nome || user.firstName || '',
+        cognome: user.cognome || user.lastName || '',
+        avatar: {
+          url: user.avatar?.url || user.avatarUrl || user.profileImageUrl || null,
+          blob: null,
+          type: 'upload' as 'upload' | 'generated'
+        },
+        codiceFiscale: user.codiceFiscale || user.fiscalCode || '',
+        dataNascita: user.dataNascita || user.birthDate || '',
+        luogoNascita: user.luogoNascita || user.birthPlace || '',
+        sesso: user.sesso || user.gender || 'M',
+        email: user.email || '',
+        emailPersonale: user.emailPersonale || user.personalEmail || '',
+        telefono: user.telefono || user.phone || '',
+        telefonoAziendale: user.telefonoAziendale || user.workPhone || '',
+        via: user.via || user.address?.via || '',
+        civico: user.civico || user.address?.civico || '',
+        citta: user.citta || user.address?.city || '',
+        cap: user.cap || user.address?.postalCode || '',
+        provincia: user.provincia || user.address?.province || '',
+        paese: user.paese || user.address?.country || 'Italia',
+        tipoDocumento: user.tipoDocumento || user.documentType || 'Carta Identità',
+        numeroDocumento: user.numeroDocumento || user.documentNumber || '',
+        dataScadenzaDocumento: user.dataScadenzaDocumento || user.documentExpiry || '',
+        stato: user.stato || (user.status === 'Active' ? 'Attivo' : user.status === 'Suspended' ? 'Sospeso' : user.status) || 'Attivo',
+        dataInizioValidita: user.dataInizioValidita || user.validFrom || '',
+        dataFineValidita: user.dataFineValidita || user.validUntil || '',
+        notificheEmail: user.notificheEmail ?? user.emailNotifications ?? true,
+        notificheSMS: user.notificheSMS ?? user.smsNotifications ?? false,
+        lingua: user.lingua || user.language || 'it',
+        fuso: user.fuso || user.timezone || 'Europe/Rome',
+        extension: {
+          enabled: user.extension?.enabled || false,
+          extNumber: user.extension?.extNumber || '',
+          sipDomain: user.extension?.sipDomain || '',
+          classOfService: user.extension?.classOfService || 'agent',
+          voicemailEnabled: user.extension?.voicemailEnabled ?? true,
+          storeId: user.extension?.storeId || null
+        },
+        tipoContratto: user.tipoContratto || user.contractType || 'Indeterminato',
+        dataAssunzione: user.dataAssunzione || user.hireDate || '',
+        livello: user.livello || user.level || '',
+        ccnl: user.ccnl || 'Commercio',
+        oreLavoro: user.oreLavoro || user.workHours || '40',
+        note: user.note || user.notes || ''
+      });
+    } else if (userModal.open && !userModal.data) {
+      // Modalità CREATE - resetta i campi (già gestito dal onClick del bottone "Nuovo Utente")
+    }
+  }, [userModal.open, userModal.data]);
+
   // State per il nuovo utente
   const [newUser, setNewUser] = useState({
     // Dati di accesso

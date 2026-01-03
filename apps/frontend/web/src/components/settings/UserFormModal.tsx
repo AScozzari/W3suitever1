@@ -131,7 +131,7 @@ export default function UserFormModal({
         puntoVenditaPreferito_id: data.puntoVenditaPreferito_id || data.primaryStoreId || null,
         nome: data.nome || data.firstName || '',
         cognome: data.cognome || data.lastName || '',
-        avatar: { url: data.avatar?.url || data.avatarUrl || null, blob: null, type: 'upload' },
+        avatar: { url: data.avatar?.url || data.avatarUrl || data.profileImageUrl || null, blob: null, type: 'upload' },
         codiceFiscale: data.codiceFiscale || data.fiscalCode || '',
         dataNascita: data.dataNascita || data.birthDate || '',
         luogoNascita: data.luogoNascita || data.birthPlace || '',
