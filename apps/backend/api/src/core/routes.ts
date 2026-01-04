@@ -1365,7 +1365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/tenants/resolve' ||
         req.path === '/utm-sources' || // UTM parameters are public reference data
         req.path === '/utm-mediums' || // UTM parameters are public reference data
-        req.path.startsWith('/action-definitions')) {  // Action definitions are global evergreen data
+        req.path.startsWith('/action-definitions') || // Action definitions are global evergreen data
+        req.path.startsWith('/avatars/serve/')) { // Avatar images use tenantId from URL, not header
       console.log(`[TENANT-SKIP] Bypassing tenant middleware for public endpoint: ${req.path}`);
       return next();
     }
