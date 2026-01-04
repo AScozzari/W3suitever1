@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCurrentTenantId } from '@/lib/queryClient';
 
 const WINDTRE_COLORS = [
   ['#FF6900', '#ff8533'],
@@ -107,11 +108,23 @@ export function useUserAvatar(
       if (!userData?.id) return null;
       
       try {
+        const tenantId = getCurrentTenantId();
+        const headers: Record<string, string> = {
+          'Accept': 'application/json'
+        };
+        
+        if (tenantId) {
+          headers['X-Tenant-ID'] = tenantId;
+        }
+        
+        const authMode = import.meta.env.VITE_AUTH_MODE;
+        if (authMode === 'development') {
+          headers['X-Auth-Session'] = 'authenticated';
+        }
+        
         const response = await fetch(`/api/storage/avatars/${userData.id}/signed-url`, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          },
+          headers,
           credentials: 'include'
         });
         
