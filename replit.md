@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, market responsiveness, and strategic decision-making. The platform leverages workflow automation, intelligent routing, and an AI Voice Agent System to provide a comprehensive, adaptive solution for business modernization and streamlined operations, aiming for a significant market presence and operational streamlining across diverse business sectors.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates key modules such as CRM, POS, WMS, Analytics, HR, and CMS, aiming to provide a comprehensive, adaptive solution for business modernization, enhanced efficiency, market responsiveness, and strategic decision-making.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -146,7 +146,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and `shadcn/ui` components leveraging Radix UI for accessibility. Tailwind CSS for styling. UI zoom handled at build-time via `VITE_FONT_SCALE=80` and CSS units predominantly use `rem`.
+- **UI/UX Decisions**: WindTre Glassmorphism design featuring fixed headers/sidebars, white backgrounds, and `shadcn/ui` components built on Radix UI for accessibility. Styling is managed with Tailwind CSS, and UI zoom is handled at build-time via `VITE_FONT_SCALE=80` with predominant use of `rem` for CSS units.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
@@ -154,7 +154,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **HR Module**: Manages shifts, leave requests, and time tracking.
-    - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
+    - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
     - **Brand Interface**: Features a Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
     - **MCP Public Gateway**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations.
 - **System Design Choices**:

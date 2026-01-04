@@ -3528,6 +3528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...user,
           avatarUrl, // Proxy URL for avatar
           // Convenient aliases for frontend compatibility
+          ruolo: user.role, // Italian alias for role
           nome: user.firstName,
           cognome: user.lastName,
           telefono: user.phone,
