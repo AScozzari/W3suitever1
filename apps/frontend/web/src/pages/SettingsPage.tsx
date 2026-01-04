@@ -2920,15 +2920,31 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
+              // Reset completo di tutti i campi per nuovo utente
               setNewUser({
+                // Dati di accesso
                 username: '',
                 password: '',
                 confirmPassword: '',
                 ruolo: '',
                 cambioPasswordObbligatorio: true,
+                
+                // Relazioni obbligatorie
                 ragioneSociale_id: null,
-                puntiVendita_ids: [] as number[],
+                puntiVendita_ids: [] as string[],
                 puntoVenditaPreferito_id: null,
+                
+                // Scope system
+                scopeLevel: 'tenant' as 'tenant' | 'organization_entity' | 'store',
+                selectedOrganizationEntities: [] as string[],
+                primaryOrganizationEntityId: null,
+                selectedStores: [] as string[],
+                primaryStoreId: null,
+                selectAllLegalEntities: false,
+                selectedAreas: [] as string[],
+                selectedLegalEntities: [] as string[],
+                
+                // Informazioni personali
                 nome: '',
                 cognome: '',
                 avatar: {
@@ -2940,31 +2956,47 @@ export default function SettingsPage() {
                 dataNascita: '',
                 luogoNascita: '',
                 sesso: 'M',
+                
+                // Contatti
                 email: '',
                 emailPersonale: '',
                 telefono: '',
                 telefonoAziendale: '',
+                
+                // Indirizzo
                 via: '',
                 civico: '',
                 citta: '',
                 cap: '',
                 provincia: '',
                 paese: 'Italia',
-                scopeLevel: 'organizzazione',
-                selectAllLegalEntities: false,
-                selectedAreas: [] as string[],
-                selectedLegalEntities: [] as number[],
-                selectedStores: [] as number[],
+                
+                // Documenti
                 tipoDocumento: 'Carta Identità',
                 numeroDocumento: '',
                 dataScadenzaDocumento: '',
-                stato: 'Attivo',
+                
+                // Impostazioni account
+                stato: 'attivo',
                 dataInizioValidita: '',
                 dataFineValidita: '',
                 notificheEmail: true,
                 notificheSMS: false,
                 lingua: 'it',
                 fuso: 'Europe/Rome',
+                
+                // VoIP Extension
+                extensionId: '',
+                extension: {
+                  enabled: false,
+                  extNumber: '',
+                  sipDomain: '',
+                  classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
+                  voicemailEnabled: true,
+                  storeId: null
+                },
+                
+                // Contratto
                 tipoContratto: 'Indeterminato',
                 dataAssunzione: '',
                 livello: '',
