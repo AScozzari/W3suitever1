@@ -90,6 +90,7 @@ import {
   stores as w3suiteStores, 
   stores, 
   userStores,
+  userOrganizationEntities,
   userAssignments,
   roles,
   legalEntities,
@@ -3297,47 +3298,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!roleId && !storeId) {
         const usersData = await storage.getUsersByTenant(tenantId);
         
-        // Enrich users with their scope assignments
+        // Enrich users with their scope assignments using user_stores and user_organization_entities tables
         const userIds = usersData.map(u => u.id);
         if (userIds.length > 0) {
           // Ensure RLS context is set for the joins
           await setTenantContext(tenantId);
           
-          // Get all assignments for these users (including tenant-wide)
-          const assignments = await db
+          // Get store assignments from user_stores table
+          const storeAssignments = await db
             .select({
-              userId: userAssignments.userId,
-              scopeType: userAssignments.scopeType,
-              scopeId: userAssignments.scopeId,
+              userId: userStores.userId,
+              storeId: userStores.storeId,
               storeName: stores.name,
-              orgName: organizationEntities.name,
+              isPrimary: userStores.isPrimary,
             })
-            .from(userAssignments)
-            .leftJoin(stores, eq(userAssignments.scopeId, stores.id))
-            .leftJoin(organizationEntities, eq(userAssignments.scopeId, organizationEntities.id))
-            .where(inArray(userAssignments.userId, userIds));
+            .from(userStores)
+            .leftJoin(stores, eq(userStores.storeId, stores.id))
+            .where(inArray(userStores.userId, userIds));
           
-          // Group assignments by user
-          const assignmentsByUser = new Map<string, any[]>();
-          for (const a of assignments) {
-            if (!assignmentsByUser.has(a.userId)) {
-              assignmentsByUser.set(a.userId, []);
+          // Get org entity assignments from user_organization_entities table
+          const orgAssignments = await db
+            .select({
+              userId: userOrganizationEntities.userId,
+              orgEntityId: userOrganizationEntities.organizationEntityId,
+              orgName: organizationEntities.name,
+              isPrimary: userOrganizationEntities.isPrimary,
+            })
+            .from(userOrganizationEntities)
+            .leftJoin(organizationEntities, eq(userOrganizationEntities.organizationEntityId, organizationEntities.id))
+            .where(inArray(userOrganizationEntities.userId, userIds));
+          
+          // Group store assignments by user
+          const storesByUser = new Map<string, any[]>();
+          for (const a of storeAssignments) {
+            if (!storesByUser.has(a.userId)) {
+              storesByUser.set(a.userId, []);
             }
-            assignmentsByUser.get(a.userId)!.push(a);
+            storesByUser.get(a.userId)!.push(a);
+          }
+          
+          // Group org entity assignments by user
+          const orgsByUser = new Map<string, any[]>();
+          for (const a of orgAssignments) {
+            if (!orgsByUser.has(a.userId)) {
+              orgsByUser.set(a.userId, []);
+            }
+            orgsByUser.get(a.userId)!.push(a);
           }
           
           // Enrich users with scope data
           const enrichedUsers = usersData.map(user => {
-            const userAssigns = assignmentsByUser.get(user.id) || [];
-            const tenantWide = userAssigns.some(a => a.scopeType === 'tenant');
-            const orgAssigns = userAssigns.filter(a => a.scopeType === 'organization_entity');
-            const storeAssigns = userAssigns.filter(a => a.scopeType === 'store');
+            const userStoreList = storesByUser.get(user.id) || [];
+            const userOrgList = orgsByUser.get(user.id) || [];
+            
+            // User is tenant_wide if they have no specific store or org assignments
+            const tenantWide = userStoreList.length === 0 && userOrgList.length === 0;
             
             return {
               ...user,
               tenant_wide: tenantWide,
-              organization_entities: orgAssigns.map(a => ({ id: a.scopeId, name: a.orgName || `Org ${a.scopeId?.slice(0, 8) || 'N/A'}` })),
-              stores: storeAssigns.map(a => ({ id: a.scopeId, name: a.storeName || `Store ${a.scopeId?.slice(0, 8) || 'N/A'}` })),
+              organization_entities: userOrgList.map(a => ({ 
+                id: a.orgEntityId, 
+                name: a.orgName || `Org ${a.orgEntityId?.slice(0, 8) || 'N/A'}`,
+                isPrimary: a.isPrimary 
+              })),
+              stores: userStoreList.map(a => ({ 
+                id: a.storeId, 
+                name: a.storeName || `Store ${a.storeId?.slice(0, 8) || 'N/A'}`,
+                isPrimary: a.isPrimary 
+              })),
             };
           });
           
