@@ -1154,6 +1154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth
         apiPath.startsWith('/avatars/serve/') || // Avatar images - public endpoint (tenantId in URL enforces isolation)
         apiPath.startsWith('/storage/avatars/serve/') || // Storage avatar images - public endpoint (tenantId in URL enforces isolation)
+        apiPath.match(/^\/storage\/avatars\/[^/]+\/signed-url$/) || // Avatar signed URL - uses tenant header for isolation
         apiPath.startsWith('/storage/serve') || // Signed URL serve - uses token for auth, not session
         apiPath === '/' // Skip auth for /api/ root endpoint
       ) {
