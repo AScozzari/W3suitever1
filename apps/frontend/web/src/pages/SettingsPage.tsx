@@ -5949,11 +5949,31 @@ export default function SettingsPage() {
     }
   }, [storeModal.open, storeModal.data]);
 
+  // Helper to check if a store is active (handles both 'active' and 'Attivo' status variants)
+  const isStoreActive = (status: string | undefined): boolean => {
+    if (!status) return false;
+    const normalized = status.toLowerCase();
+    return normalized === 'active' || normalized === 'attivo' || normalized.startsWith('attiv');
+  };
+
   // ✅ POPULATE newUser when userModal opens in EDIT mode
   useEffect(() => {
     if (userModal.open && userModal.data) {
       // Modalità EDIT - precompila i campi con i dati esistenti
       const user = userModal.data;
+      const scopeLevel = user.scopeLevel || 'tenant';
+      const orgEntities = user.selectedOrganizationEntities || user.selectedLegalEntities || [];
+      const isTenantScope = scopeLevel === 'tenant';
+      
+      // Derive selectedStores from hierarchy when backend returns org-level scope without explicit stores
+      let derivedStores = user.selectedStores || [];
+      if (!isTenantScope && orgEntities.length > 0 && derivedStores.length === 0 && puntiVenditaList.length > 0) {
+        // Auto-populate all active stores for the selected organization entities
+        derivedStores = puntiVenditaList
+          .filter(pv => orgEntities.includes(pv.organizationEntityId) && isStoreActive(pv.status))
+          .map(pv => pv.id);
+      }
+      
       setNewUser({
         username: user.username || user.email || '',
         password: '',
@@ -5963,16 +5983,16 @@ export default function SettingsPage() {
         ragioneSociale_id: user.ragioneSociale_id || user.legalEntityId || null,
         puntiVendita_ids: user.puntiVendita_ids || user.storeIds || [],
         puntoVenditaPreferito_id: user.puntoVenditaPreferito_id || user.primaryStoreId || null,
-        scopeLevel: user.scopeLevel || 'tenant',
-        selectedOrganizationEntities: user.selectedOrganizationEntities || [],
+        scopeLevel: scopeLevel,
+        selectedOrganizationEntities: orgEntities,
         primaryOrganizationEntityId: user.primaryOrganizationEntityId || null,
-        selectedStores: user.selectedStores || [],
+        selectedStores: derivedStores,
         primaryStoreId: user.primaryStoreId || null,
-        // Map scope data correctly for UI display
-        selectAllLegalEntities: user.scopeLevel === 'tenant' || user.selectAllLegalEntities || false,
-        selectedAreas: user.selectedAreas || [],
-        // Use selectedOrganizationEntities if selectedLegalEntities is empty (backend returns org entities)
-        selectedLegalEntities: (user.selectedLegalEntities?.length > 0 ? user.selectedLegalEntities : user.selectedOrganizationEntities) || [],
+        // Tenant scope: selectAll=true and clear explicit selections
+        selectAllLegalEntities: isTenantScope,
+        selectedAreas: isTenantScope ? [] : (user.selectedAreas || []),
+        // Only use entity selections for non-tenant scope
+        selectedLegalEntities: isTenantScope ? [] : orgEntities,
         nome: user.nome || user.firstName || '',
         cognome: user.cognome || user.lastName || '',
         avatar: {
@@ -6022,7 +6042,7 @@ export default function SettingsPage() {
     } else if (userModal.open && !userModal.data) {
       // Modalità CREATE - resetta i campi (già gestito dal onClick del bottone "Nuovo Utente")
     }
-  }, [userModal.open, userModal.data]);
+  }, [userModal.open, userModal.data, puntiVenditaList]);
 
   // State per il nuovo utente
   const [newUser, setNewUser] = useState({
@@ -9569,27 +9589,32 @@ export default function SettingsPage() {
                             checked={newUser.selectedLegalEntities.includes(rs.id)}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                // Auto-select all stores for this organization entity
+                                // Auto-select all active stores for this organization entity
                                 const newLegalEntities = [...newUser.selectedLegalEntities, rs.id];
                                 const storesForNewEntity = puntiVenditaList
-                                  .filter(pv => pv.organizationEntityId === rs.id && (pv.status === 'active' || pv.status === 'Attivo'))
+                                  .filter(pv => pv.organizationEntityId === rs.id && isStoreActive(pv.status))
                                   .map(pv => pv.id);
                                 // Merge with existing stores (keeping already selected stores)
                                 const allStores = [...new Set([...newUser.selectedStores, ...storesForNewEntity])];
                                 setNewUser({
                                   ...newUser,
                                   selectedLegalEntities: newLegalEntities,
-                                  selectedStores: allStores
+                                  selectedOrganizationEntities: newLegalEntities,
+                                  selectedStores: allStores,
+                                  scopeLevel: 'organization_entity'
                                 });
                               } else {
                                 // Remove all stores from this organization entity
+                                const updatedLegalEntities = newUser.selectedLegalEntities.filter(id => id !== rs.id);
                                 setNewUser({
                                   ...newUser,
-                                  selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
+                                  selectedLegalEntities: updatedLegalEntities,
+                                  selectedOrganizationEntities: updatedLegalEntities,
                                   selectedStores: newUser.selectedStores.filter(storeId => {
                                     const store = puntiVenditaList.find(pv => pv.id === storeId);
                                     return store && store.organizationEntityId !== rs.id;
-                                  })
+                                  }),
+                                  scopeLevel: updatedLegalEntities.length > 0 ? 'organization_entity' : 'tenant'
                                 });
                               }
                             }}
@@ -9636,7 +9661,7 @@ export default function SettingsPage() {
                             borderRadius: '0.75rem',
                             fontWeight: '500'
                           }}>
-                            {puntiVenditaList.filter(pv => pv.organizationEntityId === rs.id && (pv.status === 'active' || pv.status === 'Attivo')).length} negozi
+                            {puntiVenditaList.filter(pv => pv.organizationEntityId === rs.id && isStoreActive(pv.status)).length} negozi
                           </div>
                         </label>
                       ))}
@@ -9661,7 +9686,7 @@ export default function SettingsPage() {
                         color: '#6b7280',
                         marginLeft: '0.5rem'
                       }}>
-                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && (pv.status === 'active' || pv.status === 'Attivo')).length} disponibili dalle ragioni sociali selezionate)
+                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && isStoreActive(pv.status)).length} disponibili dalle ragioni sociali selezionate)
                       </span>
                     </label>
                     <div style={{
@@ -9673,7 +9698,7 @@ export default function SettingsPage() {
                       background: '#ffffff'
                     }}>
                       {puntiVenditaList
-                        .filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && (pv.status === 'active' || pv.status === 'Attivo'))
+                        .filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && isStoreActive(pv.status))
                         .filter(pv => newUser.selectedAreas.length === 0 || newUser.selectedAreas.includes(pv.commercialAreaId))
                         .map(pv => (
                         <label key={pv.id} style={{
@@ -9741,13 +9766,13 @@ export default function SettingsPage() {
                           </div>
                           <div style={{
                             fontSize: '0.6875rem',
-                            color: (pv.status === 'active' || pv.status === 'Attivo') ? '#059669' : '#dc2626',
-                            background: (pv.status === 'active' || pv.status === 'Attivo') ? '#d1fae5' : '#fee2e2',
+                            color: isStoreActive(pv.status) ? '#059669' : '#dc2626',
+                            background: isStoreActive(pv.status) ? '#d1fae5' : '#fee2e2',
                             padding: '0.25rem 0.5rem',
                             borderRadius: '0.75rem',
                             fontWeight: '500'
                           }}>
-                            {(pv.status === 'active' || pv.status === 'Attivo') ? 'Attivo' : 'Inattivo'}
+                            {isStoreActive(pv.status) ? 'Attivo' : 'Inattivo'}
                           </div>
                         </label>
                       ))}
