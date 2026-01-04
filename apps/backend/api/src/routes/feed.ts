@@ -1080,7 +1080,9 @@ router.get('/attachments/download/:fileId', requirePermission('communication.rea
     }
 
     const objectKey = files.objects[0].name;
-    const fileBuffer = await client.downloadAsBytes(objectKey);
+    const downloadResult = await client.downloadAsBytes(objectKey);
+    // downloadAsBytes returns Buffer[] - extract the first buffer
+    const [fileBuffer] = downloadResult.value || [];
     
     const extension = objectKey.split('.').pop() || '';
     const mimeTypes: Record<string, string> = {
@@ -1100,7 +1102,7 @@ router.get('/attachments/download/:fileId', requirePermission('communication.rea
 
     res.setHeader('Content-Type', mimeTypes[extension] || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${fileId}.${extension}"`);
-    res.send(Buffer.from(fileBuffer));
+    res.send(fileBuffer);
   } catch (error) {
     handleApiError(error, res);
   }
@@ -1127,7 +1129,9 @@ router.get('/attachments/preview/:fileId', requirePermission('communication.read
       return res.status(400).json({ error: 'Preview disponibile solo per immagini' });
     }
 
-    const fileBuffer = await client.downloadAsBytes(objectKey);
+    const downloadResult = await client.downloadAsBytes(objectKey);
+    // downloadAsBytes returns Buffer[] - extract the first buffer
+    const [fileBuffer] = downloadResult.value || [];
     
     const mimeTypes: Record<string, string> = {
       'jpg': 'image/jpeg',
@@ -1139,7 +1143,7 @@ router.get('/attachments/preview/:fileId', requirePermission('communication.read
 
     res.setHeader('Content-Type', mimeTypes[extension]);
     res.setHeader('Cache-Control', 'public, max-age=31536000');
-    res.send(Buffer.from(fileBuffer));
+    res.send(fileBuffer);
   } catch (error) {
     handleApiError(error, res);
   }

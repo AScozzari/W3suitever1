@@ -493,7 +493,10 @@ export const storageService = {
     }
 
     const client = getObjectStorageClient();
-    const { value: fileBuffer } = await client.downloadAsBytes(object.objectKey);
+    const downloadResult = await client.downloadAsBytes(object.objectKey);
+    
+    // downloadAsBytes returns Buffer[] - extract the first buffer
+    const [fileBuffer] = downloadResult.value || [];
 
     return {
       buffer: fileBuffer,
@@ -1299,6 +1302,15 @@ export const storageService = {
       createdByUserId: ctx.userId,
     }).returning();
 
+    // Create public ACL for avatar (tenant-wide read access)
+    await db.insert(storageAcl).values({
+      tenantId: ctx.tenantId,
+      objectId: avatarObject.id,
+      subjectTenantWide: true,
+      role: 'viewer',
+      grantedByUserId: ctx.userId,
+    });
+
     // Update user's avatar_object_path for backward compatibility
     await db.update(users)
       .set({ avatarObjectPath: objectKey })
@@ -1366,12 +1378,15 @@ export const storageService = {
       const client = getObjectStorageClient();
       const result = await client.downloadAsBytes(avatarObject.objectKey);
       
-      if (!result.ok || !result.value) {
+      if (!result.ok || !result.value || result.value.length === 0) {
         return null;
       }
       
+      // downloadAsBytes returns Buffer[] - extract the first buffer
+      const [buffer] = result.value;
+      
       return {
-        buffer: result.value,
+        buffer,
         mimeType: avatarObject.mimeType || 'image/png',
       };
     } catch (err) {

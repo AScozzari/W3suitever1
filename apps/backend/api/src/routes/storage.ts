@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { requirePermission } from '../middleware/tenant';
 import { storageService, StorageServiceContext } from '../services/storage.service';
 
