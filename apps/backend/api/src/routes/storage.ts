@@ -249,6 +249,7 @@ router.post('/avatars/:userId', requirePermission('storage:write'), upload.singl
       return res.status(400).json({ error: 'No file provided' });
     }
     
+    // Use the legacy uploadAvatar function with 4 parameters
     const avatar = await storageService.uploadAvatar(ctx, req.params.userId, req.file.buffer, req.file.mimetype);
     res.status(201).json(avatar);
   } catch (error: any) {

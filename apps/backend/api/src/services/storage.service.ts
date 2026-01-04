@@ -1235,10 +1235,10 @@ export const storageService = {
   async createUserEvergreenFolders(ctx: StorageServiceContext, targetUserId?: string) {
     const userId = targetUserId || ctx.userId;
     const EVERGREEN_FOLDERS = [
-      { name: 'avatar', icon: 'user-circle', category: 'system' },
-      { name: 'feed', icon: 'rss', category: 'social' },
-      { name: 'documents', icon: 'file-text', category: 'documents' },
-      { name: 'shared', icon: 'share-2', category: 'shared' },
+      { name: 'Avatar', icon: 'user-circle', category: 'avatars' },
+      { name: 'Feed', icon: 'rss', category: 'feed' },
+      { name: 'Documenti', icon: 'file-text', category: 'documents' },
+      { name: 'Condivisi', icon: 'share-2', category: 'general' },
     ];
 
     const existingFolders = await db.select().from(storageFolders)
@@ -1295,7 +1295,7 @@ export const storageService = {
       .where(and(
         eq(storageFolders.tenantId, ctx.tenantId),
         eq(storageFolders.ownerUserId, userId),
-        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.name, 'Avatar'),
         eq(storageFolders.scopeLevel, 'user'),
         isNull(storageFolders.parentId),
         isNull(storageFolders.deletedAt),
@@ -1311,7 +1311,7 @@ export const storageService = {
       .where(and(
         eq(storageFolders.tenantId, ctx.tenantId),
         eq(storageFolders.ownerUserId, userId),
-        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.name, 'Avatar'),
         eq(storageFolders.scopeLevel, 'user'),
         isNull(storageFolders.parentId),
       )).limit(1);
@@ -1340,18 +1340,18 @@ export const storageService = {
       
       try {
         const client = getObjectStorageClient();
-        await client.delete(oldAvatar.storageKey);
+        await client.delete(oldAvatar.objectKey);
       } catch (err) {
         console.warn('Failed to delete old avatar from object storage:', err);
       }
     }
 
     const ext = fileName.split('.').pop() || 'webp';
-    const storageKey = `users/${targetUserId}/avatar/profile.${ext}`;
+    const objectKey = `users/${targetUserId}/avatar/profile.${ext}`;
     const sizeBytes = fileBuffer.length;
 
     const client = getObjectStorageClient();
-    const uploadResult = await client.uploadFromBytes(storageKey, fileBuffer);
+    const uploadResult = await client.uploadFromBytes(objectKey, fileBuffer);
     
     if (!uploadResult.ok) {
       throw new Error('Failed to upload avatar to object storage');
@@ -1361,13 +1361,13 @@ export const storageService = {
       tenantId: ctx.tenantId,
       folderId: avatarFolder.id,
       name: `profile.${ext}`,
-      storageKey,
+      objectKey,
       mimeType,
       sizeBytes,
       objectType: 'avatar',
-      category: 'profile',
-      isPublic: true,
-      uploadedByUserId: ctx.userId,
+      category: 'avatars',
+      visibility: 'public',
+      createdByUserId: ctx.userId,
     }).returning();
 
     await this.updateQuotaUsage(ctx, sizeBytes);
@@ -1386,7 +1386,7 @@ export const storageService = {
       .where(and(
         eq(storageFolders.tenantId, ctx.tenantId),
         eq(storageFolders.ownerUserId, targetUserId),
-        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.name, 'Avatar'),
         eq(storageFolders.scopeLevel, 'user'),
         isNull(storageFolders.parentId),
         isNull(storageFolders.deletedAt),
@@ -1419,7 +1419,7 @@ export const storageService = {
         eq(storageObjects.tenantId, tenantId),
         eq(storageObjects.objectType, 'avatar'),
         isNull(storageObjects.deletedAt),
-        sql`${storageObjects.storageKey} LIKE ${'%' + filename}`,
+        sql`${storageObjects.objectKey} LIKE ${'%' + filename}`,
       ))
       .orderBy(desc(storageObjects.createdAt))
       .limit(1);
@@ -1430,7 +1430,7 @@ export const storageService = {
 
     try {
       const client = getObjectStorageClient();
-      const result = await client.downloadAsBytes(avatarObject.storageKey);
+      const result = await client.downloadAsBytes(avatarObject.objectKey);
       
       if (!result.ok || !result.value) {
         return null;
@@ -1451,7 +1451,7 @@ export const storageService = {
       .where(and(
         eq(storageFolders.tenantId, ctx.tenantId),
         eq(storageFolders.ownerUserId, targetUserId),
-        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.name, 'Avatar'),
         eq(storageFolders.scopeLevel, 'user'),
         isNull(storageFolders.parentId),
         isNull(storageFolders.deletedAt),
@@ -1480,7 +1480,7 @@ export const storageService = {
 
       try {
         const client = getObjectStorageClient();
-        await client.delete(avatarObject.storageKey);
+        await client.delete(avatarObject.objectKey);
       } catch (err) {
         console.warn('Failed to delete avatar from object storage:', err);
       }
