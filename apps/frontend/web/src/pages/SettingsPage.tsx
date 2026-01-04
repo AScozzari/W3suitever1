@@ -10064,12 +10064,10 @@ export default function SettingsPage() {
                           : '/api/users';
                         const method = isEditMode ? 'PUT' : 'POST';
                         
-                        const response = await fetch(url, {
+                        const response = await authenticatedFetch(url, {
                           method,
-                          credentials: 'include',
                           headers: {
-                            'Content-Type': 'application/json',
-                            'X-Tenant-ID': getCurrentTenantId()
+                            'Content-Type': 'application/json'
                           },
                           body: JSON.stringify(userData)
                         });
@@ -10117,9 +10115,9 @@ export default function SettingsPage() {
                               organizationEntityIds: selectedOrgEntityIds,
                               ...(selectedOrgEntityIds.length > 0 ? { primaryId: selectedOrgEntityIds[0] } : {})
                             };
-                            const response = await fetch(`/api/users/${userId}/organization-entities`, {
+                            const response = await authenticatedFetch(`/api/users/${userId}/organization-entities`, {
                               method: 'PUT',
-                              headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenantId },
+                              headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify(orgPayload)
                             });
                             if (response.ok) {
@@ -10137,9 +10135,9 @@ export default function SettingsPage() {
                               storeIds: selectedStoreIds,
                               ...(selectedStoreIds.length > 0 ? { primaryId: selectedStoreIds[0] } : {})
                             };
-                            const response = await fetch(`/api/users/${userId}/stores`, {
+                            const response = await authenticatedFetch(`/api/users/${userId}/stores`, {
                               method: 'PUT',
-                              headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenantId },
+                              headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify(storePayload)
                             });
                             if (response.ok) {
