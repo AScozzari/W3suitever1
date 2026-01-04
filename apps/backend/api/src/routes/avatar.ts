@@ -54,12 +54,14 @@ async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buf
       if (client) {
         const paths = [`avatars/${filename}`, filename];
         for (const objectKey of paths) {
-          // Use downloadAsText to properly retrieve content (fixes 1-byte issue with downloadAsBytes)
-          const result = await client.downloadAsText(objectKey);
+          // Use downloadAsBytes to properly retrieve binary image data
+          const result = await client.downloadAsBytes(objectKey);
           if (result.ok && result.value && result.value.length > 10) {
-            const content = result.value;
-            const isSvg = content.startsWith('<svg') || content.includes('xmlns="http://www.w3.org/2000/svg"');
-            return { ok: true, buffer: Buffer.from(content), isSvg };
+            const buffer = Buffer.from(result.value);
+            // Check if SVG by looking at the start of the buffer
+            const isSvg = buffer.toString('utf-8', 0, 50).includes('<svg') || 
+                          buffer.toString('utf-8', 0, 200).includes('xmlns="http://www.w3.org/2000/svg"');
+            return { ok: true, buffer, isSvg };
           }
         }
       }
