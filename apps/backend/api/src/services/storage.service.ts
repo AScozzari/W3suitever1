@@ -165,7 +165,30 @@ export const storageService = {
       ))
       .orderBy(storageFolders.name);
 
-    return folders;
+    const folderIds = folders.map(f => f.id);
+    
+    const shareCountMap = new Map<string, number>();
+    if (folderIds.length > 0) {
+      const shares = await db.select({ 
+        folderId: storageShares.folderId,
+        count: sql<number>`count(*)::int`
+      })
+        .from(storageShares)
+        .where(sql`${storageShares.folderId} = ANY(${folderIds})`)
+        .groupBy(storageShares.folderId);
+      
+      for (const share of shares) {
+        if (share.folderId) {
+          shareCountMap.set(share.folderId, share.count);
+        }
+      }
+    }
+
+    return folders.map(folder => ({
+      ...folder,
+      isShared: shareCountMap.has(folder.id),
+      shareCount: shareCountMap.get(folder.id) || 0,
+    }));
   },
 
   async ensureUserEvergreenFolders(ctx: StorageServiceContext) {
@@ -185,18 +208,30 @@ export const storageService = {
         isNull(storageFolders.parentId),
       ));
 
-    const existingNames = new Set(existingFolders.map(f => f.name));
+    if (existingFolders.length >= evergreenFolders.length) {
+      return;
+    }
 
-    for (const folderDef of evergreenFolders) {
-      if (!existingNames.has(folderDef.name)) {
-        await this.createFolder(ctx, {
-          name: folderDef.name,
-          category: folderDef.category,
-          icon: folderDef.icon,
-          color: folderDef.color,
-          scopeLevel: 'user',
-        });
-      }
+    const existingNames = new Set(existingFolders.map(f => f.name));
+    const foldersToCreate = evergreenFolders.filter(f => !existingNames.has(f.name));
+
+    if (foldersToCreate.length === 0) {
+      return;
+    }
+
+    for (const folderDef of foldersToCreate) {
+      const path = '/' + folderDef.name;
+      await db.insert(storageFolders).values({
+        tenantId: ctx.tenantId,
+        name: folderDef.name,
+        path,
+        scopeLevel: 'user',
+        ownerUserId: ctx.userId,
+        category: folderDef.category as any,
+        color: folderDef.color,
+        icon: folderDef.icon,
+        createdByUserId: ctx.userId,
+      });
     }
   },
 
@@ -658,7 +693,30 @@ export const storageService = {
       .where(and(...conditions))
       .orderBy(desc(storageObjects.createdAt));
 
-    return objects;
+    const objectIds = objects.map(o => o.id);
+    
+    const shareCountMap = new Map<string, number>();
+    if (objectIds.length > 0) {
+      const shares = await db.select({ 
+        objectId: storageShares.objectId,
+        count: sql<number>`count(*)::int`
+      })
+        .from(storageShares)
+        .where(sql`${storageShares.objectId} = ANY(${objectIds})`)
+        .groupBy(storageShares.objectId);
+      
+      for (const share of shares) {
+        if (share.objectId) {
+          shareCountMap.set(share.objectId, share.count);
+        }
+      }
+    }
+
+    return objects.map(obj => ({
+      ...obj,
+      isShared: shareCountMap.has(obj.id),
+      shareCount: shareCountMap.get(obj.id) || 0,
+    }));
   },
 
   async getMyDriveObjects(ctx: StorageServiceContext, folderId?: string) {
