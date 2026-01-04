@@ -570,6 +570,56 @@ router.post('/shifts/bulk-unassign', requirePermission('hr.shifts.manage'), asyn
 
 // ==================== BULK TEMPLATE TO STORE ====================
 
+// ==================== TASK MANAGEMENT ====================
+
+// GET /api/hr/tasks - Get HR tasks
+router.get('/tasks', requirePermission('hr.tasks.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const tasks = await hrStorage.getHrTasks(tenantId, req.query);
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching HR tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch HR tasks' });
+  }
+});
+
+// POST /api/hr/tasks - Create HR task
+router.post('/tasks', requirePermission('hr.tasks.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const task = await hrStorage.createHrTask(tenantId, req.body);
+    res.status(201).json(task);
+  } catch (error) {
+    console.error('Error creating HR task:', error);
+    res.status(500).json({ error: 'Failed to create HR task' });
+  }
+});
+
+// PATCH /api/hr/tasks/:id - Update HR task
+router.patch('/tasks/:id', requirePermission('hr.tasks.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const task = await hrStorage.updateHrTask(req.params.id, tenantId, req.body);
+    res.json(task);
+  } catch (error) {
+    console.error('Error updating HR task:', error);
+    res.status(500).json({ error: 'Failed to update HR task' });
+  }
+});
+
+// GET /api/hr/teams/:teamId/assignments - Get team assignments
+router.get('/teams/:teamId/assignments', requirePermission('hr.tasks.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const assignments = await hrStorage.getTeamAssignments(tenantId, req.params.teamId);
+    res.json(assignments);
+  } catch (error) {
+    console.error('Error fetching team assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch team assignments' });
+  }
+});
+
 // POST /api/hr/shifts/bulk-template-assign - Bulk apply template to multiple stores for a period
 router.post('/shifts/bulk-template-assign', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
   try {

@@ -1,0 +1,70 @@
+d: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:370  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/current 500 (Internal Server Error)
+apiRequest @ queryClient.ts:370
+apiRequest @ api.ts:15
+apiGet @ api.ts:19
+getCurrentSession @ timeTrackingService.ts:483
+queryFn @ useTimeTracking.ts:47
+fetchFn @ @tanstack_react-query.js?v=b56a477b:1097
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+fetch @ @tanstack_react-query.js?v=b56a477b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=b56a477b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=b56a477b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=b56a477b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=b56a477b:384Comprendi l'errore
+MyDrivePage.tsx:414  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/objects/7c3ddf8c-dabd-454c-9b87-fa7229e3f1c9/signed-url 401 (Unauthorized)
+(anonime) @ MyDrivePage.tsx:414
+onClick @ MyDrivePage.tsx:700
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=b56a477b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=b56a477b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=b56a477b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=b56a477b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=b56a477b:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=b56a477b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=b56a477b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=b56a477b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5449Comprendi l'errore
+MyDrivePage.tsx:414  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/objects/7c3ddf8c-dabd-454c-9b87-fa7229e3f1c9/signed-url 401 (Unauthorized)
+(anonime) @ MyDrivePage.tsx:414
+onClick @ MyDrivePage.tsx:700
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=b56a477b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=b56a477b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=b56a477b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=b56a477b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=b56a477b:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=b56a477b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=b56a477b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=b56a477b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5449Comprendi l'errore
+MyDrivePage.tsx:414  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/objects/7c3ddf8c-dabd-454c-9b87-fa7229e3f1c9/signed-url 401 (Unauthorized)

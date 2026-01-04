@@ -267,6 +267,12 @@ export interface IHRStorage {
   }>;
   
   generateComplianceReport(tenantId: string, options: any): Promise<any>;
+
+  // Task Management & Team Assignments
+  getHrTasks(tenantId: string, filters?: any): Promise<any[]>;
+  createHrTask(tenantId: string, data: any): Promise<any>;
+  updateHrTask(id: string, tenantId: string, data: any): Promise<any>;
+  getTeamAssignments(tenantId: string, teamId: string): Promise<any[]>;
 }
 
 // Filter interfaces
@@ -2486,6 +2492,43 @@ export class HRStorage implements IHRStorage {
       console.error('Error generating compliance report:', error);
       throw error;
     }
+  }
+
+  // Task Management & Team Assignments Implementation
+  async getHrTasks(tenantId: string, filters?: any): Promise<any[]> {
+    const conditions = [eq(calendarEvents.tenantId, tenantId)];
+    if (filters?.teamId) conditions.push(eq(calendarEvents.teamId, filters.teamId));
+    
+    // In our schema, type is used for categories (task, event, etc.)
+    // We check both type='task' AND category='hr' (if it exists)
+    // Looking at the schema, let's stick to type='task' for simplicity as it's common
+    conditions.push(eq(calendarEvents.type, 'task'));
+
+    return await db.select().from(calendarEvents).where(and(...conditions)).orderBy(desc(calendarEvents.createdAt));
+  }
+
+  async createHrTask(tenantId: string, data: any): Promise<any> {
+    const result = await db.insert(calendarEvents).values({
+      ...data,
+      tenantId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async updateHrTask(id: string, tenantId: string, data: any): Promise<any> {
+    const result = await db.update(calendarEvents)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(calendarEvents.id, id), eq(calendarEvents.tenantId, tenantId)))
+      .returning();
+    return result[0];
+  }
+
+  async getTeamAssignments(tenantId: string, teamId: string): Promise<any[]> {
+    return await db.select().from(userAssignments)
+      .where(and(eq(userAssignments.scopeId, teamId), eq(userAssignments.scopeType, 'team')))
+      .limit(100);
   }
 }
 

@@ -21,6 +21,7 @@ const HRManagementPage = lazy(() => import('../pages/HRManagementPage'));
 const NotificationCenter = lazy(() => import('../pages/NotificationCenter'));
 const TenantVerificationTest = lazy(() => import('../pages/TenantVerificationTest'));
 const TasksPage = lazy(() => import('../pages/TasksPage'));
+const TaskManagementPage = lazy(() => import('../pages/TaskManagementPage'));
 const ChatPage = lazy(() => import('../pages/ChatPage'));
 const CommunicationCenterPage = lazy(() => import('../pages/CommunicationCenterPage'));
 const AIToolsDashboardPage = lazy(() => import('../pages/AIToolsDashboardPage'));
@@ -416,6 +417,12 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       <Route path={`/${tenantSlug}/tasks`}>
         <AuthenticatedRoute>
           <TasksPage />
+        </AuthenticatedRoute>
+      </Route>
+
+      <Route path={`/${tenantSlug}/hr/tasks`}>
+        <AuthenticatedRoute>
+          <TaskManagementPage />
         </AuthenticatedRoute>
       </Route>
       
