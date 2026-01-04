@@ -3888,11 +3888,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user data from database
+      // Get user data from database - use avatarObjectPath for proxy URL generation
       const userResult = await db
         .select({
           id: users.id,
-          profileImageUrl: users.profileImageUrl,
+          tenantId: users.tenantId,
+          avatarObjectPath: users.avatarObjectPath,
           firstName: users.firstName,
           lastName: users.lastName
         })
@@ -3908,14 +3909,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = userResult[0];
+      
+      // Generate proxy URL from avatarObjectPath (NEVER use direct storage URL)
+      let avatarUrl: string | null = null;
+      if (user.avatarObjectPath) {
+        const filename = user.avatarObjectPath.split('/').pop();
+        avatarUrl = `/api/avatars/serve/${user.tenantId}/${filename}`;
+      }
 
       res.json({
         success: true,
         data: {
           userId: user.id,
-          avatarUrl: user.profileImageUrl,
+          avatarUrl,
           displayName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.id,
-          hasAvatar: !!user.profileImageUrl
+          hasAvatar: !!user.avatarObjectPath
         }
       });
 

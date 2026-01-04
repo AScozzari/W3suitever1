@@ -641,7 +641,7 @@ export default function SettingsPage() {
           // Normalize field names
           firstName: user.firstName || user.first_name || '',
           lastName: user.lastName || user.last_name || '',
-          avatarUrl: user.avatarUrl || user.avatar_url || user.profile_image_url || null,
+          avatarUrl: user.avatarUrl || user.avatar_url || null, // NEVER use profile_image_url (contains old broken URLs)
           // Scope data
           scopeLevel: isTenantScope ? 'tenant' : (userOrgs.length > 0 ? 'organization' : 'store'),
           selectedOrganizationEntities: userOrgs,
@@ -6158,7 +6158,7 @@ export default function SettingsPage() {
         nome: user.nome || user.firstName || '',
         cognome: user.cognome || user.lastName || '',
         avatar: {
-          url: user.avatarUrl || user.avatar?.url || user.profileImageUrl || null,
+          url: user.avatarUrl || user.avatar?.url || null, // NEVER use profileImageUrl (contains old broken URLs)
           blob: null,
           type: 'upload' as 'upload' | 'generated'
         },
