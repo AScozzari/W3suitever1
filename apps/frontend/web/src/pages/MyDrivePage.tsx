@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import Layout from '../components/Layout';
@@ -17,7 +17,7 @@ import {
   Folder, File, Upload, MoreVertical, Grid, List, Search, Plus, 
   Download, Trash2, Share2, Star, StarOff, Clock, Home, ChevronRight,
   FileText, Image, FileVideo, FileAudio, Archive, FileSpreadsheet,
-  Filter, SortAsc, SortDesc, RefreshCw, Info, Lock, Users, Eye
+  Filter, SortAsc, SortDesc, RefreshCw, Info, Lock, Users, Eye, X, CheckCircle2, AlertCircle
 } from 'lucide-react';
 
 interface StorageFolder {
@@ -130,6 +130,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ fileName: string; progress: number; status: 'uploading' | 'success' | 'error' }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const tenantSlug = location.split('/')[1];
 
@@ -203,6 +206,106 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     }
   });
 
+  const uploadBatchMutation = useMutation({
+    mutationFn: async (files: FileList) => {
+      const formData = new FormData();
+      Array.from(files).forEach((file) => {
+        formData.append('files', file);
+      });
+      if (currentFolderId) {
+        formData.append('folderId', currentFolderId);
+      }
+      formData.append('category', 'general');
+
+      const response = await fetch('/api/storage/upload/batch', {
+        method: 'POST',
+        body: formData
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Errore upload');
+      }
+      return response.json();
+    },
+    onMutate: (files) => {
+      const progressItems = Array.from(files).map((file) => ({
+        fileName: file.name,
+        progress: 0,
+        status: 'uploading' as const
+      }));
+      setUploadProgress(progressItems);
+      setUploadDialogOpen(true);
+    },
+    onSuccess: (result) => {
+      setUploadProgress(prev => prev.map(item => ({
+        ...item,
+        progress: 100,
+        status: result.results?.find((r: any) => r.fileName === item.fileName)?.success ? 'success' : 'error'
+      })));
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/quota'] });
+      toast({ 
+        title: 'Upload completato', 
+        description: `${result.uploaded} file caricati con successo` 
+      });
+      setTimeout(() => {
+        setUploadDialogOpen(false);
+        setUploadProgress([]);
+      }, 2000);
+    },
+    onError: (error: Error) => {
+      setUploadProgress(prev => prev.map(item => ({
+        ...item,
+        status: 'error'
+      })));
+      toast({ 
+        title: 'Errore upload', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    }
+  });
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      uploadBatchMutation.mutate(files);
+    }
+  }, [uploadBatchMutation]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      uploadBatchMutation.mutate(files);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [uploadBatchMutation]);
+
   const breadcrumbs: BreadcrumbItem[] = useMemo(() => {
     const items: BreadcrumbItem[] = [{ id: null, name: 'My Drive', path: '' }];
     return items;
@@ -261,7 +364,65 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const isLoading = foldersLoading || objectsLoading;
 
   const content = (
-    <div className="space-y-1rem">
+    <div 
+      className={`space-y-1rem relative ${isDragging ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex flex-col items-center justify-center">
+          <Upload className="w-4rem h-4rem text-primary mb-1rem animate-bounce" />
+          <p className="text-1.25rem font-medium text-primary">Rilascia i file qui</p>
+          <p className="text-0.875rem text-muted-foreground">Supporta upload multipli fino a 20 file</p>
+        </div>
+      )}
+
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-0.5rem">
+              <Upload className="w-1.25rem h-1.25rem" />
+              Upload file
+            </DialogTitle>
+            <DialogDescription>
+              Caricamento in corso...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-0.75rem max-h-80 overflow-y-auto">
+            {uploadProgress.map((item, index) => (
+              <div key={index} className="flex items-center gap-0.75rem p-0.5rem border rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <p className="text-0.875rem font-medium truncate">{item.fileName}</p>
+                  <Progress 
+                    value={item.status === 'uploading' ? 50 : 100} 
+                    className="h-1.5 mt-0.25rem"
+                  />
+                </div>
+                <div className="flex-shrink-0">
+                  {item.status === 'uploading' && (
+                    <div className="w-1.25rem h-1.25rem border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  )}
+                  {item.status === 'success' && (
+                    <CheckCircle2 className="w-1.25rem h-1.25rem text-green-600" />
+                  )}
+                  {item.status === 'error' && (
+                    <AlertCircle className="w-1.25rem h-1.25rem text-destructive" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {!uploadBatchMutation.isPending && (
+            <DialogFooter>
+              <Button onClick={() => { setUploadDialogOpen(false); setUploadProgress([]); }}>
+                Chiudi
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
         <div className="flex flex-col sm:flex-row gap-0.5rem items-start sm:items-center justify-between">
           <div className="flex items-center gap-0.25rem text-0.875rem text-muted-foreground" data-testid="breadcrumb-nav">
             {breadcrumbs.map((item, index) => (
@@ -399,9 +560,22 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                         </DialogContent>
                       </Dialog>
 
-                      <Button size="sm" data-testid="button-upload-file">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        multiple
+                        className="hidden"
+                        data-testid="input-file-upload"
+                      />
+                      <Button 
+                        size="sm" 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadBatchMutation.isPending}
+                        data-testid="button-upload-file"
+                      >
                         <Upload className="w-1rem h-1rem mr-0.25rem" />
-                        Carica file
+                        {uploadBatchMutation.isPending ? 'Caricamento...' : 'Carica file'}
                       </Button>
                     </div>
                   </div>
