@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
@@ -919,6 +919,17 @@ export default function SettingsPage() {
   };
   
   const [utentiList, setUtentiList] = useState<any[]>([]);
+  
+  // ✅ Lookup map: storeId → storeName for tooltip display
+  const storeNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    puntiVenditaList.forEach((store: any) => {
+      if (store.id) {
+        map.set(store.id, store.nome || store.name || `Sede ${store.id.slice(0, 8)}`);
+      }
+    });
+    return map;
+  }, [puntiVenditaList]);
   
   // Modal states
   const [showCreateRagioneSociale, setShowCreateRagioneSociale] = useState(false);
@@ -3158,45 +3169,44 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
                       {(() => {
-                        const userStores = user.stores || user.scope?.stores || [];
-                        const userOrgs = user.organization_entities || user.scope?.organization_entities || [];
+                        // ✅ user.stores e user.organization_entities sono array di ID (stringhe)
+                        const userStoreIds: string[] = (user.stores || user.scope?.stores || []).map((s: any) => typeof s === 'string' ? s : s.id || s);
+                        const userOrgIds: string[] = (user.organization_entities || user.scope?.organization_entities || []).map((o: any) => typeof o === 'string' ? o : o.id || o);
+                        
                         // tenant_wide esplicito OPPURE flag select_all_legal_entities
                         const tenantWideExplicit = user.select_all_legal_entities === true || 
                                                    user.scope?.selectAll === true ||
-                                                   (user.tenant_wide === true && userStores.length === 0 && userOrgs.length === 0);
+                                                   (user.tenant_wide === true && userStoreIds.length === 0 && userOrgIds.length === 0);
                         
-                        // Calcola il numero totale di sedi (stores + org con stores associati)
-                        const totalStoreCount = userStores.length;
-                        const orgStoreCount = userOrgs.reduce((acc: number, o: any) => acc + (o.storeCount || 0), 0);
-                        
-                        if (userOrgs.length > 0) {
-                          const orgNames = userOrgs.map((o: any) => o.name || o.organization_name || 'Org').filter(Boolean);
-                          const tooltip = orgNames.length > 0 
-                            ? `Organizzazioni:\n${orgNames.join('\n')}` + (totalStoreCount > 0 ? `\n\nPunti Vendita: ${totalStoreCount}` : '')
-                            : `${userOrgs.length} organizzazioni`;
-                          return (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-org">
-                              🏢 {userOrgs.length} {userOrgs.length === 1 ? 'Sede' : 'Sedi'}
-                            </span>
-                          );
-                        }
-                        
-                        if (userStores.length > 0) {
-                          const storeNames = userStores.map((s: any) => s.name || s.store_name || 'Store').filter(Boolean);
-                          const tooltip = storeNames.length > 0 
-                            ? `Punti Vendita:\n${storeNames.join('\n')}` 
-                            : `${userStores.length} punti vendita`;
-                          return (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#d1fae5', color: '#065f46', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-store">
-                              🏪 {userStores.length} {userStores.length === 1 ? 'Sede' : 'Sedi'}
-                            </span>
-                          );
-                        }
-                        
+                        // ✅ Prima controlla se tenant-wide
                         if (tenantWideExplicit) {
                           return (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#dbeafe', color: '#1e40af', fontSize: '0.75rem', fontWeight: '500' }} title="Accesso completo a tutte le sedi del tenant" data-testid="scope-badge-tenant">
-                              🌐 Tutte le Sedi
+                              🌐 Accesso Completo
+                            </span>
+                          );
+                        }
+                        
+                        // ✅ Risolvi i nomi delle sedi usando la lookup map
+                        const resolvedStoreNames = userStoreIds
+                          .map(id => storeNameById.get(id))
+                          .filter(Boolean) as string[];
+                        
+                        // Se ci sono org entities, trova le sedi associate
+                        let allStoreNames = [...resolvedStoreNames];
+                        if (userOrgIds.length > 0) {
+                          // Trova tutte le sedi che appartengono alle org entities selezionate
+                          const orgStoreNames = puntiVenditaList
+                            .filter((pv: any) => userOrgIds.includes(pv.organizationEntityId))
+                            .map((pv: any) => pv.nome || pv.name || `Sede ${pv.id?.slice(0, 8)}`);
+                          allStoreNames = [...new Set([...allStoreNames, ...orgStoreNames])];
+                        }
+                        
+                        if (allStoreNames.length > 0) {
+                          const tooltip = `Sedi assegnate:\n${allStoreNames.join('\n')}`;
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#d1fae5', color: '#065f46', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-store">
+                              🏪 {allStoreNames.length} {allStoreNames.length === 1 ? 'Sede' : 'Sedi'}
                             </span>
                           );
                         }
