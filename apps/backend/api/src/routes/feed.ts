@@ -386,11 +386,11 @@ router.post('/posts', requirePermission('communication.write'), async (req: Requ
     } else {
       const recipientValues: any[] = [];
       
-      body.recipients.userIds.forEach(userId => {
-        recipientValues.push({ tenantId, postId: newPost.id, userId });
+      body.recipients.userIds.forEach(uid => {
+        recipientValues.push({ tenantId, postId: newPost.id, userId: uid });
       });
-      body.recipients.teamIds.forEach(teamId => {
-        recipientValues.push({ tenantId, postId: newPost.id, teamId });
+      body.recipients.teamIds.forEach(tid => {
+        recipientValues.push({ tenantId, postId: newPost.id, teamId: tid });
       });
       body.recipients.departments.forEach(department => {
         recipientValues.push({ tenantId, postId: newPost.id, department });
@@ -1021,9 +1021,9 @@ const feedUpload = multer({
 });
 
 // Upload file for feed attachment
-router.post('/attachments/upload', feedUpload.single('file'), async (req: Request, res: Response) => {
+router.post('/attachments/upload', requirePermission('communication.write'), feedUpload.single('file'), async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenant!.id;
     const userId = req.user!.id;
 
     if (!req.file) {
@@ -1065,9 +1065,9 @@ router.post('/attachments/upload', feedUpload.single('file'), async (req: Reques
 });
 
 // Download/serve feed attachment
-router.get('/attachments/download/:fileId', async (req: Request, res: Response) => {
+router.get('/attachments/download/:fileId', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenant!.id;
     const { fileId } = req.params;
 
     // Find the file in object storage
@@ -1107,9 +1107,9 @@ router.get('/attachments/download/:fileId', async (req: Request, res: Response) 
 });
 
 // Preview feed attachment (images only)
-router.get('/attachments/preview/:fileId', async (req: Request, res: Response) => {
+router.get('/attachments/preview/:fileId', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenant!.id;
     const { fileId } = req.params;
 
     const client = new Client();
@@ -1146,14 +1146,15 @@ router.get('/attachments/preview/:fileId', async (req: Request, res: Response) =
 });
 
 // Search users for @mentions and recipient selection
-router.get('/users/search', async (req: Request, res: Response) => {
+router.get('/users/search', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenant!.id;
     const { q, limit = '20' } = req.query;
     const searchTerm = String(q || '').trim();
     const maxResults = Math.min(parseInt(String(limit)), 50);
 
-    const conditions = [eq(users.tenantId, tenantId), eq(users.isActive, true)];
+    // Note: users table has 'status' field, not 'isActive'
+    const conditions = [eq(users.tenantId, tenantId)];
     
     if (searchTerm) {
       conditions.push(
@@ -1187,9 +1188,9 @@ router.get('/users/search', async (req: Request, res: Response) => {
 });
 
 // Get teams with department filter
-router.get('/teams/search', async (req: Request, res: Response) => {
+router.get('/teams/search', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenant!.id;
     const { departmentId, q } = req.query;
     const searchTerm = String(q || '').trim();
 
@@ -1241,9 +1242,9 @@ router.get('/teams/search', async (req: Request, res: Response) => {
 });
 
 // Get departments for filtering
-router.get('/departments', async (req: Request, res: Response) => {
+router.get('/departments', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = req.tenant!.id;
 
     const depts = await db.select({
       id: departments.id,
