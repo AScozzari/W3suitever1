@@ -918,90 +918,7 @@ export const storageService = {
     });
   },
 
-  async uploadAvatar(ctx: StorageServiceContext, userId: string, fileBuffer: Buffer, mimeType: string) {
-    await this.ensureSystemFolders(ctx);
-
-    const extension = mimeType.split('/')[1] || 'png';
-    const objectKey = `${ctx.tenantId}/avatars/${userId}/avatar.${extension}`;
-
-    const existingAvatar = await db.select().from(storageObjects)
-      .where(and(
-        eq(storageObjects.tenantId, ctx.tenantId),
-        eq(storageObjects.linkedResourceType, 'user_avatar'),
-        eq(storageObjects.linkedResourceId, userId),
-      )).limit(1);
-
-    const client = getObjectStorageClient();
-    await client.uploadFromBytes(objectKey, fileBuffer);
-
-    const contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-
-    if (existingAvatar.length > 0) {
-      try {
-        await client.delete(existingAvatar[0].objectKey);
-      } catch (e) {}
-
-      const [updated] = await db.update(storageObjects)
-        .set({
-          objectKey,
-          sizeBytes: fileBuffer.length,
-          contentHash,
-          mimeType,
-          updatedAt: new Date(),
-        })
-        .where(eq(storageObjects.id, existingAvatar[0].id))
-        .returning();
-
-      await this.logAuditEvent(ctx, 'update_avatar', { objectId: updated.id, userId });
-      return updated;
-    } else {
-      const [newAvatar] = await db.insert(storageObjects).values({
-        tenantId: ctx.tenantId,
-        name: `avatar.${extension}`,
-        originalName: `avatar.${extension}`,
-        mimeType,
-        sizeBytes: fileBuffer.length,
-        extension,
-        objectKey,
-        objectType: 'avatar',
-        category: 'avatars',
-        scopeLevel: 'user',
-        ownerUserId: userId,
-        visibility: 'private',
-        contentHash,
-        linkedResourceType: 'user_avatar',
-        linkedResourceId: userId,
-        createdByUserId: ctx.userId,
-      }).returning();
-
-      await db.insert(storageAcl).values({
-        tenantId: ctx.tenantId,
-        objectId: newAvatar.id,
-        subjectTenantWide: true,
-        role: 'viewer',
-        grantedByUserId: ctx.userId,
-      });
-
-      await this.logAuditEvent(ctx, 'upload_avatar', { objectId: newAvatar.id, userId });
-      return newAvatar;
-    }
-  },
-
-  async getAvatarSignedUrl(ctx: StorageServiceContext, userId: string) {
-    const [avatar] = await db.select().from(storageObjects)
-      .where(and(
-        eq(storageObjects.tenantId, ctx.tenantId),
-        eq(storageObjects.linkedResourceType, 'user_avatar'),
-        eq(storageObjects.linkedResourceId, userId),
-        isNull(storageObjects.deletedAt),
-      )).limit(1);
-
-    if (!avatar) {
-      return null;
-    }
-
-    return this.getSignedUrl(ctx, avatar.id);
-  },
+  // Legacy uploadAvatar and getAvatarSignedUrl removed - use evergreen folder versions below
 
   async getRecentObjects(ctx: StorageServiceContext, limit: number = 20) {
     const objects = await db.select().from(storageObjects)
@@ -1357,18 +1274,32 @@ export const storageService = {
       throw new Error('Failed to upload avatar to object storage');
     }
 
+    const contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
     const [avatarObject] = await db.insert(storageObjects).values({
       tenantId: ctx.tenantId,
       folderId: avatarFolder.id,
       name: `profile.${ext}`,
+      originalName: fileName,
       objectKey,
       mimeType,
       sizeBytes,
+      extension: ext,
       objectType: 'avatar',
       category: 'avatars',
+      scopeLevel: 'user',
+      ownerUserId: targetUserId,
       visibility: 'public',
+      contentHash,
+      linkedResourceType: 'user_avatar',
+      linkedResourceId: targetUserId,
       createdByUserId: ctx.userId,
     }).returning();
+
+    // Update user's avatar_object_path for backward compatibility
+    await db.update(users)
+      .set({ avatarObjectPath: objectKey })
+      .where(eq(users.id, targetUserId));
 
     await this.updateQuotaUsage(ctx, sizeBytes);
 
