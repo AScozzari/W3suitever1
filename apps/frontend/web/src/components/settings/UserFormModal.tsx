@@ -215,9 +215,15 @@ export default function UserFormModal({
       setErrors({ general: 'Username è obbligatorio' });
       return;
     }
-    if (mode === 'create' && formData.password !== formData.confirmPassword) {
-      setErrors({ general: 'Le password non coincidono' });
-      return;
+    if (mode === 'create') {
+      if (!formData.password || formData.password.length < 6) {
+        setErrors({ general: 'Password è obbligatoria (minimo 6 caratteri)' });
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setErrors({ general: 'Le password non coincidono' });
+        return;
+      }
     }
 
     setSaving(true);
@@ -272,7 +278,7 @@ export default function UserFormModal({
           {mode === 'create' && (
             <>
               <div>
-                <label style={formStyles.label}>Password</label>
+                <label style={formStyles.label}>Password <span style={{ color: '#ef4444' }}>*</span></label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -292,7 +298,7 @@ export default function UserFormModal({
                 </div>
               </div>
               <div>
-                <label style={formStyles.label}>Conferma Password</label>
+                <label style={formStyles.label}>Conferma Password <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
