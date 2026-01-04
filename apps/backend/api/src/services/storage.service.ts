@@ -1139,6 +1139,240 @@ export const storageService = {
       return created;
     }
   },
+
+  async createUserEvergreenFolders(ctx: StorageServiceContext, targetUserId?: string) {
+    const userId = targetUserId || ctx.userId;
+    const EVERGREEN_FOLDERS = [
+      { name: 'avatar', icon: 'user-circle', category: 'system' },
+      { name: 'feed', icon: 'rss', category: 'social' },
+      { name: 'documents', icon: 'file-text', category: 'documents' },
+      { name: 'shared', icon: 'share-2', category: 'shared' },
+    ];
+
+    const existingFolders = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, userId),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.parentId),
+      ));
+
+    const existingNames = new Set(existingFolders.map(f => f.name.toLowerCase()));
+    const createdFolders = [];
+
+    for (const folderDef of EVERGREEN_FOLDERS) {
+      if (!existingNames.has(folderDef.name)) {
+        const [folder] = await db.insert(storageFolders).values({
+          tenantId: ctx.tenantId,
+          name: folderDef.name,
+          path: `/${folderDef.name}`,
+          scopeLevel: 'user',
+          ownerUserId: userId,
+          category: folderDef.category as any,
+          icon: folderDef.icon,
+          isSystemFolder: true,
+          createdByUserId: ctx.userId,
+        }).returning();
+
+        await db.insert(storageAcl).values({
+          tenantId: ctx.tenantId,
+          folderId: folder.id,
+          subjectUserId: userId,
+          role: 'owner',
+          grantedByUserId: ctx.userId,
+        });
+
+        createdFolders.push(folder);
+      }
+    }
+
+    if (createdFolders.length > 0) {
+      await this.logAuditEvent(ctx, 'create_evergreen_folders', { 
+        targetUserId: userId, 
+        folders: createdFolders.map(f => f.name) 
+      });
+    }
+
+    return createdFolders;
+  },
+
+  async ensureUserAvatarFolder(ctx: StorageServiceContext, targetUserId?: string) {
+    const userId = targetUserId || ctx.userId;
+    
+    const [existingAvatarFolder] = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, userId),
+        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.parentId),
+        isNull(storageFolders.deletedAt),
+      )).limit(1);
+
+    if (existingAvatarFolder) {
+      return existingAvatarFolder;
+    }
+
+    await this.createUserEvergreenFolders(ctx, userId);
+
+    const [avatarFolder] = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, userId),
+        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.parentId),
+      )).limit(1);
+
+    return avatarFolder;
+  },
+
+  async uploadAvatar(ctx: StorageServiceContext, targetUserId: string, fileBuffer: Buffer, mimeType: string, fileName: string) {
+    const avatarFolder = await this.ensureUserAvatarFolder(ctx, targetUserId);
+    if (!avatarFolder) {
+      throw new Error('Could not create avatar folder');
+    }
+
+    const existingAvatars = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        eq(storageObjects.folderId, avatarFolder.id),
+        eq(storageObjects.objectType, 'avatar'),
+        isNull(storageObjects.deletedAt),
+      ));
+
+    for (const oldAvatar of existingAvatars) {
+      await db.update(storageObjects)
+        .set({ deletedAt: new Date() })
+        .where(eq(storageObjects.id, oldAvatar.id));
+      
+      try {
+        const client = getObjectStorageClient();
+        await client.delete(oldAvatar.storageKey);
+      } catch (err) {
+        console.warn('Failed to delete old avatar from object storage:', err);
+      }
+    }
+
+    const ext = fileName.split('.').pop() || 'webp';
+    const storageKey = `users/${targetUserId}/avatar/profile.${ext}`;
+    const sizeBytes = fileBuffer.length;
+
+    const client = getObjectStorageClient();
+    const uploadResult = await client.uploadFromBytes(storageKey, fileBuffer);
+    
+    if (!uploadResult.ok) {
+      throw new Error('Failed to upload avatar to object storage');
+    }
+
+    const [avatarObject] = await db.insert(storageObjects).values({
+      tenantId: ctx.tenantId,
+      folderId: avatarFolder.id,
+      name: `profile.${ext}`,
+      storageKey,
+      mimeType,
+      sizeBytes,
+      objectType: 'avatar',
+      category: 'profile',
+      isPublic: true,
+      uploadedByUserId: ctx.userId,
+    }).returning();
+
+    await this.updateQuotaUsage(ctx, sizeBytes);
+
+    await this.logAuditEvent(ctx, 'upload_avatar', { 
+      targetUserId, 
+      objectId: avatarObject.id,
+      sizeBytes 
+    });
+
+    return avatarObject;
+  },
+
+  async getAvatarSignedUrl(ctx: StorageServiceContext, targetUserId: string) {
+    const avatarFolder = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, targetUserId),
+        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.parentId),
+        isNull(storageFolders.deletedAt),
+      )).limit(1);
+
+    if (!avatarFolder[0]) {
+      return null;
+    }
+
+    const [avatarObject] = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        eq(storageObjects.folderId, avatarFolder[0].id),
+        eq(storageObjects.objectType, 'avatar'),
+        isNull(storageObjects.deletedAt),
+      ))
+      .orderBy(desc(storageObjects.createdAt))
+      .limit(1);
+
+    if (!avatarObject) {
+      return null;
+    }
+
+    return this.getSignedUrl(ctx, avatarObject.id);
+  },
+
+  async deleteAvatar(ctx: StorageServiceContext, targetUserId: string) {
+    const avatarFolder = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, targetUserId),
+        eq(storageFolders.name, 'avatar'),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.parentId),
+        isNull(storageFolders.deletedAt),
+      )).limit(1);
+
+    if (!avatarFolder[0]) {
+      return { deleted: false, message: 'No avatar folder found' };
+    }
+
+    const avatarObjects = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        eq(storageObjects.folderId, avatarFolder[0].id),
+        eq(storageObjects.objectType, 'avatar'),
+        isNull(storageObjects.deletedAt),
+      ));
+
+    let totalBytesDeleted = 0;
+
+    for (const avatarObject of avatarObjects) {
+      await db.update(storageObjects)
+        .set({ deletedAt: new Date() })
+        .where(eq(storageObjects.id, avatarObject.id));
+      
+      totalBytesDeleted += avatarObject.sizeBytes || 0;
+
+      try {
+        const client = getObjectStorageClient();
+        await client.delete(avatarObject.storageKey);
+      } catch (err) {
+        console.warn('Failed to delete avatar from object storage:', err);
+      }
+    }
+
+    if (totalBytesDeleted > 0) {
+      await this.updateQuotaUsage(ctx, -totalBytesDeleted);
+    }
+
+    await this.logAuditEvent(ctx, 'delete_avatar', { 
+      targetUserId, 
+      objectsDeleted: avatarObjects.length,
+      bytesFreed: totalBytesDeleted 
+    });
+
+    return { deleted: true, objectsDeleted: avatarObjects.length, bytesFreed: totalBytesDeleted };
+  },
 };
 
 function formatBytes(bytes: number): string {

@@ -1,13 +1,12 @@
 import { Router, Request, Response } from 'express';
-import multer, { MulterError } from 'multer';
+import multer from 'multer';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../core/db';
-import { users, objectAcls, objectMetadata } from '../db/schema/w3suite';
+import { users } from '../db/schema/w3suite';
 import { requirePermission } from '../middleware/tenant';
 import { structuredLogger } from '../core/logger';
 import { avatarService } from '../core/objectStorage';
 import { Client } from '@replit/object-storage';
-import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { storageService, StorageServiceContext } from '../services/storage.service';
@@ -101,10 +100,6 @@ async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buf
   return { ok: false };
 }
 
-function generateStableId(path: string): string {
-  return createHash('sha256').update(path).digest('hex').substring(0, 32);
-}
-
 const AVATAR_CONSTRAINTS = {
   maxSize: 512 * 1024,
   allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -154,7 +149,7 @@ router.post(
       }
 
       const [targetUser] = await db
-        .select({ id: users.id, tenantId: users.tenantId, avatarObjectPath: users.avatarObjectPath })
+        .select({ id: users.id, tenantId: users.tenantId })
         .from(users)
         .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
         .limit(1);
@@ -173,92 +168,33 @@ router.post(
         return res.status(400).json({ error: validation.error });
       }
 
-      const extension = req.file.originalname.split('.').pop()?.toLowerCase() || 'png';
-      const objectKey = `avatars/${tenantId}/${userId}.${extension}`;
-
-      try {
-        const client = getStorageClient();
-        if (client) {
-          await client.uploadFromBytes(objectKey, req.file.buffer);
-          structuredLogger.info('Avatar uploaded to object storage', {
-            component: 'avatar-upload',
-            metadata: { userId, tenantId, objectKey, size: req.file.size }
-          });
-        } else {
-          // VPS mode: save to local filesystem
-          const localDir = getLocalAvatarDir();
-          const localPath = path.join(localDir, `${userId}.${extension}`);
-          fs.mkdirSync(localDir, { recursive: true });
-          fs.writeFileSync(localPath, req.file.buffer);
-          structuredLogger.info('Avatar saved to local filesystem', {
-            component: 'avatar-upload-local',
-            metadata: { userId, tenantId, localPath, size: req.file.size }
-          });
-        }
-      } catch (uploadError) {
-        structuredLogger.error('Failed to upload avatar', {
-          component: 'avatar-upload',
-          error: uploadError instanceof Error ? uploadError : new Error(String(uploadError)),
-          metadata: { userId, tenantId }
-        });
-        return res.status(500).json({ error: 'Errore durante il caricamento del file' });
-      }
-
-      const publicUrl = `/api/avatars/serve/${tenantId}/${userId}.${extension}`;
-
-      await db.update(users)
-        .set({ avatarObjectPath: objectKey })
-        .where(eq(users.id, userId));
-
-      const stableMetadataId = generateStableId(`metadata:${objectKey}`);
-      const stableAclId = generateStableId(`acl:${objectKey}`);
-      const now = new Date();
-
-      await db.insert(objectMetadata).values({
-        id: stableMetadataId,
-        objectPath: objectKey,
-        fileName: `${userId}.${extension}`,
-        contentType: req.file.mimetype,
-        fileSize: req.file.size,
-        visibility: 'public',
-        uploadedBy: currentUserId || userId,
+      const ctx: StorageServiceContext = {
         tenantId,
-        createdAt: now
-      }).onConflictDoUpdate({
-        target: objectMetadata.objectPath,
-        set: {
-          fileName: `${userId}.${extension}`,
-          contentType: req.file.mimetype,
-          fileSize: req.file.size,
-          uploadedBy: currentUserId || userId
-        }
-      });
+        userId: currentUserId || userId,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers['user-agent'],
+      };
 
-      await db.insert(objectAcls).values({
-        id: stableAclId,
-        objectPath: objectKey,
-        tenantId,
-        visibility: 'public',
-        ownerId: userId,
-        ownerTenantId: tenantId,
-        createdAt: now
-      }).onConflictDoUpdate({
-        target: objectAcls.objectPath,
-        set: {
-          ownerId: userId,
-          ownerTenantId: tenantId
-        }
-      });
+      const avatarObject = await storageService.uploadAvatar(
+        ctx,
+        userId,
+        req.file.buffer,
+        req.file.mimetype,
+        req.file.originalname
+      );
 
-      structuredLogger.info('Avatar updated successfully', {
+      structuredLogger.info('Avatar uploaded via unified storage', {
         component: 'avatar-upload',
-        metadata: { userId, tenantId, objectKey, serveUrl: publicUrl }
+        metadata: { userId, tenantId, objectId: avatarObject.id, storageKey: avatarObject.storageKey }
       });
+
+      const signedUrl = await storageService.getAvatarSignedUrl(ctx, userId);
 
       res.json({
         success: true,
-        avatarUrl: publicUrl,
-        objectPath: objectKey,
+        avatarUrl: signedUrl?.url || null,
+        objectId: avatarObject.id,
+        storageKey: avatarObject.storageKey,
         message: 'Avatar caricato con successo'
       });
 
@@ -323,13 +259,14 @@ router.delete(
     try {
       const { userId } = req.params;
       const tenantId = req.headers['x-tenant-id'] as string;
+      const currentUserId = (req as any).user?.id;
 
       if (!tenantId) {
         return res.status(400).json({ error: 'Tenant ID richiesto' });
       }
 
       const [targetUser] = await db
-        .select({ id: users.id, avatarObjectPath: users.avatarObjectPath })
+        .select({ id: users.id })
         .from(users)
         .where(and(eq(users.id, userId), eq(users.tenantId, tenantId)))
         .limit(1);
@@ -338,38 +275,16 @@ router.delete(
         return res.status(404).json({ error: 'Utente non trovato' });
       }
 
-      if (targetUser.avatarObjectPath) {
-        try {
-          const client = getStorageClient();
-          if (client) {
-            await client.delete(targetUser.avatarObjectPath);
-          } else {
-            // VPS mode: delete from local filesystem
-            const filename = targetUser.avatarObjectPath.split('/').pop() || '';
-            const localPath = path.join(getLocalAvatarDir(), filename);
-            if (fs.existsSync(localPath)) {
-              fs.unlinkSync(localPath);
-            }
-          }
-          
-          await db.delete(objectMetadata)
-            .where(eq(objectMetadata.objectPath, targetUser.avatarObjectPath));
-          await db.delete(objectAcls)
-            .where(eq(objectAcls.objectPath, targetUser.avatarObjectPath));
-        } catch (deleteErr) {
-          structuredLogger.warn('Failed to delete avatar from storage', {
-            component: 'avatar-delete',
-            error: deleteErr instanceof Error ? deleteErr : new Error(String(deleteErr)),
-            metadata: { userId, objectPath: targetUser.avatarObjectPath }
-          });
-        }
-      }
+      const ctx: StorageServiceContext = {
+        tenantId,
+        userId: currentUserId || userId,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.headers['user-agent'],
+      };
 
-      await db.update(users)
-        .set({ avatarObjectPath: null })
-        .where(eq(users.id, userId));
+      await storageService.deleteAvatar(ctx, userId);
 
-      structuredLogger.info('Avatar removed', {
+      structuredLogger.info('Avatar removed via unified storage', {
         component: 'avatar-delete',
         metadata: { userId, tenantId }
       });
