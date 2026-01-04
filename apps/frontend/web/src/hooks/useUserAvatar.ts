@@ -189,6 +189,12 @@ export function useUserAvatar(
   }, [signedUrlData?.url]);
 
   const avatarUrl = useMemo(() => {
+    // Priority 1: Signed URL from Object Storage (most reliable)
+    if (signedUrlData?.url && signedUrlData.hasAvatar && imageLoaded && !imageError) {
+      return signedUrlData.url;
+    }
+    
+    // Priority 2: Legacy URLs (fallback)
     if (userData?.avatarUrl && !imageError) {
       return userData.avatarUrl;
     }
@@ -197,14 +203,10 @@ export function useUserAvatar(
       return userData.profileImageUrl;
     }
     
-    if (signedUrlData?.url && signedUrlData.hasAvatar && imageLoaded && !imageError) {
-      return signedUrlData.url;
-    }
-    
     return undefined;
   }, [userData?.avatarUrl, userData?.profileImageUrl, signedUrlData, imageLoaded, imageError]);
 
-  const hasImage = !!(avatarUrl && !imageError && (imageLoaded || !!userData?.avatarUrl || !!userData?.profileImageUrl));
+  const hasImage = !!(signedUrlData?.hasAvatar && signedUrlData?.url && imageLoaded && !imageError);
   const isLoading = enabled && !!userData?.id && (isQueryLoading || (!!signedUrlData?.url && !imageLoaded && !imageError));
   const isLegacy = signedUrlData?.isLegacy ?? true;
 
