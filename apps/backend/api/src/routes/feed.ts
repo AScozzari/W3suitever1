@@ -34,6 +34,42 @@ import { structuredLogger } from '../core/logger';
 
 const router = express.Router();
 
+// Lazy-initialized Object Storage client for avatar signed URLs
+let storageClient: Client | null = null;
+let storageClientInitialized = false;
+
+function getStorageClient(): Client | null {
+  if (!storageClientInitialized) {
+    storageClientInitialized = true;
+    try {
+      storageClient = new Client();
+    } catch (e) {
+      structuredLogger.warn('Object Storage client not available for feed avatars');
+      storageClient = null;
+    }
+  }
+  return storageClient;
+}
+
+// Helper function to generate signed URL for avatar
+async function getAvatarSignedUrl(avatarObjectPath: string | null, tenantId: string): Promise<string | null> {
+  const client = getStorageClient();
+  if (!avatarObjectPath || !client) return null;
+  
+  try {
+    // Supported avatar path formats:
+    // - tenants/{tenantId}/users/{userId}/Avatar/{filename}
+    // - avatars/{tenantId}/{filename}
+    // - users/{userId}/avatar/{filename}
+    // Just use the path as-is for Object Storage lookup
+    const signedUrl = await client.signDownloadUrl(avatarObjectPath, { expiresIn: 3600 });
+    return signedUrl;
+  } catch (error) {
+    structuredLogger.warn('Failed to generate avatar signed URL', { avatarObjectPath, error });
+    return null;
+  }
+}
+
 router.use(tenantMiddleware);
 router.use(rbacMiddleware);
 
@@ -210,17 +246,40 @@ async function enrichPostWithDetails(post: FeedPost, userId: string, tenantId: s
     }).from(users).where(inArray(users.id, post.awardeeUserIds));
   }
 
+  // Generate signed URLs for all avatars
+  const authorWithSignedUrl = authorData[0] ? {
+    ...authorData[0],
+    avatarUrl: await getAvatarSignedUrl(authorData[0].avatar, tenantId)
+  } : null;
+
+  const commentsWithSignedUrls = await Promise.all(
+    commentsData.map(async (c) => ({
+      ...c,
+      user: c.user ? {
+        ...c.user,
+        avatarUrl: await getAvatarSignedUrl(c.user.avatar, tenantId)
+      } : null
+    }))
+  );
+
+  const awardeesWithSignedUrls = await Promise.all(
+    badgeAwardees.map(async (a) => ({
+      ...a,
+      avatarUrl: await getAvatarSignedUrl(a.avatar, tenantId)
+    }))
+  );
+
   return {
     ...post,
-    author: authorData[0] || null,
-    recentComments: commentsData,
+    author: authorWithSignedUrl,
+    recentComments: commentsWithSignedUrls,
     reactions: reactionsData.reduce((acc, r) => ({ ...acc, [r.reactionType]: r.count }), {}),
     userReactions: userReactionData.map(r => r.reactionType),
     isFavorited: isFavorited.length > 0,
     isRead: isRead.length > 0,
     isUnfollowed: isUnfollowed.length > 0,
     poll: pollData,
-    badgeAwardees
+    badgeAwardees: awardeesWithSignedUrls
   };
 }
 
@@ -564,6 +623,7 @@ router.post('/posts/:postId/reactions', requirePermission('communication.write')
 
 router.get('/posts/:postId/comments', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
+    const tenantId = req.tenant!.id;
     const { postId } = req.params;
     
     const comments = await db.select({
@@ -581,10 +641,15 @@ router.get('/posts/:postId/comments', requirePermission('communication.read'), a
     .where(eq(feedComments.postId, postId))
     .orderBy(asc(feedComments.createdAt));
     
-    const formattedComments = comments.map(c => ({
-      ...c.comment,
-      user: c.user
-    }));
+    const formattedComments = await Promise.all(
+      comments.map(async (c) => ({
+        ...c.comment,
+        user: c.user ? {
+          ...c.user,
+          avatarUrl: await getAvatarSignedUrl(c.user.avatar, tenantId)
+        } : null
+      }))
+    );
     
     res.json(formattedComments);
   } catch (error) {
@@ -623,7 +688,10 @@ router.post('/posts/:postId/comments', requirePermission('communication.write'),
     
     res.status(201).json({
       ...newComment,
-      user
+      user: user ? {
+        ...user,
+        avatarUrl: await getAvatarSignedUrl(user.avatar, tenantId)
+      } : null
     });
   } catch (error) {
     handleApiError(error, res);

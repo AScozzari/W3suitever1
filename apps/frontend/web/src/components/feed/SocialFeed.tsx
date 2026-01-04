@@ -235,11 +235,11 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
 }
 
-function getAvatarUrl(user: { avatar?: string } | null | undefined): string | undefined {
-  if (!user?.avatar) return undefined;
-  // Only use full HTTP URLs (signed URLs from Object Storage)
-  // Legacy /avatars/serve/ routes have been removed
-  if (user.avatar.startsWith('http')) return user.avatar;
+function getAvatarUrl(user: { avatar?: string; avatarUrl?: string } | null | undefined): string | undefined {
+  // Use avatarUrl (signed URL from Object Storage) if available
+  if (user?.avatarUrl) return user.avatarUrl;
+  // Fallback to avatar if it's a full HTTP URL
+  if (user?.avatar && user.avatar.startsWith('http')) return user.avatar;
   return undefined;
 }
 
