@@ -319,7 +319,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const createShareMutation = useMutation({
     mutationFn: async (data: { objectId?: string; folderId?: string; settings: typeof shareSettings }) => {
-      const response = await fetch('/api/storage/shares', {
+      const response = await fetch('/api/storage/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

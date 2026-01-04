@@ -248,41 +248,6 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
   }
 });
 
-// ==================== SHARING ====================
-
-router.post('/share', requirePermission('storage:write'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const share = await storageService.createShare(ctx, req.body);
-    res.status(201).json(share);
-  } catch (error: any) {
-    console.error('Error creating share:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.post('/acl', requirePermission('storage:write'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const acl = await storageService.grantAccess(ctx, req.body);
-    res.status(201).json(acl);
-  } catch (error: any) {
-    console.error('Error granting access:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-router.delete('/acl/:aclId', requirePermission('storage:write'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const deleted = await storageService.revokeAccess(ctx, req.params.aclId);
-    res.json({ deleted: !!deleted });
-  } catch (error: any) {
-    console.error('Error revoking access:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // ==================== TRASH & DELETE ====================
 
 router.post('/objects/:objectId/trash', requirePermission('storage:write'), async (req: Request, res: Response) => {
@@ -620,86 +585,6 @@ router.post('/upload/batch', requirePermission('storage:write'), upload.array('f
     });
   } catch (error: any) {
     console.error('Error in batch upload:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== SHARES ====================
-
-/**
- * POST /storage/shares
- * Create a new share link for a file or folder
- */
-router.post('/shares', requirePermission('storage:write'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const { objectId, folderId, allowDownload, allowEdit, requirePassword, password, expiresInHours, maxDownloads } = req.body;
-
-    if (!objectId && !folderId) {
-      return res.status(400).json({ error: 'Either objectId or folderId is required' });
-    }
-
-    const share = await storageService.createShare(ctx, {
-      objectId,
-      folderId,
-      allowDownload,
-      allowEdit,
-      requirePassword,
-      password,
-      expiresInHours,
-      maxDownloads
-    });
-
-    res.status(201).json(share);
-  } catch (error: any) {
-    console.error('Error creating share:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /storage/shares
- * List all active shares created by current user
- */
-router.get('/shares', requirePermission('storage:read'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const shares = await storageService.listMyShares(ctx);
-    res.json(shares);
-  } catch (error: any) {
-    console.error('Error listing shares:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /storage/share/:token
- * Access a shared item (public endpoint for shared links)
- */
-router.get('/share/:token', async (req: Request, res: Response) => {
-  try {
-    const { token } = req.params;
-    const { password } = req.query;
-    
-    const result = await storageService.accessShare(token, password as string);
-    res.json(result);
-  } catch (error: any) {
-    console.error('Error accessing share:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-/**
- * DELETE /storage/shares/:token
- * Revoke a share link
- */
-router.delete('/shares/:token', requirePermission('storage:write'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    await storageService.revokeShare(ctx, req.params.token);
-    res.json({ success: true });
-  } catch (error: any) {
-    console.error('Error revoking share:', error);
     res.status(500).json({ error: error.message });
   }
 });
