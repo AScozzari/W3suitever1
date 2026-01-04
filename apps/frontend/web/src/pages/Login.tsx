@@ -124,15 +124,43 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     const isDevelopmentAuth = import.meta.env.VITE_AUTH_MODE === 'development';
     if (isDevelopmentAuth) {
       try {
-        const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
-        localStorage.setItem('auth_token', demoToken);
-        localStorage.setItem('currentTenant', propTenantCode || 'staging');
-        localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
+        // Call backend JWT login endpoint for development mode
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            username, 
+            password,
+            tenantSlug: propTenantCode || 'staging'
+          }),
+        });
+        
+        if (!loginResponse.ok) {
+          const error = await loginResponse.json();
+          alert(error.message || 'Credenziali non valide');
+          setIsLoading(false);
+          return;
+        }
+        
+        const loginData = await loginResponse.json();
+        
+        // Store JWT token and tenant info
+        localStorage.setItem('auth_token', loginData.token);
+        localStorage.setItem('currentTenant', loginData.tenant?.slug || propTenantCode || 'staging');
+        localStorage.setItem('currentTenantId', loginData.tenant?.id || loginData.user?.tenantId);
+        
+        // Also store as oauth2_tokens format for compatibility with existing hooks
+        localStorage.setItem('oauth2_tokens', JSON.stringify({
+          access_token: loginData.token,
+          token_type: 'Bearer',
+          expires_at: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        }));
+        
         window.location.href = returnUrl;
         return;
       } catch (error) {
         console.error('Development login error:', error);
-        alert('Errore durante il login in development mode');
+        alert('Errore durante il login');
         setIsLoading(false);
         return;
       }

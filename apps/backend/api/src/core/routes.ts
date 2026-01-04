@@ -38,6 +38,7 @@ import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../mi
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
 import { createHmac, timingSafeEqual } from "crypto";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { db, setTenantContext } from "./db";
 import { sql, eq, inArray, and, or, between, gte, lte, desc, isNull, not } from "drizzle-orm";
 import { 
@@ -1969,6 +1970,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("[AUTH] Session verification failed:", error);
       return res.json({ user: null, authenticated: false, reason: 'token_verification_failed' });
+    }
+  });
+
+  // Development mode login endpoint - JWT authentication for Replit environment
+  // SECURITY: This endpoint is ONLY available in development mode
+  app.post('/api/auth/login', async (req: any, res) => {
+    // Block access in production - OAuth2 is the only auth mechanism in production
+    if (config.AUTH_MODE !== 'development') {
+      return res.status(404).json({ 
+        error: 'not_found', 
+        message: 'This endpoint is only available in development mode. Use OAuth2 for production authentication.' 
+      });
+    }
+    
+    const { username, password, tenantSlug } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    try {
+      // Query user from database
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, username))
+        .limit(1);
+      
+      if (!user) {
+        return res.status(401).json({ error: 'invalid_credentials', message: 'Credenziali non valide' });
+      }
+      
+      // Verify password
+      if (!user.passwordHash) {
+        return res.status(401).json({ error: 'invalid_credentials', message: 'Credenziali non valide' });
+      }
+      
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'invalid_credentials', message: 'Credenziali non valide' });
+      }
+      
+      // Check user status
+      if (user.status !== 'attivo') {
+        return res.status(401).json({ error: 'account_inactive', message: 'Account non attivo' });
+      }
+      
+      // Generate JWT token
+      const token = jwt.sign({
+        id: user.id,
+        userId: user.id,
+        email: user.email,
+        tenantId: user.tenantId,
+        tenant_id: user.tenantId,
+        roles: [user.role || 'user'],
+        permissions: ['*'],
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+      }, JWT_SECRET, { algorithm: 'HS256' });
+      
+      // Get tenant info
+      const [tenant] = await db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.id, user.tenantId))
+        .limit(1);
+      
+      console.log(`✅ [AUTH/LOGIN] User authenticated: ${user.email}`);
+      
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          tenantId: user.tenantId
+        },
+        tenant: tenant ? {
+          id: tenant.id,
+          slug: tenant.slug,
+          name: tenant.name
+        } : null
+      });
+    } catch (error) {
+      console.error('[AUTH/LOGIN] Login failed:', error);
+      return res.status(500).json({ error: 'server_error', message: 'Errore durante il login' });
     }
   });
 
