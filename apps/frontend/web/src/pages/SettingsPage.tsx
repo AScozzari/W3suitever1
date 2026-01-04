@@ -10187,7 +10187,7 @@ export default function SettingsPage() {
                           const selectedOrgEntityIds = hasOrgSelections 
                             ? (newUser.selectedLegalEntities || [])
                                 .map(legacyId => {
-                                  const rs = ragioniSocialiList.find((r: any) => r.id === legacyId);
+                                  const rs = ragioneSocialiList.find((r: any) => r.id === legacyId);
                                   return rs?.organization_entity_id; // Only return actual UUIDs
                                 })
                                 .filter((id): id is string => !!id && id.includes('-')) // Validate UUID format
