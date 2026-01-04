@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCurrentTenantId } from '@/lib/queryClient';
 
 const WINDTRE_COLORS = [
   ['#FF6900', '#ff8533'],
@@ -103,44 +102,7 @@ export function useUserAvatar(
   }, [userData]);
 
   const { data: signedUrlData, isLoading: isQueryLoading, error: queryError, refetch } = useQuery<SignedUrlResponse | null>({
-    queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'],
-    queryFn: async () => {
-      if (!userData?.id) return null;
-      
-      try {
-        const tenantId = getCurrentTenantId();
-        const headers: Record<string, string> = {
-          'Accept': 'application/json'
-        };
-        
-        if (tenantId) {
-          headers['X-Tenant-ID'] = tenantId;
-        }
-        
-        const authMode = import.meta.env.VITE_AUTH_MODE;
-        if (authMode === 'development') {
-          headers['X-Auth-Session'] = 'authenticated';
-        }
-        
-        const response = await fetch(`/api/storage/avatars/${userData.id}/signed-url`, {
-          method: 'GET',
-          headers,
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          if (response.status >= 400 && response.status < 500) {
-            return null;
-          }
-          throw new Error(`Signed URL fetch failed: ${response.status}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.warn('Signed URL fetch failed, using fallback:', error);
-        return null;
-      }
-    },
+    queryKey: [`/api/storage/avatars/${userData?.id}/signed-url`],
     enabled: enabled && !!userData?.id,
     staleTime: 4 * 60 * 1000, // 4 minutes (signed URLs expire in 5)
     retry: false,
@@ -148,7 +110,7 @@ export function useUserAvatar(
   });
 
   useEffect(() => {
-    if (!signedUrlData?.expiresAt || signedUrlData.isLegacy) return;
+    if (!signedUrlData?.expiresAt || signedUrlData.isLegacy || !userData?.id) return;
 
     const expiresAt = new Date(signedUrlData.expiresAt).getTime();
     const now = Date.now();
@@ -157,7 +119,7 @@ export function useUserAvatar(
     if (timeUntilExpiry > 60000) {
       const refreshTimeout = setTimeout(() => {
         queryClient.invalidateQueries({ 
-          queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'] 
+          queryKey: [`/api/storage/avatars/${userData.id}/signed-url`] 
         });
       }, timeUntilExpiry - 60000);
       
@@ -211,9 +173,11 @@ export function useUserAvatar(
   const isLegacy = signedUrlData?.isLegacy ?? true;
 
   const refreshUrl = () => {
-    queryClient.invalidateQueries({ 
-      queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'] 
-    });
+    if (userData?.id) {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/storage/avatars/${userData.id}/signed-url`] 
+      });
+    }
   };
 
   return {
