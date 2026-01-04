@@ -9784,6 +9784,13 @@ export default function SettingsPage() {
                 )}
 
                 {/* 🏪 TERZO LIVELLO: Multi-select punti vendita filtrati */}
+                {console.log('🔍 SCOPE DEBUG:', {
+                  selectAllLegalEntities: newUser.selectAllLegalEntities,
+                  selectedLegalEntities: newUser.selectedLegalEntities,
+                  selectedStores: newUser.selectedStores,
+                  puntiVenditaCount: puntiVenditaList.length,
+                  matchingStores: puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId)).length
+                })}
                 {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length > 0 && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
