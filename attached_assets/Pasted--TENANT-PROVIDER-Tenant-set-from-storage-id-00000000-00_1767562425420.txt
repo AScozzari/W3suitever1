@@ -1,0 +1,37 @@
+[TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:370  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/time-tracking/current 500 (Internal Server Error)
+apiRequest @ queryClient.ts:370
+apiRequest @ api.ts:15
+apiGet @ api.ts:19
+getCurrentSession @ timeTrackingService.ts:483
+queryFn @ useTimeTracking.ts:47
+fetchFn @ @tanstack_react-query.js?v=b56a477b:1097
+run @ @tanstack_react-query.js?v=b56a477b:795
+start @ @tanstack_react-query.js?v=b56a477b:838
+fetch @ @tanstack_react-query.js?v=b56a477b:1144
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=b56a477b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=b56a477b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=b56a477b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=b56a477b:384Comprendi l'errore
+useSIPRegistration.ts:145 🚀 [SIP Hook] Starting SIP setup with credentials: {sipServer: 'demo.edgvoip.it', wsPort: 443, extension: '2000', transport: 'wss'}
+useSIPRegistration.ts:169 📡 [SIP Hook] Connecting to: wss://demo.edgvoip.it/ws (transport: wss)
+useSIPRegistration.ts:172 Sun Jan 04 2026 22:33:16 GMT+0100 (Ora standard dell’Europa centrale) 

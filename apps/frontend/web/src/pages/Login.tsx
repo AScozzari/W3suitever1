@@ -149,6 +149,12 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         localStorage.setItem('currentTenant', loginData.tenant?.slug || propTenantCode || 'staging');
         localStorage.setItem('currentTenantId', loginData.tenant?.id || loginData.user?.tenantId);
         
+        // CRITICAL: Store demo_user_id for development auth headers
+        // This ensures the correct user identity is sent in all API calls
+        if (loginData.user?.id) {
+          localStorage.setItem('demo_user_id', loginData.user.id);
+        }
+        
         // Also store as oauth2_tokens format for compatibility with existing hooks
         localStorage.setItem('oauth2_tokens', JSON.stringify({
           access_token: loginData.token,
