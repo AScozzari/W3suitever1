@@ -102,16 +102,17 @@ export function useUserAvatar(
   }, [userData]);
 
   const { data: signedUrlData, isLoading: isQueryLoading, error: queryError, refetch } = useQuery<SignedUrlResponse | null>({
-    queryKey: ['/api/avatars/users', userData?.id, 'signed-url'],
+    queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'],
     queryFn: async () => {
       if (!userData?.id) return null;
       
       try {
-        const response = await fetch(`/api/avatars/users/${userData.id}/signed-url`, {
+        const response = await fetch(`/api/storage/avatars/${userData.id}/signed-url`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -143,7 +144,7 @@ export function useUserAvatar(
     if (timeUntilExpiry > 60000) {
       const refreshTimeout = setTimeout(() => {
         queryClient.invalidateQueries({ 
-          queryKey: ['/api/avatars/users', userData?.id, 'signed-url'] 
+          queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'] 
         });
       }, timeUntilExpiry - 60000);
       
@@ -196,7 +197,7 @@ export function useUserAvatar(
 
   const refreshUrl = () => {
     queryClient.invalidateQueries({ 
-      queryKey: ['/api/avatars/users', userData?.id, 'signed-url'] 
+      queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'] 
     });
   };
 

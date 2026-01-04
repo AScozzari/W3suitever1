@@ -31,7 +31,6 @@ import edgvoipWebhookRoutes from "../routes/webhooks-edgvoip";
 import activityLogsRoutes from "../routes/activity-logs";
 import actionConfigurationsRoutes from "../routes/action-configurations";
 import actionDefinitionsRoutes from "../routes/action-definitions";
-import avatarRoutes from "../routes/avatar";
 import storageRoutes from "../routes/storage";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
@@ -1571,11 +1570,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== ACTION DEFINITIONS ROUTES ====================
   // Global action definitions (evergreen actions) - read-only, no tenant middleware needed
   app.use('/api/action-definitions', actionDefinitionsRoutes);
-
-  // ==================== AVATAR ROUTES ====================
-  // All avatar routes handled by avatarRoutes (includes /serve/:tenantId/:filename with Replit/VPS fallback)
-  // The /serve endpoint is public (no auth), other avatar routes need tenant/rbac middleware
-  app.use('/api/avatars', avatarRoutes);
 
   // ==================== STORAGE ROUTES ====================
   // Enterprise Object Storage with signed URLs, ACL, quotas
