@@ -599,7 +599,8 @@ export default function SettingsPage() {
         });
         if (orgRes.ok) {
           const orgData = await orgRes.json();
-          userOrgs = (orgData.data || orgData.organizationEntities || []).map((o: any) => o.id || o.organization_entity_id);
+          userOrgs = (orgData.data || orgData.organizationEntities || []).map((o: any) => o.organizationEntityId || o.id || o.organization_entity_id);
+          console.log('🏢 User orgs loaded:', userOrgs);
         }
       } catch (e) {
         console.warn('Could not fetch user orgs:', e);
@@ -612,7 +613,8 @@ export default function SettingsPage() {
         });
         if (storeRes.ok) {
           const storeData = await storeRes.json();
-          userStores = (storeData.data || storeData.stores || []).map((s: any) => s.id || s.store_id);
+          userStores = (storeData.data || storeData.stores || []).map((s: any) => s.storeId || s.id || s.store_id);
+          console.log('📦 User stores loaded:', userStores);
         }
       } catch (e) {
         console.warn('Could not fetch user stores:', e);

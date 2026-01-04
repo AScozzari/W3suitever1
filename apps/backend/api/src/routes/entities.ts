@@ -2728,6 +2728,63 @@ router.put('/users/:id/teams', requirePermission('users:write'), async (req, res
   }
 });
 
+// ==================== USER STORES (Scope Interno) ====================
+
+/**
+ * GET /api/users/:id/stores
+ * Get stores assigned to a user
+ */
+router.get('/users/:id/stores', requirePermission('users:read'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.params.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const userStoreList = await db
+      .select({
+        userId: userStores.userId,
+        storeId: userStores.storeId,
+        isPrimary: userStores.isPrimary,
+        createdAt: userStores.createdAt,
+        storeName: stores.nome,
+        storeCode: stores.code,
+        storeStatus: stores.status
+      })
+      .from(userStores)
+      .innerJoin(stores, eq(userStores.storeId, stores.id))
+      .where(
+        and(
+          eq(userStores.userId, userId),
+          eq(userStores.tenantId, tenantId)
+        )
+      );
+
+    res.status(200).json({
+      success: true,
+      data: userStoreList,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving user stores', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 /**
  * PUT /api/users/:id/stores
  * Set stores for a user (replaces existing)

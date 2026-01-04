@@ -3309,7 +3309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .select({
               userId: userStores.userId,
               storeId: userStores.storeId,
-              storeName: stores.name,
+              storeName: stores.nome,
               isPrimary: userStores.isPrimary,
             })
             .from(userStores)
@@ -3321,7 +3321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .select({
               userId: userOrganizationEntities.userId,
               orgEntityId: userOrganizationEntities.organizationEntityId,
-              orgName: organizationEntities.name,
+              orgName: organizationEntities.nome,
               isPrimary: userOrganizationEntities.isPrimary,
             })
             .from(userOrganizationEntities)
