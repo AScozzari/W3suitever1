@@ -9052,11 +9052,15 @@ export default function SettingsPage() {
                       color: '#374151',
                       marginBottom: '0.5rem'
                     }}>
-                      Password <span style={{ color: '#ef4444' }}>*</span>
+                      {userModal.data ? (
+                        <>Nuova Password <span style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 'normal' }}>(lascia vuoto per non modificare)</span></>
+                      ) : (
+                        <>Password <span style={{ color: '#ef4444' }}>*</span></>
+                      )}
                     </label>
                     <input
                       type="password"
-                      placeholder="Minimo 8 caratteri"
+                      placeholder="••••••••"
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       style={{
@@ -9080,11 +9084,15 @@ export default function SettingsPage() {
                       color: '#374151',
                       marginBottom: '0.5rem'
                     }}>
-                      Conferma Password <span style={{ color: '#ef4444' }}>*</span>
+                      {userModal.data ? (
+                        <>Conferma Nuova Password <span style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 'normal' }}>(lascia vuoto per non modificare)</span></>
+                      ) : (
+                        <>Conferma Password <span style={{ color: '#ef4444' }}>*</span></>
+                      )}
                     </label>
                     <input
                       type="password"
-                      placeholder="Ripeti password"
+                      placeholder="••••••••"
                       value={newUser.confirmPassword}
                       onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                       style={{

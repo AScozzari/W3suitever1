@@ -22,11 +22,24 @@ interface AvatarSelectorProps {
 
 export default function AvatarSelector({
   currentAvatarUrl,
+  firstName,
+  lastName,
+  username,
   onAvatarChange,
   loading = false,
   error,
   size = 120
 }: AvatarSelectorProps) {
+  // Generate initials from firstName/lastName or username
+  const getInitials = (): string => {
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    }
+    if (firstName) return firstName.charAt(0).toUpperCase();
+    if (lastName) return lastName.charAt(0).toUpperCase();
+    if (username) return username.charAt(0).toUpperCase();
+    return '?';
+  };
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -171,19 +184,21 @@ export default function AvatarSelector({
             />
           ) : (
             <div style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: '8px',
-              color: '#6b7280'
+              justifyContent: 'center'
             }}>
-              <Camera size={32} />
               <span style={{
-                fontSize: '12px',
-                fontWeight: '500',
-                textAlign: 'center'
+                fontSize: `${Math.floor(size * 0.4)}px`,
+                fontWeight: '700',
+                color: 'white',
+                textShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }}>
-                Anteprima
+                {getInitials()}
               </span>
             </div>
           )}
