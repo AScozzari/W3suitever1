@@ -9656,6 +9656,11 @@ export default function SettingsPage() {
                 )}
 
                 {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
+                {console.log('🏭 RAGIONI SOCIALI DEBUG:', {
+                  ragioneSocialiListIds: ragioneSocialiList.map(rs => rs.id),
+                  selectedLegalEntities: newUser.selectedLegalEntities,
+                  matching: ragioneSocialiList.filter(rs => newUser.selectedLegalEntities.includes(rs.id)).map(rs => rs.nome)
+                })}
                 {!newUser.selectAllLegalEntities && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
