@@ -3293,12 +3293,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If no filters, use standard method
+      // If no filters, use standard method with scope enrichment
       if (!roleId && !storeId) {
-        const users = await storage.getUsersByTenant(tenantId);
+        const usersData = await storage.getUsersByTenant(tenantId);
+        
+        // Enrich users with their scope assignments
+        const userIds = usersData.map(u => u.id);
+        if (userIds.length > 0) {
+          // Ensure RLS context is set for the joins
+          await setTenantContext(tenantId);
+          
+          // Get all assignments for these users (including tenant-wide)
+          const assignments = await db
+            .select({
+              userId: userAssignments.userId,
+              scopeType: userAssignments.scopeType,
+              scopeId: userAssignments.scopeId,
+              storeName: stores.name,
+              orgName: organizationEntities.name,
+            })
+            .from(userAssignments)
+            .leftJoin(stores, eq(userAssignments.scopeId, stores.id))
+            .leftJoin(organizationEntities, eq(userAssignments.scopeId, organizationEntities.id))
+            .where(inArray(userAssignments.userId, userIds));
+          
+          // Group assignments by user
+          const assignmentsByUser = new Map<string, any[]>();
+          for (const a of assignments) {
+            if (!assignmentsByUser.has(a.userId)) {
+              assignmentsByUser.set(a.userId, []);
+            }
+            assignmentsByUser.get(a.userId)!.push(a);
+          }
+          
+          // Enrich users with scope data
+          const enrichedUsers = usersData.map(user => {
+            const userAssigns = assignmentsByUser.get(user.id) || [];
+            const tenantWide = userAssigns.some(a => a.scopeType === 'tenant');
+            const orgAssigns = userAssigns.filter(a => a.scopeType === 'organization_entity');
+            const storeAssigns = userAssigns.filter(a => a.scopeType === 'store');
+            
+            return {
+              ...user,
+              tenant_wide: tenantWide,
+              organization_entities: orgAssigns.map(a => ({ id: a.scopeId, name: a.orgName || `Org ${a.scopeId?.slice(0, 8) || 'N/A'}` })),
+              stores: storeAssigns.map(a => ({ id: a.scopeId, name: a.storeName || `Store ${a.scopeId?.slice(0, 8) || 'N/A'}` })),
+            };
+          });
+          
+          return res.json({ 
+            success: true,
+            data: enrichedUsers 
+          });
+        }
+        
         return res.json({ 
           success: true,
-          data: users 
+          data: usersData 
         });
       }
 

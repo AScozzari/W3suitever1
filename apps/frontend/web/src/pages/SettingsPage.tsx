@@ -2993,11 +2993,8 @@ export default function SettingsPage() {
                   <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
                   <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
                   <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
-                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Posizione</th>
-                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
-                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
+                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Accesso</th>
                   <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Telefono</th>
-                  <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contratto</th>
                   <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
                   <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
                 </tr>
@@ -3039,19 +3036,51 @@ export default function SettingsPage() {
                       </span>
                     </td>
                     <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
-                      {user.position || 'N/A'}
-                    </td>
-                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
-                      {user.department || 'N/A'}
-                    </td>
-                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
-                      {user.store_name || 'Sede Centrale'}
+                      {(() => {
+                        const userStores = user.stores || user.scope?.stores || [];
+                        const userOrgs = user.organization_entities || user.scope?.organization_entities || [];
+                        const tenantWide = user.tenant_wide || user.scope?.tenant_wide || false;
+                        
+                        if (tenantWide) {
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#dbeafe', color: '#1e40af', fontSize: '0.75rem', fontWeight: '500' }} title="Accesso completo a tutto il tenant" data-testid="scope-badge-tenant">
+                              🌐 Totale
+                            </span>
+                          );
+                        }
+                        
+                        if (userOrgs.length > 0) {
+                          const orgNames = userOrgs.map((o: any) => o.name || o.organization_name || 'Org').filter(Boolean);
+                          const storeCount = userStores.length;
+                          const tooltip = orgNames.length > 0 
+                            ? orgNames.join(', ') + (storeCount > 0 ? ` (${storeCount} punti vendita)` : '')
+                            : `${userOrgs.length} organizzazioni`;
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-org">
+                              🏢 {userOrgs.length} {userOrgs.length === 1 ? 'Organizzazione' : 'Organizzazioni'}
+                            </span>
+                          );
+                        }
+                        
+                        if (userStores.length > 0) {
+                          const storeNames = userStores.map((s: any) => s.name || s.store_name || 'Store').filter(Boolean);
+                          const tooltip = storeNames.length > 0 ? storeNames.join(', ') : `${userStores.length} punti vendita`;
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#d1fae5', color: '#065f46', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-store">
+                              🏪 {userStores.length} {userStores.length === 1 ? 'Punto Vendita' : 'Punti Vendita'}
+                            </span>
+                          );
+                        }
+                        
+                        return (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#f3f4f6', color: '#6b7280', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title="Nessun accesso assegnato - contattare l'amministratore" data-testid="scope-badge-none">
+                            ⚠️ Non assegnato
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
                       {user.phone || 'N/A'}
-                    </td>
-                    <td style={{ padding: '1rem', fontSize: '0.8125rem', color: '#374151' }}>
-                      {user.contract_type || 'N/A'}
                     </td>
                     <td style={{ padding: '1rem' }}>
                       <span style={{
