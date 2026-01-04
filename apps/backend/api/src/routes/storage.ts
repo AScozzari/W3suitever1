@@ -425,4 +425,203 @@ router.patch('/quotas/team/:teamId', requirePermission('settings:write'), async 
   }
 });
 
+// ==================== MIGRATION ====================
+
+/**
+ * POST /storage/admin/migrate-evergreen-folders
+ * Create evergreen folders for all existing users who don't have them
+ * Admin only - for migrating existing users to the new storage system
+ */
+router.post('/admin/migrate-evergreen-folders', requirePermission('settings:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const result = await storageService.migrateEvergreenFolders(ctx);
+    res.json({
+      success: true,
+      message: 'Evergreen folders migration completed',
+      ...result
+    });
+  } catch (error: any) {
+    console.error('Error migrating evergreen folders:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== SHARING ====================
+
+/**
+ * POST /storage/share
+ * Create a share for an object or folder with optional password protection
+ */
+router.post('/share', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const share = await storageService.createShare(ctx, req.body);
+    res.status(201).json(share);
+  } catch (error: any) {
+    console.error('Error creating share:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/share/:shareToken
+ * Access a shared item via token (public endpoint)
+ */
+router.get('/share/:shareToken', async (req: Request, res: Response) => {
+  try {
+    const { password } = req.query;
+    const share = await storageService.accessShare(req.params.shareToken, password as string | undefined);
+    res.json(share);
+  } catch (error: any) {
+    console.error('Error accessing share:', error);
+    res.status(error.message.includes('not found') ? 404 : 403).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /storage/share/:shareToken
+ * Revoke a share
+ */
+router.delete('/share/:shareToken', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    await storageService.revokeShare(ctx, req.params.shareToken);
+    res.status(204).send();
+  } catch (error: any) {
+    console.error('Error revoking share:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/shares
+ * List all shares created by the current user
+ */
+router.get('/shares', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const shares = await storageService.listMyShares(ctx);
+    res.json(shares);
+  } catch (error: any) {
+    console.error('Error listing shares:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== ACL / PERMISSIONS ====================
+
+/**
+ * POST /storage/acl
+ * Grant access to an object or folder
+ */
+router.post('/acl', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const acl = await storageService.grantAccess(ctx, req.body);
+    res.status(201).json(acl);
+  } catch (error: any) {
+    console.error('Error granting access:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /storage/acl/:aclId
+ * Revoke access
+ */
+router.delete('/acl/:aclId', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    await storageService.revokeAccess(ctx, req.params.aclId);
+    res.status(204).send();
+  } catch (error: any) {
+    console.error('Error revoking access:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/acl/object/:objectId
+ * Get all ACL entries for an object
+ */
+router.get('/acl/object/:objectId', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const acls = await storageService.getObjectAcl(ctx, req.params.objectId);
+    res.json(acls);
+  } catch (error: any) {
+    console.error('Error getting object ACL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/acl/folder/:folderId
+ * Get all ACL entries for a folder (including inherited)
+ */
+router.get('/acl/folder/:folderId', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const acls = await storageService.getFolderAcl(ctx, req.params.folderId);
+    res.json(acls);
+  } catch (error: any) {
+    console.error('Error getting folder ACL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/permissions/effective/:resourceType/:resourceId
+ * Get effective permissions for current user on a resource (resolves inheritance)
+ */
+router.get('/permissions/effective/:resourceType/:resourceId', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { resourceType, resourceId } = req.params;
+    const permissions = await storageService.getEffectivePermissions(
+      ctx, 
+      resourceType as 'object' | 'folder', 
+      resourceId
+    );
+    res.json(permissions);
+  } catch (error: any) {
+    console.error('Error getting effective permissions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== BATCH UPLOAD ====================
+
+/**
+ * POST /storage/upload/batch
+ * Upload multiple files at once (drag & drop support)
+ */
+router.post('/upload/batch', requirePermission('storage:write'), upload.array('files', 20), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const files = req.files as Express.Multer.File[];
+    
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+
+    const { folderId, category } = req.body;
+    const results = await storageService.uploadBatch(ctx, files, {
+      folderId,
+      category: category || 'general'
+    });
+
+    res.status(201).json({
+      success: true,
+      uploaded: results.filter(r => r.success).length,
+      failed: results.filter(r => !r.success).length,
+      results
+    });
+  } catch (error: any) {
+    console.error('Error in batch upload:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

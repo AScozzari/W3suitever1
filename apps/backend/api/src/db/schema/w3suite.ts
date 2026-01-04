@@ -11666,9 +11666,10 @@ export const storageAcl = w3suiteSchema.table("storage_acl", {
   // Permission
   role: storageAclRoleEnum("role").notNull(), // owner, editor, viewer
   
-  // Inheritance
-  inherited: boolean("inherited").default(false), // Inherited from parent folder
+  // Inheritance (Option A - automatic propagation)
+  inherited: boolean("inherited").default(false), // This ACL was inherited from parent
   inheritedFromFolderId: uuid("inherited_from_folder_id").references(() => storageFolders.id),
+  inheritToChildren: boolean("inherit_to_children").default(true), // Propagate to children (Google Drive style)
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   grantedByUserId: varchar("granted_by_user_id").references(() => users.id),
@@ -11693,11 +11694,14 @@ export const storageShares = w3suiteSchema.table("storage_shares", {
   // Share token for URL
   shareToken: varchar("share_token", { length: 64 }).notNull().unique(),
   
-  // Permissions
+  // Permissions (read = download only, write = download + edit)
   allowDownload: boolean("allow_download").default(true),
   allowEdit: boolean("allow_edit").default(false),
   requirePassword: boolean("require_password").default(false),
   passwordHash: varchar("password_hash", { length: 255 }),
+  
+  // Inheritance for folder shares (Option A)
+  inheritToChildren: boolean("inherit_to_children").default(true), // Apply to all contents
   
   // Limits
   maxDownloads: integer("max_downloads"),

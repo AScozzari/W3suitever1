@@ -1373,6 +1373,447 @@ export const storageService = {
 
     return { deleted: true, objectsDeleted: avatarObjects.length, bytesFreed: totalBytesDeleted };
   },
+
+  // ==================== MIGRATION ====================
+
+  async migrateEvergreenFolders(ctx: StorageServiceContext) {
+    const tenantUsers = await db.select({ id: users.id })
+      .from(users)
+      .where(eq(users.tenantId, ctx.tenantId));
+
+    let usersProcessed = 0;
+    let foldersCreated = 0;
+    const errors: string[] = [];
+
+    for (const user of tenantUsers) {
+      try {
+        const created = await this.createUserEvergreenFolders(ctx, user.id);
+        foldersCreated += created.length;
+        usersProcessed++;
+      } catch (err: any) {
+        errors.push(`User ${user.id}: ${err.message}`);
+      }
+    }
+
+    await this.logAuditEvent(ctx, 'migrate_evergreen_folders', {
+      usersProcessed,
+      foldersCreated,
+      errors: errors.length
+    });
+
+    return { usersProcessed, foldersCreated, errors };
+  },
+
+  // ==================== SHARING ====================
+
+  async createShare(ctx: StorageServiceContext, input: ShareInput) {
+    const shareToken = generateToken(32);
+    let passwordHash = null;
+
+    if (input.requirePassword && input.password) {
+      passwordHash = hashToken(input.password);
+    }
+
+    const expiresAt = input.expiresInHours 
+      ? new Date(Date.now() + input.expiresInHours * 60 * 60 * 1000)
+      : null;
+
+    const [share] = await db.insert(storageShares).values({
+      tenantId: ctx.tenantId,
+      objectId: input.objectId,
+      folderId: input.folderId,
+      shareToken,
+      allowDownload: input.allowDownload ?? true,
+      allowEdit: input.allowEdit ?? false,
+      requirePassword: input.requirePassword ?? false,
+      passwordHash,
+      maxDownloads: input.maxDownloads,
+      expiresAt,
+      createdByUserId: ctx.userId,
+      inheritToChildren: true,
+    }).returning();
+
+    await this.logAuditEvent(ctx, 'create_share', { shareId: share.id });
+
+    return {
+      ...share,
+      shareUrl: `/api/storage/share/${shareToken}`,
+      shareToken,
+    };
+  },
+
+  async accessShare(shareToken: string, password?: string) {
+    const [share] = await db.select().from(storageShares)
+      .where(and(
+        eq(storageShares.shareToken, shareToken),
+        eq(storageShares.isActive, true),
+      )).limit(1);
+
+    if (!share) {
+      throw new Error('Share not found or expired');
+    }
+
+    if (share.expiresAt && new Date() > share.expiresAt) {
+      throw new Error('Share has expired');
+    }
+
+    if (share.maxDownloads && share.downloadCount >= share.maxDownloads) {
+      throw new Error('Maximum downloads reached');
+    }
+
+    if (share.requirePassword) {
+      if (!password) {
+        throw new Error('Password required');
+      }
+      if (hashToken(password) !== share.passwordHash) {
+        throw new Error('Invalid password');
+      }
+    }
+
+    await db.update(storageShares)
+      .set({ 
+        downloadCount: (share.downloadCount || 0) + 1,
+        lastAccessedAt: new Date(),
+      })
+      .where(eq(storageShares.id, share.id));
+
+    if (share.objectId) {
+      const [object] = await db.select().from(storageObjects)
+        .where(eq(storageObjects.id, share.objectId)).limit(1);
+      return { type: 'object', share, item: object };
+    } else if (share.folderId) {
+      const [folder] = await db.select().from(storageFolders)
+        .where(eq(storageFolders.id, share.folderId)).limit(1);
+      const contents = await db.select().from(storageObjects)
+        .where(and(
+          eq(storageObjects.folderId, share.folderId),
+          isNull(storageObjects.deletedAt),
+        ));
+      return { type: 'folder', share, item: folder, contents };
+    }
+
+    return { type: 'unknown', share };
+  },
+
+  async revokeShare(ctx: StorageServiceContext, shareToken: string) {
+    const [share] = await db.select().from(storageShares)
+      .where(and(
+        eq(storageShares.shareToken, shareToken),
+        eq(storageShares.tenantId, ctx.tenantId),
+        eq(storageShares.createdByUserId, ctx.userId),
+      )).limit(1);
+
+    if (!share) {
+      throw new Error('Share not found or not owned by user');
+    }
+
+    await db.update(storageShares)
+      .set({ isActive: false })
+      .where(eq(storageShares.id, share.id));
+
+    await this.logAuditEvent(ctx, 'revoke_share', { shareId: share.id });
+  },
+
+  async listMyShares(ctx: StorageServiceContext) {
+    const shares = await db.select().from(storageShares)
+      .where(and(
+        eq(storageShares.tenantId, ctx.tenantId),
+        eq(storageShares.createdByUserId, ctx.userId),
+        eq(storageShares.isActive, true),
+      ))
+      .orderBy(desc(storageShares.createdAt));
+
+    return shares;
+  },
+
+  // ==================== ACL ====================
+
+  async grantAccess(ctx: StorageServiceContext, input: AclInput) {
+    const canShare = await this.checkSharePermission(ctx, input.objectId, input.folderId);
+    if (!canShare) {
+      throw new Error('You do not have permission to share this item');
+    }
+
+    const [acl] = await db.insert(storageAcl).values({
+      tenantId: ctx.tenantId,
+      objectId: input.objectId,
+      folderId: input.folderId,
+      subjectUserId: input.subjectUserId,
+      subjectTeamId: input.subjectTeamId,
+      subjectTenantWide: input.subjectTenantWide,
+      role: input.role,
+      inherited: false,
+      inheritToChildren: true,
+      grantedByUserId: ctx.userId,
+      expiresAt: input.expiresAt,
+    }).returning();
+
+    await this.logAuditEvent(ctx, 'grant_access', { aclId: acl.id, ...input });
+
+    return acl;
+  },
+
+  async revokeAccess(ctx: StorageServiceContext, aclId: string) {
+    const [acl] = await db.select().from(storageAcl)
+      .where(and(
+        eq(storageAcl.id, aclId),
+        eq(storageAcl.tenantId, ctx.tenantId),
+      )).limit(1);
+
+    if (!acl) {
+      throw new Error('ACL not found');
+    }
+
+    const canRevoke = await this.checkSharePermission(ctx, acl.objectId || undefined, acl.folderId || undefined);
+    if (!canRevoke && acl.grantedByUserId !== ctx.userId) {
+      throw new Error('You do not have permission to revoke this access');
+    }
+
+    await db.delete(storageAcl).where(eq(storageAcl.id, aclId));
+
+    await this.logAuditEvent(ctx, 'revoke_access', { aclId });
+  },
+
+  async getObjectAcl(ctx: StorageServiceContext, objectId: string) {
+    const acls = await db.select({
+      id: storageAcl.id,
+      role: storageAcl.role,
+      subjectUserId: storageAcl.subjectUserId,
+      subjectTeamId: storageAcl.subjectTeamId,
+      subjectTenantWide: storageAcl.subjectTenantWide,
+      inherited: storageAcl.inherited,
+      inheritToChildren: storageAcl.inheritToChildren,
+      inheritedFromFolderId: storageAcl.inheritedFromFolderId,
+      expiresAt: storageAcl.expiresAt,
+      createdAt: storageAcl.createdAt,
+      userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('userName'),
+      userEmail: users.email,
+    }).from(storageAcl)
+      .leftJoin(users, eq(storageAcl.subjectUserId, users.id))
+      .where(and(
+        eq(storageAcl.objectId, objectId),
+        eq(storageAcl.tenantId, ctx.tenantId),
+      ));
+
+    return acls;
+  },
+
+  async getFolderAcl(ctx: StorageServiceContext, folderId: string) {
+    const [folder] = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.id, folderId),
+        eq(storageFolders.tenantId, ctx.tenantId),
+      )).limit(1);
+
+    if (!folder) {
+      throw new Error('Folder not found');
+    }
+
+    const directAcls = await db.select({
+      id: storageAcl.id,
+      role: storageAcl.role,
+      subjectUserId: storageAcl.subjectUserId,
+      subjectTeamId: storageAcl.subjectTeamId,
+      subjectTenantWide: storageAcl.subjectTenantWide,
+      inherited: storageAcl.inherited,
+      inheritToChildren: storageAcl.inheritToChildren,
+      inheritedFromFolderId: storageAcl.inheritedFromFolderId,
+      expiresAt: storageAcl.expiresAt,
+      createdAt: storageAcl.createdAt,
+      userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('userName'),
+      userEmail: users.email,
+    }).from(storageAcl)
+      .leftJoin(users, eq(storageAcl.subjectUserId, users.id))
+      .where(and(
+        eq(storageAcl.folderId, folderId),
+        eq(storageAcl.tenantId, ctx.tenantId),
+      ));
+
+    const inheritedAcls = await this.getInheritedAclsForFolder(ctx, folder.parentId);
+
+    return {
+      direct: directAcls,
+      inherited: inheritedAcls,
+    };
+  },
+
+  async getInheritedAclsForFolder(ctx: StorageServiceContext, parentFolderId: string | null): Promise<any[]> {
+    if (!parentFolderId) return [];
+
+    const parentAcls = await db.select({
+      id: storageAcl.id,
+      role: storageAcl.role,
+      subjectUserId: storageAcl.subjectUserId,
+      subjectTeamId: storageAcl.subjectTeamId,
+      subjectTenantWide: storageAcl.subjectTenantWide,
+      inheritToChildren: storageAcl.inheritToChildren,
+      folderId: storageAcl.folderId,
+      folderName: storageFolders.name,
+    }).from(storageAcl)
+      .innerJoin(storageFolders, eq(storageAcl.folderId, storageFolders.id))
+      .where(and(
+        eq(storageAcl.folderId, parentFolderId),
+        eq(storageAcl.tenantId, ctx.tenantId),
+        eq(storageAcl.inheritToChildren, true),
+      ));
+
+    const [parentFolder] = await db.select().from(storageFolders)
+      .where(eq(storageFolders.id, parentFolderId)).limit(1);
+
+    const ancestorAcls = parentFolder?.parentId 
+      ? await this.getInheritedAclsForFolder(ctx, parentFolder.parentId)
+      : [];
+
+    return [...parentAcls, ...ancestorAcls];
+  },
+
+  async getEffectivePermissions(ctx: StorageServiceContext, resourceType: 'object' | 'folder', resourceId: string) {
+    let folderId: string | null = null;
+    let objectId: string | null = null;
+
+    if (resourceType === 'object') {
+      objectId = resourceId;
+      const [obj] = await db.select().from(storageObjects)
+        .where(eq(storageObjects.id, resourceId)).limit(1);
+      folderId = obj?.folderId || null;
+    } else {
+      folderId = resourceId;
+    }
+
+    const directAcls = await db.select().from(storageAcl)
+      .where(and(
+        eq(storageAcl.tenantId, ctx.tenantId),
+        objectId ? eq(storageAcl.objectId, objectId) : eq(storageAcl.folderId, folderId!),
+        or(
+          eq(storageAcl.subjectUserId, ctx.userId),
+          eq(storageAcl.subjectTenantWide, true),
+        ),
+        or(
+          isNull(storageAcl.expiresAt),
+          gte(storageAcl.expiresAt, new Date()),
+        ),
+      ));
+
+    let inheritedRole: string | null = null;
+    if (folderId) {
+      const [folder] = await db.select().from(storageFolders)
+        .where(eq(storageFolders.id, folderId)).limit(1);
+      
+      if (folder?.parentId) {
+        const inherited = await this.getInheritedPermissionForUser(ctx, folder.parentId);
+        inheritedRole = inherited;
+      }
+    }
+
+    const roleHierarchy = ['viewer', 'editor', 'owner'];
+    const directRoles = directAcls.map(a => a.role);
+    const allRoles = inheritedRole ? [...directRoles, inheritedRole] : directRoles;
+    
+    const highestRole = allRoles.reduce((highest, role) => {
+      return roleHierarchy.indexOf(role) > roleHierarchy.indexOf(highest) ? role : highest;
+    }, 'viewer');
+
+    const hasAccess = allRoles.length > 0;
+
+    return {
+      hasAccess,
+      effectiveRole: hasAccess ? highestRole : null,
+      canRead: hasAccess,
+      canWrite: hasAccess && ['editor', 'owner'].includes(highestRole),
+      canShare: hasAccess && highestRole === 'owner',
+      directPermissions: directAcls.length,
+      inheritedRole,
+    };
+  },
+
+  async getInheritedPermissionForUser(ctx: StorageServiceContext, folderId: string): Promise<string | null> {
+    const acls = await db.select().from(storageAcl)
+      .where(and(
+        eq(storageAcl.folderId, folderId),
+        eq(storageAcl.tenantId, ctx.tenantId),
+        eq(storageAcl.inheritToChildren, true),
+        or(
+          eq(storageAcl.subjectUserId, ctx.userId),
+          eq(storageAcl.subjectTenantWide, true),
+        ),
+        or(
+          isNull(storageAcl.expiresAt),
+          gte(storageAcl.expiresAt, new Date()),
+        ),
+      ));
+
+    if (acls.length > 0) {
+      const roleHierarchy = ['viewer', 'editor', 'owner'];
+      return acls.reduce((highest, acl) => {
+        return roleHierarchy.indexOf(acl.role) > roleHierarchy.indexOf(highest) ? acl.role : highest;
+      }, 'viewer');
+    }
+
+    const [folder] = await db.select().from(storageFolders)
+      .where(eq(storageFolders.id, folderId)).limit(1);
+
+    if (folder?.parentId) {
+      return this.getInheritedPermissionForUser(ctx, folder.parentId);
+    }
+
+    return null;
+  },
+
+  async checkSharePermission(ctx: StorageServiceContext, objectId?: string, folderId?: string): Promise<boolean> {
+    const resourceType = objectId ? 'object' : 'folder';
+    const resourceId = objectId || folderId!;
+    const perms = await this.getEffectivePermissions(ctx, resourceType, resourceId);
+    return perms.canShare;
+  },
+
+  // ==================== BATCH UPLOAD ====================
+
+  async uploadBatch(ctx: StorageServiceContext, files: Express.Multer.File[], options: { folderId?: string; category?: string }) {
+    const results: Array<{ success: boolean; fileName: string; objectId?: string; error?: string }> = [];
+
+    let totalSize = 0;
+    for (const file of files) {
+      totalSize += file.size;
+    }
+
+    const quotaCheck = await this.checkQuota(ctx, totalSize);
+    if (!quotaCheck.allowed) {
+      throw new Error(`Quota exceeded: ${quotaCheck.message}`);
+    }
+
+    for (const file of files) {
+      try {
+        const object = await this.uploadDirect(ctx, {
+          fileName: file.originalname,
+          mimeType: file.mimetype,
+          totalSizeBytes: file.size,
+          targetFolderId: options.folderId,
+          objectType: 'file',
+          category: options.category,
+        }, file.buffer);
+
+        results.push({
+          success: true,
+          fileName: file.originalname,
+          objectId: object.id,
+        });
+      } catch (err: any) {
+        results.push({
+          success: false,
+          fileName: file.originalname,
+          error: err.message,
+        });
+      }
+    }
+
+    await this.logAuditEvent(ctx, 'batch_upload', {
+      totalFiles: files.length,
+      successCount: results.filter(r => r.success).length,
+      folderId: options.folderId,
+    });
+
+    return results;
+  },
 };
 
 function formatBytes(bytes: number): string {
