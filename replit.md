@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, providing a comprehensive solution to modernize businesses, enhance efficiency, improve market responsiveness, and facilitate strategic decision-decision making.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, providing a comprehensive solution to modernize businesses, enhance efficiency, improve market responsiveness, and facilitate strategic decision-making.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -163,9 +163,6 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing".
     - **Action Management System**: Centralized configuration for department actions via `action_configurations`, routed through supervisors by `UnifiedTriggerService`.
     - **Deployment & Governance**: Incremental VPS deployment using `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections to `wss://{extension.sipServer}/ws`.
-    - **User Scope**: `user_stores` is the single source of truth; organization entities are derived automatically.
-    - **MCP/Action RLS**: `action_definitions` serves as the unified catalog for the MCP Gateway, supporting mixed RLS for global and tenant-specific actions.
-    - **Italian Business Validation**: Comprehensive validation for various Italian business data types with real-time feedback, Italian messages, Zod schemas, auto-formatting, and visual indicators.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)

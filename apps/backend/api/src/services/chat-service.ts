@@ -297,7 +297,7 @@ export class ChatService {
   }
 
   static async getChannelMembers(channelId: string, tenantId: string): Promise<any[]> {
-    const members = await db
+    const rawMembers = await db
       .select({
         id: chatChannelMembers.id,
         channelId: chatChannelMembers.channelId,
@@ -310,7 +310,8 @@ export class ChatService {
           id: users.id,
           email: users.email,
           firstName: users.firstName,
-          lastName: users.lastName
+          lastName: users.lastName,
+          avatarObjectPath: users.avatarObjectPath
         }
       })
       .from(chatChannelMembers)
@@ -321,6 +322,22 @@ export class ChatService {
         eq(chatChannels.tenantId, tenantId)
       ))
       .orderBy(desc(chatChannelMembers.joinedAt));
+    
+    // Build avatarUrl from avatarObjectPath for each member
+    const members = rawMembers.map(m => {
+      let avatarUrl: string | null = null;
+      if (m.user?.avatarObjectPath) {
+        const filename = m.user.avatarObjectPath.split('/').pop();
+        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+      }
+      return {
+        ...m,
+        user: m.user ? {
+          ...m.user,
+          avatarUrl
+        } : null
+      };
+    });
     
     logger.info('🔍 GET CHANNEL MEMBERS', { 
       channelId, 
