@@ -1,5 +1,6 @@
 import { useUserPresence, getPresenceColor, getPresenceLabel, PresenceStatus } from '@/hooks/useChatPresence';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar } from './Avatar';
 
 interface PresenceIndicatorProps {
   userId: string;
@@ -62,73 +63,43 @@ export function PresenceIndicator({
 
 interface AvatarWithPresenceProps {
   userId: string;
-  name: string;
-  avatarUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   showPresence?: boolean;
 }
 
-const avatarSizes = {
-  sm: { container: 32, text: 11 },
-  md: { container: 40, text: 13 },
-  lg: { container: 48, text: 15 }
+const avatarContainerSizes = {
+  sm: 32,
+  md: 40,
+  lg: 48
 };
-
-function getInitials(name: string): string {
-  if (!name || name.trim() === '') return '??';
-  
-  const parts = name.trim().split(/\s+/);
-  
-  if (parts.length >= 2) {
-    const first = parts[0]?.[0] || '';
-    const last = parts[parts.length - 1]?.[0] || '';
-    return (first + last).toUpperCase();
-  }
-  
-  if (parts[0] && parts[0].length >= 2) {
-    return parts[0].substring(0, 2).toUpperCase();
-  }
-  
-  return (parts[0]?.[0] || '?').toUpperCase();
-}
 
 export function AvatarWithPresence({
   userId,
-  name,
-  avatarUrl,
+  firstName,
+  lastName,
+  email,
   size = 'md',
   className = '',
   showPresence = true
 }: AvatarWithPresenceProps) {
-  const dimensions = avatarSizes[size];
-  const initials = getInitials(name);
+  const containerSize = avatarContainerSizes[size];
 
   return (
     <div 
       className={`relative shrink-0 ${className}`}
-      style={{ width: dimensions.container, height: dimensions.container }}
+      style={{ width: containerSize, height: containerSize }}
     >
-      {avatarUrl ? (
-        <img
-          src={avatarUrl}
-          alt={name}
-          className="w-full h-full rounded-full object-cover"
-        />
-      ) : (
-        <div
-          className="w-full h-full rounded-full flex items-center justify-center font-bold shadow-md"
-          style={{ 
-            fontSize: dimensions.text,
-            background: 'linear-gradient(135deg, #FF6900 0%, #e85d00 100%)',
-            color: '#ffffff',
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-            border: '2px solid rgba(255,255,255,0.9)'
-          }}
-        >
-          {initials}
-        </div>
-      )}
+      <Avatar 
+        userId={userId}
+        firstName={firstName}
+        lastName={lastName}
+        email={email}
+        size={size}
+      />
       {showPresence && (
         <div 
           className="absolute"

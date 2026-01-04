@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircle, Loader2 } from 'lucide-react';
+import { Avatar } from './Avatar';
 import { MessageActions } from './MessageActions';
 import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 import { AvatarWithPresence } from './PresenceIndicator';
@@ -177,9 +178,11 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
               {/* Avatar con indicatore presenza */}
               <AvatarWithPresence
                 userId={message.userId}
-                name={isMine ? 'Tu' : (message.user?.name || 'Utente')}
-                avatarUrl={message.user?.avatarUrl || undefined}
+                firstName={message.user?.firstName}
+                lastName={message.user?.lastName}
+                email={message.user?.email}
                 size="sm"
+                status="online"
               />
 
               {/* Message Bubble */}
