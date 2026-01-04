@@ -1,15 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiService } from '../services/ApiService';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-// WindTre colors for avatar generation (matching AvatarSelector)
 const WINDTRE_COLORS = [
-  ['#FF6900', '#ff8533'], // Primary orange gradient
-  ['#7B2CBF', '#9747ff'], // Primary purple gradient
-  ['#FF6900', '#7B2CBF'], // Orange to purple
-  ['#ff8533', '#9747ff'], // Light orange to light purple
-  ['#e55a00', '#6B21A8'], // Dark orange to dark purple
-  ['#FF8500', '#8B5CF6'], // Bright orange to violet
+  ['#FF6900', '#ff8533'],
+  ['#7B2CBF', '#9747ff'],
+  ['#FF6900', '#7B2CBF'],
+  ['#ff8533', '#9747ff'],
+  ['#e55a00', '#6B21A8'],
+  ['#FF8500', '#8B5CF6'],
 ];
 
 interface UserData {
@@ -21,6 +19,15 @@ interface UserData {
   profileImageUrl?: string;
   avatarUrl?: string;
   avatarObjectPath?: string;
+}
+
+interface SignedUrlResponse {
+  hasAvatar: boolean;
+  url: string | null;
+  expiresAt: string | null;
+  isLegacy?: boolean;
+  initials: string;
+  mimeType?: string;
 }
 
 interface UseUserAvatarOptions {
@@ -35,6 +42,8 @@ interface UseUserAvatarReturn {
   isLoading: boolean;
   error?: string;
   hasImage: boolean;
+  isLegacy: boolean;
+  refreshUrl: () => void;
 }
 
 export function useUserAvatar(
@@ -44,8 +53,8 @@ export function useUserAvatar(
   const { size = 32, enabled = true } = options;
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Generate consistent initials from user data
   const initials = useMemo(() => {
     if (!userData) return 'U';
     
@@ -74,14 +83,12 @@ export function useUserAvatar(
     return 'U';
   }, [userData]);
 
-  // Generate consistent gradient based on user identifier (seeded)
   const gradient = useMemo(() => {
     if (!userData) {
       const colorSet = WINDTRE_COLORS[0];
       return `linear-gradient(135deg, ${colorSet[0]}, ${colorSet[1]})`;
     }
 
-    // Create a simple hash from user identifier for consistent color selection
     const identifier = userData.id || userData.email || userData.username || 'default';
     let hash = 0;
     for (let i = 0; i < identifier.length; i++) {
@@ -94,15 +101,13 @@ export function useUserAvatar(
     return `linear-gradient(135deg, ${colorSet[0]}, ${colorSet[1]})`;
   }, [userData]);
 
-  // Query for user avatar image - uses new Object Storage endpoint
-  const { data: avatarData, isLoading: isQueryLoading, error: queryError } = useQuery({
-    queryKey: ['/api/avatars/users', userData?.id, 'avatar'],
+  const { data: signedUrlData, isLoading: isQueryLoading, error: queryError, refetch } = useQuery<SignedUrlResponse | null>({
+    queryKey: ['/api/avatars/users', userData?.id, 'signed-url'],
     queryFn: async () => {
-      if (!userData?.id) throw new Error('User ID not available');
+      if (!userData?.id) return null;
       
-      // Try to fetch from API, but gracefully handle failures
       try {
-        const response = await fetch(`/api/avatars/users/${userData.id}/avatar`, {
+        const response = await fetch(`/api/avatars/users/${userData.id}/signed-url`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json'
@@ -110,31 +115,45 @@ export function useUserAvatar(
         });
         
         if (!response.ok) {
-          // If 404 or other client errors, just return null (no avatar)
           if (response.status >= 400 && response.status < 500) {
             return null;
           }
-          throw new Error(`Avatar fetch failed: ${response.status}`);
+          throw new Error(`Signed URL fetch failed: ${response.status}`);
         }
         
-        const result = await response.json();
-        // Support both old profileImageUrl and new avatarUrl formats
-        return result?.avatarUrl || result?.profileImageUrl || null;
+        return await response.json();
       } catch (error) {
-        // For network errors or server errors, log but don't throw
-        console.warn('Avatar fetch failed, using fallback:', error);
+        console.warn('Signed URL fetch failed, using fallback:', error);
         return null;
       }
     },
     enabled: enabled && !!userData?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // Don't retry failed avatar fetches
+    staleTime: 4 * 60 * 1000, // 4 minutes (signed URLs expire in 5)
+    retry: false,
     refetchOnWindowFocus: false
   });
 
-  // Handle image loading states
   useEffect(() => {
-    if (!avatarData) {
+    if (!signedUrlData?.expiresAt || signedUrlData.isLegacy) return;
+
+    const expiresAt = new Date(signedUrlData.expiresAt).getTime();
+    const now = Date.now();
+    const timeUntilExpiry = expiresAt - now;
+    
+    if (timeUntilExpiry > 60000) {
+      const refreshTimeout = setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/avatars/users', userData?.id, 'signed-url'] 
+        });
+      }, timeUntilExpiry - 60000);
+      
+      return () => clearTimeout(refreshTimeout);
+    }
+  }, [signedUrlData?.expiresAt, signedUrlData?.isLegacy, userData?.id, queryClient]);
+
+  useEffect(() => {
+    const url = signedUrlData?.url;
+    if (!url) {
       setImageError(false);
       setImageLoaded(false);
       return;
@@ -143,7 +162,6 @@ export function useUserAvatar(
     setImageError(false);
     setImageLoaded(false);
 
-    // Preload image to detect errors
     const img = new Image();
     img.onload = () => {
       setImageLoaded(true);
@@ -153,38 +171,43 @@ export function useUserAvatar(
       setImageError(true);
       setImageLoaded(false);
     };
-    img.src = avatarData;
-  }, [avatarData]);
+    img.src = url;
+  }, [signedUrlData?.url]);
 
-  // Determine final avatar URL and loading state
   const avatarUrl = useMemo(() => {
-    // If we have avatarUrl from user data and no API error, use it first
     if (userData?.avatarUrl && !imageError) {
       return userData.avatarUrl;
     }
     
-    // Fallback to legacy profileImageUrl for backwards compatibility
     if (userData?.profileImageUrl && !imageError) {
       return userData.profileImageUrl;
     }
     
-    // If we have API data and it loaded successfully, use it
-    if (avatarData && imageLoaded && !imageError) {
-      return avatarData;
+    if (signedUrlData?.url && signedUrlData.hasAvatar && imageLoaded && !imageError) {
+      return signedUrlData.url;
     }
     
     return undefined;
-  }, [userData?.avatarUrl, userData?.profileImageUrl, avatarData, imageLoaded, imageError]);
+  }, [userData?.avatarUrl, userData?.profileImageUrl, signedUrlData, imageLoaded, imageError]);
 
   const hasImage = !!(avatarUrl && !imageError && (imageLoaded || !!userData?.avatarUrl || !!userData?.profileImageUrl));
-  const isLoading = enabled && !!userData?.id && (isQueryLoading || (!!avatarData && !imageLoaded && !imageError));
+  const isLoading = enabled && !!userData?.id && (isQueryLoading || (!!signedUrlData?.url && !imageLoaded && !imageError));
+  const isLegacy = signedUrlData?.isLegacy ?? true;
+
+  const refreshUrl = () => {
+    queryClient.invalidateQueries({ 
+      queryKey: ['/api/avatars/users', userData?.id, 'signed-url'] 
+    });
+  };
 
   return {
     avatarUrl,
-    initials,
+    initials: signedUrlData?.initials || initials,
     gradient,
     isLoading,
     error: queryError?.message,
-    hasImage
+    hasImage,
+    isLegacy,
+    refreshUrl
   };
 }

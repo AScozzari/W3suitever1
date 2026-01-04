@@ -32,6 +32,7 @@ import activityLogsRoutes from "../routes/activity-logs";
 import actionConfigurationsRoutes from "../routes/action-configurations";
 import actionDefinitionsRoutes from "../routes/action-definitions";
 import avatarRoutes from "../routes/avatar";
+import storageRoutes from "../routes/storage";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1575,6 +1576,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // All avatar routes handled by avatarRoutes (includes /serve/:tenantId/:filename with Replit/VPS fallback)
   // The /serve endpoint is public (no auth), other avatar routes need tenant/rbac middleware
   app.use('/api/avatars', avatarRoutes);
+
+  // ==================== STORAGE ROUTES ====================
+  // Enterprise Object Storage with signed URLs, ACL, quotas
+  // /serve endpoint is public (token-based), other routes need tenant/rbac middleware
+  app.use('/api/storage', storageRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 

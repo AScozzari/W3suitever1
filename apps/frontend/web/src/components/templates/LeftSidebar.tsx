@@ -60,7 +60,7 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'time-tracking', label: 'Time Tracking', icon: Clock, path: '/time-tracking' },
   { id: 'leave-management', label: 'Gestione Ferie', icon: CalendarDays, path: '/leave-management' },
   { id: 'shift-planning', label: 'Pianificazione Turni', icon: Clock, path: '/shift-planning' },
-  { id: 'documents', label: 'Document Drive', icon: FileText, path: '/documents' },
+  { id: 'documents', label: 'My Drive', icon: FileText, path: '/my-drive' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
   { 

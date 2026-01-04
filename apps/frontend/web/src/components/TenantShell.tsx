@@ -49,6 +49,7 @@ const WMSDashboardPage = lazy(() => import('../pages/wms/WMSDashboardPage'));
 
 // Commissioning Pages
 const CommissioningPage = lazy(() => import('../pages/commissioning/CommissioningPage'));
+const MyDrivePage = lazy(() => import('../pages/MyDrivePage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -563,7 +564,15 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         <Redirect to={`/${tenantSlug}/hr-management`} replace />
       </Route>
       <Route path={`/${tenantSlug}/documents`}>
-        <Redirect to={`/${tenantSlug}/portale`} replace />
+        <AuthenticatedRoute>
+          <MyDrivePage />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/my-drive`}>
+        <AuthenticatedRoute>
+          <MyDrivePage />
+        </AuthenticatedRoute>
       </Route>
       <Route path={`/${tenantSlug}/expense-management`}>
         <Redirect to={`/${tenantSlug}/portale`} replace />

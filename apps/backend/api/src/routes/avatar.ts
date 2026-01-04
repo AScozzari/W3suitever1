@@ -10,6 +10,7 @@ import { Client } from '@replit/object-storage';
 import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { storageService, StorageServiceContext } from '../services/storage.service';
 
 const router = Router();
 
@@ -422,6 +423,139 @@ router.get('/users/:userId/avatar', async (req: Request, res: Response) => {
 
   } catch (error) {
     res.status(500).json({ error: 'Errore interno del server' });
+  }
+});
+
+// ==================== ENTERPRISE STORAGE SIGNED URL ENDPOINTS ====================
+
+// Get signed URL for avatar (NEW - secure access via temporary signed URL)
+router.get('/users/:userId/signed-url', requirePermission('users.read'), async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const tenantId = req.tenant?.id || req.headers['x-tenant-id'] as string;
+    const currentUserId = (req as any).user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID richiesto' });
+    }
+
+    const ctx: StorageServiceContext = {
+      tenantId,
+      userId: currentUserId,
+      ipAddress: req.ip || req.connection?.remoteAddress,
+      userAgent: req.headers['user-agent'],
+    };
+
+    const result = await storageService.getAvatarSignedUrl(ctx, userId);
+
+    if (!result) {
+      // No avatar in new storage system, check legacy
+      const [user] = await db
+        .select({ 
+          avatarObjectPath: users.avatarObjectPath, 
+          firstName: users.firstName, 
+          lastName: users.lastName,
+          tenantId: users.tenantId
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).json({ error: 'Utente non trovato' });
+      }
+
+      if (user.avatarObjectPath) {
+        // Legacy avatar exists - return legacy URL (will be migrated later)
+        const filename = user.avatarObjectPath.split('/').pop();
+        return res.json({
+          hasAvatar: true,
+          url: `/api/avatars/serve/${user.tenantId}/${filename}`,
+          isLegacy: true,
+          expiresAt: null,
+          initials: `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || '??'
+        });
+      }
+
+      // No avatar at all
+      return res.json({
+        hasAvatar: false,
+        url: null,
+        initials: `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || '??'
+      });
+    }
+
+    // Get user for initials
+    const [user] = await db
+      .select({ firstName: users.firstName, lastName: users.lastName })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    res.json({
+      hasAvatar: true,
+      url: result.url,
+      expiresAt: result.expiresAt,
+      mimeType: result.mimeType,
+      isLegacy: false,
+      initials: user ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() : '??'
+    });
+
+  } catch (error) {
+    structuredLogger.error('Avatar signed URL failed', {
+      component: 'avatar-signed-url',
+      error: error instanceof Error ? error : new Error(String(error))
+    });
+    res.status(500).json({ error: 'Errore nel recupero avatar' });
+  }
+});
+
+// Upload avatar using new storage service (optional - can coexist with legacy)
+router.post('/users/:userId/avatar-v2', requirePermission('users.update'), upload.single('avatar'), async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const tenantId = req.tenant?.id || req.headers['x-tenant-id'] as string;
+    const currentUserId = (req as any).user?.id;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nessun file caricato' });
+    }
+
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID richiesto' });
+    }
+
+    const ctx: StorageServiceContext = {
+      tenantId,
+      userId: currentUserId,
+      ipAddress: req.ip || req.connection?.remoteAddress,
+      userAgent: req.headers['user-agent'],
+    };
+
+    const storageObject = await storageService.uploadAvatar(ctx, userId, req.file.buffer, req.file.mimetype);
+
+    // Get signed URL for the newly uploaded avatar
+    const signedUrl = await storageService.getAvatarSignedUrl(ctx, userId);
+
+    structuredLogger.info('Avatar uploaded via new storage service', {
+      component: 'avatar-v2-upload',
+      metadata: { userId, tenantId, objectId: storageObject.id }
+    });
+
+    res.status(201).json({
+      success: true,
+      objectId: storageObject.id,
+      signedUrl: signedUrl?.url,
+      expiresAt: signedUrl?.expiresAt,
+      message: 'Avatar caricato con successo'
+    });
+
+  } catch (error: any) {
+    structuredLogger.error('Avatar v2 upload failed', {
+      component: 'avatar-v2-upload',
+      error: error instanceof Error ? error : new Error(String(error))
+    });
+    res.status(500).json({ error: error.message || 'Errore durante il caricamento' });
   }
 });
 

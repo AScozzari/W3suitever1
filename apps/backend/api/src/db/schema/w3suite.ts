@@ -71,6 +71,24 @@ export const notificationCategoryEnum = pgEnum('notification_category', ['sales'
 export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'private']);
 export const objectTypeEnum = pgEnum('object_type', ['avatar', 'document', 'image', 'file']);
 
+// Enterprise Storage System Enums
+export const storageScopeLevelEnum = pgEnum('storage_scope_level', ['tenant', 'team', 'user', 'system']);
+export const storageAclRoleEnum = pgEnum('storage_acl_role', ['owner', 'editor', 'viewer']);
+export const storageCategoryEnum = pgEnum('storage_category', [
+  'avatars',        // User/team/tenant avatars
+  'feed',           // Feed post attachments
+  'chat',           // Chat message attachments  
+  'documents',      // General documents
+  'crm',            // CRM related files
+  'wms',            // WMS documents (invoices, DDT)
+  'hr',             // HR documents (payslips, contracts)
+  'mcp',            // MCP resources
+  'rag',            // RAG knowledge base
+  'brand_push',     // Brand-pushed resources
+  'general'         // General files
+]);
+export const storageUploadStatusEnum = pgEnum('storage_upload_status', ['pending', 'uploading', 'completed', 'failed', 'expired']);
+
 // CRM Pipeline Permission Enums
 export const pipelinePermissionModeEnum = pgEnum('pipeline_permission_mode', ['all', 'deal_managers', 'pipeline_admins', 'supervisor_only', 'custom', 'none']);
 export const pipelineDeletionModeEnum = pgEnum('pipeline_deletion_mode', ['admins', 'supervisor_only', 'none']);
@@ -11500,7 +11518,380 @@ export const userBadges = w3suiteSchema.table("user_badges", {
   index("user_badges_type_idx").on(table.badgeType),
 ]);
 
+// ==================== ENTERPRISE STORAGE SYSTEM ====================
+
+// Storage Folders - Hierarchical folder structure (like Google Drive)
+export const storageFolders = w3suiteSchema.table("storage_folders", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  name: varchar("name", { length: 255 }).notNull(),
+  parentId: uuid("parent_id"), // Self-reference for nested folders
+  path: text("path").notNull(), // Cached full path: /Documents/Projects/2024
+  
+  // Ownership & Scope
+  scopeLevel: storageScopeLevelEnum("scope_level").notNull().default('user'), // tenant, team, user, system
+  ownerUserId: varchar("owner_user_id").references(() => users.id),
+  ownerTeamId: uuid("owner_team_id").references(() => teams.id),
+  
+  // Category for filtering
+  category: storageCategoryEnum("category").default('general'),
+  departmentId: uuid("department_id").references(() => departments.id),
+  
+  // Metadata
+  isSystemFolder: boolean("is_system_folder").default(false), // /System/Avatars, /Feed, etc.
+  color: varchar("color", { length: 7 }), // Folder color #HEX
+  icon: varchar("icon", { length: 50 }), // Lucide icon name
+  
+  // Soft delete
+  deletedAt: timestamp("deleted_at"),
+  deletedByUserId: varchar("deleted_by_user_id").references(() => users.id),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+}, (table) => [
+  index("storage_folders_tenant_idx").on(table.tenantId),
+  index("storage_folders_parent_idx").on(table.parentId),
+  index("storage_folders_owner_user_idx").on(table.ownerUserId),
+  index("storage_folders_owner_team_idx").on(table.ownerTeamId),
+  index("storage_folders_path_idx").on(table.path),
+  index("storage_folders_category_idx").on(table.category),
+]);
+
+// Storage Objects - Individual files with metadata
+export const storageObjects = w3suiteSchema.table("storage_objects", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // File info
+  name: varchar("name", { length: 255 }).notNull(),
+  originalName: varchar("original_name", { length: 500 }), // Original upload filename
+  mimeType: varchar("mime_type", { length: 255 }).notNull(),
+  sizeBytes: bigint("size_bytes", { mode: 'number' }).notNull(),
+  extension: varchar("extension", { length: 20 }),
+  
+  // Storage location
+  objectKey: varchar("object_key", { length: 1000 }).notNull(), // Full key in object storage
+  storageProvider: varchar("storage_provider", { length: 50 }).default('replit'), // replit, s3, gcs
+  
+  // Organization
+  folderId: uuid("folder_id").references(() => storageFolders.id),
+  
+  // Type & Category
+  objectType: objectTypeEnum("object_type").notNull(),
+  category: storageCategoryEnum("category").default('general'),
+  departmentId: uuid("department_id").references(() => departments.id),
+  
+  // Ownership & Scope
+  scopeLevel: storageScopeLevelEnum("scope_level").notNull().default('user'),
+  ownerUserId: varchar("owner_user_id").references(() => users.id),
+  ownerTeamId: uuid("owner_team_id").references(() => teams.id),
+  
+  // Visibility
+  visibility: objectVisibilityEnum("visibility").default('private'),
+  
+  // Version tracking
+  versionNumber: integer("version_number").default(1),
+  latestVersionId: uuid("latest_version_id"), // Points to latest version in versions table
+  
+  // Content hash for deduplication
+  contentHash: varchar("content_hash", { length: 64 }), // SHA-256
+  
+  // Preview/thumbnail
+  thumbnailKey: varchar("thumbnail_key", { length: 1000 }),
+  previewAvailable: boolean("preview_available").default(false),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}), // Extra metadata (dimensions, duration, etc.)
+  tags: varchar("tags", { length: 100 }).array().default([]),
+  
+  // Linked resources (for service-specific files)
+  linkedResourceType: varchar("linked_resource_type", { length: 50 }), // 'feed_post', 'chat_message', 'user_avatar', etc.
+  linkedResourceId: varchar("linked_resource_id", { length: 100 }),
+  
+  // Soft delete
+  deletedAt: timestamp("deleted_at"),
+  deletedByUserId: varchar("deleted_by_user_id").references(() => users.id),
+  permanentDeleteAt: timestamp("permanent_delete_at"), // When to permanently delete from storage
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+}, (table) => [
+  index("storage_objects_tenant_idx").on(table.tenantId),
+  index("storage_objects_folder_idx").on(table.folderId),
+  index("storage_objects_owner_user_idx").on(table.ownerUserId),
+  index("storage_objects_owner_team_idx").on(table.ownerTeamId),
+  index("storage_objects_category_idx").on(table.category),
+  index("storage_objects_type_idx").on(table.objectType),
+  index("storage_objects_linked_idx").on(table.linkedResourceType, table.linkedResourceId),
+  index("storage_objects_hash_idx").on(table.contentHash),
+  uniqueIndex("storage_objects_key_unique").on(table.objectKey),
+]);
+
+// Storage Object Versions - File version history
+export const storageObjectVersions = w3suiteSchema.table("storage_object_versions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  objectId: uuid("object_id").notNull().references(() => storageObjects.id, { onDelete: 'cascade' }),
+  
+  versionNumber: integer("version_number").notNull(),
+  objectKey: varchar("object_key", { length: 1000 }).notNull(),
+  sizeBytes: bigint("size_bytes", { mode: 'number' }).notNull(),
+  contentHash: varchar("content_hash", { length: 64 }),
+  
+  changeNote: text("change_note"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+}, (table) => [
+  index("storage_versions_object_idx").on(table.objectId),
+  uniqueIndex("storage_versions_unique").on(table.objectId, table.versionNumber),
+]);
+
+// Storage ACL - Access Control List for objects and folders
+export const storageAcl = w3suiteSchema.table("storage_acl", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Target (object or folder)
+  objectId: uuid("object_id").references(() => storageObjects.id, { onDelete: 'cascade' }),
+  folderId: uuid("folder_id").references(() => storageFolders.id, { onDelete: 'cascade' }),
+  
+  // Subject (who has access)
+  subjectUserId: varchar("subject_user_id").references(() => users.id, { onDelete: 'cascade' }),
+  subjectTeamId: uuid("subject_team_id").references(() => teams.id, { onDelete: 'cascade' }),
+  subjectTenantWide: boolean("subject_tenant_wide").default(false), // All tenant users
+  
+  // Permission
+  role: storageAclRoleEnum("role").notNull(), // owner, editor, viewer
+  
+  // Inheritance
+  inherited: boolean("inherited").default(false), // Inherited from parent folder
+  inheritedFromFolderId: uuid("inherited_from_folder_id").references(() => storageFolders.id),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  grantedByUserId: varchar("granted_by_user_id").references(() => users.id),
+  expiresAt: timestamp("expires_at"), // Optional expiration
+}, (table) => [
+  index("storage_acl_tenant_idx").on(table.tenantId),
+  index("storage_acl_object_idx").on(table.objectId),
+  index("storage_acl_folder_idx").on(table.folderId),
+  index("storage_acl_user_idx").on(table.subjectUserId),
+  index("storage_acl_team_idx").on(table.subjectTeamId),
+]);
+
+// Storage Shares - Shareable links (like Google Drive share links)
+export const storageShares = w3suiteSchema.table("storage_shares", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Target
+  objectId: uuid("object_id").references(() => storageObjects.id, { onDelete: 'cascade' }),
+  folderId: uuid("folder_id").references(() => storageFolders.id, { onDelete: 'cascade' }),
+  
+  // Share token for URL
+  shareToken: varchar("share_token", { length: 64 }).notNull().unique(),
+  
+  // Permissions
+  allowDownload: boolean("allow_download").default(true),
+  allowEdit: boolean("allow_edit").default(false),
+  requirePassword: boolean("require_password").default(false),
+  passwordHash: varchar("password_hash", { length: 255 }),
+  
+  // Limits
+  maxDownloads: integer("max_downloads"),
+  downloadCount: integer("download_count").default(0),
+  expiresAt: timestamp("expires_at"),
+  
+  // Tracking
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  
+  isActive: boolean("is_active").default(true),
+}, (table) => [
+  index("storage_shares_tenant_idx").on(table.tenantId),
+  index("storage_shares_object_idx").on(table.objectId),
+  index("storage_shares_folder_idx").on(table.folderId),
+  index("storage_shares_token_idx").on(table.shareToken),
+]);
+
+// Storage Upload Sessions - For resumable uploads
+export const storageUploadSessions = w3suiteSchema.table("storage_upload_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Upload token
+  uploadToken: varchar("upload_token", { length: 64 }).notNull().unique(),
+  
+  // File info
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 255 }).notNull(),
+  totalSizeBytes: bigint("total_size_bytes", { mode: 'number' }).notNull(),
+  uploadedBytes: bigint("uploaded_bytes", { mode: 'number' }).default(0),
+  
+  // Target location
+  targetFolderId: uuid("target_folder_id").references(() => storageFolders.id),
+  objectType: objectTypeEnum("object_type").notNull(),
+  category: storageCategoryEnum("category").default('general'),
+  
+  // Link to resource (optional)
+  linkedResourceType: varchar("linked_resource_type", { length: 50 }),
+  linkedResourceId: varchar("linked_resource_id", { length: 100 }),
+  
+  // Status
+  status: storageUploadStatusEnum("status").default('pending'),
+  
+  // Result
+  resultObjectId: uuid("result_object_id").references(() => storageObjects.id),
+  errorMessage: text("error_message"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  completedAt: timestamp("completed_at"),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+}, (table) => [
+  index("storage_uploads_tenant_idx").on(table.tenantId),
+  index("storage_uploads_token_idx").on(table.uploadToken),
+  index("storage_uploads_status_idx").on(table.status),
+]);
+
+// Storage Signed Tokens - For secure URL access
+export const storageSignedTokens = w3suiteSchema.table("storage_signed_tokens", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  objectId: uuid("object_id").notNull().references(() => storageObjects.id, { onDelete: 'cascade' }),
+  
+  // Token
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull(), // For faster lookup
+  
+  // Access info
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 45 }), // IPv6 compatible
+  
+  // Validity
+  expiresAt: timestamp("expires_at").notNull(),
+  singleUse: boolean("single_use").default(false),
+  usedAt: timestamp("used_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("storage_tokens_object_idx").on(table.objectId),
+  index("storage_tokens_hash_idx").on(table.tokenHash),
+  index("storage_tokens_expires_idx").on(table.expiresAt),
+]);
+
+// Storage Quota - Quota configuration and usage tracking
+export const storageQuotas = w3suiteSchema.table("storage_quotas", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Subject (who this quota applies to)
+  scopeLevel: storageScopeLevelEnum("scope_level").notNull(), // tenant, team, user
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  teamId: uuid("team_id").references(() => teams.id, { onDelete: 'cascade' }),
+  
+  // Quota limits (bytes)
+  quotaBytes: bigint("quota_bytes", { mode: 'number' }).notNull(), // Max allowed
+  usedBytes: bigint("used_bytes", { mode: 'number' }).default(0), // Current usage
+  
+  // File count limits
+  maxFileCount: integer("max_file_count"), // Optional max files
+  currentFileCount: integer("current_file_count").default(0),
+  
+  // Alert thresholds
+  alertThreshold80: boolean("alert_threshold_80").default(false), // 80% alert sent
+  alertThreshold90: boolean("alert_threshold_90").default(false), // 90% alert sent
+  alertThreshold100: boolean("alert_threshold_100").default(false), // 100% alert sent
+  
+  // Override from brand
+  brandOverride: boolean("brand_override").default(false), // Set by Brand Interface
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("storage_quotas_tenant_idx").on(table.tenantId),
+  index("storage_quotas_user_idx").on(table.userId),
+  index("storage_quotas_team_idx").on(table.teamId),
+  uniqueIndex("storage_quotas_scope_unique").on(table.tenantId, table.scopeLevel, table.userId, table.teamId),
+]);
+
+// Storage Audit Events - Access and modification logs
+export const storageAuditEvents = w3suiteSchema.table("storage_audit_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  
+  // Target
+  objectId: uuid("object_id").references(() => storageObjects.id, { onDelete: 'set null' }),
+  folderId: uuid("folder_id").references(() => storageFolders.id, { onDelete: 'set null' }),
+  
+  // Action
+  action: varchar("action", { length: 50 }).notNull(), // 'upload', 'download', 'delete', 'share', 'view', 'edit', 'move', 'copy'
+  
+  // Actor
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  
+  // Details
+  details: jsonb("details").default({}), // Additional action-specific data
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("storage_audit_tenant_idx").on(table.tenantId),
+  index("storage_audit_object_idx").on(table.objectId),
+  index("storage_audit_folder_idx").on(table.folderId),
+  index("storage_audit_user_idx").on(table.userId),
+  index("storage_audit_action_idx").on(table.action),
+  index("storage_audit_date_idx").on(table.createdAt),
+]);
+
 // ==================== INSERT SCHEMAS AND TYPES ====================
+
+// Storage Insert Schemas
+export const insertStorageFolderSchema = createInsertSchema(storageFolders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertStorageFolder = z.infer<typeof insertStorageFolderSchema>;
+export type StorageFolder = typeof storageFolders.$inferSelect;
+
+export const insertStorageObjectSchema = createInsertSchema(storageObjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertStorageObject = z.infer<typeof insertStorageObjectSchema>;
+export type StorageObject = typeof storageObjects.$inferSelect;
+
+export const insertStorageAclSchema = createInsertSchema(storageAcl).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertStorageAcl = z.infer<typeof insertStorageAclSchema>;
+export type StorageAcl = typeof storageAcl.$inferSelect;
+
+export const insertStorageShareSchema = createInsertSchema(storageShares).omit({
+  id: true,
+  createdAt: true,
+  downloadCount: true,
+});
+export type InsertStorageShare = z.infer<typeof insertStorageShareSchema>;
+export type StorageShare = typeof storageShares.$inferSelect;
+
+export const insertStorageQuotaSchema = createInsertSchema(storageQuotas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usedBytes: true,
+  currentFileCount: true,
+});
+export type InsertStorageQuota = z.infer<typeof insertStorageQuotaSchema>;
+export type StorageQuota = typeof storageQuotas.$inferSelect;
+
 export const insertFeedPostSchema = createInsertSchema(feedPosts).omit({
   id: true,
   createdAt: true,
