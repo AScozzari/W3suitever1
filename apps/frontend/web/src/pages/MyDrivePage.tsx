@@ -132,6 +132,17 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ fileName: string; progress: number; status: 'uploading' | 'success' | 'error' }[]>([]);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState<{ type: 'object' | 'folder'; id: string; name: string } | null>(null);
+  const [shareSettings, setShareSettings] = useState({
+    allowDownload: true,
+    allowEdit: false,
+    requirePassword: false,
+    password: '',
+    expiresInHours: 0,
+    maxDownloads: 0
+  });
+  const [shareLink, setShareLink] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const tenantSlug = location.split('/')[1];
@@ -306,6 +317,64 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     }
   }, [uploadBatchMutation]);
 
+  const createShareMutation = useMutation({
+    mutationFn: async (data: { objectId?: string; folderId?: string; settings: typeof shareSettings }) => {
+      const response = await fetch('/api/storage/shares', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          objectId: data.objectId,
+          folderId: data.folderId,
+          allowDownload: data.settings.allowDownload,
+          allowEdit: data.settings.allowEdit,
+          requirePassword: data.settings.requirePassword,
+          password: data.settings.requirePassword ? data.settings.password : undefined,
+          expiresInHours: data.settings.expiresInHours || undefined,
+          maxDownloads: data.settings.maxDownloads || undefined
+        })
+      });
+      if (!response.ok) throw new Error('Errore creazione link');
+      return response.json();
+    },
+    onSuccess: (result) => {
+      setShareLink(window.location.origin + result.shareUrl);
+      toast({ title: 'Link creato', description: 'Il link di condivisione è stato creato' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile creare il link di condivisione', variant: 'destructive' });
+    }
+  });
+
+  const handleOpenShareDialog = useCallback((type: 'object' | 'folder', id: string, name: string) => {
+    setShareTarget({ type, id, name });
+    setShareSettings({
+      allowDownload: true,
+      allowEdit: false,
+      requirePassword: false,
+      password: '',
+      expiresInHours: 0,
+      maxDownloads: 0
+    });
+    setShareLink(null);
+    setShareDialogOpen(true);
+  }, []);
+
+  const handleCreateShare = useCallback(() => {
+    if (!shareTarget) return;
+    createShareMutation.mutate({
+      objectId: shareTarget.type === 'object' ? shareTarget.id : undefined,
+      folderId: shareTarget.type === 'folder' ? shareTarget.id : undefined,
+      settings: shareSettings
+    });
+  }, [shareTarget, shareSettings, createShareMutation]);
+
+  const copyShareLink = useCallback(() => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      toast({ title: 'Copiato!', description: 'Link copiato negli appunti' });
+    }
+  }, [shareLink, toast]);
+
   const breadcrumbs: BreadcrumbItem[] = useMemo(() => {
     const items: BreadcrumbItem[] = [{ id: null, name: 'My Drive', path: '' }];
     return items;
@@ -423,6 +492,133 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-0.5rem">
+              <Share2 className="w-1.25rem h-1.25rem" />
+              Condividi {shareTarget?.type === 'folder' ? 'cartella' : 'file'}
+            </DialogTitle>
+            <DialogDescription>
+              {shareTarget?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {shareLink ? (
+            <div className="space-y-1rem">
+              <div className="p-0.75rem bg-muted rounded-lg">
+                <Label className="text-0.75rem text-muted-foreground">Link di condivisione</Label>
+                <div className="flex items-center gap-0.5rem mt-0.25rem">
+                  <Input 
+                    value={shareLink} 
+                    readOnly 
+                    className="text-0.875rem"
+                    data-testid="input-share-link"
+                  />
+                  <Button size="sm" onClick={copyShareLink} data-testid="button-copy-link">
+                    Copia
+                  </Button>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => { setShareDialogOpen(false); setShareLink(null); }}>
+                  Chiudi
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-1rem">
+              <div className="space-y-0.75rem">
+                <div className="flex items-center justify-between">
+                  <Label className="text-0.875rem">Consenti download</Label>
+                  <input
+                    type="checkbox"
+                    checked={shareSettings.allowDownload}
+                    onChange={(e) => setShareSettings(s => ({ ...s, allowDownload: e.target.checked }))}
+                    className="w-1rem h-1rem"
+                    data-testid="checkbox-allow-download"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label className="text-0.875rem">Consenti modifica</Label>
+                  <input
+                    type="checkbox"
+                    checked={shareSettings.allowEdit}
+                    onChange={(e) => setShareSettings(s => ({ ...s, allowEdit: e.target.checked }))}
+                    className="w-1rem h-1rem"
+                    data-testid="checkbox-allow-edit"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label className="text-0.875rem">Richiedi password</Label>
+                  <input
+                    type="checkbox"
+                    checked={shareSettings.requirePassword}
+                    onChange={(e) => setShareSettings(s => ({ ...s, requirePassword: e.target.checked }))}
+                    className="w-1rem h-1rem"
+                    data-testid="checkbox-require-password"
+                  />
+                </div>
+                
+                {shareSettings.requirePassword && (
+                  <div>
+                    <Label className="text-0.75rem">Password</Label>
+                    <Input
+                      type="password"
+                      value={shareSettings.password}
+                      onChange={(e) => setShareSettings(s => ({ ...s, password: e.target.value }))}
+                      placeholder="Inserisci password"
+                      className="mt-0.25rem"
+                      data-testid="input-share-password"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label className="text-0.75rem">Scadenza (ore, 0 = mai)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={shareSettings.expiresInHours}
+                    onChange={(e) => setShareSettings(s => ({ ...s, expiresInHours: parseInt(e.target.value) || 0 }))}
+                    className="mt-0.25rem"
+                    data-testid="input-expires-hours"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-0.75rem">Max download (0 = illimitati)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={shareSettings.maxDownloads}
+                    onChange={(e) => setShareSettings(s => ({ ...s, maxDownloads: parseInt(e.target.value) || 0 }))}
+                    className="mt-0.25rem"
+                    data-testid="input-max-downloads"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={handleCreateShare}
+                  disabled={createShareMutation.isPending || (shareSettings.requirePassword && !shareSettings.password)}
+                  data-testid="button-create-share"
+                >
+                  {createShareMutation.isPending ? 'Creazione...' : 'Crea link'}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
         <div className="flex flex-col sm:flex-row gap-0.5rem items-start sm:items-center justify-between">
           <div className="flex items-center gap-0.25rem text-0.875rem text-muted-foreground" data-testid="breadcrumb-nav">
             {breadcrumbs.map((item, index) => (
@@ -615,7 +811,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
-                                      <DropdownMenuItem><Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}>
+                                        <Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem><Download className="w-1rem h-1rem mr-0.5rem" /> Scarica</DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem className="text-destructive"><Trash2 className="w-1rem h-1rem mr-0.5rem" /> Elimina</DropdownMenuItem>
@@ -654,7 +852,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent>
                                           <DropdownMenuItem><Eye className="w-1rem h-1rem mr-0.5rem" /> Anteprima</DropdownMenuItem>
-                                          <DropdownMenuItem><Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}>
+                                            <Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi
+                                          </DropdownMenuItem>
                                           <DropdownMenuItem><Download className="w-1rem h-1rem mr-0.5rem" /> Scarica</DropdownMenuItem>
                                           <DropdownMenuSeparator />
                                           <DropdownMenuItem
@@ -695,7 +895,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent>
-                                    <DropdownMenuItem><Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}>
+                                      <Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi
+                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem className="text-destructive"><Trash2 className="w-1rem h-1rem mr-0.5rem" /> Elimina</DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -734,7 +936,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent>
                                         <DropdownMenuItem><Eye className="w-1rem h-1rem mr-0.5rem" /> Anteprima</DropdownMenuItem>
-                                        <DropdownMenuItem><Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}>
+                                          <Share2 className="w-1rem h-1rem mr-0.5rem" /> Condividi
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem><Download className="w-1rem h-1rem mr-0.5rem" /> Scarica</DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem className="text-destructive" onClick={() => deleteObjectMutation.mutate(obj.id)}>

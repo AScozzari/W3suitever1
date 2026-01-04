@@ -624,4 +624,84 @@ router.post('/upload/batch', requirePermission('storage:write'), upload.array('f
   }
 });
 
+// ==================== SHARES ====================
+
+/**
+ * POST /storage/shares
+ * Create a new share link for a file or folder
+ */
+router.post('/shares', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { objectId, folderId, allowDownload, allowEdit, requirePassword, password, expiresInHours, maxDownloads } = req.body;
+
+    if (!objectId && !folderId) {
+      return res.status(400).json({ error: 'Either objectId or folderId is required' });
+    }
+
+    const share = await storageService.createShare(ctx, {
+      objectId,
+      folderId,
+      allowDownload,
+      allowEdit,
+      requirePassword,
+      password,
+      expiresInHours,
+      maxDownloads
+    });
+
+    res.status(201).json(share);
+  } catch (error: any) {
+    console.error('Error creating share:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/shares
+ * List all active shares created by current user
+ */
+router.get('/shares', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const shares = await storageService.listMyShares(ctx);
+    res.json(shares);
+  } catch (error: any) {
+    console.error('Error listing shares:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/share/:token
+ * Access a shared item (public endpoint for shared links)
+ */
+router.get('/share/:token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.query;
+    
+    const result = await storageService.accessShare(token, password as string);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error accessing share:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /storage/shares/:token
+ * Revoke a share link
+ */
+router.delete('/shares/:token', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    await storageService.revokeShare(ctx, req.params.token);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error revoking share:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
