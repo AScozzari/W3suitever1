@@ -817,3 +817,30 @@ input[type="time"]:focus::-webkit-calendar-picker-indicator {
 .my-drive-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #FF6900 0%, #7B2CBF 100%);
 }
+
+/* Radix ScrollArea Custom Scrollbar - WindTre Style */
+[data-radix-scroll-area-viewport] {
+  scrollbar-width: thin;
+  scrollbar-color: #FF6900 #f1f5f9;
+}
+
+[data-radix-scroll-area-scrollbar] {
+  width: 10px !important;
+  padding: 2px !important;
+}
+
+[data-radix-scroll-area-thumb] {
+  background: linear-gradient(180deg, #FF6900 0%, #7B2CBF 100%) !important;
+  border-radius: 6px !important;
+  min-height: 40px;
+}
+
+[data-radix-scroll-area-thumb]:hover {
+  background: linear-gradient(180deg, #e55f00 0%, #6a24a8 100%) !important;
+}
+
+/* Ensure ScrollArea has proper overflow */
+.my-drive-scroll [data-radix-scroll-area-viewport] {
+  max-height: 100%;
+  overflow-y: auto !important;
+}

@@ -477,21 +477,31 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
             <Separator className="my-4" />
 
-            <div className="pb-4">
-              <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Cartelle</p>
-              <nav className="space-y-0.5">
-                {['Avatar', 'Documenti', 'Feed', 'Condivisi'].map((folder) => (
-                  <button
-                    key={folder}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors"
-                    data-testid={`folder-shortcut-${folder.toLowerCase()}`}
-                  >
-                    <Folder className="w-4 h-4 text-orange-400" />
-                    {folder}
-                  </button>
-                ))}
-              </nav>
-            </div>
+            {foldersData && foldersData.length > 0 && (
+              <div className="pb-4">
+                <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Cartelle</p>
+                <nav className="space-y-0.5">
+                  {foldersData.slice(0, 6).map((folder) => (
+                    <button
+                      key={folder.id}
+                      onClick={() => {
+                        setActiveSection('my-files');
+                        setCurrentFolderId(folder.id);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        currentFolderId === folder.id 
+                          ? 'bg-orange-50 text-orange-700' 
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                      data-testid={`folder-shortcut-${folder.id}`}
+                    >
+                      <Folder className={`w-4 h-4 ${currentFolderId === folder.id ? 'text-orange-500' : 'text-orange-400'}`} />
+                      <span className="truncate">{folder.name}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            )}
           </ScrollArea>
 
           <div className="p-4 border-t bg-gradient-to-t from-slate-50 to-white">
