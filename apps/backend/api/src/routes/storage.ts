@@ -266,10 +266,16 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
     const result = await storageService.getAvatarSignedUrl(ctx, req.params.userId);
     
     if (!result) {
-      return res.status(404).json({ error: 'Avatar not found' });
+      // Return response format expected by useUserAvatar hook
+      return res.json({ hasAvatar: false, url: null, expiresAt: null, initials: 'U' });
     }
     
-    res.json(result);
+    // Add hasAvatar: true for the useUserAvatar hook
+    res.json({ 
+      ...result, 
+      hasAvatar: true,
+      initials: req.params.userId.substring(0, 2).toUpperCase()
+    });
   } catch (error: any) {
     console.error('Error getting avatar signed URL:', error);
     res.status(500).json({ error: error.message });

@@ -10,6 +10,8 @@ export interface UserData {
   username?: string;
   email?: string;
   profileImageUrl?: string;
+  avatarUrl?: string;
+  avatarObjectPath?: string;
 }
 
 // Basic backend schema types - using simple interfaces instead of complex imports

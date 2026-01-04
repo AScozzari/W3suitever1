@@ -52,7 +52,8 @@ export default function Header({
   const [, navigate] = useLocation();
   
   const { currentTenant } = useTenant();
-  const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
+  const { data: sessionData } = useQuery<{ user: UserData } | null>({ queryKey: ["/api/auth/session"] });
+  const user = sessionData?.user || null;
   const refetchInterval = useIdleAwareRefetch(15000);
   
   // Use avatar hook for enhanced avatar functionality
