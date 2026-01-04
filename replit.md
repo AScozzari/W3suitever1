@@ -15,7 +15,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **DATABASE ARCHITECTURE**: Always use 3-schema structure (w3suite, public, brand_interface)
 - **USER SCOPE - SINGLE SOURCE OF TRUTH (OBBLIGATORIO - Jan 2026)**:
   - **📋 ARCHITETTURA**: `user_stores` è la FONTE UNICA per lo scope utente
-    - Le ragioni sociali (`user_organization_entities`) sono DERIVATE automaticamente dalle sedi assegnate
+    - Le ragioni sociali (`user_organization_entities`) vengono DERIVATE automaticamente dalle sedi assegnate
     - Quando si salvano le sedi di un utente, le org entities vengono sincronizzate automaticamente
     - Mai assegnare org entities direttamente - sempre tramite sedi
   - **🔄 FLUSSO**:
