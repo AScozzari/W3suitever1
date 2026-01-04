@@ -569,6 +569,93 @@ export default function SettingsPage() {
   const [logDetailsModal, setLogDetailsModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [calendarModal, setCalendarModal] = useState<{ open: boolean; storeId: string | null; storeName: string }>({ open: false, storeId: null, storeName: '' });
+  const [userEditLoading, setUserEditLoading] = useState(false);
+
+  // ✅ EDIT USER HANDLER: Fetch complete user data before opening modal
+  const handleEditUser = async (userId: string) => {
+    setUserEditLoading(true);
+    try {
+      // Fetch complete user data including scope
+      const response = await authenticatedFetch(`/api/users/${userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load user: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      const user = result.data || result;
+      
+      // Also fetch user scope (organization entities and stores)
+      let userOrgs: string[] = [];
+      let userStores: string[] = [];
+      
+      try {
+        const orgRes = await authenticatedFetch(`/api/users/${userId}/organization-entities`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (orgRes.ok) {
+          const orgData = await orgRes.json();
+          userOrgs = (orgData.data || orgData.organizationEntities || []).map((o: any) => o.id || o.organization_entity_id);
+        }
+      } catch (e) {
+        console.warn('Could not fetch user orgs:', e);
+      }
+      
+      try {
+        const storeRes = await authenticatedFetch(`/api/users/${userId}/stores`, {
+          method: 'GET', 
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (storeRes.ok) {
+          const storeData = await storeRes.json();
+          userStores = (storeData.data || storeData.stores || []).map((s: any) => s.id || s.store_id);
+        }
+      } catch (e) {
+        console.warn('Could not fetch user stores:', e);
+      }
+      
+      // Determine scope level
+      const isTenantScope = userOrgs.length === 0 && userStores.length === 0;
+      
+      console.log('📋 Loaded complete user data:', { 
+        id: user.id, 
+        firstName: user.firstName, 
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl || user.avatar_url,
+        orgs: userOrgs.length,
+        stores: userStores.length,
+        isTenantScope
+      });
+      
+      // Open modal with complete data
+      setUserModal({ 
+        open: true, 
+        data: {
+          ...user,
+          // Normalize field names
+          firstName: user.firstName || user.first_name || '',
+          lastName: user.lastName || user.last_name || '',
+          avatarUrl: user.avatarUrl || user.avatar_url || user.profile_image_url || null,
+          // Scope data
+          scopeLevel: isTenantScope ? 'tenant' : (userOrgs.length > 0 ? 'organization' : 'store'),
+          selectedOrganizationEntities: userOrgs,
+          selectedLegalEntities: userOrgs, // Legacy compatibility
+          selectedStores: userStores,
+          selectAllLegalEntities: isTenantScope
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Error loading user for edit:', error);
+      alert('Errore nel caricamento dei dati utente. Riprova.');
+    } finally {
+      setUserEditLoading(false);
+    }
+  };
 
   // Avatar change handler
   const handleAvatarChange = (avatarData: { url?: string; blob?: Blob; type: 'upload' | 'generated' }) => {
@@ -3139,27 +3226,31 @@ export default function SettingsPage() {
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                         <button
-                          onClick={() => setUserModal({ open: true, data: user })}
+                          onClick={() => handleEditUser(user.id)}
+                          disabled={userEditLoading}
                           style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
                           borderRadius: '0.375rem',
                           padding: '0.375rem',
-                          cursor: 'pointer',
+                          cursor: userEditLoading ? 'wait' : 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          transition: 'all 0.2s ease'
+                          transition: 'all 0.2s ease',
+                          opacity: userEditLoading ? 0.5 : 1
                         }}
                         onMouseOver={(e) => {
-                          e.currentTarget.style.background = '#f3f4f6';
-                          e.currentTarget.style.borderColor = '#9ca3af';
+                          if (!userEditLoading) {
+                            e.currentTarget.style.background = '#f3f4f6';
+                            e.currentTarget.style.borderColor = '#9ca3af';
+                          }
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.borderColor = '#e5e7eb';
                         }}
-                        title="Modifica utente">
+                        title={userEditLoading ? "Caricamento..." : "Modifica utente"}>
                           <Edit3 size={14} style={{ color: '#6b7280' }} />
                         </button>
                         <button
