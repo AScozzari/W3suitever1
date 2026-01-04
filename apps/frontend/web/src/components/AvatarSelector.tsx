@@ -32,12 +32,17 @@ export default function AvatarSelector({
 }: AvatarSelectorProps) {
   // Generate initials from firstName/lastName or username
   const getInitials = (): string => {
-    if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    // Ensure values are valid non-empty strings
+    const fn = typeof firstName === 'string' && firstName.trim() ? firstName.trim() : '';
+    const ln = typeof lastName === 'string' && lastName.trim() ? lastName.trim() : '';
+    const un = typeof username === 'string' && username.trim() ? username.trim() : '';
+    
+    if (fn && ln) {
+      return `${fn.charAt(0)}${ln.charAt(0)}`.toUpperCase();
     }
-    if (firstName) return firstName.charAt(0).toUpperCase();
-    if (lastName) return lastName.charAt(0).toUpperCase();
-    if (username) return username.charAt(0).toUpperCase();
+    if (fn) return fn.charAt(0).toUpperCase();
+    if (ln) return ln.charAt(0).toUpperCase();
+    if (un) return un.charAt(0).toUpperCase();
     return '?';
   };
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);

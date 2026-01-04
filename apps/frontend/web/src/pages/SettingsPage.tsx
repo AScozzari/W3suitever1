@@ -9973,12 +9973,18 @@ export default function SettingsPage() {
                     }
 
                     // Basic required field validation
-                    if (!newUser.username || !newUser.password || !newUser.nome || !newUser.cognome || !newUser.ruolo) {
+                    // CREATE mode: password obbligatoria | EDIT mode: password opzionale
+                    const isEditMode = !!userModal.data;
+                    const requiredFieldsMissing = !newUser.username || !newUser.nome || !newUser.cognome || !newUser.ruolo;
+                    const passwordMissing = !isEditMode && !newUser.password; // Password obbligatoria solo in CREATE
+                    
+                    if (requiredFieldsMissing || passwordMissing) {
                       alert('Compila tutti i campi obbligatori');
                       return;
                     }
                     
-                    if (newUser.password !== newUser.confirmPassword) {
+                    // Verifica match password solo se è stata inserita una nuova password
+                    if (newUser.password && newUser.password !== newUser.confirmPassword) {
                       alert('Le password non corrispondono');
                       return;
                     }
@@ -10008,11 +10014,11 @@ export default function SettingsPage() {
                     }
                     
                     // 🔥 SAVE USER TO DATABASE WITH AVATAR
-                    console.log('💾 Creating new user with avatar:', newUser.avatar);
+                    console.log(isEditMode ? '💾 Updating user:' : '💾 Creating new user:', newUser.avatar);
                     
-                    const createUser = async () => {
+                    const saveUser = async () => {
                       try {
-                        const userData = {
+                        const userData: Record<string, any> = {
                           username: newUser.username,
                           nome: newUser.nome,
                           cognome: newUser.cognome,
@@ -10020,10 +10026,9 @@ export default function SettingsPage() {
                           telefono: newUser.telefono,
                           ruolo: newUser.ruolo,
                           stato: newUser.stato,
-                          foto: newUser.avatar?.url || null, // ✅ INCLUDE AVATAR URL
-                          password: newUser.password,
+                          foto: newUser.avatar?.url || null,
                           tenant_id: getCurrentTenantId(),
-                          // ✅ SCOPE DATA - Invia dati scope piramidale al backend
+                          // ✅ SCOPE DATA
                           selectAllLegalEntities: newUser.selectAllLegalEntities,
                           selectedAreas: newUser.selectedAreas,
                           selectedLegalEntities: newUser.selectedLegalEntities,
@@ -10039,11 +10044,28 @@ export default function SettingsPage() {
                             }
                           } : {})
                         };
+                        
+                        // ✅ EDIT mode: includi password SOLO se inserita
+                        // ✅ CREATE mode: password è sempre inclusa (già validata come obbligatoria)
+                        if (isEditMode) {
+                          if (newUser.password && newUser.password.trim() !== '') {
+                            userData.password = newUser.password;
+                          }
+                          // Non inviare password se vuota in edit mode
+                        } else {
+                          userData.password = newUser.password;
+                        }
 
                         console.log('📤 Sending user data to API:', userData);
                         
-                        const response = await fetch('/api/users', {
-                          method: 'POST',
+                        // ✅ USE PUT for EDIT, POST for CREATE
+                        const url = isEditMode 
+                          ? `/api/users/${userModal.data?.id}` 
+                          : '/api/users';
+                        const method = isEditMode ? 'PUT' : 'POST';
+                        
+                        const response = await fetch(url, {
+                          method,
                           credentials: 'include',
                           headers: {
                             'Content-Type': 'application/json',
@@ -10053,17 +10075,17 @@ export default function SettingsPage() {
                         });
 
                         if (!response.ok) {
-                          throw new Error(`Failed to create user: ${response.statusText}`);
+                          throw new Error(`Failed to ${isEditMode ? 'update' : 'create'} user: ${response.statusText}`);
                         }
 
                         const result = await response.json();
-                        console.log('✅ User created successfully:', result);
+                        console.log(`✅ User ${isEditMode ? 'updated' : 'created'} successfully:`, result);
                         
-                        const createdUserId = result.data?.id || result.id;
+                        const userId = isEditMode ? userModal.data?.id : (result.data?.id || result.id);
                         
                         // ✅ Set user scope via new relational APIs
                         // Map legacy selectedLegalEntities to organization entity UUIDs
-                        if (createdUserId) {
+                        if (userId) {
                           const tenantId = getCurrentTenantId();
                           
                           // Determine scope type: tenant (selectAll), organization_entity, or store
@@ -10095,7 +10117,7 @@ export default function SettingsPage() {
                               organizationEntityIds: selectedOrgEntityIds,
                               ...(selectedOrgEntityIds.length > 0 ? { primaryId: selectedOrgEntityIds[0] } : {})
                             };
-                            const response = await fetch(`/api/users/${createdUserId}/organization-entities`, {
+                            const response = await fetch(`/api/users/${userId}/organization-entities`, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenantId },
                               body: JSON.stringify(orgPayload)
@@ -10115,7 +10137,7 @@ export default function SettingsPage() {
                               storeIds: selectedStoreIds,
                               ...(selectedStoreIds.length > 0 ? { primaryId: selectedStoreIds[0] } : {})
                             };
-                            const response = await fetch(`/api/users/${createdUserId}/stores`, {
+                            const response = await fetch(`/api/users/${userId}/stores`, {
                               method: 'PUT',
                               headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenantId },
                               body: JSON.stringify(storePayload)
@@ -10165,12 +10187,12 @@ export default function SettingsPage() {
                         } as any);
 
                       } catch (error) {
-                        console.error('❌ Error creating user:', error);
-                        alert('Errore durante la creazione dell\'utente. Riprova.');
+                        console.error('❌ Error saving user:', error);
+                        alert(`Errore durante ${isEditMode ? 'l\'aggiornamento' : 'la creazione'} dell'utente. Riprova.`);
                       }
                     };
 
-                    createUser();
+                    saveUser();
                   }}
                   style={{
                     padding: '0.625rem 1.5rem',
