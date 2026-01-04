@@ -960,57 +960,39 @@ export const storageService = {
   },
 
   async getQuotaSummary(ctx: StorageServiceContext) {
-    const userQuotas = await db.select({
-      userId: storageQuotas.userId,
-      quotaBytes: storageQuotas.quotaBytes,
-      usedBytes: storageQuotas.usedBytes,
-      suspended: storageQuotas.suspended,
-      scopeLevel: storageQuotas.scopeLevel,
-    }).from(storageQuotas)
+    const userQuotas = await db.select()
+      .from(storageQuotas)
       .where(and(
         eq(storageQuotas.tenantId, ctx.tenantId),
         eq(storageQuotas.scopeLevel, 'user'),
       ));
 
-    const teamQuotas = await db.select({
-      teamId: storageQuotas.teamId,
-      quotaBytes: storageQuotas.quotaBytes,
-      usedBytes: storageQuotas.usedBytes,
-      suspended: storageQuotas.suspended,
-      scopeLevel: storageQuotas.scopeLevel,
-    }).from(storageQuotas)
+    const teamQuotas = await db.select()
+      .from(storageQuotas)
       .where(and(
         eq(storageQuotas.tenantId, ctx.tenantId),
         eq(storageQuotas.scopeLevel, 'team'),
       ));
 
-    const usersList = await db.select({
-      id: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      email: users.email,
-      isActive: users.isActive,
-    }).from(users)
+    const usersList = await db.select()
+      .from(users)
       .where(eq(users.tenantId, ctx.tenantId));
 
-    const teamsList = await db.select({
-      id: teams.id,
-      name: teams.name,
-      isActive: teams.isActive,
-    }).from(teams)
+    const teamsList = await db.select()
+      .from(teams)
       .where(eq(teams.tenantId, ctx.tenantId));
 
     const userQuotaMap = new Map(userQuotas.map(q => [q.userId, q]));
     const teamQuotaMap = new Map(teamQuotas.map(q => [q.teamId, q]));
 
-    const userSummary = usersList.map(user => {
+    const userSummary = usersList.map((user: any) => {
       const quota = userQuotaMap.get(user.id);
       return {
         type: 'user' as const,
         id: user.id,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        name: `${user.first_name || user.firstName || ''} ${user.last_name || user.lastName || ''}`.trim() || user.email,
         email: user.email,
-        isActive: user.isActive,
+        isActive: user.is_active ?? user.isActive ?? true,
         quotaBytes: quota?.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
         usedBytes: quota?.usedBytes || 0,
         hasCustomQuota: !!quota,
@@ -1018,13 +1000,13 @@ export const storageService = {
       };
     });
 
-    const teamSummary = teamsList.map(team => {
+    const teamSummary = teamsList.map((team: any) => {
       const quota = teamQuotaMap.get(team.id);
       return {
         type: 'team' as const,
         id: team.id,
         name: team.name,
-        isActive: team.isActive,
+        isActive: team.is_active ?? team.isActive ?? true,
         quotaBytes: quota?.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
         usedBytes: quota?.usedBytes || 0,
         hasCustomQuota: !!quota,
