@@ -1937,8 +1937,7 @@ export const timeTracking = w3suiteSchema.table("time_tracking", {
   
   // Break tracking (real-time)
   isOnBreak: boolean("is_on_break").default(false),
-  breakStartedAt: timestamp("break_started_at"),
-  breakDuration: integer("break_duration").default(0), // Total break duration in minutes
+  // NOTE: breakStartedAt and breakDuration removed - columns not in DB, use breaks jsonb array instead
   
   // Status and approval
   status: timeTrackingStatusEnum("status").notNull().default("active"),
