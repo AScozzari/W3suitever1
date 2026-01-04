@@ -225,6 +225,16 @@ export default function UserFormModal({
         return;
       }
     }
+    if (mode === 'edit' && formData.password) {
+      if (formData.password.length < 6) {
+        setErrors({ general: 'Password deve avere almeno 6 caratteri' });
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setErrors({ general: 'Le password non coincidono' });
+        return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -275,16 +285,18 @@ export default function UserFormModal({
               ))}
             </select>
           </div>
-          {mode === 'create' && (
+          {!isReadOnly && (
             <>
               <div>
-                <label style={formStyles.label}>Password <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={formStyles.label}>
+                  Password {mode === 'create' ? <span style={{ color: '#ef4444' }}>*</span> : <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>(opzionale)</span>}
+                </label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="••••••••"
+                    placeholder={mode === 'edit' ? 'Lascia vuoto per non modificare' : '••••••••'}
                     style={{ ...inputStyle, paddingRight: '40px' }}
                     data-testid="input-user-password"
                   />
@@ -298,12 +310,14 @@ export default function UserFormModal({
                 </div>
               </div>
               <div>
-                <label style={formStyles.label}>Conferma Password <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={formStyles.label}>
+                  Conferma Password {mode === 'create' ? <span style={{ color: '#ef4444' }}>*</span> : <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>(opzionale)</span>}
+                </label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="••••••••"
+                  placeholder={mode === 'edit' ? 'Lascia vuoto per non modificare' : '••••••••'}
                   style={inputStyle}
                   data-testid="input-user-confirm-password"
                 />
