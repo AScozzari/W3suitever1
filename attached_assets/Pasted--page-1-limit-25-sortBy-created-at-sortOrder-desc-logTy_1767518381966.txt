@@ -1,0 +1,21 @@
+{page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:677 🏢 User orgs loaded: ['40000000-0000-0000-0000-000000000005']
+SettingsPage.tsx:688 📦 Store API response status: 200 true
+SettingsPage.tsx:691 📦 Store API raw response: {"success":true,"data":[{"userId":"user-007","storeId":"50000000-0000-0000-0000-000000000005","isPrimary":true,"createdAt":"2026-01-03T23:12:04.452Z","storeName":"Torino Porta Nuova","storeCode":"9000015","storeStatus":"Attivo"}],"timestamp":"2026-01-04T09:19:26.516Z"}
+SettingsPage.tsx:693 📦 User stores extracted IDs: ['50000000-0000-0000-0000-000000000005']
+SettingsPage.tsx:704 📋 Loaded complete user data: {id: 'user-007', firstName: 'Alessandro', lastName: 'Greco', avatarUrl: undefined, orgs: 1, …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:9787 🔍 SCOPE DEBUG: {selectAllLegalEntities: false, selectedLegalEntities: Array(0), selectedStores: Array(0), puntiVenditaCount: 5, matchingStores: 0}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 🔍 SCOPE DEBUG: {selectAllLegalEntities: false, selectedLegalEntities: Array(0), selectedStores: Array(0), puntiVenditaCount: 5, matchingStores: 0}
+AvatarSelector.tsx:58 [AvatarSelector] currentAvatarUrl changed: undefined
+SettingsPage.tsx:6135 📝 EDIT MODE useEffect - userModal.data: {scopeLevel: 'organization', selectedStores: Array(1), selectedOrganizationEntities: Array(1), selectedLegalEntities: Array(1), selectAllLegalEntities: false}
+SettingsPage.tsx:6159 📊 Final scope values for form: {scopeLevel: 'organization', orgEntities: 1, derivedStores: 1, isTenantScope: false}
+AvatarSelector.tsx:58 [AvatarSelector] currentAvatarUrl changed: undefined
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:9787 🔍 SCOPE DEBUG: {selectAllLegalEntities: false, selectedLegalEntities: Array(1), selectedStores: Array(1), puntiVenditaCount: 5, matchingStores: 1}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 🔍 SCOPE DEBUG: {selectAllLegalEntities: false, selectedLegalEntities: Array(1), selectedStores: Array(1), puntiVenditaCount: 5, matchingStores: 1}
