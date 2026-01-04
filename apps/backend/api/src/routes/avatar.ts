@@ -54,14 +54,21 @@ async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buf
       if (client) {
         const paths = [`avatars/${filename}`, filename];
         for (const objectKey of paths) {
-          // Use downloadAsBytes to properly retrieve binary image data
-          const result = await client.downloadAsBytes(objectKey);
-          if (result.ok && result.value && result.value.length > 10) {
-            const buffer = Buffer.from(result.value);
-            // Check if SVG by looking at the start of the buffer
-            const isSvg = buffer.toString('utf-8', 0, 50).includes('<svg') || 
-                          buffer.toString('utf-8', 0, 200).includes('xmlns="http://www.w3.org/2000/svg"');
-            return { ok: true, buffer, isSvg };
+          // First try downloadAsText (works for SVG files which are common for generated avatars)
+          const textResult = await client.downloadAsText(objectKey);
+          if (textResult.ok && textResult.value && textResult.value.length > 10) {
+            const content = textResult.value;
+            const isSvg = content.startsWith('<svg') || content.includes('xmlns="http://www.w3.org/2000/svg"');
+            if (isSvg) {
+              return { ok: true, buffer: Buffer.from(content, 'utf-8'), isSvg: true };
+            }
+          }
+          
+          // If not SVG text, try binary download for real PNG/JPG/WEBP
+          const bytesResult = await client.downloadAsBytes(objectKey);
+          if (bytesResult.ok && bytesResult.value && bytesResult.value.length > 10) {
+            const buffer = Buffer.from(bytesResult.value);
+            return { ok: true, buffer, isSvg: false };
           }
         }
       }
@@ -80,7 +87,7 @@ async function downloadAvatarBytes(filename: string): Promise<{ ok: boolean; buf
   try {
     if (fs.existsSync(filePath)) {
       const buffer = fs.readFileSync(filePath);
-      const isSvg = buffer.toString().startsWith('<svg');
+      const isSvg = buffer.toString('utf-8', 0, 100).includes('<svg');
       return { ok: true, buffer, isSvg };
     }
   } catch (err) {
