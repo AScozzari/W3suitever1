@@ -6140,26 +6140,30 @@ export default function SettingsPage() {
         selectAllLegalEntities: user.selectAllLegalEntities
       });
       
-      const scopeLevel = user.scopeLevel || 'tenant';
-      const orgEntities = user.selectedOrganizationEntities || user.selectedLegalEntities || [];
-      // ✅ FIX: Usa direttamente selectedStores dal modal data
       const userStores = user.selectedStores || [];
-      const isTenantScope = scopeLevel === 'tenant' || user.selectAllLegalEntities === true;
+      const isTenantScope = user.selectAllLegalEntities === true || (userStores.length === 0 && (user.selectedOrganizationEntities || []).length === 0);
       
-      // ✅ Solo se l'utente ha org entities ma NON stores esplicite, deriva le stores dalle org
-      let derivedStores = [...userStores];
-      if (!isTenantScope && orgEntities.length > 0 && userStores.length === 0 && puntiVenditaList.length > 0) {
-        // Auto-populate all active stores for the selected organization entities
-        derivedStores = puntiVenditaList
-          .filter(pv => orgEntities.includes(pv.organizationEntityId) && isStoreActive(pv.status))
-          .map(pv => pv.id);
-        console.log('🔄 Derived stores from org entities:', derivedStores.length);
+      // ✅ FIX: Deriva le organization entities DALLE stores assegnate (non usare user_organization_entities che può essere inconsistente)
+      let derivedOrgEntities: string[] = [];
+      if (userStores.length > 0 && puntiVenditaList.length > 0) {
+        // Trova le organization entities delle stores assegnate
+        derivedOrgEntities = [...new Set(
+          userStores
+            .map(storeId => {
+              const store = puntiVenditaList.find(pv => pv.id === storeId);
+              return store?.organizationEntityId;
+            })
+            .filter(Boolean) as string[]
+        )];
+        console.log('🔄 Derived org entities from stores:', derivedOrgEntities);
+      } else {
+        // Fallback: usa i dati salvati se non ci sono stores
+        derivedOrgEntities = user.selectedOrganizationEntities || user.selectedLegalEntities || [];
       }
       
       console.log('📊 Final scope values for form:', {
-        scopeLevel,
-        orgEntities: orgEntities.length,
-        derivedStores: derivedStores.length,
+        derivedOrgEntities: derivedOrgEntities.length,
+        userStores: userStores.length,
         isTenantScope
       });
       
@@ -6172,16 +6176,16 @@ export default function SettingsPage() {
         ragioneSociale_id: user.ragioneSociale_id || user.legalEntityId || null,
         puntiVendita_ids: user.puntiVendita_ids || user.storeIds || [],
         puntoVenditaPreferito_id: user.puntoVenditaPreferito_id || user.primaryStoreId || null,
-        scopeLevel: scopeLevel,
-        selectedOrganizationEntities: orgEntities,
+        scopeLevel: isTenantScope ? 'tenant' : (derivedOrgEntities.length > 0 ? 'organization_entity' : 'store'),
+        selectedOrganizationEntities: derivedOrgEntities,
         primaryOrganizationEntityId: user.primaryOrganizationEntityId || null,
-        selectedStores: derivedStores,
+        selectedStores: userStores,
         primaryStoreId: user.primaryStoreId || null,
         // Tenant scope: selectAll=true and clear explicit selections
         selectAllLegalEntities: isTenantScope,
         selectedAreas: isTenantScope ? [] : (user.selectedAreas || []),
-        // Only use entity selections for non-tenant scope
-        selectedLegalEntities: isTenantScope ? [] : orgEntities,
+        // ✅ FIX: Usa derivedOrgEntities (derivate dalle stores) per la selezione corretta
+        selectedLegalEntities: isTenantScope ? [] : derivedOrgEntities,
         nome: user.nome || user.firstName || '',
         cognome: user.cognome || user.lastName || '',
         avatar: {
