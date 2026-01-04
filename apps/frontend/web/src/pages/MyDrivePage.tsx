@@ -29,6 +29,8 @@ interface StorageFolder {
   name: string;
   path: string;
   isSystemFolder: boolean;
+  isShared?: boolean;
+  shareCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,9 +47,21 @@ interface StorageObject {
   category: string;
   isPublic: boolean;
   isFavorite: boolean;
+  isShared?: boolean;
+  shareCount?: number;
   createdAt: string;
   updatedAt: string;
   ownerName?: string;
+}
+
+interface StorageShare {
+  id: string;
+  objectId?: string;
+  folderId?: string;
+  sharedWithUserId?: string;
+  sharedWithEmail?: string;
+  role: 'viewer' | 'editor' | 'owner';
+  expiresAt?: string;
 }
 
 interface StorageQuota {
@@ -154,7 +168,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: foldersData, isLoading: foldersLoading } = useQuery<StorageFolder[]>({
-    queryKey: ['/api/storage/folders', currentFolderId],
+    queryKey: ['/api/storage/my-drive/folders', currentFolderId],
     enabled: activeSection === 'my-files'
   });
 
@@ -188,7 +202,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/storage/folders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/folders'] });
       setNewFolderDialogOpen(false);
       setNewFolderName('');
       toast({ title: 'Cartella creata', description: 'La cartella è stata creata con successo' });
@@ -656,6 +670,17 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                       
+                      {folder.isShared && (
+                        <div 
+                          className="absolute top-2 left-2 w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}
+                          title="Condiviso"
+                          data-testid={`share-indicator-folder-${folder.id}`}
+                        >
+                          <Users className="w-3 h-3 text-purple-600" />
+                        </div>
+                      )}
+                      
                       <div className="flex flex-col items-center text-center">
                         <Folder className="w-12 h-12 text-orange-400 mb-3" />
                         <p className="font-medium text-sm text-slate-700 truncate w-full">{folder.name}</p>
@@ -707,9 +732,21 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                           </DropdownMenu>
                         </div>
 
-                        {obj.isFavorite && (
-                          <Star className="absolute top-2 left-2 w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        )}
+                        <div className="absolute top-2 left-2 flex items-center gap-1">
+                          {obj.isFavorite && (
+                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                          )}
+                          {obj.isShared && (
+                            <div 
+                              className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}
+                              title="Condiviso"
+                              data-testid={`share-indicator-object-${obj.id}`}
+                            >
+                              <Users className="w-3 h-3 text-purple-600" />
+                            </div>
+                          )}
+                        </div>
                         
                         <div className="flex flex-col items-center text-center">
                           <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center mb-3`}>
@@ -745,6 +782,15 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                             <div className="flex items-center gap-3">
                               <Folder className="w-5 h-5 text-orange-400" />
                               <span className="font-medium text-sm text-slate-700">{folder.name}</span>
+                              {folder.isShared && (
+                                <div 
+                                  className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200"
+                                  onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}
+                                  title="Condiviso"
+                                >
+                                  <Users className="w-3 h-3 text-purple-600" />
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500 hidden sm:table-cell">{formatDate(folder.createdAt)}</td>
@@ -784,6 +830,15 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                 <FileIcon className={`w-5 h-5 ${iconColor}`} />
                                 <span className="font-medium text-sm text-slate-700">{obj.displayName}</span>
                                 {obj.isFavorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                                {obj.isShared && (
+                                  <div 
+                                    className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200"
+                                    onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}
+                                    title="Condiviso"
+                                  >
+                                    <Users className="w-3 h-3 text-purple-600" />
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-500 hidden sm:table-cell">{formatDate(obj.createdAt)}</td>
