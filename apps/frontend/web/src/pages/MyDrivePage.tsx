@@ -456,7 +456,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 px-2">
+          <ScrollArea className="flex-1 px-2 my-drive-scroll">
             <nav className="space-y-1 py-2">
               {sidebarItems.map((item) => (
                 <button
@@ -599,7 +599,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
             </div>
           </header>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 my-drive-scroll">
             <div className="p-6">
               {isLoading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
