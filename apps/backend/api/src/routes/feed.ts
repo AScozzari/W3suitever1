@@ -37,35 +37,39 @@ const router = express.Router();
 // Lazy-initialized Object Storage client for avatar signed URLs
 let storageClient: Client | null = null;
 let storageClientInitialized = false;
+let storageClientAvailable = false;
 
-function getStorageClient(): Client | null {
-  if (!storageClientInitialized) {
-    storageClientInitialized = true;
-    try {
-      storageClient = new Client();
-    } catch (e) {
-      structuredLogger.warn('Object Storage client not available for feed avatars');
-      storageClient = null;
-    }
+async function initStorageClient(): Promise<void> {
+  if (storageClientInitialized) return;
+  storageClientInitialized = true;
+  
+  try {
+    const client = new Client();
+    // Test if storage is actually available
+    await client.exists('test-connection');
+    storageClient = client;
+    storageClientAvailable = true;
+  } catch (e: any) {
+    // Silently fail - Object Storage not configured
+    storageClient = null;
+    storageClientAvailable = false;
   }
-  return storageClient;
 }
 
 // Helper function to generate signed URL for avatar
 async function getAvatarSignedUrl(avatarObjectPath: string | null, tenantId: string): Promise<string | null> {
-  const client = getStorageClient();
-  if (!avatarObjectPath || !client) return null;
+  if (!avatarObjectPath) return null;
+  
+  // Ensure client is initialized
+  await initStorageClient();
+  
+  if (!storageClientAvailable || !storageClient) return null;
   
   try {
-    // Supported avatar path formats:
-    // - tenants/{tenantId}/users/{userId}/Avatar/{filename}
-    // - avatars/{tenantId}/{filename}
-    // - users/{userId}/avatar/{filename}
-    // Just use the path as-is for Object Storage lookup
-    const signedUrl = await client.signDownloadUrl(avatarObjectPath, { expiresIn: 3600 });
+    const signedUrl = await storageClient.signDownloadUrl(avatarObjectPath, { expiresIn: 3600 });
     return signedUrl;
   } catch (error) {
-    structuredLogger.warn('Failed to generate avatar signed URL', { avatarObjectPath, error });
+    // Silently fail - don't log to avoid noise
     return null;
   }
 }
