@@ -1,4 +1,5 @@
 import { db } from '../core/db.js';
+import { Client } from '@replit/object-storage';
 import { 
   chatChannels,
   chatChannelMembers,
@@ -25,6 +26,37 @@ import {
 } from '../db/schema/w3suite.js';
 import { eq, and, desc, isNull, lt, inArray, sql, gte, like, or, asc } from 'drizzle-orm';
 import { logger } from '../core/logger';
+
+// Lazy-initialized Object Storage client for avatar signed URLs
+let storageClient: Client | null = null;
+let storageClientInitialized = false;
+
+function getStorageClient(): Client | null {
+  if (!storageClientInitialized) {
+    storageClientInitialized = true;
+    try {
+      storageClient = new Client();
+    } catch (e) {
+      logger.warn('Object Storage client not available for chat avatars');
+      storageClient = null;
+    }
+  }
+  return storageClient;
+}
+
+// Helper function to generate signed URL for avatar
+async function getAvatarSignedUrl(avatarObjectPath: string | null): Promise<string | null> {
+  const client = getStorageClient();
+  if (!avatarObjectPath || !client) return null;
+  
+  try {
+    const signedUrl = await client.signDownloadUrl(avatarObjectPath, { expiresIn: 3600 });
+    return signedUrl;
+  } catch (error) {
+    logger.warn('Failed to generate avatar signed URL', { avatarObjectPath, error });
+    return null;
+  }
+}
 
 export class ChatService {
   
@@ -179,12 +211,8 @@ export class ChatService {
               .limit(1);
             
             if (otherUser) {
-              // Build proper avatar URL from object storage path
-              let avatarUrl: string | null = null;
-              if (otherUser.avatarObjectPath) {
-                const filename = otherUser.avatarObjectPath.split('/').pop();
-                avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
-              }
+              // Generate signed URL for avatar from Object Storage
+              const avatarUrl = await getAvatarSignedUrl(otherUser.avatarObjectPath);
               
               dmUserInfo = {
                 id: otherUser.id,
@@ -323,13 +351,9 @@ export class ChatService {
       ))
       .orderBy(desc(chatChannelMembers.joinedAt));
     
-    // Build avatarUrl from avatarObjectPath for each member
-    const members = rawMembers.map(m => {
-      let avatarUrl: string | null = null;
-      if (m.user?.avatarObjectPath) {
-        const filename = m.user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
-      }
+    // Build avatarUrl from avatarObjectPath for each member using signed URLs
+    const members = await Promise.all(rawMembers.map(async m => {
+      const avatarUrl = await getAvatarSignedUrl(m.user?.avatarObjectPath || null);
       return {
         ...m,
         user: m.user ? {
@@ -337,7 +361,7 @@ export class ChatService {
           avatarUrl
         } : null
       };
-    });
+    }));
     
     logger.info('🔍 GET CHANNEL MEMBERS', { 
       channelId, 
@@ -544,45 +568,64 @@ export class ChatService {
       beforeMessageId?: string;
       afterMessageId?: string;
     }
-  ): Promise<ChatMessage[]> {
+  ): Promise<any[]> {
     try {
-      // Use raw SQL to avoid Drizzle schema mismatch issues with columns that may not exist
+      // Use raw SQL with JOIN to include user data
       const limit = options?.limit || 50;
       
       const result = await db.execute(sql`
         SELECT 
-          id, channel_id, tenant_id, user_id, content,
-          attachments, mentioned_user_ids, reactions, parent_message_id,
-          is_edited, is_voice_message, voice_duration_seconds, voice_url,
-          created_at, updated_at, deleted_at
-        FROM w3suite.chat_messages
-        WHERE channel_id = ${channelId}
-          AND tenant_id = ${tenantId}::uuid
-          AND deleted_at IS NULL
-        ORDER BY created_at DESC
+          m.id, m.channel_id, m.tenant_id, m.user_id, m.content,
+          m.attachments, m.mentioned_user_ids, m.reactions, m.parent_message_id,
+          m.is_edited, m.is_voice_message, m.voice_duration_seconds, m.voice_url,
+          m.created_at, m.updated_at, m.deleted_at,
+          u.first_name, u.last_name, u.email, u.avatar_object_path
+        FROM w3suite.chat_messages m
+        LEFT JOIN w3suite.users u ON m.user_id = u.id
+        WHERE m.channel_id = ${channelId}
+          AND m.tenant_id = ${tenantId}::uuid
+          AND m.deleted_at IS NULL
+        ORDER BY m.created_at DESC
         LIMIT ${limit}
       `);
       
-      // Map snake_case to camelCase
-      return (result.rows || []).map((row: any) => ({
-        id: row.id,
-        channelId: row.channel_id,
-        tenantId: row.tenant_id,
-        userId: row.user_id,
-        content: row.content,
-        messageType: row.is_voice_message ? 'voice' : 'text',
-        attachments: row.attachments,
-        mentionedUserIds: row.mentioned_user_ids,
-        reactions: row.reactions,
-        replyToMessageId: row.parent_message_id,
-        isEdited: row.is_edited,
-        isVoiceMessage: row.is_voice_message,
-        voiceDurationSeconds: row.voice_duration_seconds,
-        voiceUrl: row.voice_url,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        deletedAt: row.deleted_at
-      })) as ChatMessage[];
+      // Map snake_case to camelCase and generate avatar signed URLs
+      const messages = await Promise.all((result.rows || []).map(async (row: any) => {
+        const avatarUrl = await getAvatarSignedUrl(row.avatar_object_path);
+        const userName = row.first_name && row.last_name 
+          ? `${row.first_name} ${row.last_name}`
+          : row.first_name || row.last_name || row.email?.split('@')[0] || 'Utente';
+        
+        return {
+          id: row.id,
+          channelId: row.channel_id,
+          tenantId: row.tenant_id,
+          userId: row.user_id,
+          content: row.content,
+          messageType: row.is_voice_message ? 'voice' : 'text',
+          attachments: row.attachments,
+          mentionedUserIds: row.mentioned_user_ids,
+          reactions: row.reactions,
+          replyToMessageId: row.parent_message_id,
+          isEdited: row.is_edited,
+          isVoiceMessage: row.is_voice_message,
+          voiceDurationSeconds: row.voice_duration_seconds,
+          voiceUrl: row.voice_url,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          deletedAt: row.deleted_at,
+          user: {
+            id: row.user_id,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            email: row.email,
+            name: userName,
+            avatarUrl
+          }
+        };
+      }));
+      
+      return messages;
     } catch (error) {
       logger.error('Failed to fetch messages', { error, channelId, tenantId });
       throw error;

@@ -6,6 +6,16 @@ import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 import { AvatarWithPresence } from './PresenceIndicator';
 import { ReadReceiptIndicator } from './ReadReceiptIndicator';
 import { useReadReceipts, getReadStatus, ReadStatus } from '@/hooks/useChatFeatures';
+import { apiRequest } from '@/lib/queryClient';
+
+interface MessageUser {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  name: string;
+  avatarUrl?: string | null;
+}
 
 interface Message {
   id: string;
@@ -20,6 +30,7 @@ interface Message {
   mentionedUserIds: string[];
   attachments: any[];
   reactions: any;
+  user?: MessageUser;
 }
 
 interface MessageListProps {
@@ -63,6 +74,10 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
 
   const { data: messages = [], isLoading } = useQuery<Message[]>({
     queryKey: ['/api/chat/channels', channelId, 'messages'],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/chat/channels/${channelId}/messages`);
+      return response;
+    },
     enabled: !!channelId,
     refetchInterval: isIdle ? false : 3000,
     staleTime: 30000,
@@ -162,7 +177,8 @@ export function MessageList({ channelId, currentUserId }: MessageListProps) {
               {/* Avatar con indicatore presenza */}
               <AvatarWithPresence
                 userId={message.userId}
-                name={isMine ? 'Tu' : 'Utente'}
+                name={isMine ? 'Tu' : (message.user?.name || 'Utente')}
+                avatarUrl={message.user?.avatarUrl || undefined}
                 size="sm"
               />
 
