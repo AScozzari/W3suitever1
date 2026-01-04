@@ -472,7 +472,7 @@ const createLogBodySchema = insertStructuredLogSchema.omit({ tenantId: true });
 
 // Zod validation schemas for notifications API
 const getNotificationsQuerySchema = z.object({
-  type: z.enum(['system', 'security', 'data', 'custom']).optional(),
+  type: z.enum(['system', 'security', 'data', 'custom', 'shift', 'leave', 'task', 'workflow', 'approval']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   status: z.enum(['unread', 'read']).optional(),
   targetUserId: z.string().uuid().optional(),

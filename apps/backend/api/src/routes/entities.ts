@@ -17,6 +17,7 @@ import { channels, commercialAreas, vatRates, vatRegimes, legalForms, paymentMet
 import { ApiSuccessResponse, ApiErrorResponse } from '../types/workflow-shared';
 import { RBACStorage } from '../core/rbac-storage';
 import { bidirectionalSyncService } from '../core/bidirectional-sync';
+import { storageService, StorageServiceContext } from '../services/storage.service';
 
 const router = express.Router();
 
@@ -2099,6 +2100,31 @@ router.post('/users', async (req, res) => {
     }
 
     logger.info('User created with RBAC assignments', { userId: user.id, tenantId, role: role.name });
+
+    // ✅ Create evergreen storage folders for new user (avatar, feed, documents, shared)
+    try {
+      const storageCtx: StorageServiceContext = {
+        tenantId,
+        userId: req.user?.id || user.id,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      };
+      const createdFolders = await storageService.createUserEvergreenFolders(storageCtx, user.id);
+      if (createdFolders.length > 0) {
+        logger.info('Evergreen storage folders created for new user', { 
+          userId: user.id, 
+          folders: createdFolders.map(f => f.name),
+          tenantId 
+        });
+      }
+    } catch (storageErr: any) {
+      // Non-blocking: log error but don't fail user creation
+      logger.warn('Failed to create evergreen folders for user', { 
+        userId: user.id, 
+        error: storageErr?.message,
+        tenantId 
+      });
+    }
 
     res.status(201).json({
       success: true,
