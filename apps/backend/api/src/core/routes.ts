@@ -3307,48 +3307,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await setTenantContext(tenantId);
           console.log(`[USERS-ENRICHMENT] Fetching scope for ${userIds.length} users...`);
           
-          // Get store assignments from user_stores table
+          // Get store assignments with org entities (Single Source of Truth - derive org from stores)
           const storeAssignments = await db
             .select({
               userId: userStores.userId,
               storeId: userStores.storeId,
               storeName: stores.nome,
               isPrimary: userStores.isPrimary,
+              organizationEntityId: stores.organizationEntityId,
+              orgName: organizationEntities.nome,
             })
             .from(userStores)
             .leftJoin(stores, eq(userStores.storeId, stores.id))
+            .leftJoin(organizationEntities, eq(stores.organizationEntityId, organizationEntities.id))
             .where(inArray(userStores.userId, userIds));
           
-          // Get org entity assignments from user_organization_entities table
-          const orgAssignments = await db
-            .select({
-              userId: userOrganizationEntities.userId,
-              orgEntityId: userOrganizationEntities.organizationEntityId,
-              orgName: organizationEntities.nome,
-              isPrimary: userOrganizationEntities.isPrimary,
-            })
-            .from(userOrganizationEntities)
-            .leftJoin(organizationEntities, eq(userOrganizationEntities.organizationEntityId, organizationEntities.id))
-            .where(inArray(userOrganizationEntities.userId, userIds));
+          console.log(`[USERS-ENRICHMENT] Found ${storeAssignments.length} store assignments (org entities derived from stores)`);
           
-          console.log(`[USERS-ENRICHMENT] Found ${storeAssignments.length} store assignments and ${orgAssignments.length} org assignments`);
-          
-          // Group store assignments by user
+          // Group store assignments and derive org entities by user (Single Source of Truth)
           const storesByUser = new Map<string, any[]>();
+          const orgsByUser = new Map<string, any[]>();
+          
           for (const a of storeAssignments) {
+            // Group stores
             if (!storesByUser.has(a.userId)) {
               storesByUser.set(a.userId, []);
             }
             storesByUser.get(a.userId)!.push(a);
-          }
-          
-          // Group org entity assignments by user
-          const orgsByUser = new Map<string, any[]>();
-          for (const a of orgAssignments) {
-            if (!orgsByUser.has(a.userId)) {
-              orgsByUser.set(a.userId, []);
+            
+            // Derive org entities from stores (Single Source of Truth)
+            if (a.organizationEntityId) {
+              if (!orgsByUser.has(a.userId)) {
+                orgsByUser.set(a.userId, []);
+              }
+              const existingOrgs = orgsByUser.get(a.userId)!;
+              const existingOrg = existingOrgs.find((o: any) => o.orgEntityId === a.organizationEntityId);
+              if (existingOrg) {
+                // Upgrade isPrimary to true if any store in this org is primary
+                if (a.isPrimary) existingOrg.isPrimary = true;
+              } else {
+                existingOrgs.push({
+                  orgEntityId: a.organizationEntityId,
+                  orgName: a.orgName,
+                  isPrimary: a.isPrimary
+                });
+              }
             }
-            orgsByUser.get(a.userId)!.push(a);
           }
           
           // Enrich users with scope data

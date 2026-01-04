@@ -13,6 +13,24 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
 - **BACKGROUND RULE**: Tutte le pagine devono avere sfondo bianco (#ffffff) con header e sidebar
 - **DATABASE ARCHITECTURE**: Always use 3-schema structure (w3suite, public, brand_interface)
+- **USER SCOPE - SINGLE SOURCE OF TRUTH (OBBLIGATORIO - Jan 2026)**:
+  - **📋 ARCHITETTURA**: `user_stores` è la FONTE UNICA per lo scope utente
+    - Le ragioni sociali (`user_organization_entities`) sono DERIVATE automaticamente dalle sedi assegnate
+    - Quando si salvano le sedi di un utente, le org entities vengono sincronizzate automaticamente
+    - Mai assegnare org entities direttamente - sempre tramite sedi
+  - **🔄 FLUSSO**:
+    1. Utente seleziona sedi nel modal → salva in `user_stores`
+    2. Backend deriva automaticamente org entities da `stores.organization_entity_id`
+    3. Backend sincronizza `user_organization_entities` nella stessa transazione
+    4. Lettura: GET /users deriva org entities da stores, non da tabella separata
+  - **✅ BENEFICI**:
+    - Zero inconsistenze tra sedi e ragioni sociali
+    - Modal mostra solo ragioni sociali/sedi ATTIVE
+    - Pulsante "Seleziona tutte sedi" per assegnazione rapida
+  - **❌ VIETATO**:
+    - Assegnare org entities senza sedi
+    - Modificare `user_organization_entities` direttamente
+    - Leggere org entities da `user_organization_entities` senza derivarle da stores
 - **MCP/ACTION RLS ARCHITECTURE (OBBLIGATORIO - REFACTORED Jan 2026)**:
   - **📋 CATALOGO UNIFICATO**: `action_definitions` è la FONTE UNICA per il MCP Gateway
     - Contiene sia **operative** (15 azioni WMS workflow) che **query** (17 tool MCP)

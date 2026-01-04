@@ -9555,102 +9555,7 @@ export default function SettingsPage() {
                   </label>
                 </div>
 
-                {/* 📍 PRIMO LIVELLO PIRAMIDALE: Selezione Aree Commerciali */}
-                {!newUser.selectAllLegalEntities && (
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '0.75rem'
-                    }}>
-                      📍 Filtra per Area Commerciale
-                      <span style={{ 
-                        fontSize: '0.75rem', 
-                        fontWeight: '400', 
-                        color: '#6b7280',
-                        marginLeft: '0.5rem'
-                      }}>
-                        (Opzionale - filtra i punti vendita per area)
-                      </span>
-                    </label>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '0.5rem',
-                      padding: '0.75rem',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.75rem',
-                      background: '#f9fafb'
-                    }}>
-                      {(commercialAreas as any[]).map((area: any) => (
-                        <label key={area.id} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.5rem 0.875rem',
-                          cursor: 'pointer',
-                          borderRadius: '1.25rem',
-                          transition: 'all 0.2s ease',
-                          background: newUser.selectedAreas.includes(area.id) ? '#dbeafe' : '#ffffff',
-                          border: `2px solid ${newUser.selectedAreas.includes(area.id) ? '#3b82f6' : '#e5e7eb'}`,
-                          fontSize: '0.8125rem',
-                          fontWeight: newUser.selectedAreas.includes(area.id) ? '600' : '400',
-                          color: newUser.selectedAreas.includes(area.id) ? '#1d4ed8' : '#374151'
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={newUser.selectedAreas.includes(area.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewUser({
-                                  ...newUser,
-                                  selectedAreas: [...newUser.selectedAreas, area.id],
-                                  selectedLegalEntities: [],
-                                  selectedStores: []
-                                });
-                              } else {
-                                setNewUser({
-                                  ...newUser,
-                                  selectedAreas: newUser.selectedAreas.filter(id => id !== area.id),
-                                  selectedLegalEntities: [],
-                                  selectedStores: []
-                                });
-                              }
-                            }}
-                            style={{ display: 'none' }}
-                          />
-                          <MapPin size={14} />
-                          {area.name || area.code}
-                          {newUser.selectedAreas.includes(area.id) && (
-                            <span style={{ marginLeft: '0.25rem' }}>✓</span>
-                          )}
-                        </label>
-                      ))}
-                      {(commercialAreas as any[]).length === 0 && (
-                        <span style={{ color: '#9ca3af', fontSize: '0.8125rem' }}>
-                          Nessuna area commerciale configurata
-                        </span>
-                      )}
-                    </div>
-                    {newUser.selectedAreas.length > 0 && (
-                      <div style={{
-                        marginTop: '0.5rem',
-                        fontSize: '0.75rem',
-                        color: '#3b82f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
-                      }}>
-                        <Filter size={12} />
-                        {newUser.selectedAreas.length} area/e selezionate - i punti vendita saranno filtrati
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
+                {/* 🏭 Seleziona Ragioni Sociali (filtro per sedi) */}
                 {!newUser.selectAllLegalEntities && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
@@ -9808,7 +9713,6 @@ export default function SettingsPage() {
                     }}>
                       {puntiVenditaList
                         .filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId) && isStoreActive(pv.status))
-                        .filter(pv => newUser.selectedAreas.length === 0 || newUser.selectedAreas.includes(pv.commercialAreaId))
                         .map(pv => (
                         <label key={pv.id} style={{
                           display: 'flex',

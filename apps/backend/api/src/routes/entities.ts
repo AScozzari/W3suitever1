@@ -1801,40 +1801,42 @@ router.get('/users', async (req, res) => {
       );
     }
 
-    // ✅ Fetch user scope assignments (organization entities and stores)
+    // ✅ Fetch user scope assignments - SINGLE SOURCE OF TRUTH from user_stores
     const userIds = usersList.map(u => u.id);
     
-    // Get organization entity assignments
-    const orgEntityAssignments = userIds.length > 0 
-      ? await db.select({
-          userId: userOrganizationEntities.userId,
-          organizationEntityId: userOrganizationEntities.organizationEntityId,
-          isPrimary: userOrganizationEntities.isPrimary
-        }).from(userOrganizationEntities)
-          .where(inArray(userOrganizationEntities.userId, userIds))
-      : [];
-    
-    // Get store assignments  
+    // Get store assignments with organization entity (derived from stores table)
     const storeAssignments = userIds.length > 0
       ? await db.select({
           userId: userStores.userId,
           storeId: userStores.storeId,
-          isPrimary: userStores.isPrimary
+          isPrimary: userStores.isPrimary,
+          organizationEntityId: stores.organizationEntityId
         }).from(userStores)
+          .innerJoin(stores, eq(userStores.storeId, stores.id))
           .where(inArray(userStores.userId, userIds))
       : [];
 
-    // Group assignments by userId
-    const orgsByUser = new Map<string, { id: string; isPrimary: boolean }[]>();
-    orgEntityAssignments.forEach(a => {
-      if (!orgsByUser.has(a.userId)) orgsByUser.set(a.userId, []);
-      orgsByUser.get(a.userId)!.push({ id: a.organizationEntityId, isPrimary: a.isPrimary || false });
-    });
-
+    // Group stores and derive org entities by userId (Single Source of Truth)
     const storesByUser = new Map<string, { id: string; isPrimary: boolean }[]>();
+    const orgsByUser = new Map<string, { id: string; isPrimary: boolean }[]>();
+    
     storeAssignments.forEach(a => {
+      // Group stores
       if (!storesByUser.has(a.userId)) storesByUser.set(a.userId, []);
       storesByUser.get(a.userId)!.push({ id: a.storeId, isPrimary: a.isPrimary || false });
+      
+      // Derive org entities from stores (Single Source of Truth)
+      if (a.organizationEntityId) {
+        if (!orgsByUser.has(a.userId)) orgsByUser.set(a.userId, []);
+        const existingOrgs = orgsByUser.get(a.userId)!;
+        const existingOrg = existingOrgs.find(o => o.id === a.organizationEntityId);
+        if (existingOrg) {
+          // Upgrade isPrimary to true if any store in this org is primary
+          if (a.isPrimary) existingOrg.isPrimary = true;
+        } else {
+          existingOrgs.push({ id: a.organizationEntityId, isPrimary: a.isPrimary || false });
+        }
+      }
     });
 
     // ✅ Build avatar URLs from avatar_object_path and include scope data
@@ -2869,8 +2871,9 @@ router.put('/users/:id/stores', requirePermission('users:write'), async (req, re
       }
     }
 
-    // Use transaction for atomic delete+insert
+    // Use transaction for atomic delete+insert + sync org entities (Single Source of Truth)
     await db.transaction(async (tx) => {
+      // 1. Delete existing store assignments
       await tx
         .delete(userStores)
         .where(
@@ -2880,19 +2883,62 @@ router.put('/users/:id/stores', requirePermission('users:write'), async (req, re
           )
         );
 
+      // 2. Delete existing org entity assignments (will be derived from stores)
+      await tx
+        .delete(userOrganizationEntities)
+        .where(
+          and(
+            eq(userOrganizationEntities.userId, userId),
+            eq(userOrganizationEntities.tenantId, tenantId)
+          )
+        );
+
       if (storeIds && storeIds.length > 0) {
-        const newAssignments = storeIds.map((storeId: string) => ({
+        // 3. Insert new store assignments
+        const newStoreAssignments = storeIds.map((storeId: string) => ({
           userId,
           storeId,
           tenantId,
           isPrimary: storeId === primaryId
         }));
+        await tx.insert(userStores).values(newStoreAssignments);
 
-        await tx.insert(userStores).values(newAssignments);
+        // 4. Derive org entities from stores and sync (Single Source of Truth)
+        const storesWithOrgs = await tx
+          .select({ 
+            storeId: stores.id, 
+            organizationEntityId: stores.organizationEntityId 
+          })
+          .from(stores)
+          .where(inArray(stores.id, storeIds));
+        
+        // Get unique org entities
+        const uniqueOrgIds = [...new Set(
+          storesWithOrgs
+            .filter(s => s.organizationEntityId)
+            .map(s => s.organizationEntityId as string)
+        )];
+        
+        if (uniqueOrgIds.length > 0) {
+          // Determine primary org entity from primary store
+          let primaryOrgId: string | null = null;
+          if (primaryId) {
+            const primaryStore = storesWithOrgs.find(s => s.storeId === primaryId);
+            primaryOrgId = primaryStore?.organizationEntityId || null;
+          }
+          
+          const newOrgAssignments = uniqueOrgIds.map((orgId: string) => ({
+            userId,
+            organizationEntityId: orgId,
+            tenantId,
+            isPrimary: orgId === primaryOrgId
+          }));
+          await tx.insert(userOrganizationEntities).values(newOrgAssignments);
+        }
       }
     });
 
-    logger.info('User stores updated', { userId, count: storeIds?.length || 0 });
+    logger.info('User stores updated (with org entities sync)', { userId, storeCount: storeIds?.length || 0 });
 
     res.status(200).json({
       success: true,
