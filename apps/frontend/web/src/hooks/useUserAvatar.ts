@@ -16,8 +16,6 @@ interface UserData {
   lastName?: string;
   username?: string;
   email?: string;
-  profileImageUrl?: string;
-  avatarUrl?: string;
   avatarObjectPath?: string;
 }
 

@@ -3582,7 +3582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: users.email,
           firstName: users.firstName,
           lastName: users.lastName,
-          profileImageUrl: users.profileImageUrl,
+          avatarObjectPath: users.avatarObjectPath,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
           tenantId: users.tenantId,
@@ -4047,14 +4047,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate public URL for the avatar
-      const avatarUrl = validatedData.avatarUrl || avatarService.getAvatarPublicUrl(validatedData.objectPath);
-
-      // Update user's profileImageUrl in database
+      // Update user's avatarObjectPath in database (new evergreen system)
       await db
         .update(users)
         .set({ 
-          profileImageUrl: avatarUrl,
+          avatarObjectPath: validatedData.objectPath,
           updatedAt: new Date()
         })
         .where(eq(users.id, targetUserId));
@@ -4233,7 +4230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get current user data
       const userResult = await db
-        .select({ profileImageUrl: users.profileImageUrl })
+        .select({ avatarObjectPath: users.avatarObjectPath })
         .from(users)
         .where(eq(users.id, targetUserId))
         .limit(1);
@@ -4245,26 +4242,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const currentAvatarUrl = userResult[0].profileImageUrl;
-
       // Clear avatar from database
       await db
         .update(users)
         .set({ 
-          profileImageUrl: null,
+          avatarObjectPath: null,
           updatedAt: new Date()
         })
         .where(eq(users.id, targetUserId));
-
-      // If there was an avatar, try to delete from object storage
-      if (currentAvatarUrl) {
-        try {
-          // Extract object path from URL and delete
-          // This is simplified - in real implementation you'd parse the URL properly
-        } catch (deleteError) {
-          console.warn('Failed to delete avatar file from storage:', deleteError);
-        }
-      }
 
       res.json({
         success: true,

@@ -631,8 +631,7 @@ export const users = w3suiteSchema.table("users", {
   passwordHash: varchar("password_hash", { length: 255 }), // bcrypt hashed password
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
-  profileImageUrl: varchar("profile_image_url", { length: 500 }),
-  // Avatar metadata fields
+  // Avatar metadata fields (legacy profileImageUrl removed - use avatarObjectPath)
   avatarObjectPath: varchar("avatar_object_path", { length: 500 }),
   avatarVisibility: objectVisibilityEnum("avatar_visibility").default("public"),
   avatarUploadedAt: timestamp("avatar_uploaded_at"),
