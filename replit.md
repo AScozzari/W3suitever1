@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive and adaptive solution for diverse business needs, offering significant market potential for businesses seeking to modernize and streamline their operations.
+W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across diverse industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform offers a comprehensive, adaptive solution with significant market potential for businesses seeking modernization and streamlined operations.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -146,7 +146,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds. UI components leverage `shadcn/ui` and Radix UI for accessibility, CSS variables, and Tailwind CSS, integrating into existing dashboards. A build-time UI zoom (`VITE_FONT_SCALE=80`) is applied, and CSS units must primarily use `rem` for scalability.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and `shadcn/ui` components leveraging Radix UI for accessibility. Tailwind CSS is used for styling. UI zoom is handled at build-time via `VITE_FONT_SCALE=80`, and CSS units predominantly use `rem`.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
@@ -154,20 +154,17 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **HR Module**: Manages shifts, leave requests, and time tracking.
-    - **WMS Module (CQRS)**: Uses Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
-    - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
+    - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
+    - **Brand Interface**: Features a Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
     - **MCP Public Gateway**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations.
 - **System Design Choices**:
-    - **Business Drivers Architecture**: Multi-tenant business drivers within `w3suite.drivers` using RLS.
-    - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
-    - **Entity Architecture**: Differentiates between internal `organization_entities` and external `legal_entities`.
-    - **Cross-Store Architecture**: Default tenant-wide data views with role-based access control, allowing optional filters, explicitly forbidding auto-selection of stores.
+    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
+    - **Cross-Store Architecture**: Default tenant-wide data views with role-based access, supporting optional filters and prohibiting automatic store selection.
     - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing".
-    - **Action Management System**: Centralized configuration for department actions using `action_configurations`. `UnifiedTriggerService` routes actions through supervisors.
-    - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections to `wss://{extension.sipServer}/ws`.
-    - **Price List Architecture**: Detailed structure for `price_list_items`, `price_list_items_canvas`, and `price_list_item_compositions`.
-    - **User Scope**: `user_stores` is the single source of truth for user scope; organization entities are derived automatically.
-    - **MCP/Action RLS**: `action_definitions` is the unified catalog for the MCP Gateway, supporting mixed RLS for global and tenant-specific actions.
+    - **Action Management System**: Centralized configuration for department actions via `action_configurations`, routed through supervisors by `UnifiedTriggerService`.
+    - **Deployment & Governance**: Incremental VPS deployment using `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections to `wss://{extension.sipServer}/ws`.
+    - **User Scope**: `user_stores` is the single source of truth; organization entities are derived automatically.
+    - **MCP/Action RLS**: `action_definitions` serves as the unified catalog for the MCP Gateway, supporting mixed RLS for global and tenant-specific actions.
     - **Italian Business Validation**: Comprehensive validation for various Italian business data types (Email, PEC, VAT, Fiscal Code, Phone, IBAN, Website, BIC/SWIFT, Addresses) with real-time feedback, Italian messages, Zod schemas, auto-formatting, and visual indicators.
 
 # External Dependencies
