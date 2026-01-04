@@ -552,6 +552,68 @@ interface RolePermissionsResponse {
 
 // Dati caricati dal database
 
+// ✅ INITIAL STATE CONSTANT - Single source of truth for empty user form
+const INITIAL_USER_STATE = {
+  username: '',
+  password: '',
+  confirmPassword: '',
+  ruolo: '',
+  cambioPasswordObbligatorio: true,
+  ragioneSociale_id: null as string | null,
+  puntiVendita_ids: [] as string[],
+  puntoVenditaPreferito_id: null as string | null,
+  scopeLevel: 'tenant' as 'tenant' | 'organization_entity' | 'store',
+  selectedOrganizationEntities: [] as string[],
+  primaryOrganizationEntityId: null as string | null,
+  selectedStores: [] as string[],
+  primaryStoreId: null as string | null,
+  selectAllLegalEntities: false,
+  selectedAreas: [] as string[],
+  selectedLegalEntities: [] as string[],
+  nome: '',
+  cognome: '',
+  avatar: { url: null as string | null, blob: null as Blob | null, type: 'upload' as 'upload' | 'generated' },
+  codiceFiscale: '',
+  dataNascita: '',
+  luogoNascita: '',
+  sesso: 'M',
+  email: '',
+  emailPersonale: '',
+  telefono: '',
+  telefonoAziendale: '',
+  via: '',
+  civico: '',
+  citta: '',
+  cap: '',
+  provincia: '',
+  paese: 'Italia',
+  tipoDocumento: 'Carta Identità',
+  numeroDocumento: '',
+  dataScadenzaDocumento: '',
+  stato: 'attivo',
+  dataInizioValidita: '',
+  dataFineValidita: '',
+  notificheEmail: true,
+  notificheSMS: false,
+  lingua: 'it',
+  fuso: 'Europe/Rome',
+  extensionId: '',
+  extension: {
+    enabled: false,
+    extNumber: '',
+    sipDomain: '',
+    classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
+    voicemailEnabled: true,
+    storeId: null as string | null
+  },
+  tipoContratto: 'Indeterminato',
+  dataAssunzione: '',
+  livello: '',
+  ccnl: 'Commercio',
+  oreLavoro: '40',
+  note: ''
+};
+
 export default function SettingsPage() {
   const [, setLocation] = useLocation();
   const { isReady: isAuthReady } = useAuthReadiness();
@@ -571,68 +633,10 @@ export default function SettingsPage() {
   const [calendarModal, setCalendarModal] = useState<{ open: boolean; storeId: string | null; storeName: string }>({ open: false, storeId: null, storeName: '' });
   const [userEditLoading, setUserEditLoading] = useState(false);
 
-  // ✅ RESET USER FORM HELPER - Used when closing modal or creating new user
+  // ✅ RESET USER FORM HELPER - Uses INITIAL_USER_STATE constant
   const resetUserForm = () => {
-    setNewUser({
-      username: '',
-      password: '',
-      confirmPassword: '',
-      ruolo: '',
-      cambioPasswordObbligatorio: true,
-      ragioneSociale_id: null,
-      puntiVendita_ids: [],
-      puntoVenditaPreferito_id: null,
-      scopeLevel: 'tenant',
-      selectedOrganizationEntities: [],
-      primaryOrganizationEntityId: null,
-      selectedStores: [],
-      primaryStoreId: null,
-      selectAllLegalEntities: false,
-      selectedAreas: [],
-      selectedLegalEntities: [],
-      nome: '',
-      cognome: '',
-      avatar: { url: null, blob: null, type: 'upload' as 'upload' | 'generated' },
-      codiceFiscale: '',
-      dataNascita: '',
-      luogoNascita: '',
-      sesso: 'M',
-      email: '',
-      emailPersonale: '',
-      telefono: '',
-      telefonoAziendale: '',
-      via: '',
-      civico: '',
-      citta: '',
-      cap: '',
-      provincia: '',
-      paese: 'Italia',
-      tipoDocumento: 'Carta Identità',
-      numeroDocumento: '',
-      dataScadenzaDocumento: '',
-      stato: 'attivo',
-      dataInizioValidita: '',
-      dataFineValidita: '',
-      notificheEmail: true,
-      notificheSMS: false,
-      lingua: 'it',
-      fuso: 'Europe/Rome',
-      extensionId: '',
-      extension: {
-        enabled: false,
-        extNumber: '',
-        sipDomain: '',
-        classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
-        voicemailEnabled: true,
-        storeId: null
-      },
-      tipoContratto: 'Indeterminato',
-      dataAssunzione: '',
-      livello: '',
-      ccnl: 'Commercio',
-      oreLavoro: '40',
-      note: ''
-    } as any);
+    console.log('🔄 resetUserForm called - resetting to INITIAL_USER_STATE');
+    setNewUser({ ...INITIAL_USER_STATE });
   };
 
   // ✅ CLOSE USER MODAL - Always reset form when closing
@@ -3090,90 +3094,9 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
-              // Reset completo di tutti i campi per nuovo utente
-              setNewUser({
-                // Dati di accesso
-                username: '',
-                password: '',
-                confirmPassword: '',
-                ruolo: '',
-                cambioPasswordObbligatorio: true,
-                
-                // Relazioni obbligatorie
-                ragioneSociale_id: null,
-                puntiVendita_ids: [] as string[],
-                puntoVenditaPreferito_id: null,
-                
-                // Scope system
-                scopeLevel: 'tenant' as 'tenant' | 'organization_entity' | 'store',
-                selectedOrganizationEntities: [] as string[],
-                primaryOrganizationEntityId: null,
-                selectedStores: [] as string[],
-                primaryStoreId: null,
-                selectAllLegalEntities: false,
-                selectedAreas: [] as string[],
-                selectedLegalEntities: [] as string[],
-                
-                // Informazioni personali
-                nome: '',
-                cognome: '',
-                avatar: {
-                  url: null,
-                  blob: null,
-                  type: 'upload' as 'upload' | 'generated'
-                },
-                codiceFiscale: '',
-                dataNascita: '',
-                luogoNascita: '',
-                sesso: 'M',
-                
-                // Contatti
-                email: '',
-                emailPersonale: '',
-                telefono: '',
-                telefonoAziendale: '',
-                
-                // Indirizzo
-                via: '',
-                civico: '',
-                citta: '',
-                cap: '',
-                provincia: '',
-                paese: 'Italia',
-                
-                // Documenti
-                tipoDocumento: 'Carta Identità',
-                numeroDocumento: '',
-                dataScadenzaDocumento: '',
-                
-                // Impostazioni account
-                stato: 'attivo',
-                dataInizioValidita: '',
-                dataFineValidita: '',
-                notificheEmail: true,
-                notificheSMS: false,
-                lingua: 'it',
-                fuso: 'Europe/Rome',
-                
-                // VoIP Extension
-                extensionId: '',
-                extension: {
-                  enabled: false,
-                  extNumber: '',
-                  sipDomain: '',
-                  classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
-                  voicemailEnabled: true,
-                  storeId: null
-                },
-                
-                // Contratto
-                tipoContratto: 'Indeterminato',
-                dataAssunzione: '',
-                livello: '',
-                ccnl: 'Commercio',
-                oreLavoro: '40',
-                note: ''
-              });
+              // ✅ Reset usando la costante INITIAL_USER_STATE
+              console.log('🆕 Nuovo Utente clicked - resetting form');
+              resetUserForm();
               setUserModal({ open: true, data: null });
             }}>
               <Plus size={16} />
@@ -6282,157 +6205,14 @@ export default function SettingsPage() {
         note: user.note || user.notes || ''
       });
     } else if (userModal.open && !userModal.data) {
-      // ✅ Modalità CREATE - RESET COMPLETO del form a valori vuoti
-      console.log('🔄 CREATE MODE - Resetting form to empty values');
-      setNewUser({
-        username: '',
-        password: '',
-        confirmPassword: '',
-        ruolo: '',
-        cambioPasswordObbligatorio: true,
-        ragioneSociale_id: null,
-        puntiVendita_ids: [],
-        puntoVenditaPreferito_id: null,
-        scopeLevel: 'tenant',
-        selectedOrganizationEntities: [],
-        primaryOrganizationEntityId: null,
-        selectedStores: [],
-        primaryStoreId: null,
-        selectAllLegalEntities: false,
-        selectedAreas: [],
-        selectedLegalEntities: [],
-        nome: '',
-        cognome: '',
-        avatar: { url: null, blob: null, type: 'upload' },
-        codiceFiscale: '',
-        dataNascita: '',
-        luogoNascita: '',
-        sesso: 'M',
-        email: '',
-        emailPersonale: '',
-        telefono: '',
-        telefonoAziendale: '',
-        via: '',
-        civico: '',
-        citta: '',
-        cap: '',
-        provincia: '',
-        paese: 'Italia',
-        tipoDocumento: 'Carta Identità',
-        numeroDocumento: '',
-        dataScadenzaDocumento: '',
-        stato: 'attivo',
-        dataInizioValidita: '',
-        dataFineValidita: '',
-        notificheEmail: true,
-        notificheSMS: false,
-        lingua: 'it',
-        fuso: 'Europe/Rome',
-        extension: {
-          enabled: false,
-          extNumber: '',
-          sipDomain: '',
-          classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
-          voicemailEnabled: true,
-          storeId: null
-        },
-        tipoContratto: 'Indeterminato',
-        dataAssunzione: '',
-        livello: '',
-        ccnl: 'Commercio',
-        oreLavoro: '40',
-        note: ''
-      });
+      // ✅ Modalità CREATE - RESET COMPLETO usando INITIAL_USER_STATE
+      console.log('🔄 CREATE MODE useEffect - Resetting form to INITIAL_USER_STATE');
+      setNewUser({ ...INITIAL_USER_STATE });
     }
   }, [userModal.open, userModal.data, puntiVenditaList]);
 
-  // State per il nuovo utente
-  const [newUser, setNewUser] = useState({
-    // Dati di accesso
-    username: '',
-    password: '',
-    confirmPassword: '',
-    ruolo: '',
-    cambioPasswordObbligatorio: true,
-    
-    // Relazioni obbligatorie (legacy - keeping for backward compatibility)
-    ragioneSociale_id: null as string | null,
-    puntiVendita_ids: [] as string[],
-    puntoVenditaPreferito_id: null as string | null,
-    
-    // ✅ NEW SCOPE SYSTEM (uses UUID strings and relational tables)
-    scopeLevel: 'tenant' as 'tenant' | 'organization_entity' | 'store',
-    selectedOrganizationEntities: [] as string[],  // UUID strings
-    primaryOrganizationEntityId: null as string | null,
-    selectedStores: [] as string[],  // UUID strings
-    primaryStoreId: null as string | null,
-    
-    // Legacy scope fields (for backward compatibility during transition)
-    selectAllLegalEntities: false,
-    selectedAreas: [] as string[],
-    selectedLegalEntities: [] as string[],
-    
-    // Informazioni personali
-    nome: '',
-    cognome: '',
-    avatar: {
-      url: null as string | null,
-      blob: null as Blob | null,
-      type: 'upload' as 'upload' | 'generated'
-    },
-    codiceFiscale: '',
-    dataNascita: '',
-    luogoNascita: '',
-    sesso: 'M',
-    
-    // Contatti
-    email: '',
-    emailPersonale: '',
-    telefono: '',
-    telefonoAziendale: '',
-    
-    // Indirizzo residenza
-    via: '',
-    civico: '',
-    citta: '',
-    cap: '',
-    provincia: '',
-    paese: 'Italia',
-    
-    // Documenti
-    tipoDocumento: 'Carta Identità',
-    numeroDocumento: '',
-    dataScadenzaDocumento: '',
-    
-    // Impostazioni account
-    stato: 'attivo',
-    dataInizioValidita: '',
-    dataFineValidita: '',
-    notificheEmail: true,
-    notificheSMS: false,
-    lingua: 'it',
-    fuso: 'Europe/Rome',
-    
-    // ✅ Configurazione VoIP Extension (1:1 relationship)
-    extension: {
-      enabled: false,         // Toggle per abilitare provisioning extension
-      extNumber: '',          // Numero interno (3-6 cifre)
-      sipDomain: '',          // SIP domain (es: tenant1.pbx.w3suite.it)
-      classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
-      voicemailEnabled: true,
-      storeId: null as string | null
-    },
-    
-    // Informazioni contrattuali
-    tipoContratto: 'Indeterminato',
-    dataAssunzione: '',
-    livello: '',
-    ccnl: 'Commercio',
-    oreLavoro: '40',
-    
-    // Note
-    note: ''
-  });
+  // State per il nuovo utente - usa INITIAL_USER_STATE come valore iniziale
+  const [newUser, setNewUser] = useState({ ...INITIAL_USER_STATE });
 
   // State per il modal ragione sociale
   const [newRagioneSociale, setNewRagioneSociale] = useState({
