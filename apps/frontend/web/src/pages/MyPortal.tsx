@@ -64,6 +64,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import AvatarSelector from '@/components/AvatarSelector';
 import QuickActions, { type QuickAction } from '@/components/QuickActions';
 import UniversalRequestModal from '@/components/Requests/UniversalRequestModal';
+import { MyDriveContent } from './MyDrivePage';
 
 // Tab configuration for Employee Dashboard
 const EMPLOYEE_TABS = [
@@ -1500,34 +1501,21 @@ export default function MyPortal() {
             )}
 
             {activeTab === 'my-drive' && (
-              <div className="space-y-6" data-testid="section-my-drive">
+              <div className="space-y-4" data-testid="section-my-drive">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-900">My Drive</h2>
                   <Link href={`/${currentTenant?.slug || 'staging'}/my-drive`}>
                     <Button 
-                      className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                      data-testid="button-open-my-drive"
+                      variant="outline"
+                      size="sm"
+                      data-testid="button-open-my-drive-fullscreen"
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      Apri My Drive
+                      Apri a schermo intero
                     </Button>
                   </Link>
                 </div>
-                
-                <Card className="glass-card">
-                  <CardContent className="p-8 text-center">
-                    <FileText className="h-16 w-16 text-teal-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Gestione File Personali</h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Accedi a My Drive per gestire i tuoi file personali, condividere documenti con il team e organizzare le tue cartelle.
-                    </p>
-                    <Link href={`/${currentTenant?.slug || 'staging'}/my-drive`}>
-                      <Button variant="outline" size="lg" data-testid="button-go-to-my-drive">
-                        Vai a My Drive
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
+                <MyDriveContent embedded={true} />
               </div>
             )}
 

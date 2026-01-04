@@ -115,8 +115,8 @@ function getFileIcon(mimeType: string) {
   return CATEGORY_ICONS[category] || File;
 }
 
-export default function MyDrivePage() {
-  const [location, navigate] = useLocation();
+export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
+  const [location] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -260,9 +260,8 @@ export default function MyDrivePage() {
 
   const isLoading = foldersLoading || objectsLoading;
 
-  return (
-    <Layout title="My Drive" subtitle="Gestisci i tuoi file e documenti">
-      <div className="space-y-1rem">
+  const content = (
+    <div className="space-y-1rem">
         <div className="flex flex-col sm:flex-row gap-0.5rem items-start sm:items-center justify-between">
           <div className="flex items-center gap-0.25rem text-0.875rem text-muted-foreground" data-testid="breadcrumb-nav">
             {breadcrumbs.map((item, index) => (
@@ -651,6 +650,19 @@ export default function MyDrivePage() {
           </div>
         </div>
       </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <Layout title="My Drive" subtitle="Gestisci i tuoi file e documenti">
+      {content}
     </Layout>
   );
+}
+
+export default function MyDrivePage() {
+  return <MyDriveContent embedded={false} />;
 }
