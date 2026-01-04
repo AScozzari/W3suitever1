@@ -47,8 +47,10 @@ const FEATURES = [
 ];
 
 export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  // Development mode: precompile with demo credentials for faster testing
+  const isDevelopmentMode = import.meta.env.VITE_AUTH_MODE === 'development';
+  const [username, setUsername] = useState(isDevelopmentMode ? 'admin@w3suite.com' : '');
+  const [password, setPassword] = useState(isDevelopmentMode ? 'admin123' : '');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

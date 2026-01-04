@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, aiming to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform provides a comprehensive solution for managing complex business processes and data across diverse industries to drive growth.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates core modules such as CRM, POS, WMS, Analytics, HR, and CMS to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive and adaptive solution for diverse business needs.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -146,17 +146,17 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and build-time UI zoom (`VITE_FONT_SCALE=80`). Content integrates into existing dashboards using `shadcn/ui` and Radix UI for accessible components, CSS variables, and Tailwind CSS.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). UI components leverage `shadcn/ui` and Radix UI for accessibility, CSS variables, and Tailwind CSS, integrating into existing dashboards.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, and Multi-Provider OAuth (MCP).
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
-    - **HR Module (Shifts, Leaves, Tracking)**: Manages shifts, leave requests, and time tracking.
+    - **HR Module**: Manages shifts, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Uses Command Query Responsibility Segregation, supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
     - **Brand Interface**: Workflow Builder (using Zustand with MCP nodes) and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway (External API)**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations.
+    - **MCP Public Gateway**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations.
 - **System Design Choices**:
     - **Business Drivers Architecture**: Multi-tenant business drivers within `w3suite.drivers` using RLS.
     - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).

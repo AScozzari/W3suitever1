@@ -3098,10 +3098,11 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
-              // ✅ Reset usando la costante INITIAL_USER_STATE
-              console.log('🆕 Nuovo Utente clicked - resetting form');
-              resetUserForm();
-              setUserModal({ open: true, data: null });
+              // ✅ ROBUST RESET: Sync reset + modal open in same tick
+              // Key on modal div forces complete re-mount for 'create-new' mode
+              console.log('🆕 Nuovo Utente clicked - robust sync reset');
+              setNewUser({ ...INITIAL_USER_STATE }); // Direct sync reset
+              setUserModal({ open: true, data: null }); // data: null triggers 'create-new' key
             }}>
               <Plus size={16} />
               Nuovo Utente
@@ -8890,8 +8891,11 @@ export default function SettingsPage() {
       )}
 
       {/* Modal Nuovo Utente con Selezione Team */}
+      {/* Key forces complete re-mount when switching between create (null) and edit (userId) modes */}
       {userModal.open && (
-        <div style={{
+        <div 
+          key={`user-modal-${userModal.data?.id || 'create-new'}`}
+          style={{
           position: 'fixed',
           top: 0,
           left: 0,
