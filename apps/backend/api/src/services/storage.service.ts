@@ -1,5 +1,5 @@
 import { db } from '../core/db';
-import { eq, and, or, sql, desc, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, or, sql, desc, isNull, gte, lte, inArray } from 'drizzle-orm';
 import { 
   storageFolders, storageObjects, storageObjectVersions,
   storageAcl, storageShares, storageUploadSessions,
@@ -15,14 +15,31 @@ const SIGNED_URL_EXPIRY_MINUTES = 5;
 const UPLOAD_SESSION_EXPIRY_HOURS = 24;
 
 let objectStorageClient: Client | null = null;
+let objectStorageInitialized = false;
+let objectStorageAvailable = false;
 
 // Object Storage bucket ID from environment
 const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
 
-function getObjectStorageClient(): Client {
-  if (!objectStorageClient) {
-    objectStorageClient = new Client({ bucketId: BUCKET_ID });
+async function initObjectStorageClient(): Promise<void> {
+  if (objectStorageInitialized) return;
+  objectStorageInitialized = true;
+  
+  try {
+    const client = new Client({ bucketId: BUCKET_ID });
+    // Test if storage is available
+    await client.exists('test-connection');
+    objectStorageClient = client;
+    objectStorageAvailable = true;
+  } catch (e: any) {
+    // Silently fail - Object Storage not configured
+    objectStorageClient = null;
+    objectStorageAvailable = false;
   }
+}
+
+async function getObjectStorageClient(): Promise<Client | null> {
+  await initObjectStorageClient();
   return objectStorageClient;
 }
 
@@ -177,7 +194,7 @@ export const storageService = {
         count: sql<number>`count(*)::int`
       })
         .from(storageShares)
-        .where(sql`${storageShares.folderId} = ANY(${folderIds})`)
+        .where(inArray(storageShares.folderId, folderIds))
         .groupBy(storageShares.folderId);
       
       for (const share of shares) {
@@ -311,7 +328,8 @@ export const storageService = {
         .set({ status: 'uploading' })
         .where(eq(storageUploadSessions.id, session.id));
 
-      const client = getObjectStorageClient();
+      const client = await getObjectStorageClient();
+      if (!client) throw new Error('Object Storage not available');
       await client.uploadFromBytes(objectKey, fileBuffer);
 
       const contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
@@ -379,7 +397,8 @@ export const storageService = {
     const category = input.category || 'general';
     const objectKey = `${ctx.tenantId}/${category}/${ctx.userId}/${objectId}.${extension}`;
 
-    const client = getObjectStorageClient();
+    const client = await getObjectStorageClient();
+    if (!client) throw new Error('Object Storage not available');
     await client.uploadFromBytes(objectKey, fileBuffer);
 
     const contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
@@ -492,7 +511,8 @@ export const storageService = {
         .where(eq(storageSignedTokens.id, tokenRecord.id));
     }
 
-    const client = getObjectStorageClient();
+    const client = await getObjectStorageClient();
+    if (!client) throw new Error('Object Storage not available');
     const downloadResult = await client.downloadAsBytes(object.objectKey);
     
     // downloadAsBytes returns Buffer[] - extract the first buffer
@@ -708,7 +728,7 @@ export const storageService = {
         count: sql<number>`count(*)::int`
       })
         .from(storageShares)
-        .where(sql`${storageShares.objectId} = ANY(${objectIds})`)
+        .where(inArray(storageShares.objectId, objectIds))
         .groupBy(storageShares.objectId);
       
       for (const share of shares) {
@@ -855,8 +875,8 @@ export const storageService = {
     }
 
     try {
-      const client = getObjectStorageClient();
-      await client.delete(object.objectKey);
+      const client = await getObjectStorageClient();
+      if (client) await client.delete(object.objectKey);
     } catch (error) {
       console.error('Failed to delete from object storage:', error);
     }
@@ -1262,8 +1282,8 @@ export const storageService = {
         .where(eq(storageObjects.id, oldAvatar.id));
       
       try {
-        const client = getObjectStorageClient();
-        await client.delete(oldAvatar.objectKey);
+        const client = await getObjectStorageClient();
+        if (client) await client.delete(oldAvatar.objectKey);
       } catch (err) {
         console.warn('Failed to delete old avatar from object storage:', err);
       }
@@ -1273,7 +1293,8 @@ export const storageService = {
     const objectKey = `users/${targetUserId}/avatar/profile.${ext}`;
     const sizeBytes = fileBuffer.length;
 
-    const client = getObjectStorageClient();
+    const client = await getObjectStorageClient();
+    if (!client) throw new Error('Object Storage not available');
     const uploadResult = await client.uploadFromBytes(objectKey, fileBuffer);
     
     if (!uploadResult.ok) {
@@ -1392,8 +1413,8 @@ export const storageService = {
       totalBytesDeleted += avatarObject.sizeBytes || 0;
 
       try {
-        const client = getObjectStorageClient();
-        await client.delete(avatarObject.objectKey);
+        const client = await getObjectStorageClient();
+        if (client) await client.delete(avatarObject.objectKey);
       } catch (err) {
         console.warn('Failed to delete avatar from object storage:', err);
       }
