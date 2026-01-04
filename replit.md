@@ -146,7 +146,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and a build-time UI zoom (`VITE_FONT_SCALE=80`). UI components leverage `shadcn/ui` and Radix UI for accessibility, CSS variables, and Tailwind CSS, integrating into existing dashboards.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds. UI components leverage `shadcn/ui` and Radix UI for accessibility, CSS variables, and Tailwind CSS, integrating into existing dashboards. A build-time UI zoom (`VITE_FONT_SCALE=80`) is applied, and CSS units must primarily use `rem` for scalability.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
@@ -166,6 +166,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Action Management System**: Centralized configuration for department actions using `action_configurations`. `UnifiedTriggerService` routes actions through supervisors.
     - **Deployment & Governance**: Deploy Center Auto-Commit System and Bidirectional Branch Linking. Incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections to `wss://{extension.sipServer}/ws`.
     - **Price List Architecture**: Detailed structure for `price_list_items`, `price_list_items_canvas`, and `price_list_item_compositions`.
+    - **User Scope**: `user_stores` is the single source of truth for user scope; organization entities are derived automatically.
+    - **MCP/Action RLS**: `action_definitions` is the unified catalog for the MCP Gateway, supporting mixed RLS for global and tenant-specific actions.
+    - **Italian Business Validation**: Comprehensive validation for various Italian business data types (Email, PEC, VAT, Fiscal Code, Phone, IBAN, Website, BIC/SWIFT, Addresses) with real-time feedback, Italian messages, Zod schemas, auto-formatting, and visual indicators.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)

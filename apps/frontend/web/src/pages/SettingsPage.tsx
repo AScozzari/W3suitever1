@@ -9039,6 +9039,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="mario.rossi"
+                      autoComplete="off"
                       value={newUser.username}
                       onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
                       style={{
@@ -9137,6 +9138,7 @@ export default function SettingsPage() {
                     <input
                       type="password"
                       placeholder="••••••••"
+                      autoComplete="new-password"
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       style={{
@@ -9169,6 +9171,7 @@ export default function SettingsPage() {
                     <input
                       type="password"
                       placeholder="••••••••"
+                      autoComplete="new-password"
                       value={newUser.confirmPassword}
                       onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                       style={{
@@ -9230,6 +9233,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="Mario"
+                      autoComplete="off"
                       value={newUser.nome}
                       onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
                       style={{
@@ -9258,6 +9262,7 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       placeholder="Rossi"
+                      autoComplete="off"
                       value={newUser.cognome}
                       onChange={(e) => setNewUser({ ...newUser, cognome: e.target.value })}
                       style={{
@@ -9286,6 +9291,7 @@ export default function SettingsPage() {
                     <input
                       type="email"
                       placeholder="mario.rossi@windtre.it"
+                      autoComplete="off"
                       value={newUser.email}
                       onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                       onBlur={(e) => handleUserFieldValidation('email', e.target.value)}
@@ -9335,6 +9341,7 @@ export default function SettingsPage() {
                     <input
                       type="tel"
                       placeholder="+39 333 1234567"
+                      autoComplete="off"
                       value={newUser.telefono}
                       onChange={(e) => setNewUser({ ...newUser, telefono: e.target.value })}
                       onBlur={(e) => handleUserFieldValidation('telefono', e.target.value)}
