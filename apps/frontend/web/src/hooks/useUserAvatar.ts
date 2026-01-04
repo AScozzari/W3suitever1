@@ -151,22 +151,13 @@ export function useUserAvatar(
   }, [signedUrlData?.url]);
 
   const avatarUrl = useMemo(() => {
-    // Priority 1: Signed URL from Object Storage (most reliable)
+    // Only use Signed URL from Object Storage (legacy profileImageUrl removed)
     if (signedUrlData?.url && signedUrlData.hasAvatar && imageLoaded && !imageError) {
       return signedUrlData.url;
     }
     
-    // Priority 2: Legacy URLs (fallback)
-    if (userData?.avatarUrl && !imageError) {
-      return userData.avatarUrl;
-    }
-    
-    if (userData?.profileImageUrl && !imageError) {
-      return userData.profileImageUrl;
-    }
-    
     return undefined;
-  }, [userData?.avatarUrl, userData?.profileImageUrl, signedUrlData, imageLoaded, imageError]);
+  }, [signedUrlData, imageLoaded, imageError]);
 
   const hasImage = !!(signedUrlData?.hasAvatar && signedUrlData?.url && imageLoaded && !imageError);
   const isLoading = enabled && !!userData?.id && (isQueryLoading || (!!signedUrlData?.url && !imageLoaded && !imageError));

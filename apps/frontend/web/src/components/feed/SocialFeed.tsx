@@ -237,10 +237,10 @@ function formatRelativeTime(dateString: string): string {
 
 function getAvatarUrl(user: { avatar?: string } | null | undefined): string | undefined {
   if (!user?.avatar) return undefined;
+  // Only use full HTTP URLs (signed URLs from Object Storage)
+  // Legacy /avatars/serve/ routes have been removed
   if (user.avatar.startsWith('http')) return user.avatar;
-  // Remove 'avatars/' prefix if present - the endpoint expects just tenantId/filename
-  const avatarPath = user.avatar.replace(/^avatars\//, '');
-  return `/api/storage/avatars/serve/${avatarPath}`;
+  return undefined;
 }
 
 function getDisplayName(user: { firstName?: string; lastName?: string; email?: string } | null | undefined): string {
@@ -1448,7 +1448,7 @@ function BadgeModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
                     </span>
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.userAvatar ? `/api/storage/avatars/serve/${user.userAvatar}` : undefined} />
+                      <AvatarImage src={user.userAvatar?.startsWith('http') ? user.userAvatar : undefined} />
                       <AvatarFallback className="text-sm">
                         {getInitials(user.userName || 'U')}
                       </AvatarFallback>

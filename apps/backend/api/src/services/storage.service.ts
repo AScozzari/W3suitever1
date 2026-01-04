@@ -1359,42 +1359,6 @@ export const storageService = {
     return this.getSignedUrl(ctx, avatarObject.id);
   },
 
-  async serveAvatarByPath(tenantId: string, filename: string): Promise<{ buffer: Uint8Array; mimeType: string } | null> {
-    const [avatarObject] = await db.select().from(storageObjects)
-      .where(and(
-        eq(storageObjects.tenantId, tenantId),
-        eq(storageObjects.objectType, 'avatar'),
-        isNull(storageObjects.deletedAt),
-        sql`${storageObjects.objectKey} LIKE ${'%' + filename}`,
-      ))
-      .orderBy(desc(storageObjects.createdAt))
-      .limit(1);
-
-    if (!avatarObject) {
-      return null;
-    }
-
-    try {
-      const client = getObjectStorageClient();
-      const result = await client.downloadAsBytes(avatarObject.objectKey);
-      
-      if (!result.ok || !result.value || result.value.length === 0) {
-        return null;
-      }
-      
-      // downloadAsBytes returns Buffer[] - extract the first buffer
-      const [buffer] = result.value;
-      
-      return {
-        buffer,
-        mimeType: avatarObject.mimeType || 'image/png',
-      };
-    } catch (err) {
-      console.error('Error downloading avatar from storage:', err);
-      return null;
-    }
-  },
-
   async deleteAvatar(ctx: StorageServiceContext, targetUserId: string) {
     const avatarFolder = await db.select().from(storageFolders)
       .where(and(

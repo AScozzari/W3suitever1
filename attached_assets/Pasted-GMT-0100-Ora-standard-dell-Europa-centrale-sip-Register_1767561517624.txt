@@ -1,0 +1,90 @@
+GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+/api/storage/avatars/serve/users/admin-user/avatar/profile.png:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/avatars/serve/users/admin-user/avatar/profile.png 404 (Not Found)
+Image
+resolveLoadingStatus @ @radix-ui_react-avatar.js?v=b56a477b:91
+(anonime) @ @radix-ui_react-avatar.js?v=b56a477b:106
+mountState @ chunk-ZHRYBLGQ.js?v=b56a477b:12005
+useState @ chunk-ZHRYBLGQ.js?v=b56a477b:12545
+useState @ chunk-L7SIRVDC.js?v=b56a477b:1066
+useImageLoadingStatus @ @radix-ui_react-avatar.js?v=b56a477b:105
+(anonime) @ @radix-ui_react-avatar.js?v=b56a477b:53
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=b56a477b:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=b56a477b:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=b56a477b:15946
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=b56a477b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=b56a477b:103
+flush @ @tanstack_react-query.js?v=b56a477b:610
+batch @ @tanstack_react-query.js?v=b56a477b:628
+dispatch_fn @ @tanstack_react-query.js?v=b56a477b:1260
+setData @ @tanstack_react-query.js?v=b56a477b:931
+fetch @ @tanstack_react-query.js?v=b56a477b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+user-002.png:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/avatars/serve/00000000-0000-0000-0000-000000000001/user-002.png 404 (Not Found)
+Image
+resolveLoadingStatus @ @radix-ui_react-avatar.js?v=b56a477b:91
+(anonime) @ @radix-ui_react-avatar.js?v=b56a477b:106
+mountState @ chunk-ZHRYBLGQ.js?v=b56a477b:12005
+useState @ chunk-ZHRYBLGQ.js?v=b56a477b:12545
+useState @ chunk-L7SIRVDC.js?v=b56a477b:1066
+useImageLoadingStatus @ @radix-ui_react-avatar.js?v=b56a477b:105
+(anonime) @ @radix-ui_react-avatar.js?v=b56a477b:53
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=b56a477b:11548
+updateForwardRef @ chunk-ZHRYBLGQ.js?v=b56a477b:14325
+beginWork @ chunk-ZHRYBLGQ.js?v=b56a477b:15946
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=b56a477b:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=b56a477b:19116
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18874
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=b56a477b:103
+flush @ @tanstack_react-query.js?v=b56a477b:610
+batch @ @tanstack_react-query.js?v=b56a477b:628
+dispatch_fn @ @tanstack_react-query.js?v=b56a477b:1260
+setData @ @tanstack_react-query.js?v=b56a477b:931
+fetch @ @tanstack_react-query.js?v=b56a477b:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=b56a477b:1639
+onSubscribe @ @tanstack_react-query.js?v=b56a477b:1335
+subscribe @ @tanstack_react-query.js?v=b56a477b:24
+(anonime) @ @tanstack_react-query.js?v=b56a477b:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=b56a477b:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'errore
+user-002.png:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/avatars/serve/00000000-0000-0000-0000-000000000001/user-002.png 404 (Not Found)
