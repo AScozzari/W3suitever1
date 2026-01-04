@@ -181,6 +181,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       const response = await fetch('/api/storage/folders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Errore creazione cartella');

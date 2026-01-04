@@ -123,16 +123,12 @@ const VALID_EMPLOYEE_TABS = ['overview', 'time-attendance', 'requests', 'documen
 const VALID_EMPLOYEE_SECTIONS = ['pending', 'approved', 'rejected']; // for requests tab
 
 export default function MyPortal() {
-  console.log('🚀 [MYPORTAL] Component rendering - start');
-  
   // Tab Router Hook with security validation - seguendo pattern Settings
   const { activeTab, setTab, getTabUrl } = useTabRouter({
     defaultTab: 'overview',
     validTabs: VALID_EMPLOYEE_TABS,
     validSections: VALID_EMPLOYEE_SECTIONS
   });
-  
-  console.log('🚀 [MYPORTAL] activeTab:', activeTab);
 
   // Use proper tenant context instead of URL parsing
   const { currentTenant } = useTenant();
@@ -144,8 +140,6 @@ export default function MyPortal() {
   // ✅ HR Authentication Readiness Hook
   const { enabled: hrQueriesEnabled, loading: hrAuthLoading, attempts, debugInfo } = useHRQueryReadiness();
   const { toast } = useToast();
-  
-  console.log('🚀 [MYPORTAL] hrQueriesEnabled:', hrQueriesEnabled, 'authUser:', authUser);
   
   // Real data queries with hierarchical cache keys - REVERTED TO STABLE VERSION
   const { data: userData, isLoading: userLoading, error: userError } = useUser(userId || '');
