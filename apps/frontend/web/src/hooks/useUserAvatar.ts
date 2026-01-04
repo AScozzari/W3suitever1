@@ -210,6 +210,19 @@ export function useUserAvatar(
   const isLoading = enabled && !!userData?.id && (isQueryLoading || (!!signedUrlData?.url && !imageLoaded && !imageError));
   const isLegacy = signedUrlData?.isLegacy ?? true;
 
+  // Debug logging
+  if (userData?.id) {
+    console.log('[useUserAvatar] State:', { 
+      userId: userData.id,
+      hasAvatar: signedUrlData?.hasAvatar,
+      signedUrl: signedUrlData?.url?.substring(0, 50),
+      imageLoaded, 
+      imageError,
+      hasImage,
+      avatarUrl: avatarUrl?.substring(0, 50)
+    });
+  }
+
   const refreshUrl = () => {
     queryClient.invalidateQueries({ 
       queryKey: ['/api/storage/avatars', userData?.id, 'signed-url'] 
