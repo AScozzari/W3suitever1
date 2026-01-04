@@ -1413,6 +1413,39 @@ export const storageService = {
     return this.getSignedUrl(ctx, avatarObject.id);
   },
 
+  async serveAvatarByPath(tenantId: string, filename: string): Promise<{ buffer: Uint8Array; mimeType: string } | null> {
+    const [avatarObject] = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, tenantId),
+        eq(storageObjects.objectType, 'avatar'),
+        isNull(storageObjects.deletedAt),
+        sql`${storageObjects.storageKey} LIKE ${'%' + filename}`,
+      ))
+      .orderBy(desc(storageObjects.createdAt))
+      .limit(1);
+
+    if (!avatarObject) {
+      return null;
+    }
+
+    try {
+      const client = getObjectStorageClient();
+      const result = await client.downloadAsBytes(avatarObject.storageKey);
+      
+      if (!result.ok || !result.value) {
+        return null;
+      }
+      
+      return {
+        buffer: result.value,
+        mimeType: avatarObject.mimeType || 'image/png',
+      };
+    } catch (err) {
+      console.error('Error downloading avatar from storage:', err);
+      return null;
+    }
+  },
+
   async deleteAvatar(ctx: StorageServiceContext, targetUserId: string) {
     const avatarFolder = await db.select().from(storageFolders)
       .where(and(

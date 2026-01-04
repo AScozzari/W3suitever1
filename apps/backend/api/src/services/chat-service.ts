@@ -183,7 +183,7 @@ export class ChatService {
               let avatarUrl: string | null = null;
               if (otherUser.avatarObjectPath) {
                 const filename = otherUser.avatarObjectPath.split('/').pop();
-                avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+                avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
               }
               
               dmUserInfo = {
@@ -328,7 +328,7 @@ export class ChatService {
       let avatarUrl: string | null = null;
       if (m.user?.avatarObjectPath) {
         const filename = m.user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+        avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
       }
       return {
         ...m,

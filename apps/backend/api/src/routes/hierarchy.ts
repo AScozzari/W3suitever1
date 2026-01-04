@@ -100,7 +100,7 @@ router.get('/organizational-structure', requirePermission('hierarchy.read'), asy
       let avatarUrl: string | null = null;
       if (item.avatarObjectPath) {
         const filename = item.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+        avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
       }
       hierarchyMap.set(item.userId, {
         ...item,

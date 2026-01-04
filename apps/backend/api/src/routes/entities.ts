@@ -1845,7 +1845,7 @@ router.get('/users', async (req, res) => {
       let avatarUrl: string | null = null;
       if (user.avatarObjectPath) {
         const filename = user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+        avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
       }
       
       // Get user's scope assignments

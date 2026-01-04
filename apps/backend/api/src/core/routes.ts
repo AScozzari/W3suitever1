@@ -1808,7 +1808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const buildAvatarUrl = (objectPath: string | null, tenantId: string): string | null => {
       if (!objectPath) return null;
       const filename = objectPath.split('/').pop();
-      return `/api/avatars/serve/${tenantId}/${filename}`;
+      return `/api/storage/avatars/serve/${tenantId}/${filename}`;
     };
 
     // Check for development mode authentication first
@@ -3606,7 +3606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let avatarUrl: string | null = null;
       if (user.avatarObjectPath) {
         const filename = user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+        avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
       }
 
       res.json({
@@ -4030,7 +4030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let avatarUrl: string | null = null;
       if (user.avatarObjectPath) {
         const filename = user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/avatars/serve/${user.tenantId}/${filename}`;
+        avatarUrl = `/api/storage/avatars/serve/${user.tenantId}/${filename}`;
       }
 
       res.json({
