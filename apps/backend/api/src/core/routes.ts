@@ -1802,6 +1802,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Session endpoint with tenant info
   app.get('/api/auth/session', async (req: any, res) => {
+    // Helper to build avatar URL from object path
+    const buildAvatarUrl = (objectPath: string | null, tenantId: string): string | null => {
+      if (!objectPath) return null;
+      const filename = objectPath.split('/').pop();
+      return `/api/avatars/serve/${tenantId}/${filename}`;
+    };
+
     // Check for development mode authentication first
     if (config.AUTH_MODE === 'development') {
       // Check for demo session header (for development)
@@ -1810,13 +1817,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (sessionAuth === 'authenticated') {
         const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
-        // Return development session data
+        
+        // ✅ Load real user data from database for development mode
+        try {
+          const [dbUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, demoUser || 'admin@w3suite.com'))
+            .limit(1);
+          
+          if (dbUser) {
+            const avatarUrl = buildAvatarUrl(dbUser.avatarObjectPath, tenantId);
+            const sessionData = {
+              user: {
+                id: dbUser.id,
+                email: dbUser.email,
+                firstName: dbUser.firstName || 'Admin',
+                lastName: dbUser.lastName || 'User',
+                avatarUrl,
+                avatarObjectPath: dbUser.avatarObjectPath,
+                tenantId: tenantId,
+                tenant: {
+                  id: tenantId,
+                  name: 'Demo Organization',
+                  code: 'DEMO001',
+                  plan: 'Enterprise',
+                  isActive: true
+                },
+                roles: [dbUser.role || 'admin'],
+                permissions: ['*'] // DEVELOPMENT: Tutti i permessi
+              }
+            };
+            return res.json(sessionData);
+          }
+        } catch (dbError) {
+          console.warn('[AUTH] Could not load user from DB in dev mode:', dbError);
+        }
+        
+        // Fallback to static data if DB query fails
         const sessionData = {
           user: {
             id: 'admin-user',
             email: demoUser || 'admin@w3suite.com',
             firstName: 'Admin',
             lastName: 'User',
+            avatarUrl: null,
             tenantId: tenantId,
             tenant: {
               id: tenantId,
@@ -1825,8 +1870,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               plan: 'Enterprise',
               isActive: true
             },
-            roles: ['admin', 'manager'], // Ruoli dell'utente
-            permissions: ['*'] // DEVELOPMENT: Tutti i permessi
+            roles: ['admin', 'manager'],
+            permissions: ['*']
           }
         };
         
@@ -1856,23 +1901,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Verify JWT token
       const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const tenantId = decoded.tenantId || '00000000-0000-0000-0000-000000000001';
 
-      // Mock session data with tenant information
+      // ✅ Load real user data from database for production mode
+      try {
+        const userId = decoded.id || decoded.userId;
+        if (userId) {
+          const [dbUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          
+          if (dbUser) {
+            const avatarUrl = buildAvatarUrl(dbUser.avatarObjectPath, tenantId);
+            const sessionData = {
+              user: {
+                id: dbUser.id,
+                email: dbUser.email,
+                firstName: dbUser.firstName || 'Admin',
+                lastName: dbUser.lastName || 'User',
+                avatarUrl,
+                avatarObjectPath: dbUser.avatarObjectPath,
+                tenantId: tenantId,
+                tenant: {
+                  id: tenantId,
+                  name: 'Demo Organization',
+                  code: 'DEMO001',
+                  plan: 'Enterprise',
+                  isActive: true
+                },
+                roles: [dbUser.role || 'admin']
+              }
+            };
+            return res.json({ ...sessionData, authenticated: true });
+          }
+        }
+      } catch (dbError) {
+        console.warn('[AUTH] Could not load user from DB:', dbError);
+      }
+
+      // Fallback to token data if DB query fails
       const sessionData = {
         user: {
           id: decoded.id || 'admin-user',
           email: decoded.email || 'admin@w3suite.com',
           firstName: 'Admin',
           lastName: 'User',
-          tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
+          avatarUrl: null,
+          tenantId: tenantId,
           tenant: {
-            id: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
+            id: tenantId,
             name: 'Demo Organization',
             code: 'DEMO001',
             plan: 'Enterprise',
             isActive: true
           },
-          roles: ['admin', 'manager'] // Ruoli dell'utente
+          roles: ['admin', 'manager']
         }
       };
 
