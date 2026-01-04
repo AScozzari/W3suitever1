@@ -571,6 +571,76 @@ export default function SettingsPage() {
   const [calendarModal, setCalendarModal] = useState<{ open: boolean; storeId: string | null; storeName: string }>({ open: false, storeId: null, storeName: '' });
   const [userEditLoading, setUserEditLoading] = useState(false);
 
+  // ✅ RESET USER FORM HELPER - Used when closing modal or creating new user
+  const resetUserForm = () => {
+    setNewUser({
+      username: '',
+      password: '',
+      confirmPassword: '',
+      ruolo: '',
+      cambioPasswordObbligatorio: true,
+      ragioneSociale_id: null,
+      puntiVendita_ids: [],
+      puntoVenditaPreferito_id: null,
+      scopeLevel: 'tenant',
+      selectedOrganizationEntities: [],
+      primaryOrganizationEntityId: null,
+      selectedStores: [],
+      primaryStoreId: null,
+      selectAllLegalEntities: false,
+      selectedAreas: [],
+      selectedLegalEntities: [],
+      nome: '',
+      cognome: '',
+      avatar: { url: null, blob: null, type: 'upload' as 'upload' | 'generated' },
+      codiceFiscale: '',
+      dataNascita: '',
+      luogoNascita: '',
+      sesso: 'M',
+      email: '',
+      emailPersonale: '',
+      telefono: '',
+      telefonoAziendale: '',
+      via: '',
+      civico: '',
+      citta: '',
+      cap: '',
+      provincia: '',
+      paese: 'Italia',
+      tipoDocumento: 'Carta Identità',
+      numeroDocumento: '',
+      dataScadenzaDocumento: '',
+      stato: 'attivo',
+      dataInizioValidita: '',
+      dataFineValidita: '',
+      notificheEmail: true,
+      notificheSMS: false,
+      lingua: 'it',
+      fuso: 'Europe/Rome',
+      extensionId: '',
+      extension: {
+        enabled: false,
+        extNumber: '',
+        sipDomain: '',
+        classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
+        voicemailEnabled: true,
+        storeId: null
+      },
+      tipoContratto: 'Indeterminato',
+      dataAssunzione: '',
+      livello: '',
+      ccnl: 'Commercio',
+      oreLavoro: '40',
+      note: ''
+    } as any);
+  };
+
+  // ✅ CLOSE USER MODAL - Always reset form when closing
+  const closeUserModal = () => {
+    setUserModal({ open: false, data: null });
+    resetUserForm();
+  };
+
   // ✅ EDIT USER HANDLER: Fetch complete user data before opening modal
   const handleEditUser = async (userId: string) => {
     setUserEditLoading(true);
@@ -9107,7 +9177,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setUserModal({ open: false, data: null })}
+                  onClick={closeUserModal}
                   style={{
                     background: 'transparent',
                     border: '1px solid #e5e7eb',
@@ -10100,7 +10170,7 @@ export default function SettingsPage() {
                 borderTop: '1px solid #e5e7eb'
               }}>
                 <button
-                  onClick={() => setUserModal({ open: false, data: null })}
+                  onClick={closeUserModal}
                   style={{
                     padding: '0.625rem 1.25rem',
                     border: '1px solid #d1d5db',
@@ -10337,37 +10407,7 @@ export default function SettingsPage() {
 
                         // Refresh user list from API
                         await refetchUserData();
-                        setUserModal({ open: false, data: null });
-
-                        // Reset form
-                        setNewUser({
-                          username: '',
-                          password: '',
-                          confirmPassword: '',
-                          nome: '',
-                          cognome: '',
-                          email: '',
-                          telefono: '',
-                          ruolo: '',
-                          stato: 'attivo',
-                          scopeLevel: 'tenant',
-                          selectedOrganizationEntities: [],
-                          primaryOrganizationEntityId: null,
-                          selectedStores: [],
-                          primaryStoreId: null,
-                          selectAllLegalEntities: false,
-                          selectedAreas: [],
-                          selectedLegalEntities: [],
-                          avatar: null,
-                          extension: {
-                            enabled: false,
-                            extNumber: '',
-                            sipDomain: '',
-                            classOfService: 'agent' as const,
-                            voicemailEnabled: true,
-                            storeId: null
-                          }
-                        } as any);
+                        closeUserModal(); // Close modal and reset form
 
                       } catch (error) {
                         console.error('❌ Error saving user:', error);
