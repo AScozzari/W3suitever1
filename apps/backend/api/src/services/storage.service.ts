@@ -153,6 +153,8 @@ export const storageService = {
   },
 
   async getMyDriveFolders(ctx: StorageServiceContext) {
+    await this.ensureUserEvergreenFolders(ctx);
+    
     const folders = await db.select().from(storageFolders)
       .where(and(
         eq(storageFolders.tenantId, ctx.tenantId),
@@ -164,6 +166,38 @@ export const storageService = {
       .orderBy(storageFolders.name);
 
     return folders;
+  },
+
+  async ensureUserEvergreenFolders(ctx: StorageServiceContext) {
+    const evergreenFolders = [
+      { name: 'Avatar', category: 'avatars', icon: 'user-circle', color: '#FF6900' },
+      { name: 'Documenti', category: 'documents', icon: 'file-text', color: '#3B82F6' },
+      { name: 'Feed', category: 'feed', icon: 'rss', color: '#10B981' },
+      { name: 'Condivisi', category: 'shared', icon: 'users', color: '#8B5CF6' },
+    ];
+
+    const existingFolders = await db.select({ name: storageFolders.name }).from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, ctx.userId),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.deletedAt),
+        isNull(storageFolders.parentId),
+      ));
+
+    const existingNames = new Set(existingFolders.map(f => f.name));
+
+    for (const folderDef of evergreenFolders) {
+      if (!existingNames.has(folderDef.name)) {
+        await this.createFolder(ctx, {
+          name: folderDef.name,
+          category: folderDef.category,
+          icon: folderDef.icon,
+          color: folderDef.color,
+          scopeLevel: 'user',
+        });
+      }
+    }
   },
 
   async getTeamDriveFolders(ctx: StorageServiceContext, teamId: string) {

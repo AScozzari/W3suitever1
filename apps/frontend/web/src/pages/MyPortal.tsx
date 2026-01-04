@@ -435,26 +435,10 @@ export default function MyPortal() {
         }} data-testid="text-dashboard-title">
           Il mio Portale
         </h1>
-        <div className="flex items-center justify-between mt-4">
-          <div></div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-sm text-gray-500" data-testid="label-current-time">Ora corrente</p>
-              <p className="text-xl font-mono font-bold text-gray-900" data-testid="text-current-time">
-                {formatTime(currentTime)}
-              </p>
-            </div>
-            {userLoading ? (
-              <Skeleton className="h-12 w-12 rounded-full" />
-            ) : (
-              <Avatar className="h-12 w-12" data-testid="avatar-user">
-                <AvatarImage src={displayUser.foto || undefined} alt={`${displayUser.nome} ${displayUser.cognome}`} />
-                <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white" data-testid="avatar-fallback">
-                  {displayUser.nome[0]}{displayUser.cognome[0]}
-                </AvatarFallback>
-              </Avatar>
-            )}
-          </div>
+        <div className="flex items-center justify-end mt-2">
+          <span className="text-sm font-mono text-gray-500" data-testid="text-current-time">
+            {formatTime(currentTime)}
+          </span>
         </div>
       </div>
 
