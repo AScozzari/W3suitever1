@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates core modules like CRM, POS, WMS, Analytics, HR, and CMS to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive and adaptive solution for diverse business needs.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform aims to provide a comprehensive and adaptive solution for diverse business needs and offers significant market potential for businesses seeking to modernize and streamline their operations.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -13,7 +13,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
 - **BACKGROUND RULE**: Tutte le pagine devono avere sfondo bianco (#ffffff) con header e sidebar
 - **DATABASE ARCHITECTURE**: Always use 3-schema structure (w3suite, public, brand_interface)
-- **USER SCOPE - SINGLE SOURCE OF TRUTH (OBBLIGATORIO - Jan 2026)**:
+- **USER SCOPE - SINGLE SOURCE OF TRUTH (OBBLIGATORIO)**:
   - **📋 ARCHITETTURA**: `user_stores` è la FONTE UNICA per lo scope utente
     - Le ragioni sociali (`user_organization_entities`) vengono DERIVATE automaticamente dalle sedi assegnate
     - Quando si salvano le sedi di un utente, le org entities vengono sincronizzate automaticamente
@@ -31,7 +31,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - Assegnare org entities senza sedi
     - Modificare `user_organization_entities` direttamente
     - Leggere org entities da `user_organization_entities` senza derivarle da stores
-- **MCP/ACTION RLS ARCHITECTURE (OBBLIGATORIO - REFACTORED Jan 2026)**:
+- **MCP/ACTION RLS ARCHITECTURE (OBBLIGATORIO)**:
   - **📋 CATALOGO UNIFICATO**: `action_definitions` è la FONTE UNICA per il MCP Gateway
     - Contiene sia **operative** (15 azioni WMS workflow) che **query** (17 tool MCP)
     - **Mixed RLS**: `tenant_id NULL` = globale (tutti i tenant), `tenant_id UUID` = tenant-specific
