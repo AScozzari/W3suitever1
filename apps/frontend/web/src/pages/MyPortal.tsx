@@ -1503,7 +1503,7 @@ export default function MyPortal() {
               <div className="space-y-6" data-testid="section-my-drive">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-900">My Drive</h2>
-                  <Link href={`/${tenantSlug}/my-drive`}>
+                  <Link href={`/${currentTenant?.slug || 'staging'}/my-drive`}>
                     <Button 
                       className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
                       data-testid="button-open-my-drive"
@@ -1521,7 +1521,7 @@ export default function MyPortal() {
                     <p className="text-gray-600 mb-6 max-w-md mx-auto">
                       Accedi a My Drive per gestire i tuoi file personali, condividere documenti con il team e organizzare le tue cartelle.
                     </p>
-                    <Link href={`/${tenantSlug}/my-drive`}>
+                    <Link href={`/${currentTenant?.slug || 'staging'}/my-drive`}>
                       <Button variant="outline" size="lg" data-testid="button-go-to-my-drive">
                         Vai a My Drive
                       </Button>
