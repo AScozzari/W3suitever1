@@ -56,7 +56,7 @@ import {
 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserAvatar } from '@/hooks/useUserAvatar';
 
 // Emoji categories for picker (no duplicates)
