@@ -1151,6 +1151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath === '/utm-mediums' || // UTM parameters are public reference data
         apiPath.startsWith('/action-definitions') || // Action definitions are global evergreen data
         apiPath.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth
+        apiPath.startsWith('/avatars/serve/') || // Avatar images - public endpoint (tenantId in URL enforces isolation)
         apiPath === '/' // Skip auth for /api/ root endpoint
       ) {
         const reason = isBrowserRequest ? 'browser page request' : 'static/public asset';
