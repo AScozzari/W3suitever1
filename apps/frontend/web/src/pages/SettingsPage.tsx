@@ -3184,22 +3184,13 @@ export default function SettingsPage() {
                           );
                         }
                         
-                        // ✅ Risolvi i nomi delle sedi usando la lookup map
+                        // ✅ FIX: Mostra SOLO le sedi dirette assegnate (non derivare da org entities per evitare duplicati)
                         const resolvedStoreNames = userStoreIds
                           .map(id => storeNameById.get(id))
                           .filter(Boolean) as string[];
                         
-                        // Se ci sono org entities, trova le sedi associate
-                        let allStoreNames = [...resolvedStoreNames];
-                        if (userOrgIds.length > 0) {
-                          // Trova tutte le sedi che appartengono alle org entities selezionate
-                          const orgStoreNames = puntiVenditaList
-                            .filter((pv: any) => userOrgIds.includes(pv.organizationEntityId))
-                            .map((pv: any) => pv.nome || pv.name || `Sede ${pv.id?.slice(0, 8)}`);
-                          allStoreNames = [...new Set([...allStoreNames, ...orgStoreNames])];
-                        }
-                        
-                        if (allStoreNames.length > 0) {
+                        if (resolvedStoreNames.length > 0) {
+                          const allStoreNames = resolvedStoreNames;
                           const tooltip = `Sedi assegnate:\n${allStoreNames.join('\n')}`;
                           return (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#d1fae5', color: '#065f46', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-store">
@@ -9660,11 +9651,6 @@ export default function SettingsPage() {
                 )}
 
                 {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
-                {console.log('🏭 RAGIONI SOCIALI DEBUG:', {
-                  ragioneSocialiListIds: ragioneSocialiList.map(rs => rs.id),
-                  selectedLegalEntities: newUser.selectedLegalEntities,
-                  matching: ragioneSocialiList.filter(rs => newUser.selectedLegalEntities.includes(rs.id)).map(rs => rs.nome)
-                })}
                 {!newUser.selectAllLegalEntities && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
@@ -9793,13 +9779,6 @@ export default function SettingsPage() {
                 )}
 
                 {/* 🏪 TERZO LIVELLO: Multi-select punti vendita filtrati */}
-                {console.log('🔍 SCOPE DEBUG:', {
-                  selectAllLegalEntities: newUser.selectAllLegalEntities,
-                  selectedLegalEntities: newUser.selectedLegalEntities,
-                  selectedStores: newUser.selectedStores,
-                  puntiVenditaCount: puntiVenditaList.length,
-                  matchingStores: puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.organizationEntityId)).length
-                })}
                 {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length > 0 && (
                   <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
