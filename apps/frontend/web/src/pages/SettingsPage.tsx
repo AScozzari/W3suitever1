@@ -10100,7 +10100,21 @@ export default function SettingsPage() {
                       }
                     }
 
-                    // Validazione scope
+                    // ✅ VALIDAZIONE SCOPE OBBLIGATORIO (Solo in CREATE mode)
+                    // Lo scope è obbligatorio: deve essere tenant-wide OPPURE avere almeno 1 org entity/store
+                    if (!isEditMode) {
+                      const isTenantScope = newUser.selectAllLegalEntities === true;
+                      const hasOrgEntities = (newUser.selectedLegalEntities || []).length > 0 || 
+                                             (newUser.selectedOrganizationEntities || []).length > 0;
+                      const hasStores = (newUser.selectedStores || []).length > 0;
+                      
+                      if (!isTenantScope && !hasOrgEntities && !hasStores) {
+                        alert('⚠️ SCOPE OBBLIGATORIO\n\nDevi selezionare almeno una delle seguenti opzioni:\n\n• Tenant-Wide (tutti i punti vendita)\n• Almeno una Ragione Sociale\n• Almeno un Punto Vendita');
+                        return;
+                      }
+                    }
+                    
+                    // Validazione scope punti vendita legacy
                     if (newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0) {
                       alert('Seleziona almeno una ragione sociale');
                       return;

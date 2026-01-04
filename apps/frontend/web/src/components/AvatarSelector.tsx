@@ -49,6 +49,7 @@ export default function AvatarSelector({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [imageLoadError, setImageLoadError] = useState(false); // ✅ Track image load errors
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +57,7 @@ export default function AvatarSelector({
   useEffect(() => {
     console.log('[AvatarSelector] currentAvatarUrl changed:', currentAvatarUrl);
     setPreviewUrl(currentAvatarUrl || null);
+    setImageLoadError(false); // Reset error when URL changes
   }, [currentAvatarUrl]);
 
   // Validate uploaded file
@@ -87,6 +89,7 @@ export default function AvatarSelector({
     }
 
     setValidationError(null);
+    setImageLoadError(false); // ✅ Reset error when uploading new image
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -172,7 +175,7 @@ export default function AvatarSelector({
           }}
           data-testid="avatar-preview"
         >
-          {previewUrl ? (
+          {previewUrl && !imageLoadError ? (
             <img 
               src={previewUrl} 
               alt="Avatar preview"
@@ -183,8 +186,8 @@ export default function AvatarSelector({
                 borderRadius: '50%'
               }}
               onError={(e) => {
-                console.error('[AvatarSelector] Image load error:', previewUrl);
-                e.currentTarget.style.display = 'none';
+                console.error('[AvatarSelector] Image load error - showing initials fallback:', previewUrl);
+                setImageLoadError(true); // ✅ Show initials instead of broken image
               }}
             />
           ) : (

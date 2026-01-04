@@ -1,0 +1,35 @@
+{page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+AvatarSelector.tsx:57 [AvatarSelector] currentAvatarUrl changed: https://storage.replit.com/replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc/public/avatars/00000000-0000-0000-0000-000000000001/8528ed1d-c18a-44b1-ab8e-f489b4b04ad8.jpg
+storage.replit.com/replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc/public/avatars/00000000-0000-0000-0000-000000000001/8528ed1d-c18a-44b1-ab8e-f489b4b04ad8.jpg:1  GET https://storage.replit.com/replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc/public/avatars/00000000-0000-0000-0000-000000000001/8528ed1d-c18a-44b1-ab8e-f489b4b04ad8.jpg net::ERR_NAME_NOT_RESOLVED
+Image
+commitMount @ chunk-ZHRYBLGQ.js?v=b56a477b:8412
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:17102
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:17969
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:17950
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:17950
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=b56a477b:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=b56a477b:197
+flushWork @ chunk-ZHRYBLGQ.js?v=b56a477b:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=b56a477b:384Comprendi l'errore
+installHook.js:1 [AvatarSelector] Image load error: https://storage.replit.com/replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc/public/avatars/00000000-0000-0000-0000-000000000001/8528ed1d-c18a-44b1-ab8e-f489b4b04ad8.jpg
+overrideMethod @ installHook.js:1
+onError @ AvatarSelector.tsx:186
+callCallback2 @ chunk-ZHRYBLGQ.js?v=b56a477b:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=b56a477b:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=b56a477b:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=b56a477b:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=b56a477b:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=b56a477b:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=b56a477b:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=b56a477b:7051
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=b56a477b:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=b56a477b:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=b56a477b:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=b56a477b:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=b56a477b:5472Comprendi l'errore

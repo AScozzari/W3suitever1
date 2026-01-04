@@ -1,0 +1,105 @@
+Alessandro Greco	alessandro.greco@windtre.it	
+Store Manager	⚠️ Non assegnato	+39 010 567 8901	
+active	
+
+
+Marco Bianchi	marco.bianchi@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 06 4825 6790	
+inactive	
+
+
+Matteo Costa	matteo.costa@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 041 789 0123	
+active	
+
+
+Monica Lombardi	monica.lombardi@windtre.it	
+Store Manager	⚠️ Non assegnato	+39 06 901 2345	
+active	
+
+
+Stefano Caruso	stefano.caruso@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 011 4567891	
+inactive	
+
+
+Sara Fontana	sara.fontana@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 011 4567892	
+inactive	
+
+
+Lorenzo Barbieri	lorenzo.barbieri@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 011 4567893	
+inactive	
+
+
+Andrea Mancini	andrea.mancini@windtre.it	
+Store Manager	⚠️ Non assegnato	+39 051 890 1234	
+active	
+
+
+Chiara Bruno	chiara.bruno@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 02 678 9012	
+active	
+
+
+Silvia Conti	silvia.conti@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 051 2345679	
+inactive	
+
+
+Giulia Ricci	giulia.ricci@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 051 2345681	
+inactive	
+
+
+Davide Santoro	davide.santoro@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 02 8467 3213	
+inactive	
+
+
+Francesca Marino	francesca.marino@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 051 2345680	
+inactive	
+
+
+Paolo Gallo	paolo.gallo@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 06 4825 6791	
+inactive	
+
+
+Elisa Ferrara	elisa.ferrara@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 06 4825 6792	
+inactive	
+
+
+Roberto Esposito	roberto.esposito@windtre.it	
+Store Manager	⚠️ Non assegnato	+39 081 456 7890	
+active	
+
+
+Valentina Marini	valentina.marini@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 081 5678903	
+inactive	
+
+
+Mario Rossi	mario.rossi@windtre.it	
+Store Manager	⚠️ Non assegnato	+39 06 9876 5432	
+active	
+
+
+Luca Verdi	luca.verdi@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 011 345 6789	
+active	
+
+
+Giulia Bianchi	giulia.bianchi@windtre.it	
+Store Specialist	⚠️ Non assegnato	+39 055 234 5678	
+active	
+
+
+Admin User	admin@w3suite.com	
+admin	⚠️ Non assegnato	+39 02 1234 5678	
+attivo	
+
+
