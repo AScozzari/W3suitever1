@@ -685,10 +685,14 @@ export default function SettingsPage() {
           method: 'GET', 
           headers: { 'Content-Type': 'application/json' }
         });
+        console.log('📦 Store API response status:', storeRes.status, storeRes.ok);
         if (storeRes.ok) {
           const storeData = await storeRes.json();
+          console.log('📦 Store API raw response:', JSON.stringify(storeData));
           userStores = (storeData.data || storeData.stores || []).map((s: any) => s.storeId || s.id || s.store_id);
-          console.log('📦 User stores loaded:', userStores);
+          console.log('📦 User stores extracted IDs:', userStores);
+        } else {
+          console.error('📦 Store API failed:', storeRes.status, await storeRes.text());
         }
       } catch (e) {
         console.warn('Could not fetch user stores:', e);
@@ -6126,18 +6130,38 @@ export default function SettingsPage() {
     if (userModal.open && userModal.data) {
       // Modalità EDIT - precompila i campi con i dati esistenti
       const user = userModal.data;
+      
+      // ✅ DEBUG: Log all scope-related data from userModal.data
+      console.log('📝 EDIT MODE useEffect - userModal.data:', {
+        scopeLevel: user.scopeLevel,
+        selectedStores: user.selectedStores,
+        selectedOrganizationEntities: user.selectedOrganizationEntities,
+        selectedLegalEntities: user.selectedLegalEntities,
+        selectAllLegalEntities: user.selectAllLegalEntities
+      });
+      
       const scopeLevel = user.scopeLevel || 'tenant';
       const orgEntities = user.selectedOrganizationEntities || user.selectedLegalEntities || [];
-      const isTenantScope = scopeLevel === 'tenant';
+      // ✅ FIX: Usa direttamente selectedStores dal modal data
+      const userStores = user.selectedStores || [];
+      const isTenantScope = scopeLevel === 'tenant' || user.selectAllLegalEntities === true;
       
-      // Derive selectedStores from hierarchy when backend returns org-level scope without explicit stores
-      let derivedStores = user.selectedStores || [];
-      if (!isTenantScope && orgEntities.length > 0 && derivedStores.length === 0 && puntiVenditaList.length > 0) {
+      // ✅ Solo se l'utente ha org entities ma NON stores esplicite, deriva le stores dalle org
+      let derivedStores = [...userStores];
+      if (!isTenantScope && orgEntities.length > 0 && userStores.length === 0 && puntiVenditaList.length > 0) {
         // Auto-populate all active stores for the selected organization entities
         derivedStores = puntiVenditaList
           .filter(pv => orgEntities.includes(pv.organizationEntityId) && isStoreActive(pv.status))
           .map(pv => pv.id);
+        console.log('🔄 Derived stores from org entities:', derivedStores.length);
       }
+      
+      console.log('📊 Final scope values for form:', {
+        scopeLevel,
+        orgEntities: orgEntities.length,
+        derivedStores: derivedStores.length,
+        isTenantScope
+      });
       
       setNewUser({
         username: user.username || user.email || '',
