@@ -241,17 +241,21 @@ export const storageService = {
 
     for (const folderDef of foldersToCreate) {
       const path = '/' + folderDef.name;
-      await db.insert(storageFolders).values({
-        tenantId: ctx.tenantId,
-        name: folderDef.name,
-        path,
-        scopeLevel: 'user',
-        ownerUserId: ctx.userId,
-        category: folderDef.category as any,
-        color: folderDef.color,
-        icon: folderDef.icon,
-        createdByUserId: ctx.userId,
-      });
+      try {
+        await db.insert(storageFolders).values({
+          tenantId: ctx.tenantId,
+          name: folderDef.name,
+          path,
+          scopeLevel: 'user',
+          ownerUserId: ctx.userId,
+          category: folderDef.category as any,
+          color: folderDef.color,
+          icon: folderDef.icon,
+          createdByUserId: ctx.userId,
+        }).onConflictDoNothing();
+      } catch (e) {
+        // Ignore duplicate key errors from race conditions
+      }
     }
   },
 
@@ -1377,7 +1381,28 @@ export const storageService = {
       return null;
     }
 
-    return this.getSignedUrl(ctx, avatarObject.id);
+    // Avatars are always public within a tenant - bypass ACL check
+    const token = generateToken(64);
+    const tokenHash = hashToken(token);
+    const expiresAt = new Date(Date.now() + SIGNED_URL_EXPIRY_MINUTES * 60 * 1000);
+
+    await db.insert(storageSignedTokens).values({
+      objectId: avatarObject.id,
+      token,
+      tokenHash,
+      userId: ctx.userId,
+      ipAddress: ctx.ipAddress,
+      expiresAt,
+    });
+
+    const signedUrl = generateSignedUrl(avatarObject.objectKey, token, expiresAt);
+
+    return {
+      url: signedUrl,
+      expiresAt,
+      mimeType: avatarObject.mimeType,
+      fileName: avatarObject.name,
+    };
   },
 
   async deleteAvatar(ctx: StorageServiceContext, targetUserId: string) {
