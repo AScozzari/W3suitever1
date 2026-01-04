@@ -958,6 +958,205 @@ export const storageService = {
   async generateSignedUrl(ctx: StorageServiceContext, objectId: string) {
     return this.getSignedUrl(ctx, objectId);
   },
+
+  async getQuotaSummary(ctx: StorageServiceContext) {
+    const userQuotas = await db.select({
+      userId: storageQuotas.userId,
+      quotaBytes: storageQuotas.quotaBytes,
+      usedBytes: storageQuotas.usedBytes,
+      suspended: storageQuotas.suspended,
+      scopeLevel: storageQuotas.scopeLevel,
+    }).from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.scopeLevel, 'user'),
+      ));
+
+    const teamQuotas = await db.select({
+      teamId: storageQuotas.teamId,
+      quotaBytes: storageQuotas.quotaBytes,
+      usedBytes: storageQuotas.usedBytes,
+      suspended: storageQuotas.suspended,
+      scopeLevel: storageQuotas.scopeLevel,
+    }).from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.scopeLevel, 'team'),
+      ));
+
+    const usersList = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      isActive: users.isActive,
+    }).from(users)
+      .where(eq(users.tenantId, ctx.tenantId));
+
+    const teamsList = await db.select({
+      id: teams.id,
+      name: teams.name,
+      isActive: teams.isActive,
+    }).from(teams)
+      .where(eq(teams.tenantId, ctx.tenantId));
+
+    const userQuotaMap = new Map(userQuotas.map(q => [q.userId, q]));
+    const teamQuotaMap = new Map(teamQuotas.map(q => [q.teamId, q]));
+
+    const userSummary = usersList.map(user => {
+      const quota = userQuotaMap.get(user.id);
+      return {
+        type: 'user' as const,
+        id: user.id,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        email: user.email,
+        isActive: user.isActive,
+        quotaBytes: quota?.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
+        usedBytes: quota?.usedBytes || 0,
+        hasCustomQuota: !!quota,
+        suspended: quota?.suspended || false,
+      };
+    });
+
+    const teamSummary = teamsList.map(team => {
+      const quota = teamQuotaMap.get(team.id);
+      return {
+        type: 'team' as const,
+        id: team.id,
+        name: team.name,
+        isActive: team.isActive,
+        quotaBytes: quota?.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
+        usedBytes: quota?.usedBytes || 0,
+        hasCustomQuota: !!quota,
+        suspended: quota?.suspended || false,
+      };
+    });
+
+    const tenantDefaults = await this.getQuotaDefaultsInternal(ctx);
+
+    return {
+      users: userSummary,
+      teams: teamSummary,
+      defaults: tenantDefaults,
+    };
+  },
+
+  async getQuotaDefaultsInternal(ctx: StorageServiceContext) {
+    const tenantQuotas = await db.select().from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.scopeLevel, 'tenant'),
+      ));
+    
+    const userDefault = tenantQuotas.find(q => q.userId === null && q.teamId === null);
+    
+    return {
+      userQuotaBytes: userDefault?.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
+      teamQuotaBytes: DEFAULT_TEAM_QUOTA_BYTES,
+    };
+  },
+
+  async getQuotaDefaults(ctx: StorageServiceContext) {
+    return this.getQuotaDefaultsInternal(ctx);
+  },
+
+  async updateQuotaDefaults(ctx: StorageServiceContext, data: { userQuotaBytes?: number; teamQuotaBytes?: number }) {
+    const [existing] = await db.select().from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.scopeLevel, 'tenant'),
+      )).limit(1);
+
+    if (existing) {
+      await db.update(storageQuotas)
+        .set({ 
+          quotaBytes: data.userQuotaBytes || existing.quotaBytes,
+          updatedAt: new Date(),
+        })
+        .where(eq(storageQuotas.id, existing.id));
+    } else {
+      await db.insert(storageQuotas).values({
+        tenantId: ctx.tenantId,
+        scopeLevel: 'tenant',
+        quotaBytes: data.userQuotaBytes || DEFAULT_USER_QUOTA_BYTES,
+      });
+    }
+
+    await this.logAuditEvent(ctx, 'update_quota_defaults', data);
+
+    return {
+      userQuotaBytes: data.userQuotaBytes || DEFAULT_USER_QUOTA_BYTES,
+      teamQuotaBytes: data.teamQuotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
+    };
+  },
+
+  async updateUserQuota(ctx: StorageServiceContext, userId: string, data: { quotaBytes?: number; suspended?: boolean }) {
+    const [existing] = await db.select().from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.userId, userId),
+        eq(storageQuotas.scopeLevel, 'user'),
+      )).limit(1);
+
+    if (existing) {
+      const [updated] = await db.update(storageQuotas)
+        .set({ 
+          quotaBytes: data.quotaBytes !== undefined ? data.quotaBytes : existing.quotaBytes,
+          suspended: data.suspended !== undefined ? data.suspended : existing.suspended,
+          updatedAt: new Date(),
+        })
+        .where(eq(storageQuotas.id, existing.id))
+        .returning();
+      
+      await this.logAuditEvent(ctx, 'update_user_quota', { userId, ...data });
+      return updated;
+    } else {
+      const [created] = await db.insert(storageQuotas).values({
+        tenantId: ctx.tenantId,
+        userId,
+        scopeLevel: 'user',
+        quotaBytes: data.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
+        suspended: data.suspended || false,
+      }).returning();
+      
+      await this.logAuditEvent(ctx, 'create_user_quota', { userId, ...data });
+      return created;
+    }
+  },
+
+  async updateTeamQuota(ctx: StorageServiceContext, teamId: string, data: { quotaBytes?: number; suspended?: boolean }) {
+    const [existing] = await db.select().from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.teamId, teamId),
+        eq(storageQuotas.scopeLevel, 'team'),
+      )).limit(1);
+
+    if (existing) {
+      const [updated] = await db.update(storageQuotas)
+        .set({ 
+          quotaBytes: data.quotaBytes !== undefined ? data.quotaBytes : existing.quotaBytes,
+          suspended: data.suspended !== undefined ? data.suspended : existing.suspended,
+          updatedAt: new Date(),
+        })
+        .where(eq(storageQuotas.id, existing.id))
+        .returning();
+      
+      await this.logAuditEvent(ctx, 'update_team_quota', { teamId, ...data });
+      return updated;
+    } else {
+      const [created] = await db.insert(storageQuotas).values({
+        tenantId: ctx.tenantId,
+        teamId,
+        scopeLevel: 'team',
+        quotaBytes: data.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
+        suspended: data.suspended || false,
+      }).returning();
+      
+      await this.logAuditEvent(ctx, 'create_team_quota', { teamId, ...data });
+      return created;
+    }
+  },
 };
 
 function formatBytes(bytes: number): string {

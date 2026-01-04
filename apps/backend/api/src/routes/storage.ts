@@ -367,4 +367,62 @@ router.get('/quota', requirePermission('storage:read'), async (req: Request, res
   }
 });
 
+router.get('/quotas/summary', requirePermission('settings:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const summary = await storageService.getQuotaSummary(ctx);
+    res.json(summary);
+  } catch (error: any) {
+    console.error('Error getting quota summary:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/quotas/defaults', requirePermission('settings:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const defaults = await storageService.getQuotaDefaults(ctx);
+    res.json(defaults);
+  } catch (error: any) {
+    console.error('Error getting quota defaults:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/quotas/defaults', requirePermission('settings:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { userQuotaBytes, teamQuotaBytes } = req.body;
+    const defaults = await storageService.updateQuotaDefaults(ctx, { userQuotaBytes, teamQuotaBytes });
+    res.json(defaults);
+  } catch (error: any) {
+    console.error('Error updating quota defaults:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/quotas/user/:userId', requirePermission('settings:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { quotaBytes, suspended } = req.body;
+    const quota = await storageService.updateUserQuota(ctx, req.params.userId, { quotaBytes, suspended });
+    res.json(quota);
+  } catch (error: any) {
+    console.error('Error updating user quota:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/quotas/team/:teamId', requirePermission('settings:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { quotaBytes, suspended } = req.body;
+    const quota = await storageService.updateTeamQuota(ctx, req.params.teamId, { quotaBytes, suspended });
+    res.json(quota);
+  } catch (error: any) {
+    console.error('Error updating team quota:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

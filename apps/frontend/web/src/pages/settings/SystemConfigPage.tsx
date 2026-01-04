@@ -647,6 +647,412 @@ function WMSDocumentNumberingSection() {
   );
 }
 
+interface QuotaEntity {
+  type: 'user' | 'team';
+  id: string;
+  name: string;
+  email?: string;
+  isActive: boolean;
+  quotaBytes: number;
+  usedBytes: number;
+  hasCustomQuota: boolean;
+  suspended: boolean;
+}
+
+interface QuotaSummary {
+  users: QuotaEntity[];
+  teams: QuotaEntity[];
+  defaults: {
+    userQuotaBytes: number;
+    teamQuotaBytes: number;
+  };
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function bytesToGB(bytes: number): number {
+  return Math.round((bytes / (1024 * 1024 * 1024)) * 100) / 100;
+}
+
+function gbToBytes(gb: number): number {
+  return Math.round(gb * 1024 * 1024 * 1024);
+}
+
+function StorageQuotaManager({ tenantSlug }: { tenantSlug: string }) {
+  const { toast } = useToast();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<QuotaEntity | null>(null);
+  const [editQuotaGB, setEditQuotaGB] = useState<string>('');
+  const [filterType, setFilterType] = useState<'all' | 'user' | 'team'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: quotaSummary, isLoading, refetch } = useQuery<QuotaSummary>({
+    queryKey: ['/api/storage/quotas/summary'],
+  });
+
+  const updateUserQuotaMutation = useMutation({
+    mutationFn: async ({ userId, quotaBytes, suspended }: { userId: string; quotaBytes?: number; suspended?: boolean }) => {
+      return apiRequest('PATCH', `/api/storage/quotas/user/${userId}`, { quotaBytes, suspended });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/quotas/summary'] });
+      toast({ title: 'Quota aggiornata', description: 'La quota utente è stata modificata con successo.' });
+      setEditModalOpen(false);
+      setSelectedEntity(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const updateTeamQuotaMutation = useMutation({
+    mutationFn: async ({ teamId, quotaBytes, suspended }: { teamId: string; quotaBytes?: number; suspended?: boolean }) => {
+      return apiRequest('PATCH', `/api/storage/quotas/team/${teamId}`, { quotaBytes, suspended });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/quotas/summary'] });
+      toast({ title: 'Quota aggiornata', description: 'La quota team è stata modificata con successo.' });
+      setEditModalOpen(false);
+      setSelectedEntity(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const handleEditQuota = (entity: QuotaEntity) => {
+    setSelectedEntity(entity);
+    setEditQuotaGB(bytesToGB(entity.quotaBytes).toString());
+    setEditModalOpen(true);
+  };
+
+  const handleSaveQuota = () => {
+    if (!selectedEntity) return;
+    const parsedValue = parseFloat(editQuotaGB);
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      toast({ title: 'Errore', description: 'Inserisci un valore valido per la quota', variant: 'destructive' });
+      return;
+    }
+    const quotaBytes = gbToBytes(parsedValue);
+    
+    if (selectedEntity.type === 'user') {
+      updateUserQuotaMutation.mutate({ userId: selectedEntity.id, quotaBytes });
+    } else {
+      updateTeamQuotaMutation.mutate({ teamId: selectedEntity.id, quotaBytes });
+    }
+  };
+
+  const suspendUserMutation = useMutation({
+    mutationFn: async ({ userId, suspended }: { userId: string; suspended: boolean }) => {
+      return apiRequest('PATCH', `/api/storage/quotas/user/${userId}`, { suspended });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/quotas/summary'] });
+      toast({ title: 'Stato aggiornato', description: 'Lo stato dell\'accesso è stato modificato.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const suspendTeamMutation = useMutation({
+    mutationFn: async ({ teamId, suspended }: { teamId: string; suspended: boolean }) => {
+      return apiRequest('PATCH', `/api/storage/quotas/team/${teamId}`, { suspended });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/quotas/summary'] });
+      toast({ title: 'Stato aggiornato', description: 'Lo stato dell\'accesso è stato modificato.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const handleToggleSuspend = (entity: QuotaEntity) => {
+    if (entity.type === 'user') {
+      suspendUserMutation.mutate({ userId: entity.id, suspended: !entity.suspended });
+    } else {
+      suspendTeamMutation.mutate({ teamId: entity.id, suspended: !entity.suspended });
+    }
+  };
+
+  const allEntities = [
+    ...(quotaSummary?.users || []),
+    ...(quotaSummary?.teams || [])
+  ].filter(entity => {
+    if (filterType !== 'all' && entity.type !== filterType) return false;
+    if (searchTerm) {
+      return entity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             (entity.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    return true;
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <HardDrive className="w-5 h-5 text-teal-600" />
+            Quote Storage
+          </CardTitle>
+          <CardDescription>Gestione quote di archiviazione per utenti e team</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Quota Utente Default
+              </h4>
+              <p className="text-2xl font-bold text-teal-600">
+                {formatBytes(quotaSummary?.defaults.userQuotaBytes || 1073741824)}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">Spazio assegnato a ogni nuovo utente</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Quota Team Default
+              </h4>
+              <p className="text-2xl font-bold text-teal-600">
+                {formatBytes(quotaSummary?.defaults.teamQuotaBytes || 10737418240)}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">Spazio condiviso per ogni team</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Gestione Quote Personalizzate</h4>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Cerca utente o team..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-64"
+                  data-testid="input-search-quota"
+                />
+                <Select value={filterType} onValueChange={(v: 'all' | 'user' | 'team') => setFilterType(v)}>
+                  <SelectTrigger className="w-32" data-testid="select-filter-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti</SelectItem>
+                    <SelectItem value="user">Utenti</SelectItem>
+                    <SelectItem value="team">Team</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quota</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilizzo</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  {allEntities.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                        {searchTerm ? 'Nessun risultato trovato' : 'Nessun utente o team presente'}
+                      </td>
+                    </tr>
+                  ) : (
+                    allEntities.map((entity) => {
+                      const usagePercent = entity.quotaBytes > 0 ? Math.min((entity.usedBytes / entity.quotaBytes) * 100, 100) : 0;
+                      return (
+                        <tr key={`${entity.type}-${entity.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800" data-testid={`row-quota-${entity.type}-${entity.id}`}>
+                          <td className="px-4 py-3">
+                            <Badge variant={entity.type === 'user' ? 'default' : 'secondary'}>
+                              {entity.type === 'user' ? 'Utente' : 'Team'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{entity.name}</p>
+                              {entity.email && <p className="text-sm text-gray-500">{entity.email}</p>}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={entity.hasCustomQuota ? 'text-teal-600 font-medium' : 'text-gray-500'}>
+                              {formatBytes(entity.quotaBytes)}
+                              {entity.hasCustomQuota && <span className="ml-1 text-xs">(custom)</span>}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-yellow-500' : 'bg-teal-500'}`}
+                                  style={{ width: `${usagePercent}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {formatBytes(entity.usedBytes)} ({usagePercent.toFixed(0)}%)
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {entity.suspended ? (
+                              <Badge variant="destructive">Sospeso</Badge>
+                            ) : entity.isActive ? (
+                              <Badge variant="outline" className="text-green-600 border-green-600">Attivo</Badge>
+                            ) : (
+                              <Badge variant="secondary">Inattivo</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      onClick={() => handleEditQuota(entity)}
+                                      data-testid={`btn-edit-quota-${entity.type}-${entity.id}`}
+                                    >
+                                      <Settings className="w-4 h-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Modifica quota</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleToggleSuspend(entity)}
+                                      data-testid={`btn-suspend-${entity.type}-${entity.id}`}
+                                    >
+                                      {entity.suspended ? (
+                                        <RotateCcw className="w-4 h-4 text-green-600" />
+                                      ) : (
+                                        <RotateCw className="w-4 h-4 text-red-600" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>{entity.suspended ? 'Riattiva accesso' : 'Sospendi accesso'}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-900 dark:text-blue-100">Quote Tenant</h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  Le quote a livello tenant sono configurate dalla Brand Interface. Contatta l'amministratore per modificare i limiti complessivi di storage.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {editModalOpen && selectedEntity && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setEditModalOpen(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Modifica Quota Storage</h3>
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Badge variant={selectedEntity.type === 'user' ? 'default' : 'secondary'}>
+                    {selectedEntity.type === 'user' ? 'Utente' : 'Team'}
+                  </Badge>
+                  <span className="font-medium">{selectedEntity.name}</span>
+                </div>
+                {selectedEntity.email && <p className="text-sm text-gray-500 mt-1">{selectedEntity.email}</p>}
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Quota (GB)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={editQuotaGB}
+                    onChange={(e) => setEditQuotaGB(e.target.value)}
+                    className="flex-1"
+                    data-testid="input-edit-quota-gb"
+                  />
+                  <span className="text-sm text-gray-500">GB</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Attuale: {formatBytes(selectedEntity.quotaBytes)} | Usato: {formatBytes(selectedEntity.usedBytes)}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditModalOpen(false)} data-testid="btn-cancel-quota">
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={handleSaveQuota} 
+                  disabled={updateUserQuotaMutation.isPending || updateTeamQuotaMutation.isPending}
+                  data-testid="btn-save-quota"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Salva
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function SystemConfigPage() {
   const { tenant: tenantSlug } = useParams<{ tenant: string }>();
   const [activeTab, setActiveTab] = useState('wms');
@@ -831,68 +1237,7 @@ export default function SystemConfigPage() {
           </TabsContent>
 
           <TabsContent value="storage" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HardDrive className="w-5 h-5 text-teal-600" />
-                  Quote Storage
-                </CardTitle>
-                <CardDescription>Gestione quote di archiviazione per utenti e team</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      Quota Utente Default
-                    </h4>
-                    <p className="text-2xl font-bold text-teal-600">1 GB</p>
-                    <p className="text-sm text-gray-500 mt-1">Spazio assegnato a ogni nuovo utente</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      Quota Team Default
-                    </h4>
-                    <p className="text-2xl font-bold text-teal-600">10 GB</p>
-                    <p className="text-sm text-gray-500 mt-1">Spazio condiviso per ogni team</p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Configurazione Quote Personalizzate</h4>
-                  <p className="text-sm text-gray-500">
-                    Per modificare le quote di singoli utenti o team, vai alle impostazioni utente nella sezione Utenti e Accessi.
-                  </p>
-                  <div className="flex gap-3">
-                    <a 
-                      href={`/${tenantSlug}/settings?tab=users`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md text-sm font-medium transition-colors"
-                      data-testid="link-user-quotas"
-                    >
-                      <Users className="w-4 h-4" />
-                      Gestisci Quote Utenti
-                    </a>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-900 dark:text-blue-100">Quote Tenant</h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                        Le quote a livello tenant sono configurate dalla Brand Interface. Contatta l'amministratore per modificare i limiti complessivi di storage.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <StorageQuotaManager tenantSlug={tenantSlug} />
           </TabsContent>
         </Tabs>
       </div>
