@@ -31,7 +31,8 @@ import {
   RotateCw,
   ClipboardCheck,
   Truck,
-  FileCheck
+  FileCheck,
+  HardDrive
 } from 'lucide-react';
 import {
   Tooltip,
@@ -658,7 +659,7 @@ export default function SystemConfigPage() {
       </div>
       <div className="max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
             <TabsTrigger 
               value="wms" 
               className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700"
@@ -706,6 +707,14 @@ export default function SystemConfigPage() {
             >
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Notifiche</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="storage" 
+              className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700"
+              data-testid="tab-storage"
+            >
+              <HardDrive className="w-4 h-4" />
+              <span className="hidden sm:inline">Storage</span>
             </TabsTrigger>
           </TabsList>
 
@@ -817,6 +826,71 @@ export default function SystemConfigPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500 text-sm">Configurazione notifiche in arrivo.</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="storage" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HardDrive className="w-5 h-5 text-teal-600" />
+                  Quote Storage
+                </CardTitle>
+                <CardDescription>Gestione quote di archiviazione per utenti e team</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Quota Utente Default
+                    </h4>
+                    <p className="text-2xl font-bold text-teal-600">1 GB</p>
+                    <p className="text-sm text-gray-500 mt-1">Spazio assegnato a ogni nuovo utente</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Quota Team Default
+                    </h4>
+                    <p className="text-2xl font-bold text-teal-600">10 GB</p>
+                    <p className="text-sm text-gray-500 mt-1">Spazio condiviso per ogni team</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h4 className="font-medium">Configurazione Quote Personalizzate</h4>
+                  <p className="text-sm text-gray-500">
+                    Per modificare le quote di singoli utenti o team, vai alle impostazioni utente nella sezione Utenti e Accessi.
+                  </p>
+                  <div className="flex gap-3">
+                    <a 
+                      href={`/${tenantSlug}/settings?tab=users`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md text-sm font-medium transition-colors"
+                      data-testid="link-user-quotas"
+                    >
+                      <Users className="w-4 h-4" />
+                      Gestisci Quote Utenti
+                    </a>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100">Quote Tenant</h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        Le quote a livello tenant sono configurate dalla Brand Interface. Contatta l'amministratore per modificare i limiti complessivi di storage.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

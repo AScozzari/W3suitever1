@@ -92,6 +92,12 @@ const EMPLOYEE_TABS = [
     description: 'Buste paga e documenti'
   },
   {
+    id: 'my-drive',
+    label: 'My Drive',
+    icon: FileText,
+    description: 'File personali e condivisi'
+  },
+  {
     id: 'performance',
     label: 'My Performance',
     icon: Target,
@@ -112,7 +118,7 @@ const EMPLOYEE_TABS = [
 ];
 
 // SECURITY: Valid tabs for Employee Dashboard - prevents malformed deep links
-const VALID_EMPLOYEE_TABS = ['overview', 'time-attendance', 'requests', 'documents', 'performance', 'training', 'profile'];
+const VALID_EMPLOYEE_TABS = ['overview', 'time-attendance', 'requests', 'documents', 'my-drive', 'performance', 'training', 'profile'];
 const VALID_EMPLOYEE_SECTIONS = ['pending', 'approved', 'rejected']; // for requests tab
 
 export default function MyPortal() {
@@ -1490,6 +1496,38 @@ export default function MyPortal() {
                     )}
                   </DialogContent>
                 </Dialog>
+              </div>
+            )}
+
+            {activeTab === 'my-drive' && (
+              <div className="space-y-6" data-testid="section-my-drive">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">My Drive</h2>
+                  <Link href={`/${tenantSlug}/my-drive`}>
+                    <Button 
+                      className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                      data-testid="button-open-my-drive"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Apri My Drive
+                    </Button>
+                  </Link>
+                </div>
+                
+                <Card className="glass-card">
+                  <CardContent className="p-8 text-center">
+                    <FileText className="h-16 w-16 text-teal-600 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Gestione File Personali</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Accedi a My Drive per gestire i tuoi file personali, condividere documenti con il team e organizzare le tue cartelle.
+                    </p>
+                    <Link href={`/${tenantSlug}/my-drive`}>
+                      <Button variant="outline" size="lg" data-testid="button-go-to-my-drive">
+                        Vai a My Drive
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
