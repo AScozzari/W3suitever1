@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across diverse industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, market responsiveness, and strategic decision-making through workflow automation, intelligent routing, and an AI Voice Agent System. The platform offers a comprehensive, adaptive solution with significant market potential for businesses seeking modernization and streamlined operations.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, market responsiveness, and strategic decision-making. The platform leverages workflow automation, intelligent routing, and an AI Voice Agent System to provide a comprehensive, adaptive solution for business modernization and streamlined operations, aiming for a significant market presence and operational streamlining across diverse business sectors.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -146,7 +146,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and `shadcn/ui` components leveraging Radix UI for accessibility. Tailwind CSS is used for styling. UI zoom is handled at build-time via `VITE_FONT_SCALE=80`, and CSS units predominantly use `rem`.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars, white backgrounds, and `shadcn/ui` components leveraging Radix UI for accessibility. Tailwind CSS for styling. UI zoom handled at build-time via `VITE_FONT_SCALE=80` and CSS units predominantly use `rem`.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
