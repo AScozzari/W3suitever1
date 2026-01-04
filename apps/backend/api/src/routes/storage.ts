@@ -218,31 +218,6 @@ router.get('/serve', async (req: Request, res: Response) => {
 
 // ==================== AVATARS ====================
 
-// Legacy compatibility endpoint for serving avatars by path (no auth for public display)
-router.get('/avatars/serve/:tenantId/:filename', async (req: Request, res: Response) => {
-  try {
-    const { tenantId, filename } = req.params;
-    
-    if (!tenantId || !filename) {
-      return res.status(400).json({ error: 'Missing tenant ID or filename' });
-    }
-
-    // Serve avatar via storage service
-    const result = await storageService.serveAvatarByPath(tenantId, filename);
-    
-    if (!result) {
-      return res.status(404).json({ error: 'Avatar not found' });
-    }
-    
-    res.setHeader('Content-Type', result.mimeType);
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.send(Buffer.from(result.buffer));
-  } catch (error: any) {
-    console.error('Error serving avatar:', error);
-    res.status(404).json({ error: 'Avatar not found' });
-  }
-});
-
 router.post('/avatars/:userId', requirePermission('storage:write'), upload.single('avatar'), async (req: Request, res: Response) => {
   try {
     const ctx = getContext(req);

@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules to enhance efficiency, improve market responsiveness, and facilitate strategic decision-making, providing a competitive edge through advanced AI functionalities and a modular design.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across diverse industries. It integrates key modules like CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI to enhance efficiency, market responsiveness, and strategic decision-making. The platform aims to provide a comprehensive solution for modern enterprises seeking operational excellence and data-driven insights.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -157,7 +157,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **HR Module**: Manages shifts, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
     - **Brand Interface**: Features a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway**: Provides a JSON-RPC 2.0 interface (`POST /api/mcp-public/sse`) for external integrations.
+    - **MCP Public Gateway**: Provides a JSON-RPC 2.0 interface for external integrations.
 - **System Design Choices**:
     - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
     - **Cross-Store Architecture**: Default tenant-wide data views with role-based access, supporting optional filters and prohibiting automatic store selection.
