@@ -3515,9 +3515,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // ✅ Build avatar URL from avatar_object_path (proxy URL pattern)
+      let avatarUrl: string | null = null;
+      if (user.avatarObjectPath) {
+        const filename = user.avatarObjectPath.split('/').pop();
+        avatarUrl = `/api/avatars/serve/${tenantId}/${filename}`;
+      }
+
       res.json({
         success: true,
-        data: user
+        data: {
+          ...user,
+          avatarUrl, // Proxy URL for avatar
+          // Convenient aliases for frontend compatibility
+          nome: user.firstName,
+          cognome: user.lastName,
+          telefono: user.phone,
+          dataNascita: user.dateOfBirth,
+          codiceFiscale: user.fiscalCode,
+          sesso: user.gender,
+          citta: user.city,
+          provincia: user.province,
+          cap: user.postalCode,
+          paese: user.country,
+          dataAssunzione: user.hireDate,
+          tipoContratto: user.contractType,
+          livello: user.level
+        }
       });
 
     } catch (error) {
