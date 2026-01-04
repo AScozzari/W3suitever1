@@ -20,6 +20,7 @@ import { useTenant } from '../contexts/TenantContext';
 import { useAuth } from '../hooks/useAuth';
 import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
+import { useUserAvatar } from '@/hooks/useUserAvatar';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
@@ -159,10 +160,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
   
   const { isIdle } = useIdleDetection();
-  const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
+  const { data: sessionData } = useQuery<{ user: UserData } | null>({ queryKey: ["/api/auth/session"] });
+  const user = sessionData?.user ?? null;
   const [location] = useLocation();
   const { navigate } = useTenantNavigation();
   const { currentTenant } = useTenant();
+  
+  const { avatarUrl: userAvatarUrl, initials: userInitials, gradient: userGradient, hasImage: userHasAvatar } = useUserAvatar(user);
   
   // ✅ Sicuro: Ottieni e valida tenant dal path URL con fallback robusto
   const getTenantFromUrl = () => {
@@ -919,10 +923,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           <div style={{ position: 'relative' }} data-user-menu>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
+              data-testid="button-user-menu"
               style={{
                 width: '32px',
                 height: '32px',
-                background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
+                background: userHasAvatar ? 'transparent' : userGradient,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -932,12 +937,27 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
-                transition: 'transform 0.2s ease'
+                transition: 'transform 0.2s ease',
+                overflow: 'hidden',
+                padding: 0
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              {(user as any)?.email?.[0]?.toUpperCase() || 'A'}
+              {userHasAvatar && userAvatarUrl ? (
+                <img 
+                  src={userAvatarUrl} 
+                  alt="Avatar"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%'
+                  }}
+                />
+              ) : (
+                userInitials
+              )}
             </button>
 
             {/* Dropdown Menu */}
@@ -962,13 +982,49 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <div style={{
                   padding: '12px',
                   borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
-                  marginBottom: '8px'
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
                 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
-                    {(user as any)?.name || 'Utente'}
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: userHasAvatar ? 'transparent' : userGradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}>
+                    {userHasAvatar && userAvatarUrl ? (
+                      <img 
+                        src={userAvatarUrl} 
+                        alt="Avatar"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%'
+                        }}
+                      />
+                    ) : (
+                      userInitials
+                    )}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>
-                    {(user as any)?.email || 'admin@w3suite.com'}
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px', color: '#1f2937' }}>
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user?.username || 'Utente'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      {user?.email || 'admin@w3suite.com'}
+                    </div>
                   </div>
                 </div>
 
