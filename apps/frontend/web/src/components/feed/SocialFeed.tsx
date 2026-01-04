@@ -56,6 +56,8 @@ import {
 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../hooks/useAuth';
+import { useUserAvatar } from '@/hooks/useUserAvatar';
 
 // Emoji categories for picker (no duplicates)
 const EMOJI_CATEGORIES = {
@@ -716,6 +718,14 @@ function FeedPostCard({
 
 function EmbeddedComposer() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { avatarUrl, initials, gradient, isLoading: avatarLoading } = useUserAvatar(user ? {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    avatarObjectPath: user.avatarObjectPath
+  } : null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -729,7 +739,8 @@ function EmbeddedComposer() {
   const [attachments, setAttachments] = useState<FeedAttachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [mentionedUsers, setMentionedUsers] = useState<FeedUser[]>([]);
-  const [showMentionPopover, setShowMentionPopover] = useState(false);
+  const [showToolbarMention, setShowToolbarMention] = useState(false);
+  const [toolbarMentionSearch, setToolbarMentionSearch] = useState('');
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionStartPos, setMentionStartPos] = useState<number | null>(null);
   const [recipientSelection, setRecipientSelection] = useState<RecipientSelection>({
@@ -741,14 +752,24 @@ function EmbeddedComposer() {
   const [selectedUsers, setSelectedUsers] = useState<FeedUser[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<FeedTeam[]>([]);
 
-  // Fetch users for mentions and recipient selection
-  const { data: usersData } = useQuery<FeedUser[]>({
+  // Fetch users for inline @ mention (typing in textarea)
+  const { data: inlineMentionUsers } = useQuery<FeedUser[]>({
     queryKey: ['/api/feed/users/search', mentionSearch],
     queryFn: async () => {
       const res = await apiRequest(`/api/feed/users/search?q=${encodeURIComponent(mentionSearch)}&limit=10`);
       return res;
     },
-    enabled: mentionSearch.length > 0 || showRecipientDialog
+    enabled: mentionStartPos !== null
+  });
+
+  // Fetch users for toolbar @ button and recipient dialog
+  const { data: usersData } = useQuery<FeedUser[]>({
+    queryKey: ['/api/feed/users/search', 'toolbar', toolbarMentionSearch],
+    queryFn: async () => {
+      const res = await apiRequest(`/api/feed/users/search?q=${encodeURIComponent(toolbarMentionSearch)}&limit=10`);
+      return res;
+    },
+    enabled: showToolbarMention || showRecipientDialog
   });
 
   // Fetch departments
@@ -888,18 +909,17 @@ function EmbeddedComposer() {
       if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n')) {
         setMentionStartPos(atIndex);
         setMentionSearch(textAfterAt);
-        setShowMentionPopover(true);
         return;
       }
     }
     
-    // Close popover if no active mention
-    setShowMentionPopover(false);
+    // Close inline mention if no active mention
     setMentionStartPos(null);
     setMentionSearch('');
   };
 
-  const insertMention = (user: FeedUser) => {
+  // Insert mention from inline dropdown (typing @ in textarea)
+  const insertInlineMention = (user: FeedUser) => {
     const displayName = user.displayName || user.firstName || user.email.split('@')[0];
     
     if (mentionStartPos !== null) {
@@ -916,17 +936,39 @@ function EmbeddedComposer() {
         textareaRef.current?.setSelectionRange(newPos, newPos);
         textareaRef.current?.focus();
       }, 0);
+    }
+    
+    if (!mentionedUsers.find(u => u.id === user.id)) {
+      setMentionedUsers([...mentionedUsers, user]);
+    }
+    setMentionSearch('');
+    setMentionStartPos(null);
+  };
+
+  // Insert mention from toolbar button
+  const insertToolbarMention = (user: FeedUser) => {
+    const displayName = user.displayName || user.firstName || user.email.split('@')[0];
+    
+    // Insert at cursor position or at end
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const newContent = content.slice(0, start) + `@${displayName} ` + content.slice(start);
+      setContent(newContent);
+      setTimeout(() => {
+        const newPos = start + displayName.length + 2;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+      }, 0);
     } else {
-      // Fallback: append mention at end
       setContent(content + `@${displayName} `);
     }
     
     if (!mentionedUsers.find(u => u.id === user.id)) {
       setMentionedUsers([...mentionedUsers, user]);
     }
-    setShowMentionPopover(false);
-    setMentionSearch('');
-    setMentionStartPos(null);
+    setShowToolbarMention(false);
+    setToolbarMentionSearch('');
   };
 
   const applyFormatting = (format: string) => {
@@ -999,7 +1041,15 @@ function EmbeddedComposer() {
           {!isExpanded ? (
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsExpanded(true)} data-testid="composer-collapsed">
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">TU</AvatarFallback>
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={initials} />
+                ) : null}
+                <AvatarFallback 
+                  className="text-white text-sm font-medium"
+                  style={{ background: gradient }}
+                >
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 py-2.5 px-4 bg-muted/50 rounded-full text-muted-foreground text-sm hover:bg-muted transition-colors">
                 {getPlaceholder()}
@@ -1036,7 +1086,7 @@ function EmbeddedComposer() {
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => fileInputRef.current?.click()} title="Allega file" disabled={isUploading} data-testid="button-attach-file">
                   <Paperclip className="h-3.5 w-3.5" />
                 </Button>
-                <Popover open={showMentionPopover} onOpenChange={setShowMentionPopover}>
+                <Popover open={showToolbarMention} onOpenChange={setShowToolbarMention}>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7" title="Menziona utente" data-testid="button-mention-user">
                       <AtSign className="h-3.5 w-3.5" />
@@ -1044,16 +1094,16 @@ function EmbeddedComposer() {
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Cerca utente..." value={mentionSearch} onValueChange={setMentionSearch} />
+                      <CommandInput placeholder="Cerca utente..." value={toolbarMentionSearch} onValueChange={setToolbarMentionSearch} />
                       <CommandList>
                         <CommandEmpty>Nessun utente trovato</CommandEmpty>
                         <CommandGroup>
-                          {usersData?.map(user => (
-                            <CommandItem key={user.id} onSelect={() => insertMention(user)}>
+                          {usersData?.map(u => (
+                            <CommandItem key={u.id} onSelect={() => insertToolbarMention(u)}>
                               <Avatar className="h-6 w-6 mr-2">
-                                <AvatarFallback className="text-xs">{getInitials(user)}</AvatarFallback>
+                                <AvatarFallback className="text-xs">{getInitials(u)}</AvatarFallback>
                               </Avatar>
-                              <span>{user.displayName || user.email}</span>
+                              <span>{u.displayName || u.email}</span>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -1096,24 +1146,25 @@ function EmbeddedComposer() {
               <div className="relative">
                 <Textarea ref={textareaRef} autoFocus placeholder={getPlaceholder()} value={content} onChange={handleContentChange} rows={postType === 'message' ? 4 : 5} className="resize-none min-h-[100px]" data-testid="input-post-content" />
                 
-                {/* Inline @mention autocomplete */}
-                {showMentionPopover && usersData && usersData.length > 0 && (
-                  <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-white rounded-lg border shadow-lg p-1 max-h-48 overflow-auto">
+                {/* Inline @mention autocomplete - appears when typing @ in textarea */}
+                {mentionStartPos !== null && inlineMentionUsers && inlineMentionUsers.length > 0 && (
+                  <div className="absolute left-0 top-full mt-1 z-50 w-64 bg-white dark:bg-slate-900 rounded-lg border shadow-lg p-1 max-h-48 overflow-auto">
                     <p className="text-xs text-muted-foreground px-2 py-1">Menziona utente</p>
-                    {usersData.map(user => (
+                    {inlineMentionUsers.map(u => (
                       <button
-                        key={user.id}
+                        key={u.id}
+                        type="button"
                         className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left"
-                        onClick={() => insertMention(user)}
-                        data-testid={`mention-user-${user.id}`}
+                        onClick={() => insertInlineMention(u)}
+                        data-testid={`mention-user-${u.id}`}
                       >
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={user.avatarUrl || undefined} />
-                          <AvatarFallback className="text-xs">{(user.firstName?.[0] || user.email[0]).toUpperCase()}</AvatarFallback>
+                          <AvatarImage src={u.avatarUrl || undefined} />
+                          <AvatarFallback className="text-xs">{(u.firstName?.[0] || u.email[0]).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{user.displayName || `${user.firstName} ${user.lastName}`}</p>
-                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          <p className="text-sm font-medium truncate">{u.displayName || `${u.firstName} ${u.lastName}`}</p>
+                          <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                         </div>
                       </button>
                     ))}

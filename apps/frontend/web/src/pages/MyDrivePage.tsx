@@ -411,7 +411,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const handleFileClick = useCallback(async (object: StorageObject) => {
     try {
-      const response = await fetch(`/api/storage/objects/${object.id}/signed-url`);
+      const response = await fetch(`/api/storage/objects/${object.id}/signed-url`, {
+        credentials: 'include'
+      });
       if (!response.ok) throw new Error('Errore');
       const { url } = await response.json();
       window.open(url, '_blank');

@@ -373,9 +373,9 @@ export function EditChannelDialog({
                 maxHeight: '200px',
                 overflowY: 'auto'
               }}>
-                {members.map((member) => (
+                {members.map((member, index) => (
                   <div 
-                    key={member.userId}
+                    key={member.userId || `member-${index}`}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
