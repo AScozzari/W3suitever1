@@ -3282,6 +3282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== USER MANAGEMENT API ====================
 
   // Get users for current tenant (with optional role and store filters)
+  // NOTE: This endpoint is shadowed by entities.ts which is mounted earlier on /api
   app.get('/api/users', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
@@ -3297,12 +3298,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no filters, use standard method with scope enrichment
       if (!roleId && !storeId) {
         const usersData = await storage.getUsersByTenant(tenantId);
+        console.log(`[USERS-ENRICHMENT] Found ${usersData.length} users for tenant ${tenantId}`);
         
         // Enrich users with their scope assignments using user_stores and user_organization_entities tables
         const userIds = usersData.map(u => u.id);
         if (userIds.length > 0) {
           // Ensure RLS context is set for the joins
           await setTenantContext(tenantId);
+          console.log(`[USERS-ENRICHMENT] Fetching scope for ${userIds.length} users...`);
           
           // Get store assignments from user_stores table
           const storeAssignments = await db
@@ -3327,6 +3330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .from(userOrganizationEntities)
             .leftJoin(organizationEntities, eq(userOrganizationEntities.organizationEntityId, organizationEntities.id))
             .where(inArray(userOrganizationEntities.userId, userIds));
+          
+          console.log(`[USERS-ENRICHMENT] Found ${storeAssignments.length} store assignments and ${orgAssignments.length} org assignments`);
           
           // Group store assignments by user
           const storesByUser = new Map<string, any[]>();

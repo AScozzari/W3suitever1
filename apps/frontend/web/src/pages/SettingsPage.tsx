@@ -3160,41 +3160,49 @@ export default function SettingsPage() {
                       {(() => {
                         const userStores = user.stores || user.scope?.stores || [];
                         const userOrgs = user.organization_entities || user.scope?.organization_entities || [];
-                        const tenantWide = user.tenant_wide || user.scope?.tenant_wide || false;
+                        // tenant_wide esplicito OPPURE flag select_all_legal_entities
+                        const tenantWideExplicit = user.select_all_legal_entities === true || 
+                                                   user.scope?.selectAll === true ||
+                                                   (user.tenant_wide === true && userStores.length === 0 && userOrgs.length === 0);
                         
-                        if (tenantWide) {
-                          return (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#dbeafe', color: '#1e40af', fontSize: '0.75rem', fontWeight: '500' }} title="Accesso completo a tutto il tenant" data-testid="scope-badge-tenant">
-                              🌐 Totale
-                            </span>
-                          );
-                        }
+                        // Calcola il numero totale di sedi (stores + org con stores associati)
+                        const totalStoreCount = userStores.length;
+                        const orgStoreCount = userOrgs.reduce((acc: number, o: any) => acc + (o.storeCount || 0), 0);
                         
                         if (userOrgs.length > 0) {
                           const orgNames = userOrgs.map((o: any) => o.name || o.organization_name || 'Org').filter(Boolean);
-                          const storeCount = userStores.length;
                           const tooltip = orgNames.length > 0 
-                            ? orgNames.join(', ') + (storeCount > 0 ? ` (${storeCount} punti vendita)` : '')
+                            ? `Organizzazioni:\n${orgNames.join('\n')}` + (totalStoreCount > 0 ? `\n\nPunti Vendita: ${totalStoreCount}` : '')
                             : `${userOrgs.length} organizzazioni`;
                           return (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-org">
-                              🏢 {userOrgs.length} {userOrgs.length === 1 ? 'Organizzazione' : 'Organizzazioni'}
+                              🏢 {userOrgs.length} {userOrgs.length === 1 ? 'Sede' : 'Sedi'}
                             </span>
                           );
                         }
                         
                         if (userStores.length > 0) {
                           const storeNames = userStores.map((s: any) => s.name || s.store_name || 'Store').filter(Boolean);
-                          const tooltip = storeNames.length > 0 ? storeNames.join(', ') : `${userStores.length} punti vendita`;
+                          const tooltip = storeNames.length > 0 
+                            ? `Punti Vendita:\n${storeNames.join('\n')}` 
+                            : `${userStores.length} punti vendita`;
                           return (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#d1fae5', color: '#065f46', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title={tooltip} data-testid="scope-badge-store">
-                              🏪 {userStores.length} {userStores.length === 1 ? 'Punto Vendita' : 'Punti Vendita'}
+                              🏪 {userStores.length} {userStores.length === 1 ? 'Sede' : 'Sedi'}
+                            </span>
+                          );
+                        }
+                        
+                        if (tenantWideExplicit) {
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#dbeafe', color: '#1e40af', fontSize: '0.75rem', fontWeight: '500' }} title="Accesso completo a tutte le sedi del tenant" data-testid="scope-badge-tenant">
+                              🌐 Tutte le Sedi
                             </span>
                           );
                         }
                         
                         return (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#f3f4f6', color: '#6b7280', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title="Nessun accesso assegnato - contattare l'amministratore" data-testid="scope-badge-none">
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#fef2f2', color: '#991b1b', fontSize: '0.75rem', fontWeight: '500', cursor: 'help' }} title="Nessun accesso assegnato - modificare l'utente per assegnare le sedi" data-testid="scope-badge-none">
                             ⚠️ Non assegnato
                           </span>
                         );
@@ -6194,7 +6202,67 @@ export default function SettingsPage() {
         note: user.note || user.notes || ''
       });
     } else if (userModal.open && !userModal.data) {
-      // Modalità CREATE - resetta i campi (già gestito dal onClick del bottone "Nuovo Utente")
+      // ✅ Modalità CREATE - RESET COMPLETO del form a valori vuoti
+      console.log('🔄 CREATE MODE - Resetting form to empty values');
+      setNewUser({
+        username: '',
+        password: '',
+        confirmPassword: '',
+        ruolo: '',
+        cambioPasswordObbligatorio: true,
+        ragioneSociale_id: null,
+        puntiVendita_ids: [],
+        puntoVenditaPreferito_id: null,
+        scopeLevel: 'tenant',
+        selectedOrganizationEntities: [],
+        primaryOrganizationEntityId: null,
+        selectedStores: [],
+        primaryStoreId: null,
+        selectAllLegalEntities: false,
+        selectedAreas: [],
+        selectedLegalEntities: [],
+        nome: '',
+        cognome: '',
+        avatar: { url: null, blob: null, type: 'upload' },
+        codiceFiscale: '',
+        dataNascita: '',
+        luogoNascita: '',
+        sesso: 'M',
+        email: '',
+        emailPersonale: '',
+        telefono: '',
+        telefonoAziendale: '',
+        via: '',
+        civico: '',
+        citta: '',
+        cap: '',
+        provincia: '',
+        paese: 'Italia',
+        tipoDocumento: 'Carta Identità',
+        numeroDocumento: '',
+        dataScadenzaDocumento: '',
+        stato: 'attivo',
+        dataInizioValidita: '',
+        dataFineValidita: '',
+        notificheEmail: true,
+        notificheSMS: false,
+        lingua: 'it',
+        fuso: 'Europe/Rome',
+        extension: {
+          enabled: false,
+          extNumber: '',
+          sipDomain: '',
+          classOfService: 'agent' as 'agent' | 'supervisor' | 'admin',
+          voicemailEnabled: true,
+          storeId: null
+        },
+        tipoContratto: 'Indeterminato',
+        dataAssunzione: '',
+        livello: '',
+        ccnl: 'Commercio',
+        oreLavoro: '40',
+        note: ''
+      });
     }
   }, [userModal.open, userModal.data, puntiVenditaList]);
 

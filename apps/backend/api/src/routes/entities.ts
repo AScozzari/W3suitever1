@@ -1857,17 +1857,24 @@ router.get('/users', async (req, res) => {
         scopeLevel = 'organization_entity';
       }
       
+      // ✅ Build store and org data with names for display
+      const isTenantWide = userOrgs.length === 0 && userStoresList.length === 0;
+      
       return {
         ...user,
         avatarUrl,
-        // ✅ Scope data for frontend
+        // ✅ Scope data for frontend (primary format expected by frontend)
+        stores: userStoresList.map(s => s.id),
+        organization_entities: userOrgs.map(o => o.id),
+        tenant_wide: isTenantWide,
+        // ✅ Legacy aliases for backwards compatibility
         scopeLevel,
         selectedOrganizationEntities: userOrgs.map(o => o.id),
-        selectedLegalEntities: userOrgs.map(o => o.id), // alias for legacy frontend
+        selectedLegalEntities: userOrgs.map(o => o.id),
         primaryOrganizationEntityId: userOrgs.find(o => o.isPrimary)?.id || userOrgs[0]?.id || null,
         selectedStores: userStoresList.map(s => s.id),
         primaryStoreId: userStoresList.find(s => s.isPrimary)?.id || userStoresList[0]?.id || null,
-        selectAllLegalEntities: userOrgs.length === 0 && userStoresList.length === 0, // tenant-wide if no assignments
+        selectAllLegalEntities: isTenantWide,
         // Add convenient aliases for frontend compatibility
         nome: user.firstName,
         cognome: user.lastName,
