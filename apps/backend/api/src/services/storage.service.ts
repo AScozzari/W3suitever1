@@ -16,9 +16,12 @@ const UPLOAD_SESSION_EXPIRY_HOURS = 24;
 
 let objectStorageClient: Client | null = null;
 
+// Object Storage bucket ID from environment
+const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
+
 function getObjectStorageClient(): Client {
   if (!objectStorageClient) {
-    objectStorageClient = new Client();
+    objectStorageClient = new Client({ bucketId: BUCKET_ID });
   }
   return objectStorageClient;
 }
