@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations by integrating CRM, POS, WMS, Analytics, HR, and CMS modules. Its purpose is to modernize businesses, enhance efficiency, improve market responsiveness, and facilitate strategic decision-making across various industries through a comprehensive, AI-enhanced solution.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules into a unified solution. The platform aims to modernize businesses, enhance efficiency, improve market responsiveness, and facilitate strategic decision-making across various industries through its comprehensive, AI-enhanced capabilities.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -150,9 +150,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP).
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP), and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
     - **Unified Object Storage**: Enterprise-grade file storage with evergreen folders, multi-tenant RLS via signed URLs, three-tier quota, My Drive UI, Google Drive-style permission inheritance, password-protected public sharing, and an ACL system.
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem, and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, lead-to-deal workflows, and a Customer 360° Dashboard.
     - **HR Module**: Manages shifts, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
