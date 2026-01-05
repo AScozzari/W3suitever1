@@ -1264,6 +1264,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fullPath = req.originalUrl || req.url || req.path;
       const apiPath = req.path;
       
+      // Check for internal service-to-service calls
+      const xService = req.headers['x-service'] as string;
+      const authHeader = req.headers.authorization;
+      const serviceToken = authHeader?.split(' ')[1];
+      const expectedServiceToken = process.env.W3_SERVICE_TOKEN || 'brand-service-internal-token-2025';
+      
+      // Allow internal service calls from brand-api with valid service token
+      if (xService === 'brand-interface' && serviceToken === expectedServiceToken) {
+        const tenantId = (req.headers['x-tenant-id'] as string) || '00000000-0000-0000-0000-000000000001';
+        console.log(`[SERVICE-AUTH] ✅ Internal service call from ${xService} for tenant: ${tenantId}`);
+        req.user = {
+          id: 'brand-service',
+          email: 'service@brand-interface.internal',
+          tenantId: tenantId,
+          roles: ['service', 'admin'],
+          permissions: ['*'],
+          scope: 'service'
+        };
+        // Grant full permissions for internal service calls
+        (req as any).userPermissions = ['*'];
+        return next();
+      }
+      
       // Skip auth for public endpoints
       const acceptHeader = req.headers.accept || '';
       const isBrowserRequest = 
@@ -1290,7 +1313,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return next();
       }
       
-      const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
 
       if (!token) {

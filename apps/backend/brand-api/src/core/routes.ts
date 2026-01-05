@@ -5398,7 +5398,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Get all tenant storage allocations
+  // Get all tenant storage allocations with real usage data from W3 Suite
   app.get("/brand-api/storage/allocations", async (req, res) => {
     const user = (req as any).user;
 
@@ -5412,9 +5412,59 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         .from(tenantStorageAllocations)
         .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
 
+      // Enrich allocations with real usage data from W3 Suite backend
+      const enrichedAllocations = await Promise.all(allocations.map(async (allocation) => {
+        try {
+          // Call W3 Suite backend to get real tenant storage usage
+          const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'X-Tenant-ID': allocation.tenantId,
+            'X-Service': 'brand-interface',
+            'X-Service-Version': '1.0.0'
+          };
+          
+          if (process.env.NODE_ENV === 'development') {
+            headers['X-Auth-Session'] = 'authenticated';
+            headers['X-Demo-User'] = 'demo-user';
+          } else {
+            headers['Authorization'] = `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`;
+          }
+
+          const response = await fetch(`${W3_BACKEND_URL}/api/storage/tenant-allocation`, {
+            method: 'GET',
+            headers
+          });
+
+          if (response.ok) {
+            const realData = await response.json();
+            return {
+              ...allocation,
+              usedBytes: realData.usedBytes || allocation.usedBytes || 0,
+              objectCount: realData.objectCount || allocation.objectCount || 0,
+              usagePercent: allocation.quotaBytes && allocation.quotaBytes > 0 
+                ? Math.round(((realData.usedBytes || 0) / allocation.quotaBytes) * 100) 
+                : 0
+            };
+          }
+        } catch (enrichError) {
+          console.warn(`⚠️ Could not fetch real usage for tenant ${allocation.tenantId}:`, enrichError);
+        }
+        
+        // Return allocation with existing data if enrichment fails
+        return {
+          ...allocation,
+          usedBytes: allocation.usedBytes || 0,
+          objectCount: allocation.objectCount || 0,
+          usagePercent: allocation.quotaBytes && allocation.quotaBytes > 0 
+            ? Math.round(((allocation.usedBytes || 0) / allocation.quotaBytes) * 100) 
+            : 0
+        };
+      }));
+
       res.json({
         success: true,
-        data: allocations
+        data: enrichedAllocations
       });
     } catch (error) {
       console.error("❌ Error fetching allocations:", error);
@@ -5615,7 +5665,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Get storage usage analytics
+  // Get storage usage analytics with real data from W3 Suite
   app.get("/brand-api/storage/analytics", async (req, res) => {
     const user = (req as any).user;
     const { startDate, endDate } = req.query;
@@ -5638,10 +5688,47 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         .from(tenantStorageAllocations)
         .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
 
-      // Calculate totals
-      const totalQuota = allocations.reduce((sum, a) => sum + (a.quotaBytes || 0), 0);
-      const totalUsed = allocations.reduce((sum, a) => sum + (a.usedBytes || 0), 0);
-      const totalObjects = allocations.reduce((sum, a) => sum + (a.objectCount || 0), 0);
+      // Enrich allocations with real usage from W3 Suite backend
+      const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
+      const enrichedAllocations = await Promise.all(allocations.map(async (allocation) => {
+        try {
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'X-Tenant-ID': allocation.tenantId,
+            'X-Service': 'brand-interface',
+            'X-Service-Version': '1.0.0'
+          };
+          
+          if (process.env.NODE_ENV === 'development') {
+            headers['X-Auth-Session'] = 'authenticated';
+            headers['X-Demo-User'] = 'demo-user';
+          } else {
+            headers['Authorization'] = `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`;
+          }
+
+          const response = await fetch(`${W3_BACKEND_URL}/api/storage/tenant-allocation`, {
+            method: 'GET',
+            headers
+          });
+
+          if (response.ok) {
+            const realData = await response.json();
+            return {
+              ...allocation,
+              usedBytes: realData.usedBytes || 0,
+              objectCount: realData.objectCount || 0
+            };
+          }
+        } catch (e) {
+          console.warn(`⚠️ Could not fetch real usage for tenant ${allocation.tenantId}`);
+        }
+        return allocation;
+      }));
+
+      // Calculate totals from enriched data
+      const totalQuota = enrichedAllocations.reduce((sum, a) => sum + (a.quotaBytes || 0), 0);
+      const totalUsed = enrichedAllocations.reduce((sum, a) => sum + (a.usedBytes || 0), 0);
+      const totalObjects = enrichedAllocations.reduce((sum, a) => sum + (a.objectCount || 0), 0);
 
       // AWS S3 Standard Frankfurt pricing (eu-central-1) - as of 2024
       const AWS_S3_PRICING = {
@@ -5689,7 +5776,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
             totalUsedBytes: totalUsed,
             totalObjectCount: totalObjects,
             usagePercent: totalQuota > 0 ? Math.round((totalUsed / totalQuota) * 100) : 0,
-            tenantCount: allocations.length
+            tenantCount: enrichedAllocations.length
           },
           costs: {
             currency: 'USD',
@@ -5706,13 +5793,13 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
               region: 'eu-central-1 (Frankfurt)'
             }
           },
-          tenants: allocations.map(a => ({
+          tenants: enrichedAllocations.map(a => ({
             tenantId: a.tenantId,
             tenantName: a.tenantName,
             tenantSlug: a.tenantSlug,
             quotaBytes: a.quotaBytes,
-            usedBytes: a.usedBytes,
-            objectCount: a.objectCount,
+            usedBytes: a.usedBytes || 0,
+            objectCount: a.objectCount || 0,
             usagePercent: a.quotaBytes && a.quotaBytes > 0 ? Math.round(((a.usedBytes || 0) / a.quotaBytes) * 100) : 0,
             suspended: a.suspended,
             alertThresholdPercent: a.alertThresholdPercent
