@@ -347,7 +347,8 @@ export const storageService = {
       throw new Error('File non trovato');
     }
 
-    if (object.ownerUserId !== ctx.userId) {
+    const isOwner = object.ownerUserId === ctx.userId || object.createdByUserId === ctx.userId;
+    if (!isOwner) {
       throw new Error('Non hai i permessi per modificare questo file');
     }
 

@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI to enhance efficiency and strategic decision-making. The platform aims to be a leading solution for operational excellence and data-driven insights with market potential across various industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across CRM, POS, WMS, Analytics, HR, and CMS modules. It leverages advanced AI for enhanced efficiency and strategic decision-making, aiming to be a leading solution for operational excellence and data-driven insights across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -148,36 +148,36 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars and white backgrounds. Utilizes `shadcn/ui` components (Radix UI-based) styled with Tailwind CSS. UI zoom is controlled at build-time via `VITE_FONT_SCALE=80`, enforcing `rem` units for scaling.
+- **UI/UX Decisions**: WindTre Glassmorphism design, fixed headers/sidebars, white backgrounds, `shadcn/ui` (Radix UI-based) with Tailwind CSS. UI zoom managed by `VITE_FONT_SCALE=80` at build-time, requiring `rem` units for scaling.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP), and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
-    - **Unified Object Storage**: Enterprise-grade file storage with multi-tenant RLS via signed URLs, three-tier quota, My Drive UI, Google Drive-style permission inheritance, and an ACL system.
-    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
-    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 360° Dashboard.
-    - **HR Module**: Manages shifts, leave requests, and time tracking.
-    - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
-    - **Brand Interface**: Workflow Builder and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface for external integrations.
+    - **Database**: PostgreSQL with 3-schema (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
+    - **Security**: OAuth2/OIDC, MFA, JWTs, 3-level RBAC.
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP), AI Voice Agent with RAG.
+    - **Unified Object Storage**: Enterprise-grade, multi-tenant RLS via signed URLs, three-tier quota, Google Drive-style permission inheritance, ACL.
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem.
+    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, Customer 360° Dashboard.
+    - **HR Module**: Manages shifts, leave requests, time tracking.
+    - **WMS Module (CQRS)**: Supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, document tables.
+    - **Brand Interface**: Workflow Builder, Git-versioned JSON-based Master Catalog System.
+    - **MCP Public Gateway**: JSON-RPC 2.0 interface for external integrations.
 - **System Design Choices**:
-    - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
-    - **Cross-Store Architecture**: Default tenant-wide data views with role-based access, supporting optional filters and prohibiting automatic store selection.
-    - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing".
-    - **Action Management System**: Centralized configuration for department actions via `action_configurations`, routed through supervisors by `UnifiedTriggerService`.
-    - **Deployment & Governance**: Incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, and database access to `w3suite_prod` via a local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
+    - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
+    - **Cross-Store Architecture**: Tenant-wide data views with role-based access; optional filters, no automatic store selection.
+    - **Request Routing**: "Functional First → First Wins" for team-based and "Shift-Based Routing".
+    - **Action Management System**: Centralized configuration via `action_configurations`, routed by `UnifiedTriggerService`.
+    - **Deployment & Governance**: Incremental VPS deployment to `/var/www/w3suite/` using `./deploy/incremental-deploy.sh`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
-- **Redis**: Used for BullMQ and the Unified Notification System.
-- **OAuth2/OIDC Enterprise**: For authentication and authorization.
+- **Redis**: For BullMQ and Unified Notification System.
+- **OAuth2/OIDC Enterprise**: Authentication and authorization.
 - **SHADCN/UI**: Primary UI component library.
-- **Radix UI**: Provides accessible component primitives.
+- **Radix UI**: Accessible component primitives.
 - **Lucide React**: Icon library.
-- **TanStack React Query**: For server state management and data fetching.
-- **React Hook Form**: Handles form management and validation.
+- **TanStack React Query**: Server state management.
+- **React Hook Form**: Form management and validation.
 - **Vite**: Frontend build tool.
-- **Drizzle Kit**: For database schema management.
+- **Drizzle Kit**: Database schema management.
 - **PostCSS**: CSS pre-processor.
 - **ESBuild**: Server-side code bundling.
 - **Nginx**: Reverse proxy.

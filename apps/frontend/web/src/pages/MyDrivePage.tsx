@@ -187,7 +187,7 @@ function FolderTreeItem({
               onClick={(e) => e.stopPropagation()}
               data-testid={`folder-tree-menu-${folder.id}`}
             >
-              <MoreVertical className="w-3 h-3 text-slate-700" />
+              <MoreVertical className="w-3 h-3 text-slate-900" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -276,7 +276,7 @@ function FolderTreeItem({
                       onClick={(e) => e.stopPropagation()}
                       data-testid={`file-tree-menu-${obj.id}`}
                     >
-                      <MoreVertical className="w-3 h-3" />
+                      <MoreVertical className="w-3 h-3 text-slate-900" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
@@ -448,7 +448,7 @@ function FolderTreeNavigator({
                   onClick={(e) => e.stopPropagation()}
                   data-testid={`root-file-menu-${obj.id}`}
                 >
-                  <MoreVertical className="w-3 h-3" />
+                  <MoreVertical className="w-3 h-3 text-slate-900" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -647,7 +647,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   });
 
   const createFolderMutation = useMutation({
-    mutationFn: async (data: { name: string; parentFolderId: string | null }) => {
+    mutationFn: async (data: { name: string; parentId: string | null }) => {
       return apiRequest('/api/storage/folders', {
         method: 'POST',
         body: JSON.stringify(data)
@@ -1807,7 +1807,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewFolderDialogOpen(false)}>Annulla</Button>
             <Button 
-              onClick={() => createFolderMutation.mutate({ name: newFolderName, parentFolderId: currentFolderId })}
+              onClick={() => createFolderMutation.mutate({ name: newFolderName, parentId: currentFolderId })}
               disabled={!newFolderName.trim() || createFolderMutation.isPending}
               className="bg-orange-500 hover:bg-orange-600"
               data-testid="button-create-folder"
