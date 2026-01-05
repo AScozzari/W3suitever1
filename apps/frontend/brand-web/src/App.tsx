@@ -12,6 +12,7 @@ import DeployCenterPage from "./pages/DeployCenterPage";
 import CommitBrowser from "./pages/CommitBrowser";
 import DeployStatus from "./pages/DeployStatus";
 import ReadyQueue from "./pages/ReadyQueue";
+import CloudStoragePage from "./pages/CloudStoragePage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
@@ -73,6 +74,9 @@ function Routes() {
       </Route>
       <Route path="/management">
         <BrandTenantWrapper params={null}><Management /></BrandTenantWrapper>
+      </Route>
+      <Route path="/cloud-storage">
+        <BrandTenantWrapper params={null}><CloudStoragePage /></BrandTenantWrapper>
       </Route>
       <Route path="/organizations/:orgId">
         <BrandTenantWrapper params={null}><OrganizationDetail /></BrandTenantWrapper>

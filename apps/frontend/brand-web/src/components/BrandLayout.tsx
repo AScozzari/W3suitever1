@@ -13,7 +13,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
   LogOut, HelpCircle, MapPin, UserCircle, Store, Building2,
-  Megaphone, Cog, Globe, Moon, Sun, Brain, Package, GitBranch
+  Megaphone, Cog, Globe, Moon, Sun, Brain, Package, GitBranch, Cloud
 } from 'lucide-react';
 
 // Palette colori W3 Suite - Coerente e Professionale
@@ -141,6 +141,13 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       icon: Building2,
       path: '/management',
       description: 'Gestione enterprise multi-tenant'
+    },
+    {
+      id: 'cloud-storage',
+      name: 'Cloud Storage',
+      icon: Cloud,
+      path: '/cloud-storage',
+      description: 'Gestione AWS S3 centralizzata'
     }
   ];
 
