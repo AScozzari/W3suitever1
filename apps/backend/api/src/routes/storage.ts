@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { requirePermission } from '../middleware/tenant';
-import { storageService, StorageServiceContext } from '../services/storage.service';
+import { storageService, StorageServiceContext, initAWSStorageIfConfigured, getAWSContext } from '../services/storage.service';
 
 const router = Router();
 const upload = multer({ 
@@ -234,6 +234,173 @@ router.get('/serve', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error serving file:', error);
     res.status(403).json({ error: error.message });
+  }
+});
+
+// ==================== PRESIGNED URLs (AWS S3) ====================
+
+/**
+ * POST /storage/presigned/upload
+ * Generate a presigned upload URL for direct browser-to-S3 upload
+ * Body: { fileName, mimeType, category?, expiresInSeconds?, folderId? }
+ * Returns: { url, objectKey, expiresAt, method }
+ */
+router.post('/presigned/upload', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { fileName, mimeType, category, expiresInSeconds, folderId } = req.body;
+    
+    if (!fileName) {
+      return res.status(400).json({ error: 'fileName is required' });
+    }
+    
+    const aws = await initAWSStorageIfConfigured();
+    if (!aws || !aws.isConfigured()) {
+      return res.status(503).json({ 
+        error: 'AWS S3 not configured', 
+        message: 'Presigned uploads require AWS S3 configuration. Use direct upload endpoint instead.',
+        fallbackEndpoint: '/api/storage/upload/direct'
+      });
+    }
+    
+    const awsCtx = getAWSContext(ctx);
+    const objectKey = aws.generateObjectKey(awsCtx, {
+      fileName,
+      category: category || 'general',
+      scope: 'user',
+    });
+    
+    const expiry = Math.min(Math.max(expiresInSeconds || 900, 60), 3600);
+    
+    const result = await aws.getPresignedUploadUrl(awsCtx, objectKey, {
+      expiresInSeconds: expiry,
+      contentType: mimeType,
+    });
+    
+    res.json({
+      url: result.url,
+      objectKey,
+      expiresAt: result.expiresAt,
+      method: result.method,
+      fileName,
+      mimeType,
+      category: category || 'general',
+      folderId,
+      instructions: {
+        method: 'PUT',
+        headers: {
+          'Content-Type': mimeType,
+        },
+        note: 'Upload the file directly to this URL using PUT method. After upload completes, call POST /storage/presigned/confirm to register the object in the database.',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error generating presigned upload URL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /storage/presigned/confirm
+ * Confirm a presigned upload completed and register object in database
+ * Body: { objectKey, fileName, mimeType, sizeBytes, category?, folderId?, objectType? }
+ */
+router.post('/presigned/confirm', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { objectKey, fileName, mimeType, sizeBytes, category, folderId, objectType, linkedResourceType, linkedResourceId } = req.body;
+    
+    if (!objectKey || !fileName || !sizeBytes) {
+      return res.status(400).json({ error: 'objectKey, fileName, and sizeBytes are required' });
+    }
+    
+    const aws = await initAWSStorageIfConfigured();
+    if (!aws || !aws.isConfigured()) {
+      return res.status(503).json({ error: 'AWS S3 not configured' });
+    }
+    
+    const awsCtx = getAWSContext(ctx);
+    if (!aws.validatePrefixAccess(awsCtx, objectKey)) {
+      return res.status(403).json({ error: 'Access denied to this object path' });
+    }
+    
+    const object = await storageService.registerPresignedUpload(ctx, {
+      objectKey,
+      fileName,
+      mimeType,
+      sizeBytes,
+      category: category || 'general',
+      folderId,
+      objectType: objectType || 'file',
+      linkedResourceType,
+      linkedResourceId,
+    });
+    
+    res.status(201).json(object);
+  } catch (error: any) {
+    console.error('Error confirming presigned upload:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /storage/presigned/download
+ * Generate a presigned download URL for direct S3-to-browser download
+ * Body: { objectId, expiresInSeconds?, inline? }
+ * Returns: { url, expiresAt, method, fileName, mimeType }
+ */
+router.post('/presigned/download', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { objectId, expiresInSeconds, inline, versionId } = req.body;
+    
+    if (!objectId) {
+      return res.status(400).json({ error: 'objectId is required' });
+    }
+    
+    const result = await storageService.getPresignedDownloadUrl(ctx, objectId, {
+      expiresInSeconds: expiresInSeconds ? Math.min(Math.max(expiresInSeconds, 60), 86400) : 3600,
+      inline: inline || false,
+      versionId,
+    });
+    
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error generating presigned download URL:', error);
+    res.status(403).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/presigned/config
+ * Get presigned URL configuration and availability status
+ */
+router.get('/presigned/config', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const aws = await initAWSStorageIfConfigured();
+    const isConfigured = aws && aws.isConfigured();
+    
+    res.json({
+      available: isConfigured,
+      provider: isConfigured ? 's3' : 'replit',
+      limits: {
+        uploadExpiryMin: 60,
+        uploadExpiryMax: 3600,
+        uploadExpiryDefault: 900,
+        downloadExpiryMin: 60,
+        downloadExpiryMax: 86400,
+        downloadExpiryDefault: 3600,
+      },
+      features: {
+        directUpload: isConfigured,
+        directDownload: isConfigured,
+        multipartUpload: isConfigured,
+        versionedDownload: isConfigured,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error getting presigned config:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

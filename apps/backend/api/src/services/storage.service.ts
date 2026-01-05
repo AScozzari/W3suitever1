@@ -26,7 +26,7 @@ let awsStorageInitialized = false;
 // Object Storage bucket ID from environment
 const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
 
-async function initAWSStorageIfConfigured(): Promise<AWSStorageService | null> {
+export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | null> {
   if (awsStorageInitialized) return awsStorageService;
   awsStorageInitialized = true;
 
@@ -60,7 +60,7 @@ async function initAWSStorageIfConfigured(): Promise<AWSStorageService | null> {
   return awsStorageService;
 }
 
-function getAWSContext(ctx: StorageServiceContext): TenantStorageContext {
+export function getAWSContext(ctx: StorageServiceContext): TenantStorageContext {
   return {
     tenantId: ctx.tenantId,
     userId: ctx.userId,
@@ -740,6 +740,114 @@ export const storageService = {
       buffer: fileBuffer,
       mimeType: object.mimeType,
       fileName: object.name,
+    };
+  },
+
+  async registerPresignedUpload(ctx: StorageServiceContext, input: {
+    objectKey: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    category?: string;
+    folderId?: string;
+    objectType?: string;
+    linkedResourceType?: string;
+    linkedResourceId?: string;
+  }) {
+    const quotaCheck = await this.checkQuota(ctx, input.sizeBytes);
+    if (!quotaCheck.allowed) {
+      throw new Error(`Quota exceeded: ${quotaCheck.message}`);
+    }
+
+    const extension = input.fileName.split('.').pop() || '';
+
+    const [storageObject] = await db.insert(storageObjects).values({
+      tenantId: ctx.tenantId,
+      name: input.fileName,
+      originalName: input.fileName,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+      extension,
+      objectKey: input.objectKey,
+      folderId: input.folderId,
+      objectType: input.objectType || 'file',
+      category: (input.category || 'general') as any,
+      scopeLevel: 'user',
+      ownerUserId: ctx.userId,
+      contentHash: crypto.createHash('sha256').update(input.objectKey + Date.now()).digest('hex'),
+      linkedResourceType: input.linkedResourceType,
+      linkedResourceId: input.linkedResourceId,
+      createdByUserId: ctx.userId,
+      storageProvider: 's3',
+    }).returning();
+
+    await db.insert(storageAcl).values({
+      tenantId: ctx.tenantId,
+      objectId: storageObject.id,
+      subjectUserId: ctx.userId,
+      role: 'owner',
+      grantedByUserId: ctx.userId,
+    });
+
+    await this.updateQuotaUsage(ctx, input.sizeBytes);
+
+    await this.logAuditEvent(ctx, 'presigned_upload_confirmed', { objectId: storageObject.id, objectKey: input.objectKey });
+
+    return storageObject;
+  },
+
+  async getPresignedDownloadUrl(ctx: StorageServiceContext, objectId: string, options: {
+    expiresInSeconds?: number;
+    inline?: boolean;
+    versionId?: string;
+  } = {}) {
+    const hasAccess = await this.checkAccess(ctx, objectId, 'viewer');
+    if (!hasAccess) {
+      throw new Error('Access denied');
+    }
+
+    const [object] = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.id, objectId),
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      )).limit(1);
+
+    if (!object) {
+      throw new Error('Object not found');
+    }
+
+    const aws = await initAWSStorageIfConfigured();
+    
+    if (aws && aws.isConfigured()) {
+      const awsCtx = getAWSContext(ctx);
+      const disposition = options.inline 
+        ? `inline; filename="${object.name}"` 
+        : `attachment; filename="${object.name}"`;
+      
+      const presigned = await aws.getPresignedDownloadUrl(awsCtx, object.objectKey, {
+        expiresInSeconds: options.expiresInSeconds || 3600,
+        responseContentDisposition: disposition,
+        versionId: options.versionId,
+      });
+      
+      await this.logAuditEvent(ctx, 'generate_presigned_download', { objectId, provider: 's3' });
+      
+      return {
+        url: presigned.url,
+        expiresAt: presigned.expiresAt,
+        method: presigned.method,
+        mimeType: object.mimeType,
+        fileName: object.name,
+        sizeBytes: object.sizeBytes,
+      };
+    }
+
+    const result = await this.getSignedUrl(ctx, objectId);
+    return {
+      ...result,
+      method: 'GET' as const,
+      sizeBytes: object.sizeBytes,
     };
   },
 
