@@ -372,10 +372,18 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                    activeSection === 'shared' ? sharedData?.objects : 
                    objectsData) || [];
 
+    // CRITICAL: Filter by current folder - show only direct children
+    if (activeSection === 'my-files') {
+      // Filter folders: show only those whose parentFolderId matches currentFolderId
+      folders = folders.filter(f => f.parentFolderId === currentFolderId);
+      // Filter objects: show only those whose folderId matches currentFolderId
+      objects = objects.filter(o => o.folderId === currentFolderId);
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       folders = folders.filter(f => f.name.toLowerCase().includes(query));
-      objects = objects.filter(o => o.displayName.toLowerCase().includes(query));
+      objects = objects.filter(o => (o.displayName || o.name || '').toLowerCase().includes(query));
     }
 
     if (activeSection === 'favorites') {
@@ -389,14 +397,16 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     });
 
     objects.sort((a, b) => {
-      if (sortBy === 'name') return sortOrder === 'asc' ? a.displayName.localeCompare(b.displayName) : b.displayName.localeCompare(a.displayName);
+      const aName = a.displayName || a.name || '';
+      const bName = b.displayName || b.name || '';
+      if (sortBy === 'name') return sortOrder === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
       if (sortBy === 'date') return sortOrder === 'asc' ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'size') return sortOrder === 'asc' ? a.sizeBytes - b.sizeBytes : b.sizeBytes - a.sizeBytes;
+      if (sortBy === 'size') return sortOrder === 'asc' ? (a.sizeBytes || 0) - (b.sizeBytes || 0) : (b.sizeBytes || 0) - (a.sizeBytes || 0);
       return 0;
     });
 
     return { folders, objects };
-  }, [foldersData, objectsData, recentData, sharedData, searchQuery, sortBy, sortOrder, activeSection]);
+  }, [foldersData, objectsData, recentData, sharedData, searchQuery, sortBy, sortOrder, activeSection, currentFolderId]);
 
   const handleFolderClick = useCallback((folderId: string, folderName?: string) => {
     const folder = foldersData?.find(f => f.id === folderId);
