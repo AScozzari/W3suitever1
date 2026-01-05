@@ -776,9 +776,10 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                   ))}
 
                   {filteredAndSortedItems.objects.map((obj) => {
-                    const FileIcon = getFileIcon(obj.mimeType);
-                    const iconColor = getCategoryColor(obj.mimeType);
-                    const fileExtension = obj.displayName.includes('.') ? obj.displayName.split('.').pop()?.toUpperCase() : 'N/A';
+                    const FileIcon = getFileIcon(obj.mimeType || 'application/octet-stream');
+                    const iconColor = getCategoryColor(obj.mimeType || 'application/octet-stream');
+                    const displayName = obj.displayName || obj.name || 'File senza nome';
+                    const fileExtension = displayName.includes('.') ? displayName.split('.').pop()?.toUpperCase() : 'N/A';
                     return (
                       <Tooltip key={obj.id}>
                         <TooltipTrigger asChild>
@@ -808,7 +809,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> Anteprima</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, displayName); }}>
                                     <Share2 className="w-4 h-4 mr-2" /> Condividi
                                   </DropdownMenuItem>
                                   <DropdownMenuItem><Download className="w-4 h-4 mr-2" /> Scarica</DropdownMenuItem>
@@ -839,19 +840,19 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                               <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center mb-3`}>
                                 <FileIcon className={`w-6 h-6 ${iconColor}`} />
                               </div>
-                              <p className="font-medium text-sm text-slate-700 truncate w-full">{obj.displayName}</p>
-                              <p className="text-xs text-slate-400 mt-1">{formatBytes(obj.sizeBytes)}</p>
+                              <p className="font-medium text-sm text-slate-700 truncate w-full">{displayName}</p>
+                              <p className="text-xs text-slate-400 mt-1">{formatBytes(obj.sizeBytes || 0)}</p>
                             </div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
                           <div className="text-xs space-y-1">
-                            <p className="font-medium">{obj.displayName}</p>
-                            <p className="text-muted-foreground">Tipo: {obj.mimeType}</p>
+                            <p className="font-medium">{displayName}</p>
+                            <p className="text-muted-foreground">Tipo: {obj.mimeType || 'Sconosciuto'}</p>
                             <p className="text-muted-foreground">Estensione: {fileExtension}</p>
-                            <p className="text-muted-foreground">Dimensione: {formatBytes(obj.sizeBytes)}</p>
-                            <p className="text-muted-foreground">Categoria: {obj.category}</p>
-                            <p className="text-muted-foreground">Modificato: {new Date(obj.updatedAt).toLocaleDateString('it-IT')}</p>
+                            <p className="text-muted-foreground">Dimensione: {formatBytes(obj.sizeBytes || 0)}</p>
+                            <p className="text-muted-foreground">Categoria: {obj.category || 'Altro'}</p>
+                            <p className="text-muted-foreground">Modificato: {obj.updatedAt ? new Date(obj.updatedAt).toLocaleDateString('it-IT') : 'N/A'}</p>
                             {obj.ownerName && <p className="text-muted-foreground">Proprietario: {obj.ownerName}</p>}
                             {obj.isShared && <p className="text-purple-600">Condiviso con {obj.shareCount || 1} utenti</p>}
                           </div>
