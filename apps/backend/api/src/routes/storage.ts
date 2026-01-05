@@ -278,6 +278,60 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
   }
 });
 
+// Serve static avatar files from filesystem (public endpoint - no auth required)
+router.get('/avatars/serve/:tenantId/:filename', async (req: Request, res: Response) => {
+  try {
+    const { tenantId, filename } = req.params;
+    
+    // Validate filename to prevent path traversal
+    if (!filename || filename.includes('..') || filename.includes('/')) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
+    
+    // Check multiple possible locations for avatar files
+    const possiblePaths = [
+      path.join(process.cwd(), 'apps/frontend/web/dist/avatars', tenantId, filename),
+      path.join(process.cwd(), 'apps/frontend/web/dist/avatars', filename),
+      path.join(process.cwd(), 'public/avatars', tenantId, filename),
+      path.join(process.cwd(), 'public/avatars', filename),
+      path.join('/var/www/w3suite/apps/frontend/web/dist/avatars', tenantId, filename),
+      path.join('/var/www/w3suite/apps/frontend/web/dist/avatars', filename),
+    ];
+    
+    let filePath: string | null = null;
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        filePath = p;
+        break;
+      }
+    }
+    
+    if (!filePath) {
+      console.log('[AVATAR-SERVE] File not found, tried paths:', possiblePaths);
+      return res.status(404).json({ error: 'Avatar not found' });
+    }
+    
+    // Determine MIME type
+    const ext = path.extname(filename).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+    
+    const contentType = mimeTypes[ext] || 'image/png';
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    res.sendFile(filePath);
+  } catch (error: any) {
+    console.error('Error serving avatar:', error);
+    res.status(500).json({ error: 'Failed to serve avatar' });
+  }
+});
+
 // ==================== TRASH & DELETE ====================
 
 router.post('/objects/:objectId/trash', requirePermission('storage:write'), async (req: Request, res: Response) => {
