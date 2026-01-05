@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import Layout from '../components/Layout';
+import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -411,12 +412,10 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const handleFileClick = useCallback(async (object: StorageObject) => {
     try {
-      const response = await fetch(`/api/storage/objects/${object.id}/signed-url`, {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Errore');
-      const { url } = await response.json();
-      window.open(url, '_blank');
+      const data = await apiRequest(`/api/storage/objects/${object.id}/signed-url`);
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
     } catch {
       toast({ title: 'Errore', description: 'Impossibile aprire il file', variant: 'destructive' });
     }
