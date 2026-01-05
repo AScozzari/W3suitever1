@@ -2,6 +2,7 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useLocation, Switch, Route, Redirect } from 'wouter';
 import { setCurrentTenantId } from '../lib/queryClient';
 import { TenantProvider } from '../contexts/TenantContext';
+import { StoreProvider } from '../contexts/StoreContext';
 import { useAuth } from '../hooks/useAuth';
 
 // 🚀 PERFORMANCE: Lazy load all pages for code splitting
@@ -232,7 +233,9 @@ export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
   // Valid tenant - render routes with automatic tenant context
   return (
     <TenantProvider>
-      <TenantRoutes tenantSlug={tenantSlug} />
+      <StoreProvider>
+        <TenantRoutes tenantSlug={tenantSlug} />
+      </StoreProvider>
     </TenantProvider>
   );
 };

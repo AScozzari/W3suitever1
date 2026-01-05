@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useIdleDetection } from '@/contexts/IdleDetectionContext';
 import { useTenantNavigation } from '@/hooks/useTenantSafety';
 import { useUserAvatar } from '@/hooks/useUserAvatar';
+import { useStore } from '@/contexts/StoreContext';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
@@ -154,7 +155,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [isTablet, setIsTablet] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [taskDetailOpen, setTaskDetailOpen] = useState(false);
@@ -167,6 +167,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const { currentTenant } = useTenant();
   
   const { avatarUrl: userAvatarUrl, initials: userInitials, gradient: userGradient, hasImage: userHasAvatar } = useUserAvatar(user);
+  
+  // Store selection from global context
+  const { stores, selectedStore, setSelectedStore, isLoading: storesLoading } = useStore();
   
   // ✅ Sicuro: Ottieni e valida tenant dal path URL con fallback robusto
   const getTenantFromUrl = () => {
@@ -200,29 +203,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   }, [location]);
 
-  // Query per ottenere i punti vendita a cui l'utente ha accesso (scope)
-  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery<{
-    success: boolean;
-    data: Array<{
-      id: string;
-      storeId: string;
-      name: string;
-      code: string;
-      status: string;
-      address: string;
-      city: string;
-      province: string;
-      isPrimary: boolean;
-    }>;
-  }>({
-    queryKey: ["/api/me/stores"],
-    enabled: !!user,
-    retry: 2
-  });
-
-  // Ensure stores is always an array (from the API response structure)
-  const stores = Array.isArray(storesResponse?.data) ? storesResponse.data : [];
-
   // Check token validity se non c'è token
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -254,15 +234,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   }, []);
 
   // Auto-login removed - manual login required
-
-  // Imposta store primario come selezionato (o primo store se nessuno primario)
-  useEffect(() => {
-    if (stores && stores.length > 0 && !selectedStore) {
-      // Priorità: store con isPrimary = true, altrimenti primo store
-      const primaryStore = stores.find((s) => s.isPrimary);
-      setSelectedStore(primaryStore || stores[0]);
-    }
-  }, [stores, selectedStore]);
   
   // Tab attiva per workspace
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
