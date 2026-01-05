@@ -1287,7 +1287,7 @@ export const storageService = {
       { name: 'Avatar', icon: 'user-circle', category: 'avatars' },
       { name: 'Feed', icon: 'rss', category: 'feed' },
       { name: 'Documenti', icon: 'file-text', category: 'documents' },
-      { name: 'Condivisi', icon: 'share-2', category: 'general' },
+      { name: 'Condivisi', icon: 'share-2', category: 'shared' },
     ];
 
     const existingFolders = await db.select().from(storageFolders)
