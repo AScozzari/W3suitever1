@@ -1,0 +1,444 @@
+17content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Wa @ index-DzKw24ZD.js:41
+Xe @ index-DzKw24ZD.js:41
+Wa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ya @ index-DzKw24ZD.js:41
+E @ index-DzKw24ZD.js:26
+ut @ index-DzKw24ZD.js:26Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Wa @ index-DzKw24ZD.js:41
+Xe @ index-DzKw24ZD.js:41
+Wa @ index-DzKw24ZD.js:41
+Xe @ index-DzKw24ZD.js:41
+Wa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/config 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/allocations 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/analytics 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/config 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/allocations 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/analytics 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Wa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ya @ index-DzKw24ZD.js:41
+E @ index-DzKw24ZD.js:26
+ut @ index-DzKw24ZD.js:26Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/config 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/allocations 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+App-Cr1EZnFI.js:1  GET https://w3suite.it/brand-api/storage/analytics 500 (Internal Server Error)
+yt @ App-Cr1EZnFI.js:1
+queryFn @ App-Cr1EZnFI.js:1
+o @ App-Cr1EZnFI.js:1
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.then
+(anonime) @ App-Cr1EZnFI.js:1
+Promise.catch
+g @ App-Cr1EZnFI.js:1
+start @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
