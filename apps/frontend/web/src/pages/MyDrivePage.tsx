@@ -866,7 +866,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <TooltipProvider delayDuration={300}>
-    <div className="h-full flex flex-col">
+    <div className="h-[calc(100vh-4rem)] min-h-[calc(100vh-4rem)] flex flex-col">
       <input
         ref={fileInputRef}
         type="file"

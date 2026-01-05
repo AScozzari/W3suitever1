@@ -1,0 +1,340 @@
+4, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:14, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:14, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:15, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:15, Token expires: 11:26:43
+2index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:15, Token expires: 11:26:43
+index-CBFRmbAT.js:2  GET https://w3suite.it/api/chat/channels/055c1ecf-1074-4563-bad2-d9c94c5bc5b2/messages 500 (Internal Server Error)
+Bo @ index-CBFRmbAT.js:2
+await in Bo
+queryFn @ EditChannelDialog-Cn2Urvf-.js:1
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32
+setTimeout
+as @ query-i2gUkQ5G.js:1
+h @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+refetchQueries @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+invalidateQueries @ query-i2gUkQ5G.js:1
+onSuccess @ EditChannelDialog-Cn2Urvf-.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+K @ EditChannelDialog-Cn2Urvf-.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:16, Token expires: 11:26:43
+index-CBFRmbAT.js:2  GET https://w3suite.it/api/chat/channels/055c1ecf-1074-4563-bad2-d9c94c5bc5b2/messages 500 (Internal Server Error)
+Bo @ index-CBFRmbAT.js:2
+await in Bo
+queryFn @ EditChannelDialog-Cn2Urvf-.js:1
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32
+setTimeout
+as @ query-i2gUkQ5G.js:1
+h @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+refetchQueries @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+invalidateQueries @ query-i2gUkQ5G.js:1
+onSuccess @ EditChannelDialog-Cn2Urvf-.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+K @ EditChannelDialog-Cn2Urvf-.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:17, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:19, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:19, Token expires: 11:26:43
+index-CBFRmbAT.js:2  GET https://w3suite.it/api/chat/channels/055c1ecf-1074-4563-bad2-d9c94c5bc5b2/messages 500 (Internal Server Error)
+Bo @ index-CBFRmbAT.js:2
+await in Bo
+queryFn @ EditChannelDialog-Cn2Urvf-.js:1
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32
+setTimeout
+as @ query-i2gUkQ5G.js:1
+h @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+refetchQueries @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+invalidateQueries @ query-i2gUkQ5G.js:1
+onSuccess @ EditChannelDialog-Cn2Urvf-.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+K @ EditChannelDialog-Cn2Urvf-.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:20, Token expires: 11:26:43
+index-CBFRmbAT.js:2  GET https://w3suite.it/api/chat/channels/055c1ecf-1074-4563-bad2-d9c94c5bc5b2/messages 500 (Internal Server Error)
+Bo @ index-CBFRmbAT.js:2
+await in Bo
+queryFn @ EditChannelDialog-Cn2Urvf-.js:1
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32
+setTimeout
+as @ query-i2gUkQ5G.js:1
+h @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+refetchQueries @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+invalidateQueries @ query-i2gUkQ5G.js:1
+onSuccess @ EditChannelDialog-Cn2Urvf-.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+K @ EditChannelDialog-Cn2Urvf-.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:21, Token expires: 11:26:43
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:23, Token expires: 11:26:43
+index-CBFRmbAT.js:2  GET https://w3suite.it/api/chat/channels/055c1ecf-1074-4563-bad2-d9c94c5bc5b2/messages 500 (Internal Server Error)
+Bo @ index-CBFRmbAT.js:2
+await in Bo
+queryFn @ EditChannelDialog-Cn2Urvf-.js:1
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32
+setTimeout
+as @ query-i2gUkQ5G.js:1
+h @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+refetchQueries @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+invalidateQueries @ query-i2gUkQ5G.js:1
+onSuccess @ EditChannelDialog-Cn2Urvf-.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+K @ EditChannelDialog-Cn2Urvf-.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-CBFRmbAT.js:2 🔍 Token expiry check: Current time: 11:12:23, Token expires: 11:26:43
