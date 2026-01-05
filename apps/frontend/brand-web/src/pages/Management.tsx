@@ -62,19 +62,19 @@ const COLORS = {
 // Glassmorphism styles aligned with W3 Suite
 const glassStyle = {
   background: 'hsla(255, 255, 255, 0.08)',
-  backdropFilter: 'blur(24px) saturate(140%)',
-  WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+  backdropFilter: 'blur(1.5rem) saturate(140%)',
+  WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
   border: '1px solid hsla(255, 255, 255, 0.12)',
-  borderRadius: '16px',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  borderRadius: '1rem',
+  boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
 const cardStyle = {
   background: 'white',
-  borderRadius: '16px',
+  borderRadius: '1rem',
   overflow: 'hidden',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
   border: '1px solid #e5e7eb',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
@@ -106,8 +106,8 @@ const AnimatedCounter = ({ value, duration = 2000 }: { value: number; duration?:
 const PulseIndicator = ({ color = COLORS.semantic.success }: { color?: string }) => (
   <span style={{
     display: 'inline-block',
-    width: '8px',
-    height: '8px',
+    width: '0.5rem',
+    height: '0.5rem',
     borderRadius: '50%',
     background: color,
     position: 'relative',
@@ -116,8 +116,8 @@ const PulseIndicator = ({ color = COLORS.semantic.success }: { color?: string })
       position: 'absolute',
       top: 0,
       left: 0,
-      width: '8px',
-      height: '8px',
+      width: '0.5rem',
+      height: '0.5rem',
       borderRadius: '50%',
       background: color,
       animation: 'pulse 2s infinite',
@@ -765,10 +765,10 @@ export default function Management() {
           padding: '64px 24px', 
           textAlign: 'center',
           ...cardStyle,
-          margin: '24px',
+          margin: '1.5rem',
         }}>
-          <Shield size={64} style={{ color: COLORS.neutral.medium, marginBottom: '16px' }} />
-          <h2 style={{ color: COLORS.neutral.dark, marginBottom: '8px' }}>
+          <Shield size={64} style={{ color: COLORS.neutral.medium, marginBottom: '1rem' }} />
+          <h2 style={{ color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
             Accesso Non Autorizzato
           </h2>
           <p style={{ color: COLORS.neutral.medium }}>
@@ -800,8 +800,8 @@ export default function Management() {
         <div style={{
           ...cardStyle,
           width: '90%',
-          maxWidth: '500px',
-          padding: '32px',
+          maxWidth: '31.25rem',
+          padding: '2rem',
           maxHeight: '80vh',
           overflowY: 'auto',
           animation: 'slideUp 0.3s ease'
@@ -810,10 +810,10 @@ export default function Management() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '24px'
+            marginBottom: '1.5rem'
           }}>
             <h3 style={{
-              fontSize: '20px',
+              fontSize: '1.25rem',
               fontWeight: 700,
               color: COLORS.neutral.dark
             }}>
@@ -825,8 +825,8 @@ export default function Management() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '8px',
-                borderRadius: '8px',
+                padding: '0.5rem',
+                borderRadius: '0.5rem',
                 color: COLORS.neutral.medium,
                 transition: 'all 0.2s ease',
               }}
@@ -838,14 +838,14 @@ export default function Management() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 color: COLORS.neutral.dark,
-                marginBottom: '8px'
+                marginBottom: '0.5rem'
               }}>
                 Nome Organizzazione *
               </label>
@@ -855,12 +855,12 @@ export default function Management() {
                 onChange={(e) => setOrganizationForm(prev => ({ ...prev, name: e.target.value }))}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   background: COLORS.neutral.white,
                   color: COLORS.neutral.dark,
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   transition: 'all 0.2s ease',
                   outline: 'none'
                 }}
@@ -873,10 +873,10 @@ export default function Management() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 color: COLORS.neutral.dark,
-                marginBottom: '8px'
+                marginBottom: '0.5rem'
               }}>
                 Slug
               </label>
@@ -887,12 +887,12 @@ export default function Management() {
                 placeholder="Lascia vuoto per auto-generare dal nome"
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   background: COLORS.neutral.white,
                   color: COLORS.neutral.dark,
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   transition: 'all 0.2s ease',
                   outline: 'none'
                 }}
@@ -905,10 +905,10 @@ export default function Management() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 color: COLORS.neutral.dark,
-                marginBottom: '8px'
+                marginBottom: '0.5rem'
               }}>
                 Stato
               </label>
@@ -917,12 +917,12 @@ export default function Management() {
                 onChange={(e) => setOrganizationForm(prev => ({ ...prev, status: e.target.value }))}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   background: COLORS.neutral.white,
                   color: COLORS.neutral.dark,
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   transition: 'all 0.2s ease',
                   outline: 'none'
                 }}
@@ -939,10 +939,10 @@ export default function Management() {
             <div>
               <label style={{
                 display: 'block',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 color: COLORS.neutral.dark,
-                marginBottom: '8px'
+                marginBottom: '0.5rem'
               }}>
                 Note
               </label>
@@ -953,12 +953,12 @@ export default function Management() {
                 rows={3}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '0.75rem',
                   border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   background: COLORS.neutral.white,
                   color: COLORS.neutral.dark,
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   transition: 'all 0.2s ease',
                   outline: 'none',
                   resize: 'vertical',
@@ -973,8 +973,8 @@ export default function Management() {
 
           <div style={{
             display: 'flex',
-            gap: '12px',
-            marginTop: '24px',
+            gap: '0.75rem',
+            marginTop: '1.5rem',
             justifyContent: 'flex-end'
           }}>
             <button
@@ -982,11 +982,11 @@ export default function Management() {
               style={{
                 padding: '12px 24px',
                 border: `1px solid ${COLORS.neutral.lighter}`,
-                borderRadius: '8px',
+                borderRadius: '0.5rem',
                 background: COLORS.neutral.white,
                 color: COLORS.neutral.dark,
                 cursor: 'pointer',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 transition: 'all 0.2s ease'
               }}
@@ -1008,14 +1008,14 @@ export default function Management() {
               style={{
                 padding: '12px 24px',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '0.5rem',
                 background: organizationForm.name ? COLORS.gradients.orange : COLORS.neutral.light,
                 color: 'white',
                 cursor: organizationForm.name ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                fontSize: '14px',
+                gap: '0.5rem',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 transition: 'all 0.2s ease'
               }}
@@ -1095,19 +1095,19 @@ export default function Management() {
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      gap: '24px',
+      gap: '1.5rem',
       animation: 'fadeInUp 0.5s ease'
     }}>
       {/* Audit Filters */}
       <div style={{
         ...cardStyle,
-        padding: '24px'
+        padding: '1.5rem'
       }}>
         <h3 style={{
-          fontSize: '18px',
+          fontSize: '1.125rem',
           fontWeight: 700,
           color: COLORS.neutral.dark,
-          marginBottom: '16px'
+          marginBottom: '1rem'
         }}>
           Filtri Audit Log
         </h3>
@@ -1115,7 +1115,7 @@ export default function Management() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px'
+          gap: '1rem'
         }}>
           <input
             type="text"
@@ -1123,11 +1123,11 @@ export default function Management() {
             value={auditFilters.userEmail}
             onChange={(e) => setAuditFilters(prev => ({ ...prev, userEmail: e.target.value }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               transition: 'all 0.2s ease',
               outline: 'none'
             }}
@@ -1140,11 +1140,11 @@ export default function Management() {
             value={auditFilters.action}
             onChange={(e) => setAuditFilters(prev => ({ ...prev, action: e.target.value }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               outline: 'none'
@@ -1166,11 +1166,11 @@ export default function Management() {
             value={auditFilters.dateFrom}
             onChange={(e) => setAuditFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               transition: 'all 0.2s ease',
               outline: 'none'
             }}
@@ -1184,11 +1184,11 @@ export default function Management() {
             value={auditFilters.dateTo}
             onChange={(e) => setAuditFilters(prev => ({ ...prev, dateTo: e.target.value }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               transition: 'all 0.2s ease',
               outline: 'none'
             }}
@@ -1202,19 +1202,19 @@ export default function Management() {
       {/* Audit Logs Table */}
       <div style={{
         ...cardStyle,
-        padding: '24px'
+        padding: '1.5rem'
       }}>
         <h3 style={{
-          fontSize: '18px',
+          fontSize: '1.125rem',
           fontWeight: 700,
           color: COLORS.neutral.dark,
-          marginBottom: '16px'
+          marginBottom: '1rem'
         }}>
           Log Attività
         </h3>
         
         {auditLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: '2.5rem' }}>
             <Loader2 size={32} className="animate-spin" style={{ color: COLORS.primary.orange }} />
           </div>
         ) : (
@@ -1226,40 +1226,40 @@ export default function Management() {
               <thead>
                 <tr>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Timestamp
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Utente
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Azione
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
@@ -1276,30 +1276,30 @@ export default function Management() {
                   onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.medium
                     }}>
                       {format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm:ss')}
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.dark
                     }}>
                       {log.userEmail}
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px'
+                      fontSize: '0.8125rem'
                     }}>
                       <span style={{
                         padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
+                        borderRadius: '0.75rem',
+                        fontSize: '0.75rem',
                         fontWeight: 500,
                         background: log.action === 'CREATE' ? `${COLORS.semantic.success}20` : 
                                    log.action === 'DELETE' ? `${COLORS.semantic.error}20` : 
@@ -1312,9 +1312,9 @@ export default function Management() {
                       </span>
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.dark
                     }}>
                       {log.resourceType}
@@ -1334,28 +1334,28 @@ export default function Management() {
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      gap: '24px',
+      gap: '1.5rem',
       animation: 'fadeInUp 0.5s ease'
     }}>
       {/* Back Navigation */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        marginBottom: '16px'
+        gap: '0.75rem',
+        marginBottom: '1rem'
       }}>
         <button
           onClick={handleBackToOrganizations}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '0.5rem',
             padding: '8px 16px',
             background: 'transparent',
             border: `1px solid ${COLORS.neutral.lighter}`,
-            borderRadius: '8px',
+            borderRadius: '0.5rem',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             color: COLORS.neutral.dark,
             transition: 'all 0.3s ease'
           }}
@@ -1369,11 +1369,11 @@ export default function Management() {
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          gap: '0.5rem'
         }}>
           <Building2 size={20} style={{ color: COLORS.primary.orange }} />
           <h2 style={{
-            fontSize: '20px',
+            fontSize: '1.25rem',
             fontWeight: 600,
             color: COLORS.neutral.dark,
             margin: 0
@@ -1387,14 +1387,14 @@ export default function Management() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '0.5rem',
             padding: '8px 16px',
             background: COLORS.gradients.orange,
             color: 'white',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '0.5rem',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontWeight: 600,
             transition: 'all 0.3s ease'
           }}
@@ -1411,18 +1411,18 @@ export default function Management() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px',
+          padding: '2.5rem',
           ...cardStyle
         }}>
           <Loader2 size={24} style={{ color: COLORS.primary.orange, animation: 'spin 1s linear infinite' }} />
-          <span style={{ marginLeft: '12px', color: COLORS.neutral.medium }}>
+          <span style={{ marginLeft: '0.75rem', color: COLORS.neutral.medium }}>
             Caricamento ragioni sociali...
           </span>
         </div>
       ) : (
         <div style={{
           ...cardStyle,
-          padding: '24px',
+          padding: '1.5rem',
           overflow: 'hidden'
         }}>
           {legalEntitiesData?.legalEntities?.length > 0 ? (
@@ -1430,12 +1430,12 @@ export default function Management() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${COLORS.neutral.lighter}` }}>
-                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Nome</th>
-                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Codice</th>
-                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Forma Giuridica</th>
-                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>P.IVA</th>
-                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>PEC</th>
-                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Stato</th>
+                    <th style={{ textAlign: 'left', padding: '0.75rem', color: COLORS.neutral.dark, fontWeight: 600 }}>Nome</th>
+                    <th style={{ textAlign: 'left', padding: '0.75rem', color: COLORS.neutral.dark, fontWeight: 600 }}>Codice</th>
+                    <th style={{ textAlign: 'left', padding: '0.75rem', color: COLORS.neutral.dark, fontWeight: 600 }}>Forma Giuridica</th>
+                    <th style={{ textAlign: 'left', padding: '0.75rem', color: COLORS.neutral.dark, fontWeight: 600 }}>P.IVA</th>
+                    <th style={{ textAlign: 'left', padding: '0.75rem', color: COLORS.neutral.dark, fontWeight: 600 }}>PEC</th>
+                    <th style={{ textAlign: 'left', padding: '0.75rem', color: COLORS.neutral.dark, fontWeight: 600 }}>Stato</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1444,16 +1444,16 @@ export default function Management() {
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
                       transition: 'background-color 0.2s ease'
                     }}>
-                      <td style={{ padding: '12px', color: COLORS.neutral.dark }}>{entity.nome}</td>
-                      <td style={{ padding: '12px', color: COLORS.neutral.medium, fontFamily: 'monospace' }}>{entity.codice}</td>
-                      <td style={{ padding: '12px', color: COLORS.neutral.dark }}>{entity.formaGiuridica}</td>
-                      <td style={{ padding: '12px', color: COLORS.neutral.medium, fontFamily: 'monospace' }}>{entity.pIva}</td>
-                      <td style={{ padding: '12px', color: COLORS.neutral.medium }}>{entity.pec}</td>
-                      <td style={{ padding: '12px' }}>
+                      <td style={{ padding: '0.75rem', color: COLORS.neutral.dark }}>{entity.nome}</td>
+                      <td style={{ padding: '0.75rem', color: COLORS.neutral.medium, fontFamily: 'monospace' }}>{entity.codice}</td>
+                      <td style={{ padding: '0.75rem', color: COLORS.neutral.dark }}>{entity.formaGiuridica}</td>
+                      <td style={{ padding: '0.75rem', color: COLORS.neutral.medium, fontFamily: 'monospace' }}>{entity.pIva}</td>
+                      <td style={{ padding: '0.75rem', color: COLORS.neutral.medium }}>{entity.pec}</td>
+                      <td style={{ padding: '0.75rem' }}>
                         <span style={{
                           padding: '4px 8px',
                           borderRadius: '4px',
-                          fontSize: '12px',
+                          fontSize: '0.75rem',
                           fontWeight: 600,
                           background: entity.stato === 'active' ? COLORS.semantic.success + '20' : COLORS.semantic.warning + '20',
                           color: entity.stato === 'active' ? COLORS.semantic.success : COLORS.semantic.warning
@@ -1469,23 +1469,23 @@ export default function Management() {
           ) : (
             <div style={{
               textAlign: 'center',
-              padding: '40px',
+              padding: '2.5rem',
               color: COLORS.neutral.medium
             }}>
-              <Building2 size={48} style={{ color: COLORS.neutral.light, marginBottom: '16px' }} />
-              <h3 style={{ color: COLORS.neutral.dark, marginBottom: '8px' }}>Nessuna Ragione Sociale</h3>
+              <Building2 size={48} style={{ color: COLORS.neutral.light, marginBottom: '1rem' }} />
+              <h3 style={{ color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>Nessuna Ragione Sociale</h3>
               <p>Nessuna ragione sociale trovata per questa organizzazione.</p>
               <button
                 onClick={() => handleAddLegalEntity(drillDownView.tenantId!, drillDownView.tenantName!)}
                 style={{
-                  marginTop: '16px',
+                  marginTop: '1rem',
                   padding: '8px 16px',
                   background: COLORS.gradients.orange,
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: 600
                 }}
                 data-testid="button-add-first-legal-entity"
@@ -1512,7 +1512,7 @@ export default function Management() {
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '24px',
+        gap: '1.5rem',
         animation: 'fadeInUp 0.5s ease'
       }}>
       {/* Real-time connection indicator */}
@@ -1520,15 +1520,15 @@ export default function Management() {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '0.5rem',
           padding: '8px 16px',
           background: `${COLORS.semantic.success}10`,
-          borderRadius: '8px',
+          borderRadius: '0.5rem',
           width: 'fit-content'
         }}>
           <PulseIndicator />
           <span style={{
-            fontSize: '13px',
+            fontSize: '0.8125rem',
             color: COLORS.semantic.success,
             fontWeight: 500
           }}>
@@ -1540,7 +1540,7 @@ export default function Management() {
       {/* Action buttons */}
       <div style={{
         display: 'flex',
-        gap: '12px',
+        gap: '0.75rem',
         flexWrap: 'wrap',
         alignItems: 'center'
       }}>
@@ -1549,14 +1549,14 @@ export default function Management() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '0.5rem',
             padding: '12px 20px',
             background: COLORS.gradients.orange,
             color: 'white',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '0.5rem',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontWeight: 600,
             transition: 'all 0.3s ease',
             boxShadow: '0 4px 12px rgba(255, 105, 0, 0.2)'
@@ -1580,14 +1580,14 @@ export default function Management() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '0.5rem',
             padding: '12px 20px',
             background: COLORS.neutral.white,
             color: COLORS.neutral.dark,
             border: `1px solid ${COLORS.neutral.lighter}`,
-            borderRadius: '8px',
+            borderRadius: '0.5rem',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontWeight: 600,
             transition: 'all 0.2s ease'
           }}
@@ -1609,7 +1609,7 @@ export default function Management() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '0.5rem',
             marginLeft: 'auto',
             animation: 'slideInRight 0.3s ease'
           }}>
@@ -1619,9 +1619,9 @@ export default function Management() {
               style={{
                 padding: '8px 12px',
                 border: `1px solid ${COLORS.neutral.lighter}`,
-                borderRadius: '8px',
+                borderRadius: '0.5rem',
                 background: COLORS.neutral.white,
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 cursor: 'pointer',
                 outline: 'none'
               }}
@@ -1639,14 +1639,14 @@ export default function Management() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '0.5rem',
                 padding: '8px 16px',
                 background: bulkOperation ? COLORS.gradients.purple : COLORS.neutral.light,
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '0.5rem',
                 cursor: bulkOperation ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 transition: 'all 0.2s ease'
               }}
@@ -1669,7 +1669,7 @@ export default function Management() {
         <div 
           style={{
             ...cardStyle,
-            padding: '24px',
+            padding: '1.5rem',
             background: COLORS.neutral.white,
             borderLeft: `4px solid ${COLORS.primary.orange}`,
             cursor: 'pointer',
@@ -1686,7 +1686,7 @@ export default function Management() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <p style={{
-                fontSize: '12px',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 color: COLORS.primary.orange,
                 textTransform: 'uppercase',
@@ -1708,7 +1708,7 @@ export default function Management() {
                 )}
               </div>
               <p style={{
-                fontSize: '13px',
+                fontSize: '0.8125rem',
                 color: COLORS.semantic.success,
                 fontWeight: 500,
                 display: 'flex',
@@ -1723,7 +1723,7 @@ export default function Management() {
               width: '48px',
               height: '48px',
               background: COLORS.gradients.orange,
-              borderRadius: '12px',
+              borderRadius: '0.75rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1738,7 +1738,7 @@ export default function Management() {
         <div 
           style={{
             ...cardStyle,
-            padding: '24px',
+            padding: '1.5rem',
             background: COLORS.neutral.white,
             borderLeft: `4px solid ${COLORS.semantic.success}`,
             cursor: 'pointer',
@@ -1755,7 +1755,7 @@ export default function Management() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <p style={{
-                fontSize: '12px',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 color: COLORS.semantic.success,
                 textTransform: 'uppercase',
@@ -1777,7 +1777,7 @@ export default function Management() {
                 )}
               </div>
               <p style={{
-                fontSize: '13px',
+                fontSize: '0.8125rem',
                 color: COLORS.neutral.medium,
                 fontWeight: 500,
                 display: 'flex',
@@ -1792,7 +1792,7 @@ export default function Management() {
               width: '48px',
               height: '48px',
               background: COLORS.gradients.green,
-              borderRadius: '12px',
+              borderRadius: '0.75rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1807,7 +1807,7 @@ export default function Management() {
         <div 
           style={{
             ...cardStyle,
-            padding: '24px',
+            padding: '1.5rem',
             background: COLORS.neutral.white,
             borderLeft: `4px solid ${COLORS.primary.purple}`,
             cursor: 'pointer',
@@ -1824,7 +1824,7 @@ export default function Management() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
               <p style={{
-                fontSize: '12px',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 color: COLORS.primary.purple,
                 textTransform: 'uppercase',
@@ -1833,7 +1833,7 @@ export default function Management() {
               }}>
                 Canali Distributivi
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {(structureStats?.data?.storesByChannel || [
                   { canale: 'Retail', count: 45, percentage: 60 },
                   { canale: 'Franchise', count: 30, percentage: 40 }
@@ -1841,14 +1841,14 @@ export default function Management() {
                   <div key={index}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                       <span style={{
-                        fontSize: '13px',
+                        fontSize: '0.8125rem',
                         color: COLORS.neutral.dark,
                         fontWeight: 500
                       }}>
                         {channel.canale}
                       </span>
                       <span style={{
-                        fontSize: '13px',
+                        fontSize: '0.8125rem',
                         color: COLORS.neutral.medium,
                         fontWeight: 600
                       }}>
@@ -1878,7 +1878,7 @@ export default function Management() {
               width: '48px',
               height: '48px',
               background: COLORS.gradients.purple,
-              borderRadius: '12px',
+              borderRadius: '0.75rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1893,13 +1893,13 @@ export default function Management() {
       {/* Filters Section */}
       <div style={{
         ...cardStyle,
-        padding: '24px'
+        padding: '1.5rem'
       }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '16px'
+          gap: '1rem',
+          marginBottom: '1rem'
         }}>
           <input
             type="text"
@@ -1907,11 +1907,11 @@ export default function Management() {
             value={filters.search}
             onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               transition: 'all 0.2s ease',
               outline: 'none'
             }}
@@ -1924,11 +1924,11 @@ export default function Management() {
             value={filters.canale}
             onChange={(e) => setFilters(prev => ({ ...prev, canale: e.target.value, page: 1 }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               outline: 'none'
@@ -1946,11 +1946,11 @@ export default function Management() {
             value={filters.stato}
             onChange={(e) => setFilters(prev => ({ ...prev, stato: e.target.value as any, page: 1 }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               outline: 'none'
@@ -1971,11 +1971,11 @@ export default function Management() {
             value={filters.areaCommerciale}
             onChange={(e) => setFilters(prev => ({ ...prev, areaCommerciale: e.target.value, page: 1 }))}
             style={{
-              padding: '12px',
+              padding: '0.75rem',
               border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               background: COLORS.neutral.white,
-              fontSize: '14px',
+              fontSize: '0.875rem',
               transition: 'all 0.2s ease',
               outline: 'none'
             }}
@@ -1989,16 +1989,16 @@ export default function Management() {
       {/* Stores Table with bulk selection */}
       <div style={{
         ...cardStyle,
-        padding: '24px'
+        padding: '1.5rem'
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px'
+          marginBottom: '1rem'
         }}>
           <h3 style={{
-            fontSize: '18px',
+            fontSize: '1.125rem',
             fontWeight: 700,
             color: COLORS.neutral.dark
           }}>
@@ -2009,20 +2009,20 @@ export default function Management() {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '0.5rem'
             }}>
               <button
                 onClick={toggleSelectAll}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '0.5rem',
                   padding: '8px 12px',
                   background: 'none',
                   border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
+                  borderRadius: '0.5rem',
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   color: COLORS.neutral.dark,
                   transition: 'all 0.2s ease'
                 }}
@@ -2041,7 +2041,7 @@ export default function Management() {
         </div>
         
         {organizationsLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: 'center', padding: '2.5rem' }}>
             <Loader2 size={32} className="animate-spin" style={{ color: COLORS.primary.orange }} />
           </div>
         ) : (
@@ -2053,10 +2053,10 @@ export default function Management() {
               <thead>
                 <tr>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark,
                     width: '40px'
@@ -2064,60 +2064,60 @@ export default function Management() {
                     {/* Checkbox column */}
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Nome
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Slug
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Data Creazione
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Stato
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'left',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
                     Note
                   </th>
                   <th style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
                     textAlign: 'center',
-                    fontSize: '14px',
+                    fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark,
                     width: '120px'
@@ -2137,7 +2137,7 @@ export default function Management() {
                     onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`
                     }}>
                       <button
@@ -2157,39 +2157,39 @@ export default function Management() {
                       </button>
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.dark,
                       fontWeight: 500
                     }}>
                       {org.name}
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.dark
                     }}>
                       {org.slug}
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.dark
                     }}>
                       {format(new Date(org.createdAt), 'dd/MM/yyyy')}
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px'
+                      fontSize: '0.8125rem'
                     }}>
                       <span style={{
                         padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
+                        borderRadius: '0.75rem',
+                        fontSize: '0.75rem',
                         fontWeight: 500,
                         background: org.status === 'active' ? `${COLORS.semantic.success}20` : 
                                    org.status === 'inactive' ? `${COLORS.semantic.error}20` : 
@@ -2203,9 +2203,9 @@ export default function Management() {
                       </span>
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.medium,
                       maxWidth: '150px',
                       overflow: 'hidden',
@@ -2215,13 +2215,13 @@ export default function Management() {
                       {org.notes || '-'}
                     </td>
                     <td style={{
-                      padding: '12px',
+                      padding: '0.75rem',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
                       textAlign: 'center'
                     }}>
                       <div style={{
                         display: 'flex',
-                        gap: '8px',
+                        gap: '0.5rem',
                         justifyContent: 'center',
                         alignItems: 'center'
                       }}>
@@ -2236,7 +2236,7 @@ export default function Management() {
                             border: 'none',
                             cursor: 'pointer',
                             padding: '6px',
-                            borderRadius: '6px',
+                            borderRadius: '0.375rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -2267,7 +2267,7 @@ export default function Management() {
                             border: 'none',
                             cursor: 'pointer',
                             padding: '6px',
-                            borderRadius: '6px',
+                            borderRadius: '0.375rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -2298,7 +2298,7 @@ export default function Management() {
                             border: 'none',
                             cursor: 'pointer',
                             padding: '6px',
-                            borderRadius: '6px',
+                            borderRadius: '0.375rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -2372,7 +2372,7 @@ export default function Management() {
         ...cardStyle,
         padding: '64px',
         textAlign: 'center',
-        maxWidth: '500px',
+        maxWidth: '31.25rem',
         background: 'white',
         position: 'relative',
         overflow: 'visible'
@@ -2429,9 +2429,9 @@ export default function Management() {
         
         {/* Description */}
         <p style={{
-          fontSize: '16px',
+          fontSize: '1rem',
           color: COLORS.neutral.medium,
-          marginBottom: '32px',
+          marginBottom: '2rem',
           lineHeight: '1.6'
         }}>
           {tab.description}
@@ -2441,15 +2441,15 @@ export default function Management() {
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '0.5rem',
           padding: '12px 24px',
           background: COLORS.neutral.lightest,
           borderRadius: '30px',
-          marginBottom: '24px'
+          marginBottom: '1.5rem'
         }}>
           <Rocket size={20} style={{ color: tab.color }} />
           <span style={{
-            fontSize: '14px',
+            fontSize: '0.875rem',
             fontWeight: 600,
             color: COLORS.neutral.dark
           }}>
@@ -2461,8 +2461,8 @@ export default function Management() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '12px',
-          marginTop: '32px'
+          gap: '0.75rem',
+          marginTop: '2rem'
         }}>
           {[
             { icon: Sparkles, text: 'AI Analytics' },
@@ -2473,11 +2473,11 @@ export default function Management() {
             <div key={idx} style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '0.5rem',
               padding: '8px 12px',
               background: COLORS.neutral.lightest,
-              borderRadius: '8px',
-              fontSize: '13px',
+              borderRadius: '0.5rem',
+              fontSize: '0.8125rem',
               color: COLORS.neutral.medium,
               animation: `fadeInUp 0.5s ease`,
               animationDelay: `${0.1 * (idx + 1)}s`,
@@ -2502,16 +2502,16 @@ export default function Management() {
   return (
     <BrandLayout>
       <div style={{
-        padding: '24px',
+        padding: '1.5rem',
         minHeight: '100vh',
         background: '#ffffff'
       }}>
         {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
+        <div style={{ marginBottom: '2rem' }}>
           <h1 style={{
             fontSize: '32px',
             fontWeight: 700,
-            marginBottom: '8px',
+            marginBottom: '0.5rem',
             background: COLORS.gradients.orange,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -2520,7 +2520,7 @@ export default function Management() {
             Management Center
           </h1>
           <p style={{
-            fontSize: '16px',
+            fontSize: '1rem',
             color: COLORS.neutral.medium,
             margin: 0
           }}>
@@ -2531,22 +2531,22 @@ export default function Management() {
         {/* Modern Tab Navigation */}
         <div style={{
           ...glassStyle,
-          padding: '16px',
-          marginBottom: '32px',
+          padding: '1rem',
+          marginBottom: '2rem',
           background: 'hsla(255, 255, 255, 0.03)',
         }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '12px'
+            gap: '0.75rem'
           }}>
             {tabs.map((tab, index) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: '16px',
-                  borderRadius: '12px',
+                  padding: '1rem',
+                  borderRadius: '0.75rem',
                   border: activeTab === tab.id ? 'none' : `1px solid ${COLORS.neutral.lighter}`,
                   background: activeTab === tab.id ? tab.gradient : COLORS.neutral.white,
                   color: activeTab === tab.id ? 'white' : COLORS.neutral.dark,
@@ -2554,7 +2554,7 @@ export default function Management() {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '8px',
+                  gap: '0.5rem',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   overflow: 'hidden',
@@ -2593,7 +2593,7 @@ export default function Management() {
                     padding: '4px 8px',
                     background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.2)' : tab.gradient,
                     color: activeTab === tab.id ? 'white' : 'white',
-                    borderRadius: '12px',
+                    borderRadius: '0.75rem',
                     fontSize: '10px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
@@ -2606,7 +2606,7 @@ export default function Management() {
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '0.75rem',
                   width: '100%'
                 }}>
                   <div style={{
@@ -2624,7 +2624,7 @@ export default function Management() {
                   
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <div style={{
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: 700,
                       marginBottom: '2px'
                     }}>
@@ -2680,7 +2680,7 @@ export default function Management() {
           }}>
             <div style={{
               background: 'white',
-              borderRadius: '12px',
+              borderRadius: '0.75rem',
               width: '90%',
               maxWidth: '600px',
               maxHeight: '90vh',
@@ -2705,8 +2705,8 @@ export default function Management() {
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '8px'
+                      gap: '0.75rem',
+                      marginBottom: '0.5rem'
                     }}>
                       <div style={{
                         width: '40px',
@@ -2720,7 +2720,7 @@ export default function Management() {
                         <Building2 size={20} color="white" />
                       </div>
                       <h2 style={{
-                        fontSize: '20px',
+                        fontSize: '1.25rem',
                         fontWeight: '600',
                         color: '#111827',
                         margin: 0,
@@ -2730,7 +2730,7 @@ export default function Management() {
                       </h2>
                     </div>
                     <p style={{
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       color: '#6b7280',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -2744,9 +2744,9 @@ export default function Management() {
                     style={{
                       background: 'rgba(255, 255, 255, 0.8)',
                       border: '1px solid rgba(226, 232, 240, 0.8)',
-                      borderRadius: '8px',
+                      borderRadius: '0.5rem',
                       cursor: 'pointer',
-                      padding: '8px',
+                      padding: '0.5rem',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       color: '#64748b',
                       backdropFilter: 'blur(8px)'
@@ -2758,7 +2758,7 @@ export default function Management() {
               </div>
 
               {/* Body Modal */}
-              <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <div style={{ padding: '2rem', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
                 <form onSubmit={async (e) => {
                   e.preventDefault();
                   const formData = new FormData(e.target as HTMLFormElement);
@@ -2792,15 +2792,15 @@ export default function Management() {
                   }
                 }}>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     {/* Codice */}
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Codice Ragione Sociale
                       </label>
@@ -2813,8 +2813,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -2825,10 +2825,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                       </label>
@@ -2842,8 +2842,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -2854,10 +2854,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
                       </label>
@@ -2868,8 +2868,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           cursor: 'pointer',
                           outline: 'none'
@@ -2889,10 +2889,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Partita IVA <span style={{ color: '#ef4444' }}>*</span>
                       </label>
@@ -2905,8 +2905,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           fontFamily: 'monospace',
                           outline: 'none'
@@ -2918,10 +2918,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Codice Fiscale
                       </label>
@@ -2934,8 +2934,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           fontFamily: 'monospace',
                           textTransform: 'uppercase',
@@ -2948,10 +2948,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Capitale Sociale
                       </label>
@@ -2964,8 +2964,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -2976,10 +2976,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Data Costituzione
                       </label>
@@ -2991,8 +2991,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3003,10 +3003,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         R.E.A.
                       </label>
@@ -3019,8 +3019,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3031,10 +3031,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Registro Imprese
                       </label>
@@ -3047,8 +3047,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3059,13 +3059,13 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Codice SDI
-                        <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '4px' }}>
                           (Sistema di Interscambio)
                         </span>
                       </label>
@@ -3078,8 +3078,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           fontFamily: 'monospace',
                           textTransform: 'uppercase',
@@ -3092,10 +3092,10 @@ export default function Management() {
                     <div style={{ gridColumn: 'span 2' }}>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
                       </label>
@@ -3108,8 +3108,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3120,10 +3120,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Città <span style={{ color: '#ef4444' }}>*</span>
                       </label>
@@ -3132,8 +3132,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#f9fafb',
                           outline: 'none'
                         }}>
@@ -3144,8 +3144,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #ef4444',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fef2f2',
                           outline: 'none'
                         }}>
@@ -3169,8 +3169,8 @@ export default function Management() {
                             width: '100%',
                             padding: '6px 10px',
                             border: '1px solid #e5e7eb',
-                            borderRadius: '8px',
-                            fontSize: '14px',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.875rem',
                             background: '#fafbfc',
                             outline: 'none'
                           }}
@@ -3189,12 +3189,12 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
-                        CAP <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '400' }}>(auto)</span>
+                        CAP <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '400' }}>(auto)</span>
                       </label>
                       <input
                         type="text"
@@ -3206,8 +3206,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#f9fafb',
                           color: '#6b7280',
                           outline: 'none',
@@ -3220,12 +3220,12 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
-                        Provincia <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '400' }}>(auto)</span>
+                        Provincia <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '400' }}>(auto)</span>
                       </label>
                       <input
                         type="text"
@@ -3238,8 +3238,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#f9fafb',
                           color: '#6b7280',
                           textTransform: 'uppercase',
@@ -3253,10 +3253,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Telefono
                       </label>
@@ -3269,8 +3269,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3281,10 +3281,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Email
                       </label>
@@ -3297,8 +3297,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3309,10 +3309,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         PEC <span style={{ color: '#ef4444' }}>*</span>
                       </label>
@@ -3325,8 +3325,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           outline: 'none'
                         }}
@@ -3337,10 +3337,10 @@ export default function Management() {
                     <div>
                       <label style={{
                         display: 'block',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         color: '#374151',
-                        marginBottom: '8px'
+                        marginBottom: '0.5rem'
                       }}>
                         Stato
                       </label>
@@ -3351,8 +3351,8 @@ export default function Management() {
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
                           background: '#fafbfc',
                           cursor: 'pointer',
                           outline: 'none'
@@ -3372,10 +3372,10 @@ export default function Management() {
                     padding: '20px 0 0 0',
                     display: 'flex',
                     justifyContent: 'flex-end',
-                    gap: '12px',
+                    gap: '0.75rem',
                     borderTop: '1px solid #e5e7eb',
-                    marginTop: '32px',
-                    paddingTop: '20px'
+                    marginTop: '2rem',
+                    paddingTop: '1.25rem'
                   }}>
                     <button
                       type="button"
@@ -3384,9 +3384,9 @@ export default function Management() {
                         padding: '10px 20px',
                         background: '#f8fafc',
                         border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
+                        borderRadius: '0.5rem',
                         cursor: 'pointer',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '500',
                         color: '#475569',
                         transition: 'all 0.2s ease'
@@ -3401,9 +3401,9 @@ export default function Management() {
                         background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '8px',
+                        borderRadius: '0.5rem',
                         cursor: 'pointer',
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
                         transition: 'all 0.2s ease'
@@ -3463,11 +3463,11 @@ export default function Management() {
                 alignItems: 'center',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.15)',
-                    padding: '12px',
-                    borderRadius: '12px',
+                    padding: '0.75rem',
+                    borderRadius: '0.75rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -3481,7 +3481,7 @@ export default function Management() {
                   </div>
                   <div>
                     <h2 style={{
-                      fontSize: '20px',
+                      fontSize: '1.25rem',
                       fontWeight: '600',
                       color: '#ffffff',
                       margin: 0,
@@ -3491,7 +3491,7 @@ export default function Management() {
                       {storeModal.editingStore ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
                     </h2>
                     <p style={{
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       color: 'rgba(255, 255, 255, 0.9)',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3506,9 +3506,9 @@ export default function Management() {
                   style={{
                     background: 'rgba(255, 255, 255, 0.15)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     cursor: 'pointer',
-                    padding: '8px',
+                    padding: '0.5rem',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     color: 'white',
                     backdropFilter: 'blur(8px)'
@@ -3529,16 +3529,16 @@ export default function Management() {
               </div>
 
               {/* Body Modal */}
-              <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ padding: '2rem', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   {/* Codice */}
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Codice Punto Vendita
@@ -3552,8 +3552,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '14px',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s ease',
                         outline: 'none',
@@ -3579,10 +3579,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
@@ -3596,8 +3596,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3623,10 +3623,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
@@ -3640,8 +3640,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3664,10 +3664,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Canale <span style={{ color: '#ef4444' }}>*</span>
@@ -3679,8 +3679,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3709,10 +3709,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Stato <span style={{ color: '#ef4444' }}>*</span>
@@ -3724,8 +3724,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3753,10 +3753,10 @@ export default function Management() {
                   <div style={{ gridColumn: 'span 2' }}>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
@@ -3765,11 +3765,11 @@ export default function Management() {
                       <label style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: '12px', 
+                        gap: '0.75rem', 
                         cursor: 'pointer',
                         padding: '6px 10px',
                         background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
-                        borderRadius: '8px',
+                        borderRadius: '0.5rem',
                         border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
                         transition: 'all 0.2s ease'
                       }}>
@@ -3784,14 +3784,14 @@ export default function Management() {
                             }
                           }}
                           style={{ 
-                            width: '20px', 
-                            height: '20px', 
+                            width: '1.25rem', 
+                            height: '1.25rem', 
                             cursor: 'pointer',
                             accentColor: '#FF6900'
                           }}
                         />
                         <span style={{ 
-                          fontSize: '14px', 
+                          fontSize: '0.875rem', 
                           color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
                           fontWeight: '600'
                         }}>
@@ -3802,11 +3802,11 @@ export default function Management() {
                       <label style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: '12px', 
+                        gap: '0.75rem', 
                         cursor: 'pointer',
                         padding: '6px 10px',
                         background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
-                        borderRadius: '8px',
+                        borderRadius: '0.5rem',
                         border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
                         transition: 'all 0.2s ease'
                       }}>
@@ -3821,14 +3821,14 @@ export default function Management() {
                             }
                           }}
                           style={{ 
-                            width: '20px', 
-                            height: '20px', 
+                            width: '1.25rem', 
+                            height: '1.25rem', 
                             cursor: 'pointer',
                             accentColor: '#10b981'
                           }}
                         />
                         <span style={{ 
-                          fontSize: '14px', 
+                          fontSize: '0.875rem', 
                           color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
                           fontWeight: '600'
                         }}>
@@ -3843,10 +3843,10 @@ export default function Management() {
                   <div style={{ gridColumn: 'span 2' }}>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Indirizzo <span style={{ color: '#ef4444' }}>*</span>
@@ -3860,8 +3860,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3884,10 +3884,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Città <span style={{ color: '#ef4444' }}>*</span>
@@ -3901,8 +3901,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3925,10 +3925,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       CAP
@@ -3942,8 +3942,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -3966,10 +3966,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Telefono
@@ -3984,8 +3984,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -4002,9 +4002,9 @@ export default function Management() {
                     />
                     {storeValidationErrors.phone && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#ef4444',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         {storeValidationErrors.phone}
@@ -4012,9 +4012,9 @@ export default function Management() {
                     )}
                     {storeValidationState.phone === 'valid' && newStore.phone && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#10b981',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         ✓ Numero di telefono valido
@@ -4026,10 +4026,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Email
@@ -4044,8 +4044,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -4062,9 +4062,9 @@ export default function Management() {
                     />
                     {storeValidationErrors.email && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#ef4444',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         {storeValidationErrors.email}
@@ -4072,9 +4072,9 @@ export default function Management() {
                     )}
                     {storeValidationState.email === 'valid' && newStore.email && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#10b981',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         ✓ Indirizzo email valido
@@ -4086,10 +4086,10 @@ export default function Management() {
                   <div>
                     <label style={{
                       display: 'block',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       color: '#374151',
-                      marginBottom: '8px',
+                      marginBottom: '0.5rem',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                     }}>
                       Telegram
@@ -4104,8 +4104,8 @@ export default function Management() {
                         width: '100%',
                         padding: '6px 10px',
                         border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
                         background: '#fafbfc',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -4122,9 +4122,9 @@ export default function Management() {
                     />
                     {storeValidationErrors.telegram && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#ef4444',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         {storeValidationErrors.telegram}
@@ -4132,9 +4132,9 @@ export default function Management() {
                     )}
                     {storeValidationState.telegram === 'valid' && newStore.telegram && (
                       <div style={{
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         color: '#0088CC',
-                        marginTop: '4px',
+                        marginTop: '0.25rem',
                         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                       }}>
                         ✓ URL Telegram valido
@@ -4146,20 +4146,20 @@ export default function Management() {
                 {/* Status Messages */}
                 {(storeFormState.error || storeFormState.success) && (
                   <div style={{
-                    marginTop: '24px',
+                    marginTop: '1.5rem',
                     padding: '12px 16px',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     background: storeFormState.error ? 
                       'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' : 
                       'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
                     border: `1px solid ${storeFormState.error ? '#fecaca' : '#bbf7d0'}`,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px'
+                    gap: '0.75rem'
                   }}>
                     <div style={{
-                      width: '20px',
-                      height: '20px',
+                      width: '1.25rem',
+                      height: '1.25rem',
                       borderRadius: '50%',
                       background: storeFormState.error ? '#ef4444' : '#22c55e',
                       display: 'flex',
@@ -4177,7 +4177,7 @@ export default function Management() {
                     </div>
                     <p style={{
                       margin: 0,
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       color: storeFormState.error ? '#dc2626' : '#16a34a',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '500'
@@ -4191,9 +4191,9 @@ export default function Management() {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-end',
-                  gap: '12px',
-                  marginTop: '32px',
-                  paddingTop: '20px',
+                  gap: '0.75rem',
+                  marginTop: '2rem',
+                  paddingTop: '1.25rem',
                   borderTop: '1px solid #e5e7eb'
                 }}>
                   <button
@@ -4203,8 +4203,8 @@ export default function Management() {
                       background: '#f8fafc',
                       color: '#374151',
                       border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       cursor: 'pointer',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -4231,8 +4231,8 @@ export default function Management() {
                         'linear-gradient(135deg, #FF6900, #ff8533)',
                       color: 'white',
                       border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
                       fontWeight: '600',
                       cursor: storeFormState.isLoading ? 'not-allowed' : 'pointer',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -4243,7 +4243,7 @@ export default function Management() {
                       opacity: storeFormState.isLoading ? 0.7 : 1,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '0.5rem'
                     }}
                     onMouseOver={(e) => {
                       if (!storeFormState.isLoading) {
