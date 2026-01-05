@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, UserPlus, Trash2 } from 'lucide-react';
+import { X, UserPlus, Trash2, Upload, Camera, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
@@ -30,6 +30,7 @@ interface EditChannelDialogProps {
   currentMetadata?: {
     headerColor?: string;
     backgroundPattern?: string;
+    avatarUrl?: string;
   };
   channelType?: 'dm' | 'team' | 'task_thread' | 'general';
   dmUser?: {
@@ -71,14 +72,58 @@ export function EditChannelDialog({
   const [headerColor, setHeaderColor] = useState(currentMetadata?.headerColor || '#FF6900');
   const [backgroundPattern, setBackgroundPattern] = useState(currentMetadata?.backgroundPattern || 'neutral');
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(currentMetadata?.avatarUrl || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setName(currentName);
       setHeaderColor(currentMetadata?.headerColor || '#FF6900');
       setBackgroundPattern(currentMetadata?.backgroundPattern || 'neutral');
+      setAvatarUrl(currentMetadata?.avatarUrl || '');
     }
   }, [open, currentName, currentMetadata]);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Errore',
+        description: 'Seleziona un file immagine',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('context', 'chat-avatar');
+      formData.append('channelId', channelId);
+      
+      const response = await apiRequest('/api/storage/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.signedUrl) {
+        setAvatarUrl(response.signedUrl);
+        toast({
+          title: 'Successo',
+          description: 'Immagine caricata con successo'
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Errore',
+        description: error.message || 'Errore durante il caricamento',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   // Fetch channel members
   const { data: members = [] } = useQuery<Member[]>({
@@ -181,10 +226,16 @@ export function EditChannelDialog({
       updates.name = name;
     }
     
-    if (headerColor !== currentMetadata?.headerColor || backgroundPattern !== currentMetadata?.backgroundPattern) {
+    const metadataChanged = 
+      headerColor !== currentMetadata?.headerColor || 
+      backgroundPattern !== currentMetadata?.backgroundPattern ||
+      avatarUrl !== currentMetadata?.avatarUrl;
+      
+    if (metadataChanged) {
       updates.metadata = {
         headerColor,
-        backgroundPattern
+        backgroundPattern,
+        avatarUrl: avatarUrl || null
       };
     }
 
@@ -281,6 +332,96 @@ export function EditChannelDialog({
                 placeholder="Nome del canale"
                 data-testid="input-channel-name"
               />
+            </div>
+          )}
+
+          {/* Avatar upload - solo per gruppi */}
+          {!isDm && (
+            <div>
+              <Label>Logo del Gruppo</Label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
+                <div style={{ position: 'relative' }}>
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Logo gruppo"
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '3px solid #e5e7eb'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #e5e7eb, #d1d5db)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#6b7280',
+                      border: '3px dashed #d1d5db'
+                    }}>
+                      <Camera size={32} />
+                    </div>
+                  )}
+                  {isUploadingAvatar && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(255,255,255,0.8)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Loader2 size={24} className="animate-spin" style={{ color: '#FF6900' }} />
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleAvatarUpload(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    data-testid="button-upload-avatar"
+                  >
+                    <Upload size={14} style={{ marginRight: '6px' }} />
+                    Carica immagine
+                  </Button>
+                  {avatarUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAvatarUrl('')}
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      data-testid="button-remove-avatar"
+                    >
+                      <Trash2 size={14} style={{ marginRight: '6px' }} />
+                      Rimuovi
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
+                Carica un'immagine per personalizzare il logo del gruppo (PNG, JPG, max 2MB)
+              </p>
             </div>
           )}
 

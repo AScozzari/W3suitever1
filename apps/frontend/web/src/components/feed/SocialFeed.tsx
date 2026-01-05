@@ -1093,13 +1093,13 @@ function EmbeddedComposer() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-0" align="start">
-                    <Command>
+                    <Command shouldFilter={false}>
                       <CommandInput placeholder="Cerca utente..." value={toolbarMentionSearch} onValueChange={setToolbarMentionSearch} />
                       <CommandList>
                         <CommandEmpty>Nessun utente trovato</CommandEmpty>
                         <CommandGroup>
                           {usersData?.map(u => (
-                            <CommandItem key={u.id} onSelect={() => insertToolbarMention(u)}>
+                            <CommandItem key={u.id} value={u.id} onSelect={() => insertToolbarMention(u)}>
                               <Avatar className="h-6 w-6 mr-2">
                                 <AvatarFallback className="text-xs">{getInitials(u)}</AvatarFallback>
                               </Avatar>
@@ -1192,7 +1192,7 @@ function EmbeddedComposer() {
                 </div>
               )}
 
-              {/* File attachments with preview */}
+              {/* File attachments with preview, open and delete */}
               {attachments.length > 0 && (
                 <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-dashed">
                   <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -1200,35 +1200,51 @@ function EmbeddedComposer() {
                     File allegati ({attachments.length})
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {attachments.map(file => (
-                      <div key={file.id} className="relative group bg-white rounded-lg border overflow-hidden">
-                        {file.contentType.startsWith('image/') ? (
-                          <div className="aspect-square relative">
-                            <img 
-                              src={file.previewUrl || file.downloadUrl} 
-                              alt={file.fileName}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => removeAttachment(file.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                    {attachments.map(file => {
+                      const viewUrl = file.openUrl || file.previewUrl || file.downloadUrl;
+                      const downloadUrl = file.downloadUrl || file.openUrl || file.previewUrl;
+                      return (
+                        <div key={file.id} className="relative group bg-white rounded-lg border overflow-hidden">
+                          {file.contentType?.startsWith('image/') ? (
+                            <div className="aspect-square relative">
+                              <img 
+                                src={file.previewUrl || downloadUrl} 
+                                alt={file.fileName}
+                                className="w-full h-full object-cover cursor-pointer"
+                                onClick={() => viewUrl && window.open(viewUrl, '_blank')}
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => viewUrl && window.open(viewUrl, '_blank')} title="Apri">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => downloadUrl && window.open(downloadUrl, '_blank')} title="Scarica">
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => removeAttachment(file.id)} title="Elimina">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="p-3 flex flex-col items-center gap-2">
-                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                              <FileText className="h-6 w-6 text-muted-foreground" />
+                          ) : (
+                            <div className="p-3 flex flex-col items-center gap-2 relative">
+                              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center cursor-pointer" onClick={() => viewUrl && window.open(viewUrl, '_blank')}>
+                                <FileText className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                              <span className="text-xs text-center truncate w-full">{file.fileName}</span>
+                              <span className="text-[10px] text-muted-foreground">{formatFileSize(file.fileSize)}</span>
+                              <div className="absolute top-1 right-1 flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => viewUrl && window.open(viewUrl, '_blank')} title="Apri">
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeAttachment(file.id)} title="Elimina">
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <span className="text-xs text-center truncate w-full">{file.fileName}</span>
-                            <span className="text-[10px] text-muted-foreground">{formatFileSize(file.fileSize)}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 absolute top-1 right-1" onClick={() => removeAttachment(file.id)}>
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

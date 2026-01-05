@@ -1092,7 +1092,7 @@ const feedUpload = multer({
   }
 });
 
-// Upload file for feed attachment
+// Upload file for feed attachment - stored in user-specific folder
 router.post('/attachments/upload', requirePermission('communication.write'), feedUpload.single('file'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
@@ -1104,7 +1104,8 @@ router.post('/attachments/upload', requirePermission('communication.write'), fee
 
     const extension = req.file.originalname.split('.').pop()?.toLowerCase() || 'bin';
     const fileId = uuidv4();
-    const objectKey = `feed/${tenantId}/${fileId}.${extension}`;
+    // Store in user-specific folder: feed/{userId}/{fileId}.{ext}
+    const objectKey = `feed/${userId}/${fileId}.${extension}`;
 
     try {
       const client = new Client();
@@ -1115,14 +1116,26 @@ router.post('/attachments/upload', requirePermission('communication.write'), fee
         metadata: { userId, tenantId, objectKey, size: req.file.size, originalName: req.file.originalname }
       });
 
+      // Generate signed URL for preview if image
+      let previewUrl = null;
+      if (req.file.mimetype.startsWith('image/')) {
+        try {
+          previewUrl = await client.signDownloadUrl(objectKey, { expiresIn: 3600 });
+        } catch {
+          previewUrl = `/api/feed/attachments/preview/${fileId}?user=${userId}`;
+        }
+      }
+
       res.json({
         id: fileId,
         objectKey,
+        userId,
         fileName: req.file.originalname,
         contentType: req.file.mimetype,
         fileSize: req.file.size,
-        downloadUrl: `/api/feed/attachments/download/${fileId}`,
-        previewUrl: req.file.mimetype.startsWith('image/') ? `/api/feed/attachments/preview/${fileId}` : null
+        downloadUrl: `/api/feed/attachments/download/${fileId}?user=${userId}`,
+        previewUrl,
+        openUrl: `/api/feed/attachments/open/${fileId}?user=${userId}`
       });
     } catch (uploadError) {
       structuredLogger.error('Feed file upload failed', {
@@ -1136,16 +1149,111 @@ router.post('/attachments/upload', requirePermission('communication.write'), fee
   }
 });
 
+// Delete feed attachment - RBAC-aware: own files or communication.manage permission
+router.delete('/attachments/:fileId', requirePermission('communication.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const currentUserId = req.user!.id;
+    const { fileId } = req.params;
+    const targetUserId = req.query.user as string;
+    
+    // Check permissions: users can delete own files, managers can delete any
+    const hasManagePermission = req.user?.permissions?.includes('communication.manage') || 
+                                 req.user?.role === 'admin' || 
+                                 req.user?.role === 'supervisor';
+
+    const client = new Client();
+    let objectKey: string | null = null;
+    let fileOwner: string | null = null;
+    
+    // Try user-specific path first (new format)
+    if (targetUserId) {
+      const userPrefix = `feed/${targetUserId}/${fileId}`;
+      const files = await client.list({ prefix: userPrefix });
+      if (files.objects?.length) {
+        objectKey = files.objects[0].name;
+        fileOwner = targetUserId;
+      }
+    }
+    
+    // Fallback to current user path
+    if (!objectKey) {
+      const currentUserPrefix = `feed/${currentUserId}/${fileId}`;
+      const files = await client.list({ prefix: currentUserPrefix });
+      if (files.objects?.length) {
+        objectKey = files.objects[0].name;
+        fileOwner = currentUserId;
+      }
+    }
+    
+    // Fallback to legacy tenant-based path
+    if (!objectKey) {
+      const tenantPrefix = `feed/${tenantId}/${fileId}`;
+      const files = await client.list({ prefix: tenantPrefix });
+      if (files.objects?.length) {
+        objectKey = files.objects[0].name;
+        fileOwner = 'tenant';
+      }
+    }
+    
+    // For admins: scan all feed folders to find the file if not found yet
+    if (!objectKey && hasManagePermission) {
+      const feedPrefix = `feed/`;
+      const allFiles = await client.list({ prefix: feedPrefix });
+      if (allFiles.objects?.length) {
+        const matchingFile = allFiles.objects.find(obj => obj.name.includes(`/${fileId}.`));
+        if (matchingFile) {
+          objectKey = matchingFile.name;
+          fileOwner = 'scanned';
+        }
+      }
+    }
+    
+    if (!objectKey) {
+      return res.status(404).json({ error: 'File non trovato' });
+    }
+    
+    // Check authorization: own file or has manage permission
+    const isOwnFile = fileOwner === currentUserId || fileOwner === 'tenant';
+    if (!isOwnFile && !hasManagePermission) {
+      return res.status(403).json({ error: 'Non autorizzato a eliminare file di altri utenti' });
+    }
+
+    await client.delete(objectKey);
+
+    structuredLogger.info('Feed file deleted', {
+      component: 'feed-delete',
+      metadata: { currentUserId, targetUserId, fileId, objectKey, fileOwner }
+    });
+
+    res.json({ success: true, message: 'File eliminato' });
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
 // Download/serve feed attachment
 router.get('/attachments/download/:fileId', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
     const { fileId } = req.params;
+    const userId = req.query.user as string;
 
-    // Find the file in object storage
+    // Find the file in object storage - support both user-specific and legacy tenant-based paths
     const client = new Client();
-    const prefix = `feed/${tenantId}/${fileId}`;
-    const files = await client.list({ prefix });
+    let files;
+    let prefix;
+    
+    if (userId) {
+      prefix = `feed/${userId}/${fileId}`;
+      files = await client.list({ prefix });
+    }
+    
+    // Fallback to legacy tenant-based path
+    if (!files?.objects?.length) {
+      prefix = `feed/${tenantId}/${fileId}`;
+      files = await client.list({ prefix });
+    }
     
     if (!files.objects || files.objects.length === 0) {
       return res.status(404).json({ error: 'File non trovato' });
@@ -1153,7 +1261,6 @@ router.get('/attachments/download/:fileId', requirePermission('communication.rea
 
     const objectKey = files.objects[0].name;
     const downloadResult = await client.downloadAsBytes(objectKey);
-    // downloadAsBytes returns Buffer[] - extract the first buffer
     const [fileBuffer] = downloadResult.value || [];
     
     const extension = objectKey.split('.').pop() || '';
@@ -1180,15 +1287,79 @@ router.get('/attachments/download/:fileId', requirePermission('communication.rea
   }
 });
 
+// Open feed attachment inline (for viewing)
+router.get('/attachments/open/:fileId', requirePermission('communication.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant!.id;
+    const { fileId } = req.params;
+    const userId = req.query.user as string;
+
+    const client = new Client();
+    let files;
+    let prefix;
+    
+    if (userId) {
+      prefix = `feed/${userId}/${fileId}`;
+      files = await client.list({ prefix });
+    }
+    
+    if (!files?.objects?.length) {
+      prefix = `feed/${tenantId}/${fileId}`;
+      files = await client.list({ prefix });
+    }
+    
+    if (!files.objects || files.objects.length === 0) {
+      return res.status(404).json({ error: 'File non trovato' });
+    }
+
+    const objectKey = files.objects[0].name;
+    const downloadResult = await client.downloadAsBytes(objectKey);
+    const [fileBuffer] = downloadResult.value || [];
+    
+    const extension = objectKey.split('.').pop() || '';
+    const mimeTypes: Record<string, string> = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'txt': 'text/plain',
+      'csv': 'text/csv'
+    };
+
+    res.setHeader('Content-Type', mimeTypes[extension] || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${fileId}.${extension}"`);
+    res.send(fileBuffer);
+  } catch (error) {
+    handleApiError(error, res);
+  }
+});
+
 // Preview feed attachment (images only)
 router.get('/attachments/preview/:fileId', requirePermission('communication.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant!.id;
     const { fileId } = req.params;
+    const userId = req.query.user as string;
 
     const client = new Client();
-    const prefix = `feed/${tenantId}/${fileId}`;
-    const files = await client.list({ prefix });
+    let files;
+    let prefix;
+    
+    if (userId) {
+      prefix = `feed/${userId}/${fileId}`;
+      files = await client.list({ prefix });
+    }
+    
+    if (!files?.objects?.length) {
+      prefix = `feed/${tenantId}/${fileId}`;
+      files = await client.list({ prefix });
+    }
     
     if (!files.objects || files.objects.length === 0) {
       return res.status(404).json({ error: 'File non trovato' });
@@ -1202,7 +1373,6 @@ router.get('/attachments/preview/:fileId', requirePermission('communication.read
     }
 
     const downloadResult = await client.downloadAsBytes(objectKey);
-    // downloadAsBytes returns Buffer[] - extract the first buffer
     const [fileBuffer] = downloadResult.value || [];
     
     const mimeTypes: Record<string, string> = {

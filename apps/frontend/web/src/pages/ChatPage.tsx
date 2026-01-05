@@ -85,6 +85,47 @@ function truncateMessage(text: string, maxLength: number = 40): string {
   return text.substring(0, maxLength) + '...';
 }
 
+// Generate meaningful initials from group name
+function getGroupInitials(name: string): string {
+  if (!name || name.trim().length === 0) return 'GR';
+  
+  const words = name.trim().split(/\s+/).filter(w => w.length > 0);
+  
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  
+  if (words[0].length >= 2) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+  
+  return words[0][0].toUpperCase() + 'G';
+}
+
+// Color palette with good contrast for group avatars
+const GROUP_COLORS = [
+  { bg: '#1e40af', text: '#ffffff' }, // Blue
+  { bg: '#047857', text: '#ffffff' }, // Green
+  { bg: '#7c3aed', text: '#ffffff' }, // Purple
+  { bg: '#dc2626', text: '#ffffff' }, // Red
+  { bg: '#0891b2', text: '#ffffff' }, // Cyan
+  { bg: '#c2410c', text: '#ffffff' }, // Orange
+  { bg: '#4338ca', text: '#ffffff' }, // Indigo
+  { bg: '#0f766e', text: '#ffffff' }, // Teal
+  { bg: '#9333ea', text: '#ffffff' }, // Violet
+  { bg: '#be185d', text: '#ffffff' }, // Pink
+];
+
+// Get consistent color for a channel based on its ID
+function getGroupColor(channelId: string): { bg: string; text: string } {
+  let hash = 0;
+  for (let i = 0; i < channelId.length; i++) {
+    hash = channelId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % GROUP_COLORS.length;
+  return GROUP_COLORS[index];
+}
+
 // Helper to get background style based on pattern
 function getBackgroundStyle(pattern: string = 'neutral'): React.CSSProperties {
   const patterns: Record<string, React.CSSProperties> = {
@@ -418,7 +459,7 @@ export default function ChatPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {/* Avatar - custom image or initials */}
+                      {/* Avatar - custom image or initials with good contrast */}
                       {channel.metadata?.avatarUrl ? (
                         <img
                           src={channel.metadata.avatarUrl}
@@ -431,24 +472,28 @@ export default function ChatPage() {
                             border: '2px solid #e5e7eb'
                           }}
                         />
-                      ) : (
-                        <div style={{
-                          width: '40px',
-                          height: '40px',
-                          background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontSize: '14px',
-                          fontWeight: 600
-                        }}>
-                          {channel.channelType === 'dm' 
-                            ? (channel.dmUser?.name?.slice(0, 2).toUpperCase() || '💬')
-                            : (channel.name || 'CH').slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
+                      ) : (() => {
+                        const colors = getGroupColor(channel.id);
+                        return (
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            background: colors.bg,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: colors.text,
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                          }}>
+                            {channel.channelType === 'dm' 
+                              ? getGroupInitials(channel.dmUser?.name || 'DM')
+                              : getGroupInitials(channel.name)}
+                          </div>
+                        );
+                      })()}
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{

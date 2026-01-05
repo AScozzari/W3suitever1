@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various industries. It integrates key modules such as CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI for enhanced efficiency, market responsiveness, and strategic decision-making. The platform aims to provide a comprehensive solution for modern enterprises seeking operational excellence and data-driven insights.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI to enhance efficiency and strategic decision-making. The platform aims to be a leading solution for operational excellence and data-driven insights.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -146,24 +146,24 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: Features a WindTre Glassmorphism design with fixed headers/sidebars and white backgrounds. It utilizes `shadcn/ui` components (based on Radix UI) styled with Tailwind CSS. UI zoom is controlled at build-time via `VITE_FONT_SCALE=80`, enforcing `rem` units for scalable design.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars and white backgrounds. Utilizes `shadcn/ui` components (Radix UI-based) styled with Tailwind CSS. UI zoom is controlled at build-time via `VITE_FONT_SCALE=80`, enforcing `rem` units.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
-    - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
-    - **Core Systems**: Includes a Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP), and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
-    - **Unified Object Storage**: Provides enterprise-grade file storage with multi-tenant RLS via signed URLs, three-tier quota, a My Drive UI, Google Drive-style permission inheritance, and an ACL system.
-    - **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
-    - **CRM Module**: Offers person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 360° Dashboard.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP), and an AI Voice Agent System with Retrieval Augmented Generation (RAG).
+    - **Unified Object Storage**: Enterprise-grade file storage with multi-tenant RLS via signed URLs, three-tier quota, My Drive UI, Google Drive-style permission inheritance, and an ACL system.
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
+    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 360° Dashboard.
     - **HR Module**: Manages shifts, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Implements Command Query Responsibility Segregation, supporting diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized products, immutable event logs, read models, historical snapshots, and document tables.
-    - **Brand Interface**: Includes a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
+    - **Brand Interface**: Workflow Builder and a Git-versioned JSON-based Master Catalog System.
     - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface for external integrations.
 - **System Design Choices**:
-    - **Organizational Hierarchy**: Utilizes a pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
-    - **Cross-Store Architecture**: Provides default tenant-wide data views with role-based access, supporting optional filters and prohibiting automatic store selection.
-    - **Request Routing**: Employs "Functional First → First Wins" for team-based routing and "Shift-Based Routing".
-    - **Action Management System**: Centralizes configuration for department actions via `action_configurations`, routed through supervisors by `UnifiedTriggerService`.
-    - **Deployment & Governance**: Uses incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access is managed with `deploy/keys/vps_key`, and database access to `w3suite_prod` is via a local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
+    - **Organizational Hierarchy**: Pyramidal scoping model (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
+    - **Cross-Store Architecture**: Default tenant-wide data views with role-based access, supporting optional filters and prohibiting automatic store selection.
+    - **Request Routing**: "Functional First → First Wins" for team-based routing and "Shift-Based Routing".
+    - **Action Management System**: Centralized configuration for department actions via `action_configurations`, routed through supervisors by `UnifiedTriggerService`.
+    - **Deployment & Governance**: Incremental VPS deployment via `./deploy/incremental-deploy.sh` to `/var/www/w3suite/`. SSH access via `deploy/keys/vps_key`, and database access to `w3suite_prod` via a local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
 
 # External Dependencies
 - **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
@@ -174,9 +174,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **Lucide React**: Icon library.
 - **TanStack React Query**: For server state management and data fetching.
 - **React Hook Form**: Handles form management and validation.
-- **Vite**: The chosen frontend build tool.
+- **Vite**: Frontend build tool.
 - **Drizzle Kit**: For database schema management.
-- **PostCSS**: Used as a CSS pre-processor.
-- **ESBuild**: For server-side code bundling.
-- **Nginx**: Functions as a reverse proxy.
+- **PostCSS**: CSS pre-processor.
+- **ESBuild**: Server-side code bundling.
+- **Nginx**: Reverse proxy.
 - **OpenAI**: Integrated for AI services (`gpt-4o`, `gpt-4o-realtime`).
