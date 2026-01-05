@@ -835,7 +835,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     mutationFn: async ({ name, parentFolderId }: { name: string; parentFolderId: string | null }) => {
       return apiRequest('/api/storage/folders', {
         method: 'POST',
-        body: JSON.stringify({ name, parentFolderId })
+        body: JSON.stringify({ name, parentId: parentFolderId })
       });
     },
     onSuccess: () => {

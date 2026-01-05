@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
-import { db } from '../core/db';
+import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { handleApiError } from '../core/error-utils';
 import { z } from 'zod';
@@ -420,6 +420,9 @@ router.post('/posts', requirePermission('communication.write'), async (req: Requ
   try {
     const tenantId = req.tenant!.id;
     const userId = req.user!.id;
+    
+    // Set RLS context for feed_posts table
+    await setTenantContext(tenantId);
     
     const body = createPostBodySchema.parse(req.body);
     
