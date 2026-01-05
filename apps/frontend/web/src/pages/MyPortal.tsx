@@ -1451,16 +1451,6 @@ export default function MyPortal() {
               <div className="space-y-4" data-testid="section-my-drive">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-900">My Drive</h2>
-                  <Link href={`/${currentTenant?.slug || 'staging'}/my-drive`}>
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      data-testid="button-open-my-drive-fullscreen"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Apri a schermo intero
-                    </Button>
-                  </Link>
                 </div>
                 <MyDriveContent embedded={true} />
               </div>
