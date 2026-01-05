@@ -109,7 +109,7 @@ interface FolderTreeItemProps {
   onRenameObject: (objectId: string, currentName: string) => void;
   onMoveFolder: (folderId: string, name: string) => void;
   onMoveObject: (objectId: string, name: string) => void;
-  onCopyObject: (objectId: string) => void;
+  onCopyObject: (objectId: string, name: string) => void;
   onCreateSubfolder: (parentFolderId: string) => void;
 }
 
@@ -293,7 +293,7 @@ function FolderTreeItem({
                       <ArrowUpDown className="w-4 h-4 mr-2" />
                       Sposta in...
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onCopyObject(obj.id)}>
+                    <DropdownMenuItem onClick={() => onCopyObject(obj.id, obj.displayName || obj.name)}>
                       <Copy className="w-4 h-4 mr-2" />
                       Copia
                     </DropdownMenuItem>
@@ -330,7 +330,7 @@ interface FolderTreeNavigatorProps {
   onRenameObject: (objectId: string, currentName: string) => void;
   onMoveFolder: (folderId: string, name: string) => void;
   onMoveObject: (objectId: string, name: string) => void;
-  onCopyObject: (objectId: string) => void;
+  onCopyObject: (objectId: string, name: string) => void;
   onCreateSubfolder: (parentFolderId: string) => void;
 }
 
@@ -465,7 +465,7 @@ function FolderTreeNavigator({
                   <ArrowUpDown className="w-4 h-4 mr-2" />
                   Sposta in...
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onCopyObject(obj.id)}>
+                <DropdownMenuItem onClick={() => onCopyObject(obj.id, obj.displayName || obj.name)}>
                   <Copy className="w-4 h-4 mr-2" />
                   Copia
                 </DropdownMenuItem>
@@ -601,6 +601,10 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const [createSubfolderDialogOpen, setCreateSubfolderDialogOpen] = useState(false);
   const [createSubfolderParentId, setCreateSubfolderParentId] = useState<string | null>(null);
   const [createSubfolderName, setCreateSubfolderName] = useState('');
+
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyTarget, setCopyTarget] = useState<{ id: string; name: string } | null>(null);
+  const [copyTargetFolderId, setCopyTargetFolderId] = useState<string | null>(null);
 
   const { data: foldersData, isLoading: foldersLoading } = useQuery<StorageFolder[]>({
     queryKey: ['/api/storage/my-drive/folders', currentFolderId],
@@ -817,6 +821,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/objects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/storage/quota'] });
+      setCopyDialogOpen(false);
+      setCopyTarget(null);
+      setCopyTargetFolderId(null);
       toast({ title: 'File copiato', description: 'La copia del file è stata creata con successo' });
     },
     onError: () => {
@@ -1166,7 +1173,11 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                     setMoveTargetFolderId(null);
                     setMoveDialogOpen(true);
                   }}
-                  onCopyObject={(id) => copyObjectMutation.mutate({ objectId: id })}
+                  onCopyObject={(id, name) => {
+                    setCopyTarget({ id, name });
+                    setCopyTargetFolderId(null);
+                    setCopyDialogOpen(true);
+                  }}
                   onCreateSubfolder={(parentId) => {
                     setCreateSubfolderParentId(parentId);
                     setCreateSubfolderName('');
@@ -1365,6 +1376,19 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleFolderClick(folder.id, folder.name); }}>
+                                <Eye className="w-4 h-4 mr-2" /> Apri
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setCreateSubfolderParentId(folder.id); setCreateSubfolderName(''); setCreateSubfolderDialogOpen(true); }}>
+                                <FolderPlus className="w-4 h-4 mr-2" /> Nuova cartella
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameTarget({ type: 'folder', id: folder.id, currentName: folder.name }); setRenameNewName(folder.name); setRenameDialogOpen(true); }}>
+                                <FileText className="w-4 h-4 mr-2" /> Rinomina
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMoveTarget({ type: 'folder', id: folder.id, name: folder.name }); setMoveTargetFolderId(null); setMoveDialogOpen(true); }}>
+                                <ArrowUpDown className="w-4 h-4 mr-2" /> Sposta in...
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}>
                                 <Share2 className="w-4 h-4 mr-2" /> Condividi
                               </DropdownMenuItem>
@@ -1440,7 +1464,17 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> Anteprima</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleFileClick(obj); }}><Eye className="w-4 h-4 mr-2" /> Apri</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameTarget({ type: 'object', id: obj.id, currentName: displayName }); setRenameNewName(displayName); setRenameDialogOpen(true); }}>
+                                    <FileText className="w-4 h-4 mr-2" /> Rinomina
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMoveTarget({ type: 'object', id: obj.id, name: displayName }); setMoveTargetFolderId(null); setMoveDialogOpen(true); }}>
+                                    <ArrowUpDown className="w-4 h-4 mr-2" /> Sposta in...
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setCopyTarget({ id: obj.id, name: displayName }); setCopyTargetFolderId(null); setCopyDialogOpen(true); }}>
+                                    <Copy className="w-4 h-4 mr-2" /> Copia
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, displayName); }}>
                                     <Share2 className="w-4 h-4 mr-2" /> Condividi
                                   </DropdownMenuItem>
@@ -1537,11 +1571,24 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleFolderClick(folder.id, folder.name); }}>
+                                  <Eye className="w-4 h-4 mr-2" /> Apri
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setCreateSubfolderParentId(folder.id); setCreateSubfolderName(''); setCreateSubfolderDialogOpen(true); }}>
+                                  <FolderPlus className="w-4 h-4 mr-2" /> Nuova cartella
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameTarget({ type: 'folder', id: folder.id, currentName: folder.name }); setRenameNewName(folder.name); setRenameDialogOpen(true); }}>
+                                  <FileText className="w-4 h-4 mr-2" /> Rinomina
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMoveTarget({ type: 'folder', id: folder.id, name: folder.name }); setMoveTargetFolderId(null); setMoveDialogOpen(true); }}>
+                                  <ArrowUpDown className="w-4 h-4 mr-2" /> Sposta in...
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}>
                                   <Share2 className="w-4 h-4 mr-2" /> Condividi
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
+                                <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); deleteFolderMutation.mutate(folder.id); }}>
                                   <Trash2 className="w-4 h-4 mr-2" /> Elimina
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -1598,7 +1645,17 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> Anteprima</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleFileClick(obj); }}><Eye className="w-4 h-4 mr-2" /> Apri</DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setRenameTarget({ type: 'object', id: obj.id, currentName: obj.displayName || obj.name }); setRenameNewName(obj.displayName || obj.name); setRenameDialogOpen(true); }}>
+                                      <FileText className="w-4 h-4 mr-2" /> Rinomina
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMoveTarget({ type: 'object', id: obj.id, name: obj.displayName || obj.name }); setMoveTargetFolderId(null); setMoveDialogOpen(true); }}>
+                                      <ArrowUpDown className="w-4 h-4 mr-2" /> Sposta in...
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setCopyTarget({ id: obj.id, name: obj.displayName || obj.name }); setCopyTargetFolderId(null); setCopyDialogOpen(true); }}>
+                                      <Copy className="w-4 h-4 mr-2" /> Copia
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}>
                                       <Share2 className="w-4 h-4 mr-2" /> Condividi
                                     </DropdownMenuItem>
@@ -2176,6 +2233,62 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
               data-testid="button-create-subfolder"
             >
               {createSubfolderMutation.isPending ? 'Creazione...' : 'Crea'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5 text-green-500" />
+              Copia file
+            </DialogTitle>
+            <DialogDescription>
+              Seleziona la cartella di destinazione per la copia di "{copyTarget?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label>Destinazione</Label>
+            <ScrollArea className="h-48 border rounded-md mt-2 p-2">
+              <button
+                onClick={() => setCopyTargetFolderId(null)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-left ${
+                  copyTargetFolderId === null ? 'bg-green-100 text-green-700' : 'hover:bg-slate-100'
+                }`}
+                data-testid="copy-to-root"
+              >
+                <Home className="w-4 h-4" />
+                Root (I miei file)
+              </button>
+              {(foldersData || []).map(folder => (
+                <button
+                  key={folder.id}
+                  onClick={() => setCopyTargetFolderId(folder.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-left ${
+                    copyTargetFolderId === folder.id ? 'bg-green-100 text-green-700' : 'hover:bg-slate-100'
+                  }`}
+                  data-testid={`copy-to-${folder.id}`}
+                >
+                  <Folder className="w-4 h-4 text-orange-400" />
+                  {folder.name}
+                </button>
+              ))}
+            </ScrollArea>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCopyDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => {
+                if (!copyTarget) return;
+                copyObjectMutation.mutate({ objectId: copyTarget.id, targetFolderId: copyTargetFolderId });
+              }}
+              disabled={copyObjectMutation.isPending}
+              className="bg-green-500 hover:bg-green-600"
+              data-testid="button-confirm-copy"
+            >
+              {copyObjectMutation.isPending ? 'Copiando...' : 'Copia'}
             </Button>
           </DialogFooter>
         </DialogContent>
