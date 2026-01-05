@@ -993,6 +993,21 @@ router.post('/upload/batch', requirePermission('storage:write'), upload.array('f
 // ==================== TENANT STORAGE ALLOCATION ====================
 
 /**
+ * GET /storage/quotas/summary
+ * Get quota summary for all users/teams in the tenant
+ */
+router.get('/quotas/summary', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const summary = await storageService.getQuotasSummary(ctx);
+    res.json(summary);
+  } catch (error: any) {
+    console.error('Error getting quotas summary:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /storage/tenant-allocation
  * Get tenant's storage allocation info (quota from Brand Interface)
  */

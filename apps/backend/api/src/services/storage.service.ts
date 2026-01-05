@@ -2464,11 +2464,24 @@ export const storageService = {
   },
 
   async getTenantAllocation(ctx: StorageServiceContext) {
-    const [quota] = await db.select().from(storageQuotas)
-      .where(and(
-        eq(storageQuotas.tenantId, ctx.tenantId),
-        eq(storageQuotas.entityType, 'tenant'),
-      )).limit(1);
+    const brandAllocation = await getTenantStorageAllocation(ctx.tenantId);
+    
+    if (brandAllocation) {
+      return {
+        tenantId: brandAllocation.tenantId,
+        tenantName: brandAllocation.tenantName,
+        tenantSlug: brandAllocation.tenantSlug,
+        quotaBytes: brandAllocation.quotaBytes,
+        usedBytes: brandAllocation.usedBytes,
+        objectCount: brandAllocation.objectCount,
+        alertThresholdPercent: brandAllocation.alertThresholdPercent,
+        suspended: brandAllocation.suspended,
+        suspendReason: brandAllocation.suspendReason,
+        maxUploadSizeMb: brandAllocation.maxUploadSizeMb,
+        allowedFileTypes: brandAllocation.allowedFileTypes,
+        features: brandAllocation.features,
+      };
+    }
 
     const totalUsed = await db.select({
       sum: sql<number>`COALESCE(SUM(size_bytes), 0)::bigint`
@@ -2487,17 +2500,21 @@ export const storageService = {
       ));
 
     const usedBytes = Number(totalUsed[0]?.sum || 0);
-    const quotaBytes = quota?.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES * 10;
-    const alertThresholdPercent = 80;
+    const quotaBytes = DEFAULT_TEAM_QUOTA_BYTES * 10;
 
     return {
       tenantId: ctx.tenantId,
+      tenantName: null,
+      tenantSlug: null,
       quotaBytes,
       usedBytes,
       objectCount: objectCount[0]?.count || 0,
-      alertThresholdPercent,
+      alertThresholdPercent: 80,
       suspended: false,
       suspendReason: null,
+      maxUploadSizeMb: null,
+      allowedFileTypes: null,
+      features: {},
     };
   },
 
@@ -2572,6 +2589,115 @@ export const storageService = {
     }
     
     return [];
+  },
+
+  async getQuotasSummary(ctx: StorageServiceContext) {
+    const brandAllocation = await getTenantStorageAllocation(ctx.tenantId);
+    
+    const userQuotasRaw = await db.select({
+      id: storageQuotas.id,
+      entityType: storageQuotas.entityType,
+      entityId: storageQuotas.entityId,
+      quotaBytes: storageQuotas.quotaBytes,
+      usedBytes: storageQuotas.usedBytes,
+      suspended: storageQuotas.suspended,
+    }).from(storageQuotas)
+      .where(eq(storageQuotas.tenantId, ctx.tenantId));
+
+    const userIds = userQuotasRaw
+      .filter(q => q.entityType === 'user' && q.entityId)
+      .map(q => q.entityId!);
+    const teamIds = userQuotasRaw
+      .filter(q => q.entityType === 'team' && q.entityId)
+      .map(q => q.entityId!);
+
+    const userMap = new Map<string, { name: string; email: string }>();
+    const teamMap = new Map<string, { name: string }>();
+
+    if (userIds.length > 0) {
+      const usersData = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+      }).from(users)
+        .where(inArray(users.id, userIds));
+
+      for (const u of usersData) {
+        userMap.set(u.id, { 
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown',
+          email: u.email || ''
+        });
+      }
+    }
+
+    if (teamIds.length > 0) {
+      const teamsData = await db.select({
+        id: teams.id,
+        name: teams.name,
+      }).from(teams)
+        .where(inArray(teams.id, teamIds));
+
+      for (const t of teamsData) {
+        teamMap.set(t.id, { name: t.name || 'Unknown' });
+      }
+    }
+
+    const entities = userQuotasRaw.map(q => {
+      if (q.entityType === 'user' && q.entityId) {
+        const user = userMap.get(q.entityId);
+        return {
+          id: q.id,
+          type: 'user' as const,
+          entityId: q.entityId,
+          name: user?.name || 'Unknown User',
+          email: user?.email || null,
+          quotaBytes: q.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
+          usedBytes: q.usedBytes || 0,
+          suspended: q.suspended || false,
+        };
+      } else if (q.entityType === 'team' && q.entityId) {
+        const team = teamMap.get(q.entityId);
+        return {
+          id: q.id,
+          type: 'team' as const,
+          entityId: q.entityId,
+          name: team?.name || 'Unknown Team',
+          email: null,
+          quotaBytes: q.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
+          usedBytes: q.usedBytes || 0,
+          suspended: q.suspended || false,
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    const totalUsed = await db.select({
+      sum: sql<number>`COALESCE(SUM(size_bytes), 0)::bigint`
+    }).from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      ));
+
+    return {
+      tenantAllocation: brandAllocation ? {
+        quotaBytes: brandAllocation.quotaBytes,
+        usedBytes: brandAllocation.usedBytes,
+        objectCount: brandAllocation.objectCount,
+        alertThresholdPercent: brandAllocation.alertThresholdPercent,
+        suspended: brandAllocation.suspended,
+      } : {
+        quotaBytes: DEFAULT_TEAM_QUOTA_BYTES * 10,
+        usedBytes: Number(totalUsed[0]?.sum || 0),
+        objectCount: 0,
+        alertThresholdPercent: 80,
+        suspended: false,
+      },
+      entities,
+      totalUsers: entities.filter(e => e?.type === 'user').length,
+      totalTeams: entities.filter(e => e?.type === 'team').length,
+    };
   },
 };
 
