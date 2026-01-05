@@ -127,7 +127,7 @@ export default function CloudStoragePage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="config" className="flex items-center gap-2" data-testid="tab-config">
               <Settings className="w-4 h-4" />
               Configurazione AWS
@@ -139,6 +139,10 @@ export default function CloudStoragePage() {
             <TabsTrigger value="allocations" className="flex items-center gap-2" data-testid="tab-allocations">
               <Users className="w-4 h-4" />
               Quote Tenant
+            </TabsTrigger>
+            <TabsTrigger value="assets" className="flex items-center gap-2" data-testid="tab-assets">
+              <Package className="w-4 h-4" />
+              Brand Assets
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2" data-testid="tab-analytics">
               <BarChart3 className="w-4 h-4" />
@@ -158,6 +162,13 @@ export default function CloudStoragePage() {
             <TenantAllocationsTab 
               allocations={allocations} 
               isLoading={allocationsLoading}
+              config={config}
+            />
+          </TabsContent>
+
+          <TabsContent value="assets" className="mt-6">
+            <BrandAssetsTab 
+              allocations={allocations}
               config={config}
             />
           </TabsContent>
@@ -1047,6 +1058,427 @@ function AnalyticsTab({
               <p className="text-sm text-gray-500 mb-1">GET/SELECT</p>
               <p className="text-2xl font-bold text-green-600">~$2.00</p>
               <p className="text-xs text-gray-400">$0.00043/1K richieste</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+interface BrandAsset {
+  id: string;
+  name: string;
+  description: string | null;
+  objectKey: string;
+  mimeType: string | null;
+  sizeBytes: number;
+  category: string | null;
+  tags: string[] | null;
+  isActive: boolean;
+  version: number;
+  pushedToTenants: string[] | null;
+  lastPushedAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+}
+
+function BrandAssetsTab({ allocations, config }: { allocations: TenantAllocation[]; config: StorageConfig | null }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [selectedAsset, setSelectedAsset] = useState<BrandAsset | null>(null);
+  const [selectedTenants, setSelectedTenants] = useState<string[]>([]);
+  const [pushProgress, setPushProgress] = useState<{ current: number; total: number; status: string } | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] = useState('shared-assets');
+  const [uploadName, setUploadName] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
+
+  const { data: assetsData, isLoading } = useQuery({
+    queryKey: ['/brand-api/storage/assets'],
+  });
+
+  const assets: BrandAsset[] = assetsData?.data || [];
+
+  const uploadAssetMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/brand-api/storage/assets/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Upload failed');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/storage/assets'] });
+      toast({ title: "Asset caricato", description: "L'asset è stato caricato con successo" });
+      setUploadFile(null);
+      setUploadName('');
+      setUploadDescription('');
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore upload", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const pushAssetMutation = useMutation({
+    mutationFn: async ({ assetId, tenantIds }: { assetId: string; tenantIds: string[] }) => {
+      setPushProgress({ current: 0, total: tenantIds.length, status: 'Inizializzazione...' });
+      
+      const response = await apiRequest(`/brand-api/storage/assets/${assetId}/push`, {
+        method: 'POST',
+        body: JSON.stringify({ tenantIds }),
+      });
+      
+      for (let i = 0; i < tenantIds.length; i++) {
+        setPushProgress({ 
+          current: i + 1, 
+          total: tenantIds.length, 
+          status: `Copiando verso tenant ${i + 1}/${tenantIds.length}...` 
+        });
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/storage/assets'] });
+      toast({ title: "Asset pushato", description: "L'asset è stato copiato ai tenant selezionati" });
+      setSelectedAsset(null);
+      setSelectedTenants([]);
+      setPushProgress(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Errore push", description: error.message, variant: "destructive" });
+      setPushProgress(null);
+    }
+  });
+
+  const handleUpload = () => {
+    if (!uploadFile || !uploadName) {
+      toast({ title: "Errore", description: "Nome e file sono obbligatori", variant: "destructive" });
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+    formData.append('name', uploadName);
+    formData.append('description', uploadDescription);
+    formData.append('category', uploadCategory);
+    uploadAssetMutation.mutate(formData);
+  };
+
+  const handlePush = () => {
+    if (!selectedAsset || selectedTenants.length === 0) {
+      toast({ title: "Errore", description: "Seleziona almeno un tenant", variant: "destructive" });
+      return;
+    }
+    pushAssetMutation.mutate({ assetId: selectedAsset.id, tenantIds: selectedTenants });
+  };
+
+  const toggleTenantSelection = (tenantId: string) => {
+    setSelectedTenants(prev => 
+      prev.includes(tenantId) 
+        ? prev.filter(id => id !== tenantId)
+        : [...prev, tenantId]
+    );
+  };
+
+  const selectAllTenants = () => {
+    setSelectedTenants(allocations.map(a => a.tenantId));
+  };
+
+  const deselectAllTenants = () => {
+    setSelectedTenants([]);
+  };
+
+  const getCategoryIcon = (category: string | null) => {
+    switch (category) {
+      case 'logo': return <Image className="w-4 h-4 text-blue-500" />;
+      case 'template': return <FileText className="w-4 h-4 text-green-500" />;
+      case 'catalog': return <Package className="w-4 h-4 text-purple-500" />;
+      case 'media': return <Video className="w-4 h-4 text-red-500" />;
+      default: return <FolderOpen className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-blue-500" />
+            Carica Nuovo Asset
+          </CardTitle>
+          <CardDescription>
+            Carica asset del brand che possono essere pushati ai tenant
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Nome Asset *</Label>
+              <Input 
+                value={uploadName}
+                onChange={(e) => setUploadName(e.target.value)}
+                placeholder="Es. Logo aziendale 2024"
+                data-testid="input-asset-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select value={uploadCategory} onValueChange={setUploadCategory}>
+                <SelectTrigger data-testid="select-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shared-assets">Asset Condivisi</SelectItem>
+                  <SelectItem value="logo">Loghi</SelectItem>
+                  <SelectItem value="template">Template</SelectItem>
+                  <SelectItem value="catalog">Catalogo</SelectItem>
+                  <SelectItem value="media">Media</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Descrizione</Label>
+            <Input 
+              value={uploadDescription}
+              onChange={(e) => setUploadDescription(e.target.value)}
+              placeholder="Descrizione opzionale dell'asset"
+              data-testid="input-asset-description"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>File *</Label>
+            <div className="flex items-center gap-4">
+              <Input 
+                type="file"
+                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                className="flex-1"
+                data-testid="input-asset-file"
+              />
+              {uploadFile && (
+                <Badge variant="secondary">
+                  {formatBytes(uploadFile.size)}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <Button 
+            onClick={handleUpload}
+            disabled={!uploadFile || !uploadName || uploadAssetMutation.isPending}
+            className="w-full"
+            data-testid="btn-upload-asset"
+          >
+            {uploadAssetMutation.isPending ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Caricamento...</>
+            ) : (
+              <><Upload className="w-4 h-4 mr-2" /> Carica Asset</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-purple-500" />
+              Asset del Brand ({assets.length})
+            </CardTitle>
+            <CardDescription>
+              Seleziona un asset per pusharlo ai tenant
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {assets.map((asset) => (
+                <div
+                  key={asset.id}
+                  onClick={() => setSelectedAsset(asset)}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                    selectedAsset?.id === asset.id 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                  data-testid={`asset-item-${asset.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {getCategoryIcon(asset.category)}
+                      <div>
+                        <p className="font-medium">{asset.name}</p>
+                        <p className="text-xs text-gray-500">{asset.objectKey}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="text-xs">
+                        {formatBytes(asset.sizeBytes)}
+                      </Badge>
+                      {asset.pushedToTenants && asset.pushedToTenants.length > 0 && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Pushato a {asset.pushedToTenants.length} tenant
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {asset.description && (
+                    <p className="text-sm text-gray-500 mt-2">{asset.description}</p>
+                  )}
+                </div>
+              ))}
+              {assets.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Nessun asset caricato</p>
+                  <p className="text-sm">Carica il primo asset del brand</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-green-500" />
+              Push a Tenant
+            </CardTitle>
+            <CardDescription>
+              {selectedAsset 
+                ? `Seleziona i tenant per: ${selectedAsset.name}`
+                : 'Seleziona prima un asset dalla lista'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {selectedAsset ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={selectAllTenants}
+                    data-testid="btn-select-all"
+                  >
+                    Seleziona Tutti
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={deselectAllTenants}
+                    data-testid="btn-deselect-all"
+                  >
+                    Deseleziona Tutti
+                  </Button>
+                  <Badge variant="secondary">
+                    {selectedTenants.length} selezionati
+                  </Badge>
+                </div>
+
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {allocations.map((tenant) => {
+                    const isSelected = selectedTenants.includes(tenant.tenantId);
+                    const alreadyPushed = selectedAsset.pushedToTenants?.includes(tenant.tenantId);
+                    
+                    return (
+                      <div
+                        key={tenant.tenantId}
+                        onClick={() => toggleTenantSelection(tenant.tenantId)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${
+                          isSelected 
+                            ? 'border-green-500 bg-green-50' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        data-testid={`tenant-select-${tenant.tenantId}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                            isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                          <div>
+                            <p className="font-medium">{tenant.tenantName}</p>
+                            <p className="text-xs text-gray-500">{tenant.tenantSlug}</p>
+                          </div>
+                        </div>
+                        {alreadyPushed && (
+                          <Badge className="bg-green-100 text-green-700">
+                            <Check className="w-3 h-3 mr-1" />
+                            Già pushato
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {pushProgress && (
+                  <div className="space-y-2 p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{pushProgress.status}</span>
+                      <span>{pushProgress.current}/{pushProgress.total}</span>
+                    </div>
+                    <Progress 
+                      value={(pushProgress.current / pushProgress.total) * 100} 
+                      className="h-2"
+                    />
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handlePush}
+                  disabled={selectedTenants.length === 0 || pushAssetMutation.isPending}
+                  className="w-full"
+                  data-testid="btn-push-asset"
+                >
+                  {pushAssetMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Pushing...</>
+                  ) : (
+                    <><Upload className="w-4 h-4 mr-2" /> Push a {selectedTenants.length} Tenant</>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Seleziona un asset</p>
+                <p className="text-sm">dalla lista a sinistra</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Server className="w-5 h-5 text-gray-500" />
+            Prefissi Storage Brand
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500 mb-1">Asset Condivisi</p>
+              <p className="font-mono text-sm">/brand/shared-assets/</p>
+              <p className="text-xs text-gray-400 mt-1">Read-only per tutti i tenant</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500 mb-1">Catalogo Prodotti</p>
+              <p className="font-mono text-sm">/brand/catalog/</p>
+              <p className="text-xs text-gray-400 mt-1">Master catalog condiviso</p>
             </div>
           </div>
         </CardContent>

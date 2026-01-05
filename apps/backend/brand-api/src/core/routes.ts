@@ -5672,6 +5672,136 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Upload brand asset with file
+  app.post("/brand-api/storage/assets/upload", async (req, res) => {
+    try {
+      const multer = await import("multer");
+      const storage = multer.default.memoryStorage();
+      const upload = multer.default({
+        storage,
+        limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+      });
+
+      upload.single("file")(req, res, async (err: any) => {
+        if (err) {
+          return res.status(400).json({
+            success: false,
+            error: err.message
+          });
+        }
+
+        const user = (req as any).user;
+        const file = (req as any).file;
+        const { name, description, category } = req.body;
+
+        if (!file || !name) {
+          return res.status(400).json({
+            success: false,
+            error: "file and name are required"
+          });
+        }
+
+        try {
+          const { db } = await import("../db/index.js");
+          const { brandAssets, storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+          const { eq } = await import("drizzle-orm");
+          const crypto = await import("crypto");
+
+          // Get storage config
+          const configs = await db
+            .select()
+            .from(storageGlobalConfig)
+            .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+            .limit(1);
+
+          const config = configs[0];
+
+          // Generate object key
+          const fileId = crypto.randomUUID();
+          const ext = file.originalname.split('.').pop() || '';
+          const categoryPath = category || 'shared-assets';
+          const objectKey = `brand/${categoryPath}/${fileId}.${ext}`;
+
+          // Try to upload to S3 if configured
+          let uploadSuccess = false;
+          if (config?.hasCredentials) {
+            try {
+              const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+              const { decryptMCPCredentials } = await import("../../services/mcp-credential-encryption.js");
+              
+              const decrypted = decryptMCPCredentials({
+                accessKeyId: config.accessKeyId || '',
+                secretAccessKey: config.secretAccessKey || ''
+              });
+
+              const s3Client = new S3Client({
+                region: config.region || 'eu-central-1',
+                credentials: {
+                  accessKeyId: decrypted.accessKeyId,
+                  secretAccessKey: decrypted.secretAccessKey
+                }
+              });
+
+              await s3Client.send(new PutObjectCommand({
+                Bucket: config.bucketName || '',
+                Key: objectKey,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+                Metadata: {
+                  'original-name': file.originalname,
+                  'uploaded-by': user.email,
+                  'category': categoryPath
+                },
+                ServerSideEncryption: 'AES256'
+              }));
+
+              uploadSuccess = true;
+              console.log(`✅ Brand asset uploaded to S3: ${objectKey}`);
+            } catch (s3Error) {
+              console.error("❌ S3 upload failed:", s3Error);
+            }
+          }
+
+          // Create asset record in database
+          const result = await db
+            .insert(brandAssets)
+            .values({
+              name,
+              description,
+              objectKey,
+              mimeType: file.mimetype,
+              sizeBytes: file.size,
+              category: categoryPath,
+              createdBy: user.email,
+              brandTenantId: user.brandTenantId
+            })
+            .returning();
+
+          res.json({
+            success: true,
+            data: result[0],
+            uploadedToS3: uploadSuccess,
+            message: uploadSuccess 
+              ? "Asset caricato su S3 con successo"
+              : "Asset registrato (S3 non configurato)"
+          });
+        } catch (dbError) {
+          console.error("❌ Database error:", dbError);
+          res.status(500).json({
+            success: false,
+            error: dbError instanceof Error ? dbError.message : "Database error"
+          });
+        }
+      });
+    } catch (error) {
+      console.error("❌ Error uploading asset:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to upload asset"
+      });
+    }
+  });
+
   // Push asset to tenants
   app.post("/brand-api/storage/assets/:assetId/push", async (req, res) => {
     const user = (req as any).user;
@@ -5709,27 +5839,113 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         });
       }
 
-      // Update pushed tenants
-      const existingPushed = assets[0].pushedToTenants || [];
-      const newPushed = [...new Set([...existingPushed, ...tenantIds])];
+      // Get storage config for S3 credentials
+      const { storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const configs = await db
+        .select()
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      const config = configs[0];
+      const asset = assets[0];
+      const copyResults: { tenantId: string; success: boolean; error?: string }[] = [];
+
+      // Perform S3 copy to each tenant prefix if configured
+      if (config?.hasCredentials && config.bucketName) {
+        try {
+          const { S3Client, CopyObjectCommand, HeadObjectCommand } = await import("@aws-sdk/client-s3");
+          const { decryptMCPCredentials } = await import("../../services/mcp-credential-encryption.js");
+          
+          const decrypted = decryptMCPCredentials({
+            accessKeyId: config.accessKeyId || '',
+            secretAccessKey: config.secretAccessKey || ''
+          });
+
+          const s3Client = new S3Client({
+            region: config.region || 'eu-central-1',
+            credentials: {
+              accessKeyId: decrypted.accessKeyId,
+              secretAccessKey: decrypted.secretAccessKey
+            }
+          });
+
+          // Verify source exists
+          try {
+            await s3Client.send(new HeadObjectCommand({
+              Bucket: config.bucketName,
+              Key: asset.objectKey
+            }));
+          } catch (headError) {
+            console.error(`❌ Source object not found: ${asset.objectKey}`);
+            return res.status(404).json({
+              success: false,
+              error: `Source file not found in S3: ${asset.objectKey}`
+            });
+          }
+
+          // Copy to each tenant prefix
+          for (const tenantId of tenantIds) {
+            try {
+              const fileName = asset.objectKey.split('/').pop() || 'asset';
+              const destinationKey = `tenants/${tenantId}/brand-assets/${asset.category || 'shared'}/${fileName}`;
+              
+              await s3Client.send(new CopyObjectCommand({
+                Bucket: config.bucketName,
+                CopySource: `${config.bucketName}/${asset.objectKey}`,
+                Key: destinationKey,
+                MetadataDirective: 'COPY',
+                ServerSideEncryption: 'AES256'
+              }));
+
+              copyResults.push({ tenantId, success: true });
+              console.log(`✅ Asset copied to tenant ${tenantId}: ${destinationKey}`);
+            } catch (copyError) {
+              copyResults.push({ 
+                tenantId, 
+                success: false, 
+                error: copyError instanceof Error ? copyError.message : 'Copy failed'
+              });
+              console.error(`❌ Failed to copy to tenant ${tenantId}:`, copyError);
+            }
+          }
+        } catch (s3Error) {
+          console.error("❌ S3 client error:", s3Error);
+          return res.status(500).json({
+            success: false,
+            error: "Failed to initialize S3 client"
+          });
+        }
+      } else {
+        // No S3 config - just record the push without actual copy
+        tenantIds.forEach(tenantId => {
+          copyResults.push({ tenantId, success: false, error: 'S3 not configured' });
+        });
+      }
+
+      // Update pushed tenants in database
+      const successfulTenants = copyResults.filter(r => r.success).map(r => r.tenantId);
+      const existingPushed = asset.pushedToTenants || [];
+      const newPushed = [...new Set([...existingPushed, ...successfulTenants])];
 
       const result = await db
         .update(brandAssets)
         .set({
           pushedToTenants: newPushed,
-          lastPushedAt: new Date(),
+          lastPushedAt: successfulTenants.length > 0 ? new Date() : asset.lastPushedAt,
           updatedAt: new Date()
         })
         .where(eq(brandAssets.id, assetId))
         .returning();
 
-      // TODO: Actually copy the file in S3 to tenant prefixes
-      // This will be implemented when we have the S3 service
-
+      const failedCount = copyResults.filter(r => !r.success).length;
       res.json({
-        success: true,
+        success: failedCount === 0,
         data: result[0],
-        message: `Asset pushed to ${tenantIds.length} tenant(s)`
+        copyResults,
+        message: failedCount === 0
+          ? `Asset copiato a ${successfulTenants.length} tenant con successo`
+          : `Copiato a ${successfulTenants.length} tenant, ${failedCount} falliti`
       });
     } catch (error) {
       console.error("❌ Error pushing asset:", error);
