@@ -2175,6 +2175,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get ALL tenants - for Brand Interface internal service calls
+  // This endpoint is called by Brand Interface to list all available tenants
+  app.get('/api/tenants/all', enterpriseAuth, async (req: any, res) => {
+    try {
+      // Get all tenants from database
+      const allTenants = await db.select({
+        id: tenants.id,
+        name: tenants.name,
+        slug: tenants.slug,
+        description: tenants.description,
+        isActive: tenants.isActive,
+        createdAt: tenants.createdAt,
+      }).from(tenants)
+        .where(eq(tenants.isActive, true));
+
+      res.json({
+        success: true,
+        data: allTenants
+      });
+    } catch (error) {
+      console.error("[API] Error fetching all tenants:", error);
+      res.status(500).json({ error: "Failed to fetch tenants" });
+    }
+  });
+
   // Get tenant info
   app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
     try {
