@@ -109,7 +109,15 @@ router.get('/objects', requirePermission('storage:read'), async (req: Request, r
 router.get('/my-drive/objects', requirePermission('storage:read'), async (req: Request, res: Response) => {
   try {
     const ctx = getContext(req);
-    const { folderId } = req.query;
+    const { folderId, all } = req.query;
+    
+    // Only return ALL objects when explicitly requested with all=true
+    if (all === 'true') {
+      const objects = await storageService.getAllMyDriveObjects(ctx);
+      return res.json(objects);
+    }
+    
+    // Default behavior: return objects filtered by folderId (root if not specified)
     const objects = await storageService.getMyDriveObjects(ctx, folderId as string | undefined);
     res.json(objects);
   } catch (error: any) {

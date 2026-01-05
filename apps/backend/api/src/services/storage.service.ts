@@ -856,6 +856,21 @@ export const storageService = {
     return objects;
   },
 
+  // Returns ALL user's objects for tree navigator (no folder filtering, but maintains user ownership)
+  async getAllMyDriveObjects(ctx: StorageServiceContext) {
+    const conditions = [
+      eq(storageObjects.tenantId, ctx.tenantId),
+      eq(storageObjects.ownerUserId, ctx.userId), // SECURITY: Only return user's own objects
+      isNull(storageObjects.deletedAt),
+    ];
+
+    const objects = await db.select().from(storageObjects)
+      .where(and(...conditions))
+      .orderBy(desc(storageObjects.createdAt));
+
+    return objects;
+  },
+
   async getSharedWithMe(ctx: StorageServiceContext) {
     const acls = await db.select({
       objectId: storageAcl.objectId,
