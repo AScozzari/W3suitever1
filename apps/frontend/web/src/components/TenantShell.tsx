@@ -231,11 +231,11 @@ export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
   }
   
   // Valid tenant - render routes with automatic tenant context
+  // NOTE: StoreProvider moved to AuthenticatedRoute only to prevent
+  // API calls on unauthenticated pages (Login, ForgotPassword, etc.)
   return (
     <TenantProvider>
-      <StoreProvider>
-        <TenantRoutes tenantSlug={tenantSlug} />
-      </StoreProvider>
+      <TenantRoutes tenantSlug={tenantSlug} />
     </TenantProvider>
   );
 };
@@ -654,5 +654,11 @@ const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children 
     return <Login tenantCode={tenantSlug} />;
   }
   
-  return <>{children}</>;
+  // StoreProvider mounted ONLY when user is authenticated
+  // This prevents API calls to /api/me/stores on unauthenticated pages
+  return (
+    <StoreProvider>
+      {children}
+    </StoreProvider>
+  );
 };

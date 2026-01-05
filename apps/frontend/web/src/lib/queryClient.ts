@@ -201,6 +201,20 @@ export const queryClient = new QueryClient({
               throw new Error('Authentication in progress');
             }
             
+            // 🛡️ GUARD: Don't trigger OAuth2 flow if already on login/auth pages
+            // This prevents infinite redirect loops when login page makes API calls
+            const currentPath = window.location.pathname;
+            const isOnAuthPage = currentPath.includes('/login') || 
+                                 currentPath.includes('/auth/callback') ||
+                                 currentPath.includes('/oauth2/callback') ||
+                                 currentPath.includes('/forgot-password') ||
+                                 currentPath.includes('/reset-password');
+            
+            if (isOnAuthPage) {
+              console.log('[AUTH] Skipping OAuth2 redirect - already on auth page:', currentPath);
+              throw new Error('Authentication required - on auth page');
+            }
+            
             window.__authRedirectInProgress = true;
             try {
               await oauth2Client.logout();
@@ -223,9 +237,16 @@ export const queryClient = new QueryClient({
         
         if (!res.ok) {
           if (res.status === 401) {
+            // 🛡️ GUARD: Don't trigger OAuth2 flow if already on login/auth pages
+            const currentPath = window.location.pathname;
+            const isOnAuthPage = currentPath.includes('/login') || 
+                                 currentPath.includes('/auth/callback') ||
+                                 currentPath.includes('/oauth2/callback') ||
+                                 currentPath.includes('/forgot-password') ||
+                                 currentPath.includes('/reset-password');
             
-            // Only trigger OAuth flow in oauth2 mode
-            if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress) {
+            // Only trigger OAuth flow in oauth2 mode and NOT on auth pages
+            if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress && !isOnAuthPage) {
               window.__authRedirectInProgress = true;
               try {
                 await oauth2Client.logout();
@@ -312,6 +333,19 @@ export async function apiRequest(
         throw new Error('Authentication in progress');
       }
       
+      // 🛡️ GUARD: Don't trigger OAuth2 flow if already on login/auth pages
+      const currentPath = window.location.pathname;
+      const isOnAuthPage = currentPath.includes('/login') || 
+                           currentPath.includes('/auth/callback') ||
+                           currentPath.includes('/oauth2/callback') ||
+                           currentPath.includes('/forgot-password') ||
+                           currentPath.includes('/reset-password');
+      
+      if (isOnAuthPage) {
+        console.log('[AUTH] Skipping OAuth2 redirect - already on auth page:', currentPath);
+        throw new Error('Authentication required - on auth page');
+      }
+      
       window.__authRedirectInProgress = true;
       try {
         await oauth2Client.logout();
@@ -378,9 +412,16 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
+      // 🛡️ GUARD: Don't trigger OAuth2 flow if already on login/auth pages
+      const currentPath = window.location.pathname;
+      const isOnAuthPage = currentPath.includes('/login') || 
+                           currentPath.includes('/auth/callback') ||
+                           currentPath.includes('/oauth2/callback') ||
+                           currentPath.includes('/forgot-password') ||
+                           currentPath.includes('/reset-password');
       
-      // Only trigger OAuth flow in oauth2 mode
-      if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress) {
+      // Only trigger OAuth flow in oauth2 mode and NOT on auth pages
+      if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress && !isOnAuthPage) {
         window.__authRedirectInProgress = true;
         try {
           await oauth2Client.logout();
