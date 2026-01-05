@@ -20,8 +20,9 @@ import {
   Download, Trash2, Share2, Star, StarOff, Clock, Home, ChevronRight,
   FileText, Image, FileVideo, FileAudio, Archive, FileSpreadsheet,
   ArrowUpDown, HardDrive, Users, Eye, Copy, CheckCircle2, AlertCircle,
-  ChevronDown, Settings, Shield, Sparkles, FilePlus, ChevronUp
+  ChevronDown, Settings, Shield, Sparkles, FilePlus, ChevronUp, X, UserPlus
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StorageFolder {
@@ -64,6 +65,20 @@ interface StorageShare {
   sharedWithEmail?: string;
   role: 'viewer' | 'editor' | 'owner';
   expiresAt?: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  departmentId?: string;
 }
 
 interface StorageQuota {
@@ -170,6 +185,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   });
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [showInfoPanel, setShowInfoPanel] = useState(true);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: foldersData, isLoading: foldersLoading } = useQuery<StorageFolder[]>({
@@ -193,6 +211,17 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const { data: sharedData } = useQuery<{ objects: StorageObject[], folders: StorageFolder[] }>({
     queryKey: ['/api/storage/shared-with-me'],
     enabled: activeSection === 'shared'
+  });
+
+  // Users and teams for sharing
+  const { data: usersData = [] } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    enabled: shareDialogOpen
+  });
+
+  const { data: teamsData = [] } = useQuery<Team[]>({
+    queryKey: ['/api/teams'],
+    enabled: shareDialogOpen
   });
 
   const createFolderMutation = useMutation({
@@ -347,6 +376,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       maxDownloads: 0
     });
     setShareLink(null);
+    setSelectedUsers([]);
+    setSelectedTeams([]);
+    setUserSearchQuery('');
     setShareDialogOpen(true);
   }, []);
 
@@ -1138,14 +1170,14 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       </Dialog>
 
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="w-5 h-5 text-purple-500" />
               Condividi "{shareTarget?.name}"
             </DialogTitle>
             <DialogDescription>
-              Crea un link di condivisione per {shareTarget?.type === 'folder' ? 'questa cartella' : 'questo file'}
+              Condividi con utenti o team, oppure crea un link pubblico
             </DialogDescription>
           </DialogHeader>
           
@@ -1169,10 +1201,132 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
             </div>
           ) : (
             <div className="space-y-4 py-4">
-              <div className="space-y-4">
+              {/* User Selection */}
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <UserPlus className="w-4 h-4 text-blue-500" />
+                  Condividi con utenti
+                </Label>
+                <Input
+                  placeholder="Cerca utenti..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="mb-2"
+                  data-testid="input-search-users"
+                />
+                <ScrollArea className="h-32 border rounded-lg p-2">
+                  {usersData
+                    .filter(u => {
+                      const name = `${u.firstName || ''} ${u.lastName || ''} ${u.email}`.toLowerCase();
+                      return name.includes(userSearchQuery.toLowerCase());
+                    })
+                    .map(user => (
+                      <div 
+                        key={user.id}
+                        className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-50 rounded cursor-pointer"
+                        onClick={() => {
+                          setSelectedUsers(prev => 
+                            prev.includes(user.id) 
+                              ? prev.filter(id => id !== user.id)
+                              : [...prev, user.id]
+                          );
+                        }}
+                        data-testid={`user-option-${user.id}`}
+                      >
+                        <Checkbox 
+                          checked={selectedUsers.includes(user.id)}
+                          className="pointer-events-none"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : user.email}
+                          </p>
+                          {(user.firstName || user.lastName) && (
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  {usersData.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nessun utente disponibile</p>
+                  )}
+                </ScrollArea>
+                {selectedUsers.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedUsers.map(userId => {
+                      const user = usersData.find(u => u.id === userId);
+                      return (
+                        <Badge key={userId} variant="secondary" className="gap-1">
+                          {user?.firstName || user?.email?.split('@')[0] || 'Utente'}
+                          <X 
+                            className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                            onClick={() => setSelectedUsers(prev => prev.filter(id => id !== userId))}
+                          />
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Team Selection */}
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-purple-500" />
+                  Condividi con team
+                </Label>
+                <ScrollArea className="h-24 border rounded-lg p-2">
+                  {teamsData.map(team => (
+                    <div 
+                      key={team.id}
+                      className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-50 rounded cursor-pointer"
+                      onClick={() => {
+                        setSelectedTeams(prev => 
+                          prev.includes(team.id) 
+                            ? prev.filter(id => id !== team.id)
+                            : [...prev, team.id]
+                        );
+                      }}
+                      data-testid={`team-option-${team.id}`}
+                    >
+                      <Checkbox 
+                        checked={selectedTeams.includes(team.id)}
+                        className="pointer-events-none"
+                      />
+                      <span className="text-sm">{team.name}</span>
+                    </div>
+                  ))}
+                  {teamsData.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nessun team disponibile</p>
+                  )}
+                </ScrollArea>
+                {selectedTeams.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedTeams.map(teamId => {
+                      const team = teamsData.find(t => t.id === teamId);
+                      return (
+                        <Badge key={teamId} variant="outline" className="gap-1 border-purple-300 text-purple-700">
+                          {team?.name || 'Team'}
+                          <X 
+                            className="w-3 h-3 cursor-pointer hover:text-red-500" 
+                            onClick={() => setSelectedTeams(prev => prev.filter(id => id !== teamId))}
+                          />
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Link Settings */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Opzioni link pubblico</Label>
+                
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Consenti download</Label>
+                    <Label className="text-sm">Consenti download</Label>
                     <p className="text-xs text-muted-foreground">Chi ha il link può scaricare</p>
                   </div>
                   <Switch
@@ -1184,7 +1338,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Consenti modifica</Label>
+                    <Label className="text-sm">Consenti modifica</Label>
                     <p className="text-xs text-muted-foreground">Chi ha il link può modificare</p>
                   </div>
                   <Switch
@@ -1194,11 +1348,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                   />
                 </div>
 
-                <Separator />
-
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-sm font-medium">Proteggi con password</Label>
+                    <Label className="text-sm">Proteggi con password</Label>
                     <p className="text-xs text-muted-foreground">Richiedi password per accedere</p>
                   </div>
                   <Switch
@@ -1254,7 +1406,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                   className="bg-purple-500 hover:bg-purple-600"
                   data-testid="button-create-share"
                 >
-                  {createShareMutation.isPending ? 'Creazione...' : 'Crea link'}
+                  {createShareMutation.isPending ? 'Condivisione...' : 'Condividi'}
                 </Button>
               </DialogFooter>
             </div>
