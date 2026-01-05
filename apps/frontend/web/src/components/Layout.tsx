@@ -1267,7 +1267,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
-          overflow: 'hidden'
+          overflowY: 'auto',
+          overflowX: 'hidden'
         }}>
           {children}
         </main>
