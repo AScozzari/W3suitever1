@@ -5399,6 +5399,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
 
   // Get all tenant storage allocations with real usage data from W3 Suite
+  // This endpoint fetches ALL tenants from W3 backend and merges with existing allocations
   app.get("/brand-api/storage/allocations", async (req, res) => {
     const user = (req as any).user;
 
@@ -5407,59 +5408,107 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const { tenantStorageAllocations } = await import("../db/schema/brand-interface.js");
       const { eq } = await import("drizzle-orm");
 
-      const allocations = await db
+      // Step 1: Get existing allocations from Brand Interface DB
+      const existingAllocations = await db
         .select()
         .from(tenantStorageAllocations)
         .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
 
-      // Enrich allocations with real usage data from W3 Suite backend
-      const enrichedAllocations = await Promise.all(allocations.map(async (allocation) => {
-        try {
-          // Call W3 Suite backend to get real tenant storage usage
-          const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'X-Tenant-ID': allocation.tenantId,
-            'X-Service': 'brand-interface',
-            'X-Service-Version': '1.0.0'
-          };
-          
-          if (process.env.NODE_ENV === 'development') {
-            headers['X-Auth-Session'] = 'authenticated';
-            headers['X-Demo-User'] = 'demo-user';
-          } else {
-            headers['Authorization'] = `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`;
-          }
+      // Create a map for quick lookup
+      const allocationMap = new Map(existingAllocations.map(a => [a.tenantId, a]));
 
-          const response = await fetch(`${W3_BACKEND_URL}/api/storage/tenant-allocation`, {
+      // Step 2: Fetch ALL tenants from W3 Suite backend
+      const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Tenant-ID': '00000000-0000-0000-0000-000000000000', // Brand tenant
+        'X-Service': 'brand-interface',
+        'X-Service-Version': '1.0.0'
+      };
+      
+      if (process.env.NODE_ENV === 'development') {
+        headers['X-Auth-Session'] = 'authenticated';
+        headers['X-Demo-User'] = 'demo-user';
+      } else {
+        headers['Authorization'] = `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`;
+      }
+
+      let allTenants: Array<{ id: string; name: string; slug: string; description?: string; isActive?: boolean }> = [];
+      
+      try {
+        const tenantsResponse = await fetch(`${W3_BACKEND_URL}/api/tenants/all`, {
+          method: 'GET',
+          headers
+        });
+
+        if (tenantsResponse.ok) {
+          const tenantsData = await tenantsResponse.json();
+          allTenants = tenantsData.data || [];
+          console.log(`✅ Fetched ${allTenants.length} tenants from W3 backend`);
+        } else {
+          console.warn('⚠️ Could not fetch tenants from W3 backend:', await tenantsResponse.text());
+        }
+      } catch (fetchError) {
+        console.warn('⚠️ Could not connect to W3 backend:', fetchError);
+      }
+
+      // Step 3: Merge tenants with allocations and fetch real usage data
+      const enrichedAllocations = await Promise.all(allTenants.map(async (tenant) => {
+        const existingAllocation = allocationMap.get(tenant.id);
+        
+        // Get real usage data for this tenant
+        let usedBytes = 0;
+        let objectCount = 0;
+        
+        try {
+          const usageHeaders = { ...headers, 'X-Tenant-ID': tenant.id };
+          const usageResponse = await fetch(`${W3_BACKEND_URL}/api/storage/tenant-allocation`, {
             method: 'GET',
-            headers
+            headers: usageHeaders
           });
 
-          if (response.ok) {
-            const realData = await response.json();
-            return {
-              ...allocation,
-              usedBytes: realData.usedBytes || allocation.usedBytes || 0,
-              objectCount: realData.objectCount || allocation.objectCount || 0,
-              usagePercent: allocation.quotaBytes && allocation.quotaBytes > 0 
-                ? Math.round(((realData.usedBytes || 0) / allocation.quotaBytes) * 100) 
-                : 0
-            };
+          if (usageResponse.ok) {
+            const usageData = await usageResponse.json();
+            usedBytes = usageData.usedBytes || 0;
+            objectCount = usageData.objectCount || 0;
           }
-        } catch (enrichError) {
-          console.warn(`⚠️ Could not fetch real usage for tenant ${allocation.tenantId}:`, enrichError);
+        } catch (usageError) {
+          console.warn(`⚠️ Could not fetch usage for tenant ${tenant.id}`);
         }
-        
-        // Return allocation with existing data if enrichment fails
-        return {
-          ...allocation,
-          usedBytes: allocation.usedBytes || 0,
-          objectCount: allocation.objectCount || 0,
-          usagePercent: allocation.quotaBytes && allocation.quotaBytes > 0 
-            ? Math.round(((allocation.usedBytes || 0) / allocation.quotaBytes) * 100) 
-            : 0
-        };
+
+        if (existingAllocation) {
+          // Merge with existing allocation
+          const quotaBytes = existingAllocation.quotaBytes || 0;
+          return {
+            ...existingAllocation,
+            tenantName: tenant.name, // Update name from source
+            tenantSlug: tenant.slug,
+            usedBytes,
+            objectCount,
+            usagePercent: quotaBytes > 0 ? Math.round((usedBytes / quotaBytes) * 100) : 0
+          };
+        } else {
+          // Create virtual allocation for tenant without one
+          return {
+            id: `virtual-${tenant.id}`,
+            brandTenantId: user.brandTenantId,
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+            tenantSlug: tenant.slug,
+            quotaBytes: 0,
+            usedBytes,
+            objectCount,
+            usagePercent: 0,
+            alertThresholdPercent: 80,
+            maxUploadSizeMb: null,
+            allowedFileTypes: null,
+            features: null,
+            suspended: false,
+            suspendReason: null,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        }
       }));
 
       res.json({
