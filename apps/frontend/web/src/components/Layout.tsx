@@ -200,15 +200,28 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   }, [location]);
 
-  // Query per ottenere i punti vendita del tenant corrente
-  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
-    queryKey: ["/api/stores"],
+  // Query per ottenere i punti vendita a cui l'utente ha accesso (scope)
+  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery<{
+    success: boolean;
+    data: Array<{
+      id: string;
+      storeId: string;
+      name: string;
+      code: string;
+      status: string;
+      address: string;
+      city: string;
+      province: string;
+      isPrimary: boolean;
+    }>;
+  }>({
+    queryKey: ["/api/me/stores"],
     enabled: !!user,
     retry: 2
   });
 
-  // Ensure stores is always an array
-  const stores = Array.isArray(storesResponse) ? storesResponse : [];
+  // Ensure stores is always an array (from the API response structure)
+  const stores = Array.isArray(storesResponse?.data) ? storesResponse.data : [];
 
   // Check token validity se non c'è token
   useEffect(() => {
@@ -242,10 +255,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   // Auto-login removed - manual login required
 
-  // Imposta primo store come selezionato se disponibile
+  // Imposta store primario come selezionato (o primo store se nessuno primario)
   useEffect(() => {
     if (stores && stores.length > 0 && !selectedStore) {
-      setSelectedStore(stores[0]);
+      // Priorità: store con isPrimary = true, altrimenti primo store
+      const primaryStore = stores.find((s) => s.isPrimary);
+      setSelectedStore(primaryStore || stores[0]);
     }
   }, [stores, selectedStore]);
   
@@ -507,13 +522,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     };
   }, [leftSidebarTimer, workspaceTimer]);
 
-  // Seleziona automaticamente il primo punto vendita quando disponibile
-  useEffect(() => {
-    if (stores && stores.length > 0 && !selectedStore) {
-      setSelectedStore(stores[0]);
-    }
-  }, [stores, selectedStore]);
-
   // Chiudi menu quando clicchi fuori
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -757,6 +765,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           {!isMobile && (
             <div style={{ position: 'relative' }} data-store-menu>
               <button
+                data-testid="button-store-selector"
                 onClick={() => setStoreMenuOpen(!storeMenuOpen)}
                 style={{
                   display: 'flex',
@@ -881,9 +890,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             marginBottom: '2px',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                            textOverflow: 'ellipsis',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
                           }}>
                             {store.name}
+                            {store.isPrimary && (
+                              <Star size={12} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                            )}
                           </div>
                           <div style={{ 
                             fontSize: '12px', 
@@ -892,12 +907,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             overflow: 'hidden',
                             textOverflow: 'ellipsis'
                           }}>
-                            {store.address || store.code}
+                            {store.city && store.province 
+                              ? `${store.city} (${store.province})`
+                              : store.address || store.code}
                           </div>
                         </div>
 
                         {selectedStore?.id === store.id && (
-                          <CheckCircle size={16} style={{ color: '#6b7280' }} />
+                          <CheckCircle size={16} style={{ color: '#10b981' }} />
                         )}
                       </button>
                     ))}
