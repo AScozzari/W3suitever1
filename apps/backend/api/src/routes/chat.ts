@@ -35,12 +35,12 @@ const createChannelBodySchema = insertChatChannelSchema
 
 const updateChannelBodySchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  description: z.string().max(1000).optional(),
+  description: z.string().max(1000).optional().nullable(),
   visibility: z.enum(['public', 'private']).optional(),
   metadata: z.object({
-    headerColor: z.string().optional(),
-    backgroundPattern: z.string().optional(),
-    avatarUrl: z.string().optional()
+    headerColor: z.string().optional().nullable(),
+    backgroundPattern: z.string().optional().nullable(),
+    avatarUrl: z.string().optional().nullable()
   }).optional()
 });
 
