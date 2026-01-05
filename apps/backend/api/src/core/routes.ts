@@ -982,7 +982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secure: process.env.NODE_ENV === 'production', // HTTPS only in production
       httpOnly: true, // Prevent XSS attacks
       maxAge: config.IDLE_TIMEOUT_MS, // 15 minutes idle timeout (from config)
-      sameSite: 'strict' // CSRF protection
+      sameSite: 'lax' // 'lax' required for OAuth2 redirect flows (strict blocks cookies on redirects)
     },
     rolling: true // Reset idle timeout on each request (correct for idle timeout behavior)
   }));
