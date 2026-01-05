@@ -1271,6 +1271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const expectedServiceToken = process.env.W3_SERVICE_TOKEN || 'brand-service-internal-token-2025';
       
       // Allow internal service calls from brand-api with valid service token
+      // Security: Apply least-privilege principle - only grant storage permissions
       if (xService === 'brand-interface' && serviceToken === expectedServiceToken) {
         const tenantId = (req.headers['x-tenant-id'] as string) || '00000000-0000-0000-0000-000000000001';
         console.log(`[SERVICE-AUTH] ✅ Internal service call from ${xService} for tenant: ${tenantId}`);
@@ -1278,12 +1279,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 'brand-service',
           email: 'service@brand-interface.internal',
           tenantId: tenantId,
-          roles: ['service', 'admin'],
-          permissions: ['*'],
+          roles: ['service'],
+          permissions: ['storage:read', 'storage:write'],
           scope: 'service'
         };
-        // Grant full permissions for internal service calls
-        (req as any).userPermissions = ['*'];
+        // Grant only storage-related permissions for internal service calls (least-privilege)
+        (req as any).userPermissions = ['storage:read', 'storage:write'];
         return next();
       }
       
