@@ -50,21 +50,31 @@ async function initStorageClient(): Promise<void> {
 }
 
 // Helper function to generate signed URL for avatar
-async function getAvatarSignedUrl(avatarObjectPath: string | null): Promise<string | null> {
+// Supports both Replit Object Storage and VPS static files
+async function getAvatarSignedUrl(avatarObjectPath: string | null, tenantId?: string): Promise<string | null> {
   if (!avatarObjectPath) return null;
   
   // Ensure client is initialized
   await initStorageClient();
   
-  if (!storageClientAvailable || !storageClient) return null;
-  
-  try {
-    const signedUrl = await storageClient.signDownloadUrl(avatarObjectPath, { expiresIn: 3600 });
-    return signedUrl;
-  } catch (error) {
-    // Silently fail - don't log to avoid noise
-    return null;
+  // If Object Storage is available (Replit), use signed URLs
+  if (storageClientAvailable && storageClient) {
+    try {
+      const signedUrl = await storageClient.signDownloadUrl(avatarObjectPath, { expiresIn: 3600 });
+      return signedUrl;
+    } catch (error) {
+      // Fall through to static URL fallback
+    }
   }
+  
+  // Fallback: Build static URL for VPS environment
+  // avatarObjectPath format: avatars/{tenantId}/{filename}
+  const filename = avatarObjectPath.split('/').pop();
+  if (filename && tenantId) {
+    return `/api/storage/avatars/serve/${tenantId}/${filename}`;
+  }
+  
+  return null;
 }
 
 export class ChatService {
@@ -220,8 +230,8 @@ export class ChatService {
               .limit(1);
             
             if (otherUser) {
-              // Generate signed URL for avatar from Object Storage
-              const avatarUrl = await getAvatarSignedUrl(otherUser.avatarObjectPath);
+              // Generate signed URL for avatar from Object Storage (or static fallback for VPS)
+              const avatarUrl = await getAvatarSignedUrl(otherUser.avatarObjectPath, tenantId);
               
               dmUserInfo = {
                 id: otherUser.id,
@@ -360,9 +370,9 @@ export class ChatService {
       ))
       .orderBy(desc(chatChannelMembers.joinedAt));
     
-    // Build avatarUrl from avatarObjectPath for each member using signed URLs
+    // Build avatarUrl from avatarObjectPath for each member using signed URLs (or static fallback for VPS)
     const members = await Promise.all(rawMembers.map(async m => {
-      const avatarUrl = await getAvatarSignedUrl(m.user?.avatarObjectPath || null);
+      const avatarUrl = await getAvatarSignedUrl(m.user?.avatarObjectPath || null, tenantId);
       return {
         ...m,
         user: m.user ? {
@@ -598,9 +608,9 @@ export class ChatService {
         LIMIT ${limit}
       `);
       
-      // Map snake_case to camelCase and generate avatar signed URLs
+      // Map snake_case to camelCase and generate avatar signed URLs (or static fallback for VPS)
       const messages = await Promise.all((result.rows || []).map(async (row: any) => {
-        const avatarUrl = await getAvatarSignedUrl(row.avatar_object_path);
+        const avatarUrl = await getAvatarSignedUrl(row.avatar_object_path, tenantId);
         const userName = row.first_name && row.last_name 
           ? `${row.first_name} ${row.last_name}`
           : row.first_name || row.last_name || row.email?.split('@')[0] || 'Utente';
