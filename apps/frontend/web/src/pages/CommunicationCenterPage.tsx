@@ -73,6 +73,37 @@ interface UserData {
   lastName?: string;
 }
 
+// Generate meaningful initials from group name (2 letters)
+function getGroupInitials(name: string): string {
+  if (!name || name.trim().length === 0) return 'GR';
+  
+  const words = name.trim().split(/\s+/).filter(w => w.length > 0);
+  
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  
+  if (words[0].length >= 2) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+  
+  return words[0][0].toUpperCase() + 'G';
+}
+
+// Color palette for group avatars based on channel ID
+const GROUP_COLORS = [
+  '#1e40af', '#047857', '#7c3aed', '#dc2626', '#0891b2',
+  '#c2410c', '#4338ca', '#0f766e', '#9333ea', '#be185d'
+];
+
+function getGroupColor(channelId: string): string {
+  let hash = 0;
+  for (let i = 0; i < channelId.length; i++) {
+    hash = channelId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
+}
+
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -293,8 +324,14 @@ export default function CommunicationCenterPage() {
                                   size="md"
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-windtre-orange to-orange-400 flex items-center justify-center text-white font-medium">
-                                  {channel.name?.[0]?.toUpperCase() || '#'}
+                                <div 
+                                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                                  style={{ 
+                                    background: channel.metadata?.headerColor || getGroupColor(channel.id),
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                                  }}
+                                >
+                                  {getGroupInitials(channel.name)}
                                 </div>
                               )}
                             </div>
