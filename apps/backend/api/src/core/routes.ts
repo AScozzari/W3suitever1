@@ -971,6 +971,13 @@ const devModeSessions = new Map<string, { createdAt: number; lastActivity: numbe
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // CRITICAL: Trust proxy for production (nginx reverse proxy)
+  // Without this, Express behind nginx won't detect HTTPS and cookies won't work
+  if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1); // Trust first proxy (nginx)
+    console.log('🔒 [PROXY] Trust proxy enabled for production (nginx)');
+  }
+
   // SECURITY: Configure express-session with 15-minute idle timeout
   // 🔒 SECURITY POLICY: 15-minute idle timeout enforced
   app.use(session({
