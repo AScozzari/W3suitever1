@@ -34,6 +34,9 @@ interface StorageFolder {
   isSystemFolder: boolean;
   isShared?: boolean;
   shareCount?: number;
+  subfolderCount?: number;
+  objectCount?: number;
+  isEmpty?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -239,6 +242,25 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     },
     onError: () => {
       toast({ title: 'Errore', description: 'Impossibile creare la cartella', variant: 'destructive' });
+    }
+  });
+
+  const deleteFolderMutation = useMutation({
+    mutationFn: async (folderId: string) => {
+      return apiRequest(`/api/storage/folders/${folderId}`, { method: 'DELETE' });
+    },
+    onSuccess: (_, deletedFolderId) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/folders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
+      if (currentFolderId === deletedFolderId) {
+        setCurrentFolderId(null);
+        setFolderPath([]);
+      }
+      toast({ title: 'Cartella eliminata', description: 'La cartella è stata eliminata con successo' });
+    },
+    onError: (error: any) => {
+      const message = error?.message || 'Impossibile eliminare la cartella';
+      toast({ title: 'Errore', description: message, variant: 'destructive' });
     }
   });
 
@@ -555,34 +577,95 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                 <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Cartelle</p>
                 <ScrollArea className="max-h-48">
                   <nav className="space-y-0.5 pr-2">
-                    {foldersData.map((folder) => (
-                      <Tooltip key={folder.id}>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => {
-                              setActiveSection('my-files');
-                              setFolderPath([{ id: folder.id, name: folder.name }]);
-                              setCurrentFolderId(folder.id);
-                            }}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                              currentFolderId === folder.id 
-                                ? 'bg-orange-50 text-orange-700' 
-                                : 'text-slate-600 hover:bg-slate-100'
-                            }`}
-                            data-testid={`folder-shortcut-${folder.id}`}
-                          >
-                            <Folder className={`w-4 h-4 shrink-0 ${currentFolderId === folder.id ? 'text-orange-500' : 'text-orange-400'}`} />
-                            <span className="truncate">{folder.name}</span>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          <div className="text-xs">
-                            <p className="font-medium">{folder.name}</p>
-                            <p className="text-muted-foreground">/{folder.path || folder.name}</p>
-                            <p className="text-muted-foreground">Creata: {formatDate(folder.createdAt)}</p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
+                    {foldersData.filter(f => !f.parentFolderId).map((folder) => (
+                      <div 
+                        key={folder.id}
+                        className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors ${
+                          currentFolderId === folder.id 
+                            ? 'bg-orange-50 text-orange-700' 
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => {
+                                setActiveSection('my-files');
+                                setFolderPath([{ id: folder.id, name: folder.name }]);
+                                setCurrentFolderId(folder.id);
+                              }}
+                              className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                              data-testid={`folder-shortcut-${folder.id}`}
+                            >
+                              <Folder className={`w-4 h-4 shrink-0 ${currentFolderId === folder.id ? 'text-orange-500' : 'text-orange-400'}`} />
+                              <span className="truncate text-ellipsis overflow-hidden">{folder.name}</span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <div className="text-xs">
+                              <p className="font-medium">{folder.name}</p>
+                              <p className="text-muted-foreground">/{folder.path || folder.name}</p>
+                              <p className="text-muted-foreground">Creata: {formatDate(folder.createdAt)}</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                              data-testid={`folder-menu-${folder.id}`}
+                            >
+                              <MoreVertical className="w-3.5 h-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setActiveSection('my-files');
+                                setFolderPath([{ id: folder.id, name: folder.name }]);
+                                setCurrentFolderId(folder.id);
+                              }}
+                            >
+                              <Folder className="w-4 h-4 mr-2" />
+                              Apri
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleOpenShareDialog('folder', folder.id, folder.name)}
+                            >
+                              <Share2 className="w-4 h-4 mr-2" />
+                              Condividi
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      if (folder.isEmpty) {
+                                        deleteFolderMutation.mutate(folder.id);
+                                      }
+                                    }}
+                                    disabled={!folder.isEmpty}
+                                    className={!folder.isEmpty ? 'opacity-50 cursor-not-allowed' : 'text-red-600'}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Elimina
+                                  </DropdownMenuItem>
+                                </div>
+                              </TooltipTrigger>
+                              {!folder.isEmpty && (
+                                <TooltipContent side="left">
+                                  <p className="text-xs">La cartella non è vuota</p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     ))}
                   </nav>
                 </ScrollArea>

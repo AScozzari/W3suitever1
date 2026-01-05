@@ -73,6 +73,19 @@ router.post('/folders', requirePermission('storage:write'), async (req: Request,
   }
 });
 
+router.delete('/folders/:folderId', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { folderId } = req.params;
+    
+    await storageService.deleteFolder(ctx, folderId);
+    res.status(200).json({ success: true, message: 'Folder deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting folder:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // ==================== OBJECTS ====================
 
 router.get('/objects', requirePermission('storage:read'), async (req: Request, res: Response) => {

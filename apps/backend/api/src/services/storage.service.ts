@@ -149,6 +149,52 @@ export const storageService = {
     return folder;
   },
 
+  async deleteFolder(ctx: StorageServiceContext, folderId: string) {
+    const folder = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.id, folderId),
+        eq(storageFolders.tenantId, ctx.tenantId),
+        isNull(storageFolders.deletedAt)
+      ))
+      .limit(1);
+
+    if (folder.length === 0) {
+      throw new Error('Cartella non trovata');
+    }
+
+    const hasSubfolders = await db.select({ count: sql<number>`count(*)::int` })
+      .from(storageFolders)
+      .where(and(
+        eq(storageFolders.parentId, folderId),
+        eq(storageFolders.tenantId, ctx.tenantId),
+        isNull(storageFolders.deletedAt)
+      ));
+
+    if (hasSubfolders[0]?.count > 0) {
+      throw new Error('La cartella contiene sottocartelle e non può essere eliminata');
+    }
+
+    const hasObjects = await db.select({ count: sql<number>`count(*)::int` })
+      .from(storageObjects)
+      .where(and(
+        eq(storageObjects.folderId, folderId),
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt)
+      ));
+
+    if (hasObjects[0]?.count > 0) {
+      throw new Error('La cartella contiene file e non può essere eliminata');
+    }
+
+    await db.update(storageFolders)
+      .set({ deletedAt: new Date() })
+      .where(eq(storageFolders.id, folderId));
+
+    await this.logAuditEvent(ctx, 'delete_folder', { folderId });
+
+    return { success: true };
+  },
+
   async getFolders(ctx: StorageServiceContext, parentId?: string, category?: string) {
     const conditions = [
       eq(storageFolders.tenantId, ctx.tenantId),
@@ -181,13 +227,15 @@ export const storageService = {
         eq(storageFolders.ownerUserId, ctx.userId),
         eq(storageFolders.scopeLevel, 'user'),
         isNull(storageFolders.deletedAt),
-        isNull(storageFolders.parentId),
       ))
       .orderBy(storageFolders.name);
 
     const folderIds = folders.map(f => f.id);
     
     const shareCountMap = new Map<string, number>();
+    const subfolderCountMap = new Map<string, number>();
+    const objectCountMap = new Map<string, number>();
+    
     if (folderIds.length > 0) {
       const shares = await db.select({ 
         folderId: storageShares.folderId,
@@ -202,12 +250,51 @@ export const storageService = {
           shareCountMap.set(share.folderId, share.count);
         }
       }
+
+      const subfolders = await db.select({
+        parentId: storageFolders.parentId,
+        count: sql<number>`count(*)::int`
+      })
+        .from(storageFolders)
+        .where(and(
+          inArray(storageFolders.parentId, folderIds),
+          eq(storageFolders.tenantId, ctx.tenantId),
+          isNull(storageFolders.deletedAt)
+        ))
+        .groupBy(storageFolders.parentId);
+      
+      for (const sf of subfolders) {
+        if (sf.parentId) {
+          subfolderCountMap.set(sf.parentId, sf.count);
+        }
+      }
+
+      const objects = await db.select({
+        folderId: storageObjects.folderId,
+        count: sql<number>`count(*)::int`
+      })
+        .from(storageObjects)
+        .where(and(
+          inArray(storageObjects.folderId, folderIds),
+          eq(storageObjects.tenantId, ctx.tenantId),
+          isNull(storageObjects.deletedAt)
+        ))
+        .groupBy(storageObjects.folderId);
+      
+      for (const obj of objects) {
+        if (obj.folderId) {
+          objectCountMap.set(obj.folderId, obj.count);
+        }
+      }
     }
 
     return folders.map(folder => ({
       ...folder,
       isShared: shareCountMap.has(folder.id),
       shareCount: shareCountMap.get(folder.id) || 0,
+      subfolderCount: subfolderCountMap.get(folder.id) || 0,
+      objectCount: objectCountMap.get(folder.id) || 0,
+      isEmpty: (subfolderCountMap.get(folder.id) || 0) === 0 && (objectCountMap.get(folder.id) || 0) === 0,
     }));
   },
 
