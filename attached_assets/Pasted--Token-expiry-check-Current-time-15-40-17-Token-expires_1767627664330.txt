@@ -1,0 +1,417 @@
+🔍 Token expiry check: Current time: 15:40:17, Token expires: 15:52:19
+4index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:10, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:10, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:10, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:10, Token expires: 15:52:19
+2index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:12, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:21, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:21, Token expires: 15:52:19
+index-uFvMMRUR.js:2  GET https://w3suite.it/api/chat/unread-count 502 (Bad Gateway)
+queryFn @ index-uFvMMRUR.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1Comprendi l'errore
+index-uFvMMRUR.js:2  POST https://w3suite.it/api/storage/upload/batch 502 (Bad Gateway)
+Bo @ index-uFvMMRUR.js:2
+await in Bo
+mutationFn @ MyDrivePage-9jKoBghI.js:1
+fn @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ MyDrivePage-9jKoBghI.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:22, Token expires: 15:52:19
+2index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:26, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:32, Token expires: 15:52:19
+3index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:41, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:41, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:41, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:41, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:42, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:45:56, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:02, Token expires: 15:52:19
+3index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:11, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:11, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:11, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:11, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:12, Token expires: 15:52:19
+index-uFvMMRUR.js:2 🔍 Token expiry check: Current time: 15:46:22, Token expires: 15:52:19
+Layout-DUzAi0J3.js:58 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+Layout-DUzAi0J3.js:58 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
+Via: SIP/2.0/WSS oilo10te4jhm.invalid;branch=z9hG4bK780003
+To: <sip:2000@demo.edgvoip.it>
+From: "Extension 2000" <sip:2000@demo.edgvoip.it>;tag=3gbumiipqs
+CSeq: 4 REGISTER
+Call-ID: ol3ud1ik0qml8g2lpr5p
+Max-Forwards: 70
+Authorization: Digest algorithm=MD5, username="2000", realm="demo.edgvoip.it", nonce="145c2a21-3de7-4a18-9ccd-061a0a0dbd5d", uri="sip:demo.edgvoip.it", response="483d1d3e19aaa9608d2b3815478e87d8", qop=auth, cnonce="osi1s44fm8ud", nc=00000001
+Contact: <sip:mnj4f9c5@oilo10te4jhm.invalid;transport=ws>;expires=600
+Allow: ACK,CANCEL,INVITE,MESSAGE,BYE,OPTIONS,INFO,NOTIFY,REFER
+Supported: outbound, path, gruu
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+installHook.js:1 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | Not connected.
+overrideMethod @ installHook.js:1
+print @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+error @ Layout-DUzAi0J3.js:58
+onTransportError @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:74
+(anonime) @ Layout-DUzAi0J3.js:74
+Promise.catch
+send @ Layout-DUzAi0J3.js:74
+Ee @ Layout-DUzAi0J3.js:74
+init @ Layout-DUzAi0J3.js:84
+xe @ Layout-DUzAi0J3.js:84
+jn @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:58
+(anonime) @ Layout-DUzAi0J3.js:58Comprendi l'errore
+installHook.js:1 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.user-agent-client | User agent client request transport error. Generating internal 503 Service Unavailable.
+overrideMethod @ installHook.js:1
+print @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+error @ Layout-DUzAi0J3.js:58
+onTransportError @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:74
+(anonime) @ Layout-DUzAi0J3.js:74
+Promise.catch
+send @ Layout-DUzAi0J3.js:74
+Ee @ Layout-DUzAi0J3.js:74
+init @ Layout-DUzAi0J3.js:84
+xe @ Layout-DUzAi0J3.js:84
+jn @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:58
+(anonime) @ Layout-DUzAi0J3.js:58Comprendi l'errore
+installHook.js:1 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Failed to register, status code 503
+overrideMethod @ installHook.js:1
+print @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+warn @ Layout-DUzAi0J3.js:58
+onReject @ Layout-DUzAi0J3.js:58
+receiveResponse @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:84
+onTransportError @ Layout-DUzAi0J3.js:74
+(anonime) @ Layout-DUzAi0J3.js:74
+Promise.catch
+send @ Layout-DUzAi0J3.js:74
+Ee @ Layout-DUzAi0J3.js:74
+init @ Layout-DUzAi0J3.js:84
+xe @ Layout-DUzAi0J3.js:84
+jn @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:58
+(anonime) @ Layout-DUzAi0J3.js:58Comprendi l'avviso
+Layout-DUzAi0J3.js:58 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Registration transitioned to state Unregistered
+Layout-DUzAi0J3.js:99 📡 Registration state: Unregistered
+Layout-DUzAi0J3.js:58 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to false
+installHook.js:1 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK780003 | Not connected.
+overrideMethod @ installHook.js:1
+print @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+error @ Layout-DUzAi0J3.js:58
+logTransportError @ Layout-DUzAi0J3.js:74
+(anonime) @ Layout-DUzAi0J3.js:74
+Promise.catch
+Ee @ Layout-DUzAi0J3.js:74
+init @ Layout-DUzAi0J3.js:84
+xe @ Layout-DUzAi0J3.js:84
+jn @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:58
+(anonime) @ Layout-DUzAi0J3.js:58Comprendi l'errore
+installHook.js:1 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK780003 | Transport error occurred in non-INVITE client transaction with id z9hG4bK780003.
+overrideMethod @ installHook.js:1
+print @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+error @ Layout-DUzAi0J3.js:58
+logTransportError @ Layout-DUzAi0J3.js:74
+(anonime) @ Layout-DUzAi0J3.js:74
+Promise.catch
+Ee @ Layout-DUzAi0J3.js:74
+init @ Layout-DUzAi0J3.js:84
+xe @ Layout-DUzAi0J3.js:84
+jn @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:58
+(anonime) @ Layout-DUzAi0J3.js:58Comprendi l'errore
+installHook.js:1 Mon Jan 05 2026 15:47:21 GMT+0100 (Ora standard dell’Europa centrale) | sip.transaction.nict | z9hG4bK780003 | Failed to send initial outgoing request.
+overrideMethod @ installHook.js:1
+print @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+genericLog @ Layout-DUzAi0J3.js:58
+error @ Layout-DUzAi0J3.js:58
+logTransportError @ Layout-DUzAi0J3.js:74
+(anonime) @ Layout-DUzAi0J3.js:74
+Promise.catch
+Ee @ Layout-DUzAi0J3.js:74
+init @ Layout-DUzAi0J3.js:84
+xe @ Layout-DUzAi0J3.js:84
+jn @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:84
+register @ Layout-DUzAi0J3.js:58
+(anonime) @ Layout-DUzAi0J3.js:58Comprendi l'errore
+:51:32, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:37, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:42, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:48, Token expires: 16:05:42
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+Bo @ index-DH2Svu2X.js:2
+await in Bo
+(anonime) @ MyDrivePage-CjaS3VgB.js:1
+onClick @ MyDrivePage-CjaS3VgB.js:1
+(anonime) @ radix-ui-BE2MXWDM.js:9
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+3index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:52, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:52, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:52, Token expires: 16:05:42
+3index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:52, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:56, Token expires: 16:05:42
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+ken expiry check: Current time: 15:51:37, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:42, Token expires: 16:05:42
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 15:51:48, Token expires: 16:05:42
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+Bo @ index-DH2Svu2X.js:2
+await in Bo
+(anonime) @ MyDrivePage-CjaS3VgB.js:1
+onClick @ MyDrivePage-CjaS3VgB.js:1
+(anonime) @ radix-ui-BE2MXWDM.js:9
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+Bo @ index-DH2Svu2X.js:2
+await in Bo
+(anonime) @ MyDrivePage-CjaS3VgB.js:1
+onClick @ MyDrivePage-CjaS3VgB.js:1
+(anonime) @ radix-ui-BE2MXWDM.js:9
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+Bo @ index-DH2Svu2X.js:2
+await in Bo
+(anonime) @ MyDrivePage-CjaS3VgB.js:1
+onClick @ MyDrivePage-CjaS3VgB.js:1
+test.n.<computed> @ radix-ui-BE2MXWDM.js:9
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+ken expiry check: Current time: 16:25:27, Token expires: 16:40:04
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 16:25:33, Token expires: 16:40:04
+index-DH2Svu2X.js:2  POST https://w3suite.it/api/feed/posts 500 (Internal Server Error)
+Bo @ index-DH2Svu2X.js:2
+await in Bo
+mutationFn @ CommunicationCenterPage-blDbPjeH.js:1
+fn @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+execute @ query-i2gUkQ5G.js:1
+await in execute
+mutate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Ks @ CommunicationCenterPage-blDbPjeH.js:1
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+POST https://w3suite.it/api/feed/posts 500 (Internal Server Error)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/tenant-allocation 500 (Internal Server Error)
+queryFn @ index-DH2Svu2X.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32Comprendi l'errore
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 16:29:32, Token expires: 16:40:04
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/tenant-allocation 500 (Internal Server Error)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/tenant-allocation 500 (Internal Server Error)
+queryFn @ index-DH2Svu2X.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32Comprendi l'errore
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 16:29:32, Token expires: 16:40:04
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/tenant-allocation 500 (Internal Server Error)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+Bo @ index-DH2Svu2X.js:2
+await in Bo
+(anonime) @ MyDrivePage-CjaS3VgB.js:1
+onClick @ MyDrivePage-CjaS3VgB.js:1
+(anonime) @ radix-ui-BE2MXWDM.js:9
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-DH2Svu2X.js:2 🔍 Token expiry check: Current time: 16:37:07, Token expires: 16:40:04
+index-DH2Svu2X.js:2  POST https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/copy 400 (Bad Request)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)
+index-DH2Svu2X.js:2  GET https://w3suite.it/api/storage/objects/e6c00615-0d1a-4490-ad62-89e569b0acb5/signed-url 403 (Forbidden)

@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { requirePermission } from '../middleware/tenant';
-import { storageService, StorageServiceContext, initAWSStorageIfConfigured, getAWSContext } from '../services/storage.service';
+import { storageService, StorageServiceContext, initAWSStorageIfConfigured, getAWSContext, getTenantStorageAllocation, getBrandStorageConfig, isStorageConfigured } from '../services/storage.service';
 
 const router = Router();
 const upload = multer({ 
@@ -663,6 +663,72 @@ router.get('/quota', requirePermission('storage:read'), async (req: Request, res
     res.json(quota);
   } catch (error: any) {
     console.error('Error getting quota:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/tenant-allocation
+ * Legge l'allocazione storage del tenant dalla Brand Interface
+ * Fornisce quota assegnata dal Brand, spazio utilizzato, conteggio file
+ */
+router.get('/tenant-allocation', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    
+    // Legge allocazione dalla Brand Interface
+    const allocation = await getTenantStorageAllocation(ctx.tenantId);
+    
+    if (!allocation) {
+      // Se non esiste allocazione, restituisce valori default
+      return res.json({
+        tenantId: ctx.tenantId,
+        tenantName: 'Non configurato',
+        tenantSlug: null,
+        quotaBytes: 0,
+        usedBytes: 0,
+        objectCount: 0,
+        alertThresholdPercent: 80,
+        suspended: false,
+        suspendReason: null,
+        maxUploadSizeMb: null,
+        allowedFileTypes: null,
+        features: {},
+        isConfigured: false
+      });
+    }
+    
+    res.json({
+      ...allocation,
+      isConfigured: true
+    });
+  } catch (error: any) {
+    console.error('Error getting tenant allocation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/provider-status
+ * Verifica se lo storage AWS S3 è configurato dalla Brand Interface
+ */
+router.get('/provider-status', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const brandConfig = await getBrandStorageConfig();
+    const configured = await isStorageConfigured();
+    
+    res.json({
+      configured,
+      provider: brandConfig?.provider || 'none',
+      bucketName: brandConfig?.bucketName || null,
+      region: brandConfig?.region || null,
+      connectionStatus: brandConfig?.connectionStatus || 'not_configured',
+      maxUploadSizeMb: brandConfig?.maxUploadSizeMb || 100,
+      encryptionEnabled: brandConfig?.encryptionEnabled || false,
+      versioningEnabled: brandConfig?.versioningEnabled || false
+    });
+  } catch (error: any) {
+    console.error('Error getting provider status:', error);
     res.status(500).json({ error: error.message });
   }
 });

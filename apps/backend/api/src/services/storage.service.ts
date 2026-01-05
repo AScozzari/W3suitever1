@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { Client } from '@replit/object-storage';
 import { getAWSStorageService, AWSStorageService, AWSStorageConfig, TenantStorageContext } from './aws-storage.service';
 import { logger } from '../core/logger';
+import { getBrandStorageConfig, getTenantStorageAllocation, updateTenantStorageUsage, canTenantUpload, isStorageConfigured } from './brand-storage-config.service';
 
 const DEFAULT_USER_QUOTA_BYTES = 1 * 1024 * 1024 * 1024; // 1GB
 const DEFAULT_TEAM_QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // 10GB
@@ -26,10 +27,41 @@ let awsStorageInitialized = false;
 // Object Storage bucket ID from environment
 const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
 
+/**
+ * Inizializza AWS S3 usando la configurazione centralizzata dalla Brand Interface
+ * Fallback alle variabili d'ambiente se la Brand Interface non è configurata
+ */
 export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | null> {
   if (awsStorageInitialized) return awsStorageService;
   awsStorageInitialized = true;
 
+  // Prima prova a leggere dalla Brand Interface (configurazione centralizzata)
+  try {
+    const brandConfig = await getBrandStorageConfig();
+    if (brandConfig && brandConfig.accessKeyId && brandConfig.secretAccessKey) {
+      awsStorageService = getAWSStorageService();
+      awsStorageService.setConfig({
+        accessKeyId: brandConfig.accessKeyId,
+        secretAccessKey: brandConfig.secretAccessKey,
+        region: brandConfig.region,
+        bucketName: brandConfig.bucketName,
+        serverSideEncryption: brandConfig.encryptionEnabled,
+        versioningEnabled: brandConfig.versioningEnabled,
+      });
+      logger.info('[Storage] AWS S3 initialized from Brand Interface config', { 
+        region: brandConfig.region, 
+        bucket: brandConfig.bucketName,
+        provider: brandConfig.provider
+      });
+      return awsStorageService;
+    }
+  } catch (error) {
+    logger.warn('[Storage] Failed to load Brand Interface config, trying env vars', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+
+  // Fallback alle variabili d'ambiente
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
   const region = process.env.AWS_REGION || 'eu-central-1';
@@ -46,7 +78,7 @@ export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | 
         serverSideEncryption: true,
         versioningEnabled: true,
       });
-      logger.info('[Storage] AWS S3 storage initialized', { region, bucket: bucketName });
+      logger.info('[Storage] AWS S3 storage initialized from env vars', { region, bucket: bucketName });
     } catch (error) {
       logger.warn('[Storage] AWS S3 initialization failed, falling back to Replit storage', {
         error: error instanceof Error ? error.message : String(error),
@@ -59,6 +91,9 @@ export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | 
 
   return awsStorageService;
 }
+
+// Re-export brand storage functions for use in routes
+export { getBrandStorageConfig, getTenantStorageAllocation, updateTenantStorageUsage, canTenantUpload, isStorageConfigured };
 
 export function getAWSContext(ctx: StorageServiceContext): TenantStorageContext {
   return {
