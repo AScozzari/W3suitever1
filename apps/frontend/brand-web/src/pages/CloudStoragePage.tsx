@@ -189,6 +189,7 @@ export default function CloudStoragePage() {
 function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isLoading: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [connectionTestResult, setConnectionTestResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
     provider: config?.provider || 'aws_s3',
     accessKey: '',
@@ -233,17 +234,21 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
       });
     },
     onSuccess: (data: any) => {
+      setConnectionTestResult('success');
       queryClient.invalidateQueries({ queryKey: ['/brand-api/storage/config'] });
       toast({
-        title: "Connessione riuscita",
-        description: `Bucket ${data.data?.bucket} raggiungibile in ${data.data?.region}`
+        title: "✅ Connessione riuscita!",
+        description: `Bucket "${data.data?.bucket || formData.bucketName}" raggiungibile nella regione ${data.data?.region || formData.region}`,
+        duration: 5000
       });
     },
     onError: (error: any) => {
+      setConnectionTestResult('error');
       toast({
-        title: "Connessione fallita",
-        description: error.message || "Impossibile connettersi al bucket S3",
-        variant: "destructive"
+        title: "❌ Connessione fallita",
+        description: error.message || "Impossibile connettersi al bucket S3. Verifica le credenziali e riprova.",
+        variant: "destructive",
+        duration: 8000
       });
     }
   });
@@ -293,22 +298,24 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
             <Label>Access Key ID</Label>
             <Input
               type="password"
-              placeholder={config?.hasCredentials ? "••••••••••••••••" : "AKIAIOSFODNN7EXAMPLE"}
+              placeholder={config?.hasCredentials ? "••••••••••••••••••••" : "es: AKIA3EXAMPLEKEYID"}
               value={formData.accessKey}
               onChange={(e) => setFormData({ ...formData, accessKey: e.target.value })}
               data-testid="input-access-key"
             />
+            <p className="text-xs text-gray-400">Formato: AKIA + 16 caratteri alfanumerici</p>
           </div>
 
           <div className="space-y-2">
             <Label>Secret Access Key</Label>
             <Input
               type="password"
-              placeholder={config?.hasCredentials ? "••••••••••••••••" : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"}
+              placeholder={config?.hasCredentials ? "••••••••••••••••••••••••••••••••••••••••" : "es: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLE"}
               value={formData.secretKey}
               onChange={(e) => setFormData({ ...formData, secretKey: e.target.value })}
               data-testid="input-secret-key"
             />
+            <p className="text-xs text-gray-400">Chiave segreta di 40 caratteri</p>
           </div>
 
           <div className="space-y-2">
@@ -346,7 +353,7 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
             </p>
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-4 items-center">
             <Button 
               onClick={() => saveConfigMutation.mutate(formData)}
               disabled={saveConfigMutation.isPending}
@@ -370,6 +377,19 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
               )}
               Test Connessione
             </Button>
+            {/* Icona stato connessione */}
+            {connectionTestResult === 'success' && (
+              <div className="flex items-center gap-1 text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
+                <Check className="w-4 h-4" />
+                <span className="text-sm font-medium">Connesso</span>
+              </div>
+            )}
+            {connectionTestResult === 'error' && (
+              <div className="flex items-center gap-1 text-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
+                <X className="w-4 h-4" />
+                <span className="text-sm font-medium">Errore</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
