@@ -286,6 +286,33 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     }
   });
 
+  const createTextFileMutation = useMutation({
+    mutationFn: async ({ name, content = '' }: { name: string; content?: string }) => {
+      const formData = new FormData();
+      const fileName = name.endsWith('.txt') ? name : `${name}.txt`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const file = new File([blob], fileName, { type: 'text/plain' });
+      formData.append('files', file);
+      if (currentFolderId) {
+        formData.append('folderId', currentFolderId);
+      }
+      return apiRequest('/api/storage/upload/batch', {
+        method: 'POST',
+        body: formData,
+        headers: {} // Let browser set Content-Type for FormData
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'File creato', description: 'Il file è stato creato con successo' });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
+      setNewFileDialogOpen(false);
+      setNewFileName('');
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile creare il file', variant: 'destructive' });
+    }
+  });
+
   const uploadBatchMutation = useMutation({
     mutationFn: async (files: FileList) => {
       const formData = new FormData();
@@ -429,9 +456,10 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     // CRITICAL: Filter by current folder - show only direct children
     if (activeSection === 'my-files') {
       // Filter folders: show only those whose parentFolderId matches currentFolderId
-      folders = folders.filter(f => f.parentFolderId === currentFolderId);
+      // Normalize: treat undefined and null as the same (root level)
+      folders = folders.filter(f => (f.parentFolderId ?? null) === currentFolderId);
       // Filter objects: show only those whose folderId matches currentFolderId
-      objects = objects.filter(o => o.folderId === currentFolderId);
+      objects = objects.filter(o => (o.folderId ?? null) === currentFolderId);
     }
 
     if (searchQuery) {
@@ -577,7 +605,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                 <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Cartelle</p>
                 <ScrollArea className="max-h-48">
                   <nav className="space-y-0.5 pr-2">
-                    {foldersData.filter(f => !f.parentFolderId).map((folder) => (
+                    {foldersData.filter(f => (f.parentFolderId ?? null) === null).map((folder) => (
                       <div 
                         key={folder.id}
                         className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors ${
@@ -615,7 +643,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                              className="h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity shrink-0"
                               onClick={(e) => e.stopPropagation()}
                               data-testid={`folder-menu-${folder.id}`}
                             >
@@ -1522,16 +1550,12 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewFileDialogOpen(false)}>Annulla</Button>
             <Button 
-              onClick={() => {
-                toast({ title: 'Funzionalità in arrivo', description: 'La creazione file sarà disponibile presto' });
-                setNewFileDialogOpen(false);
-                setNewFileName('');
-              }}
-              disabled={!newFileName.trim()}
+              onClick={() => createTextFileMutation.mutate({ name: newFileName })}
+              disabled={!newFileName.trim() || createTextFileMutation.isPending}
               className="bg-blue-500 hover:bg-blue-600"
               data-testid="button-create-file"
             >
-              Crea
+              {createTextFileMutation.isPending ? 'Creazione...' : 'Crea'}
             </Button>
           </DialogFooter>
         </DialogContent>
