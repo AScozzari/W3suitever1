@@ -208,7 +208,7 @@ export default function QRCheckinPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-purple-50 to-orange-100">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
       <Card className={`w-full max-w-md ${getStatusColor()} border-2`}>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

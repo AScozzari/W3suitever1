@@ -323,7 +323,7 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
   };
 
   return (
-    <div className="w-full h-full min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-pink-50 p-4">
+    <div className="w-full h-full min-h-screen bg-white p-4">
       {/* Main Control Panel - Clock + PDV + Sistema Timbratura */}
       <div className="mb-6">
         <MainControlPanel />
