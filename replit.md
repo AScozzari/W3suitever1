@@ -148,7 +148,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars and white backgrounds. Utilizes `shadcn/ui` components (Radix UI-based) styled with Tailwind CSS. UI zoom is controlled at build-time via `VITE_FONT_SCALE=80`, enforcing `rem` units.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers/sidebars and white backgrounds. Utilizes `shadcn/ui` components (Radix UI-based) styled with Tailwind CSS. UI zoom is controlled at build-time via `VITE_FONT_SCALE=80`, enforcing `rem` units for scaling.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
