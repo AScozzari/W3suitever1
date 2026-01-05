@@ -5104,6 +5104,642 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== CLOUD STORAGE MANAGEMENT ENDPOINTS ====================
+  
+  // Get global storage configuration
+  app.get("/brand-api/storage/config", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq } = await import("drizzle-orm");
+
+      const configs = await db
+        .select()
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      if (configs.length === 0) {
+        return res.json({
+          success: true,
+          data: null // No config exists yet
+        });
+      }
+
+      // Remove encrypted keys from response
+      const config = configs[0];
+      const safeConfig = {
+        ...config,
+        accessKeyEncrypted: config.accessKeyEncrypted ? "****" : null,
+        secretKeyEncrypted: config.secretKeyEncrypted ? "****" : null,
+        hasCredentials: !!(config.accessKeyEncrypted && config.secretKeyEncrypted)
+      };
+
+      res.json({
+        success: true,
+        data: safeConfig
+      });
+    } catch (error) {
+      console.error("❌ Error fetching storage config:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch storage config"
+      });
+    }
+  });
+
+  // Create or update global storage configuration
+  app.post("/brand-api/storage/config", async (req, res) => {
+    const user = (req as any).user;
+    const configData = req.body;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq } = await import("drizzle-orm");
+      const crypto = await import("crypto");
+
+      // Simple AES encryption for credentials - REQUIRES environment variable
+      const encryptKey = process.env.STORAGE_ENCRYPTION_KEY;
+      if (!encryptKey || encryptKey.length < 32) {
+        return res.status(500).json({
+          success: false,
+          error: "STORAGE_ENCRYPTION_KEY environment variable must be set (min 32 characters)"
+        });
+      }
+      const encrypt = (text: string): string => {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(encryptKey.padEnd(32).slice(0, 32)), iv);
+        let encrypted = cipher.update(text, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        return iv.toString('hex') + ':' + encrypted;
+      };
+
+      // Check if config exists
+      const existing = await db
+        .select({ id: storageGlobalConfig.id })
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      // Prepare data - encrypt credentials if provided
+      const dataToSave: any = {
+        provider: configData.provider || 'aws_s3',
+        bucketName: configData.bucketName,
+        region: configData.region || 'eu-central-1',
+        endpoint: configData.endpoint,
+        versioningEnabled: configData.versioningEnabled ?? true,
+        encryptionEnabled: configData.encryptionEnabled ?? true,
+        encryptionType: configData.encryptionType || 'AES256',
+        corsEnabled: configData.corsEnabled ?? true,
+        corsAllowedOrigins: configData.corsAllowedOrigins || [],
+        lifecycleRules: configData.lifecycleRules || [],
+        signedUrlExpiryHours: configData.signedUrlExpiryHours || 24,
+        maxUploadSizeMb: configData.maxUploadSizeMb || 100,
+        updatedAt: new Date()
+      };
+
+      // Only update credentials if provided
+      if (configData.accessKey) {
+        dataToSave.accessKeyEncrypted = encrypt(configData.accessKey);
+      }
+      if (configData.secretKey) {
+        dataToSave.secretKeyEncrypted = encrypt(configData.secretKey);
+      }
+
+      let result;
+      if (existing.length > 0) {
+        // Update existing
+        result = await db
+          .update(storageGlobalConfig)
+          .set(dataToSave)
+          .where(eq(storageGlobalConfig.id, existing[0].id))
+          .returning();
+      } else {
+        // Create new
+        result = await db
+          .insert(storageGlobalConfig)
+          .values({
+            ...dataToSave,
+            brandTenantId: user.brandTenantId,
+            createdAt: new Date()
+          })
+          .returning();
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: result[0].id,
+          hasCredentials: !!(result[0].accessKeyEncrypted && result[0].secretKeyEncrypted)
+        }
+      });
+    } catch (error) {
+      console.error("❌ Error saving storage config:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to save storage config"
+      });
+    }
+  });
+
+  // Test S3 connection
+  app.post("/brand-api/storage/test-connection", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq } = await import("drizzle-orm");
+      const crypto = await import("crypto");
+      const { S3Client, HeadBucketCommand } = await import("@aws-sdk/client-s3");
+
+      // Get config
+      const configs = await db
+        .select()
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      if (configs.length === 0 || !configs[0].accessKeyEncrypted || !configs[0].secretKeyEncrypted) {
+        return res.status(400).json({
+          success: false,
+          error: "Storage configuration or credentials not found"
+        });
+      }
+
+      const config = configs[0];
+
+      // Decrypt credentials - REQUIRES environment variable
+      const encryptKey = process.env.STORAGE_ENCRYPTION_KEY;
+      if (!encryptKey || encryptKey.length < 32) {
+        return res.status(500).json({
+          success: false,
+          error: "STORAGE_ENCRYPTION_KEY environment variable must be set"
+        });
+      }
+      const decrypt = (encryptedText: string): string => {
+        const [ivHex, encrypted] = encryptedText.split(':');
+        const iv = Buffer.from(ivHex, 'hex');
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptKey.padEnd(32).slice(0, 32)), iv);
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+      };
+
+      const accessKey = decrypt(config.accessKeyEncrypted);
+      const secretKey = decrypt(config.secretKeyEncrypted);
+
+      // Test connection with AWS SDK
+      const s3Client = new S3Client({
+        region: config.region || 'eu-central-1',
+        credentials: {
+          accessKeyId: accessKey,
+          secretAccessKey: secretKey
+        },
+        ...(config.endpoint && { endpoint: config.endpoint })
+      });
+
+      await s3Client.send(new HeadBucketCommand({ Bucket: config.bucketName! }));
+
+      // Update connection status
+      await db
+        .update(storageGlobalConfig)
+        .set({
+          connectionStatus: 'connected',
+          connectionError: null,
+          lastConnectionTestAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(storageGlobalConfig.id, config.id));
+
+      res.json({
+        success: true,
+        message: "Connection successful",
+        data: {
+          bucket: config.bucketName,
+          region: config.region,
+          status: "connected"
+        }
+      });
+    } catch (error: any) {
+      console.error("❌ S3 connection test failed:", error);
+
+      // Update connection status with error
+      const { db } = await import("../db/index.js");
+      const { storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq } = await import("drizzle-orm");
+
+      await db
+        .update(storageGlobalConfig)
+        .set({
+          connectionStatus: 'error',
+          connectionError: error.message,
+          lastConnectionTestAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(storageGlobalConfig.brandTenantId, (req as any).user.brandTenantId));
+
+      res.status(400).json({
+        success: false,
+        error: error.message || "Connection failed"
+      });
+    }
+  });
+
+  // Get all tenant storage allocations
+  app.get("/brand-api/storage/allocations", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { tenantStorageAllocations } = await import("../db/schema/brand-interface.js");
+      const { eq } = await import("drizzle-orm");
+
+      const allocations = await db
+        .select()
+        .from(tenantStorageAllocations)
+        .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
+
+      res.json({
+        success: true,
+        data: allocations
+      });
+    } catch (error) {
+      console.error("❌ Error fetching allocations:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch allocations"
+      });
+    }
+  });
+
+  // Create or update tenant storage allocation
+  app.post("/brand-api/storage/allocations", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId, tenantName, tenantSlug, quotaBytes, alertThresholdPercent, maxUploadSizeMb, allowedFileTypes, features } = req.body;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { tenantStorageAllocations, storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq, and, sql } = await import("drizzle-orm");
+
+      if (!tenantId || !tenantName) {
+        return res.status(400).json({
+          success: false,
+          error: "tenantId and tenantName are required"
+        });
+      }
+
+      // Check if allocation exists
+      const existing = await db
+        .select()
+        .from(tenantStorageAllocations)
+        .where(
+          and(
+            eq(tenantStorageAllocations.tenantId, tenantId),
+            eq(tenantStorageAllocations.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      let result;
+      if (existing.length > 0) {
+        // Update
+        result = await db
+          .update(tenantStorageAllocations)
+          .set({
+            quotaBytes: quotaBytes ?? existing[0].quotaBytes,
+            alertThresholdPercent: alertThresholdPercent ?? existing[0].alertThresholdPercent,
+            maxUploadSizeMb,
+            allowedFileTypes,
+            features: features ?? existing[0].features,
+            updatedAt: new Date()
+          })
+          .where(eq(tenantStorageAllocations.id, existing[0].id))
+          .returning();
+      } else {
+        // Create
+        result = await db
+          .insert(tenantStorageAllocations)
+          .values({
+            tenantId,
+            tenantName,
+            tenantSlug,
+            quotaBytes: quotaBytes ?? 5368709120, // 5GB default
+            alertThresholdPercent: alertThresholdPercent ?? 80,
+            maxUploadSizeMb,
+            allowedFileTypes,
+            features: features ?? {},
+            brandTenantId: user.brandTenantId
+          })
+          .returning();
+      }
+
+      // Update total allocated in global config
+      const totalAllocated = await db
+        .select({ total: sql<number>`COALESCE(SUM(quota_bytes), 0)` })
+        .from(tenantStorageAllocations)
+        .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
+
+      await db
+        .update(storageGlobalConfig)
+        .set({
+          totalAllocatedBytes: totalAllocated[0]?.total || 0,
+          updatedAt: new Date()
+        })
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId));
+
+      res.json({
+        success: true,
+        data: result[0]
+      });
+    } catch (error) {
+      console.error("❌ Error saving allocation:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to save allocation"
+      });
+    }
+  });
+
+  // Suspend/unsuspend tenant storage
+  app.patch("/brand-api/storage/allocations/:tenantId/suspend", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+    const { suspended, reason } = req.body;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { tenantStorageAllocations } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      const result = await db
+        .update(tenantStorageAllocations)
+        .set({
+          suspended: suspended ?? false,
+          suspendReason: suspended ? reason : null,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(tenantStorageAllocations.tenantId, tenantId),
+            eq(tenantStorageAllocations.brandTenantId, user.brandTenantId)
+          )
+        )
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Tenant allocation not found"
+        });
+      }
+
+      res.json({
+        success: true,
+        data: result[0]
+      });
+    } catch (error) {
+      console.error("❌ Error updating suspend status:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to update suspend status"
+      });
+    }
+  });
+
+  // Get storage usage analytics
+  app.get("/brand-api/storage/analytics", async (req, res) => {
+    const user = (req as any).user;
+    const { startDate, endDate } = req.query;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { storageUsageLogs, tenantStorageAllocations, storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq, sql, and, gte, lte } = await import("drizzle-orm");
+
+      // Get global config
+      const configs = await db
+        .select()
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      // Get all allocations with usage
+      const allocations = await db
+        .select()
+        .from(tenantStorageAllocations)
+        .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
+
+      // Calculate totals
+      const totalQuota = allocations.reduce((sum, a) => sum + (a.quotaBytes || 0), 0);
+      const totalUsed = allocations.reduce((sum, a) => sum + (a.usedBytes || 0), 0);
+      const totalObjects = allocations.reduce((sum, a) => sum + (a.objectCount || 0), 0);
+
+      // Get usage logs if date range provided
+      let usageLogs: any[] = [];
+      if (startDate && endDate) {
+        usageLogs = await db
+          .select()
+          .from(storageUsageLogs)
+          .where(
+            and(
+              eq(storageUsageLogs.brandTenantId, user.brandTenantId),
+              gte(storageUsageLogs.periodStart, new Date(startDate as string)),
+              lte(storageUsageLogs.periodEnd, new Date(endDate as string))
+            )
+          );
+      }
+
+      res.json({
+        success: true,
+        data: {
+          config: configs[0] ? {
+            provider: configs[0].provider,
+            region: configs[0].region,
+            bucketName: configs[0].bucketName,
+            connectionStatus: configs[0].connectionStatus
+          } : null,
+          summary: {
+            totalQuotaBytes: totalQuota,
+            totalUsedBytes: totalUsed,
+            totalObjectCount: totalObjects,
+            usagePercent: totalQuota > 0 ? Math.round((totalUsed / totalQuota) * 100) : 0,
+            tenantCount: allocations.length
+          },
+          tenants: allocations.map(a => ({
+            tenantId: a.tenantId,
+            tenantName: a.tenantName,
+            quotaBytes: a.quotaBytes,
+            usedBytes: a.usedBytes,
+            objectCount: a.objectCount,
+            usagePercent: a.quotaBytes && a.quotaBytes > 0 ? Math.round(((a.usedBytes || 0) / a.quotaBytes) * 100) : 0,
+            suspended: a.suspended
+          })),
+          usageLogs
+        }
+      });
+    } catch (error) {
+      console.error("❌ Error fetching analytics:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch analytics"
+      });
+    }
+  });
+
+  // Get brand assets
+  app.get("/brand-api/storage/assets", async (req, res) => {
+    const user = (req as any).user;
+    const { category } = req.query;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { brandAssets } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      let query = db
+        .select()
+        .from(brandAssets)
+        .where(
+          category 
+            ? and(
+                eq(brandAssets.brandTenantId, user.brandTenantId),
+                eq(brandAssets.category, category as string)
+              )
+            : eq(brandAssets.brandTenantId, user.brandTenantId)
+        );
+
+      const assets = await query;
+
+      res.json({
+        success: true,
+        data: assets
+      });
+    } catch (error) {
+      console.error("❌ Error fetching assets:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch assets"
+      });
+    }
+  });
+
+  // Create brand asset
+  app.post("/brand-api/storage/assets", async (req, res) => {
+    const user = (req as any).user;
+    const { name, description, objectKey, mimeType, sizeBytes, category, tags } = req.body;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { brandAssets } = await import("../db/schema/brand-interface.js");
+
+      if (!name || !objectKey) {
+        return res.status(400).json({
+          success: false,
+          error: "name and objectKey are required"
+        });
+      }
+
+      const result = await db
+        .insert(brandAssets)
+        .values({
+          name,
+          description,
+          objectKey,
+          mimeType,
+          sizeBytes: sizeBytes || 0,
+          category,
+          tags,
+          createdBy: user.email,
+          brandTenantId: user.brandTenantId
+        })
+        .returning();
+
+      res.json({
+        success: true,
+        data: result[0]
+      });
+    } catch (error) {
+      console.error("❌ Error creating asset:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to create asset"
+      });
+    }
+  });
+
+  // Push asset to tenants
+  app.post("/brand-api/storage/assets/:assetId/push", async (req, res) => {
+    const user = (req as any).user;
+    const { assetId } = req.params;
+    const { tenantIds } = req.body;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { brandAssets } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      if (!tenantIds || !Array.isArray(tenantIds) || tenantIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "tenantIds array is required"
+        });
+      }
+
+      // Get asset
+      const assets = await db
+        .select()
+        .from(brandAssets)
+        .where(
+          and(
+            eq(brandAssets.id, assetId),
+            eq(brandAssets.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      if (assets.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Asset not found"
+        });
+      }
+
+      // Update pushed tenants
+      const existingPushed = assets[0].pushedToTenants || [];
+      const newPushed = [...new Set([...existingPushed, ...tenantIds])];
+
+      const result = await db
+        .update(brandAssets)
+        .set({
+          pushedToTenants: newPushed,
+          lastPushedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(brandAssets.id, assetId))
+        .returning();
+
+      // TODO: Actually copy the file in S3 to tenant prefixes
+      // This will be implemented when we have the S3 service
+
+      res.json({
+        success: true,
+        data: result[0],
+        message: `Asset pushed to ${tenantIds.length} tenant(s)`
+      });
+    } catch (error) {
+      console.error("❌ Error pushing asset:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to push asset"
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 

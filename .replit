@@ -102,3 +102,6 @@ localPort = 24678
 
 [userenv.development]
 VITE_AUTH_MODE = "development"
+
+[userenv.shared]
+STORAGE_ENCRYPTION_KEY = "w3suite-cloud-storage-key-2026-secure-32chars"
