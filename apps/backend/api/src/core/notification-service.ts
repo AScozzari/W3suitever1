@@ -463,23 +463,36 @@ class AWSEmailProvider implements EmailProvider {
     // Configure AWS SES if credentials are available
     if (this.isConfigured()) {
       try {
-        AWS.config.update({
-          accessKeyId: this.accessKeyId,
-          secretAccessKey: this.secretAccessKey,
-          region: this.region
-        });
-        
-        this.ses = new AWS.SES({ region: this.region });
-        
-        logger.debug('📧 AWS SES client configured', {
-          region: this.region,
-          fromEmail: this.fromEmail
-        });
+        // Safely check if AWS SDK v2 is available
+        if (AWS && AWS.config && typeof AWS.config.update === 'function') {
+          AWS.config.update({
+            accessKeyId: this.accessKeyId,
+            secretAccessKey: this.secretAccessKey,
+            region: this.region
+          });
+          
+          this.ses = new AWS.SES({ region: this.region });
+          
+          logger.debug('📧 AWS SES client configured', {
+            region: this.region,
+            fromEmail: this.fromEmail
+          });
+        } else {
+          // AWS SDK v2 not properly loaded - try direct instantiation
+          logger.warn('⚠️ AWS SDK v2 config not available, trying direct SES instantiation');
+          this.ses = new AWS.SES({
+            accessKeyId: this.accessKeyId,
+            secretAccessKey: this.secretAccessKey,
+            region: this.region
+          });
+        }
       } catch (error) {
         logger.error('❌ Failed to configure AWS SES client', {
           error: error instanceof Error ? error.message : String(error),
           region: this.region
         });
+        // Don't crash - email will just not be available
+        this.ses = undefined;
       }
     }
   }
