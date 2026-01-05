@@ -472,35 +472,33 @@ export default function ChatPage() {
                             border: '2px solid #e5e7eb'
                           }}
                         />
-                      ) : (() => {
-                        const metaColor = channel.metadata?.headerColor;
-                        const isValidColor = metaColor && metaColor !== 'white' && metaColor !== '#ffffff' && metaColor !== 'transparent';
-                        const bgColor = isValidColor ? metaColor : getGroupColor(channel.id).bg;
-                        const initials = channel.channelType === 'dm' 
-                          ? getGroupInitials(channel.dmUser?.name || 'DM')
-                          : getGroupInitials(channel.name);
-                        return (
-                          <div 
-                            style={{
-                              width: '40px',
-                              height: '40px',
-                              background: bgColor,
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#ffffff',
-                              fontSize: '14px',
-                              fontWeight: 600,
-                              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-                              border: '2px solid rgba(255,255,255,0.3)'
-                            }}
-                            title={channel.name}
-                          >
-                            {initials}
-                          </div>
-                        );
-                      })()}
+                      ) : (
+                        <div 
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            background: (() => {
+                              const metaColor = channel.metadata?.headerColor;
+                              const isValidColor = metaColor && metaColor !== 'white' && metaColor !== '#ffffff' && metaColor !== 'transparent' && metaColor !== '#fff';
+                              return isValidColor ? metaColor : getGroupColor(channel.id).bg;
+                            })(),
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#ffffff',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                            border: '2px solid rgba(255,255,255,0.3)'
+                          }}
+                          title={channel.name}
+                        >
+                          {channel.channelType === 'dm' 
+                            ? getGroupInitials(channel.dmUser?.name || 'DM')
+                            : getGroupInitials(channel.name)}
+                        </div>
+                      )}
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
