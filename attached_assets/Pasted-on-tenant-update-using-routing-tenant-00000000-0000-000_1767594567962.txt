@@ -1,0 +1,71 @@
+on tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-AMKBJTH4.js?v=b56a477b:335:29)
+    at chunk-AMKBJTH4.js?v=b56a477b:239:13
+    at chunk-AMKBJTH4.js?v=b56a477b:162:58
+    at Presence (chunk-3RPIZZKC.js?v=b56a477b:24:11)
+    at chunk-AMKBJTH4.js?v=b56a477b:153:64
+    at chunk-TCRT5IO7.js?v=b56a477b:43:13
+    at chunk-TCRT5IO7.js?v=b56a477b:20:13
+    at chunk-7JN5FQRM.js?v=b56a477b:42:13
+    at chunk-R54IPKTL.js?v=b56a477b:244:22
+    at Presence (chunk-3RPIZZKC.js?v=b56a477b:24:11)
+    at Provider (chunk-3WVMON5O.js?v=b56a477b:38:15)
+    at DialogPortal (chunk-AMKBJTH4.js?v=b56a477b:115:11)
+    at _c3 (dialog.tsx:30:6)
+    at Provider (chunk-3WVMON5O.js?v=b56a477b:38:15)
+    at Dialog (chunk-AMKBJTH4.js?v=b56a477b:56:5)
+    at div (<anonymous>)
+    at MyDriveContent (MyDrivePage.tsx:142:34)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:146:34)
+    at MyPortal (MyPortal.tsx:127:44)
+    at AuthenticatedRoute (TenantShell.tsx:618:72)
+    at Route (wouter.js?v=b56a477b:206:16)
+    at Switch (wouter.js?v=b56a477b:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:244:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:99:59)
+    at Route (wouter.js?v=b56a477b:206:16)
+    at Switch (wouter.js?v=b56a477b:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=b56a477b:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-AMKBJTH4.js?v=b56a477b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=b56a477b:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=b56a477b:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=b56a477b:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'avviso
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-AMKBJTH4.js?v=b56a477b:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=b56a477b:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=b56a477b:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=b56a477b:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=b56a477b:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=b56a477b:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=b56a477b:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=b56a477b:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=b56a477b:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=b56a477b:18627Comprendi l'avviso
+MyDrivePage.tsx:196  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/folders 401 (Unauthorized)

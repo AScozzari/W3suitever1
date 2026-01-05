@@ -193,16 +193,12 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const createFolderMutation = useMutation({
     mutationFn: async (data: { name: string; parentFolderId: string | null }) => {
-      const response = await fetch('/api/storage/folders', {
+      return apiRequest('/api/storage/folders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(data)
       });
-      if (!response.ok) throw new Error('Errore creazione cartella');
-      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newFolder: StorageFolder) => {
       queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/folders'] });
       setNewFolderDialogOpen(false);
       setNewFolderName('');
@@ -215,9 +211,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (objectId: string) => {
-      const response = await fetch(`/api/storage/objects/${objectId}/favorite`, { method: 'POST' });
-      if (!response.ok) throw new Error('Errore');
-      return response.json();
+      return apiRequest(`/api/storage/objects/${objectId}/favorite`, { method: 'POST' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
@@ -226,9 +220,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const deleteObjectMutation = useMutation({
     mutationFn: async (objectId: string) => {
-      const response = await fetch(`/api/storage/objects/${objectId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Errore eliminazione');
-      return response.json();
+      return apiRequest(`/api/storage/objects/${objectId}`, { method: 'DELETE' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
@@ -251,14 +243,13 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       
       setUploadProgress(Array.from(files).map(f => ({ fileName: f.name, progress: 0, status: 'uploading' as const })));
       
-      const response = await fetch('/api/storage/upload/batch', {
+      return apiRequest('/api/storage/upload/batch', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {} // Let browser set Content-Type for FormData
       });
-      if (!response.ok) throw new Error('Errore upload');
-      return response.json();
     },
-    onSuccess: (result) => {
+    onSuccess: (result: { uploaded: number }) => {
       setUploadProgress(prev => prev.map(p => ({ ...p, status: 'success' as const, progress: 100 })));
       queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/storage/quota'] });
@@ -276,9 +267,8 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const createShareMutation = useMutation({
     mutationFn: async (data: { objectId?: string; folderId?: string; settings: typeof shareSettings }) => {
-      const response = await fetch('/api/storage/share', {
+      return apiRequest('/api/storage/share', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           objectId: data.objectId,
           folderId: data.folderId,
@@ -290,10 +280,8 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           maxDownloads: data.settings.maxDownloads || undefined
         })
       });
-      if (!response.ok) throw new Error('Errore creazione link');
-      return response.json();
     },
-    onSuccess: (result) => {
+    onSuccess: (result: { shareUrl: string }) => {
       setShareLink(window.location.origin + result.shareUrl);
       toast({ title: 'Link creato', description: 'Il link di condivisione è stato generato' });
     },
