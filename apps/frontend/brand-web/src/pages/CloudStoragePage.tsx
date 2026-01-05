@@ -802,11 +802,15 @@ function TenantAllocationsTab({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Quote Tenant</CardTitle>
-              <CardDescription>Gestione dello spazio assegnato a ogni tenant</CardDescription>
+              <CardDescription>Gestione dello spazio assegnato a ogni tenant (caricamento automatico da W3 Suite)</CardDescription>
             </div>
-            <Button data-testid="btn-add-allocation">
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi Tenant
+            <Button 
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['/brand-api/storage/allocations'] })}
+              data-testid="btn-refresh-allocations"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Aggiorna
             </Button>
           </div>
         </CardHeader>
