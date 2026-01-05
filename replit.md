@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI to enhance efficiency and strategic decision-making. The platform aims to be a leading solution for operational excellence and data-driven insights.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI to enhance efficiency and strategic decision-making. The platform aims to be a leading solution for operational excellence and data-driven insights with market potential across various industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -142,7 +142,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **✅ px OK**: border-width (1-2px), box-shadow offset/blur (piccoli valori)
   - **Formula**: `rem = px / 16` (es: 16px = 1rem, 14px = 0.875rem)
   - **Motivo**: VITE_FONT_SCALE=80 scala solo rem/em, non px
-  - **Pagine convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
+  - **W3 Suite pagine convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
+  - **Brand Interface pagine convertite**: Login.tsx ✅, Management.tsx ✅, CloudStoragePage.tsx ✅ (usa Tailwind)
+  - **Brand Interface**: Hook `useProductionScale()` in App.tsx + CSS var `--font-scale` in index.css
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture

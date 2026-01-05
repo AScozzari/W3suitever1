@@ -762,7 +762,7 @@ export default function Management() {
     return (
       <BrandLayout>
         <div style={{ 
-          padding: '64px 24px', 
+          padding: '4rem 1.5rem', 
           textAlign: 'center',
           ...cardStyle,
           margin: '1.5rem',
@@ -980,7 +980,7 @@ export default function Management() {
             <button
               onClick={() => setShowOrganizationModal(false)}
               style={{
-                padding: '12px 24px',
+                padding: '0.75rem 1.5rem',
                 border: `1px solid ${COLORS.neutral.lighter}`,
                 borderRadius: '0.5rem',
                 background: COLORS.neutral.white,
@@ -1006,7 +1006,7 @@ export default function Management() {
               onClick={() => createOrganizationMutation.mutate(organizationForm)}
               disabled={!organizationForm.name || createOrganizationMutation.isPending}
               style={{
-                padding: '12px 24px',
+                padding: '0.75rem 1.5rem',
                 border: 'none',
                 borderRadius: '0.5rem',
                 background: organizationForm.name ? COLORS.gradients.orange : COLORS.neutral.light,
@@ -1114,7 +1114,7 @@ export default function Management() {
         
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(12.5rem, 1fr))',
           gap: '1rem'
         }}>
           <input
@@ -1297,7 +1297,7 @@ export default function Management() {
                       fontSize: '0.8125rem'
                     }}>
                       <span style={{
-                        padding: '4px 8px',
+                        padding: '0.25rem 0.5rem',
                         borderRadius: '0.75rem',
                         fontSize: '0.75rem',
                         fontWeight: 500,
@@ -1350,7 +1350,7 @@ export default function Management() {
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            padding: '8px 16px',
+            padding: '0.5rem 1rem',
             background: 'transparent',
             border: `1px solid ${COLORS.neutral.lighter}`,
             borderRadius: '0.5rem',
@@ -1388,7 +1388,7 @@ export default function Management() {
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            padding: '8px 16px',
+            padding: '0.5rem 1rem',
             background: COLORS.gradients.orange,
             color: 'white',
             border: 'none',
@@ -1451,8 +1451,8 @@ export default function Management() {
                       <td style={{ padding: '0.75rem', color: COLORS.neutral.medium }}>{entity.pec}</td>
                       <td style={{ padding: '0.75rem' }}>
                         <span style={{
-                          padding: '4px 8px',
-                          borderRadius: '4px',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
                           fontSize: '0.75rem',
                           fontWeight: 600,
                           background: entity.stato === 'active' ? COLORS.semantic.success + '20' : COLORS.semantic.warning + '20',
@@ -1479,7 +1479,7 @@ export default function Management() {
                 onClick={() => handleAddLegalEntity(drillDownView.tenantId!, drillDownView.tenantName!)}
                 style={{
                   marginTop: '1rem',
-                  padding: '8px 16px',
+                  padding: '0.5rem 1rem',
                   background: COLORS.gradients.orange,
                   color: 'white',
                   border: 'none',
@@ -1490,7 +1490,7 @@ export default function Management() {
                 }}
                 data-testid="button-add-first-legal-entity"
               >
-                <Plus size={16} style={{ marginRight: '8px' }} />
+                <Plus size={16} style={{ marginRight: '0.5rem' }} />
                 Aggiungi Prima Ragione Sociale
               </button>
             </div>
@@ -1521,7 +1521,7 @@ export default function Management() {
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          padding: '8px 16px',
+          padding: '0.5rem 1rem',
           background: `${COLORS.semantic.success}10`,
           borderRadius: '0.5rem',
           width: 'fit-content'
@@ -1640,7 +1640,7 @@ export default function Management() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                padding: '8px 16px',
+                padding: '0.5rem 1rem',
                 background: bulkOperation ? COLORS.gradients.purple : COLORS.neutral.light,
                 color: 'white',
                 border: 'none',
@@ -1662,8 +1662,8 @@ export default function Management() {
       {/* Statistics Cards with animations */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(17.5rem, 1fr))',
+        gap: '1.25rem'
       }}>
         {/* Total PDV Card */}
         <div 
@@ -1691,15 +1691,15 @@ export default function Management() {
                 color: COLORS.primary.orange,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                marginBottom: '12px'
+                marginBottom: '0.75rem'
               }}>
                 PDV Totali
               </p>
               <div style={{
-                fontSize: '32px',
+                fontSize: '2rem',
                 fontWeight: 700,
                 color: COLORS.neutral.dark,
-                marginBottom: '4px'
+                marginBottom: '0.25rem'
               }}>
                 {structureStats?.data?.totalStores ? (
                   <AnimatedCounter value={structureStats.data.totalStores} />
@@ -1713,15 +1713,15 @@ export default function Management() {
                 fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '0.25rem'
               }}>
                 <TrendingUp size={14} />
                 +{structureStats?.data?.growth?.percentage || '7.1'}% questo mese
               </p>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
+              width: '3rem',
+              height: '3rem',
               background: COLORS.gradients.orange,
               borderRadius: '0.75rem',
               display: 'flex',
@@ -1760,15 +1760,15 @@ export default function Management() {
                 color: COLORS.semantic.success,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                marginBottom: '12px'
+                marginBottom: '0.75rem'
               }}>
                 PDV Attivi
               </p>
               <div style={{
-                fontSize: '32px',
+                fontSize: '2rem',
                 fontWeight: 700,
                 color: COLORS.neutral.dark,
-                marginBottom: '4px'
+                marginBottom: '0.25rem'
               }}>
                 {structureStats?.data?.activeStores ? (
                   <AnimatedCounter value={structureStats.data.activeStores} />
@@ -1782,15 +1782,15 @@ export default function Management() {
                 fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                gap: '0.25rem'
               }}>
                 <Activity size={14} />
                 93% operational rate
               </p>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
+              width: '3rem',
+              height: '3rem',
               background: COLORS.gradients.green,
               borderRadius: '0.75rem',
               display: 'flex',
@@ -1829,7 +1829,7 @@ export default function Management() {
                 color: COLORS.primary.purple,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                marginBottom: '12px'
+                marginBottom: '0.75rem'
               }}>
                 Canali Distributivi
               </p>
@@ -1839,7 +1839,7 @@ export default function Management() {
                   { canale: 'Franchise', count: 30, percentage: 40 }
                 ]).map((channel, index) => (
                   <div key={index}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                       <span style={{
                         fontSize: '0.8125rem',
                         color: COLORS.neutral.dark,
@@ -1857,9 +1857,9 @@ export default function Management() {
                     </div>
                     <div style={{
                       width: '100%',
-                      height: '4px',
+                      height: '0.25rem',
                       background: COLORS.neutral.lighter,
-                      borderRadius: '2px',
+                      borderRadius: '0.125rem',
                       overflow: 'hidden'
                     }}>
                       <div style={{
@@ -1875,8 +1875,8 @@ export default function Management() {
               </div>
             </div>
             <div style={{
-              width: '48px',
-              height: '48px',
+              width: '3rem',
+              height: '3rem',
               background: COLORS.gradients.purple,
               borderRadius: '0.75rem',
               display: 'flex',
@@ -1897,7 +1897,7 @@ export default function Management() {
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(12.5rem, 1fr))',
           gap: '1rem',
           marginBottom: '1rem'
         }}>
@@ -2059,7 +2059,7 @@ export default function Management() {
                     fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark,
-                    width: '40px'
+                    width: '2.5rem'
                   }}>
                     {/* Checkbox column */}
                   </th>
@@ -2120,7 +2120,7 @@ export default function Management() {
                     fontSize: '0.875rem',
                     fontWeight: 600,
                     color: COLORS.neutral.dark,
-                    width: '120px'
+                    width: '7.5rem'
                   }}>
                     Actions
                   </th>
@@ -2146,7 +2146,7 @@ export default function Management() {
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          padding: '4px'
+                          padding: '0.25rem'
                         }}
                         data-testid={`checkbox-org-${org.id}`}
                       >
@@ -2187,7 +2187,7 @@ export default function Management() {
                       fontSize: '0.8125rem'
                     }}>
                       <span style={{
-                        padding: '4px 8px',
+                        padding: '0.25rem 0.5rem',
                         borderRadius: '0.75rem',
                         fontSize: '0.75rem',
                         fontWeight: 500,
@@ -2207,7 +2207,7 @@ export default function Management() {
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
                       fontSize: '0.8125rem',
                       color: COLORS.neutral.medium,
-                      maxWidth: '150px',
+                      maxWidth: '9.375rem',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -2235,7 +2235,7 @@ export default function Management() {
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
-                            padding: '6px',
+                            padding: '0.375rem',
                             borderRadius: '0.375rem',
                             display: 'flex',
                             alignItems: 'center',
@@ -2266,7 +2266,7 @@ export default function Management() {
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
-                            padding: '6px',
+                            padding: '0.375rem',
                             borderRadius: '0.375rem',
                             display: 'flex',
                             alignItems: 'center',
@@ -2297,7 +2297,7 @@ export default function Management() {
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
-                            padding: '6px',
+                            padding: '0.375rem',
                             borderRadius: '0.375rem',
                             display: 'flex',
                             alignItems: 'center',
@@ -2370,7 +2370,7 @@ export default function Management() {
     }}>
       <div style={{
         ...cardStyle,
-        padding: '64px',
+        padding: '4rem',
         textAlign: 'center',
         maxWidth: '31.25rem',
         background: 'white',
@@ -2381,13 +2381,13 @@ export default function Management() {
         {tab.badge && (
           <span style={{
             position: 'absolute',
-            top: '-12px',
-            right: '24px',
-            padding: '6px 12px',
+            top: '-0.75rem',
+            right: '1.5rem',
+            padding: '0.375rem 0.75rem',
             background: tab.gradient,
             color: 'white',
-            borderRadius: '20px',
-            fontSize: '11px',
+            borderRadius: '1.25rem',
+            fontSize: '0.6875rem',
             fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -2399,14 +2399,14 @@ export default function Management() {
         
         {/* Icon */}
         <div style={{
-          width: '96px',
-          height: '96px',
+          width: '6rem',
+          height: '6rem',
           background: tab.gradient,
-          borderRadius: '24px',
+          borderRadius: '1.5rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 24px',
+          margin: '0 auto 1.5rem',
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
           animation: 'float 3s ease-in-out infinite'
         }}>
@@ -2415,10 +2415,10 @@ export default function Management() {
         
         {/* Title */}
         <h2 style={{
-          fontSize: '28px',
+          fontSize: '1.75rem',
           fontWeight: 700,
           color: COLORS.neutral.dark,
-          marginBottom: '12px',
+          marginBottom: '0.75rem',
           background: tab.gradient,
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -2442,9 +2442,9 @@ export default function Management() {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.5rem',
-          padding: '12px 24px',
+          padding: '0.75rem 1.5rem',
           background: COLORS.neutral.lightest,
-          borderRadius: '30px',
+          borderRadius: '1.875rem',
           marginBottom: '1.5rem'
         }}>
           <Rocket size={20} style={{ color: tab.color }} />
@@ -2509,7 +2509,7 @@ export default function Management() {
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{
-            fontSize: '32px',
+            fontSize: '2rem',
             fontWeight: 700,
             marginBottom: '0.5rem',
             background: COLORS.gradients.orange,
@@ -2588,13 +2588,13 @@ export default function Management() {
                 {tab.badge && (
                   <span style={{
                     position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    padding: '4px 8px',
+                    top: '0.5rem',
+                    right: '0.5rem',
+                    padding: '0.25rem 0.5rem',
                     background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.2)' : tab.gradient,
                     color: activeTab === tab.id ? 'white' : 'white',
                     borderRadius: '0.75rem',
-                    fontSize: '10px',
+                    fontSize: '0.625rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
@@ -2610,10 +2610,10 @@ export default function Management() {
                   width: '100%'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '2.5rem',
+                    height: '2.5rem',
                     background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.2)' : tab.gradient,
-                    borderRadius: '10px',
+                    borderRadius: '0.625rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2626,12 +2626,12 @@ export default function Management() {
                     <div style={{
                       fontSize: '0.875rem',
                       fontWeight: 700,
-                      marginBottom: '2px'
+                      marginBottom: '0.125rem'
                     }}>
                       {tab.name}
                     </div>
                     <div style={{
-                      fontSize: '11px',
+                      fontSize: '0.6875rem',
                       opacity: 0.8,
                       fontWeight: 400,
                       color: activeTab === tab.id ? 'rgba(255, 255, 255, 0.9)' : COLORS.neutral.medium
@@ -2682,7 +2682,7 @@ export default function Management() {
               background: 'white',
               borderRadius: '0.75rem',
               width: '90%',
-              maxWidth: '600px',
+              maxWidth: '37.5rem',
               maxHeight: '90vh',
               overflow: 'auto',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
@@ -2709,9 +2709,9 @@ export default function Management() {
                       marginBottom: '0.5rem'
                     }}>
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
+                        width: '2.5rem',
+                        height: '2.5rem',
+                        borderRadius: '0.625rem',
                         background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                         display: 'flex',
                         alignItems: 'center',
@@ -3065,7 +3065,7 @@ export default function Management() {
                         marginBottom: '0.5rem'
                       }}>
                         Codice SDI
-                        <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '4px' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '0.25rem' }}>
                           (Sistema di Interscambio)
                         </span>
                       </label>
@@ -3443,10 +3443,10 @@ export default function Management() {
             `}</style>
             <div style={{
               width: '90%',
-              maxWidth: '900px',
+              maxWidth: '56.25rem',
               maxHeight: '90vh',
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '1rem',
               overflow: 'hidden',
               boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
               border: '1px solid #e2e8f0',
@@ -3761,7 +3761,7 @@ export default function Management() {
                     }}>
                       Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
                     </label>
-                    <div style={{ display: 'flex', gap: '20px' }}>
+                    <div style={{ display: 'flex', gap: '1.25rem' }}>
                       <label style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
