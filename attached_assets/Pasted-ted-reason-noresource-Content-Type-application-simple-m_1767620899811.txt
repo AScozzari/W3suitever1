@@ -1,0 +1,133 @@
+ted;reason=noresource
+Content-Type: application/simple-message-summary
+Content-Length: 67
+
+Messages-Waiting: no
+Message-Account: sip:2000@demo.edgvoip.it
+
+
+
+Layout-CQdVjArK.js:58 Mon Jan 05 2026 14:47:44 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+SIP/2.0 481 Call/Transaction Does Not Exist
+Via: SIP/2.0/WSS 127.0.0.1:7444;branch=z9hG4bKcH57Fr9H6FrtH
+From: <sip:2000@demo.edgvoip.it>;tag=8Q9eFSm5KrcBa
+To: <sip:2000@demo.edgvoip.it>;tag=lfam13u7am
+CSeq: 109256638 NOTIFY
+Call-ID: f1ed7993-64df-123f-2c82-0050560ce942
+Supported: outbound
+User-Agent: SIP.js/0.21.1
+Content-Length: 0
+
+
+
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:45, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:45, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:45, Token expires: 15:01:14
+2index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:45, Token expires: 15:01:14
+index-DAd4xwsA.js:2  GET https://w3suite.it/api/storage/avatars/user-008/signed-url 500 (Internal Server Error)
+queryFn @ index-DAd4xwsA.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32Comprendi l'errore
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:45, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:45, Token expires: 15:01:14
+index-DAd4xwsA.js:2  GET https://w3suite.it/api/storage/avatars/admin-user/signed-url 500 (Internal Server Error)
+queryFn @ index-DAd4xwsA.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32
+setTimeout
+as @ query-i2gUkQ5G.js:1
+h @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+setData @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32Comprendi l'errore
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:47, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:48, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:49, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:51, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:51, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:51, Token expires: 15:01:14
+3index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:53, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:54, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:54, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:54, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:54, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:54, Token expires: 15:01:14
+index-DAd4xwsA.js:2  GET https://w3suite.it/api/storage/avatars/admin-user/signed-url 500 (Internal Server Error)
+queryFn @ index-DAd4xwsA.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32Comprendi l'errore
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:47:58, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:48:03, Token expires: 15:01:14
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:48:10, Token expires: 15:01:14
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonime) @ radix-ui-BE2MXWDM.js:53
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+pa @ react-core-CmNK3XIx.js:32
+jt @ react-core-CmNK3XIx.js:30
+(anonime) @ react-core-CmNK3XIx.js:32Comprendi l'avviso
+index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:48:13, Token expires: 15:01:14
+3index-DAd4xwsA.js:2 🔍 Token expiry check: Current time: 14:48:13, Token expires: 15:01:14

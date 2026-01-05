@@ -442,7 +442,7 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
     
     // Fallback: Check for static avatar file via avatar_object_path in users table
     // This handles VPS environments where Object Storage isn't available
-    const { db } = await import('../db');
+    const { db } = await import('../core/db');
     const { users } = await import('../db/schema/w3suite');
     const { eq } = await import('drizzle-orm');
     
