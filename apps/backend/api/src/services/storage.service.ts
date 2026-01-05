@@ -2594,7 +2594,23 @@ export const storageService = {
   async getQuotasSummary(ctx: StorageServiceContext) {
     const brandAllocation = await getTenantStorageAllocation(ctx.tenantId);
     
-    // Query storage_quotas using the correct schema columns
+    // Load ALL users and teams from the tenant (not just those with quota records)
+    const allTenantUsers = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      isActive: users.isActive,
+    }).from(users)
+      .where(eq(users.tenantId, ctx.tenantId));
+
+    const allTenantTeams = await db.select({
+      id: teams.id,
+      name: teams.name,
+    }).from(teams)
+      .where(eq(teams.tenantId, ctx.tenantId));
+    
+    // Query existing storage_quotas for this tenant
     const quotasRaw = await db.select({
       id: storageQuotas.id,
       scopeLevel: storageQuotas.scopeLevel,
@@ -2606,73 +2622,68 @@ export const storageService = {
     }).from(storageQuotas)
       .where(eq(storageQuotas.tenantId, ctx.tenantId));
 
-    const userIds = quotasRaw
-      .filter(q => q.scopeLevel === 'user' && q.userId)
-      .map(q => q.userId!);
-    const teamIds = quotasRaw
-      .filter(q => q.scopeLevel === 'team' && q.teamId)
-      .map(q => q.teamId!);
-
-    const userMap = new Map<string, { name: string; email: string }>();
-    const teamMap = new Map<string, { name: string }>();
-
-    if (userIds.length > 0) {
-      const usersData = await db.select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-      }).from(users)
-        .where(inArray(users.id, userIds));
-
-      for (const u of usersData) {
-        userMap.set(u.id, { 
-          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown',
-          email: u.email || ''
-        });
-      }
-    }
-
-    if (teamIds.length > 0) {
-      const teamsData = await db.select({
-        id: teams.id,
-        name: teams.name,
-      }).from(teams)
-        .where(inArray(teams.id, teamIds));
-
-      for (const t of teamsData) {
-        teamMap.set(t.id, { name: t.name || 'Unknown' });
-      }
-    }
-
-    const entities = quotasRaw.map(q => {
+    // Create maps for quick lookup of existing quotas
+    const userQuotaMap = new Map<string, typeof quotasRaw[0]>();
+    const teamQuotaMap = new Map<string, typeof quotasRaw[0]>();
+    
+    for (const q of quotasRaw) {
       if (q.scopeLevel === 'user' && q.userId) {
-        const user = userMap.get(q.userId);
-        return {
-          id: q.id,
-          type: 'user' as const,
-          entityId: q.userId,
-          name: user?.name || 'Unknown User',
-          email: user?.email || null,
-          quotaBytes: q.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
-          usedBytes: q.usedBytes || 0,
-          suspended: q.brandOverride || false,
-        };
+        userQuotaMap.set(q.userId, q);
       } else if (q.scopeLevel === 'team' && q.teamId) {
-        const team = teamMap.get(q.teamId);
-        return {
-          id: q.id,
-          type: 'team' as const,
-          entityId: q.teamId,
-          name: team?.name || 'Unknown Team',
-          email: null,
-          quotaBytes: q.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
-          usedBytes: q.usedBytes || 0,
-          suspended: q.brandOverride || false,
-        };
+        teamQuotaMap.set(q.teamId, q);
       }
-      return null;
-    }).filter(Boolean);
+    }
+
+    // Calculate real usage per user from storage_objects
+    const userUsageRaw = await db.select({
+      ownerUserId: storageObjects.ownerUserId,
+      sum: sql<number>`COALESCE(SUM(size_bytes), 0)::bigint`
+    }).from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      ))
+      .groupBy(storageObjects.ownerUserId);
+
+    const userUsageMap = new Map<string, number>();
+    for (const row of userUsageRaw) {
+      if (row.ownerUserId) {
+        userUsageMap.set(row.ownerUserId, Number(row.sum || 0));
+      }
+    }
+
+    // Format ALL users (merge with existing quotas if present)
+    const usersFormatted = allTenantUsers.map(u => {
+      const existingQuota = userQuotaMap.get(u.id);
+      const realUsedBytes = userUsageMap.get(u.id) || 0;
+      return {
+        type: 'user' as const,
+        id: u.id,
+        name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown User',
+        email: u.email || null,
+        isActive: u.isActive !== false,
+        quotaBytes: existingQuota?.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
+        usedBytes: realUsedBytes,
+        hasCustomQuota: !!existingQuota,
+        suspended: existingQuota?.brandOverride || false,
+      };
+    });
+
+    // Format ALL teams (merge with existing quotas if present)
+    const teamsFormatted = allTenantTeams.map(t => {
+      const existingQuota = teamQuotaMap.get(t.id);
+      return {
+        type: 'team' as const,
+        id: t.id,
+        name: t.name || 'Unknown Team',
+        email: null,
+        isActive: true,
+        quotaBytes: existingQuota?.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
+        usedBytes: existingQuota?.usedBytes || 0,
+        hasCustomQuota: !!existingQuota,
+        suspended: existingQuota?.brandOverride || false,
+      };
+    });
 
     const totalUsed = await db.select({
       sum: sql<number>`COALESCE(SUM(size_bytes), 0)::bigint`
@@ -2681,34 +2692,6 @@ export const storageService = {
         eq(storageObjects.tenantId, ctx.tenantId),
         isNull(storageObjects.deletedAt),
       ));
-
-    const usersFormatted = entities
-      .filter(e => e?.type === 'user')
-      .map(e => ({
-        type: 'user' as const,
-        id: e!.entityId,
-        name: e!.name,
-        email: e!.email,
-        isActive: !e!.suspended,
-        quotaBytes: e!.quotaBytes,
-        usedBytes: e!.usedBytes,
-        hasCustomQuota: true,
-        suspended: e!.suspended,
-      }));
-
-    const teamsFormatted = entities
-      .filter(e => e?.type === 'team')
-      .map(e => ({
-        type: 'team' as const,
-        id: e!.entityId,
-        name: e!.name,
-        email: null,
-        isActive: !e!.suspended,
-        quotaBytes: e!.quotaBytes,
-        usedBytes: e!.usedBytes,
-        hasCustomQuota: true,
-        suspended: e!.suspended,
-      }));
 
     const result = {
       users: usersFormatted,
