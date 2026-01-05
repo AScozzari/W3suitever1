@@ -148,12 +148,12 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor graduale**: Convertire pagine quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design, fixed headers/sidebars, white backgrounds, `shadcn/ui` (Radix UI-based) with Tailwind CSS. UI zoom managed by `VITE_FONT_SCALE=80` at build-time, requiring `rem` units for scaling.
+- **UI/UX Decisions**: WindTre Glassmorphism design, fixed headers/sidebars, white backgrounds. Uses `shadcn/ui` (Radix UI-based) with Tailwind CSS. UI zoom is managed by `VITE_FONT_SCALE=80` at build-time, requiring `rem` units for proper scaling.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with 3-schema (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
+    - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, 3-level RBAC.
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook management, Task Management, Multi-Provider OAuth (MCP), AI Voice Agent with RAG.
-    - **Unified Object Storage**: Enterprise-grade, multi-tenant RLS via signed URLs, three-tier quota, Google Drive-style permission inheritance, ACL.
+    - **Unified Object Storage**: Enterprise-grade, multi-tenant RLS via signed URLs, three-tier quota, Google Drive-style permission inheritance, ACL. Dual storage architecture for development (Replit's object storage) and production (AWS S3) with automatic environment detection.
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, AI Tools Ecosystem.
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, Customer 360° Dashboard.
     - **HR Module**: Manages shifts, leave requests, time tracking.
@@ -182,3 +182,5 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **ESBuild**: Server-side code bundling.
 - **Nginx**: Reverse proxy.
 - **OpenAI**: Integrated for AI services (`gpt-4o`, `gpt-4o-realtime`).
+- **AWS S3**: For production object storage.
+- **AWS S3**: For production object storage.
