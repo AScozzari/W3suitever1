@@ -253,6 +253,30 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
     }
   });
 
+  const disconnectMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/brand-api/storage/disconnect', {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      setConnectionTestResult('idle');
+      setFormData({ ...formData, accessKey: '', secretKey: '' });
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/storage/config'] });
+      toast({
+        title: "Disconnesso",
+        description: "Le credenziali AWS S3 sono state rimosse con successo"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile disconnettere",
+        variant: "destructive"
+      });
+    }
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -353,7 +377,7 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
             </p>
           </div>
 
-          <div className="flex gap-2 pt-4 items-center">
+          <div className="flex flex-wrap gap-2 pt-4 items-center">
             <Button 
               onClick={() => saveConfigMutation.mutate(formData)}
               disabled={saveConfigMutation.isPending}
@@ -377,7 +401,25 @@ function AWSConfigTab({ config, isLoading }: { config: StorageConfig | null; isL
               )}
               Test Connessione
             </Button>
-            {/* Icona stato connessione */}
+            {config?.hasCredentials && (
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  if (confirm('Sei sicuro di voler disconnettere AWS S3? Le credenziali verranno rimosse.')) {
+                    disconnectMutation.mutate();
+                  }
+                }}
+                disabled={disconnectMutation.isPending}
+                data-testid="btn-disconnect"
+              >
+                {disconnectMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <X className="w-4 h-4 mr-2" />
+                )}
+                Disconnetti
+              </Button>
+            )}
             {connectionTestResult === 'success' && (
               <div className="flex items-center gap-1 text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
                 <Check className="w-4 h-4" />

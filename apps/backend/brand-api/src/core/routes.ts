@@ -5349,6 +5349,55 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Disconnect AWS S3 - remove credentials and reset connection
+  app.delete("/brand-api/storage/disconnect", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq } = await import("drizzle-orm");
+
+      // Get existing config
+      const configs = await db
+        .select({ id: storageGlobalConfig.id })
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      if (configs.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "No storage configuration found"
+        });
+      }
+
+      // Clear credentials and reset connection status
+      await db
+        .update(storageGlobalConfig)
+        .set({
+          accessKeyEncrypted: null,
+          secretKeyEncrypted: null,
+          connectionStatus: 'not_tested',
+          connectionError: null,
+          lastConnectionTestAt: null,
+          updatedAt: new Date()
+        })
+        .where(eq(storageGlobalConfig.id, configs[0].id));
+
+      res.json({
+        success: true,
+        message: "AWS S3 credentials removed successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error disconnecting storage:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to disconnect storage"
+      });
+    }
+  });
+
   // Get all tenant storage allocations
   app.get("/brand-api/storage/allocations", async (req, res) => {
     const user = (req as any).user;
