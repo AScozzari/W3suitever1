@@ -1731,11 +1731,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return next();
       }
       
+      // Check for internal service-to-service calls (Brand Interface)
+      const xService = req.headers['x-service'] as string;
+      const authHeader = req.headers.authorization;
+      const serviceToken = authHeader?.split(' ')[1];
+      const expectedServiceToken = process.env.W3_SERVICE_TOKEN || 'brand-service-internal-token-2025';
+      
+      // Allow internal service calls from brand-api with valid service token
+      if (xService === 'brand-interface' && serviceToken === expectedServiceToken) {
+        const tenantId = (req.headers['x-tenant-id'] as string) || '00000000-0000-0000-0000-000000000001';
+        console.log(`[ENTERPRISE-AUTH] ✅ Internal service call from ${xService} for tenant: ${tenantId}`);
+        req.user = {
+          id: 'brand-service',
+          email: 'service@brand-interface.internal',
+          tenantId: tenantId,
+          roles: ['service'],
+          permissions: ['storage:read', 'storage:write', 'tenants:read'],
+          scope: 'service'
+        };
+        return next();
+      }
+      
       // Development authentication is now handled by unified devAuthMiddleware
       // This middleware focuses only on OAuth2 JWT validation
       
       // OAuth2 mode: require proper JWT token authentication
-      const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
 
       if (!token) {
@@ -2179,16 +2199,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // This endpoint is called by Brand Interface to list all available tenants
   app.get('/api/tenants/all', enterpriseAuth, async (req: any, res) => {
     try {
-      // Get all tenants from database
+      // Get all active tenants from database (status = 'active', not archived)
       const allTenants = await db.select({
         id: tenants.id,
         name: tenants.name,
         slug: tenants.slug,
-        description: tenants.description,
-        isActive: tenants.isActive,
+        status: tenants.status,
         createdAt: tenants.createdAt,
       }).from(tenants)
-        .where(eq(tenants.isActive, true));
+        .where(and(
+          eq(tenants.status, 'active'),
+          isNull(tenants.archivedAt)
+        ));
 
       res.json({
         success: true,
