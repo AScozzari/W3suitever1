@@ -1773,7 +1773,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       {uploadProgress.length > 0 && (
-        <div className="fixed bottom-4 right-4 w-80 bg-white border rounded-xl shadow-xl p-4 z-50">
+        <div className="fixed bottom-4 right-20 w-80 bg-white border rounded-xl shadow-xl p-4 z-50">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-semibold text-sm">Caricamento file</h4>
             {!uploadBatchMutation.isPending && (
