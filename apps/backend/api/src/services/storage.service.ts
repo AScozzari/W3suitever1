@@ -2600,7 +2600,7 @@ export const storageService = {
       firstName: users.firstName,
       lastName: users.lastName,
       email: users.email,
-      isActive: users.isActive,
+      status: users.status,
     }).from(users)
       .where(eq(users.tenantId, ctx.tenantId));
 
@@ -2661,7 +2661,7 @@ export const storageService = {
         id: u.id,
         name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown User',
         email: u.email || null,
-        isActive: u.isActive !== false,
+        isActive: u.status === 'attivo',
         quotaBytes: existingQuota?.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
         usedBytes: realUsedBytes,
         hasCustomQuota: !!existingQuota,
