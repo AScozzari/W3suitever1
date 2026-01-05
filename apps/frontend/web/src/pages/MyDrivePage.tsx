@@ -25,6 +25,22 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Custom filled vertical dots icon for better visibility on light backgrounds
+// Lucide's MoreVertical uses stroke-only circles which are barely visible
+const DotsVerticalIcon = ({ className }: { className?: string }) => (
+  <svg 
+    width="12" 
+    height="12" 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className}
+  >
+    <circle cx="12" cy="5" r="2" />
+    <circle cx="12" cy="12" r="2" />
+    <circle cx="12" cy="19" r="2" />
+  </svg>
+);
+
 interface StorageFolder {
   id: string;
   tenantId: string;
@@ -187,7 +203,7 @@ function FolderTreeItem({
               onClick={(e) => e.stopPropagation()}
               data-testid={`folder-tree-menu-${folder.id}`}
             >
-              <MoreVertical className="w-3 h-3 text-slate-900" />
+              <DotsVerticalIcon className="w-3 h-3 text-slate-900" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -276,7 +292,7 @@ function FolderTreeItem({
                       onClick={(e) => e.stopPropagation()}
                       data-testid={`file-tree-menu-${obj.id}`}
                     >
-                      <MoreVertical className="w-3 h-3 text-slate-900" />
+                      <DotsVerticalIcon className="w-3 h-3 text-slate-900" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
@@ -448,7 +464,7 @@ function FolderTreeNavigator({
                   onClick={(e) => e.stopPropagation()}
                   data-testid={`root-file-menu-${obj.id}`}
                 >
-                  <MoreVertical className="w-3 h-3 text-slate-900" />
+                  <DotsVerticalIcon className="w-3 h-3 text-slate-900" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
