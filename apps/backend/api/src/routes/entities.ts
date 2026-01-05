@@ -2768,6 +2768,7 @@ router.put('/users/:id/teams', requirePermission('users:write'), async (req, res
 /**
  * GET /api/me/stores
  * Get stores assigned to the currently logged-in user (for store selector)
+ * In development mode with no assigned stores, returns all active stores for the tenant
  */
 router.get('/me/stores', async (req, res) => {
   try {
@@ -2784,7 +2785,7 @@ router.get('/me/stores', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    const userStoreList = await db
+    let userStoreList = await db
       .select({
         id: stores.id,
         storeId: stores.id,
@@ -2807,9 +2808,36 @@ router.get('/me/stores', async (req, res) => {
       )
       .orderBy(stores.nome);
 
+    // Development mode fallback: if no stores assigned, return all tenant stores
+    if (userStoreList.length === 0 && process.env.NODE_ENV === 'development') {
+      const allStores = await db
+        .select({
+          id: stores.id,
+          storeId: stores.id,
+          name: stores.nome,
+          code: stores.code,
+          status: stores.status,
+          address: stores.indirizzo,
+          city: stores.citta,
+          province: stores.provincia,
+          isPrimary: sql<boolean>`false`,
+        })
+        .from(stores)
+        .where(
+          and(
+            eq(stores.tenantId, tenantId),
+            eq(stores.status, 'active')
+          )
+        )
+        .orderBy(stores.nome)
+        .limit(20);
+      
+      userStoreList = allStores.map((s, i) => ({ ...s, isPrimary: i === 0 }));
+    }
+
     res.status(200).json({
       success: true,
-      data: userStoreList,
+      data: userStoreList || [],
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
 
