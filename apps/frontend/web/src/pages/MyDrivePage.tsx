@@ -1393,13 +1393,14 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
         </main>
 
         {showInfoPanel && (
-          <aside className="w-64 border-l bg-gradient-to-b from-white to-slate-50/50 p-4 shrink-0 hidden lg:block">
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-2">
-                  <HardDrive className="w-4 h-4 text-orange-500" />
-                  Spazio di archiviazione
-                </h3>
+          <aside className="w-64 border-l bg-gradient-to-b from-white to-slate-50/50 shrink-0 hidden lg:flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                    <HardDrive className="w-4 h-4 text-orange-500" />
+                    Spazio di archiviazione
+                  </h3>
                 <div className="bg-gradient-to-br from-slate-50 to-white border rounded-xl p-4">
                   <div className="relative w-24 h-24 mx-auto mb-3">
                     <svg className="w-full h-full transform -rotate-90">
@@ -1462,7 +1463,8 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                   ))}
                 </div>
               </div>
-            </div>
+              </div>
+            </ScrollArea>
           </aside>
         )}
       </div>
