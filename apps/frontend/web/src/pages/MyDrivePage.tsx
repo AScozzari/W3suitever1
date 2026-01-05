@@ -866,7 +866,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <TooltipProvider delayDuration={300}>
-    <div className="h-[calc(100vh-4rem)] min-h-[calc(100vh-4rem)] flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <input
         ref={fileInputRef}
         type="file"
@@ -1402,8 +1402,8 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                     Spazio di archiviazione
                   </h3>
                 <div className="bg-gradient-to-br from-slate-50 to-white border rounded-xl p-4">
-                  <div className="relative w-24 h-24 mx-auto mb-3">
-                    <svg className="w-full h-full transform -rotate-90">
+                  <div className="relative w-24 h-24 mx-auto mb-3 flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
                       <circle cx="48" cy="48" r="40" fill="none" stroke="#f1f5f9" strokeWidth="8" />
                       <circle 
                         cx="48" cy="48" r="40" fill="none" 
