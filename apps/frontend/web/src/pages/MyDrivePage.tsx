@@ -1299,7 +1299,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   }
 
   return (
-    <Layout>
+    <Layout currentModule="employee" setCurrentModule={() => {}}>
       {content}
     </Layout>
   );
