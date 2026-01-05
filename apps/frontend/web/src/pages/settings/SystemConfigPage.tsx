@@ -684,8 +684,44 @@ function gbToBytes(gb: number): number {
   return Math.round(gb * 1024 * 1024 * 1024);
 }
 
+interface TenantStorageAllocation {
+  id: string;
+  tenantId: string;
+  quotaBytes: number;
+  usedBytes: number;
+  objectCount: number;
+  alertThresholdPercent: number;
+  suspended: boolean;
+  suspendReason: string | null;
+}
+
+interface StorageFile {
+  id: string;
+  name: string;
+  path: string;
+  sizeBytes: number;
+  mimeType: string;
+  createdAt: string;
+  updatedAt: string;
+  uploadedBy: string;
+  versions?: number;
+}
+
+interface BrandAsset {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  s3Key: string;
+  fileType: string;
+  sizeBytes: number;
+  pushToAllTenants: boolean;
+  createdAt: string;
+}
+
 function StorageQuotaManager({ tenantSlug }: { tenantSlug: string }) {
   const { toast } = useToast();
+  const [activeStorageTab, setActiveStorageTab] = useState('overview');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<QuotaEntity | null>(null);
   const [editQuotaGB, setEditQuotaGB] = useState<string>('');
@@ -694,6 +730,18 @@ function StorageQuotaManager({ tenantSlug }: { tenantSlug: string }) {
 
   const { data: quotaSummary, isLoading, refetch } = useQuery<QuotaSummary>({
     queryKey: ['/api/storage/quotas/summary'],
+  });
+
+  const { data: tenantAllocation, isLoading: isLoadingAllocation } = useQuery<TenantStorageAllocation>({
+    queryKey: ['/api/storage/tenant-allocation'],
+  });
+
+  const { data: recentFiles, isLoading: isLoadingFiles } = useQuery<StorageFile[]>({
+    queryKey: ['/api/storage/files/recent'],
+  });
+
+  const { data: brandAssets, isLoading: isLoadingAssets } = useQuery<BrandAsset[]>({
+    queryKey: ['/api/storage/brand-assets'],
   });
 
   const updateUserQuotaMutation = useMutation({
@@ -812,108 +860,220 @@ function StorageQuotaManager({ tenantSlug }: { tenantSlug: string }) {
     );
   }
 
+  const tenantUsagePercent = tenantAllocation && tenantAllocation.quotaBytes > 0 
+    ? Math.round((tenantAllocation.usedBytes / tenantAllocation.quotaBytes) * 100) 
+    : 0;
+  const isNearLimit = tenantUsagePercent >= (tenantAllocation?.alertThresholdPercent || 80);
+
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <HardDrive className="w-5 h-5 text-teal-600" />
-            Quote Storage
+            Gestione Storage
           </CardTitle>
-          <CardDescription>Gestione quote di archiviazione per utenti e team</CardDescription>
+          <CardDescription>Quota tenant, gestione utenti/team, file e asset condivisi</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Quota Utente Default
-              </h4>
-              <p className="text-2xl font-bold text-teal-600">
-                {formatBytes(quotaSummary?.defaults.userQuotaBytes || 1073741824)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">Spazio assegnato a ogni nuovo utente</p>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Quota Team Default
-              </h4>
-              <p className="text-2xl font-bold text-teal-600">
-                {formatBytes(quotaSummary?.defaults.teamQuotaBytes || 10737418240)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">Spazio condiviso per ogni team</p>
-            </div>
-          </div>
+        <CardContent>
+          <Tabs value={activeStorageTab} onValueChange={setActiveStorageTab} className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4 gap-1">
+              <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm" data-testid="storage-tab-overview">
+                <HardDrive className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="quotas" className="flex items-center gap-1 text-xs sm:text-sm" data-testid="storage-tab-quotas">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Quote</span>
+              </TabsTrigger>
+              <TabsTrigger value="files" className="flex items-center gap-1 text-xs sm:text-sm" data-testid="storage-tab-files">
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">File</span>
+              </TabsTrigger>
+              <TabsTrigger value="assets" className="flex items-center gap-1 text-xs sm:text-sm" data-testid="storage-tab-assets">
+                <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Brand Assets</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <Separator />
+            <TabsContent value="overview" className="space-y-6">
+              {isLoadingAllocation ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border rounded-lg">
+                      <Skeleton className="h-5 w-24 mb-2" />
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-4 w-32 mt-2" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <HardDrive className="w-4 h-4 text-blue-500" />
+                      Quota Tenant
+                    </h4>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {formatBytes(tenantAllocation?.quotaBytes || 0)}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Assegnato dal Brand</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <HardDrive className="w-4 h-4 text-green-500" />
+                      Spazio Utilizzato
+                    </h4>
+                    <p className="text-2xl font-bold text-green-600">
+                      {formatBytes(tenantAllocation?.usedBytes || 0)}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{tenantAllocation?.objectCount || 0} file totali</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <HardDrive className={`w-4 h-4 ${isNearLimit ? 'text-amber-500' : 'text-teal-500'}`} />
+                      Utilizzo %
+                    </h4>
+                    <p className={`text-2xl font-bold ${isNearLimit ? 'text-amber-600' : 'text-teal-600'}`}>
+                      {tenantUsagePercent}%
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Alert a {tenantAllocation?.alertThresholdPercent || 80}%</p>
+                  </div>
+                </div>
+              )}
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">Gestione Quote Personalizzate</h4>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Cerca utente o team..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-64"
-                  data-testid="input-search-quota"
-                />
-                <Select value={filterType} onValueChange={(v: 'all' | 'user' | 'team') => setFilterType(v)}>
-                  <SelectTrigger className="w-32" data-testid="select-filter-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutti</SelectItem>
-                    <SelectItem value="user">Utenti</SelectItem>
-                    <SelectItem value="team">Team</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-medium mb-3">Utilizzo Storage Tenant</h4>
+                <div className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${isNearLimit ? 'bg-amber-500' : 'bg-teal-500'}`}
+                    style={{ width: `${Math.min(tenantUsagePercent, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-2 text-sm text-gray-500">
+                  <span>{formatBytes(tenantAllocation?.usedBytes || 0)} usato</span>
+                  <span>{formatBytes((tenantAllocation?.quotaBytes || 0) - (tenantAllocation?.usedBytes || 0))} disponibile</span>
+                </div>
               </div>
-            </div>
 
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quota</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilizzo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                  {allEntities.length === 0 ? (
+              {tenantAllocation?.suspended && (
+                <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-red-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-red-900 dark:text-red-100">Storage Sospeso</h4>
+                      <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                        L'accesso allo storage è stato sospeso. {tenantAllocation.suspendReason || 'Contatta l\'amministratore.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {isNearLimit && !tenantAllocation?.suspended && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-amber-900 dark:text-amber-100">Quota Quasi Esaurita</h4>
+                      <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                        Hai utilizzato il {tenantUsagePercent}% della quota disponibile. Considera di liberare spazio o richiedere un aumento della quota.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Quota Utente Default
+                  </h4>
+                  <p className="text-2xl font-bold text-teal-600">
+                    {formatBytes(quotaSummary?.defaults.userQuotaBytes || 1073741824)}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">Spazio assegnato a ogni nuovo utente</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Quota Team Default
+                  </h4>
+                  <p className="text-2xl font-bold text-teal-600">
+                    {formatBytes(quotaSummary?.defaults.teamQuotaBytes || 10737418240)}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">Spazio condiviso per ogni team</p>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="quotas" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Gestione Quote Personalizzate</h4>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Cerca utente o team..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-64"
+                    data-testid="input-search-quota"
+                  />
+                  <Select value={filterType} onValueChange={(v: 'all' | 'user' | 'team') => setFilterType(v)}>
+                    <SelectTrigger className="w-32" data-testid="select-filter-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti</SelectItem>
+                      <SelectItem value="user">Utenti</SelectItem>
+                      <SelectItem value="team">Team</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                        {searchTerm ? 'Nessun risultato trovato' : 'Nessun utente o team presente'}
-                      </td>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quota</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilizzo</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stato</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
                     </tr>
-                  ) : (
-                    allEntities.map((entity) => {
-                      const usagePercent = entity.quotaBytes > 0 ? Math.min((entity.usedBytes / entity.quotaBytes) * 100, 100) : 0;
-                      return (
-                        <tr key={`${entity.type}-${entity.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800" data-testid={`row-quota-${entity.type}-${entity.id}`}>
-                          <td className="px-4 py-3">
-                            <Badge variant={entity.type === 'user' ? 'default' : 'secondary'}>
-                              {entity.type === 'user' ? 'Utente' : 'Team'}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">{entity.name}</p>
-                              {entity.email && <p className="text-sm text-gray-500">{entity.email}</p>}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={entity.hasCustomQuota ? 'text-teal-600 font-medium' : 'text-gray-500'}>
-                              {formatBytes(entity.quotaBytes)}
-                              {entity.hasCustomQuota && <span className="ml-1 text-xs">(custom)</span>}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {allEntities.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                          {searchTerm ? 'Nessun risultato trovato' : 'Nessun utente o team presente'}
+                        </td>
+                      </tr>
+                    ) : (
+                      allEntities.map((entity) => {
+                        const usagePercent = entity.quotaBytes > 0 ? Math.min((entity.usedBytes / entity.quotaBytes) * 100, 100) : 0;
+                        return (
+                          <tr key={`${entity.type}-${entity.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-800" data-testid={`row-quota-${entity.type}-${entity.id}`}>
+                            <td className="px-4 py-3">
+                              <Badge variant={entity.type === 'user' ? 'default' : 'secondary'}>
+                                {entity.type === 'user' ? 'Utente' : 'Team'}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-white">{entity.name}</p>
+                                {entity.email && <p className="text-sm text-gray-500">{entity.email}</p>}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={entity.hasCustomQuota ? 'text-teal-600 font-medium' : 'text-gray-500'}>
+                                {formatBytes(entity.quotaBytes)}
+                                {entity.hasCustomQuota && <span className="ml-1 text-xs">(custom)</span>}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div 
@@ -979,22 +1139,148 @@ function StorageQuotaManager({ tenantSlug }: { tenantSlug: string }) {
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">Quote Tenant</h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Le quote a livello tenant sono configurate dalla Brand Interface. Contatta l'amministratore per modificare i limiti complessivi di storage.
-                </p>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="files" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">File Recenti</h4>
+                <Badge variant="secondary">{recentFiles?.length || 0} file</Badge>
+              </div>
+
+              {isLoadingFiles ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border rounded-lg flex items-center gap-4">
+                      <Skeleton className="w-8 h-8 rounded" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (!recentFiles || recentFiles.length === 0) ? (
+                <div className="text-center py-12 border rounded-lg">
+                  <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-500">Nessun file caricato</p>
+                  <p className="text-sm text-gray-400">I file caricati appariranno qui</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-800">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dimensione</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Caricato da</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {recentFiles.map((file) => (
+                        <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-gray-800" data-testid={`file-row-${file.id}`}>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium text-gray-900 dark:text-white">{file.name}</span>
+                              {file.versions && file.versions > 1 && (
+                                <Badge variant="outline" className="text-xs">v{file.versions}</Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">{file.mimeType}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">{formatBytes(file.sizeBytes)}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">{file.uploadedBy}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {new Date(file.createdAt).toLocaleDateString('it-IT')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100">Gestione File</h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      I file sono archiviati su AWS S3 con versioning abilitato. Per gestire i file, usa la sezione My Drive nelle rispettive applicazioni.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="assets" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Asset dal Brand</h4>
+                <Badge variant="secondary">{brandAssets?.length || 0} asset</Badge>
+              </div>
+
+              {isLoadingAssets ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Skeleton className="w-10 h-10 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-4 w-16 mt-3" />
+                    </div>
+                  ))}
+                </div>
+              ) : (!brandAssets || brandAssets.length === 0) ? (
+                <div className="text-center py-12 border rounded-lg">
+                  <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-500">Nessun asset condiviso</p>
+                  <p className="text-sm text-gray-400">Gli asset pushati dal Brand appariranno qui</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {brandAssets.map((asset) => (
+                    <div key={asset.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow" data-testid={`asset-card-${asset.id}`}>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                          <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-medium text-gray-900 dark:text-white truncate">{asset.name}</h5>
+                          <p className="text-sm text-gray-500 truncate">{asset.description || 'Nessuna descrizione'}</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                        <Badge variant="outline">{asset.category}</Badge>
+                        <span>{formatBytes(asset.sizeBytes)}</span>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-400">
+                        Aggiunto il {new Date(asset.createdAt).toLocaleDateString('it-IT')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-purple-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-purple-900 dark:text-purple-100">Asset Brand (Solo Lettura)</h4>
+                    <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
+                      Questi asset sono gestiti centralmente dal Brand e condivisi con tutti i tenant. Non possono essere modificati o eliminati.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
