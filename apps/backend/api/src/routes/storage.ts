@@ -86,6 +86,48 @@ router.delete('/folders/:folderId', requirePermission('storage:write'), async (r
   }
 });
 
+router.patch('/folders/:folderId', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { folderId } = req.params;
+    const { name, parentFolderId } = req.body;
+    
+    const folder = await storageService.updateFolder(ctx, folderId, { name, parentFolderId });
+    res.json(folder);
+  } catch (error: any) {
+    console.error('Error updating folder:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.patch('/objects/:objectId', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { objectId } = req.params;
+    const { displayName, folderId } = req.body;
+    
+    const object = await storageService.updateObject(ctx, objectId, { displayName, folderId });
+    res.json(object);
+  } catch (error: any) {
+    console.error('Error updating object:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/objects/:objectId/copy', requirePermission('storage:write'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const { objectId } = req.params;
+    const { targetFolderId, newName } = req.body;
+    
+    const copy = await storageService.copyObject(ctx, objectId, { targetFolderId, newName });
+    res.status(201).json(copy);
+  } catch (error: any) {
+    console.error('Error copying object:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // ==================== OBJECTS ====================
 
 router.get('/objects', requirePermission('storage:read'), async (req: Request, res: Response) => {

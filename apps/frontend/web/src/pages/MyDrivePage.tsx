@@ -105,6 +105,12 @@ interface FolderTreeItemProps {
   onDeleteObject: (objectId: string) => void;
   onFileClick: (object: StorageObject) => void;
   buildFolderPath: (folderId: string) => { id: string; name: string }[];
+  onRenameFolder: (folderId: string, currentName: string) => void;
+  onRenameObject: (objectId: string, currentName: string) => void;
+  onMoveFolder: (folderId: string, name: string) => void;
+  onMoveObject: (objectId: string, name: string) => void;
+  onCopyObject: (objectId: string) => void;
+  onCreateSubfolder: (parentFolderId: string) => void;
 }
 
 function FolderTreeItem({
@@ -120,7 +126,13 @@ function FolderTreeItem({
   onDeleteFolder,
   onDeleteObject,
   onFileClick,
-  buildFolderPath
+  buildFolderPath,
+  onRenameFolder,
+  onRenameObject,
+  onMoveFolder,
+  onMoveObject,
+  onCopyObject,
+  onCreateSubfolder
 }: FolderTreeItemProps) {
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = currentFolderId === folder.id;
@@ -178,10 +190,23 @@ function FolderTreeItem({
               <MoreVertical className="w-3 h-3 text-slate-700" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={() => onNavigate(folder.id, folder.name, buildFolderPath(folder.id))}>
               <Folder className="w-4 h-4 mr-2" />
               Apri
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onCreateSubfolder(folder.id)}>
+              <FolderPlus className="w-4 h-4 mr-2" />
+              Nuova cartella
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onRenameFolder(folder.id, folder.name)}>
+              <FileText className="w-4 h-4 mr-2" />
+              Rinomina
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onMoveFolder(folder.id, folder.name)}>
+              <ArrowUpDown className="w-4 h-4 mr-2" />
+              Sposta in...
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onShare('folder', folder.id, folder.name)}>
               <Share2 className="w-4 h-4 mr-2" />
@@ -218,6 +243,12 @@ function FolderTreeItem({
               onDeleteObject={onDeleteObject}
               onFileClick={onFileClick}
               buildFolderPath={buildFolderPath}
+              onRenameFolder={onRenameFolder}
+              onRenameObject={onRenameObject}
+              onMoveFolder={onMoveFolder}
+              onMoveObject={onMoveObject}
+              onCopyObject={onCopyObject}
+              onCreateSubfolder={onCreateSubfolder}
             />
           ))}
           {childObjects.map(obj => {
@@ -243,14 +274,28 @@ function FolderTreeItem({
                       size="sm" 
                       className="h-5 w-5 p-0 shrink-0"
                       onClick={(e) => e.stopPropagation()}
+                      data-testid={`file-tree-menu-${obj.id}`}
                     >
                       <MoreVertical className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-36">
+                  <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem onClick={() => onFileClick(obj)}>
                       <Eye className="w-4 h-4 mr-2" />
                       Apri
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onRenameObject(obj.id, obj.displayName || obj.name)}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Rinomina
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onMoveObject(obj.id, obj.displayName || obj.name)}>
+                      <ArrowUpDown className="w-4 h-4 mr-2" />
+                      Sposta in...
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onCopyObject(obj.id)}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copia
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onShare('object', obj.id, obj.displayName || obj.name)}>
                       <Share2 className="w-4 h-4 mr-2" />
@@ -281,6 +326,12 @@ interface FolderTreeNavigatorProps {
   onDeleteFolder: (folderId: string) => void;
   onDeleteObject: (objectId: string) => void;
   onFileClick: (object: StorageObject) => void;
+  onRenameFolder: (folderId: string, currentName: string) => void;
+  onRenameObject: (objectId: string, currentName: string) => void;
+  onMoveFolder: (folderId: string, name: string) => void;
+  onMoveObject: (objectId: string, name: string) => void;
+  onCopyObject: (objectId: string) => void;
+  onCreateSubfolder: (parentFolderId: string) => void;
 }
 
 function FolderTreeNavigator({
@@ -291,7 +342,13 @@ function FolderTreeNavigator({
   onShare,
   onDeleteFolder,
   onDeleteObject,
-  onFileClick
+  onFileClick,
+  onRenameFolder,
+  onRenameObject,
+  onMoveFolder,
+  onMoveObject,
+  onCopyObject,
+  onCreateSubfolder
 }: FolderTreeNavigatorProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
@@ -353,6 +410,12 @@ function FolderTreeNavigator({
           onDeleteObject={onDeleteObject}
           onFileClick={onFileClick}
           buildFolderPath={buildFolderPath}
+          onRenameFolder={onRenameFolder}
+          onRenameObject={onRenameObject}
+          onMoveFolder={onMoveFolder}
+          onMoveObject={onMoveObject}
+          onCopyObject={onCopyObject}
+          onCreateSubfolder={onCreateSubfolder}
         />
       ))}
       {rootObjects.map(obj => {
@@ -383,14 +446,28 @@ function FolderTreeNavigator({
                   size="sm" 
                   className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                   onClick={(e) => e.stopPropagation()}
+                  data-testid={`root-file-menu-${obj.id}`}
                 >
                   <MoreVertical className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem onClick={() => onFileClick(obj)}>
                   <Eye className="w-4 h-4 mr-2" />
                   Apri
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onRenameObject(obj.id, obj.displayName || obj.name)}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Rinomina
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onMoveObject(obj.id, obj.displayName || obj.name)}>
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  Sposta in...
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onCopyObject(obj.id)}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copia
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onShare('object', obj.id, obj.displayName || obj.name)}>
                   <Share2 className="w-4 h-4 mr-2" />
@@ -512,6 +589,18 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ type: 'folder' | 'object'; id: string; currentName: string } | null>(null);
+  const [renameNewName, setRenameNewName] = useState('');
+  
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveTarget, setMoveTarget] = useState<{ type: 'folder' | 'object'; id: string; name: string } | null>(null);
+  const [moveTargetFolderId, setMoveTargetFolderId] = useState<string | null>(null);
+  
+  const [createSubfolderDialogOpen, setCreateSubfolderDialogOpen] = useState(false);
+  const [createSubfolderParentId, setCreateSubfolderParentId] = useState<string | null>(null);
+  const [createSubfolderName, setCreateSubfolderName] = useState('');
 
   const { data: foldersData, isLoading: foldersLoading } = useQuery<StorageFolder[]>({
     queryKey: ['/api/storage/my-drive/folders', currentFolderId],
@@ -636,6 +725,121 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     },
     onError: () => {
       toast({ title: 'Errore', description: 'Impossibile creare il file', variant: 'destructive' });
+    }
+  });
+
+  const renameFolderMutation = useMutation({
+    mutationFn: async ({ folderId, name }: { folderId: string; name: string }) => {
+      return apiRequest(`/api/storage/folders/${folderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/folders'] });
+      setRenameDialogOpen(false);
+      setRenameTarget(null);
+      setRenameNewName('');
+      toast({ title: 'Cartella rinominata', description: 'La cartella è stata rinominata con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile rinominare la cartella', variant: 'destructive' });
+    }
+  });
+
+  const renameObjectMutation = useMutation({
+    mutationFn: async ({ objectId, displayName }: { objectId: string; displayName: string }) => {
+      return apiRequest(`/api/storage/objects/${objectId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ displayName })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/objects'] });
+      setRenameDialogOpen(false);
+      setRenameTarget(null);
+      setRenameNewName('');
+      toast({ title: 'File rinominato', description: 'Il file è stato rinominato con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile rinominare il file', variant: 'destructive' });
+    }
+  });
+
+  const moveFolderMutation = useMutation({
+    mutationFn: async ({ folderId, parentFolderId }: { folderId: string; parentFolderId: string | null }) => {
+      return apiRequest(`/api/storage/folders/${folderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ parentFolderId })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/folders'] });
+      setMoveDialogOpen(false);
+      setMoveTarget(null);
+      setMoveTargetFolderId(null);
+      toast({ title: 'Cartella spostata', description: 'La cartella è stata spostata con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile spostare la cartella', variant: 'destructive' });
+    }
+  });
+
+  const moveObjectMutation = useMutation({
+    mutationFn: async ({ objectId, folderId }: { objectId: string; folderId: string | null }) => {
+      return apiRequest(`/api/storage/objects/${objectId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ folderId })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/objects'] });
+      setMoveDialogOpen(false);
+      setMoveTarget(null);
+      setMoveTargetFolderId(null);
+      toast({ title: 'File spostato', description: 'Il file è stato spostato con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile spostare il file', variant: 'destructive' });
+    }
+  });
+
+  const copyObjectMutation = useMutation({
+    mutationFn: async ({ objectId, targetFolderId }: { objectId: string; targetFolderId?: string | null }) => {
+      return apiRequest(`/api/storage/objects/${objectId}/copy`, {
+        method: 'POST',
+        body: JSON.stringify({ targetFolderId })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/objects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/objects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/quota'] });
+      toast({ title: 'File copiato', description: 'La copia del file è stata creata con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile copiare il file', variant: 'destructive' });
+    }
+  });
+
+  const createSubfolderMutation = useMutation({
+    mutationFn: async ({ name, parentFolderId }: { name: string; parentFolderId: string | null }) => {
+      return apiRequest('/api/storage/folders', {
+        method: 'POST',
+        body: JSON.stringify({ name, parentFolderId })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/storage/my-drive/folders'] });
+      setCreateSubfolderDialogOpen(false);
+      setCreateSubfolderParentId(null);
+      setCreateSubfolderName('');
+      toast({ title: 'Cartella creata', description: 'La cartella è stata creata con successo' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile creare la cartella', variant: 'destructive' });
     }
   });
 
@@ -942,6 +1146,32 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                   onDeleteFolder={(id) => deleteFolderMutation.mutate(id)}
                   onDeleteObject={(id) => deleteObjectMutation.mutate(id)}
                   onFileClick={handleFileClick}
+                  onRenameFolder={(id, name) => {
+                    setRenameTarget({ type: 'folder', id, currentName: name });
+                    setRenameNewName(name);
+                    setRenameDialogOpen(true);
+                  }}
+                  onRenameObject={(id, name) => {
+                    setRenameTarget({ type: 'object', id, currentName: name });
+                    setRenameNewName(name);
+                    setRenameDialogOpen(true);
+                  }}
+                  onMoveFolder={(id, name) => {
+                    setMoveTarget({ type: 'folder', id, name });
+                    setMoveTargetFolderId(null);
+                    setMoveDialogOpen(true);
+                  }}
+                  onMoveObject={(id, name) => {
+                    setMoveTarget({ type: 'object', id, name });
+                    setMoveTargetFolderId(null);
+                    setMoveDialogOpen(true);
+                  }}
+                  onCopyObject={(id) => copyObjectMutation.mutate({ objectId: id })}
+                  onCreateSubfolder={(parentId) => {
+                    setCreateSubfolderParentId(parentId);
+                    setCreateSubfolderName('');
+                    setCreateSubfolderDialogOpen(true);
+                  }}
                 />
               </ScrollArea>
             </div>
@@ -1807,6 +2037,145 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
               data-testid="button-create-file"
             >
               {createTextFileMutation.isPending ? 'Creazione...' : 'Crea'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-500" />
+              Rinomina {renameTarget?.type === 'folder' ? 'cartella' : 'file'}
+            </DialogTitle>
+            <DialogDescription>
+              Inserisci il nuovo nome per {renameTarget?.type === 'folder' ? 'la cartella' : 'il file'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="rename-input">Nuovo nome</Label>
+            <Input
+              id="rename-input"
+              value={renameNewName}
+              onChange={(e) => setRenameNewName(e.target.value)}
+              placeholder="Nuovo nome..."
+              className="mt-2"
+              data-testid="input-rename"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => {
+                if (!renameTarget || !renameNewName.trim()) return;
+                if (renameTarget.type === 'folder') {
+                  renameFolderMutation.mutate({ folderId: renameTarget.id, name: renameNewName });
+                } else {
+                  renameObjectMutation.mutate({ objectId: renameTarget.id, displayName: renameNewName });
+                }
+              }}
+              disabled={!renameNewName.trim() || renameFolderMutation.isPending || renameObjectMutation.isPending}
+              className="bg-orange-500 hover:bg-orange-600"
+              data-testid="button-confirm-rename"
+            >
+              {(renameFolderMutation.isPending || renameObjectMutation.isPending) ? 'Rinominando...' : 'Rinomina'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowUpDown className="w-5 h-5 text-blue-500" />
+              Sposta {moveTarget?.type === 'folder' ? 'cartella' : 'file'}
+            </DialogTitle>
+            <DialogDescription>
+              Seleziona la cartella di destinazione per "{moveTarget?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label>Destinazione</Label>
+            <ScrollArea className="h-48 border rounded-md mt-2 p-2">
+              <button
+                onClick={() => setMoveTargetFolderId(null)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-left ${
+                  moveTargetFolderId === null ? 'bg-orange-100 text-orange-700' : 'hover:bg-slate-100'
+                }`}
+                data-testid="move-to-root"
+              >
+                <Home className="w-4 h-4" />
+                Root (I miei file)
+              </button>
+              {(foldersData || []).filter(f => f.id !== moveTarget?.id).map(folder => (
+                <button
+                  key={folder.id}
+                  onClick={() => setMoveTargetFolderId(folder.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-left ${
+                    moveTargetFolderId === folder.id ? 'bg-orange-100 text-orange-700' : 'hover:bg-slate-100'
+                  }`}
+                  data-testid={`move-to-${folder.id}`}
+                >
+                  <Folder className="w-4 h-4 text-orange-400" />
+                  {folder.name}
+                </button>
+              ))}
+            </ScrollArea>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => {
+                if (!moveTarget) return;
+                if (moveTarget.type === 'folder') {
+                  moveFolderMutation.mutate({ folderId: moveTarget.id, parentFolderId: moveTargetFolderId });
+                } else {
+                  moveObjectMutation.mutate({ objectId: moveTarget.id, folderId: moveTargetFolderId });
+                }
+              }}
+              disabled={moveFolderMutation.isPending || moveObjectMutation.isPending}
+              className="bg-blue-500 hover:bg-blue-600"
+              data-testid="button-confirm-move"
+            >
+              {(moveFolderMutation.isPending || moveObjectMutation.isPending) ? 'Spostando...' : 'Sposta'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createSubfolderDialogOpen} onOpenChange={setCreateSubfolderDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="w-5 h-5 text-orange-500" />
+              Nuova sottocartella
+            </DialogTitle>
+            <DialogDescription>
+              Crea una nuova cartella all'interno della cartella selezionata
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="subfolder-name">Nome cartella</Label>
+            <Input
+              id="subfolder-name"
+              value={createSubfolderName}
+              onChange={(e) => setCreateSubfolderName(e.target.value)}
+              placeholder="Es: Documenti"
+              className="mt-2"
+              data-testid="input-subfolder-name"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateSubfolderDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => createSubfolderMutation.mutate({ name: createSubfolderName, parentFolderId: createSubfolderParentId })}
+              disabled={!createSubfolderName.trim() || createSubfolderMutation.isPending}
+              className="bg-orange-500 hover:bg-orange-600"
+              data-testid="button-create-subfolder"
+            >
+              {createSubfolderMutation.isPending ? 'Creazione...' : 'Crea'}
             </Button>
           </DialogFooter>
         </DialogContent>

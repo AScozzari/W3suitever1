@@ -243,6 +243,169 @@ export const storageService = {
     return { success: true };
   },
 
+  async updateFolder(ctx: StorageServiceContext, folderId: string, updates: { name?: string; parentFolderId?: string | null }) {
+    const [folder] = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.id, folderId),
+        eq(storageFolders.tenantId, ctx.tenantId),
+        isNull(storageFolders.deletedAt)
+      ))
+      .limit(1);
+
+    if (!folder) {
+      throw new Error('Cartella non trovata');
+    }
+
+    if (folder.ownerUserId !== ctx.userId) {
+      throw new Error('Non hai i permessi per modificare questa cartella');
+    }
+
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (updates.name !== undefined && updates.name.trim()) {
+      updateData.name = updates.name.trim();
+    }
+    
+    if (updates.parentFolderId !== undefined) {
+      if (updates.parentFolderId === folderId) {
+        throw new Error('Una cartella non può essere spostata dentro se stessa');
+      }
+      updateData.parentId = updates.parentFolderId;
+      
+      if (updates.parentFolderId) {
+        const parent = await db.select().from(storageFolders)
+          .where(and(
+            eq(storageFolders.id, updates.parentFolderId),
+            eq(storageFolders.tenantId, ctx.tenantId),
+            isNull(storageFolders.deletedAt)
+          ))
+          .limit(1);
+        if (parent.length === 0) {
+          throw new Error('Cartella di destinazione non trovata');
+        }
+        updateData.path = `${parent[0].path}/${updateData.name || folder.name}`;
+      } else {
+        updateData.path = `/${updateData.name || folder.name}`;
+      }
+    }
+
+    const [updated] = await db.update(storageFolders)
+      .set(updateData)
+      .where(eq(storageFolders.id, folderId))
+      .returning();
+
+    await this.logAuditEvent(ctx, 'update_folder', { folderId, updates });
+
+    return updated;
+  },
+
+  async updateObject(ctx: StorageServiceContext, objectId: string, updates: { displayName?: string; folderId?: string | null }) {
+    const [object] = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.id, objectId),
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt)
+      ))
+      .limit(1);
+
+    if (!object) {
+      throw new Error('File non trovato');
+    }
+
+    if (object.ownerUserId !== ctx.userId) {
+      throw new Error('Non hai i permessi per modificare questo file');
+    }
+
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (updates.displayName !== undefined && updates.displayName.trim()) {
+      updateData.displayName = updates.displayName.trim();
+    }
+    
+    if (updates.folderId !== undefined) {
+      if (updates.folderId) {
+        const [folder] = await db.select().from(storageFolders)
+          .where(and(
+            eq(storageFolders.id, updates.folderId),
+            eq(storageFolders.tenantId, ctx.tenantId),
+            isNull(storageFolders.deletedAt)
+          ))
+          .limit(1);
+        if (!folder) {
+          throw new Error('Cartella di destinazione non trovata');
+        }
+      }
+      updateData.folderId = updates.folderId;
+    }
+
+    const [updated] = await db.update(storageObjects)
+      .set(updateData)
+      .where(eq(storageObjects.id, objectId))
+      .returning();
+
+    await this.logAuditEvent(ctx, 'update_object', { objectId, updates });
+
+    return updated;
+  },
+
+  async copyObject(ctx: StorageServiceContext, objectId: string, options: { targetFolderId?: string | null; newName?: string }) {
+    const [original] = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.id, objectId),
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt)
+      ))
+      .limit(1);
+
+    if (!original) {
+      throw new Error('File non trovato');
+    }
+
+    if (options.targetFolderId) {
+      const [folder] = await db.select().from(storageFolders)
+        .where(and(
+          eq(storageFolders.id, options.targetFolderId),
+          eq(storageFolders.tenantId, ctx.tenantId),
+          isNull(storageFolders.deletedAt)
+        ))
+        .limit(1);
+      if (!folder) {
+        throw new Error('Cartella di destinazione non trovata');
+      }
+    }
+
+    const newDisplayName = options.newName || `${original.displayName || original.fileName} (copia)`;
+
+    const [copy] = await db.insert(storageObjects).values({
+      tenantId: ctx.tenantId,
+      folderId: options.targetFolderId ?? original.folderId,
+      ownerUserId: ctx.userId,
+      scopeLevel: original.scopeLevel,
+      fileName: original.fileName,
+      displayName: newDisplayName,
+      objectKey: original.objectKey,
+      mimeType: original.mimeType,
+      sizeBytes: original.sizeBytes,
+      category: original.category,
+      objectType: original.objectType,
+      storageProvider: original.storageProvider,
+      tags: original.tags,
+      metadata: original.metadata,
+    }).returning();
+
+    await db.insert(storageAcl).values({
+      tenantId: ctx.tenantId,
+      objectId: copy.id,
+      subjectUserId: ctx.userId,
+      role: 'owner',
+      grantedByUserId: ctx.userId,
+    });
+
+    await this.logAuditEvent(ctx, 'copy_object', { originalId: objectId, copyId: copy.id });
+
+    return copy;
+  },
+
   async getFolders(ctx: StorageServiceContext, parentId?: string, category?: string) {
     const conditions = [
       eq(storageFolders.tenantId, ctx.tenantId),
