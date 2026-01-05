@@ -1593,20 +1593,22 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
       const storesData = await brandStorage.getStructureStores(filters);
 
-      // Log the access for audit
-      await brandStorage.createAuditLog({
-        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
-        userEmail: user.email,
-        userRole: user.role,
-        action: 'VIEW_STRUCTURE_STORES',
-        resourceType: 'stores',
-        resourceIds: storesData.stores.map(s => s.id),
-        metadata: {
-          filters,
-          resultsCount: storesData.stores.length,
-          totalCount: storesData.pagination.total
-        }
-      });
+      // Log the access for audit (non-blocking)
+      if (context.tenantId) {
+        brandStorage.createAuditLog({
+          tenantId: context.tenantId,
+          userEmail: user.email,
+          userRole: user.role,
+          action: 'VIEW_STRUCTURE_STORES',
+          resourceType: 'stores',
+          resourceIds: storesData.stores.map(s => s.id),
+          metadata: {
+            filters,
+            resultsCount: storesData.stores.length,
+            totalCount: storesData.pagination.total
+          }
+        }).catch(err => console.log('Audit log skipped:', err?.message));
+      }
 
       res.json({
         success: true,
@@ -1726,19 +1728,21 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const tenantId = req.query.tenantId as string;
       const stats = await brandStorage.getStructureStats(tenantId);
 
-      // Log the access for audit
-      await brandStorage.createAuditLog({
-        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
-        userEmail: user.email,
-        userRole: user.role,
-        action: 'VIEW_STRUCTURE_STATS',
-        resourceType: 'statistics',
-        metadata: {
-          tenantId,
-          totalStores: stats.totalStores,
-          activeStores: stats.activeStores
-        }
-      });
+      // Log the access for audit (non-blocking - don't fail the request if audit fails)
+      if (context.tenantId) {
+        brandStorage.createAuditLog({
+          tenantId: context.tenantId,
+          userEmail: user.email,
+          userRole: user.role,
+          action: 'VIEW_STRUCTURE_STATS',
+          resourceType: 'statistics',
+          metadata: {
+            tenantId,
+            totalStores: stats.totalStores,
+            activeStores: stats.activeStores
+          }
+        }).catch(err => console.log('Audit log skipped:', err?.message));
+      }
 
       res.json({
         success: true,
@@ -1933,19 +1937,21 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
       const csvContent = await brandStorage.exportStoresCSV(filters);
 
-      // Log the export for audit
-      await brandStorage.createAuditLog({
-        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
-        userEmail: user.email,
-        userRole: user.role,
-        action: 'EXPORT_STRUCTURE_STORES_CSV',
-        resourceType: 'export',
-        metadata: {
-          filters,
-          exportFormat: 'csv',
-          exportTimestamp: new Date().toISOString()
-        }
-      });
+      // Log the export for audit (non-blocking)
+      if (context.tenantId) {
+        brandStorage.createAuditLog({
+          tenantId: context.tenantId,
+          userEmail: user.email,
+          userRole: user.role,
+          action: 'EXPORT_STRUCTURE_STORES_CSV',
+          resourceType: 'export',
+          metadata: {
+            filters,
+            exportFormat: 'csv',
+            exportTimestamp: new Date().toISOString()
+          }
+        }).catch(err => console.log('Audit log skipped:', err?.message));
+      }
 
       // Set CSV response headers
       const filename = `stores-export-${new Date().toISOString().split('T')[0]}.csv`;
@@ -1985,23 +1991,25 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     try {
       const result = await brandStorage.performBulkOperation(bulkOperation);
 
-      // Log the bulk operation for audit
-      await brandStorage.createAuditLog({
-        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
-        userEmail: user.email,
-        userRole: user.role,
-        action: 'PERFORM_BULK_OPERATION',
-        resourceType: 'stores',
-        resourceIds: bulkOperation.storeIds,
-        metadata: {
-          operation: bulkOperation.operation,
-          storeCount: bulkOperation.storeIds.length,
-          processedCount: result.processedCount,
-          errorCount: result.errorCount,
-          reason: bulkOperation.reason,
-          values: bulkOperation.values
-        }
-      });
+      // Log the bulk operation for audit (non-blocking)
+      if (context.tenantId) {
+        brandStorage.createAuditLog({
+          tenantId: context.tenantId,
+          userEmail: user.email,
+          userRole: user.role,
+          action: 'PERFORM_BULK_OPERATION',
+          resourceType: 'stores',
+          resourceIds: bulkOperation.storeIds,
+          metadata: {
+            operation: bulkOperation.operation,
+            storeCount: bulkOperation.storeIds.length,
+            processedCount: result.processedCount,
+            errorCount: result.errorCount,
+            reason: bulkOperation.reason,
+            values: bulkOperation.values
+          }
+        }).catch(err => console.log('Audit log skipped:', err?.message));
+      }
 
       res.json({
         success: result.success,
@@ -5421,7 +5429,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-Tenant-ID': '00000000-0000-0000-0000-000000000000', // Brand tenant
+        'X-Tenant-ID': '00000000-0000-0000-0000-000000000001', // Brand tenant
         'X-Service': 'brand-interface',
         'X-Service-Version': '1.0.0'
       };
@@ -5745,7 +5753,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-Tenant-ID': '00000000-0000-0000-0000-000000000000',
+        'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
         'X-Service': 'brand-interface',
         'X-Service-Version': '1.0.0'
       };

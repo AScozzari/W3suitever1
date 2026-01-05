@@ -506,12 +506,22 @@ class BrandDrizzleStorage implements IBrandStorage {
       // Call W3 Backend stores endpoint to get data for statistics
       const storesData = await this.secureW3BackendCall('/api/stores', {
         headers: {
-          'X-Tenant-ID': tenantId || '00000000-0000-0000-0000-000000000001' // Default staging tenant
+          'X-Tenant-ID': tenantId || '00000000-0000-0000-0000-000000000001' // Default staging tenant (brand-safe)
         }
       });
       
-      // Calculate statistics from stores data
-      const stores = storesData.stores || storesData || [];
+      // Calculate statistics from stores data - handle various response formats
+      let stores: any[] = [];
+      if (Array.isArray(storesData)) {
+        stores = storesData;
+      } else if (storesData && typeof storesData === 'object') {
+        // Try common response patterns: data, stores, items, results
+        stores = storesData.data || storesData.stores || storesData.items || storesData.results || [];
+        if (!Array.isArray(stores)) {
+          stores = [];
+        }
+      }
+      
       const totalStores = stores.length;
       const activeStores = stores.filter((s: any) => s.status === 'active' || s.stato === 'active').length;
       

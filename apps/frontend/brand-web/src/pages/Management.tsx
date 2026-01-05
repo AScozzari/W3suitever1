@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSSE } from '../hooks/useSSE';
 import BrandLayout from '../components/BrandLayout';
 import { 
   Settings, Building2, ShoppingCart, Package, Briefcase,
@@ -339,19 +338,24 @@ export default function Management() {
     return params.toString();
   }, [filters, currentTenant, isCrossTenant]);
 
-  // 1. REAL-TIME ANALYTICS WITH SSE + FALLBACK POLLING
-  const sseStatsUrl = `/brand-api/structure/stats/stream?${filterParams}`;
-  const fallbackStatsUrl = `/brand-api/structure/stats?${filterParams}`;
-  
+  // 1. STRUCTURE STATS WITH STANDARD POLLING (replaces SSE for better auth handling)
   const { 
-    data: structureStats, 
-    isLoading: statsLoading, 
-    isConnected: statsConnected,
+    data: structureStatsResponse, 
+    isLoading: statsLoading,
     error: statsError,
-    lastUpdate: statsLastUpdate
-  } = useSSE<StructureStatsResponse>(sseStatsUrl, fallbackStatsUrl, {
-    enabled: activeTab === 'structure' && isAuthenticated
+    dataUpdatedAt: statsLastUpdateTime
+  } = useQuery<StructureStatsResponse>({
+    queryKey: ['/brand-api/structure/stats', filterParams],
+    queryFn: async () => {
+      return apiRequest(`/brand-api/structure/stats?${filterParams}`);
+    },
+    enabled: activeTab === 'structure' && isAuthenticated,
+    refetchInterval: 30000, // Poll every 30 seconds
+    staleTime: 10000
   });
+  const structureStats = structureStatsResponse;
+  const statsConnected = !statsError;
+  const statsLastUpdate = statsLastUpdateTime ? new Date(statsLastUpdateTime) : null;
 
   // Query for organizations data
   const { data: organizationsData, isLoading: organizationsLoading } = useQuery<OrganizationsListResponse>({

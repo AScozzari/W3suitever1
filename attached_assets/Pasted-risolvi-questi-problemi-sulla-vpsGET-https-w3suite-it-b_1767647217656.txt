@@ -1,0 +1,39 @@
+risolvi questi problemi sulla vpsGET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.M.onerror @ App-DOlSqiUV.js:732Comprendi l'errore
+App-DOlSqiUV.js:732 Retrying SSE connection (1/3) in 2000ms
+stream:1 GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.M.onerror @ App-DOlSqiUV.js:732Comprendi l'errore
+App-DOlSqiUV.js:732 Retrying SSE connection (2/3) in 2000ms
+stream:1 GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.M.onerror @ App-DOlSqiUV.js:732Comprendi l'errore
+App-DOlSqiUV.js:732 Retrying SSE connection (3/3) in 2000ms
+stream:1 GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.M.onerror @ App-DOlSqiUV.js:732Comprendi l'errore
+App-DOlSqiUV.js:732 Max retry attempts reached, falling back to polling
+App-DOlSqiUV.js:732 GET https://w3suite.it/brand-api/structure/stats?page=1&limit=25 500 (Internal Server Error)
+C @ App-DOlSqiUV.js:732
+k @ App-DOlSqiUV.js:732
+N.M.onerror @ App-DOlSqiUV.js:732Comprendi l'errore
+installHook.js:1 Fallback fetch failed: Error: HTTP 500
+at C (App-DOlSqiUV.js:732:81098)
+
+Optimized Agent memory
+Capisco. Ci sono due problemi da risolvere:
+
+401 Unauthorized su SSE - EventSource non passa i cookie di autenticazione automaticamente
+500 Internal Server Error - Bug stores3.filter is not a function + FK constraint violation
+Verifico rapidamente il codice per creare un piano preciso:
+
+Ho identificato i problemi:
+
+401 SSE Auth: EventSource non passa cookie/headers. Soluzione: usare polling invece di SSE, o passare token via query string
+500 Error: L'API /api/stores restituisce un formato che il codice non gestisce correttamente (line 514: stores.filter fallisce perché non è un array)
+FK Constraint: Il codice prova a inserire audit logs con tenant_id non valido
