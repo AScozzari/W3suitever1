@@ -358,7 +358,7 @@ export function EditChannelDialog({
                       width: '80px',
                       height: '80px',
                       borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${headerColor}, ${headerColor}cc)`,
+                      background: `linear-gradient(135deg, ${headerColor || '#FF6900'}, ${(headerColor || '#FF6900')}cc)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -367,9 +367,10 @@ export function EditChannelDialog({
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       border: '3px solid rgba(255,255,255,0.3)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}>
-                      {name ? name.split(' ').map(w => w[0]).slice(0, 2).join('') : <Camera size={32} />}
+                      {name && name.trim() ? name.split(' ').filter(w => w.length > 0).map(w => w[0]).slice(0, 2).join('').toUpperCase() : <Camera size={32} style={{ color: 'white' }} />}
                     </div>
                   )}
                   {isUploadingAvatar && (
