@@ -100,6 +100,40 @@ export class AWSStorageService {
     return this.s3Client !== null && this.config !== null;
   }
 
+  /**
+   * Health check: verify S3 bucket is accessible
+   * Returns true if bucket exists and credentials are valid
+   */
+  async healthCheck(): Promise<boolean> {
+    if (!this.s3Client || !this.config) {
+      return false;
+    }
+
+    try {
+      // Try to list objects with max 1 result to verify bucket access
+      const command = new ListObjectsV2Command({
+        Bucket: this.config.bucketName,
+        MaxKeys: 1,
+      });
+      
+      await this.s3Client.send(command);
+      
+      logger.info('[AWS Storage] Health check passed', {
+        bucket: this.config.bucketName,
+        region: this.config.region,
+      });
+      
+      return true;
+    } catch (error: any) {
+      logger.error('[AWS Storage] Health check FAILED', {
+        bucket: this.config.bucketName,
+        error: error.message || String(error),
+        code: error.Code || error.name,
+      });
+      return false;
+    }
+  }
+
   getStoragePrefixes(ctx: TenantStorageContext): StoragePrefix {
     return {
       base: 'tenants',

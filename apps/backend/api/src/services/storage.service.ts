@@ -27,9 +27,28 @@ let awsStorageInitialized = false;
 // Object Storage bucket ID from environment
 const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
 
+// Storage backend status for observability
+let activeStorageBackend: 'aws_s3' | 'replit' | 'none' = 'none';
+let awsHealthCheckPassed = false;
+
+/**
+ * Get the currently active storage backend
+ */
+export function getActiveStorageBackend(): string {
+  return activeStorageBackend;
+}
+
+/**
+ * Check if AWS S3 is healthy and connected
+ */
+export function isAWSHealthy(): boolean {
+  return awsHealthCheckPassed;
+}
+
 /**
  * Inizializza AWS S3 usando la configurazione centralizzata dalla Brand Interface
  * Fallback alle variabili d'ambiente se la Brand Interface non è configurata
+ * Includes health check validation
  */
 export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | null> {
   if (awsStorageInitialized) return awsStorageService;
@@ -48,12 +67,32 @@ export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | 
         serverSideEncryption: brandConfig.encryptionEnabled,
         versioningEnabled: brandConfig.versioningEnabled,
       });
-      logger.info('[Storage] AWS S3 initialized from Brand Interface config', { 
-        region: brandConfig.region, 
-        bucket: brandConfig.bucketName,
-        provider: brandConfig.provider
-      });
-      return awsStorageService;
+      
+      // Health check: verify bucket is accessible
+      try {
+        const isHealthy = await awsStorageService.healthCheck();
+        if (isHealthy) {
+          awsHealthCheckPassed = true;
+          activeStorageBackend = 'aws_s3';
+          logger.info('✅ [Storage] AWS S3 health check PASSED', { 
+            region: brandConfig.region, 
+            bucket: brandConfig.bucketName,
+            provider: brandConfig.provider
+          });
+        } else {
+          logger.warn('⚠️ [Storage] AWS S3 health check FAILED - falling back to Replit', {
+            bucket: brandConfig.bucketName
+          });
+          awsStorageService = null;
+        }
+      } catch (healthError) {
+        logger.warn('⚠️ [Storage] AWS S3 health check error', {
+          error: healthError instanceof Error ? healthError.message : String(healthError)
+        });
+        awsStorageService = null;
+      }
+      
+      if (awsStorageService) return awsStorageService;
     }
   } catch (error) {
     logger.warn('[Storage] Failed to load Brand Interface config, trying env vars', {
@@ -78,7 +117,24 @@ export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | 
         serverSideEncryption: true,
         versioningEnabled: true,
       });
-      logger.info('[Storage] AWS S3 storage initialized from env vars', { region, bucket: bucketName });
+      
+      // Health check for env var config
+      try {
+        const isHealthy = await awsStorageService.healthCheck();
+        if (isHealthy) {
+          awsHealthCheckPassed = true;
+          activeStorageBackend = 'aws_s3';
+          logger.info('✅ [Storage] AWS S3 health check PASSED (env vars)', { region, bucket: bucketName });
+        } else {
+          logger.warn('⚠️ [Storage] AWS S3 health check FAILED (env vars)', { bucket: bucketName });
+          awsStorageService = null;
+        }
+      } catch (healthError) {
+        logger.warn('⚠️ [Storage] AWS S3 health check error (env vars)', {
+          error: healthError instanceof Error ? healthError.message : String(healthError)
+        });
+        awsStorageService = null;
+      }
     } catch (error) {
       logger.warn('[Storage] AWS S3 initialization failed, falling back to Replit storage', {
         error: error instanceof Error ? error.message : String(error),
@@ -89,10 +145,16 @@ export async function initAWSStorageIfConfigured(): Promise<AWSStorageService | 
     logger.info('[Storage] AWS S3 not configured, using Replit object storage');
   }
 
+  // Set Replit as fallback if AWS not available
+  if (!awsStorageService) {
+    activeStorageBackend = 'replit';
+    logger.info('📦 [Storage] Active backend: Replit Object Storage');
+  }
+
   return awsStorageService;
 }
 
-// Re-export brand storage functions for use in routes
+// Re-export brand storage functions and observability functions for use in routes
 export { getBrandStorageConfig, getTenantStorageAllocation, updateTenantStorageUsage, canTenantUpload, isStorageConfigured };
 
 export function getAWSContext(ctx: StorageServiceContext): TenantStorageContext {
@@ -608,9 +670,16 @@ export const storageService = {
   },
 
   async createUploadSession(ctx: StorageServiceContext, input: UploadSessionInput) {
+    // Check TENANT quota first (from Brand Interface allocations)
+    const tenantQuotaCheck = await canTenantUpload(ctx.tenantId, input.totalSizeBytes);
+    if (!tenantQuotaCheck.allowed) {
+      throw new Error(`Tenant quota: ${tenantQuotaCheck.reason}`);
+    }
+
+    // Check USER quota
     const quotaCheck = await this.checkQuota(ctx, input.totalSizeBytes);
     if (!quotaCheck.allowed) {
-      throw new Error(`Quota exceeded: ${quotaCheck.message}`);
+      throw new Error(`User quota exceeded: ${quotaCheck.message}`);
     }
 
     const uploadToken = generateToken(32);
@@ -732,6 +801,16 @@ export const storageService = {
         .where(eq(storageUploadSessions.id, session.id));
 
       await this.updateQuotaUsage(ctx, fileBuffer.length);
+      // Update TENANT storage usage in Brand Interface (non-blocking)
+      try {
+        await updateTenantStorageUsage(ctx.tenantId, fileBuffer.length, 1);
+      } catch (tenantUsageError) {
+        logger.warn('[Storage] Failed to update tenant usage - Brand Interface may be unavailable', {
+          tenantId: ctx.tenantId,
+          bytes: fileBuffer.length,
+          error: tenantUsageError instanceof Error ? tenantUsageError.message : String(tenantUsageError)
+        });
+      }
 
       await this.logAuditEvent(ctx, 'upload', { objectId: storageObject.id });
 
@@ -749,9 +828,16 @@ export const storageService = {
   },
 
   async uploadDirect(ctx: StorageServiceContext, input: UploadSessionInput, fileBuffer: Buffer) {
+    // Check TENANT quota first (from Brand Interface allocations)
+    const tenantQuotaCheck = await canTenantUpload(ctx.tenantId, input.totalSizeBytes);
+    if (!tenantQuotaCheck.allowed) {
+      throw new Error(`Tenant quota: ${tenantQuotaCheck.reason}`);
+    }
+
+    // Check USER quota
     const quotaCheck = await this.checkQuota(ctx, input.totalSizeBytes);
     if (!quotaCheck.allowed) {
-      throw new Error(`Quota exceeded: ${quotaCheck.message}`);
+      throw new Error(`User quota exceeded: ${quotaCheck.message}`);
     }
 
     const extension = input.fileName.split('.').pop() || '';
@@ -815,6 +901,16 @@ export const storageService = {
     });
 
     await this.updateQuotaUsage(ctx, fileBuffer.length);
+    // Update TENANT storage usage in Brand Interface (non-blocking)
+    try {
+      await updateTenantStorageUsage(ctx.tenantId, fileBuffer.length, 1);
+    } catch (tenantUsageError) {
+      logger.warn('[Storage] Failed to update tenant usage - Brand Interface may be unavailable', {
+        tenantId: ctx.tenantId,
+        bytes: fileBuffer.length,
+        error: tenantUsageError instanceof Error ? tenantUsageError.message : String(tenantUsageError)
+      });
+    }
     await this.logAuditEvent(ctx, 'upload', { objectId: storageObject.id });
 
     return storageObject;
@@ -1393,6 +1489,15 @@ export const storageService = {
 
     if (updated) {
       await this.updateQuotaUsage(ctx, -(updated.sizeBytes || 0));
+      // Update TENANT storage usage in Brand Interface (non-blocking, decrease)
+      try {
+        await updateTenantStorageUsage(ctx.tenantId, -(updated.sizeBytes || 0), -1);
+      } catch (tenantUsageError) {
+        logger.warn('[Storage] Failed to update tenant usage on trash', {
+          tenantId: ctx.tenantId,
+          error: tenantUsageError instanceof Error ? tenantUsageError.message : String(tenantUsageError)
+        });
+      }
       await this.logAuditEvent(ctx, 'trash', { objectId });
     }
 
@@ -1421,6 +1526,15 @@ export const storageService = {
 
     if (updated) {
       await this.updateQuotaUsage(ctx, updated.sizeBytes || 0);
+      // Update TENANT storage usage in Brand Interface (non-blocking, restore = increase)
+      try {
+        await updateTenantStorageUsage(ctx.tenantId, updated.sizeBytes || 0, 1);
+      } catch (tenantUsageError) {
+        logger.warn('[Storage] Failed to update tenant usage on restore', {
+          tenantId: ctx.tenantId,
+          error: tenantUsageError instanceof Error ? tenantUsageError.message : String(tenantUsageError)
+        });
+      }
       await this.logAuditEvent(ctx, 'restore', { objectId });
     }
 

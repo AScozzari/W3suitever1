@@ -3,7 +3,17 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { requirePermission } from '../middleware/tenant';
-import { storageService, StorageServiceContext, initAWSStorageIfConfigured, getAWSContext, getTenantStorageAllocation, getBrandStorageConfig, isStorageConfigured } from '../services/storage.service';
+import { 
+  storageService, 
+  StorageServiceContext, 
+  initAWSStorageIfConfigured, 
+  getAWSContext, 
+  getTenantStorageAllocation, 
+  getBrandStorageConfig, 
+  isStorageConfigured,
+  getActiveStorageBackend,
+  isAWSHealthy
+} from '../services/storage.service';
 
 const router = Router();
 const upload = multer({ 
@@ -19,6 +29,55 @@ function getContext(req: Request): StorageServiceContext {
     userAgent: req.headers['user-agent'],
   };
 }
+
+// ==================== STORAGE STATUS ====================
+
+router.get('/status', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    
+    // Initialize AWS storage (lazy) to check status
+    const aws = await initAWSStorageIfConfigured();
+    
+    // Get tenant allocation
+    const tenantAllocation = await getTenantStorageAllocation(ctx.tenantId);
+    
+    // Get brand config (without credentials)
+    const brandConfig = await getBrandStorageConfig();
+    
+    // Check if storage is configured (must await as it's async)
+    const configured = await isStorageConfigured();
+    
+    res.json({
+      activeBackend: getActiveStorageBackend(),
+      awsHealthy: isAWSHealthy(),
+      configured,
+      brandConfig: brandConfig ? {
+        provider: brandConfig.provider,
+        region: brandConfig.region,
+        bucketName: brandConfig.bucketName,
+        versioningEnabled: brandConfig.versioningEnabled,
+        encryptionEnabled: brandConfig.encryptionEnabled,
+        connectionStatus: brandConfig.connectionStatus,
+        lastConnectionTestAt: brandConfig.lastConnectionTestAt,
+      } : null,
+      tenantAllocation: tenantAllocation ? {
+        quotaBytes: tenantAllocation.quotaBytes,
+        usedBytes: tenantAllocation.usedBytes,
+        objectCount: tenantAllocation.objectCount,
+        percentUsed: tenantAllocation.quotaBytes > 0 
+          ? Math.round((tenantAllocation.usedBytes / tenantAllocation.quotaBytes) * 100) 
+          : 0,
+        suspended: tenantAllocation.suspended,
+        suspendReason: tenantAllocation.suspendReason,
+        alertThresholdPercent: tenantAllocation.alertThresholdPercent,
+      } : null,
+    });
+  } catch (error: any) {
+    console.error('Error getting storage status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // ==================== FOLDERS ====================
 

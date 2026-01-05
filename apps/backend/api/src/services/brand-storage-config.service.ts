@@ -263,25 +263,40 @@ export async function canTenantUpload(tenantId: string, fileSizeBytes: number): 
   allowed: boolean;
   reason?: string;
 }> {
-  const allocation = await getTenantStorageAllocation(tenantId);
-  
-  if (!allocation) {
-    return { allowed: false, reason: 'Allocazione storage non configurata per questo tenant' };
-  }
+  try {
+    const allocation = await getTenantStorageAllocation(tenantId);
+    
+    // If no allocation configured in Brand Interface, allow by default (permissive fallback)
+    // This prevents blocking uploads when Brand Interface is not configured
+    if (!allocation) {
+      logger.debug('[BrandStorageConfig] No tenant allocation found, allowing upload by default', { tenantId });
+      return { allowed: true };
+    }
 
-  if (allocation.suspended) {
-    return { allowed: false, reason: allocation.suspendReason || 'Account storage sospeso' };
-  }
+    if (allocation.suspended) {
+      return { allowed: false, reason: allocation.suspendReason || 'Account storage sospeso' };
+    }
 
-  const projectedUsage = allocation.usedBytes + fileSizeBytes;
-  if (projectedUsage > allocation.quotaBytes) {
-    return { 
-      allowed: false, 
-      reason: `Quota storage superata. Utilizzati: ${formatBytes(allocation.usedBytes)}, Quota: ${formatBytes(allocation.quotaBytes)}` 
-    };
-  }
+    // Only enforce quota if it's set (quotaBytes > 0)
+    if (allocation.quotaBytes > 0) {
+      const projectedUsage = allocation.usedBytes + fileSizeBytes;
+      if (projectedUsage > allocation.quotaBytes) {
+        return { 
+          allowed: false, 
+          reason: `Quota storage superata. Utilizzati: ${formatBytes(allocation.usedBytes)}, Quota: ${formatBytes(allocation.quotaBytes)}` 
+        };
+      }
+    }
 
-  return { allowed: true };
+    return { allowed: true };
+  } catch (error) {
+    // If Brand Interface is unavailable, allow by default (graceful degradation)
+    logger.warn('[BrandStorageConfig] Failed to check tenant quota, allowing by default', {
+      tenantId,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return { allowed: true };
+  }
 }
 
 /**
