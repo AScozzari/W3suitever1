@@ -2766,6 +2766,65 @@ router.put('/users/:id/teams', requirePermission('users:write'), async (req, res
 // ==================== USER STORES (Scope Interno) ====================
 
 /**
+ * GET /api/me/stores
+ * Get stores assigned to the currently logged-in user (for store selector)
+ */
+router.get('/me/stores', async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId || !userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    const userStoreList = await db
+      .select({
+        id: stores.id,
+        storeId: stores.id,
+        name: stores.nome,
+        code: stores.code,
+        status: stores.status,
+        address: stores.indirizzo,
+        city: stores.citta,
+        province: stores.provincia,
+        isPrimary: userStores.isPrimary,
+      })
+      .from(userStores)
+      .innerJoin(stores, eq(userStores.storeId, stores.id))
+      .where(
+        and(
+          eq(userStores.userId, userId),
+          eq(userStores.tenantId, tenantId),
+          eq(stores.status, 'active')
+        )
+      )
+      .orderBy(stores.nome);
+
+    res.status(200).json({
+      success: true,
+      data: userStoreList,
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving current user stores', { errorMessage: error?.message });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message,
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * GET /api/users/:id/stores
  * Get stores assigned to a user
  */
