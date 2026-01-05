@@ -2011,28 +2011,13 @@ router.get('/workflow-instances/approvals', requirePermission('workflows.read'),
     // 1. Direct assignee (currentAssigneeId matches)
     // 2. Primary/secondary supervisor of the team linked to the workflow
     // 3. Observer of the team (if escalated)
-    const results = await db.execute<{
-      id: string;
-      tenant_id: string;
-      template_id: string;
-      template_name: string;
-      current_status: string;
-      current_node_id: string;
-      current_step_id: string;
-      reference_id: string;
-      instance_name: string;
-      created_at: string;
-      updated_at: string;
-      entity_type: string;
-      entity_id: string;
-      triggered_by: string;
-      triggered_by_name: string;
-      department: string;
-      action_id: string;
-      action_name: string;
-      escalated: boolean;
-      sla_hours: number;
-    }>(`
+    const statusParam = status === 'all' ? null : (status || 'pending');
+    const departmentParam = department || null;
+    const excludeDepartmentParam = excludeDepartment || null;
+    const limitParam = parseInt(limit as string, 10);
+    const offsetParam = parseInt(offset as string, 10);
+    
+    const results = await db.execute(sql`
       SELECT DISTINCT
         wi.id,
         wi.tenant_id,
@@ -2058,39 +2043,39 @@ router.get('/workflow-instances/approvals', requirePermission('workflows.read'),
       LEFT JOIN w3suite.workflow_templates wt ON wt.id = wi.template_id
       LEFT JOIN w3suite.universal_requests ur ON ur.workflow_instance_id = wi.id
       LEFT JOIN w3suite.users u ON u.id = ur.requester_id
-      WHERE wi.tenant_id = $1
+      WHERE wi.tenant_id = ${tenantId}::uuid
         AND wi.current_status IN ('running', 'waiting_approval', 'pending')
         -- Filter by status if specified
-        AND ($3::text IS NULL OR $3::text = 'all' OR wi.current_status = $3::text)
+        AND (${statusParam}::text IS NULL OR ${statusParam}::text = 'all' OR wi.current_status = ${statusParam}::text)
         -- Filter by department if specified
-        AND ($4::text IS NULL OR ur.department::text = $4::text OR wt.for_department = $4::text)
+        AND (${departmentParam}::text IS NULL OR ur.department::text = ${departmentParam}::text OR wt.for_department = ${departmentParam}::text)
         -- Exclude department (e.g., exclude HR from Tasks view)
         AND (
-          $5::text IS NULL 
+          ${excludeDepartmentParam}::text IS NULL 
           OR (
-            (ur.department IS NULL OR ur.department::text != $5::text)
-            AND (wt.for_department IS NULL OR wt.for_department != $5::text)
+            (ur.department IS NULL OR ur.department::text != ${excludeDepartmentParam}::text)
+            AND (wt.for_department IS NULL OR wt.for_department != ${excludeDepartmentParam}::text)
           )
         )
         -- User authorization: can approve if direct assignee OR team supervisor OR explicit approver
         AND (
           -- Direct assignee in workflow_data
-          wi.workflow_data->>'currentAssigneeId' = $2
+          wi.workflow_data->>'currentAssigneeId' = ${userId}
           -- OR explicit approver in approvers array
-          OR wi.workflow_data->'approvers' @> to_jsonb($2::text)
+          OR wi.workflow_data->'approvers' @> to_jsonb(${userId}::text)
           -- OR supervisor of team linked to request (only if teamId exists)
           OR (
             COALESCE(ur.metadata->>'teamId', wi.workflow_data->>'teamId', ur.metadata->'firstWinsRouting'->>'teamId') IS NOT NULL
             AND EXISTS (
               SELECT 1 FROM w3suite.teams t
-              WHERE t.tenant_id = $1
+              WHERE t.tenant_id = ${tenantId}::uuid
                 AND t.is_active = true
                 AND t.id::text = COALESCE(
                   ur.metadata->>'teamId',
                   wi.workflow_data->>'teamId',
                   ur.metadata->'firstWinsRouting'->>'teamId'
                 )
-                AND (t.primary_supervisor_id = $2 OR t.secondary_supervisor_id = $2)
+                AND (t.primary_supervisor_user = ${userId} OR t.secondary_supervisor_user = ${userId})
             )
           )
           -- OR observer if escalated (only if teamId exists)
@@ -2100,9 +2085,9 @@ router.get('/workflow-instances/approvals', requirePermission('workflows.read'),
             AND EXISTS (
               SELECT 1 FROM w3suite.team_observers tobs
               JOIN w3suite.teams t ON t.id = tobs.team_id
-              WHERE t.tenant_id = $1
+              WHERE t.tenant_id = ${tenantId}::uuid
                 AND t.is_active = true
-                AND tobs.user_id = $2
+                AND tobs.user_id = ${userId}
                 AND t.id::text = COALESCE(
                   ur.metadata->>'teamId',
                   wi.workflow_data->>'teamId',
@@ -2112,16 +2097,8 @@ router.get('/workflow-instances/approvals', requirePermission('workflows.read'),
           )
         )
       ORDER BY wi.created_at DESC
-      LIMIT $6 OFFSET $7
-    `, [
-      tenantId,
-      userId,
-      status === 'all' ? null : (status || 'pending'),
-      department || null,
-      excludeDepartment || null,
-      parseInt(limit as string, 10),
-      parseInt(offset as string, 10)
-    ]);
+      LIMIT ${limitParam} OFFSET ${offsetParam}
+    `);
 
     // Transform results to match ApprovalRequest interface
     const approvals = results.rows.map(row => ({
