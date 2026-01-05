@@ -3675,10 +3675,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set tenant context for RLS
       await setTenantContext(tenantId);
 
-      // Get user from database
-      const [user] = await db
-        .select()
+      // Get user from database with role name via JOIN
+      const result = await db
+        .select({
+          // All user fields
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          phone: users.phone,
+          role: users.role,
+          status: users.status,
+          tenantId: users.tenantId,
+          avatarObjectPath: users.avatarObjectPath,
+          dateOfBirth: users.dateOfBirth,
+          fiscalCode: users.fiscalCode,
+          gender: users.gender,
+          address: users.address,
+          city: users.city,
+          province: users.province,
+          postalCode: users.postalCode,
+          country: users.country,
+          hireDate: users.hireDate,
+          contractType: users.contractType,
+          level: users.level,
+          position: users.position,
+          department: users.department,
+          storeId: users.storeId,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          // Role name from roles table via user_assignments
+          role_name: roles.name,
+        })
         .from(users)
+        .leftJoin(userAssignments, eq(users.id, userAssignments.userId))
+        .leftJoin(roles, eq(userAssignments.roleId, roles.id))
         .where(
           and(
             eq(users.id, userId),
@@ -3686,6 +3717,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         )
         .limit(1);
+
+      const user = result[0];
 
       if (!user) {
         return res.status(404).json({
@@ -3706,8 +3739,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: {
           ...user,
           avatarUrl, // Proxy URL for avatar
+          role_name: user.role_name || user.role, // Display name for role dropdown
           // Convenient aliases for frontend compatibility
-          ruolo: user.role, // Italian alias for role
+          ruolo: user.role_name || user.role, // Italian alias - use role_name for display
           nome: user.firstName,
           cognome: user.lastName,
           telefono: user.phone,

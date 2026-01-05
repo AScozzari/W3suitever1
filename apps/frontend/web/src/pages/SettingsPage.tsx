@@ -6163,7 +6163,7 @@ export default function SettingsPage() {
         username: user.username || user.email || '',
         password: '',
         confirmPassword: '',
-        ruolo: user.ruolo || user.role || '',
+        ruolo: user.role_name || user.roleName || user.ruolo || user.role || '', // Prioritize role_name (display name) for Select matching
         cambioPasswordObbligatorio: user.cambioPasswordObbligatorio ?? false,
         ragioneSociale_id: user.ragioneSociale_id || user.legalEntityId || null,
         puntiVendita_ids: user.puntiVendita_ids || user.storeIds || [],
