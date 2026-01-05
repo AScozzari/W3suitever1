@@ -675,33 +675,8 @@ router.get('/quota', requirePermission('storage:read'), async (req: Request, res
 router.get('/tenant-allocation', requirePermission('storage:read'), async (req: Request, res: Response) => {
   try {
     const ctx = getContext(req);
-    
-    // Legge allocazione dalla Brand Interface
-    const allocation = await getTenantStorageAllocation(ctx.tenantId);
-    
-    if (!allocation) {
-      // Se non esiste allocazione, restituisce valori default
-      return res.json({
-        tenantId: ctx.tenantId,
-        tenantName: 'Non configurato',
-        tenantSlug: null,
-        quotaBytes: 0,
-        usedBytes: 0,
-        objectCount: 0,
-        alertThresholdPercent: 80,
-        suspended: false,
-        suspendReason: null,
-        maxUploadSizeMb: null,
-        allowedFileTypes: null,
-        features: {},
-        isConfigured: false
-      });
-    }
-    
-    res.json({
-      ...allocation,
-      isConfigured: true
-    });
+    const allocation = await storageService.getTenantAllocation(ctx);
+    res.json(allocation);
   } catch (error: any) {
     console.error('Error getting tenant allocation:', error);
     res.status(500).json({ error: error.message });
@@ -733,10 +708,10 @@ router.get('/provider-status', requirePermission('storage:read'), async (req: Re
   }
 });
 
-router.get('/quotas/summary', requirePermission('settings:read'), async (req: Request, res: Response) => {
+router.get('/quotas/summary', requirePermission('storage:read'), async (req: Request, res: Response) => {
   try {
     const ctx = getContext(req);
-    const summary = await storageService.getQuotaSummary(ctx);
+    const summary = await storageService.getQuotasSummary(ctx);
     res.json(summary);
   } catch (error: any) {
     console.error('Error getting quota summary:', error);
@@ -990,37 +965,7 @@ router.post('/upload/batch', requirePermission('storage:write'), upload.array('f
   }
 });
 
-// ==================== TENANT STORAGE ALLOCATION ====================
-
-/**
- * GET /storage/quotas/summary
- * Get quota summary for all users/teams in the tenant
- */
-router.get('/quotas/summary', requirePermission('storage:read'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const summary = await storageService.getQuotasSummary(ctx);
-    res.json(summary);
-  } catch (error: any) {
-    console.error('Error getting quotas summary:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /storage/tenant-allocation
- * Get tenant's storage allocation info (quota from Brand Interface)
- */
-router.get('/tenant-allocation', requirePermission('storage:read'), async (req: Request, res: Response) => {
-  try {
-    const ctx = getContext(req);
-    const allocation = await storageService.getTenantAllocation(ctx);
-    res.json(allocation);
-  } catch (error: any) {
-    console.error('Error getting tenant allocation:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// ==================== RECENT FILES & BRAND ASSETS ====================
 
 /**
  * GET /storage/files/recent

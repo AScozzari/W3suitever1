@@ -1,0 +1,369 @@
+3content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Wa @ index-DzKw24ZD.js:41
+Xe @ index-DzKw24ZD.js:41
+Wa @ index-DzKw24ZD.js:41
+Xe @ index-DzKw24ZD.js:41
+Wa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+stream:1  GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.I.onerror @ App-Cr1EZnFI.js:727Comprendi l'errore
+App-Cr1EZnFI.js:727 Retrying SSE connection (1/3) in 2000ms
+3content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Do @ index-DzKw24ZD.js:41
+Me @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41
+setTimeout
+WL @ App-Cr1EZnFI.js:1
+s @ App-Cr1EZnFI.js:1
+batch @ App-Cr1EZnFI.js:1
+Vi @ App-Cr1EZnFI.js:1
+setData @ App-Cr1EZnFI.js:1
+fetch @ App-Cr1EZnFI.js:1
+await in fetch
+Iu @ App-Cr1EZnFI.js:1
+onSubscribe @ App-Cr1EZnFI.js:1
+subscribe @ App-Cr1EZnFI.js:1
+(anonime) @ App-Cr1EZnFI.js:1
+va @ index-DzKw24ZD.js:39
+sl @ index-DzKw24ZD.js:41
+Gn @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ai @ index-DzKw24ZD.js:41
+mn @ index-DzKw24ZD.js:39
+(anonime) @ index-DzKw24ZD.js:41Comprendi l'errore
+stream:1  GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.I.onerror @ App-Cr1EZnFI.js:727Comprendi l'errore
+App-Cr1EZnFI.js:727 Retrying SSE connection (2/3) in 2000ms
+stream:1  GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.I.onerror @ App-Cr1EZnFI.js:727Comprendi l'errore
+App-Cr1EZnFI.js:727 Retrying SSE connection (3/3) in 2000ms
+3content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Wa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ya @ index-DzKw24ZD.js:41
+E @ index-DzKw24ZD.js:26
+ut @ index-DzKw24ZD.js:26Comprendi l'errore
+stream:1  GET https://w3suite.it/brand-api/structure/stats/stream?page=1&limit=25 401 (Unauthorized)Comprendi l'errore
+installHook.js:1 SSE connection error: Event {isTrusted: true, type: 'error', target: EventSource, currentTarget: EventSource, eventPhase: 2, …}
+overrideMethod @ installHook.js:1
+N.I.onerror @ App-Cr1EZnFI.js:727Comprendi l'errore
+App-Cr1EZnFI.js:727 Max retry attempts reached, falling back to polling
+3content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Tt @ index-DzKw24ZD.js:38
+Me @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ya @ index-DzKw24ZD.js:41
+E @ index-DzKw24ZD.js:26
+ut @ index-DzKw24ZD.js:26Comprendi l'errore
+App-Cr1EZnFI.js:727  GET https://w3suite.it/brand-api/structure/stats?page=1&limit=25 500 (Internal Server Error)
+C @ App-Cr1EZnFI.js:727
+k @ App-Cr1EZnFI.js:727
+N.I.onerror @ App-Cr1EZnFI.js:727Comprendi l'errore
+installHook.js:1 Fallback fetch failed: Error: HTTP 500
+    at C (App-Cr1EZnFI.js:727:81098)
+overrideMethod @ installHook.js:1
+C @ App-Cr1EZnFI.js:727
+await in C
+k @ App-Cr1EZnFI.js:727
+N.I.onerror @ App-Cr1EZnFI.js:727Comprendi l'errore
+3content_script.js:1 Uncaught TypeError: Cannot read properties of null (reading 'deref')
+    at MutationObserver.<anonymous> (content_script.js:1:440606)
+(anonime) @ content_script.js:1
+childList
+Wa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+Pe @ index-DzKw24ZD.js:41
+Qa @ index-DzKw24ZD.js:41
+xd @ index-DzKw24ZD.js:41
+gn @ index-DzKw24ZD.js:41
+Ya @ index-DzKw24ZD.js:41
+E @ index-DzKw24ZD.js:26
+ut @ index-DzKw24ZD.js:26Comprendi l'errore

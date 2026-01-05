@@ -2594,22 +2594,24 @@ export const storageService = {
   async getQuotasSummary(ctx: StorageServiceContext) {
     const brandAllocation = await getTenantStorageAllocation(ctx.tenantId);
     
-    const userQuotasRaw = await db.select({
+    // Query storage_quotas using the correct schema columns
+    const quotasRaw = await db.select({
       id: storageQuotas.id,
-      entityType: storageQuotas.entityType,
-      entityId: storageQuotas.entityId,
+      scopeLevel: storageQuotas.scopeLevel,
+      userId: storageQuotas.userId,
+      teamId: storageQuotas.teamId,
       quotaBytes: storageQuotas.quotaBytes,
       usedBytes: storageQuotas.usedBytes,
-      suspended: storageQuotas.suspended,
+      brandOverride: storageQuotas.brandOverride,
     }).from(storageQuotas)
       .where(eq(storageQuotas.tenantId, ctx.tenantId));
 
-    const userIds = userQuotasRaw
-      .filter(q => q.entityType === 'user' && q.entityId)
-      .map(q => q.entityId!);
-    const teamIds = userQuotasRaw
-      .filter(q => q.entityType === 'team' && q.entityId)
-      .map(q => q.entityId!);
+    const userIds = quotasRaw
+      .filter(q => q.scopeLevel === 'user' && q.userId)
+      .map(q => q.userId!);
+    const teamIds = quotasRaw
+      .filter(q => q.scopeLevel === 'team' && q.teamId)
+      .map(q => q.teamId!);
 
     const userMap = new Map<string, { name: string; email: string }>();
     const teamMap = new Map<string, { name: string }>();
@@ -2643,30 +2645,30 @@ export const storageService = {
       }
     }
 
-    const entities = userQuotasRaw.map(q => {
-      if (q.entityType === 'user' && q.entityId) {
-        const user = userMap.get(q.entityId);
+    const entities = quotasRaw.map(q => {
+      if (q.scopeLevel === 'user' && q.userId) {
+        const user = userMap.get(q.userId);
         return {
           id: q.id,
           type: 'user' as const,
-          entityId: q.entityId,
+          entityId: q.userId,
           name: user?.name || 'Unknown User',
           email: user?.email || null,
           quotaBytes: q.quotaBytes || DEFAULT_USER_QUOTA_BYTES,
           usedBytes: q.usedBytes || 0,
-          suspended: q.suspended || false,
+          suspended: q.brandOverride || false,
         };
-      } else if (q.entityType === 'team' && q.entityId) {
-        const team = teamMap.get(q.entityId);
+      } else if (q.scopeLevel === 'team' && q.teamId) {
+        const team = teamMap.get(q.teamId);
         return {
           id: q.id,
           type: 'team' as const,
-          entityId: q.entityId,
+          entityId: q.teamId,
           name: team?.name || 'Unknown Team',
           email: null,
           quotaBytes: q.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES,
           usedBytes: q.usedBytes || 0,
-          suspended: q.suspended || false,
+          suspended: q.brandOverride || false,
         };
       }
       return null;
@@ -2680,7 +2682,41 @@ export const storageService = {
         isNull(storageObjects.deletedAt),
       ));
 
-    return {
+    const usersFormatted = entities
+      .filter(e => e?.type === 'user')
+      .map(e => ({
+        type: 'user' as const,
+        id: e!.entityId,
+        name: e!.name,
+        email: e!.email,
+        isActive: !e!.suspended,
+        quotaBytes: e!.quotaBytes,
+        usedBytes: e!.usedBytes,
+        hasCustomQuota: true,
+        suspended: e!.suspended,
+      }));
+
+    const teamsFormatted = entities
+      .filter(e => e?.type === 'team')
+      .map(e => ({
+        type: 'team' as const,
+        id: e!.entityId,
+        name: e!.name,
+        email: null,
+        isActive: !e!.suspended,
+        quotaBytes: e!.quotaBytes,
+        usedBytes: e!.usedBytes,
+        hasCustomQuota: true,
+        suspended: e!.suspended,
+      }));
+
+    const result = {
+      users: usersFormatted,
+      teams: teamsFormatted,
+      defaults: {
+        userQuotaBytes: DEFAULT_USER_QUOTA_BYTES,
+        teamQuotaBytes: DEFAULT_TEAM_QUOTA_BYTES,
+      },
       tenantAllocation: brandAllocation ? {
         quotaBytes: brandAllocation.quotaBytes,
         usedBytes: brandAllocation.usedBytes,
@@ -2694,10 +2730,14 @@ export const storageService = {
         alertThresholdPercent: 80,
         suspended: false,
       },
-      entities,
-      totalUsers: entities.filter(e => e?.type === 'user').length,
-      totalTeams: entities.filter(e => e?.type === 'team').length,
     };
+    logger.debug('[Storage] getQuotasSummary result', { 
+      hasBrandAllocation: !!brandAllocation,
+      tenantAllocation: result.tenantAllocation,
+      userCount: result.users.length,
+      teamCount: result.teams.length,
+    });
+    return result;
   },
 };
 
