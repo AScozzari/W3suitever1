@@ -20,8 +20,9 @@ import {
   Download, Trash2, Share2, Star, StarOff, Clock, Home, ChevronRight,
   FileText, Image, FileVideo, FileAudio, Archive, FileSpreadsheet,
   ArrowUpDown, HardDrive, Users, Eye, Copy, CheckCircle2, AlertCircle,
-  ChevronDown, Settings, Shield, Sparkles
+  ChevronDown, Settings, Shield, Sparkles, FilePlus, ChevronUp
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StorageFolder {
   id: string;
@@ -147,11 +148,14 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [folderPath, setFolderPath] = useState<{ id: string; name: string }[]>([]);
   const [activeSection, setActiveSection] = useState<'my-files' | 'recent' | 'favorites' | 'shared' | 'trash'>('my-files');
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
+  const [newFileName, setNewFileName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ fileName: string; progress: number; status: 'uploading' | 'success' | 'error' }[]>([]);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -394,9 +398,31 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
     return { folders, objects };
   }, [foldersData, objectsData, recentData, sharedData, searchQuery, sortBy, sortOrder, activeSection]);
 
-  const handleFolderClick = useCallback((folderId: string) => {
+  const handleFolderClick = useCallback((folderId: string, folderName?: string) => {
+    const folder = foldersData?.find(f => f.id === folderId);
+    const name = folderName || folder?.name || 'Cartella';
+    setFolderPath(prev => [...prev, { id: folderId, name }]);
     setCurrentFolderId(folderId);
-  }, []);
+  }, [foldersData]);
+
+  const handleBreadcrumbClick = useCallback((index: number) => {
+    if (index === -1) {
+      setCurrentFolderId(null);
+      setFolderPath([]);
+    } else {
+      const newPath = folderPath.slice(0, index + 1);
+      setFolderPath(newPath);
+      setCurrentFolderId(newPath[newPath.length - 1].id);
+    }
+  }, [folderPath]);
+
+  const handleGoUp = useCallback(() => {
+    if (folderPath.length > 0) {
+      const newPath = folderPath.slice(0, -1);
+      setFolderPath(newPath);
+      setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
+    }
+  }, [folderPath]);
 
   const handleFileClick = useCallback(async (object: StorageObject) => {
     try {
@@ -421,6 +447,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   ] as const;
 
   const content = (
+    <TooltipProvider delayDuration={300}>
     <div className="h-full flex flex-col">
       <input
         ref={fileInputRef}
@@ -484,26 +511,39 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
             {foldersData && foldersData.length > 0 && (
               <div className="pb-4">
                 <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Cartelle</p>
-                <nav className="space-y-0.5">
-                  {foldersData.slice(0, 6).map((folder) => (
-                    <button
-                      key={folder.id}
-                      onClick={() => {
-                        setActiveSection('my-files');
-                        setCurrentFolderId(folder.id);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        currentFolderId === folder.id 
-                          ? 'bg-orange-50 text-orange-700' 
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`}
-                      data-testid={`folder-shortcut-${folder.id}`}
-                    >
-                      <Folder className={`w-4 h-4 ${currentFolderId === folder.id ? 'text-orange-500' : 'text-orange-400'}`} />
-                      <span className="truncate">{folder.name}</span>
-                    </button>
-                  ))}
-                </nav>
+                <ScrollArea className="max-h-48">
+                  <nav className="space-y-0.5 pr-2">
+                    {foldersData.map((folder) => (
+                      <Tooltip key={folder.id}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => {
+                              setActiveSection('my-files');
+                              setFolderPath([{ id: folder.id, name: folder.name }]);
+                              setCurrentFolderId(folder.id);
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                              currentFolderId === folder.id 
+                                ? 'bg-orange-50 text-orange-700' 
+                                : 'text-slate-600 hover:bg-slate-100'
+                            }`}
+                            data-testid={`folder-shortcut-${folder.id}`}
+                          >
+                            <Folder className={`w-4 h-4 shrink-0 ${currentFolderId === folder.id ? 'text-orange-500' : 'text-orange-400'}`} />
+                            <span className="truncate">{folder.name}</span>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <div className="text-xs">
+                            <p className="font-medium">{folder.name}</p>
+                            <p className="text-muted-foreground">/{folder.path || folder.name}</p>
+                            <p className="text-muted-foreground">Creata: {formatDate(folder.createdAt)}</p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </nav>
+                </ScrollArea>
               </div>
             )}
           </ScrollArea>
@@ -525,17 +565,53 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
         <main className="flex-1 flex flex-col min-w-0 bg-white">
           <header className="px-6 py-4 border-b bg-gradient-to-r from-white to-slate-50/50">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm overflow-x-auto">
+                {folderPath.length > 0 && (
+                  <button 
+                    onClick={handleGoUp}
+                    className="flex items-center gap-1 text-slate-500 hover:text-orange-500 transition-colors p-1 rounded hover:bg-slate-100"
+                    title="Torna indietro"
+                    data-testid="button-go-up"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                )}
                 <button 
-                  onClick={() => setCurrentFolderId(null)}
+                  onClick={() => handleBreadcrumbClick(-1)}
                   className="flex items-center gap-1 text-slate-500 hover:text-orange-500 transition-colors"
+                  data-testid="breadcrumb-home"
                 >
                   <Home className="w-4 h-4" />
                 </button>
-                <ChevronRight className="w-4 h-4 text-slate-300" />
-                <span className="font-medium text-slate-700">
+                <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                <span className={`font-medium ${folderPath.length === 0 ? 'text-orange-600' : 'text-slate-700 cursor-pointer hover:text-orange-500'}`}
+                  onClick={() => handleBreadcrumbClick(-1)}
+                >
                   {sidebarItems.find(i => i.id === activeSection)?.label || 'I miei file'}
                 </span>
+                {folderPath.map((folder, index) => (
+                  <div key={folder.id} className="flex items-center gap-2 shrink-0">
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleBreadcrumbClick(index)}
+                          className={`font-medium max-w-[120px] truncate ${
+                            index === folderPath.length - 1 
+                              ? 'text-orange-600' 
+                              : 'text-slate-700 hover:text-orange-500 cursor-pointer'
+                          }`}
+                          data-testid={`breadcrumb-${folder.id}`}
+                        >
+                          {folder.name}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>/{folderPath.slice(0, index + 1).map(f => f.name).join('/')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                ))}
               </div>
 
               <div className="flex items-center gap-3 flex-1 max-w-xl justify-end">
@@ -607,7 +683,17 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                   data-testid="button-new-folder"
                 >
                   <FolderPlus className="w-4 h-4" />
-                  Nuova cartella
+                  Cartella
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewFileDialogOpen(true)}
+                  className="gap-2"
+                  data-testid="button-new-file"
+                >
+                  <FilePlus className="w-4 h-4" />
+                  File
                 </Button>
               </div>
             </div>
@@ -636,115 +722,141 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
               ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {filteredAndSortedItems.folders.map((folder) => (
-                    <div
-                      key={folder.id}
-                      onClick={() => handleFolderClick(folder.id)}
-                      className="group relative bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/50 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:shadow-orange-500/10 hover:border-orange-300 transition-all duration-200"
-                      data-testid={`folder-card-${folder.id}`}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="absolute top-2 right-2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}>
-                            <Share2 className="w-4 h-4 mr-2" /> Condividi
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" /> Elimina
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      
-                      {folder.isShared && (
-                        <div 
-                          className="absolute top-2 left-2 w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
-                          onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}
-                          title="Condiviso"
-                          data-testid={`share-indicator-folder-${folder.id}`}
+                    <Tooltip key={folder.id}>
+                      <TooltipTrigger asChild>
+                        <div
+                          onClick={() => handleFolderClick(folder.id, folder.name)}
+                          className="group relative bg-gradient-to-br from-orange-50 to-amber-50/50 border border-orange-200/50 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:shadow-orange-500/10 hover:border-orange-300 transition-all duration-200"
+                          data-testid={`folder-card-${folder.id}`}
                         >
-                          <Users className="w-3 h-3 text-purple-600" />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="absolute top-2 right-2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}>
+                                <Share2 className="w-4 h-4 mr-2" /> Condividi
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive">
+                                <Trash2 className="w-4 h-4 mr-2" /> Elimina
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          
+                          {folder.isShared && (
+                            <div 
+                              className="absolute top-2 left-2 w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('folder', folder.id, folder.name); }}
+                              data-testid={`share-indicator-folder-${folder.id}`}
+                            >
+                              <Users className="w-3 h-3 text-purple-600" />
+                            </div>
+                          )}
+                          
+                          <div className="flex flex-col items-center text-center">
+                            <Folder className="w-12 h-12 text-orange-400 mb-3" />
+                            <p className="font-medium text-sm text-slate-700 truncate w-full">{folder.name}</p>
+                            <p className="text-xs text-slate-400 mt-1">{formatDate(folder.createdAt)}</p>
+                          </div>
                         </div>
-                      )}
-                      
-                      <div className="flex flex-col items-center text-center">
-                        <Folder className="w-12 h-12 text-orange-400 mb-3" />
-                        <p className="font-medium text-sm text-slate-700 truncate w-full">{folder.name}</p>
-                        <p className="text-xs text-slate-400 mt-1">{formatDate(folder.createdAt)}</p>
-                      </div>
-                    </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <div className="text-xs space-y-1">
+                          <p className="font-medium">{folder.name}</p>
+                          <p className="text-muted-foreground">Tipo: Cartella</p>
+                          <p className="text-muted-foreground">Percorso: /{folder.path || folder.name}</p>
+                          <p className="text-muted-foreground">Creata: {new Date(folder.createdAt).toLocaleDateString('it-IT')}</p>
+                          {folder.isShared && <p className="text-purple-600">Condiviso con {folder.shareCount || 1} utenti</p>}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {filteredAndSortedItems.objects.map((obj) => {
                     const FileIcon = getFileIcon(obj.mimeType);
                     const iconColor = getCategoryColor(obj.mimeType);
+                    const fileExtension = obj.displayName.includes('.') ? obj.displayName.split('.').pop()?.toUpperCase() : 'N/A';
                     return (
-                      <div
-                        key={obj.id}
-                        onClick={() => handleFileClick(obj)}
-                        className="group relative bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-300 transition-all duration-200"
-                        data-testid={`file-card-${obj.id}`}
-                      >
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-7 h-7"
-                            onClick={(e) => { e.stopPropagation(); toggleFavoriteMutation.mutate(obj.id); }}
+                      <Tooltip key={obj.id}>
+                        <TooltipTrigger asChild>
+                          <div
+                            onClick={() => handleFileClick(obj)}
+                            className="group relative bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-300 transition-all duration-200"
+                            data-testid={`file-card-${obj.id}`}
                           >
-                            {obj.isFavorite ? (
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            ) : (
-                              <StarOff className="w-4 h-4 text-slate-400" />
-                            )}
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="w-7 h-7">
-                                <MoreVertical className="w-4 h-4" />
+                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-7 h-7"
+                                onClick={(e) => { e.stopPropagation(); toggleFavoriteMutation.mutate(obj.id); }}
+                              >
+                                {obj.isFavorite ? (
+                                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                ) : (
+                                  <StarOff className="w-4 h-4 text-slate-400" />
+                                )}
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> Anteprima</DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}>
-                                <Share2 className="w-4 h-4 mr-2" /> Condividi
-                              </DropdownMenuItem>
-                              <DropdownMenuItem><Download className="w-4 h-4 mr-2" /> Scarica</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); deleteObjectMutation.mutate(obj.id); }}>
-                                <Trash2 className="w-4 h-4 mr-2" /> Elimina
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
-                        <div className="absolute top-2 left-2 flex items-center gap-1">
-                          {obj.isFavorite && (
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                          )}
-                          {obj.isShared && (
-                            <div 
-                              className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
-                              onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}
-                              title="Condiviso"
-                              data-testid={`share-indicator-object-${obj.id}`}
-                            >
-                              <Users className="w-3 h-3 text-purple-600" />
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="w-7 h-7">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem><Eye className="w-4 h-4 mr-2" /> Anteprima</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}>
+                                    <Share2 className="w-4 h-4 mr-2" /> Condividi
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem><Download className="w-4 h-4 mr-2" /> Scarica</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); deleteObjectMutation.mutate(obj.id); }}>
+                                    <Trash2 className="w-4 h-4 mr-2" /> Elimina
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-col items-center text-center">
-                          <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center mb-3`}>
-                            <FileIcon className={`w-6 h-6 ${iconColor}`} />
+
+                            <div className="absolute top-2 left-2 flex items-center gap-1">
+                              {obj.isFavorite && (
+                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                              )}
+                              {obj.isShared && (
+                                <div 
+                                  className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
+                                  onClick={(e) => { e.stopPropagation(); handleOpenShareDialog('object', obj.id, obj.displayName); }}
+                                  data-testid={`share-indicator-object-${obj.id}`}
+                                >
+                                  <Users className="w-3 h-3 text-purple-600" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex flex-col items-center text-center">
+                              <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center mb-3`}>
+                                <FileIcon className={`w-6 h-6 ${iconColor}`} />
+                              </div>
+                              <p className="font-medium text-sm text-slate-700 truncate w-full">{obj.displayName}</p>
+                              <p className="text-xs text-slate-400 mt-1">{formatBytes(obj.sizeBytes)}</p>
+                            </div>
                           </div>
-                          <p className="font-medium text-sm text-slate-700 truncate w-full">{obj.displayName}</p>
-                          <p className="text-xs text-slate-400 mt-1">{formatBytes(obj.sizeBytes)}</p>
-                        </div>
-                      </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <div className="text-xs space-y-1">
+                            <p className="font-medium">{obj.displayName}</p>
+                            <p className="text-muted-foreground">Tipo: {obj.mimeType}</p>
+                            <p className="text-muted-foreground">Estensione: {fileExtension}</p>
+                            <p className="text-muted-foreground">Dimensione: {formatBytes(obj.sizeBytes)}</p>
+                            <p className="text-muted-foreground">Categoria: {obj.category}</p>
+                            <p className="text-muted-foreground">Modificato: {new Date(obj.updatedAt).toLocaleDateString('it-IT')}</p>
+                            {obj.ownerName && <p className="text-muted-foreground">Proprietario: {obj.ownerName}</p>}
+                            {obj.isShared && <p className="text-purple-600">Condiviso con {obj.shareCount || 1} utenti</p>}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   })}
                 </div>
@@ -985,6 +1097,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
               <FolderPlus className="w-5 h-5 text-orange-500" />
               Nuova cartella
             </DialogTitle>
+            <DialogDescription>
+              Crea una nuova cartella {currentFolderId ? 'nella cartella corrente' : 'nella root'}
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Label htmlFor="folder-name">Nome cartella</Label>
@@ -1135,7 +1250,48 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newFileDialogOpen} onOpenChange={setNewFileDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FilePlus className="w-5 h-5 text-blue-500" />
+              Nuovo file di testo
+            </DialogTitle>
+            <DialogDescription>
+              Crea un nuovo file di testo nella cartella corrente
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="file-name">Nome file</Label>
+            <Input
+              id="file-name"
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              placeholder="Es: note.txt"
+              className="mt-2"
+              data-testid="input-file-name"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewFileDialogOpen(false)}>Annulla</Button>
+            <Button 
+              onClick={() => {
+                toast({ title: 'Funzionalità in arrivo', description: 'La creazione file sarà disponibile presto' });
+                setNewFileDialogOpen(false);
+                setNewFileName('');
+              }}
+              disabled={!newFileName.trim()}
+              className="bg-blue-500 hover:bg-blue-600"
+              data-testid="button-create-file"
+            >
+              Crea
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+    </TooltipProvider>
   );
 
   if (embedded) {
@@ -1143,7 +1299,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   }
 
   return (
-    <Layout title="My Drive" subtitle="Gestisci i tuoi file e documenti">
+    <Layout>
       {content}
     </Layout>
   );
