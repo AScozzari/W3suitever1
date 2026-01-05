@@ -628,3 +628,137 @@ export type WindtreOfferChunk = typeof windtreOfferChunks.$inferSelect;
 export type NewWindtreOfferChunk = typeof windtreOfferChunks.$inferInsert;
 export type RagSyncState = typeof ragSyncState.$inferSelect;
 export type NewRagSyncState = typeof ragSyncState.$inferInsert;
+
+// ==================== CLOUD STORAGE MANAGEMENT ====================
+
+// Storage Provider enum
+export const storageProviderEnum = brandInterfaceSchema.enum("storage_provider", [
+  "aws_s3",
+  "google_cloud_storage",
+  "azure_blob",
+  "minio"
+]);
+
+// Global Storage Configuration (single row for Brand-wide settings)
+export const storageGlobalConfig = brandInterfaceSchema.table("storage_global_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  provider: storageProviderEnum("provider").notNull().default("aws_s3"),
+  accessKeyEncrypted: text("access_key_encrypted"), // AES encrypted
+  secretKeyEncrypted: text("secret_key_encrypted"), // AES encrypted
+  bucketName: varchar("bucket_name", { length: 255 }),
+  region: varchar("region", { length: 50 }).default("eu-central-1"),
+  endpoint: varchar("endpoint", { length: 500 }), // Custom endpoint for MinIO
+  versioningEnabled: boolean("versioning_enabled").default(true),
+  encryptionEnabled: boolean("encryption_enabled").default(true),
+  encryptionType: varchar("encryption_type", { length: 50 }).default("AES256"), // AES256, aws:kms
+  corsEnabled: boolean("cors_enabled").default(true),
+  corsAllowedOrigins: text("cors_allowed_origins").array(),
+  lifecycleRules: jsonb("lifecycle_rules").default([]), // Array of lifecycle rule configs
+  signedUrlExpiryHours: integer("signed_url_expiry_hours").default(24),
+  maxUploadSizeMb: integer("max_upload_size_mb").default(100),
+  totalAllocatedBytes: real("total_allocated_bytes").default(0), // Sum of all tenant allocations
+  lastConnectionTestAt: timestamp("last_connection_test_at"),
+  connectionStatus: varchar("connection_status", { length: 50 }).default("not_tested"), // not_tested, connected, error
+  connectionError: text("connection_error"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// Per-Tenant Storage Allocations
+export const tenantStorageAllocations = brandInterfaceSchema.table("tenant_storage_allocations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(), // References w3suite.tenants
+  tenantName: varchar("tenant_name", { length: 255 }).notNull(),
+  tenantSlug: varchar("tenant_slug", { length: 100 }),
+  quotaBytes: real("quota_bytes").notNull().default(5368709120), // 5GB default
+  usedBytes: real("used_bytes").default(0),
+  objectCount: integer("object_count").default(0),
+  alertThresholdPercent: integer("alert_threshold_percent").default(80), // Alert when usage > X%
+  alertEmailSent: boolean("alert_email_sent").default(false),
+  suspended: boolean("suspended").default(false), // Block uploads if true
+  suspendReason: varchar("suspend_reason", { length: 500 }),
+  maxUploadSizeMb: integer("max_upload_size_mb"), // Override global if set
+  allowedFileTypes: text("allowed_file_types").array(), // e.g., ['image/*', 'application/pdf']
+  features: jsonb("features").default({}), // { versioning: true, sharing: true, etc. }
+  lastUsageUpdateAt: timestamp("last_usage_update_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// Storage Usage Logs (for analytics and billing)
+export const storageUsageLogs = brandInterfaceSchema.table("storage_usage_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  avgStorageBytes: real("avg_storage_bytes").default(0),
+  peakStorageBytes: real("peak_storage_bytes").default(0),
+  uploadCount: integer("upload_count").default(0),
+  downloadCount: integer("download_count").default(0),
+  uploadBytes: real("upload_bytes").default(0),
+  downloadBytes: real("download_bytes").default(0),
+  deleteCount: integer("delete_count").default(0),
+  estimatedCostUsd: real("estimated_cost_usd").default(0),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// Brand Assets (files pushed to tenants)
+export const brandAssets = brandInterfaceSchema.table("brand_assets", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  objectKey: varchar("object_key", { length: 1000 }).notNull(), // S3 key in brand/ prefix
+  mimeType: varchar("mime_type", { length: 100 }),
+  sizeBytes: real("size_bytes").default(0),
+  category: varchar("category", { length: 100 }), // logo, template, catalog, etc.
+  tags: text("tags").array(),
+  isActive: boolean("is_active").default(true),
+  version: integer("version").default(1),
+  pushedToTenants: text("pushed_to_tenants").array(), // Array of tenant IDs
+  lastPushedAt: timestamp("last_pushed_at"),
+  createdBy: varchar("created_by", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// ==================== CLOUD STORAGE TYPES ====================
+
+export type StorageGlobalConfig = typeof storageGlobalConfig.$inferSelect;
+export type NewStorageGlobalConfig = typeof storageGlobalConfig.$inferInsert;
+export type TenantStorageAllocation = typeof tenantStorageAllocations.$inferSelect;
+export type NewTenantStorageAllocation = typeof tenantStorageAllocations.$inferInsert;
+export type StorageUsageLog = typeof storageUsageLogs.$inferSelect;
+export type NewStorageUsageLog = typeof storageUsageLogs.$inferInsert;
+export type BrandAsset = typeof brandAssets.$inferSelect;
+export type NewBrandAsset = typeof brandAssets.$inferInsert;
+
+// Zod schemas for validation
+export const insertStorageGlobalConfigSchema = createInsertSchema(storageGlobalConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  brandTenantId: true
+});
+
+export const insertTenantStorageAllocationSchema = createInsertSchema(tenantStorageAllocations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  brandTenantId: true
+});
+
+export const insertBrandAssetSchema = createInsertSchema(brandAssets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  brandTenantId: true
+});
+
+export type InsertStorageGlobalConfig = z.infer<typeof insertStorageGlobalConfigSchema>;
+export type InsertTenantStorageAllocation = z.infer<typeof insertTenantStorageAllocationSchema>;
+export type InsertBrandAsset = z.infer<typeof insertBrandAssetSchema>;
