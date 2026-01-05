@@ -585,6 +585,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -1334,7 +1335,11 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setNewFolderDialogOpen(true)}
+                  onClick={() => {
+                    setNewFolderParentId(currentFolderId);
+                    setNewFolderName('');
+                    setNewFolderDialogOpen(true);
+                  }}
                   className="gap-2"
                   data-testid="button-new-folder"
                 >
@@ -1806,7 +1811,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
               Nuova cartella
             </DialogTitle>
             <DialogDescription>
-              Crea una nuova cartella {currentFolderId ? 'nella cartella corrente' : 'nella root'}
+              Crea una nuova cartella {newFolderParentId ? 'nella cartella corrente' : 'nella root'}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1823,7 +1828,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewFolderDialogOpen(false)}>Annulla</Button>
             <Button 
-              onClick={() => createFolderMutation.mutate({ name: newFolderName, parentId: currentFolderId })}
+              onClick={() => createFolderMutation.mutate({ name: newFolderName, parentId: newFolderParentId })}
               disabled={!newFolderName.trim() || createFolderMutation.isPending}
               className="bg-orange-500 hover:bg-orange-600"
               data-testid="button-create-folder"
