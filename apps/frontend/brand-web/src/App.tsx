@@ -18,9 +18,10 @@ import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Toaster } from "./components/ui/toaster";
+import { useProductionScale } from "./hooks/useProductionScale";
 
 export default function App() {
-  // Brand Interface App mounting with providers
+  useProductionScale();
   
   return (
     <ErrorBoundary>
