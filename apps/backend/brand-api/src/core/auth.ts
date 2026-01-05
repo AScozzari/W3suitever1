@@ -92,6 +92,7 @@ export class BrandAuthService {
       email: user.email,
       role: user.role,
       tenantId: user.tenantId,
+      brandTenantId: user.tenantId, // Alias for storage routes
       commercialAreas: user.commercialAreaCodes,
       permissions: user.permissions
     };
