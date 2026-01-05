@@ -5560,6 +5560,61 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Delete tenant storage allocation
+  app.delete("/brand-api/storage/allocations/:tenantId", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { tenantStorageAllocations, storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq, and, sql } = await import("drizzle-orm");
+
+      // Delete the allocation
+      const result = await db
+        .delete(tenantStorageAllocations)
+        .where(
+          and(
+            eq(tenantStorageAllocations.tenantId, tenantId),
+            eq(tenantStorageAllocations.brandTenantId, user.brandTenantId)
+          )
+        )
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Tenant allocation not found"
+        });
+      }
+
+      // Update total allocated in global config
+      const totalAllocated = await db
+        .select({ total: sql<number>`COALESCE(SUM(quota_bytes), 0)` })
+        .from(tenantStorageAllocations)
+        .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
+
+      await db
+        .update(storageGlobalConfig)
+        .set({
+          totalAllocatedBytes: totalAllocated[0]?.total || 0,
+          updatedAt: new Date()
+        })
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId));
+
+      res.json({
+        success: true,
+        message: "Tenant allocation deleted successfully"
+      });
+    } catch (error) {
+      console.error("❌ Error deleting allocation:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete allocation"
+      });
+    }
+  });
+
   // Get storage usage analytics
   app.get("/brand-api/storage/analytics", async (req, res) => {
     const user = (req as any).user;
@@ -5588,6 +5643,22 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const totalUsed = allocations.reduce((sum, a) => sum + (a.usedBytes || 0), 0);
       const totalObjects = allocations.reduce((sum, a) => sum + (a.objectCount || 0), 0);
 
+      // AWS S3 Standard Frankfurt pricing (eu-central-1) - as of 2024
+      const AWS_S3_PRICING = {
+        storagePerGbMonth: 0.023,      // $0.023/GB/month for first 50TB
+        putPostListPer1k: 0.0054,      // $0.0054 per 1,000 PUT/POST/LIST requests
+        getSelectPer1k: 0.00043,       // $0.00043 per 1,000 GET/SELECT requests
+        dataTransferPerGb: 0.09,       // $0.09/GB for data transfer out (first 10TB)
+      };
+
+      // Calculate estimated monthly costs
+      const storageGb = totalUsed / (1024 * 1024 * 1024);
+      const estimatedStorageCost = storageGb * AWS_S3_PRICING.storagePerGbMonth;
+      // Estimate requests based on object count (rough approximation)
+      const estimatedPutCost = (totalObjects / 1000) * AWS_S3_PRICING.putPostListPer1k;
+      const estimatedGetCost = (totalObjects * 10 / 1000) * AWS_S3_PRICING.getSelectPer1k; // Assume 10 gets per object
+      const totalEstimatedCost = estimatedStorageCost + estimatedPutCost + estimatedGetCost;
+
       // Get usage logs if date range provided
       let usageLogs: any[] = [];
       if (startDate && endDate) {
@@ -5610,7 +5681,8 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
             provider: configs[0].provider,
             region: configs[0].region,
             bucketName: configs[0].bucketName,
-            connectionStatus: configs[0].connectionStatus
+            connectionStatus: configs[0].connectionStatus,
+            lastConnectionTestAt: configs[0].lastConnectionTestAt
           } : null,
           summary: {
             totalQuotaBytes: totalQuota,
@@ -5619,14 +5691,31 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
             usagePercent: totalQuota > 0 ? Math.round((totalUsed / totalQuota) * 100) : 0,
             tenantCount: allocations.length
           },
+          costs: {
+            currency: 'USD',
+            estimatedMonthly: {
+              storage: Math.round(estimatedStorageCost * 100) / 100,
+              putPostList: Math.round(estimatedPutCost * 100) / 100,
+              getSelect: Math.round(estimatedGetCost * 100) / 100,
+              total: Math.round(totalEstimatedCost * 100) / 100
+            },
+            pricing: {
+              storagePerGbMonth: AWS_S3_PRICING.storagePerGbMonth,
+              putPostListPer1k: AWS_S3_PRICING.putPostListPer1k,
+              getSelectPer1k: AWS_S3_PRICING.getSelectPer1k,
+              region: 'eu-central-1 (Frankfurt)'
+            }
+          },
           tenants: allocations.map(a => ({
             tenantId: a.tenantId,
             tenantName: a.tenantName,
+            tenantSlug: a.tenantSlug,
             quotaBytes: a.quotaBytes,
             usedBytes: a.usedBytes,
             objectCount: a.objectCount,
             usagePercent: a.quotaBytes && a.quotaBytes > 0 ? Math.round(((a.usedBytes || 0) / a.quotaBytes) * 100) : 0,
-            suspended: a.suspended
+            suspended: a.suspended,
+            alertThresholdPercent: a.alertThresholdPercent
           })),
           usageLogs
         }
@@ -5636,6 +5725,135 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : "Failed to fetch analytics"
+      });
+    }
+  });
+
+  // Sync storage usage from S3 (recalculate actual usage per tenant)
+  app.post("/brand-api/storage/sync-usage", async (req, res) => {
+    const user = (req as any).user;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { tenantStorageAllocations, storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+      const crypto = await import("crypto");
+
+      // Get storage config
+      const configs = await db
+        .select()
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      if (!configs[0]?.accessKeyEncrypted || !configs[0]?.secretKeyEncrypted) {
+        return res.status(400).json({
+          success: false,
+          error: "S3 credentials not configured"
+        });
+      }
+
+      const config = configs[0];
+      
+      // Decrypt credentials
+      const encryptKey = process.env.STORAGE_ENCRYPTION_KEY;
+      if (!encryptKey || encryptKey.length < 32) {
+        return res.status(500).json({
+          success: false,
+          error: "STORAGE_ENCRYPTION_KEY not configured"
+        });
+      }
+      const decrypt = (encryptedText: string): string => {
+        const [ivHex, encrypted] = encryptedText.split(':');
+        const iv = Buffer.from(ivHex, 'hex');
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptKey.padEnd(32).slice(0, 32)), iv);
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+      };
+      
+      const accessKey = decrypt(config.accessKeyEncrypted);
+      const secretKey = decrypt(config.secretKeyEncrypted);
+
+      const { S3Client, ListObjectsV2Command } = await import("@aws-sdk/client-s3");
+      
+      const s3Client = new S3Client({
+        region: config.region || 'eu-central-1',
+        credentials: {
+          accessKeyId: accessKey,
+          secretAccessKey: secretKey
+        }
+      });
+
+      // Get all tenant allocations
+      const allocations = await db
+        .select()
+        .from(tenantStorageAllocations)
+        .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
+
+      const syncResults: { tenantId: string; usedBytes: number; objectCount: number; success: boolean }[] = [];
+
+      // For each tenant, calculate their S3 usage
+      for (const allocation of allocations) {
+        try {
+          let totalSize = 0;
+          let objectCount = 0;
+          let continuationToken: string | undefined;
+
+          do {
+            const response = await s3Client.send(new ListObjectsV2Command({
+              Bucket: config.bucketName!,
+              Prefix: `tenants/${allocation.tenantId}/`,
+              ContinuationToken: continuationToken
+            }));
+
+            if (response.Contents) {
+              for (const obj of response.Contents) {
+                totalSize += obj.Size || 0;
+                objectCount++;
+              }
+            }
+
+            continuationToken = response.NextContinuationToken;
+          } while (continuationToken);
+
+          // Update allocation with actual usage
+          await db
+            .update(tenantStorageAllocations)
+            .set({
+              usedBytes: totalSize,
+              objectCount: objectCount,
+              updatedAt: new Date()
+            })
+            .where(eq(tenantStorageAllocations.id, allocation.id));
+
+          syncResults.push({
+            tenantId: allocation.tenantId,
+            usedBytes: totalSize,
+            objectCount,
+            success: true
+          });
+        } catch (tenantError) {
+          console.error(`❌ Error syncing tenant ${allocation.tenantId}:`, tenantError);
+          syncResults.push({
+            tenantId: allocation.tenantId,
+            usedBytes: 0,
+            objectCount: 0,
+            success: false
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        message: "Storage usage synchronized from S3",
+        data: syncResults
+      });
+    } catch (error) {
+      console.error("❌ Error syncing storage usage:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to sync storage usage"
       });
     }
   });
@@ -5721,6 +5939,106 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Delete brand asset
+  app.delete("/brand-api/storage/assets/:assetId", async (req, res) => {
+    const user = (req as any).user;
+    const { assetId } = req.params;
+
+    try {
+      const { db } = await import("../db/index.js");
+      const { brandAssets, storageGlobalConfig } = await import("../db/schema/brand-interface.js");
+      const { eq, and } = await import("drizzle-orm");
+
+      // Get asset first
+      const assets = await db
+        .select()
+        .from(brandAssets)
+        .where(
+          and(
+            eq(brandAssets.id, assetId),
+            eq(brandAssets.brandTenantId, user.brandTenantId)
+          )
+        )
+        .limit(1);
+
+      if (assets.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Asset not found"
+        });
+      }
+
+      const asset = assets[0];
+
+      // Try to delete from S3 if configured
+      const configs = await db
+        .select()
+        .from(storageGlobalConfig)
+        .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
+        .limit(1);
+
+      const config = configs[0];
+      let s3Deleted = false;
+
+      if (config?.accessKeyEncrypted && config?.secretKeyEncrypted && config.bucketName) {
+        try {
+          const { S3Client, DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+          const crypto = await import("crypto");
+
+          const encryptKey = process.env.STORAGE_ENCRYPTION_KEY;
+          if (encryptKey && encryptKey.length >= 32) {
+            const decrypt = (encryptedText: string): string => {
+              const [ivHex, encrypted] = encryptedText.split(':');
+              const iv = Buffer.from(ivHex, 'hex');
+              const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptKey.padEnd(32).slice(0, 32)), iv);
+              let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+              decrypted += decipher.final('utf8');
+              return decrypted;
+            };
+
+            const accessKey = decrypt(config.accessKeyEncrypted);
+            const secretKey = decrypt(config.secretKeyEncrypted);
+
+            const s3Client = new S3Client({
+              region: config.region || 'eu-central-1',
+              credentials: {
+                accessKeyId: accessKey,
+                secretAccessKey: secretKey
+              }
+            });
+
+            await s3Client.send(new DeleteObjectCommand({
+              Bucket: config.bucketName,
+              Key: asset.objectKey
+            }));
+
+            s3Deleted = true;
+            console.log(`✅ Deleted asset from S3: ${asset.objectKey}`);
+          }
+        } catch (s3Error) {
+          console.error("❌ S3 delete failed:", s3Error);
+        }
+      }
+
+      // Delete from database
+      await db
+        .delete(brandAssets)
+        .where(eq(brandAssets.id, assetId));
+
+      res.json({
+        success: true,
+        message: s3Deleted ? "Asset eliminato da S3 e database" : "Asset eliminato dal database",
+        s3Deleted
+      });
+    } catch (error) {
+      console.error("❌ Error deleting asset:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to delete asset"
+      });
+    }
+  });
+
   // Upload brand asset with file
   app.post("/brand-api/storage/assets/upload", async (req, res) => {
     try {
@@ -5773,21 +6091,33 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
           // Try to upload to S3 if configured
           let uploadSuccess = false;
-          if (config?.hasCredentials) {
+          if (config?.accessKeyEncrypted && config?.secretKeyEncrypted) {
             try {
               const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
-              const { decryptMCPCredentials } = await import("../../services/mcp-credential-encryption.js");
+              const cryptoMod = await import("crypto");
               
-              const decrypted = decryptMCPCredentials({
-                accessKeyId: config.accessKeyId || '',
-                secretAccessKey: config.secretAccessKey || ''
-              });
+              // Decrypt credentials using same method as test-connection
+              const encryptKey = process.env.STORAGE_ENCRYPTION_KEY;
+              if (!encryptKey || encryptKey.length < 32) {
+                throw new Error("STORAGE_ENCRYPTION_KEY not configured");
+              }
+              const decrypt = (encryptedText: string): string => {
+                const [ivHex, encrypted] = encryptedText.split(':');
+                const iv = Buffer.from(ivHex, 'hex');
+                const decipher = cryptoMod.createDecipheriv('aes-256-cbc', Buffer.from(encryptKey.padEnd(32).slice(0, 32)), iv);
+                let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+                decrypted += decipher.final('utf8');
+                return decrypted;
+              };
+              
+              const accessKey = decrypt(config.accessKeyEncrypted);
+              const secretKey = decrypt(config.secretKeyEncrypted);
 
               const s3Client = new S3Client({
                 region: config.region || 'eu-central-1',
                 credentials: {
-                  accessKeyId: decrypted.accessKeyId,
-                  secretAccessKey: decrypted.secretAccessKey
+                  accessKeyId: accessKey,
+                  secretAccessKey: secretKey
                 }
               });
 
@@ -5901,21 +6231,33 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const copyResults: { tenantId: string; success: boolean; error?: string }[] = [];
 
       // Perform S3 copy to each tenant prefix if configured
-      if (config?.hasCredentials && config.bucketName) {
+      if (config?.accessKeyEncrypted && config?.secretKeyEncrypted && config.bucketName) {
         try {
           const { S3Client, CopyObjectCommand, HeadObjectCommand } = await import("@aws-sdk/client-s3");
-          const { decryptMCPCredentials } = await import("../../services/mcp-credential-encryption.js");
+          const cryptoMod = await import("crypto");
           
-          const decrypted = decryptMCPCredentials({
-            accessKeyId: config.accessKeyId || '',
-            secretAccessKey: config.secretAccessKey || ''
-          });
+          // Decrypt credentials using same method as test-connection
+          const encryptKey = process.env.STORAGE_ENCRYPTION_KEY;
+          if (!encryptKey || encryptKey.length < 32) {
+            throw new Error("STORAGE_ENCRYPTION_KEY not configured");
+          }
+          const decrypt = (encryptedText: string): string => {
+            const [ivHex, encrypted] = encryptedText.split(':');
+            const iv = Buffer.from(ivHex, 'hex');
+            const decipher = cryptoMod.createDecipheriv('aes-256-cbc', Buffer.from(encryptKey.padEnd(32).slice(0, 32)), iv);
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            return decrypted;
+          };
+          
+          const accessKey = decrypt(config.accessKeyEncrypted);
+          const secretKey = decrypt(config.secretKeyEncrypted);
 
           const s3Client = new S3Client({
             region: config.region || 'eu-central-1',
             credentials: {
-              accessKeyId: decrypted.accessKeyId,
-              secretAccessKey: decrypted.secretAccessKey
+              accessKeyId: accessKey,
+              secretAccessKey: secretKey
             }
           });
 
