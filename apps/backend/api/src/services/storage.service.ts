@@ -1053,6 +1053,7 @@ export const storageService = {
     const roleHierarchy = { owner: 3, editor: 2, viewer: 1 };
     const requiredLevel = roleHierarchy[requiredRole];
 
+    // First check ACL table
     const acls = await db.select().from(storageAcl)
       .where(and(
         eq(storageAcl.tenantId, ctx.tenantId),
@@ -1072,6 +1073,34 @@ export const storageService = {
       if (aclLevel >= requiredLevel) {
         return true;
       }
+    }
+
+    // Fallback: check if user is the owner/creator of the object (for legacy files without ACL)
+    const [object] = await db.select({
+      ownerUserId: storageObjects.ownerUserId,
+      createdByUserId: storageObjects.createdByUserId,
+    }).from(storageObjects)
+      .where(and(
+        eq(storageObjects.id, objectId),
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      ))
+      .limit(1);
+
+    if (object && (object.ownerUserId === ctx.userId || object.createdByUserId === ctx.userId)) {
+      // Owner has full access - create missing ACL entry for future requests
+      try {
+        await db.insert(storageAcl).values({
+          tenantId: ctx.tenantId,
+          objectId,
+          subjectUserId: ctx.userId,
+          role: 'owner',
+          grantedByUserId: ctx.userId,
+        }).onConflictDoNothing();
+      } catch (e) {
+        // Ignore ACL creation errors
+      }
+      return true;
     }
 
     return false;
