@@ -102,7 +102,7 @@ export function EditChannelDialog({
       formData.append('context', 'chat-avatar');
       formData.append('channelId', channelId);
       
-      const response = await apiRequest('/api/storage/upload', {
+      const response = await apiRequest('/api/storage/upload/direct', {
         method: 'POST',
         body: formData
       });
@@ -127,8 +127,8 @@ export function EditChannelDialog({
 
   // Fetch channel members
   const { data: members = [] } = useQuery<Member[]>({
-    queryKey: ['/api/chat/channels', channelId, 'members'],
-    enabled: open
+    queryKey: [`/api/chat/channels/${channelId}/members`],
+    enabled: open && !!channelId
   });
 
   // Fetch all users for adding members
@@ -358,14 +358,18 @@ export function EditChannelDialog({
                       width: '80px',
                       height: '80px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #e5e7eb, #d1d5db)',
+                      background: `linear-gradient(135deg, ${headerColor}, ${headerColor}cc)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#6b7280',
-                      border: '3px dashed #d1d5db'
+                      color: 'white',
+                      fontSize: '24px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      border: '3px solid rgba(255,255,255,0.3)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                     }}>
-                      <Camera size={32} />
+                      {name ? name.split(' ').map(w => w[0]).slice(0, 2).join('') : <Camera size={32} />}
                     </div>
                   )}
                   {isUploadingAvatar && (
@@ -514,7 +518,16 @@ export function EditChannelDialog({
                 maxHeight: '200px',
                 overflowY: 'auto'
               }}>
-                {members.map((member, index) => (
+                {members.map((member, index) => {
+                  const memberUser = allUsers.find(u => u.id === member.userId);
+                  const displayName = member.user?.firstName && member.user?.lastName
+                    ? `${member.user.firstName} ${member.user.lastName}`
+                    : memberUser?.firstName && memberUser?.lastName
+                      ? `${memberUser.firstName} ${memberUser.lastName}`
+                      : member.user?.email || memberUser?.email || member.userId;
+                  const initial = member.user?.firstName?.[0] || memberUser?.firstName?.[0] || member.user?.email?.[0] || memberUser?.email?.[0] || '?';
+                  
+                  return (
                   <div 
                     key={member.userId || `member-${index}`}
                     style={{
@@ -540,13 +553,11 @@ export function EditChannelDialog({
                         fontSize: '12px',
                         fontWeight: 600
                       }}>
-                        {member.user?.firstName?.[0] || member.user?.email?.[0] || '?'}
+                        {initial.toUpperCase()}
                       </div>
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: 500 }}>
-                          {member.user?.firstName && member.user?.lastName
-                            ? `${member.user.firstName} ${member.user.lastName}`
-                            : member.user?.email || member.userId}
+                          {displayName}
                         </div>
                         <div style={{ fontSize: '12px', color: '#6b7280' }}>
                           {member.role === 'owner' ? 'Proprietario' : member.role === 'admin' ? 'Admin' : 'Membro'}
@@ -566,7 +577,8 @@ export function EditChannelDialog({
                       </Button>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
