@@ -715,4 +715,52 @@ router.post('/upload/batch', requirePermission('storage:write'), upload.array('f
   }
 });
 
+// ==================== TENANT STORAGE ALLOCATION ====================
+
+/**
+ * GET /storage/tenant-allocation
+ * Get tenant's storage allocation info (quota from Brand Interface)
+ */
+router.get('/tenant-allocation', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const allocation = await storageService.getTenantAllocation(ctx);
+    res.json(allocation);
+  } catch (error: any) {
+    console.error('Error getting tenant allocation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/files/recent
+ * Get recent files for the tenant
+ */
+router.get('/files/recent', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const limit = parseInt(req.query.limit as string) || 20;
+    const files = await storageService.getRecentFiles(ctx, limit);
+    res.json(files);
+  } catch (error: any) {
+    console.error('Error getting recent files:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /storage/brand-assets
+ * Get brand assets pushed to all tenants (read-only)
+ */
+router.get('/brand-assets', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const assets = await storageService.getBrandAssets(ctx);
+    res.json(assets);
+  } catch (error: any) {
+    console.error('Error getting brand assets:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

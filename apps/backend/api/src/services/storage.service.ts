@@ -8,6 +8,8 @@ import {
 } from '../db/schema/w3suite';
 import crypto from 'crypto';
 import { Client } from '@replit/object-storage';
+import { getAWSStorageService, AWSStorageService, AWSStorageConfig, TenantStorageContext } from './aws-storage.service';
+import { logger } from '../core/logger';
 
 const DEFAULT_USER_QUOTA_BYTES = 1 * 1024 * 1024 * 1024; // 1GB
 const DEFAULT_TEAM_QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // 10GB
@@ -18,8 +20,54 @@ let objectStorageClient: Client | null = null;
 let objectStorageInitialized = false;
 let objectStorageAvailable = false;
 
+let awsStorageService: AWSStorageService | null = null;
+let awsStorageInitialized = false;
+
 // Object Storage bucket ID from environment
 const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
+
+async function initAWSStorageIfConfigured(): Promise<AWSStorageService | null> {
+  if (awsStorageInitialized) return awsStorageService;
+  awsStorageInitialized = true;
+
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const region = process.env.AWS_REGION || 'eu-central-1';
+  const bucketName = process.env.AWS_S3_BUCKET_NAME;
+
+  if (accessKeyId && secretAccessKey && bucketName) {
+    try {
+      awsStorageService = getAWSStorageService();
+      awsStorageService.setConfig({
+        accessKeyId,
+        secretAccessKey,
+        region,
+        bucketName,
+        serverSideEncryption: true,
+        versioningEnabled: true,
+      });
+      logger.info('[Storage] AWS S3 storage initialized', { region, bucket: bucketName });
+    } catch (error) {
+      logger.warn('[Storage] AWS S3 initialization failed, falling back to Replit storage', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      awsStorageService = null;
+    }
+  } else {
+    logger.info('[Storage] AWS S3 not configured, using Replit object storage');
+  }
+
+  return awsStorageService;
+}
+
+function getAWSContext(ctx: StorageServiceContext): TenantStorageContext {
+  return {
+    tenantId: ctx.tenantId,
+    userId: ctx.userId,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+  };
+}
 
 async function initObjectStorageClient(): Promise<void> {
   if (objectStorageInitialized) return;
@@ -411,19 +459,43 @@ export const storageService = {
     }
 
     const extension = session.fileName.split('.').pop() || '';
-    const objectId = crypto.randomUUID();
-    const objectKey = `${ctx.tenantId}/${session.category}/${ctx.userId}/${objectId}.${extension}`;
+    const objectIdUuid = crypto.randomUUID();
+    const category = session.category || 'general';
 
     try {
       await db.update(storageUploadSessions)
         .set({ status: 'uploading' })
         .where(eq(storageUploadSessions.id, session.id));
 
-      const client = await getObjectStorageClient();
-      if (!client) throw new Error('Object Storage not available');
-      await client.uploadFromBytes(objectKey, fileBuffer);
+      const aws = await initAWSStorageIfConfigured();
+      let objectKey: string;
+      let contentHash: string;
 
-      const contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+      if (aws && aws.isConfigured()) {
+        const awsCtx = getAWSContext(ctx);
+        objectKey = aws.generateObjectKey(awsCtx, {
+          fileName: session.fileName,
+          category,
+          scope: 'user',
+        });
+        
+        const result = await aws.uploadObject(awsCtx, objectKey, fileBuffer, {
+          mimeType: session.mimeType,
+          metadata: {
+            'original-name': session.fileName,
+            'object-type': session.objectType,
+            'session-id': session.id,
+          },
+        });
+        contentHash = result.contentHash;
+        logger.info('[Storage] Session upload completed to AWS S3', { objectKey, size: fileBuffer.length });
+      } else {
+        objectKey = `${ctx.tenantId}/${category}/${ctx.userId}/${objectIdUuid}.${extension}`;
+        const client = await getObjectStorageClient();
+        if (!client) throw new Error('Object Storage not available');
+        await client.uploadFromBytes(objectKey, fileBuffer);
+        contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+      }
 
       const [storageObject] = await db.insert(storageObjects).values({
         tenantId: ctx.tenantId,
@@ -486,13 +558,35 @@ export const storageService = {
     const extension = input.fileName.split('.').pop() || '';
     const objectId = crypto.randomUUID();
     const category = input.category || 'general';
-    const objectKey = `${ctx.tenantId}/${category}/${ctx.userId}/${objectId}.${extension}`;
+    
+    const aws = await initAWSStorageIfConfigured();
+    let objectKey: string;
+    let contentHash: string;
 
-    const client = await getObjectStorageClient();
-    if (!client) throw new Error('Object Storage not available');
-    await client.uploadFromBytes(objectKey, fileBuffer);
-
-    const contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    if (aws && aws.isConfigured()) {
+      const awsCtx = getAWSContext(ctx);
+      objectKey = aws.generateObjectKey(awsCtx, {
+        fileName: input.fileName,
+        category,
+        scope: 'user',
+      });
+      
+      const result = await aws.uploadObject(awsCtx, objectKey, fileBuffer, {
+        mimeType: input.mimeType,
+        metadata: {
+          'original-name': input.fileName,
+          'object-type': input.objectType,
+        },
+      });
+      contentHash = result.contentHash;
+      logger.info('[Storage] Uploaded to AWS S3', { objectKey, size: fileBuffer.length });
+    } else {
+      objectKey = `${ctx.tenantId}/${category}/${ctx.userId}/${objectId}.${extension}`;
+      const client = await getObjectStorageClient();
+      if (!client) throw new Error('Object Storage not available');
+      await client.uploadFromBytes(objectKey, fileBuffer);
+      contentHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    }
 
     const [storageObject] = await db.insert(storageObjects).values({
       tenantId: ctx.tenantId,
@@ -542,6 +636,25 @@ export const storageService = {
 
     if (!object) {
       throw new Error('Object not found');
+    }
+
+    const aws = await initAWSStorageIfConfigured();
+    
+    if (aws && aws.isConfigured()) {
+      const awsCtx = getAWSContext(ctx);
+      const presigned = await aws.getPresignedDownloadUrl(awsCtx, object.objectKey, {
+        expiresInSeconds: SIGNED_URL_EXPIRY_MINUTES * 60,
+        responseContentDisposition: `attachment; filename="${object.name}"`,
+      });
+      
+      await this.logAuditEvent(ctx, 'generate_signed_url', { objectId, provider: 's3' });
+      
+      return {
+        url: presigned.url,
+        expiresAt: presigned.expiresAt,
+        mimeType: object.mimeType,
+        fileName: object.name,
+      };
     }
 
     const token = generateToken(64);
@@ -602,11 +715,25 @@ export const storageService = {
         .where(eq(storageSignedTokens.id, tokenRecord.id));
     }
 
+    const aws = await initAWSStorageIfConfigured();
+    
+    if (aws && aws.isConfigured()) {
+      const awsCtx: TenantStorageContext = {
+        tenantId: object.tenantId,
+        userId: tokenRecord.userId || 'system',
+      };
+      const result = await aws.downloadObject(awsCtx, object.objectKey);
+      return {
+        buffer: result.buffer,
+        mimeType: result.mimeType || object.mimeType,
+        fileName: object.name,
+      };
+    }
+
     const client = await getObjectStorageClient();
     if (!client) throw new Error('Object Storage not available');
     const downloadResult = await client.downloadAsBytes(object.objectKey);
     
-    // downloadAsBytes returns Buffer[] - extract the first buffer
     const [fileBuffer] = downloadResult.value || [];
 
     return {
@@ -1999,6 +2126,117 @@ export const storageService = {
     });
 
     return results;
+  },
+
+  async getTenantAllocation(ctx: StorageServiceContext) {
+    const [quota] = await db.select().from(storageQuotas)
+      .where(and(
+        eq(storageQuotas.tenantId, ctx.tenantId),
+        eq(storageQuotas.entityType, 'tenant'),
+      )).limit(1);
+
+    const totalUsed = await db.select({
+      sum: sql<number>`COALESCE(SUM(size_bytes), 0)::bigint`
+    }).from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      ));
+
+    const objectCount = await db.select({
+      count: sql<number>`COUNT(*)::int`
+    }).from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      ));
+
+    const usedBytes = Number(totalUsed[0]?.sum || 0);
+    const quotaBytes = quota?.quotaBytes || DEFAULT_TEAM_QUOTA_BYTES * 10;
+    const alertThresholdPercent = 80;
+
+    return {
+      tenantId: ctx.tenantId,
+      quotaBytes,
+      usedBytes,
+      objectCount: objectCount[0]?.count || 0,
+      alertThresholdPercent,
+      suspended: false,
+      suspendReason: null,
+    };
+  },
+
+  async getRecentFiles(ctx: StorageServiceContext, limit: number = 20) {
+    const files = await db.select({
+      id: storageObjects.id,
+      name: storageObjects.name,
+      mimeType: storageObjects.mimeType,
+      sizeBytes: storageObjects.sizeBytes,
+      createdAt: storageObjects.createdAt,
+      updatedAt: storageObjects.updatedAt,
+      ownerUserId: storageObjects.ownerUserId,
+    }).from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        isNull(storageObjects.deletedAt),
+      ))
+      .orderBy(desc(storageObjects.createdAt))
+      .limit(limit);
+
+    const userIds = [...new Set(files.map(f => f.ownerUserId).filter(Boolean))] as string[];
+    const userMap = new Map<string, string>();
+
+    if (userIds.length > 0) {
+      const usersData = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      }).from(users)
+        .where(inArray(users.id, userIds));
+
+      for (const u of usersData) {
+        userMap.set(u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown');
+      }
+    }
+
+    return files.map(f => ({
+      id: f.id,
+      name: f.name,
+      mimeType: f.mimeType,
+      sizeBytes: f.sizeBytes,
+      createdAt: f.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: f.updatedAt?.toISOString() || new Date().toISOString(),
+      uploadedBy: f.ownerUserId ? userMap.get(f.ownerUserId) || 'Unknown' : 'System',
+      versions: 1,
+    }));
+  },
+
+  async getBrandAssets(ctx: StorageServiceContext) {
+    const aws = await initAWSStorageIfConfigured();
+    
+    if (aws && aws.isConfigured()) {
+      try {
+        const assets = await aws.getBrandAssetsForTenant(ctx.tenantId);
+        return assets.map(asset => ({
+          id: asset.key,
+          name: asset.name,
+          description: null,
+          category: asset.category,
+          s3Key: asset.key,
+          fileType: asset.name.split('.').pop() || 'unknown',
+          sizeBytes: asset.size,
+          pushToAllTenants: true,
+          createdAt: asset.lastModified.toISOString(),
+        }));
+      } catch (error) {
+        logger.warn('[Storage] Failed to fetch brand assets from AWS S3', {
+          error: error instanceof Error ? error.message : String(error),
+          tenantId: ctx.tenantId,
+        });
+      }
+    }
+    
+    return [];
   },
 };
 
