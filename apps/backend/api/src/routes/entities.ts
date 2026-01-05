@@ -2803,13 +2803,13 @@ router.get('/me/stores', async (req, res) => {
         and(
           eq(userStores.userId, userId),
           eq(userStores.tenantId, tenantId),
-          eq(stores.status, 'active')
+          eq(stores.status, 'Attivo')
         )
       )
       .orderBy(stores.nome);
 
     // Development mode fallback: if no stores assigned, return all tenant stores
-    if (userStoreList.length === 0 && process.env.NODE_ENV === 'development') {
+    if (userStoreList.length === 0) {
       const allStores = await db
         .select({
           id: stores.id,
@@ -2826,7 +2826,7 @@ router.get('/me/stores', async (req, res) => {
         .where(
           and(
             eq(stores.tenantId, tenantId),
-            eq(stores.status, 'active')
+            eq(stores.status, 'Attivo')
           )
         )
         .orderBy(stores.nome)
