@@ -425,87 +425,56 @@ export default function MyPortal() {
 
   return (
     <Layout currentModule="employee" setCurrentModule={() => {}}>
-      {/* Header - Direttamente sullo sfondo come Settings */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{
-          fontSize: '28px',
-          fontWeight: '700',
-          color: '#111827',
-          margin: '0 0 8px 0'
-        }} data-testid="text-dashboard-title">
-          Il mio Portale
-        </h1>
-        <div className="flex items-center justify-end mt-2">
-          <span className="text-sm font-mono text-gray-500" data-testid="text-current-time">
-            {formatTime(currentTime)}
-          </span>
+      <div className="flex flex-col h-full">
+        {/* WindTre Glassmorphism Header con Tabs - Stile CRM */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900" data-testid="text-dashboard-title">
+                  Il mio Portale
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Dashboard personale, presenze, richieste e documenti
+                </p>
+              </div>
+              <span className="text-sm font-mono text-gray-500" data-testid="text-current-time">
+                {formatTime(currentTime)}
+              </span>
+            </div>
+            
+            {/* Tab Navigation - Stile CRM */}
+            <div className="flex gap-1 p-1 bg-white/30 rounded-lg overflow-x-auto">
+              {EMPLOYEE_TABS.map((tab) => {
+                const IconComponent = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <Link
+                    key={tab.id}
+                    href={getTabUrl(tab.id)}
+                    onClick={() => setTab(tab.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
+                      whitespace-nowrap min-w-fit
+                      ${isActive 
+                        ? 'bg-windtre-orange text-white shadow-lg' 
+                        : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+                      }
+                    `}
+                    data-testid={`tab-${tab.id}`}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                    <span className="font-medium">{tab.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Tabs Container - Glassmorphism come Settings */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '16px',
-        padding: '20px',
-        marginBottom: '24px',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
-      }}>
-        <div style={{
-          display: 'flex',
-          background: 'rgba(243, 244, 246, 0.5)',
-          borderRadius: '12px',
-          padding: '4px',
-          gap: '4px',
-          flexWrap: 'wrap'
-        }}>
-          {EMPLOYEE_TABS.map((tab) => {
-            const IconComponent = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <Link
-                key={tab.id}
-                href={getTabUrl(tab.id)}
-                onClick={() => setTab(tab.id)}
-                style={{
-                  flex: '1 1 auto',
-                  minWidth: 'clamp(80px, 15vw, 120px)',
-                  background: isActive 
-                    ? 'linear-gradient(135deg, #FF6900, #ff8533)'
-                    : 'transparent',
-                  color: isActive ? 'white' : '#6b7280',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '14px 20px',
-                  fontSize: '14px',
-                  fontWeight: isActive ? '600' : '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isActive 
-                    ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
-                    : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  textAlign: 'center',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  textDecoration: 'none'
-                }}
-                data-testid={`tab-${tab.id}`}
-              >
-                <IconComponent size={16} />
-                {tab.label}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Content Area - Direttamente sullo sfondo come Settings */}
-      <div>
+        {/* Content Area */}
+        <div className="flex-1">
             {activeTab === 'overview' && (
               <div className="space-y-6" data-testid="section-overview">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2059,6 +2028,7 @@ export default function MyPortal() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </div>
       </div>
     </Layout>
   );
