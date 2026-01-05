@@ -164,7 +164,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Organizational Hierarchy**: Pyramidal scoping (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
     - **Cross-Store Architecture**: Tenant-wide data views with role-based access; optional filters, no automatic store selection.
     - **Request Routing**: "Functional First → First Wins" for team-based and "Shift-Based Routing".
-    - **Action Management System**: Centralized configuration via `action_configurations`, routed by `UnifiedTriggerService`.
+    - **Action Management System**: Centralized configuration via `action_definitions`, routed by `UnifiedTriggerService`.
     - **Deployment & Governance**: Incremental VPS deployment to `/var/www/w3suite/` using `./deploy/incremental-deploy.sh`. SSH access via `deploy/keys/vps_key`, database access to `w3suite_prod` via local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
 
 # External Dependencies
@@ -182,5 +182,4 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **ESBuild**: Server-side code bundling.
 - **Nginx**: Reverse proxy.
 - **OpenAI**: Integrated for AI services (`gpt-4o`, `gpt-4o-realtime`).
-- **AWS S3**: For production object storage.
 - **AWS S3**: For production object storage.
