@@ -1062,36 +1062,29 @@ function AnalyticsTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Image className="w-5 h-5 text-green-500" />
-                  <span>Immagini</span>
-                </div>
-                <span className="font-medium">45%</span>
+            {analytics?.fileDistribution && Object.keys(analytics.fileDistribution).length > 0 ? (
+              <div className="space-y-4">
+                {Object.entries(analytics.fileDistribution as Record<string, number>).map(([type, percent]) => (
+                  <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {type === 'images' && <Image className="w-5 h-5 text-green-500" />}
+                      {type === 'documents' && <FileText className="w-5 h-5 text-blue-500" />}
+                      {type === 'videos' && <Video className="w-5 h-5 text-red-500" />}
+                      {type === 'audio' && <Music className="w-5 h-5 text-purple-500" />}
+                      {!['images', 'documents', 'videos', 'audio'].includes(type) && <Archive className="w-5 h-5 text-amber-500" />}
+                      <span className="capitalize">{type === 'images' ? 'Immagini' : type === 'documents' ? 'Documenti' : type === 'videos' ? 'Video' : type === 'audio' ? 'Audio' : 'Altro'}</span>
+                    </div>
+                    <span className="font-medium">{percent}%</span>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  <span>Documenti</span>
-                </div>
-                <span className="font-medium">30%</span>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <Archive className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">Nessun file caricato</p>
+                <p className="text-xs text-gray-400">La distribuzione sarà calcolata quando verranno caricati file nello storage</p>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Video className="w-5 h-5 text-red-500" />
-                  <span>Video</span>
-                </div>
-                <span className="font-medium">15%</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Archive className="w-5 h-5 text-amber-500" />
-                  <span>Altro</span>
-                </div>
-                <span className="font-medium">10%</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -1103,27 +1096,38 @@ function AnalyticsTab({
             Stima Costi AWS
           </CardTitle>
           <CardDescription>
-            Basata su pricing S3 Standard Frankfurt (eu-central-1)
+            Basata su pricing S3 Standard {analytics?.costs?.pricing?.region || 'Frankfurt (eu-central-1)'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="p-4 border rounded-lg text-center">
               <p className="text-sm text-gray-500 mb-1">Storage</p>
               <p className="text-2xl font-bold text-blue-600">
-                ${((summary.totalUsedBytes / (1024 * 1024 * 1024)) * 0.023).toFixed(2)}
+                ${analytics?.costs?.estimatedMonthly?.storage?.toFixed(2) || '0.00'}
               </p>
-              <p className="text-xs text-gray-400">$0.023/GB/mese</p>
+              <p className="text-xs text-gray-400">${analytics?.costs?.pricing?.storagePerGbMonth || '0.023'}/GB/mese</p>
             </div>
             <div className="p-4 border rounded-lg text-center">
               <p className="text-sm text-gray-500 mb-1">PUT/POST/LIST</p>
-              <p className="text-2xl font-bold text-purple-600">~$5.00</p>
-              <p className="text-xs text-gray-400">$0.0054/1K richieste</p>
+              <p className="text-2xl font-bold text-purple-600">
+                ${analytics?.costs?.estimatedMonthly?.putPostList?.toFixed(2) || '0.00'}
+              </p>
+              <p className="text-xs text-gray-400">${analytics?.costs?.pricing?.putPostListPer1k || '0.0054'}/1K richieste</p>
             </div>
             <div className="p-4 border rounded-lg text-center">
               <p className="text-sm text-gray-500 mb-1">GET/SELECT</p>
-              <p className="text-2xl font-bold text-green-600">~$2.00</p>
-              <p className="text-xs text-gray-400">$0.00043/1K richieste</p>
+              <p className="text-2xl font-bold text-green-600">
+                ${analytics?.costs?.estimatedMonthly?.getSelect?.toFixed(2) || '0.00'}
+              </p>
+              <p className="text-xs text-gray-400">${analytics?.costs?.pricing?.getSelectPer1k || '0.00043'}/1K richieste</p>
+            </div>
+            <div className="p-4 border rounded-lg text-center bg-gradient-to-br from-amber-50 to-orange-50">
+              <p className="text-sm text-gray-600 mb-1 font-medium">Totale Stimato</p>
+              <p className="text-2xl font-bold text-amber-600">
+                ${analytics?.costs?.estimatedMonthly?.total?.toFixed(2) || '0.00'}
+              </p>
+              <p className="text-xs text-gray-500">/mese</p>
             </div>
           </div>
         </CardContent>
