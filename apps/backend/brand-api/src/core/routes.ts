@@ -5715,6 +5715,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
 
   // Get storage usage analytics with real data from W3 Suite
+  // This endpoint fetches ALL tenants from W3 backend and merges with existing allocations
   app.get("/brand-api/storage/analytics", async (req, res) => {
     const user = (req as any).user;
     const { startDate, endDate } = req.query;
@@ -5731,47 +5732,90 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         .where(eq(storageGlobalConfig.brandTenantId, user.brandTenantId))
         .limit(1);
 
-      // Get all allocations with usage
-      const allocations = await db
+      // Step 1: Get existing allocations from Brand Interface DB
+      const existingAllocations = await db
         .select()
         .from(tenantStorageAllocations)
         .where(eq(tenantStorageAllocations.brandTenantId, user.brandTenantId));
 
-      // Enrich allocations with real usage from W3 Suite backend
-      const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
-      const enrichedAllocations = await Promise.all(allocations.map(async (allocation) => {
-        try {
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'X-Tenant-ID': allocation.tenantId,
-            'X-Service': 'brand-interface',
-            'X-Service-Version': '1.0.0'
-          };
-          
-          if (process.env.NODE_ENV === 'development') {
-            headers['X-Auth-Session'] = 'authenticated';
-            headers['X-Demo-User'] = 'demo-user';
-          } else {
-            headers['Authorization'] = `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`;
-          }
+      // Create a map for quick lookup
+      const allocationMap = new Map(existingAllocations.map(a => [a.tenantId, a]));
 
-          const response = await fetch(`${W3_BACKEND_URL}/api/storage/tenant-allocation`, {
+      // Step 2: Fetch ALL tenants from W3 Suite backend
+      const W3_BACKEND_URL = process.env.W3_BACKEND_URL || 'http://localhost:3004';
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Tenant-ID': '00000000-0000-0000-0000-000000000000',
+        'X-Service': 'brand-interface',
+        'X-Service-Version': '1.0.0'
+      };
+      
+      if (process.env.NODE_ENV === 'development') {
+        headers['X-Auth-Session'] = 'authenticated';
+        headers['X-Demo-User'] = 'demo-user';
+      } else {
+        headers['Authorization'] = `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`;
+      }
+
+      let allTenants: Array<{ id: string; name: string; slug: string }> = [];
+      
+      try {
+        const tenantsResponse = await fetch(`${W3_BACKEND_URL}/api/tenants/all`, {
+          method: 'GET',
+          headers
+        });
+
+        if (tenantsResponse.ok) {
+          const tenantsData = await tenantsResponse.json();
+          allTenants = tenantsData.data || [];
+        }
+      } catch (fetchError) {
+        console.warn('⚠️ Could not connect to W3 backend for analytics:', fetchError);
+      }
+
+      // Step 3: Merge tenants with allocations and fetch real usage data
+      const enrichedAllocations = await Promise.all(allTenants.map(async (tenant) => {
+        const existingAllocation = allocationMap.get(tenant.id);
+        
+        let usedBytes = 0;
+        let objectCount = 0;
+        
+        try {
+          const usageHeaders = { ...headers, 'X-Tenant-ID': tenant.id };
+          const usageResponse = await fetch(`${W3_BACKEND_URL}/api/storage/tenant-allocation`, {
             method: 'GET',
-            headers
+            headers: usageHeaders
           });
 
-          if (response.ok) {
-            const realData = await response.json();
-            return {
-              ...allocation,
-              usedBytes: realData.usedBytes || 0,
-              objectCount: realData.objectCount || 0
-            };
+          if (usageResponse.ok) {
+            const usageData = await usageResponse.json();
+            usedBytes = usageData.usedBytes || 0;
+            objectCount = usageData.objectCount || 0;
           }
-        } catch (e) {
-          console.warn(`⚠️ Could not fetch real usage for tenant ${allocation.tenantId}`);
+        } catch (usageError) {
+          console.warn(`⚠️ Could not fetch usage for tenant ${tenant.id}`);
         }
-        return allocation;
+
+        if (existingAllocation) {
+          return {
+            ...existingAllocation,
+            tenantName: tenant.name,
+            tenantSlug: tenant.slug,
+            usedBytes,
+            objectCount
+          };
+        } else {
+          return {
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+            tenantSlug: tenant.slug,
+            quotaBytes: 0,
+            usedBytes,
+            objectCount,
+            alertThresholdPercent: 80,
+            suspended: false
+          };
+        }
       }));
 
       // Calculate totals from enriched data
