@@ -1388,7 +1388,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                               <Button variant="ghost" size="icon" className="absolute top-2 right-2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreVertical className="w-4 h-4" />
+                                <DotsVerticalIcon className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -1476,7 +1476,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                   <Button variant="ghost" size="icon" className="w-7 h-7">
-                                    <MoreVertical className="w-4 h-4" />
+                                    <DotsVerticalIcon className="w-4 h-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -1583,7 +1583,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                 <Button variant="ghost" size="icon" className="w-8 h-8 opacity-0 group-hover:opacity-100">
-                                  <MoreVertical className="w-4 h-4" />
+                                  <DotsVerticalIcon className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -1657,7 +1657,7 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                     <Button variant="ghost" size="icon" className="w-8 h-8">
-                                      <MoreVertical className="w-4 h-4" />
+                                      <DotsVerticalIcon className="w-4 h-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
