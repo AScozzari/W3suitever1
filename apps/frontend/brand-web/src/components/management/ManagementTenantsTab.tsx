@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
 import { 
   Building2, Search, Trash2, Edit2, Lock, LockOpen,
-  Clock, Plus
+  Clock, Plus, CheckCircle, XCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +44,7 @@ interface Tenant {
   id: string;
   name: string;
   slug: string;
-  status: 'active' | 'suspended' | 'pending';
+  status: 'active' | 'suspended' | 'pending' | 'attivo' | 'sospeso';
   createdAt: string;
   storesCount?: number;
   usersCount?: number;
@@ -63,6 +64,7 @@ export default function ManagementTenantsTab({
   onDeleteTenant
 }: ManagementTenantsTabProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -79,9 +81,20 @@ export default function ManagementTenantsTab({
   const suspendMutation = useMutation({
     mutationFn: (tenantId: string) => 
       apiRequest(`/brand-api/organizations/${tenantId}/suspend`, { method: 'PATCH' }),
-    onSuccess: () => {
+    onSuccess: (_, tenantId) => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setConfirmDialog({ open: false, type: 'suspend', tenant: null });
+      toast({
+        title: "Tenant sospeso",
+        description: "Il tenant è stato sospeso con successo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile sospendere il tenant.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -91,6 +104,17 @@ export default function ManagementTenantsTab({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setConfirmDialog({ open: false, type: 'reactivate', tenant: null });
+      toast({
+        title: "Tenant riattivato",
+        description: "Il tenant è stato riattivato con successo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile riattivare il tenant.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -100,6 +124,17 @@ export default function ManagementTenantsTab({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setConfirmDialog({ open: false, type: 'delete', tenant: null });
+      toast({
+        title: "Tenant eliminato",
+        description: "Il tenant è stato eliminato con successo.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare il tenant.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -108,16 +143,28 @@ export default function ManagementTenantsTab({
   const filteredTenants = tenants.filter((tenant) => {
     const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          tenant.slug.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || tenant.status === statusFilter;
+    // Handle both Italian and English status values for filtering
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && (tenant.status === 'active' || tenant.status === 'attivo')) ||
+                         (statusFilter === 'suspended' && (tenant.status === 'suspended' || tenant.status === 'sospeso'));
     return matchesSearch && matchesStatus;
   });
 
+  // Helper function to check if status is active (handles both Italian and English)
+  const isActiveStatus = (status: string) => {
+    return status === 'active' || status === 'attivo';
+  };
+
   const getStatusBadge = (status: string) => {
+    // Handle both Italian and English status values
+    const normalizedStatus = isActiveStatus(status) ? 'active' : 
+                            (status === 'suspended' || status === 'sospeso') ? 'suspended' : 
+                            status;
     const config = {
       active: { bg: `${COLORS.semantic.success}15`, color: COLORS.semantic.success, label: 'Attivo' },
       suspended: { bg: `${COLORS.semantic.warning}15`, color: COLORS.semantic.warning, label: 'Sospeso' },
       pending: { bg: `${COLORS.semantic.info}15`, color: COLORS.semantic.info, label: 'In attesa' },
-    }[status] || { bg: COLORS.neutral.lighter, color: COLORS.neutral.medium, label: status };
+    }[normalizedStatus] || { bg: COLORS.neutral.lighter, color: COLORS.neutral.medium, label: status };
 
     return (
       <span style={{
@@ -373,17 +420,17 @@ export default function ManagementTenantsTab({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        if (tenant.status === 'active') {
+                        if (isActiveStatus(tenant.status)) {
                           setConfirmDialog({ open: true, type: 'suspend', tenant });
                         } else {
                           setConfirmDialog({ open: true, type: 'reactivate', tenant });
                         }
                       }}
                       data-testid={`button-toggle-status-${tenant.id}`}
-                      title={tenant.status === 'active' ? 'Sospendi' : 'Riattiva'}
+                      title={isActiveStatus(tenant.status) ? 'Sospendi' : 'Riattiva'}
                       style={{ padding: '0.5rem' }}
                     >
-                      {tenant.status === 'active' ? (
+                      {isActiveStatus(tenant.status) ? (
                         <LockOpen size={16} style={{ color: COLORS.semantic.success }} />
                       ) : (
                         <Lock size={16} style={{ color: COLORS.semantic.warning }} />
