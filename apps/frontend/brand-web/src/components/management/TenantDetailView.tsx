@@ -174,15 +174,15 @@ export default function TenantDetailView({
 
   return (
     <div>
-      {/* Header con Glassmorphism - design contrastato */}
+      {/* Header con Glassmorphism - design contrastato arancione chiaro */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.55), rgba(255, 133, 51, 0.45))',
+        background: 'linear-gradient(135deg, rgba(255, 140, 60, 0.45), rgba(255, 175, 100, 0.35))',
         backdropFilter: 'blur(1.25rem) saturate(150%)',
         borderRadius: '1rem',
         padding: '1.75rem 2rem',
         marginBottom: '1.5rem',
-        border: '0.0625rem solid rgba(255, 255, 255, 0.18)',
-        boxShadow: '0 1rem 2.5rem rgba(255, 105, 0, 0.22)',
+        border: '0.0625rem solid rgba(255, 255, 255, 0.22)',
+        boxShadow: '0 1rem 2.5rem rgba(255, 140, 60, 0.18)',
       }}>
         {/* Riga 1: Back + Info Tenant + Modifica */}
         <div style={{ 
@@ -291,7 +291,7 @@ export default function TenantDetailView({
           </Button>
         </div>
 
-        {/* Riga 2: KPI Cards con vetro colorato intenso */}
+        {/* Riga 2: KPI Cards con sfondo bianco e bordi colorati */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -300,14 +300,14 @@ export default function TenantDetailView({
           {kpiCards.map((kpi, idx) => {
             const Icon = kpi.icon;
             const colorHex = kpi.color;
-            // Colori più saturi per le card
-            const cardColors: Record<number, { bg1: string; bg2: string; border: string }> = {
-              0: { bg1: 'rgba(123, 44, 191, 0.22)', bg2: 'rgba(151, 71, 255, 0.18)', border: 'rgba(151, 71, 255, 0.35)' }, // Purple
-              1: { bg1: 'rgba(16, 185, 129, 0.22)', bg2: 'rgba(52, 211, 153, 0.18)', border: 'rgba(52, 211, 153, 0.35)' }, // Green
-              2: { bg1: 'rgba(59, 130, 246, 0.22)', bg2: 'rgba(96, 165, 250, 0.18)', border: 'rgba(96, 165, 250, 0.35)' }, // Blue
-              3: { bg1: 'rgba(255, 124, 67, 0.22)', bg2: 'rgba(255, 176, 102, 0.18)', border: 'rgba(255, 176, 102, 0.35)' }, // Orange
+            // Bordi colorati per le card
+            const borderColors: Record<number, string> = {
+              0: '#7B2CBF', // Purple
+              1: '#10b981', // Green
+              2: '#3b82f6', // Blue
+              3: '#FF6900', // Orange
             };
-            const colors = cardColors[idx] || cardColors[0];
+            const borderColor = borderColors[idx] || borderColors[0];
             
             return (
               <div
@@ -315,56 +315,50 @@ export default function TenantDetailView({
                 data-testid={`kpi-card-${idx}`}
                 title={kpi.fullValue || undefined}
                 style={{
-                  background: `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})`,
-                  backdropFilter: 'blur(1rem) saturate(130%)',
+                  background: 'white',
                   borderRadius: '0.75rem',
-                  padding: '0.25rem',
-                  border: `0.0625rem solid ${colors.border}`,
+                  padding: '1rem 1.25rem',
+                  border: `0.125rem solid ${borderColor}`,
                   cursor: kpi.fullValue ? 'help' : 'default',
                   transition: 'all 0.2s ease',
                   boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.08)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-0.125rem)';
-                  e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0, 0, 0, 0.15)';
+                  e.currentTarget.style.transform = 'translateY(-0.25rem)';
+                  e.currentTarget.style.boxShadow = `0 0.5rem 1.5rem ${borderColor}30`;
+                  e.currentTarget.style.borderColor = borderColor;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 0.25rem 1rem rgba(0, 0, 0, 0.08)';
+                  e.currentTarget.style.borderColor = borderColor;
                 }}
               >
-                {/* Contenuto interno su sfondo bianco semi-opaco */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.85)',
-                  borderRadius: '0.625rem',
-                  padding: '1rem 1.25rem',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem' }}>
-                    <div style={{
-                      width: '2rem',
-                      height: '2rem',
-                      borderRadius: '0.5rem',
-                      background: `${colorHex}18`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <Icon size={16} style={{ color: colorHex }} />
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium, fontWeight: 500 }}>
-                      {kpi.label}
-                    </span>
-                  </div>
-                  <p style={{ 
-                    fontSize: '1.5rem', 
-                    fontWeight: 700, 
-                    margin: 0,
-                    letterSpacing: '-0.02em',
-                    color: COLORS.neutral.dark,
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem' }}>
+                  <div style={{
+                    width: '2rem',
+                    height: '2rem',
+                    borderRadius: '0.5rem',
+                    background: `${colorHex}18`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}>
-                    {kpi.value}
-                  </p>
+                    <Icon size={16} style={{ color: colorHex }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium, fontWeight: 500 }}>
+                    {kpi.label}
+                  </span>
                 </div>
+                <p style={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 700, 
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                  color: COLORS.neutral.dark,
+                }}>
+                  {kpi.value}
+                </p>
               </div>
             );
           })}
