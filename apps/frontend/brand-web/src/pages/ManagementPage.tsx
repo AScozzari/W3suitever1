@@ -164,6 +164,11 @@ export default function ManagementPage() {
   };
 
   const handleEditTenant = (tenant: Tenant) => {
+    // Navigate to tenant detail view
+    setSelectedTenant(tenant);
+  };
+  
+  const handleOpenEditModal = (tenant: Tenant) => {
     setEditingTenant(tenant);
     setOrganizationForm(prev => ({
       ...prev,
@@ -342,7 +347,7 @@ export default function ManagementPage() {
                     onBack={() => setSelectedTenant(null)}
                     onCreateLegalEntity={handleCreateLegalEntity}
                     onCreateStore={handleCreateStore}
-                    onEditTenant={handleEditTenant}
+                    onEditTenant={handleOpenEditModal}
                   />
                 ) : (
                   <ManagementTenantsTab 
