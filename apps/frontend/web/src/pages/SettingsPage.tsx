@@ -6394,33 +6394,33 @@ export default function SettingsPage() {
         note: newRagioneSociale.note
       };
 
-      console.log(`💾 ${isEdit ? 'Updating' : 'Creating'} legal entity:`, legalEntityData);
+      console.log(`💾 ${isEdit ? 'Updating' : 'Creating'} organization entity:`, legalEntityData);
 
       let result;
       if (isEdit) {
-        // Update existing legal entity using ApiService (with proper auth headers)
-        result = await apiService.updateLegalEntity(legalEntityModal.data.id, legalEntityData);
+        // Update existing organization entity using ApiService (with proper auth headers)
+        result = await apiService.updateOrganizationEntity(legalEntityModal.data.id, legalEntityData);
       } else {
-        // Create new legal entity using ApiService
-        result = await apiService.createLegalEntity(legalEntityData);
+        // Create new organization entity using ApiService
+        result = await apiService.createOrganizationEntity(legalEntityData);
       }
       
       if (result.success) {
-        console.log(`✅ Legal entity ${isEdit ? 'updated' : 'created'}:`, result.data);
+        console.log(`✅ Organization entity ${isEdit ? 'updated' : 'created'}:`, result.data);
         
         // Refresh the list dopo l'operazione
-        await refetchLegalEntities();
+        await refetchOrganizationEntities();
         
         setLegalEntityModal({ open: false, data: null });
         
         alert(`Ragione sociale ${isEdit ? 'modificata' : 'salvata'} con successo!`);
       } else {
-        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} legal entity:`, result.error);
+        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} organization entity:`, result.error);
         alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} della ragione sociale: ${result.error}. Riprova.`);
       }
 
     } catch (error) {
-      console.error(`❌ Error ${legalEntityModal.data ? 'updating' : 'creating'} legal entity:`, error);
+      console.error(`❌ Error ${legalEntityModal.data ? 'updating' : 'creating'} organization entity:`, error);
       alert(`Errore nella ${legalEntityModal.data ? 'modifica' : 'creazione'} della ragione sociale. Riprova.`);
     }
   };
