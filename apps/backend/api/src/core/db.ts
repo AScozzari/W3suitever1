@@ -110,8 +110,9 @@ export const withTenantTransaction = async <T>(
 ): Promise<T> => {
   return await db.transaction(async (tx) => {
     // Imposta il tenant context sulla stessa connessione della transazione
+    // CRITICAL: Must use 'app.tenant_id' to match RLS policies
     await tx.execute(
-      sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
+      sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`)
     );
     
     // Esegui l'operazione con la transazione tenant-scoped

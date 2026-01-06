@@ -8,7 +8,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { createHash } from 'crypto';
-import { db, setTenantContext } from '../core/db';
+import { db, setTenantContext, withTenantTransaction } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
 import { eq, and, sql, desc, inArray, or, isNull } from 'drizzle-orm';
@@ -179,64 +179,70 @@ router.get('/organization-entities', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    await setTenantContext(tenantId);
-    console.log('[ORG-ENTITIES] Tenant context set for:', tenantId);
+    // Use transaction to ensure same connection for RLS context and queries
+    const result = await db.transaction(async (tx) => {
+      // Set tenant context on this specific connection
+      await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`));
+      console.log('[ORG-ENTITIES] Tenant context set in transaction for:', tenantId);
 
-    // Get all organization entities for the tenant with their linked stores
-    const orgEntities = await db
-      .select({
-        id: organizationEntities.id,
-        codice: organizationEntities.codice,
-        nome: organizationEntities.nome,
-        pIva: organizationEntities.pIva,
-        stato: organizationEntities.stato,
-        codiceFiscale: organizationEntities.codiceFiscale,
-        formaGiuridica: organizationEntities.formaGiuridica,
-        capitaleSociale: organizationEntities.capitaleSociale,
-        dataCostituzione: organizationEntities.dataCostituzione,
-        indirizzo: organizationEntities.indirizzo,
-        citta: organizationEntities.citta,
-        provincia: organizationEntities.provincia,
-        cap: organizationEntities.cap,
-        telefono: organizationEntities.telefono,
-        email: organizationEntities.email,
-        pec: organizationEntities.pec,
-        rea: organizationEntities.rea,
-        registroImprese: organizationEntities.registroImprese,
-        logo: organizationEntities.logo,
-        codiceSDI: organizationEntities.codiceSDI,
-        iban: organizationEntities.iban,
-        bic: organizationEntities.bic,
-        website: organizationEntities.website,
-        refAmminNome: organizationEntities.refAmminNome,
-        refAmminCognome: organizationEntities.refAmminCognome,
-        refAmminEmail: organizationEntities.refAmminEmail,
-        note: organizationEntities.note,
-        createdAt: organizationEntities.createdAt,
-        updatedAt: organizationEntities.updatedAt,
-      })
-      .from(organizationEntities)
-      .where(eq(organizationEntities.tenantId, tenantId))
-      .orderBy(organizationEntities.codice);
-    
-    console.log('[ORG-ENTITIES] Query returned', orgEntities.length, 'records');
+      // Get all organization entities for the tenant with their linked stores
+      const orgEntities = await tx
+        .select({
+          id: organizationEntities.id,
+          codice: organizationEntities.codice,
+          nome: organizationEntities.nome,
+          pIva: organizationEntities.pIva,
+          stato: organizationEntities.stato,
+          codiceFiscale: organizationEntities.codiceFiscale,
+          formaGiuridica: organizationEntities.formaGiuridica,
+          capitaleSociale: organizationEntities.capitaleSociale,
+          dataCostituzione: organizationEntities.dataCostituzione,
+          indirizzo: organizationEntities.indirizzo,
+          citta: organizationEntities.citta,
+          provincia: organizationEntities.provincia,
+          cap: organizationEntities.cap,
+          telefono: organizationEntities.telefono,
+          email: organizationEntities.email,
+          pec: organizationEntities.pec,
+          rea: organizationEntities.rea,
+          registroImprese: organizationEntities.registroImprese,
+          logo: organizationEntities.logo,
+          codiceSDI: organizationEntities.codiceSDI,
+          iban: organizationEntities.iban,
+          bic: organizationEntities.bic,
+          website: organizationEntities.website,
+          refAmminNome: organizationEntities.refAmminNome,
+          refAmminCognome: organizationEntities.refAmminCognome,
+          refAmminEmail: organizationEntities.refAmminEmail,
+          note: organizationEntities.note,
+          createdAt: organizationEntities.createdAt,
+          updatedAt: organizationEntities.updatedAt,
+        })
+        .from(organizationEntities)
+        .where(eq(organizationEntities.tenantId, tenantId))
+        .orderBy(organizationEntities.codice);
+      
+      console.log('[ORG-ENTITIES] Query returned', orgEntities.length, 'records');
 
-    // Get linked stores count for each organization entity
-    const storesData = await db
-      .select({
-        organizationEntityId: stores.organizationEntityId,
-        storeCount: sql<number>`count(*)::int`,
-      })
-      .from(stores)
-      .where(eq(stores.tenantId, tenantId))
-      .groupBy(stores.organizationEntityId);
+      // Get linked stores count for each organization entity
+      const storesData = await tx
+        .select({
+          organizationEntityId: stores.organizationEntityId,
+          storeCount: sql<number>`count(*)::int`,
+        })
+        .from(stores)
+        .where(eq(stores.tenantId, tenantId))
+        .groupBy(stores.organizationEntityId);
+
+      return { orgEntities, storesData };
+    });
 
     const storesCountMap = new Map(
-      storesData.map(s => [s.organizationEntityId, s.storeCount])
+      result.storesData.map(s => [s.organizationEntityId, s.storeCount])
     );
 
     // Enhance entities with store count
-    const enhancedEntities = orgEntities.map(entity => ({
+    const enhancedEntities = result.orgEntities.map(entity => ({
       ...entity,
       storeCount: storesCountMap.get(entity.id) || 0,
       hasDependencies: (storesCountMap.get(entity.id) || 0) > 0,
