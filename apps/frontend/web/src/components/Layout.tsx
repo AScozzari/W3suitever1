@@ -620,43 +620,43 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         top: 0,
         left: 0,
         right: 0,
-        height: isMobile ? '56px' : '64px',
+        height: isMobile ? '3.5rem' : '4rem',
         background: 'hsla(255, 255, 255, 0.15)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        backdropFilter: 'blur(1.5rem) saturate(180%)',
+        WebkitBackdropFilter: 'blur(1.5rem) saturate(180%)',
         borderBottom: '1px solid hsla(255, 255, 255, 0.25)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isMobile ? '0 16px' : '0 24px',
+        padding: isMobile ? '0 1rem' : '0 1.5rem',
         zIndex: 50,
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        borderRadius: '0 0 20px 20px'
+        boxShadow: '0 0.5rem 2rem rgba(0, 0, 0, 0.08)',
+        borderRadius: '0 0 1.25rem 1.25rem'
       }}>
         {/* Logo e Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <img 
             src={w3LogoOfficial} 
             alt="W3 Logo" 
             style={{
-              height: '32px',
+              height: '2rem',
               width: 'auto',
-              borderRadius: '6px'
+              borderRadius: '0.375rem'
             }}
           />
           <div>
-            <p style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>WindTre Suite</p>
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: 1 }}>Multitenant Dashboard</p>
+            <p style={{ fontSize: '1rem', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>WindTre Suite</p>
+            <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0, lineHeight: 1 }}>Multitenant Dashboard</p>
           </div>
         </div>
 
         {/* Barra di ricerca centrale - Hidden on mobile */}
         {!isMobile && (
-          <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
+          <div style={{ flex: 1, maxWidth: '25rem', margin: '0 2rem' }}>
             <div style={{ position: 'relative' }}>
               <Search size={16} style={{ 
                 position: 'absolute', 
-                left: '12px', 
+                left: '0.75rem', 
                 top: '50%', 
                 transform: 'translateY(-50%)', 
                 color: '#6b7280' 
@@ -665,12 +665,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 placeholder="Cerca clienti, contratti, fatture..."
                 style={{
                   width: '100%',
-                  padding: '8px 12px 8px 40px',
+                  padding: '0.5rem 0.75rem 0.5rem 2.5rem',
                   background: 'hsla(0, 0%, 100%, 0.25)',
-                  backdropFilter: 'blur(16px)',
+                  backdropFilter: 'blur(1rem)',
                   border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   outline: 'none'
                 }}
               />
@@ -683,29 +683,29 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           <button style={{
             background: 'transparent',
             border: 'none',
-            padding: '8px',
+            padding: '0.5rem',
             cursor: 'pointer',
-            borderRadius: '8px'
+            borderRadius: '0.5rem'
           }}>
             <Search size={20} />
           </button>
         )}
 
         {/* Sezione destra - Responsive */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
           {/* AI Voice Test Button */}
           {user && !isMobile && (
             <button
               onClick={() => navigate('ai-voice-test')}
               data-testid="button-ai-voice-test"
               style={{
-                width: '40px',
-                height: '40px',
+                width: '2.5rem',
+                height: '2.5rem',
                 padding: 0,
                 background: 'hsla(0, 0%, 100%, 0.1)',
-                backdropFilter: 'blur(10px)',
+                backdropFilter: 'blur(0.625rem)',
                 border: '1px solid hsla(0, 0%, 100%, 0.15)',
-                borderRadius: '10px',
+                borderRadius: '0.625rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -741,13 +741,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
+                  gap: '0.5rem',
+                  padding: '0.5rem 0.75rem',
                   background: 'hsla(0, 0%, 100%, 0.1)',
-                  backdropFilter: 'blur(10px)',
+                  backdropFilter: 'blur(0.625rem)',
                   border: '1px solid hsla(0, 0%, 100%, 0.15)',
-                  borderRadius: '8px',
-                  fontSize: '14px',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
                   fontWeight: 500,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
@@ -777,35 +777,35 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     position: 'absolute',
                     right: 0,
                     top: '100%',
-                    marginTop: '8px',
-                    width: '280px',
-                    maxHeight: '300px',
+                    marginTop: '0.5rem',
+                    width: '17.5rem',
+                    maxHeight: '18.75rem',
                     overflowY: 'auto',
                     background: 'hsla(0, 0%, 100%, 0.95)',
-                    backdropFilter: 'blur(20px)',
+                    backdropFilter: 'blur(1.25rem)',
                     border: '1px solid hsla(0, 0%, 100%, 0.2)',
-                    borderRadius: '12px',
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 1.25rem 1.5625rem -0.3125rem rgba(0, 0, 0, 0.1), 0 0.625rem 0.625rem -0.3125rem rgba(0, 0, 0, 0.04)',
                     zIndex: 1000,
-                    padding: '8px'
+                    padding: '0.5rem'
                   }}
                 >
                   {/* Header */}
                   <div style={{
-                    padding: '12px',
+                    padding: '0.75rem',
                     borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
-                    marginBottom: '8px'
+                    marginBottom: '0.5rem'
                   }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
                       Seleziona Punto Vendita
                     </div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>
                       {stores?.length || 0} punti vendita disponibili
                     </div>
                   </div>
 
                   {/* Lista Punti Vendita */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                     {stores?.map((store: any) => (
                       <button
                         key={store.id}
@@ -816,11 +816,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px',
-                          padding: '12px',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
                           background: selectedStore?.id === store.id ? 'hsla(120, 61%, 50%, 0.1)' : 'transparent',
                           border: 'none',
-                          borderRadius: '8px',
+                          borderRadius: '0.5rem',
                           cursor: 'pointer',
                           textAlign: 'left',
                           transition: 'background-color 0.15s ease',
@@ -838,17 +838,17 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         }}
                       >
                         <div style={{
-                          width: '32px',
-                          height: '32px',
+                          width: '2rem',
+                          height: '2rem',
                           background: selectedStore?.id === store.id 
                             ? 'linear-gradient(135deg, #10b981, #059669)' 
                             : 'linear-gradient(135deg, #e5e7eb, #d1d5db)',
-                          borderRadius: '8px',
+                          borderRadius: '0.5rem',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: selectedStore?.id === store.id ? 'white' : '#666',
-                          fontSize: '12px',
+                          fontSize: '0.75rem',
                           fontWeight: 600
                         }}>
                           {store.code?.slice(-2) || store.name?.slice(0, 2).toUpperCase()}
@@ -856,15 +856,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ 
-                            fontSize: '14px', 
+                            fontSize: '0.875rem', 
                             fontWeight: 500, 
-                            marginBottom: '2px',
+                            marginBottom: '0.125rem',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px'
+                            gap: '0.375rem'
                           }}>
                             {store.name}
                             {store.isPrimary && (
@@ -872,7 +872,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             )}
                           </div>
                           <div style={{ 
-                            fontSize: '12px', 
+                            fontSize: '0.75rem', 
                             color: '#666',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -892,10 +892,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
                     {(!stores || stores.length === 0) && (
                       <div style={{
-                        padding: '20px',
+                        padding: '1.25rem',
                         textAlign: 'center',
                         color: '#666',
-                        fontSize: '14px'
+                        fontSize: '0.875rem'
                       }}>
                         Nessun punto vendita disponibile
                       </div>
@@ -913,15 +913,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               data-testid="button-user-menu"
               style={{
-                width: '32px',
-                height: '32px',
+                width: '2rem',
+                height: '2rem',
                 background: userHasAvatar ? 'transparent' : userGradient,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
@@ -955,36 +955,36 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   position: 'absolute',
                   right: 0,
                   top: '100%',
-                  marginTop: '8px',
-                  width: '220px',
+                  marginTop: '0.5rem',
+                  width: '13.75rem',
                   background: 'hsla(0, 0%, 100%, 0.95)',
-                  backdropFilter: 'blur(20px)',
+                  backdropFilter: 'blur(1.25rem)',
                   border: '1px solid hsla(0, 0%, 100%, 0.2)',
-                  borderRadius: '12px',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 1.25rem 1.5625rem -0.3125rem rgba(0, 0, 0, 0.1), 0 0.625rem 0.625rem -0.3125rem rgba(0, 0, 0, 0.04)',
                   zIndex: 1000,
-                  padding: '8px'
+                  padding: '0.5rem'
                 }}
               >
                 {/* Header utente */}
                 <div style={{
-                  padding: '12px',
+                  padding: '0.75rem',
                   borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
-                  marginBottom: '8px',
+                  marginBottom: '0.5rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px'
+                  gap: '0.625rem'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '2.5rem',
+                    height: '2.5rem',
                     borderRadius: '50%',
                     background: userHasAvatar ? 'transparent' : userGradient,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: '16px',
+                    fontSize: '1rem',
                     fontWeight: 600,
                     overflow: 'hidden',
                     flexShrink: 0
@@ -1005,12 +1005,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     )}
                   </div>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px', color: '#1f2937' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.125rem', color: '#1f2937' }}>
                       {user?.firstName && user?.lastName 
                         ? `${user.firstName} ${user.lastName}` 
                         : user?.username || 'Utente'}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>
                       {user?.email || 'admin@w3suite.com'}
                     </div>
                   </div>
@@ -1018,7 +1018,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
 
                 {/* Menu items */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
 
                   <button
                     onClick={() => {
@@ -1029,13 +1029,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
+                      gap: '0.625rem',
+                      padding: '0.625rem 0.75rem',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '0.5rem',
                       cursor: 'pointer',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       transition: 'background-color 0.15s ease'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(123, 47%, 50%, 0.05)'}
@@ -1046,7 +1046,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   </button>
 
                   {/* Divider */}
-                  <div style={{ height: '1px', background: 'hsla(0, 0%, 0%, 0.1)', margin: '8px 0' }}></div>
+                  <div style={{ height: '1px', background: 'hsla(0, 0%, 0%, 0.1)', margin: '0.5rem 0' }}></div>
 
                   <button
                     onClick={() => {
@@ -1056,13 +1056,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
+                      gap: '0.625rem',
+                      padding: '0.625rem 0.75rem',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '0.5rem',
                       cursor: 'pointer',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       transition: 'background-color 0.15s ease'
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
@@ -1080,13 +1080,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
+                      gap: '0.625rem',
+                      padding: '0.625rem 0.75rem',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '0.5rem',
                       cursor: 'pointer',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       color: '#ef4444',
                       transition: 'background-color 0.15s ease'
                     }}
@@ -1106,7 +1106,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       {/* Layout principale - Responsive - IDENTICO WindTreDashboard */}
       <div style={{ 
         display: 'flex', 
-        paddingTop: isMobile ? '56px' : '64px',
+        paddingTop: isMobile ? '3.5rem' : '4rem',
         flexDirection: isMobile ? 'column' : 'row'
       }}>
         
@@ -1116,14 +1116,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
             style={{
               position: 'fixed',
-              top: '14px',
-              left: '16px',
-              width: '28px',
-              height: '28px',
+              top: '0.875rem',
+              left: '1rem',
+              width: '1.75rem',
+              height: '1.75rem',
               background: 'hsla(0, 0%, 100%, 0.35)',
-              backdropFilter: 'blur(16px)',
+              backdropFilter: 'blur(1rem)',
               border: '1px solid hsla(0, 0%, 100%, 0.18)',
-              borderRadius: '8px',
+              borderRadius: '0.5rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1165,12 +1165,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           style={{
           position: isMobile ? 'static' : 'fixed',
           left: 0,
-          top: isMobile ? '0' : '64px',
-          height: isMobile ? 'auto' : 'calc(100vh - 64px)',
-          width: isMobile ? '100%' : (leftSidebarCollapsed ? '64px' : '256px'),
+          top: isMobile ? '0' : '4rem',
+          height: isMobile ? 'auto' : 'calc(100vh - 4rem)',
+          width: isMobile ? '100%' : (leftSidebarCollapsed ? '4rem' : '16rem'),
           background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          backdropFilter: 'blur(1.5rem) saturate(140%)',
+          WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
           borderRight: isMobile ? 'none' : '1px solid hsla(255, 255, 255, 0.12)',
           borderBottom: isMobile ? '1px solid hsla(255, 255, 255, 0.12)' : 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -1178,8 +1178,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           display: isMobile && leftSidebarCollapsed ? 'none' : 'flex',
           flexDirection: isMobile ? 'row' : 'column',
           overflowX: isMobile ? 'auto' : 'visible',
-          padding: isMobile ? '12px' : '0',
-          boxShadow: isMobile ? 'none' : '4px 0 24px rgba(0, 0, 0, 0.04)'
+          padding: isMobile ? '0.75rem' : '0',
+          boxShadow: isMobile ? 'none' : '0.25rem 0 1.5rem rgba(0, 0, 0, 0.04)'
         }}>
           {/* Toggle Button - Mobile hamburger */}
           {isMobile ? (
@@ -1187,14 +1187,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
               style={{
                 position: 'fixed',
-                top: '14px',
-                left: '16px',
-                width: '28px',
-                height: '28px',
+                top: '0.875rem',
+                left: '1rem',
+                width: '1.75rem',
+                height: '1.75rem',
                 background: 'hsla(0, 0%, 100%, 0.35)',
-                backdropFilter: 'blur(16px)',
+                backdropFilter: 'blur(1rem)',
                 border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                borderRadius: '8px',
+                borderRadius: '0.5rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
