@@ -52,7 +52,7 @@ interface TenantDetailViewProps {
   onEditTenant: (tenant: Tenant) => void;
 }
 
-type DetailTab = 'dashboard' | 'analytics' | 'legal-entities' | 'stores';
+type DetailTab = 'analytics' | 'legal-entities' | 'stores';
 
 export default function TenantDetailView({
   tenant,
@@ -61,7 +61,7 @@ export default function TenantDetailView({
   onCreateStore,
   onEditTenant,
 }: TenantDetailViewProps) {
-  const [activeTab, setActiveTab] = useState<DetailTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<DetailTab>('analytics');
 
   const { data: legalEntitiesData, isLoading: legalEntitiesLoading } = useQuery({
     queryKey: ['/brand-api/organizations', tenant.id, 'legal-entities'],
@@ -77,10 +77,16 @@ export default function TenantDetailView({
   const stores = storesData?.stores || [];
 
   const tabs: { id: DetailTab; label: string; icon: React.ElementType; count?: number }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-    { id: 'legal-entities', label: 'Legal Entities', icon: Briefcase, count: legalEntities.length },
-    { id: 'stores', label: 'Stores', icon: Store, count: stores.length },
+    { id: 'legal-entities', label: 'Ragioni Sociali', icon: Briefcase, count: legalEntities.length },
+    { id: 'stores', label: 'Punti Vendita', icon: Store, count: stores.length },
+  ];
+
+  const kpiCards = [
+    { label: 'Ragioni Sociali', value: legalEntities.length, icon: Briefcase, color: COLORS.primary.purple },
+    { label: 'Punti Vendita', value: stores.length, icon: Store, color: COLORS.semantic.success },
+    { label: 'ID Tenant', value: tenant.id.slice(0, 8) + '...', icon: Globe, color: COLORS.semantic.info },
+    { label: 'Creato il', value: format(new Date(tenant.createdAt), 'dd/MM/yyyy'), icon: Calendar, color: COLORS.primary.orange },
   ];
 
   // Helper function to check if status is active (handles both Italian and English)
@@ -118,58 +124,74 @@ export default function TenantDetailView({
 
   return (
     <div>
+      {/* Header con Glassmorphism */}
       <div style={{
-        background: COLORS.gradients.orange,
+        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.85), rgba(255, 133, 51, 0.75))',
+        backdropFilter: 'blur(1rem) saturate(150%)',
         borderRadius: '1rem',
         padding: '1.5rem',
         marginBottom: '1.5rem',
         color: 'white',
+        boxShadow: '0 0.5rem 2rem rgba(255, 105, 0, 0.2)',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+        {/* Riga 1: Back + Info Tenant + Modifica */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '1.5rem',
+          paddingBottom: '1rem',
+          borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button
               onClick={onBack}
               data-testid="button-back-to-list"
               style={{
-                background: 'rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.15)',
                 border: 'none',
                 borderRadius: '0.5rem',
-                padding: '0.5rem',
+                padding: '0.625rem',
                 cursor: 'pointer',
                 color: 'white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                transition: 'all 0.2s ease',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
             >
               <ArrowLeft size={20} />
             </button>
             <div style={{
-              width: '3.5rem',
-              height: '3.5rem',
+              width: '3rem',
+              height: '3rem',
               borderRadius: '0.75rem',
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(255, 255, 255, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <Building2 size={24} />
+              <Building2 size={22} />
             </div>
             <div>
               <h2 style={{ 
-                fontSize: '1.5rem', 
+                fontSize: '1.375rem', 
                 fontWeight: 700, 
                 margin: 0,
-                marginBottom: '0.25rem'
+                marginBottom: '0.375rem',
+                letterSpacing: '-0.01em',
               }}>
                 {tenant.name}
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <code style={{
-                  fontSize: '0.8125rem',
-                  padding: '0.125rem 0.5rem',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem',
+                  padding: '0.25rem 0.625rem',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '0.375rem',
+                  fontFamily: 'monospace',
                 }}>
                   {tenant.slug}
                 </code>
@@ -178,154 +200,178 @@ export default function TenantDetailView({
             </div>
           </div>
           
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button
-              onClick={() => onEditTenant(tenant)}
-              data-testid="button-edit-tenant-detail"
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                border: 'none',
-              }}
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Modifica
-            </Button>
-          </div>
+          <Button
+            onClick={() => onEditTenant(tenant)}
+            data-testid="button-edit-tenant-detail"
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              color: 'white',
+              border: '0.0625rem solid rgba(255, 255, 255, 0.2)',
+              padding: '0.625rem 1.25rem',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+            }}
+          >
+            <Edit2 className="h-4 w-4 mr-2" />
+            Modifica
+          </Button>
         </div>
 
-        <div style={{ 
-          display: 'flex', 
-          gap: '0.25rem',
-          borderTop: '0.0625rem solid rgba(255, 255, 255, 0.2)',
-          paddingTop: '1rem',
-          marginTop: '0.5rem',
+        {/* Riga 2: KPI Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '1rem',
+          marginBottom: '1.5rem',
         }}>
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+          {kpiCards.map((kpi, idx) => {
+            const Icon = kpi.icon;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                data-testid={`tab-detail-${tab.id}`}
+              <div
+                key={idx}
+                data-testid={`kpi-card-${idx}`}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.625rem 1rem',
-                  background: isActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: isActive ? 600 : 400,
-                  opacity: isActive ? 1 : 0.8,
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(0.5rem)',
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                  border: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+                  cursor: 'default',
                   transition: 'all 0.2s ease',
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(-0.125rem)';
+                  e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <Icon size={16} />
-                {tab.label}
-                {tab.count !== undefined && (
-                  <span style={{
-                    background: 'rgba(255, 255, 255, 0.3)',
-                    padding: '0.125rem 0.375rem',
-                    borderRadius: '0.75rem',
-                    fontSize: '0.6875rem',
-                    fontWeight: 600,
-                  }}>
-                    {tab.count}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <Icon size={16} style={{ opacity: 0.9 }} />
+                  <span style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: 500 }}>
+                    {kpi.label}
                   </span>
-                )}
-              </button>
+                </div>
+                <p style={{ 
+                  fontSize: '1.375rem', 
+                  fontWeight: 700, 
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                }}>
+                  {kpi.value}
+                </p>
+              </div>
             );
           })}
         </div>
-      </div>
 
-      {activeTab === 'dashboard' && (
-        <div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '1rem',
-            marginBottom: '1.5rem',
-          }}>
-            {[
-              { label: 'Ragioni Sociali', value: legalEntities.length, icon: Briefcase, color: COLORS.primary.purple },
-              { label: 'Punti Vendita', value: stores.length, icon: Store, color: COLORS.semantic.success },
-              { label: 'ID Tenant', value: tenant.id.slice(0, 8) + '...', icon: Globe, color: COLORS.semantic.info },
-              { label: 'Creato il', value: format(new Date(tenant.createdAt), 'dd/MM/yyyy'), icon: Calendar, color: COLORS.primary.orange },
-            ].map((stat, idx) => {
-              const Icon = stat.icon;
+        {/* Riga 3: Tabs + Azioni Rapide */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderTop: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+          paddingTop: '1rem',
+        }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
               return (
-                <div
-                  key={idx}
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  data-testid={`tab-detail-${tab.id}`}
                   style={{
-                    background: 'white',
-                    borderRadius: '0.75rem',
-                    padding: '1.25rem',
-                    border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.625rem 1rem',
+                    background: isActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                    color: 'white',
+                    border: isActive ? '0.0625rem solid rgba(255, 255, 255, 0.25)' : '0.0625rem solid transparent',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: isActive ? 600 : 500,
+                    opacity: isActive ? 1 : 0.85,
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                    }
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <div style={{
-                      width: '2rem',
-                      height: '2rem',
-                      borderRadius: '0.5rem',
-                      background: `${stat.color}15`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                  <Icon size={16} />
+                  {tab.label}
+                  {tab.count !== undefined && (
+                    <span style={{
+                      background: 'rgba(255, 255, 255, 0.25)',
+                      padding: '0.125rem 0.5rem',
+                      borderRadius: '0.75rem',
+                      fontSize: '0.6875rem',
+                      fontWeight: 600,
                     }}>
-                      <Icon size={16} style={{ color: stat.color }} />
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium }}>
-                      {stat.label}
+                      {tab.count}
                     </span>
-                  </div>
-                  <p style={{ 
-                    fontSize: '1.5rem', 
-                    fontWeight: 700, 
-                    color: COLORS.neutral.dark,
-                    margin: 0 
-                  }}>
-                    {stat.value}
-                  </p>
-                </div>
+                  )}
+                </button>
               );
             })}
           </div>
-
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          
+          {/* Azioni Rapide */}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <Button
               onClick={() => onCreateLegalEntity(tenant.id)}
-              data-testid="button-dashboard-add-legal-entity"
+              data-testid="button-header-add-legal-entity"
+              size="sm"
               style={{
-                background: COLORS.gradients.purple,
+                background: 'rgba(255, 255, 255, 0.15)',
                 color: 'white',
-                border: 'none',
+                border: '0.0625rem solid rgba(255, 255, 255, 0.2)',
+                fontSize: '0.8125rem',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova Ragione Sociale
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Ragione Sociale
             </Button>
             <Button
               onClick={() => onCreateStore(tenant.id)}
-              data-testid="button-dashboard-add-store"
+              data-testid="button-header-add-store"
+              size="sm"
               style={{
-                background: COLORS.gradients.green,
+                background: 'rgba(255, 255, 255, 0.15)',
                 color: 'white',
-                border: 'none',
+                border: '0.0625rem solid rgba(255, 255, 255, 0.2)',
+                fontSize: '0.8125rem',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Punto Vendita
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Punto Vendita
             </Button>
           </div>
         </div>
-      )}
+      </div>
 
       {activeTab === 'analytics' && (
         <div>

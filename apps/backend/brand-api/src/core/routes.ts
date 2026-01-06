@@ -330,6 +330,62 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Update organization (tenant) - name and slug
+  app.patch("/brand-api/organizations/:id", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to update organizations" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const { name, slug, notes } = req.body;
+      
+      // If slug is being changed, validate it's unique (excluding current org)
+      if (slug) {
+        const currentOrg = await brandStorage.getOrganization(id);
+        if (currentOrg && currentOrg.slug !== slug) {
+          const slugValid = await brandStorage.validateSlug(slug);
+          if (!slugValid) {
+            return res.status(400).json({ error: `Slug "${slug}" is already in use` });
+          }
+        }
+      }
+
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (slug) updateData.slug = slug;
+      if (notes !== undefined) updateData.notes = notes;
+
+      const organization = await brandStorage.updateOrganization(id, updateData);
+
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      res.json({
+        success: true,
+        organization: {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          status: organization.status,
+          notes: organization.notes
+        },
+        message: "Organization updated successfully"
+      });
+    } catch (error) {
+      console.error("Error updating organization:", error);
+      res.status(500).json({ error: "Failed to update organization" });
+    }
+  });
+
   // Suspend organization (tenant)
   app.patch("/brand-api/organizations/:id/suspend", async (req, res) => {
     const context = (req as any).brandContext;

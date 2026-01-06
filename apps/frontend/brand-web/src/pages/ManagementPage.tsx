@@ -60,9 +60,34 @@ export default function ManagementPage() {
   
   const [modals, setModals] = useState({
     createTenant: false,
+    editTenant: false,
     createLegalEntity: false,
     createStore: false,
     selectedTenantId: null as string | null,
+  });
+  
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [legalEntityForm, setLegalEntityForm] = useState({
+    nome: '',
+    pIva: '',
+    codiceFiscale: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    email: '',
+    pec: '',
+    telefono: '',
+  });
+  const [storeForm, setStoreForm] = useState({
+    nome: '',
+    code: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    email: '',
+    telefono: '',
   });
   
   const createOrganizationMutation = useMutation({
@@ -139,8 +164,63 @@ export default function ManagementPage() {
   };
 
   const handleEditTenant = (tenant: Tenant) => {
-    setSelectedTenant(tenant);
+    setEditingTenant(tenant);
+    setOrganizationForm(prev => ({
+      ...prev,
+      name: tenant.name,
+      slug: tenant.slug,
+      status: tenant.status === 'attivo' ? 'active' : tenant.status === 'sospeso' ? 'suspended' : tenant.status,
+    }));
+    setModals(prev => ({ ...prev, editTenant: true }));
   };
+  
+  const updateTenantMutation = useMutation({
+    mutationFn: async (data: { id: string; name: string; slug: string }) => {
+      return apiRequest(`/brand-api/organizations/${data.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: data.name, slug: data.slug })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
+      setModals(prev => ({ ...prev, editTenant: false }));
+      setEditingTenant(null);
+    }
+  });
+  
+  const createLegalEntityMutation = useMutation({
+    mutationFn: async (data: { tenantId: string; form: typeof legalEntityForm }) => {
+      return apiRequest(`/brand-api/legal-entities`, {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantId: data.tenantId,
+          ...data.form
+        })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
+      setModals(prev => ({ ...prev, createLegalEntity: false, selectedTenantId: null }));
+      setLegalEntityForm({ nome: '', pIva: '', codiceFiscale: '', indirizzo: '', citta: '', cap: '', provincia: '', email: '', pec: '', telefono: '' });
+    }
+  });
+  
+  const createStoreMutation = useMutation({
+    mutationFn: async (data: { tenantId: string; form: typeof storeForm }) => {
+      return apiRequest(`/brand-api/stores`, {
+        method: 'POST',
+        body: JSON.stringify({
+          tenantId: data.tenantId,
+          ...data.form
+        })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
+      setModals(prev => ({ ...prev, createStore: false, selectedTenantId: null }));
+      setStoreForm({ nome: '', code: '', indirizzo: '', citta: '', cap: '', provincia: '', email: '', telefono: '' });
+    }
+  });
 
   const handleDeleteTenant = (tenant: Tenant) => {
     console.log('Delete tenant', tenant);
@@ -676,6 +756,523 @@ export default function ManagementPage() {
               >
                 {createOrganizationMutation.isPending && <Loader2 size={16} className="animate-spin" />}
                 Crea Organizzazione + Admin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Tenant */}
+      {modals.editTenant && editingTenant && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '0.75rem',
+            width: '90%',
+            maxWidth: '28rem',
+            padding: '1.5rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORS.neutral.dark, margin: 0 }}>
+                Modifica Tenant
+              </h2>
+              <button
+                onClick={() => {
+                  setModals(prev => ({ ...prev, editTenant: false }));
+                  setEditingTenant(null);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                }}
+              >
+                <X size={20} style={{ color: COLORS.neutral.medium }} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Nome Organizzazione *
+                </label>
+                <input
+                  type="text"
+                  value={organizationForm.name}
+                  onChange={(e) => setOrganizationForm(prev => ({ ...prev, name: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                  data-testid="input-edit-tenant-name"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Slug
+                </label>
+                <input
+                  type="text"
+                  value={organizationForm.slug}
+                  onChange={(e) => setOrganizationForm(prev => ({ ...prev, slug: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                  data-testid="input-edit-tenant-slug"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setModals(prev => ({ ...prev, editTenant: false }));
+                  setEditingTenant(null);
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '0.5rem',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => updateTenantMutation.mutate({
+                  id: editingTenant.id,
+                  name: organizationForm.name,
+                  slug: organizationForm.slug
+                })}
+                disabled={!organizationForm.name || updateTenantMutation.isPending}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  background: organizationForm.name ? COLORS.gradients.orange : COLORS.neutral.light,
+                  color: 'white',
+                  cursor: organizationForm.name ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+                data-testid="button-save-edit-tenant"
+              >
+                {updateTenantMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+                Salva Modifiche
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Create Legal Entity */}
+      {modals.createLegalEntity && modals.selectedTenantId && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '0.75rem',
+            width: '90%',
+            maxWidth: '32rem',
+            padding: '1.5rem',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORS.neutral.dark, margin: 0 }}>
+                Nuova Ragione Sociale
+              </h2>
+              <button
+                onClick={() => setModals(prev => ({ ...prev, createLegalEntity: false, selectedTenantId: null }))}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
+              >
+                <X size={20} style={{ color: COLORS.neutral.medium }} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Denominazione *
+                </label>
+                <input
+                  type="text"
+                  value={legalEntityForm.nome}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, nome: e.target.value }))}
+                  placeholder="Es. WindTre Retail S.r.l."
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-nome"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Partita IVA
+                </label>
+                <input
+                  type="text"
+                  value={legalEntityForm.pIva}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, pIva: e.target.value }))}
+                  placeholder="IT12345678901"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-piva"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Codice Fiscale
+                </label>
+                <input
+                  type="text"
+                  value={legalEntityForm.codiceFiscale}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
+                  placeholder="12345678901"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-cf"
+                />
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Indirizzo
+                </label>
+                <input
+                  type="text"
+                  value={legalEntityForm.indirizzo}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, indirizzo: e.target.value }))}
+                  placeholder="Via Roma, 1"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-address"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Città
+                </label>
+                <input
+                  type="text"
+                  value={legalEntityForm.citta}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, citta: e.target.value }))}
+                  placeholder="Milano"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-city"
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    value={legalEntityForm.cap}
+                    onChange={(e) => setLegalEntityForm(prev => ({ ...prev, cap: e.target.value }))}
+                    placeholder="20100"
+                    style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                    data-testid="input-legal-entity-cap"
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    value={legalEntityForm.provincia}
+                    onChange={(e) => setLegalEntityForm(prev => ({ ...prev, provincia: e.target.value.toUpperCase() }))}
+                    placeholder="MI"
+                    maxLength={2}
+                    style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                    data-testid="input-legal-entity-province"
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={legalEntityForm.email}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="info@azienda.it"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-email"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  PEC
+                </label>
+                <input
+                  type="email"
+                  value={legalEntityForm.pec}
+                  onChange={(e) => setLegalEntityForm(prev => ({ ...prev, pec: e.target.value }))}
+                  placeholder="azienda@pec.it"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-legal-entity-pec"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setModals(prev => ({ ...prev, createLegalEntity: false, selectedTenantId: null }))}
+                style={{ padding: '0.75rem 1.5rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', background: 'white', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => createLegalEntityMutation.mutate({ tenantId: modals.selectedTenantId!, form: legalEntityForm })}
+                disabled={!legalEntityForm.nome || createLegalEntityMutation.isPending}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  background: legalEntityForm.nome ? COLORS.primary.purple : COLORS.neutral.light,
+                  color: 'white',
+                  cursor: legalEntityForm.nome ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+                data-testid="button-create-legal-entity"
+              >
+                {createLegalEntityMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+                Crea Ragione Sociale
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Create Store */}
+      {modals.createStore && modals.selectedTenantId && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '0.75rem',
+            width: '90%',
+            maxWidth: '32rem',
+            padding: '1.5rem',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: COLORS.neutral.dark, margin: 0 }}>
+                Nuovo Punto Vendita
+              </h2>
+              <button
+                onClick={() => setModals(prev => ({ ...prev, createStore: false, selectedTenantId: null }))}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
+              >
+                <X size={20} style={{ color: COLORS.neutral.medium }} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Nome Punto Vendita *
+                </label>
+                <input
+                  type="text"
+                  value={storeForm.nome}
+                  onChange={(e) => setStoreForm(prev => ({ ...prev, nome: e.target.value }))}
+                  placeholder="Es. Milano Centro"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-store-nome"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Codice
+                </label>
+                <input
+                  type="text"
+                  value={storeForm.code}
+                  onChange={(e) => setStoreForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                  placeholder="MI001"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-store-code"
+                />
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Indirizzo
+                </label>
+                <input
+                  type="text"
+                  value={storeForm.indirizzo}
+                  onChange={(e) => setStoreForm(prev => ({ ...prev, indirizzo: e.target.value }))}
+                  placeholder="Via Roma, 1"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-store-address"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Città
+                </label>
+                <input
+                  type="text"
+                  value={storeForm.citta}
+                  onChange={(e) => setStoreForm(prev => ({ ...prev, citta: e.target.value }))}
+                  placeholder="Milano"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-store-city"
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    value={storeForm.cap}
+                    onChange={(e) => setStoreForm(prev => ({ ...prev, cap: e.target.value }))}
+                    placeholder="20100"
+                    style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                    data-testid="input-store-cap"
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    value={storeForm.provincia}
+                    onChange={(e) => setStoreForm(prev => ({ ...prev, provincia: e.target.value.toUpperCase() }))}
+                    placeholder="MI"
+                    maxLength={2}
+                    style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                    data-testid="input-store-province"
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={storeForm.email}
+                  onChange={(e) => setStoreForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="store@azienda.it"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-store-email"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: COLORS.neutral.dark, marginBottom: '0.5rem' }}>
+                  Telefono
+                </label>
+                <input
+                  type="tel"
+                  value={storeForm.telefono}
+                  onChange={(e) => setStoreForm(prev => ({ ...prev, telefono: e.target.value }))}
+                  placeholder="+39 02 1234567"
+                  style={{ width: '100%', padding: '0.75rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', fontSize: '0.875rem', outline: 'none' }}
+                  data-testid="input-store-phone"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setModals(prev => ({ ...prev, createStore: false, selectedTenantId: null }))}
+                style={{ padding: '0.75rem 1.5rem', border: `0.0625rem solid ${COLORS.neutral.lighter}`, borderRadius: '0.5rem', background: 'white', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => createStoreMutation.mutate({ tenantId: modals.selectedTenantId!, form: storeForm })}
+                disabled={!storeForm.nome || createStoreMutation.isPending}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  background: storeForm.nome ? COLORS.semantic.success : COLORS.neutral.light,
+                  color: 'white',
+                  cursor: storeForm.nome ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+                data-testid="button-create-store"
+              >
+                {createStoreMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+                Crea Punto Vendita
               </button>
             </div>
           </div>
