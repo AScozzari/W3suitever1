@@ -530,14 +530,18 @@ export const storageService = {
   async getMyDriveFolders(ctx: StorageServiceContext) {
     await this.ensureUserEvergreenFolders(ctx);
     
-    const folders = await db.select().from(storageFolders)
-      .where(and(
-        eq(storageFolders.tenantId, ctx.tenantId),
-        eq(storageFolders.ownerUserId, ctx.userId),
-        eq(storageFolders.scopeLevel, 'user'),
-        isNull(storageFolders.deletedAt),
-      ))
-      .orderBy(storageFolders.name);
+    const folders = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${ctx.tenantId}, true)`);
+      
+      return tx.select().from(storageFolders)
+        .where(and(
+          eq(storageFolders.tenantId, ctx.tenantId),
+          eq(storageFolders.ownerUserId, ctx.userId),
+          eq(storageFolders.scopeLevel, 'user'),
+          isNull(storageFolders.deletedAt),
+        ))
+        .orderBy(storageFolders.name);
+    });
 
     const folderIds = folders.map(f => f.id);
     
@@ -615,43 +619,52 @@ export const storageService = {
       { name: 'Condivisi', category: 'shared', icon: 'users', color: '#8B5CF6' },
     ];
 
-    const existingFolders = await db.select({ name: storageFolders.name }).from(storageFolders)
-      .where(and(
-        eq(storageFolders.tenantId, ctx.tenantId),
-        eq(storageFolders.ownerUserId, ctx.userId),
-        eq(storageFolders.scopeLevel, 'user'),
-        isNull(storageFolders.deletedAt),
-        isNull(storageFolders.parentId),
-      ));
+    try {
+      await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${ctx.tenantId}, true)`);
+        
+        const existingFolders = await tx.select({ name: storageFolders.name }).from(storageFolders)
+          .where(and(
+            eq(storageFolders.tenantId, ctx.tenantId),
+            eq(storageFolders.ownerUserId, ctx.userId),
+            eq(storageFolders.scopeLevel, 'user'),
+            isNull(storageFolders.deletedAt),
+            isNull(storageFolders.parentId),
+          ));
 
-    if (existingFolders.length >= evergreenFolders.length) {
-      return;
-    }
+        if (existingFolders.length >= evergreenFolders.length) {
+          return;
+        }
 
-    const existingNames = new Set(existingFolders.map(f => f.name));
-    const foldersToCreate = evergreenFolders.filter(f => !existingNames.has(f.name));
+        const existingNames = new Set(existingFolders.map(f => f.name));
+        const foldersToCreate = evergreenFolders.filter(f => !existingNames.has(f.name));
 
-    if (foldersToCreate.length === 0) {
-      return;
-    }
+        if (foldersToCreate.length === 0) {
+          return;
+        }
 
-    for (const folderDef of foldersToCreate) {
-      const path = '/' + folderDef.name;
-      try {
-        await db.insert(storageFolders).values({
-          tenantId: ctx.tenantId,
-          name: folderDef.name,
-          path,
-          scopeLevel: 'user',
-          ownerUserId: ctx.userId,
-          category: folderDef.category as any,
-          color: folderDef.color,
-          icon: folderDef.icon,
-          createdByUserId: ctx.userId,
-        }).onConflictDoNothing();
-      } catch (e) {
-        // Ignore duplicate key errors from race conditions
-      }
+        for (const folderDef of foldersToCreate) {
+          const path = '/' + folderDef.name;
+          try {
+            await tx.insert(storageFolders).values({
+              tenantId: ctx.tenantId,
+              name: folderDef.name,
+              path,
+              scopeLevel: 'user',
+              ownerUserId: ctx.userId,
+              category: folderDef.category as any,
+              color: folderDef.color,
+              icon: folderDef.icon,
+              createdByUserId: ctx.userId,
+            }).onConflictDoNothing();
+            console.log(`[EVERGREEN] Created folder '${folderDef.name}' for user ${ctx.userId}`);
+          } catch (e: any) {
+            console.error(`[EVERGREEN] Failed to create folder '${folderDef.name}':`, e.message);
+          }
+        }
+      });
+    } catch (e: any) {
+      console.error(`[EVERGREEN] Transaction failed for user ${ctx.userId}:`, e.message);
     }
   },
 
