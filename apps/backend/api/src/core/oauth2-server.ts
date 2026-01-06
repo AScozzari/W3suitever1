@@ -323,14 +323,14 @@ async function getUserByCredentialsWithTenant(tenantSlug: string, username: stri
       return null;
     }
     
-    // Check user status
-    if (user.status === 'sospeso') {
+    // Check user status (accepts both Italian 'attivo' and English 'active')
+    if (user.status === 'sospeso' || user.status === 'suspended') {
       throw new Error('Il tuo account è stato sospeso.');
     }
     if (user.status === 'off-boarding') {
       throw new Error('Il tuo account è in fase di off-boarding.');
     }
-    if (user.status !== 'attivo') {
+    if (user.status !== 'attivo' && user.status !== 'active') {
       throw new Error('Il tuo account non è attivo.');
     }
     
@@ -378,8 +378,8 @@ async function getUserByCredentials(username: string, password: string) {
       return null; // FAIL-CLOSED: Invalid password
     }
     
-    // Check user status before allowing login
-    if (user.status === 'sospeso') {
+    // Check user status before allowing login (accepts both Italian and English status)
+    if (user.status === 'sospeso' || user.status === 'suspended') {
       throw new Error('Il tuo account è stato sospeso. Contatta l\'amministratore per assistenza.');
     }
     
@@ -387,7 +387,7 @@ async function getUserByCredentials(username: string, password: string) {
       throw new Error('Il tuo account è in fase di off-boarding. Accesso non autorizzato.');
     }
     
-    if (user.status !== 'attivo') {
+    if (user.status !== 'attivo' && user.status !== 'active') {
       throw new Error('Il tuo account non è attivo. Contatta l\'amministratore.');
     }
     
