@@ -85,8 +85,8 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <BrandLayout>
-        <div style={{ padding: '32px' }}>
-          <div style={{ color: '#6b7280', fontSize: '16px' }}>Caricamento dashboard...</div>
+        <div style={{ padding: '2rem' }}>
+          <div style={{ color: '#6b7280', fontSize: '1rem' }}>Caricamento dashboard...</div>
         </div>
       </BrandLayout>
     );
@@ -94,18 +94,18 @@ export default function Dashboard() {
 
   return (
     <BrandLayout>
-      <div style={{ padding: '24px', minHeight: '100vh' }}>
+      <div style={{ padding: '1.5rem', minHeight: '100vh' }}>
         {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <h1 style={{ 
-            fontSize: '28px', 
+            fontSize: '1.75rem', 
             fontWeight: 'bold', 
             color: '#1f2937',
             margin: 0
           }}>
             Dashboard Brand Interface
           </h1>
-          <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '14px' }}>
+          <p style={{ color: '#6b7280', marginTop: '0.25rem', fontSize: '0.875rem' }}>
             Monitoraggio performance network WindTre
           </p>
         </div>
@@ -113,39 +113,39 @@ export default function Dashboard() {
         {/* Metrics Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px',
-          marginBottom: '24px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(15.625rem, 1fr))',
+          gap: '1.25rem',
+          marginBottom: '1.5rem'
         }}>
           {metrics.map((metric, idx) => {
             const Icon = metric.icon;
             return (
               <div key={idx} style={{
                 background: 'hsla(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(24px) saturate(140%)',
-                WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-                borderRadius: '12px',
-                padding: '20px',
-                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+                backdropFilter: 'blur(1.5rem) saturate(140%)',
+                WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
+                borderRadius: '0.75rem',
+                padding: '1.25rem',
+                boxShadow: '0 0.25rem 1.5rem rgba(0, 0, 0, 0.04)',
                 border: '1px solid hsla(255, 255, 255, 0.12)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>
+                    <p style={{ color: '#6b7280', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>
                       {metric.label}
                     </p>
-                    <h3 style={{ color: '#1f2937', fontSize: '24px', fontWeight: 'bold', margin: '0 0 4px 0' }}>
+                    <h3 style={{ color: '#1f2937', fontSize: '1.5rem', fontWeight: 'bold', margin: '0 0 0.25rem 0' }}>
                       {metric.value}
                     </h3>
-                    <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '500' }}>
+                    <span style={{ color: '#10b981', fontSize: '0.75rem', fontWeight: '500' }}>
                       {metric.change} vs ultimo mese
                     </span>
                   </div>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '2.5rem',
+                    height: '2.5rem',
                     background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -161,30 +161,30 @@ export default function Dashboard() {
         {/* Tabs */}
         <div style={{
           background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '24px',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+          backdropFilter: 'blur(1.5rem) saturate(140%)',
+          WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
+          borderRadius: '0.75rem',
+          padding: '1.25rem',
+          marginBottom: '1.5rem',
+          boxShadow: '0 0.25rem 1.5rem rgba(0, 0, 0, 0.04)',
           border: '1px solid hsla(255, 255, 255, 0.12)'
         }}>
           <div style={{
             display: 'flex',
-            gap: '24px',
+            gap: '1.5rem',
             borderBottom: '2px solid #e5e7eb',
-            marginBottom: '24px'
+            marginBottom: '1.5rem'
           }}>
             {['overview', 'revenue', 'performance', 'analytics'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 style={{
-                  padding: '8px 0 12px 0',
+                  padding: '0.5rem 0 0.75rem 0',
                   background: 'none',
                   border: 'none',
                   color: activeTab === tab ? '#FF6900' : '#6b7280',
-                  fontSize: '14px',
+                  fontSize: '0.875rem',
                   fontWeight: activeTab === tab ? '600' : '400',
                   borderBottom: activeTab === tab ? '2px solid #FF6900' : 'none',
                   marginBottom: '-2px',
@@ -202,10 +202,10 @@ export default function Dashboard() {
 
           {/* Tab Content */}
           {activeTab === 'overview' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(25rem, 1fr))', gap: '1.5rem' }}>
               {/* Revenue Trend Chart */}
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>
                   Trend Ricavi
                 </h3>
                 <ResponsiveContainer width="100%" height={250}>
@@ -228,7 +228,7 @@ export default function Dashboard() {
 
               {/* Store Performance Pie Chart */}
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>
                   Performance Store
                 </h3>
                 <ResponsiveContainer width="100%" height={250}>
@@ -256,7 +256,7 @@ export default function Dashboard() {
 
           {activeTab === 'revenue' && (
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>
                 Ricavi per Categoria
               </h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -273,7 +273,7 @@ export default function Dashboard() {
 
           {activeTab === 'performance' && (
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>
                 Metriche Store Settimanali
               </h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -291,34 +291,34 @@ export default function Dashboard() {
           )}
 
           {activeTab === 'analytics' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-              <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-                <h4 style={{ color: '#1f2937', fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(18.75rem, 1fr))', gap: '1.25rem' }}>
+              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
+                <h4 style={{ color: '#1f2937', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.75rem' }}>
                   Top Performing Stores
                 </h4>
                 {['Milano Centro', 'Roma EUR', 'Napoli Vomero', 'Torino Centro'].map((store, idx) => (
                   <div key={idx} style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    padding: '8px 0',
+                    padding: '0.5rem 0',
                     borderBottom: idx < 3 ? '1px solid #e5e7eb' : 'none'
                   }}>
-                    <span style={{ color: '#4b5563', fontSize: '13px' }}>{store}</span>
-                    <span style={{ color: '#10b981', fontSize: '13px', fontWeight: '500' }}>
+                    <span style={{ color: '#4b5563', fontSize: '0.8125rem' }}>{store}</span>
+                    <span style={{ color: '#10b981', fontSize: '0.8125rem', fontWeight: '500' }}>
                       +{12 + idx * 3}%
                     </span>
                   </div>
                 ))}
               </div>
               
-              <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-                <h4 style={{ color: '#1f2937', fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>
+              <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem' }}>
+                <h4 style={{ color: '#1f2937', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.75rem' }}>
                   Conversion Rate
                 </h4>
-                <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#FF6900', marginBottom: '8px' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#FF6900', marginBottom: '0.5rem' }}>
                   24.8%
                 </div>
-                <p style={{ color: '#6b7280', fontSize: '12px' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>
                   +3.2% rispetto al mese scorso
                 </p>
               </div>
@@ -329,15 +329,15 @@ export default function Dashboard() {
         {/* Activity Feed */}
         <div style={{
           background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
+          borderRadius: '0.75rem',
+          padding: '1.25rem',
           boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
           border: '1px solid #e5e7eb'
         }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937', marginBottom: '1rem' }}>
             Attività Recenti
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {[
               { text: 'Nuovo store Wind3 Milano aperto', time: '2 minuti fa', icon: ShoppingBag, color: '#10b981' },
               { text: 'Report vendite Q4 generato', time: '15 minuti fa', icon: Activity, color: '#FF6900' },
@@ -349,16 +349,16 @@ export default function Dashboard() {
                 <div key={idx} style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
+                  gap: '0.75rem',
+                  padding: '0.75rem',
                   background: '#f9fafb',
-                  borderRadius: '8px'
+                  borderRadius: '0.5rem'
                 }}>
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '2rem',
+                    height: '2rem',
                     background: `${activity.color}15`,
-                    borderRadius: '6px',
+                    borderRadius: '0.375rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -366,8 +366,8 @@ export default function Dashboard() {
                     <Icon size={16} color={activity.color} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#1f2937', margin: 0, fontSize: '14px' }}>{activity.text}</p>
-                    <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>{activity.time}</p>
+                    <p style={{ color: '#1f2937', margin: 0, fontSize: '0.875rem' }}>{activity.text}</p>
+                    <p style={{ color: '#9ca3af', fontSize: '0.75rem', margin: 0 }}>{activity.time}</p>
                   </div>
                 </div>
               );

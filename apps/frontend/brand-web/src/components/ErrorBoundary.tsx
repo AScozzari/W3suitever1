@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div style={{ 
-          padding: '20px', 
+          padding: '1.25rem', 
           background: '#fee', 
           border: '1px solid #fcc',
           position: 'fixed',
@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
         }}>
           <h1 style={{ color: 'red' }}>🚨 Brand Interface Error</h1>
           <h2>Error: {this.state.error?.message}</h2>
-          <pre style={{ background: '#fff', padding: '10px', overflow: 'auto' }}>
+          <pre style={{ background: '#fff', padding: '0.625rem', overflow: 'auto' }}>
             {this.state.error?.stack}
           </pre>
         </div>
