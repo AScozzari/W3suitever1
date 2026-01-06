@@ -3473,7 +3473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get legal entities for current tenant
   app.get('/api/legal-entities', ...authWithRBAC, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -3495,7 +3495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create legal entity
   app.post('/api/legal-entities', ...authWithRBAC, requirePermission('legal_entities.create'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -3537,7 +3537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete legal entity
   app.delete('/api/legal-entities/:id', ...authWithRBAC, requirePermission('legal_entities.delete'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const legalEntityId = req.params.id;
 
       if (!tenantId) {
@@ -3565,7 +3565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NOTE: This endpoint is shadowed by entities.ts which is mounted earlier on /api
   app.get('/api/users', ...authWithRBAC, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { roleId, storeId } = req.query;
 
       if (!tenantId) {
@@ -3725,7 +3725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create user
   app.post('/api/users', ...authWithRBAC, requirePermission('users.create'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -3756,7 +3756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single user by ID
   app.get('/api/users/:id', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.params.id;
 
       if (!tenantId) {
@@ -3865,7 +3865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user - HR data and extended fields
   app.put('/api/users/:id', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.params.id;
 
       if (!tenantId) {
@@ -5505,7 +5505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/stores/:storeId/location', async (req: any, res) => {
     try {
       const { storeId } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       // Get store location data (GPS coordinates are in geo JSONB field)
       const storeData = await db.select({
@@ -5652,7 +5652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get shifts
   app.get('/api/hr/shifts', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const storeId = req.query.storeId;
       
       if (!storeId) {
@@ -5677,7 +5677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/shifts/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       const { shifts } = await import('../db/schema/w3suite.js');
       
@@ -5705,7 +5705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create shift
   app.post('/api/hr/shifts', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       const shiftData = {
@@ -5727,7 +5727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/hr/shifts/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       const { shifts } = await import('../db/schema/w3suite.js');
       
@@ -5759,7 +5759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/hr/shifts/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       const { shifts } = await import('../db/schema/w3suite.js');
       
@@ -5779,7 +5779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bulk create shifts
   app.post('/api/hr/shifts/bulk', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const { shifts: shiftsData } = req.body;
       
@@ -6416,7 +6416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all HR documents
   app.get('/api/hr/documents', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -6464,7 +6464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload HR document
   app.post('/api/hr/documents/upload', enterpriseAuth, documentUpload.single('file'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       if (!req.file) {
@@ -6522,7 +6522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // HR Push Document to User - Assign existing or new document to specific user
   app.post('/api/hr/documents/push-to-user', enterpriseAuth, documentUpload.single('file'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const currentUserId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -6623,7 +6623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search HR documents
   app.get('/api/hr/documents/search', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       const { query } = req.query;
@@ -6662,7 +6662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get document categories with counts
   app.get('/api/hr/documents/categories', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -6694,7 +6694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get storage quota
   app.get('/api/hr/documents/storage-quota', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       const { hrDocuments } = await import('../db/schema/w3suite.js');
@@ -6726,7 +6726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get payslips for a specific year
   app.get('/api/hr/documents/payslips', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const year = parseInt(req.query.year as string) || new Date().getFullYear();
       
@@ -6752,7 +6752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -6795,7 +6795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/documents/:id/download', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -6847,7 +6847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/documents/:id/preview', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -6901,7 +6901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/objects/:objectId/download', enterpriseAuth, async (req: any, res) => {
     try {
       const { objectId } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const { signature, expires, action } = req.query;
       
@@ -7004,7 +7004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/objects/:objectId/preview', enterpriseAuth, async (req: any, res) => {
     try {
       const { objectId } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const { signature, expires, action } = req.query;
       
@@ -7107,7 +7107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -7151,7 +7151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -7201,7 +7201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { expiresIn = 168, password, maxDownloads } = req.body; // Default 7 days
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       const { hrDocuments } = await import('../db/schema/w3suite.js');
@@ -7250,7 +7250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search HR documents
   app.get('/api/hr/documents/search', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       const { query } = req.query;
@@ -7289,7 +7289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get document categories with counts
   app.get('/api/hr/documents/categories', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -7321,7 +7321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get storage quota
   app.get('/api/hr/documents/storage-quota', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       const { hrDocuments } = await import('../db/schema/w3suite.js');
@@ -7353,7 +7353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get payslips for a specific year
   app.get('/api/hr/documents/payslips', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const year = parseInt(req.query.year as string) || new Date().getFullYear();
       
@@ -7379,7 +7379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/hr/documents/bulk-operation', enterpriseAuth, async (req: any, res) => {
     try {
       const { operation, documentIds } = req.body;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       
@@ -7438,7 +7438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/documents/cud/:year', enterpriseAuth, async (req: any, res) => {
     try {
       const { year } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       // This would generate a CUD document based on payslips
@@ -7459,7 +7459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get expense reports
   app.get('/api/hr/expenses/reports', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       const userRole = req.user?.role || 'USER';
       const filters = {
@@ -7481,7 +7481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get single expense report
   app.get('/api/hr/expenses/reports/:id', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const report = await expenseStorage.getExpenseReportById(req.params.id, tenantId);
       
       if (!report) {
@@ -7500,7 +7500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create expense report
   app.post('/api/hr/expenses/reports', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user?.id;
       
       const report = await expenseStorage.createExpenseReport({
@@ -7518,7 +7518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update expense report
   app.put('/api/hr/expenses/reports/:id', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const report = await expenseStorage.updateExpenseReport(req.params.id, req.body, tenantId);
       res.json(report);
     } catch (error) {
@@ -7529,7 +7529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete expense report
   app.delete('/api/hr/expenses/reports/:id', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       await expenseStorage.deleteExpenseReport(req.params.id, tenantId);
       res.status(204).send();
     } catch (error) {
@@ -7540,7 +7540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit expense report
   app.post('/api/hr/expenses/reports/:id/submit', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const report = await expenseStorage.submitExpenseReport(req.params.id, tenantId);
       res.json(report);
     } catch (error) {
@@ -7551,7 +7551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Approve expense report
   app.post('/api/hr/expenses/reports/:id/approve', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const approverId = req.user?.id;
       const { comments } = req.body;
       
@@ -7565,7 +7565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reject expense report
   app.post('/api/hr/expenses/reports/:id/reject', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const approverId = req.user?.id;
       const { reason } = req.body;
       
@@ -7586,7 +7586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reimburse expense report
   app.post('/api/hr/expenses/reports/:id/reimburse', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const processedBy = req.user?.id;
       const { paymentMethod } = req.body;
       
@@ -7640,7 +7640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get expense analytics
   app.get('/api/hr/expenses/analytics', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { startDate, endDate } = req.query;
       
       const analytics = await expenseStorage.getExpenseAnalytics(
@@ -7658,7 +7658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get expenses by category
   app.get('/api/hr/expenses/categories', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { startDate, endDate } = req.query;
       
       const categories = await expenseStorage.getExpensesByCategory(
@@ -7676,7 +7676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get expense policy
   app.get('/api/hr/expenses/policy', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const policy = await expenseStorage.getExpensePolicy(tenantId);
       res.json(policy);
     } catch (error) {
@@ -7687,7 +7687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update expense policy (Admin only)
   app.put('/api/hr/expenses/policy', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userRole = req.user?.role || 'USER';
       
       if (userRole !== 'ADMIN' && userRole !== 'HR_MANAGER') {
@@ -7740,7 +7740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get shift templates
   app.get('/api/hr/shift-templates', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const isActive = req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
       
       const templates = await hrStorage.getShiftTemplates(tenantId, isActive);
@@ -7755,7 +7755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/hr/shift-templates/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       const { shiftTemplates, shiftTimeSlots } = await import('../db/schema/w3suite.js');
       
@@ -7791,7 +7791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create shift template
   app.post('/api/hr/shift-templates', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       const templateData = {
         ...req.body,
@@ -7811,7 +7811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/hr/shift-templates/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       const updated = await hrStorage.updateShiftTemplate(id, req.body, tenantId);
       
@@ -7825,7 +7825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/hr/shift-templates/:id', enterpriseAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       await hrStorage.deleteShiftTemplate(id, tenantId);
       
@@ -7838,7 +7838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply shift template
   app.post('/api/hr/shifts/apply-template', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { templateId, storeId, startDate, endDate } = req.body;
       
       if (!templateId || !storeId || !startDate || !endDate) {
@@ -7865,7 +7865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get staff availability
   app.get('/api/hr/shifts/staff-availability', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { storeId, startDate, endDate } = req.query;
       
       if (!storeId || !startDate || !endDate) {
@@ -7896,7 +7896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get coverage analysis
   app.get('/api/hr/shifts/coverage-analysis', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { storeId, startDate, endDate } = req.query;
       
       if (!storeId || !startDate || !endDate) {
@@ -7922,7 +7922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Detect shift conflicts
   app.get('/api/hr/shifts/conflicts', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { storeId, userId } = req.query;
       
       if (!storeId) {
@@ -7943,7 +7943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auto-schedule shifts
   app.post('/api/hr/shifts/auto-schedule', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { storeId, startDate, endDate, constraints } = req.body;
       
       if (!storeId || !startDate || !endDate) {
@@ -7970,7 +7970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get shift statistics
   app.get('/api/hr/shifts/stats', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { storeId, startDate, endDate } = req.query;
       
       if (!startDate || !endDate) {
@@ -8043,7 +8043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all roles for the current tenant
   app.get('/api/roles', ...authWithRBAC, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -8062,7 +8062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new role
   app.post('/api/roles', ...authWithRBAC, requirePermission('admin.roles.create'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({
@@ -8150,7 +8150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user roles and permissions
   app.get('/api/users/:userId/permissions', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({ error: "No tenant ID available" });
@@ -8179,7 +8179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.params.userId,
         roleId: req.params.roleId,
         scopeType: req.body.scopeType || 'tenant',
-        scopeId: body.scopeId || (req.headers['x-tenant-id'] as string) || req.user?.tenantId || DEMO_TENANT_ID,
+        scopeId: body.scopeId || (req.headers['x-tenant-id'] as string) || req.user?.tenantId,
         expiresAt: req.body.expiresAt
       };
 
@@ -8196,7 +8196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { rbacStorage } = await import('../core/rbac-storage.js');
       const scopeType = req.query.scopeType as string || 'tenant';
-      const scopeId = req.query.scopeId as string || req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const scopeId = req.query.scopeId as string || req.headers['x-tenant-id'] || req.user?.tenantId;
 
       await rbacStorage.removeRoleFromUser(
         req.params.userId,
@@ -8245,7 +8245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize system roles for a tenant
   app.post('/api/rbac/initialize', enterpriseAuth, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
         return res.status(400).json({ error: "No tenant ID available" });
@@ -13530,7 +13530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Available AI Agents
   app.get('/api/ai/agents', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
       console.log(`[AI-AGENTS] 🔍 Fetching available agents for tenant: ${tenantId}`);
       
@@ -13554,7 +13554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Settings Management
   app.get('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const settings = await storage.getAISettings(tenantId);
       
       if (!settings) {
@@ -13589,7 +13589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const updates = req.body;
       
       // Sanitize timestamp fields - remove them from updates as they should be auto-managed
@@ -13623,7 +13623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Connection Test
   app.post('/api/ai/test-connection', ...authWithRBAC, requirePermission('ai.settings.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { apiKey } = req.body;
       
       // Use provided API key or get from environment (secure approach)
@@ -13681,7 +13681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update connection status to error
       try {
-        await storage.updateAISettings(req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID, {
+        await storage.updateAISettings(req.headers['x-tenant-id'] || req.user?.tenantId, {
           apiConnectionStatus: 'error' as any,
           lastConnectionTest: new Date(),
           connectionTestResult: {
@@ -13705,7 +13705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Usage Analytics
   app.get('/api/ai/usage/stats', ...authWithRBAC, requirePermission('ai.usage.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const days = parseInt(req.query.days as string) || 30;
       
       const stats = await storage.getAIUsageStats(tenantId, days);
@@ -13717,7 +13717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/ai/usage/logs', ...authWithRBAC, requirePermission('ai.usage.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const limit = parseInt(req.query.limit as string) || 100;
       const offset = parseInt(req.query.offset as string) || 0;
       
@@ -13731,7 +13731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Conversations Management
   app.get('/api/ai/conversations', ...authWithRBAC, requirePermission('ai.conversations.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.query.userId as string;
       const limit = parseInt(req.query.limit as string) || 50;
       
@@ -13744,7 +13744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete('/api/ai/conversations/:id', ...authWithRBAC, requirePermission('ai.conversations.delete'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const conversationId = req.params.id;
       
       if (!validateUUIDParam(conversationId, 'Conversation ID', res)) {
@@ -13768,7 +13768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create vector collection
   app.post('/api/ai/vectors/collections', ...authWithRBAC, requirePermission('ai.vectors.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { name, description, collectionType, embeddingModel, chunkingStrategy, departmentScope } = req.body;
       
@@ -13808,7 +13808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get vector collections
   app.get('/api/ai/vectors/collections', ...authWithRBAC, requirePermission('ai.vectors.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const collections = await storage.getVectorCollections(tenantId);
       
       res.json({ 
@@ -13824,7 +13824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate and store embedding
   app.post('/api/ai/vectors/embeddings', ...authWithRBAC, requirePermission('ai.vectors.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { 
         text, 
@@ -13910,7 +13910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search similar embeddings
   app.post('/api/ai/vectors/search', ...authWithRBAC, requirePermission('ai.vectors.search'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { 
         query, 
@@ -14044,7 +14044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get vector search analytics
   app.get('/api/ai/vectors/analytics', ...authWithRBAC, requirePermission('ai.analytics.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const days = parseInt(req.query.days as string) || 30;
       
       const analytics = await storage.getVectorSearchAnalytics(tenantId, days);
@@ -14062,7 +14062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Chat Assistant (enhanced with RAG and Web Search)
   app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), enforceAIEnabled, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { message, context, includeDocuments = false, includeWebSearch = false } = req.body;
       
@@ -14271,7 +14271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Document Analysis
   app.post('/api/ai/analyze-document', ...authWithRBAC, requirePermission('ai.documents.analyze'), enforceAIEnabled, async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { documentContent, analysisQuery } = req.body;
       
@@ -14320,7 +14320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get AI Training Sessions
   app.get('/api/ai/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const filters = {
         sessionType: req.query.sessionType as string,
         sessionStatus: req.query.sessionStatus as string,
@@ -14338,7 +14338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create AI Training Session
   app.post('/api/ai/training/sessions', ...authWithRBAC, requirePermission('ai.training.create'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const sessionData = {
         ...req.body,
@@ -14359,7 +14359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Validate AI Response
   app.post('/api/ai/training/validate', ...authWithRBAC, requirePermission('ai.training.validate'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { 
         originalQuery, 
@@ -14419,7 +14419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Process URL for Training
   app.post('/api/ai/training/url', ...authWithRBAC, requirePermission('ai.training.url'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { url, extractContent = true } = req.body;
       
@@ -14541,7 +14541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     trainingUpload.single('file'),
     async (req: any, res) => {
       try {
-        const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+        const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
         const userId = req.user.id;
         const file = req.file;
         
@@ -14654,7 +14654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete Training Session
   app.delete('/api/ai/training/sessions/:id', ...authWithRBAC, requirePermission('ai.training.create'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const sessionId = req.params.id;
       
       if (!sessionId) {
@@ -14681,7 +14681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Training Statistics
   app.get('/api/ai/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const days = parseInt(req.query.days as string) || 30;
       
       const sessions = await storage.getAITrainingSessions(tenantId, { limit: 1000 });
@@ -14722,7 +14722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Process URL for Agent-Specific Training
   app.post('/api/ai/agents/:agentId/training/url', ...authWithRBAC, requirePermission('ai.training.url'), ...enforceAIWithAgent, async (req: any, res: Response) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const userId = req.user.id;
       const { agentId } = req.params;
       const { url, extractContent = true } = req.body;
@@ -14831,7 +14831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     trainingUpload.single('file'),
     async (req: any, res: Response) => {
       try {
-        const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+        const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
         const userId = req.user.id;
         const { agentId } = req.params;
         const file = req.file;
@@ -14958,7 +14958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Agent-Specific Training Sessions
   app.get('/api/ai/agents/:agentId/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), ...enforceAIWithAgent, async (req: any, res: Response) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { agentId } = req.params;
       
       if (!agentId) {
@@ -14994,7 +14994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Agent-Specific Training Statistics
   app.get('/api/ai/agents/:agentId/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), ...enforceAIWithAgent, async (req: any, res: Response) => {
     try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       const { agentId } = req.params;
       
       if (!agentId) {
