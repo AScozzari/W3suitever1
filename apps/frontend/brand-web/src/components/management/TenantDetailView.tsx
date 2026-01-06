@@ -83,10 +83,10 @@ export default function TenantDetailView({
   ];
 
   const kpiCards = [
-    { label: 'Ragioni Sociali', value: legalEntities.length, icon: Briefcase, color: COLORS.primary.purple },
-    { label: 'Punti Vendita', value: stores.length, icon: Store, color: COLORS.semantic.success },
-    { label: 'ID Tenant', value: tenant.id.slice(0, 8) + '...', icon: Globe, color: COLORS.semantic.info },
-    { label: 'Creato il', value: format(new Date(tenant.createdAt), 'dd/MM/yyyy'), icon: Calendar, color: COLORS.primary.orange },
+    { label: 'Ragioni Sociali', value: legalEntities.length, icon: Briefcase, color: COLORS.primary.purple, fullValue: null },
+    { label: 'Punti Vendita', value: stores.length, icon: Store, color: COLORS.semantic.success, fullValue: null },
+    { label: 'ID Tenant', value: '...' + tenant.id.slice(-5), icon: Globe, color: COLORS.semantic.info, fullValue: tenant.id },
+    { label: 'Creato il', value: format(new Date(tenant.createdAt), 'dd/MM/yyyy'), icon: Calendar, color: COLORS.primary.orange, fullValue: null },
   ];
 
   // Helper function to check if status is active (handles both Italian and English)
@@ -124,15 +124,15 @@ export default function TenantDetailView({
 
   return (
     <div>
-      {/* Header con Glassmorphism */}
+      {/* Header con Glassmorphism - sfondo quasi trasparente */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.85), rgba(255, 133, 51, 0.75))',
-        backdropFilter: 'blur(1rem) saturate(150%)',
+        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.12), rgba(255, 133, 51, 0.08))',
+        backdropFilter: 'blur(1.25rem) saturate(120%)',
         borderRadius: '1rem',
-        padding: '1.5rem',
+        padding: '1.5rem 2rem',
         marginBottom: '1.5rem',
-        color: 'white',
-        boxShadow: '0 0.5rem 2rem rgba(255, 105, 0, 0.2)',
+        border: '0.0625rem solid rgba(255, 105, 0, 0.15)',
+        boxShadow: '0 0.25rem 1.5rem rgba(255, 105, 0, 0.08)',
       }}>
         {/* Riga 1: Back + Info Tenant + Modifica */}
         <div style={{ 
@@ -140,58 +140,63 @@ export default function TenantDetailView({
           justifyContent: 'space-between', 
           alignItems: 'center', 
           marginBottom: '1.5rem',
-          paddingBottom: '1rem',
-          borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+          paddingBottom: '1.25rem',
+          borderBottom: '0.0625rem solid rgba(255, 105, 0, 0.1)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
             <button
               onClick={onBack}
               data-testid="button-back-to-list"
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: 'none',
+                background: 'rgba(255, 105, 0, 0.1)',
+                border: '0.0625rem solid rgba(255, 105, 0, 0.2)',
                 borderRadius: '0.5rem',
                 padding: '0.625rem',
                 cursor: 'pointer',
-                color: 'white',
+                color: COLORS.primary.orange,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 105, 0, 0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)'}
             >
               <ArrowLeft size={20} />
             </button>
             <div style={{
-              width: '3rem',
-              height: '3rem',
+              width: '3.5rem',
+              height: '3.5rem',
               borderRadius: '0.75rem',
-              background: 'rgba(255, 255, 255, 0.15)',
+              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.15), rgba(255, 133, 51, 0.1))',
+              border: '0.0625rem solid rgba(255, 105, 0, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              color: COLORS.primary.orange,
             }}>
-              <Building2 size={22} />
+              <Building2 size={24} />
             </div>
-            <div>
+            <div style={{ marginLeft: '0.5rem' }}>
               <h2 style={{ 
-                fontSize: '1.375rem', 
+                fontSize: '1.5rem', 
                 fontWeight: 700, 
                 margin: 0,
-                marginBottom: '0.375rem',
+                marginBottom: '0.5rem',
                 letterSpacing: '-0.01em',
+                color: COLORS.neutral.dark,
               }}>
                 {tenant.name}
               </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <code style={{
-                  fontSize: '0.75rem',
-                  padding: '0.25rem 0.625rem',
-                  background: 'rgba(255, 255, 255, 0.15)',
+                  fontSize: '0.8125rem',
+                  padding: '0.375rem 0.75rem',
+                  background: 'rgba(255, 105, 0, 0.08)',
+                  border: '0.0625rem solid rgba(255, 105, 0, 0.15)',
                   borderRadius: '0.375rem',
                   fontFamily: 'monospace',
+                  color: COLORS.neutral.dark,
                 }}>
                   {tenant.slug}
                 </code>
@@ -204,17 +209,20 @@ export default function TenantDetailView({
             onClick={() => onEditTenant(tenant)}
             data-testid="button-edit-tenant-detail"
             style={{
-              background: 'rgba(255, 255, 255, 0.15)',
+              background: COLORS.primary.orange,
               color: 'white',
-              border: '0.0625rem solid rgba(255, 255, 255, 0.2)',
-              padding: '0.625rem 1.25rem',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
               transition: 'all 0.2s ease',
+              boxShadow: '0 0.25rem 0.75rem rgba(255, 105, 0, 0.25)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+              e.currentTarget.style.transform = 'translateY(-0.125rem)';
+              e.currentTarget.style.boxShadow = '0 0.5rem 1rem rgba(255, 105, 0, 0.35)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 0.25rem 0.75rem rgba(255, 105, 0, 0.25)';
             }}
           >
             <Edit2 className="h-4 w-4 mr-2" />
@@ -222,50 +230,63 @@ export default function TenantDetailView({
           </Button>
         </div>
 
-        {/* Riga 2: KPI Cards */}
+        {/* Riga 2: KPI Cards colorate con glassmorphism */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '1rem',
-          marginBottom: '1.5rem',
         }}>
           {kpiCards.map((kpi, idx) => {
             const Icon = kpi.icon;
+            const colorHex = kpi.color;
             return (
               <div
                 key={idx}
                 data-testid={`kpi-card-${idx}`}
+                title={kpi.fullValue || undefined}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.12)',
-                  backdropFilter: 'blur(0.5rem)',
+                  background: `linear-gradient(135deg, ${colorHex}12, ${colorHex}08)`,
+                  backdropFilter: 'blur(1rem) saturate(120%)',
                   borderRadius: '0.75rem',
-                  padding: '1rem',
-                  border: '0.0625rem solid rgba(255, 255, 255, 0.15)',
-                  cursor: 'default',
+                  padding: '1.25rem',
+                  border: `0.0625rem solid ${colorHex}20`,
+                  cursor: kpi.fullValue ? 'help' : 'default',
                   transition: 'all 0.2s ease',
+                  boxShadow: `0 0.25rem 1rem ${colorHex}10`,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                  e.currentTarget.style.background = `linear-gradient(135deg, ${colorHex}20, ${colorHex}12)`;
                   e.currentTarget.style.transform = 'translateY(-0.125rem)';
-                  e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0, 0, 0, 0.15)';
+                  e.currentTarget.style.boxShadow = `0 0.5rem 1.5rem ${colorHex}25`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                  e.currentTarget.style.background = `linear-gradient(135deg, ${colorHex}12, ${colorHex}08)`;
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.boxShadow = `0 0.25rem 1rem ${colorHex}10`;
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <Icon size={16} style={{ opacity: 0.9 }} />
-                  <span style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: 500 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.625rem' }}>
+                  <div style={{
+                    width: '2rem',
+                    height: '2rem',
+                    borderRadius: '0.5rem',
+                    background: `${colorHex}15`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Icon size={16} style={{ color: colorHex }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium, fontWeight: 500 }}>
                     {kpi.label}
                   </span>
                 </div>
                 <p style={{ 
-                  fontSize: '1.375rem', 
+                  fontSize: '1.5rem', 
                   fontWeight: 700, 
                   margin: 0,
                   letterSpacing: '-0.02em',
+                  color: COLORS.neutral.dark,
                 }}>
                   {kpi.value}
                 </p>
