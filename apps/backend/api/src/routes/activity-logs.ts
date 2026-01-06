@@ -10,7 +10,10 @@ type ActivityLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.headers['x-tenant-id'];
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required for activity logs' });
+    }
     
     const {
       service,
@@ -112,7 +115,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.headers['x-tenant-id'];
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required for activity stats' });
+    }
     const { from, to, service } = req.query as Record<string, string | undefined>;
     
     const conditions = [eq(activityLogs.tenantId, tenantId)];
@@ -198,7 +204,10 @@ router.get('/stats', async (req: Request, res: Response) => {
 
 router.get('/export', async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.headers['x-tenant-id'];
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required for activity export' });
+    }
     const { format = 'json', from, to, service, limit: maxLimit = '1000' } = req.query as Record<string, string>;
     
     const conditions = [eq(activityLogs.tenantId, tenantId)];
@@ -242,7 +251,10 @@ router.get('/export', async (req: Request, res: Response) => {
 
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.headers['x-tenant-id'];
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Tenant context required' });
+    }
     const { id } = req.params;
     
     const [log] = await db.select()

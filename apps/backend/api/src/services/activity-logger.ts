@@ -36,8 +36,14 @@ export interface ActivityLogParams {
 function buildLogData(params: ActivityLogParams): ActivityLogJobData {
   const context = getLogContext();
   
+  const tenantId = params.tenantId || context?.tenantId;
+  if (!tenantId) {
+    console.warn('[ActivityLogger] Missing tenant context - log will be skipped');
+    throw new Error('Tenant context required for activity logging');
+  }
+  
   return {
-    tenantId: params.tenantId || context?.tenantId || '00000000-0000-0000-0000-000000000001',
+    tenantId,
     service: params.service,
     module: params.module,
     action: params.action,
