@@ -106,6 +106,17 @@ interface StorageQuota {
   fileCount: number;
 }
 
+interface StorageStatus {
+  activeBackend: 'aws_s3' | 'replit';
+  awsHealthy: boolean;
+  brandConfigured: boolean;
+  tenantAllocation?: {
+    usedBytes: number;
+    quotaBytes: number;
+    usagePercentage: number;
+  };
+}
+
 // ==================== FOLDER TREE NAVIGATOR COMPONENT ====================
 interface FolderTreeItemProps {
   folder: StorageFolder;
@@ -640,6 +651,11 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
   const { data: quotaData } = useQuery<StorageQuota>({
     queryKey: ['/api/storage/quota']
+  });
+
+  const { data: storageStatus } = useQuery<StorageStatus>({
+    queryKey: ['/api/storage/status'],
+    refetchInterval: 60000
   });
 
   const { data: recentData } = useQuery<{ objects: StorageObject[] }>({
@@ -1206,7 +1222,62 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
           </ScrollArea>
 
           <div className="p-4 border-t bg-gradient-to-t from-slate-50 to-white">
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2" data-testid="storage-status-badge">
+                    {!storageStatus ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-slate-300 animate-pulse" />
+                        <span className="text-xs font-medium text-slate-400">Verifica...</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className={`w-2 h-2 rounded-full ${
+                          storageStatus.awsHealthy 
+                            ? 'bg-green-500 animate-pulse' 
+                            : storageStatus.activeBackend === 'replit' 
+                              ? 'bg-yellow-500' 
+                              : 'bg-red-500'
+                        }`} />
+                        <span className="text-xs font-medium text-slate-600">
+                          {storageStatus.awsHealthy 
+                            ? 'AWS S3' 
+                            : storageStatus.activeBackend === 'replit' 
+                              ? 'Replit Storage' 
+                              : 'Offline'}
+                        </span>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-[10px] px-1.5 py-0 h-4 ${
+                            storageStatus.awsHealthy 
+                              ? 'border-green-300 text-green-600 bg-green-50' 
+                              : storageStatus.activeBackend === 'replit' 
+                                ? 'border-yellow-300 text-yellow-600 bg-yellow-50' 
+                                : 'border-red-300 text-red-600 bg-red-50'
+                          }`}
+                        >
+                          {storageStatus.awsHealthy ? 'Attivo' : storageStatus.activeBackend === 'replit' ? 'Fallback' : 'Errore'}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-[200px]">
+                  <p className="text-xs">
+                    {!storageStatus 
+                      ? 'Verifica connessione in corso...'
+                      : storageStatus.awsHealthy 
+                        ? 'Connesso al bucket AWS S3 principale' 
+                        : storageStatus.activeBackend === 'replit' 
+                          ? 'AWS non disponibile, usando storage locale' 
+                          : 'Sistema storage non raggiungibile'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Separator className="my-2" />
+              
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">Spazio utilizzato</span>
                 <span className="font-medium text-slate-700">{quotaPercentage}%</span>
