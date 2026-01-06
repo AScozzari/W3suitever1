@@ -392,10 +392,16 @@ async function getUserByCredentials(username: string, password: string) {
     }
     
     console.log('✅ User authenticated successfully:', username);
+    
+    if (!user.tenantId) {
+      console.log('❌ User has no tenantId:', username);
+      return null; // FAIL-CLOSED: Users must belong to a tenant
+    }
+    
     return {
       id: user.id,
       email: user.email || username,
-      tenantId: user.tenantId || '00000000-0000-0000-0000-000000000001',
+      tenantId: user.tenantId,
       roles: user.role ? [user.role] : ['user'],
       firstName: user.firstName || '',
       lastName: user.lastName || '',
@@ -1460,7 +1466,10 @@ export function setupOAuth2Server(app: express.Application) {
       const demoUser = req.headers['x-demo-user'];
       
       if (sessionAuth === 'authenticated') {
-        const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+        const tenantId = req.headers['x-tenant-id'] as string;
+        if (!tenantId) {
+          return res.status(403).json({ error: 'tenant_required', error_description: 'X-Tenant-Id header is required' });
+        }
         
         // Return development user info matching OAuth2 standard
         const userInfo = {

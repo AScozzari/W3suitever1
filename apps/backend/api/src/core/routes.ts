@@ -1234,10 +1234,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[DEV-AUTH] ✅ Development authentication active for API: ${apiPath}`);
         console.log(`[DEV-AUTH] 👤 User: ${demoUser || 'admin@w3suite.com'}`);
         
+        const devTenantId = req.headers['x-tenant-id'] as string;
+        if (!devTenantId) {
+          console.log(`[DEV-AUTH] ❌ Missing X-Tenant-Id header for API: ${apiPath}`);
+          return res.status(403).json({ 
+            error: 'tenant_required',
+            message: 'X-Tenant-Id header is required'
+          });
+        }
+        
         req.user = {
-          id: demoUser || 'admin-user', // ✅ MY REQUEST FIX: Use string ID to match universal_requests requester_id
+          id: demoUser || 'admin-user',
           email: demoUser || 'admin@w3suite.com',
-          tenantId: req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001',
+          tenantId: devTenantId,
           roles: ['admin', 'manager'],
           permissions: ['*'], // DEVELOPMENT ONLY: All permissions
           scope: 'all'
@@ -1273,7 +1282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Allow internal service calls from brand-api with valid service token
       // Security: Apply least-privilege principle - only grant storage permissions
       if (xService === 'brand-interface' && serviceToken === expectedServiceToken) {
-        const tenantId = (req.headers['x-tenant-id'] as string) || '00000000-0000-0000-0000-000000000001';
+        const tenantId = req.headers['x-tenant-id'] as string;
+        if (!tenantId) {
+          console.log(`[SERVICE-AUTH] ❌ Internal service call from ${xService} missing X-Tenant-Id`);
+          return res.status(403).json({ error: 'tenant_required', message: 'X-Tenant-Id header is required for service calls' });
+        }
         console.log(`[SERVICE-AUTH] ✅ Internal service call from ${xService} for tenant: ${tenantId}`);
         req.user = {
           id: 'brand-service',
@@ -1739,7 +1752,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Allow internal service calls from brand-api with valid service token
       if (xService === 'brand-interface' && serviceToken === expectedServiceToken) {
-        const tenantId = (req.headers['x-tenant-id'] as string) || '00000000-0000-0000-0000-000000000001';
+        const tenantId = req.headers['x-tenant-id'] as string;
+        if (!tenantId) {
+          console.log(`[ENTERPRISE-AUTH] ❌ Internal service call from ${xService} missing X-Tenant-Id`);
+          return res.status(403).json({ error: 'tenant_required', message: 'X-Tenant-Id header is required for service calls' });
+        }
         console.log(`[ENTERPRISE-AUTH] ✅ Internal service call from ${xService} for tenant: ${tenantId}`);
         req.user = {
           id: 'brand-service',
@@ -1871,7 +1888,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const demoUser = req.headers['x-demo-user'];
       
       if (sessionAuth === 'authenticated') {
-        const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+        const tenantId = req.headers['x-tenant-id'] as string;
+        if (!tenantId) {
+          return res.status(403).json({ error: 'tenant_required', message: 'X-Tenant-Id header is required' });
+        }
         
         // ✅ Load real user data from database for development mode
         try {
@@ -1956,7 +1976,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Verify JWT token
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const tenantId = decoded.tenantId || '00000000-0000-0000-0000-000000000001';
+      const tenantId = decoded.tenantId;
+      if (!tenantId) {
+        console.error('[AUTH] JWT missing tenantId claim');
+        return res.json({ user: null, authenticated: false, reason: 'missing_tenant_claim' });
+      }
 
       // ✅ Load real user data from database for production mode
       try {
@@ -2178,9 +2202,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tenant management
   app.get('/api/tenants', ...authWithRBAC, async (req: any, res) => {
     try {
-      // In a real enterprise app, this would check permissions
-      // For demo, return the current user's tenant
-      const tenantId = req.user?.tenantId || '00000000-0000-0000-0000-000000000001';
+      // Return the current user's tenant - tenantId should be populated by auth middleware
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Tenant context required' });
+      }
       const tenant = await storage.getTenant(tenantId);
 
       if (!tenant) {
@@ -10483,7 +10509,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate URL for QR code with tenant slug
       const baseUrl = req.protocol + '://' + req.get('host');
-      const tenantSlug = req.tenant?.code || 'staging'; // Fallback to staging in dev
+      const tenantSlug = req.tenant?.code;
+      if (!tenantSlug) {
+        return res.status(403).json({ error: 'Tenant context required for QR code generation' });
+      }
       const qrUrl = `${baseUrl}/${tenantSlug}/qr-checkin?token=${token}`;
 
       res.json({ 
