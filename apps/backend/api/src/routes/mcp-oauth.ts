@@ -386,7 +386,11 @@ router.get('/google/callback', async (req: Request, res: Response) => {
       .where(eq(tenants.id, stateData.tenantId))
       .limit(1);
     
-    const tenantSlug = tenant[0]?.slug || 'staging';
+    const tenantSlug = tenant[0]?.slug;
+    if (!tenantSlug) {
+      logger.error('❌ [OAuth] Tenant not found for redirect', { tenantId: stateData.tenantId });
+      return res.status(400).send('Tenant not found');
+    }
     const redirectUrl = `/${tenantSlug}/workflows`;
 
     // Return success page with auto-redirect
@@ -1655,9 +1659,13 @@ router.post('/test-mcp-connector', async (req: Request, res: Response) => {
       }
     };
 
-    // Prepare execution context
+    // Prepare execution context - require tenant context
+    const tenantId = (req as any).tenant?.id || (req.headers['x-tenant-id'] as string);
+    if (!tenantId) {
+      return res.status(403).json({ success: false, error: 'Tenant context required' });
+    }
     const context = {
-      tenantId: (req as any).tenant?.id || (req.headers['x-tenant-id'] as string) || '00000000-0000-0000-0000-000000000001',
+      tenantId,
       requesterId: (req as any).user?.id || 'admin-user',
       instanceId: 'test-instance',
       templateId: 'test-template'

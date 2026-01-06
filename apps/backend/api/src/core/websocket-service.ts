@@ -86,8 +86,15 @@ export class WebSocketService {
   private async handleConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
     try {
       const url = new URL(req.url!, `http://${req.headers.host}`);
-      const userId = url.searchParams.get('userId') || 'demo-user';
-      const tenantId = url.searchParams.get('tenantId') || '00000000-0000-0000-0000-000000000001';
+      const userId = url.searchParams.get('userId');
+      const tenantId = url.searchParams.get('tenantId');
+      
+      if (!userId || !tenantId) {
+        logger.warn('🌐 WebSocket connection rejected - missing userId or tenantId');
+        ws.close(1008, 'userId and tenantId are required');
+        return;
+      }
+      
       const sessionId = `${userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const client: WebSocketClient = {
@@ -318,21 +325,12 @@ export class WebSocketService {
    */
   private async subscribeToNotificationEvents(): Promise<void> {
     try {
-      // Subscribe to all tenant channels (pattern matching)
-      const tenants = ['00000000-0000-0000-0000-000000000001']; // TODO: Get from database
-
-      for (const tenantId of tenants) {
-        await redisService.subscribeToNotifications(tenantId, (event) => {
-          this.handleRedisNotificationEvent(event);
-        });
-      }
-
-      logger.info('🌐 Successfully subscribed to Redis notification events', { 
-        tenantsCount: tenants.length 
-      });
+      // Subscribe dynamically based on connected clients' tenants
+      // Each client connection triggers subscription for its tenant
+      logger.info('🌐 WebSocket notification events ready (tenant subscriptions are dynamic per connection)');
     } catch (error) {
-      logger.error('🌐 Failed to subscribe to Redis notification events', { error });
-      throw error; // Re-throw to be caught by the caller
+      logger.error('🌐 Failed to initialize notification event system', { error });
+      throw error;
     }
   }
 
