@@ -169,6 +169,8 @@ router.get('/organization-entities', async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     
+    console.log('[ORG-ENTITIES] Request received, tenantId:', tenantId);
+    
     if (!tenantId) {
       return res.status(400).json({
         success: false,
@@ -178,6 +180,7 @@ router.get('/organization-entities', async (req, res) => {
     }
 
     await setTenantContext(tenantId);
+    console.log('[ORG-ENTITIES] Tenant context set for:', tenantId);
 
     // Get all organization entities for the tenant with their linked stores
     const orgEntities = await db
@@ -215,6 +218,8 @@ router.get('/organization-entities', async (req, res) => {
       .from(organizationEntities)
       .where(eq(organizationEntities.tenantId, tenantId))
       .orderBy(organizationEntities.codice);
+    
+    console.log('[ORG-ENTITIES] Query returned', orgEntities.length, 'records');
 
     // Get linked stores count for each organization entity
     const storesData = await db

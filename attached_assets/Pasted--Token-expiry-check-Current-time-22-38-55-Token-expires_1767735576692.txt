@@ -1,0 +1,73 @@
+ Token expiry check: Current time: 22:38:55, Token expires: 22:53:20
+3index-ays6mppX.js:2 🔍 Token expiry check: Current time: 22:38:56, Token expires: 22:53:20
+SettingsPage-BUMM4XWJ.js:17 💾 Creating legal entity: {tenantId: '00000000-0000-0000-0000-000000000001', codice: '800000', nome: 'testsrl', formaGiuridica: 'SNC', pIva: 'IT87595219091', …}
+index-ays6mppX.js:2 🔍 Token expiry check: Current time: 22:38:57, Token expires: 22:53:20
+index-ays6mppX.js:2  POST https://w3suite.it/api/legal-entities 400 (Bad Request)
+Bo @ index-ays6mppX.js:2
+await in Bo
+makeRequest @ ApiService-CQiZ7Z3q.js:1
+createLegalEntity @ ApiService-CQiZ7Z3q.js:1
+Os @ SettingsPage-BUMM4XWJ.js:17
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-ays6mppX.js:2 🔍 Token expiry check: Current time: 22:38:58, Token expires: 22:53:20
+index-ays6mppX.js:2  POST https://w3suite.it/api/legal-entities 400 (Bad Request)
+Bo @ index-ays6mppX.js:2
+await in Bo
+makeRequest @ ApiService-CQiZ7Z3q.js:1
+await in makeRequest
+createLegalEntity @ ApiService-CQiZ7Z3q.js:1
+Os @ SettingsPage-BUMM4XWJ.js:17
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/legal-entities: ragioneSociale: Required
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-CQiZ7Z3q.js:1
+await in makeRequest
+createLegalEntity @ ApiService-CQiZ7Z3q.js:1
+Os @ SettingsPage-BUMM4XWJ.js:17
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'avviso
+installHook.js:1 ❌ Error creating legal entity: ragioneSociale: Required
+overrideMethod @ installHook.js:1
+Os @ SettingsPage-BUMM4XWJ.js:17
+await in Os
+qa @ react-core-CmNK3XIx.js:29
+ec @ react-core-CmNK3XIx.js:29
+tc @ react-core-CmNK3XIx.js:29
+Bi @ react-core-CmNK3XIx.js:29
+Wi @ react-core-CmNK3XIx.js:29
+(anonime) @ react-core-CmNK3XIx.js:29
+po @ react-core-CmNK3XIx.js:32
+Go @ react-core-CmNK3XIx.js:29
+du @ react-core-CmNK3XIx.js:29
+Xl @ react-core-CmNK3XIx.js:29
+yc @ react-core-CmNK3XIx.js:29Comprendi l'errore
+index-ays6mppX.js:2 🔍 Token expiry check: Current time: 22:39:06, Token expires: 22:53
