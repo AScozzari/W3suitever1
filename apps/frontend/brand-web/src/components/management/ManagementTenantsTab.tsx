@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
 import { 
-  Building2, Search, Eye, Trash2, Edit2,
+  Building2, Search, Trash2, Edit2, Lock, LockOpen,
   Clock, Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -355,60 +355,51 @@ export default function ManagementTenantsTab({
                 </td>
                 <td style={{ padding: '1rem', textAlign: 'center' }}>
                   <div 
-                    style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+                    style={{ display: 'flex', justifyContent: 'center', gap: '0.25rem' }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onSelectTenant(tenant)}
-                      data-testid={`button-view-${tenant.id}`}
+                      onClick={() => onEditTenant(tenant)}
+                      data-testid={`button-edit-${tenant.id}`}
+                      title="Modifica"
                       style={{ padding: '0.5rem' }}
                     >
-                      <Eye size={16} style={{ color: COLORS.primary.orange }} />
+                      <Edit2 size={16} style={{ color: COLORS.primary.purple }} />
                     </Button>
                     
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          data-testid={`button-actions-${tenant.id}`}
-                          style={{ padding: '0.5rem' }}
-                        >
-                          <MoreVertical size={16} style={{ color: COLORS.neutral.medium }} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onSelectTenant(tenant)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Visualizza Dettagli
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {tenant.status === 'active' ? (
-                          <DropdownMenuItem 
-                            onClick={() => setConfirmDialog({ open: true, type: 'suspend', tenant })}
-                          >
-                            <Pause className="mr-2 h-4 w-4" />
-                            Sospendi
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem 
-                            onClick={() => setConfirmDialog({ open: true, type: 'reactivate', tenant })}
-                          >
-                            <Play className="mr-2 h-4 w-4" />
-                            Riattiva
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem 
-                          onClick={() => setConfirmDialog({ open: true, type: 'delete', tenant })}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Elimina
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (tenant.status === 'active') {
+                          setConfirmDialog({ open: true, type: 'suspend', tenant });
+                        } else {
+                          setConfirmDialog({ open: true, type: 'reactivate', tenant });
+                        }
+                      }}
+                      data-testid={`button-toggle-status-${tenant.id}`}
+                      title={tenant.status === 'active' ? 'Sospendi' : 'Riattiva'}
+                      style={{ padding: '0.5rem' }}
+                    >
+                      {tenant.status === 'active' ? (
+                        <LockOpen size={16} style={{ color: COLORS.semantic.success }} />
+                      ) : (
+                        <Lock size={16} style={{ color: COLORS.semantic.warning }} />
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteTenant(tenant)}
+                      data-testid={`button-delete-${tenant.id}`}
+                      title="Elimina"
+                      style={{ padding: '0.5rem' }}
+                    >
+                      <Trash2 size={16} style={{ color: COLORS.semantic.error }} />
+                    </Button>
                   </div>
                 </td>
               </tr>

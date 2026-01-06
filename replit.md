@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, leveraging advanced AI for enhanced efficiency, strategic decision-making, and comprehensive operational excellence. Its purpose is to streamline operations and provide data-driven insights to foster a competitive advantage across various industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, leveraging advanced AI to enhance efficiency and strategic decision-making. The platform aims to streamline operations and provide data-driven insights to foster a competitive advantage across various industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -149,7 +149,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
   - **W3 Suite convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
   - **Brand Interface convertite**: Login.tsx ✅, Management.tsx ✅, CloudStoragePage.tsx ✅, Dashboard.tsx ✅, BrandLayout.tsx ✅, ErrorBoundary.tsx ✅, DeployCenterPage.tsx ✅, AIManagement.tsx ✅, OrganizationDetail.tsx ✅, Entities.tsx ✅, DashboardTab.tsx ✅, BrowseCommitsTab.tsx ✅, WMSCatalogPage.tsx ✅, BrandPriceListsTab.tsx ✅
   - **Refactor continuo**: Convertire pagine esistenti quando vengono toccate
-  - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.tsx, deploy/DeployModal.tsx
+  - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers and sidebars, white backgrounds. Uses `shadcn/ui` (built on Radix UI for accessibility) and Tailwind CSS. UI scaling is handled by `VITE_FONT_SCALE=80` at build-time, enforcing `rem` units for responsiveness.

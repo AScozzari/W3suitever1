@@ -16,7 +16,7 @@ import ManagementDashboardTab from '@/components/management/ManagementDashboardT
 import ManagementTenantsTab from '@/components/management/ManagementTenantsTab';
 import ManagementLegalEntitiesTab from '@/components/management/ManagementLegalEntitiesTab';
 import ManagementStoresTab from '@/components/management/ManagementStoresTab';
-import TenantDetailSlideOver from '@/components/management/TenantDetailSlideOver';
+import TenantDetailView from '@/components/management/TenantDetailView';
 
 interface Tenant {
   id: string;
@@ -92,6 +92,16 @@ export default function ManagementPage() {
       createStore: true,
       selectedTenantId: tenantId || null
     }));
+  };
+
+  const handleEditTenant = (tenant: Tenant) => {
+    console.log('Edit tenant', tenant);
+    // TODO: Open edit tenant modal
+  };
+
+  const handleDeleteTenant = (tenant: Tenant) => {
+    console.log('Delete tenant', tenant);
+    // TODO: Open delete confirmation dialog
   };
 
   const handleEditLegalEntity = (entity: any) => {
@@ -227,10 +237,22 @@ export default function ManagementPage() {
 
             <TabsContent value="tenants" className="mt-0">
               {activeTab === 'tenants' && (
-                <ManagementTenantsTab 
-                  onSelectTenant={handleSelectTenant}
-                  onCreateTenant={handleCreateTenant}
-                />
+                selectedTenant ? (
+                  <TenantDetailView
+                    tenant={selectedTenant}
+                    onBack={() => setSelectedTenant(null)}
+                    onCreateLegalEntity={handleCreateLegalEntity}
+                    onCreateStore={handleCreateStore}
+                    onEditTenant={handleEditTenant}
+                  />
+                ) : (
+                  <ManagementTenantsTab 
+                    onSelectTenant={handleSelectTenant}
+                    onCreateTenant={handleCreateTenant}
+                    onEditTenant={handleEditTenant}
+                    onDeleteTenant={handleDeleteTenant}
+                  />
+                )
               )}
             </TabsContent>
 
@@ -255,13 +277,6 @@ export default function ManagementPage() {
         </div>
       </div>
 
-      <TenantDetailSlideOver
-        tenant={selectedTenant}
-        isOpen={!!selectedTenant}
-        onClose={() => setSelectedTenant(null)}
-        onCreateLegalEntity={handleCreateLegalEntity}
-        onCreateStore={handleCreateStore}
-      />
     </BrandLayout>
   );
 }
