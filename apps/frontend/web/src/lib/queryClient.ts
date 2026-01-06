@@ -189,8 +189,9 @@ export const queryClient = new QueryClient({
         } else if (AUTH_MODE === 'development') {
           // Development mode: ONLY use X-Auth-Session headers, NEVER call OAuth methods
           headers['X-Auth-Session'] = 'authenticated';
-          const demoUserId = localStorage.getItem('demo_user_id') || 'admin-user';
-          headers['X-Demo-User'] = demoUserId;
+          // Backend expects email, not user ID - default to admin@w3suite.com
+          const demoUserEmail = localStorage.getItem('demo_user_email') || 'admin@w3suite.com';
+          headers['X-Demo-User'] = demoUserEmail;
         } else if (AUTH_MODE === 'oauth2') {
           // OAuth2 mode: Use Bearer tokens with proper error handling
           const token = await oauth2Client.getAccessToken();
@@ -321,8 +322,9 @@ export async function apiRequest(
   } else if (AUTH_MODE === 'development') {
     // Development mode: ONLY use X-Auth-Session headers
     headers['X-Auth-Session'] = 'authenticated';
-    const demoUserId = localStorage.getItem('demo_user_id') || 'admin-user';
-    headers['X-Demo-User'] = demoUserId;
+    // Backend expects email, not user ID - default to admin@w3suite.com
+    const demoUserEmail = localStorage.getItem('demo_user_email') || 'admin@w3suite.com';
+    headers['X-Demo-User'] = demoUserEmail;
   } else if (AUTH_MODE === 'oauth2') {
     // OAuth2 mode: Use Bearer tokens
     const token = await oauth2Client.getAccessToken();

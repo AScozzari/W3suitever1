@@ -722,7 +722,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               }}
               title="Test AI Voice Agent"
             >
-              <Smartphone size={20} style={{ color: '#6b7280' }} />
+              <Phone size={20} style={{ color: '#6b7280' }} />
             </button>
           )}
           
