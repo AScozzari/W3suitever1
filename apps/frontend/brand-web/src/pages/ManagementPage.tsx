@@ -27,7 +27,7 @@ interface Tenant {
   id: string;
   name: string;
   slug: string;
-  status: 'active' | 'suspended' | 'pending';
+  status: 'active' | 'suspended' | 'pending' | 'attivo' | 'sospeso';
   createdAt: string;
 }
 

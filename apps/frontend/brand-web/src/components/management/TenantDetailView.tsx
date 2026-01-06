@@ -40,7 +40,7 @@ interface Tenant {
   id: string;
   name: string;
   slug: string;
-  status: 'active' | 'suspended' | 'pending';
+  status: 'active' | 'suspended' | 'pending' | 'attivo' | 'sospeso';
   createdAt: string;
 }
 
@@ -52,7 +52,7 @@ interface TenantDetailViewProps {
   onEditTenant: (tenant: Tenant) => void;
 }
 
-type DetailTab = 'dashboard' | 'legal-entities' | 'stores';
+type DetailTab = 'dashboard' | 'analytics' | 'legal-entities' | 'stores';
 
 export default function TenantDetailView({
   tenant,
@@ -78,16 +78,26 @@ export default function TenantDetailView({
 
   const tabs: { id: DetailTab; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'legal-entities', label: 'Ragioni Sociali', icon: Briefcase, count: legalEntities.length },
-    { id: 'stores', label: 'Punti Vendita', icon: Store, count: stores.length },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'legal-entities', label: 'Legal Entities', icon: Briefcase, count: legalEntities.length },
+    { id: 'stores', label: 'Stores', icon: Store, count: stores.length },
   ];
 
+  // Helper function to check if status is active (handles both Italian and English)
+  const isActiveStatus = (status: string) => {
+    return status === 'active' || status === 'attivo';
+  };
+
   const getStatusBadge = (status: string) => {
+    // Handle both Italian and English status values
+    const normalizedStatus = isActiveStatus(status) ? 'active' : 
+                            (status === 'suspended' || status === 'sospeso') ? 'suspended' : 
+                            status;
     const config = {
       active: { bg: `${COLORS.semantic.success}15`, color: COLORS.semantic.success, label: 'Attivo' },
       suspended: { bg: `${COLORS.semantic.warning}15`, color: COLORS.semantic.warning, label: 'Sospeso' },
       pending: { bg: `${COLORS.semantic.info}15`, color: COLORS.semantic.info, label: 'In attesa' },
-    }[status] || { bg: COLORS.neutral.lighter, color: COLORS.neutral.medium, label: status };
+    }[normalizedStatus] || { bg: COLORS.neutral.lighter, color: COLORS.neutral.medium, label: status };
 
     return (
       <span 
@@ -313,6 +323,167 @@ export default function TenantDetailView({
               <Plus className="h-4 w-4 mr-2" />
               Nuovo Punto Vendita
             </Button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'analytics' && (
+        <div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '1rem',
+            marginBottom: '1.5rem',
+          }}>
+            {[
+              { label: 'Total Stores', value: stores.length, change: '+2 questo mese', icon: Store, color: COLORS.semantic.success },
+              { label: 'Legal Entities', value: legalEntities.length, change: 'Stabile', icon: Briefcase, color: COLORS.primary.purple },
+              { label: 'Active Users', value: 12, change: '+3 questa settimana', icon: Shield, color: COLORS.semantic.info },
+              { label: 'System Health', value: '98.5%', change: 'Eccellente', icon: TrendingUp, color: COLORS.primary.orange },
+            ].map((stat, idx) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    background: 'white',
+                    borderRadius: '0.75rem',
+                    padding: '1.25rem',
+                    border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <div style={{
+                      width: '2rem',
+                      height: '2rem',
+                      borderRadius: '0.5rem',
+                      background: `${stat.color}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Icon size={16} style={{ color: stat.color }} />
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium }}>
+                      {stat.label}
+                    </span>
+                  </div>
+                  <p style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: 700, 
+                    color: COLORS.neutral.dark,
+                    margin: 0,
+                    marginBottom: '0.25rem',
+                  }}>
+                    {stat.value}
+                  </p>
+                  <span style={{ 
+                    fontSize: '0.6875rem', 
+                    color: COLORS.semantic.success,
+                    fontWeight: 500,
+                  }}>
+                    {stat.change}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1fr',
+            gap: '1rem',
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+            }}>
+              <h4 style={{ 
+                fontSize: '1rem', 
+                fontWeight: 600, 
+                color: COLORS.neutral.dark,
+                margin: 0,
+                marginBottom: '1rem',
+              }}>
+                Attività Recenti
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {[
+                  { title: 'Nuovo store creato', desc: 'Store "Milano Centro" aggiunto alla legal entity "WindTre Retail S.r.l."', time: '2 ore fa' },
+                  { title: 'User access granted', desc: 'Accesso concesso a mario.rossi@windtre.it per gestione stores', time: '4 ore fa' },
+                  { title: 'Legal entity updated', desc: 'Aggiornate informazioni fiscali per "WindTre Business S.p.A."', time: '1 giorno fa' },
+                  { title: 'System backup completed', desc: 'Backup automatico completato con successo (2.4 GB)', time: '2 giorni fa' },
+                ].map((activity, idx) => (
+                  <div key={idx} style={{
+                    padding: '0.75rem',
+                    background: COLORS.neutral.lightest,
+                    borderRadius: '0.5rem',
+                  }}>
+                    <p style={{ 
+                      fontSize: '0.875rem', 
+                      fontWeight: 600, 
+                      color: COLORS.neutral.dark,
+                      margin: 0,
+                      marginBottom: '0.25rem',
+                    }}>
+                      {activity.title}
+                    </p>
+                    <p style={{ 
+                      fontSize: '0.75rem', 
+                      color: COLORS.neutral.medium,
+                      margin: 0,
+                      marginBottom: '0.25rem',
+                    }}>
+                      {activity.desc}
+                    </p>
+                    <span style={{ fontSize: '0.6875rem', color: COLORS.neutral.light }}>
+                      {activity.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{
+              background: 'white',
+              borderRadius: '0.75rem',
+              padding: '1.5rem',
+              border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+            }}>
+              <h4 style={{ 
+                fontSize: '1rem', 
+                fontWeight: 600, 
+                color: COLORS.neutral.dark,
+                margin: 0,
+                marginBottom: '1rem',
+              }}>
+                Riassunto Organizzazione
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {[
+                  { label: 'Status', value: isActiveStatus(tenant.status) ? 'Operativo' : 'Sospeso' },
+                  { label: 'Ultima sync', value: 'Appena ora' },
+                  { label: 'Tipo', value: 'Enterprise' },
+                  { label: 'Region', value: 'EU-West' },
+                ].map((item, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.5rem 0',
+                    borderBottom: idx < 3 ? `0.0625rem solid ${COLORS.neutral.lighter}` : 'none',
+                  }}>
+                    <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium }}>
+                      {item.label}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: COLORS.neutral.dark }}>
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
