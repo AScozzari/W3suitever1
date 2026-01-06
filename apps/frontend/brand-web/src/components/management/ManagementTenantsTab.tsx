@@ -78,7 +78,7 @@ export default function ManagementTenantsTab({
 
   const suspendMutation = useMutation({
     mutationFn: (tenantId: string) => 
-      apiRequest(`/brand-api/organizations/${tenantId}/suspend`, { method: 'POST' }),
+      apiRequest(`/brand-api/organizations/${tenantId}/suspend`, { method: 'PATCH' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setConfirmDialog({ open: false, type: 'suspend', tenant: null });
@@ -87,7 +87,7 @@ export default function ManagementTenantsTab({
 
   const reactivateMutation = useMutation({
     mutationFn: (tenantId: string) => 
-      apiRequest(`/brand-api/organizations/${tenantId}/reactivate`, { method: 'POST' }),
+      apiRequest(`/brand-api/organizations/${tenantId}/reactivate`, { method: 'PATCH' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setConfirmDialog({ open: false, type: 'reactivate', tenant: null });
