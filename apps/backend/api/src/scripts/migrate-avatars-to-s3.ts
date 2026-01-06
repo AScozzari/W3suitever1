@@ -9,8 +9,8 @@
 
 import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { db } from '../core/db';
-import { eq, isNotNull, sql } from 'drizzle-orm';
-import { users } from '../db/schema/w3suite';
+import { eq, and, isNotNull, isNull, sql } from 'drizzle-orm';
+import { users, storageFolders, storageObjects, storageAcl } from '../db/schema/w3suite';
 import fs from 'fs';
 import path from 'path';
 
@@ -93,6 +93,80 @@ async function checkS3ObjectExists(s3Client: S3Client, key: string): Promise<boo
   } catch {
     return false;
   }
+}
+
+async function getOrCreateAvatarFolder(tenantId: string, userId: string): Promise<{ id: string }> {
+  const [existingFolder] = await db.select().from(storageFolders)
+    .where(and(
+      eq(storageFolders.tenantId, tenantId),
+      eq(storageFolders.ownerUserId, userId),
+      eq(storageFolders.name, 'Avatar'),
+      eq(storageFolders.scopeLevel, 'user'),
+      isNull(storageFolders.parentId),
+      isNull(storageFolders.deletedAt),
+    ))
+    .limit(1);
+  
+  if (existingFolder) return existingFolder;
+  
+  const [newFolder] = await db.insert(storageFolders).values({
+    tenantId,
+    ownerUserId: userId,
+    name: 'Avatar',
+    path: `/users/${userId}/Avatar`,
+    scopeLevel: 'user' as const,
+    isSystemFolder: true,
+    createdByUserId: userId,
+  }).returning();
+  
+  return newFolder;
+}
+
+async function registerStorageObject(
+  tenantId: string, 
+  userId: string, 
+  folderId: string, 
+  objectKey: string, 
+  filename: string,
+  sizeBytes: number,
+  mimeType: string
+): Promise<void> {
+  const [existingObject] = await db.select().from(storageObjects)
+    .where(and(
+      eq(storageObjects.tenantId, tenantId),
+      eq(storageObjects.folderId, folderId),
+      eq(storageObjects.objectType, 'avatar'),
+      isNull(storageObjects.deletedAt),
+    ))
+    .limit(1);
+  
+  if (existingObject) {
+    await db.update(storageObjects)
+      .set({ objectKey, sizeBytes, mimeType })
+      .where(eq(storageObjects.id, existingObject.id));
+    return;
+  }
+  
+  const [avatarObject] = await db.insert(storageObjects).values({
+    tenantId,
+    folderId,
+    name: filename,
+    originalName: filename,
+    mimeType,
+    sizeBytes,
+    objectKey,
+    objectType: 'avatar' as const,
+    isPublic: true,
+    createdByUserId: userId,
+  }).returning();
+  
+  await db.insert(storageAcl).values({
+    tenantId,
+    objectId: avatarObject.id,
+    subjectTenantWide: true,
+    role: 'viewer' as const,
+    grantedByUserId: userId,
+  });
 }
 
 async function migrateAvatars(): Promise<void> {
@@ -219,6 +293,23 @@ async function migrateAvatars(): Promise<void> {
 
     const alreadyExists = await checkS3ObjectExists(s3Client, newS3Key);
     if (alreadyExists) {
+      const fileStats = finalLocalPath ? fs.statSync(finalLocalPath) : { size: 0 };
+      const ext = path.extname(filename).toLowerCase();
+      const mimeType = ext === '.png' ? 'image/png' : 
+                       ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+                       ext === '.webp' ? 'image/webp' : 'image/png';
+      
+      const folder = await getOrCreateAvatarFolder(user.tenantId, user.id);
+      await registerStorageObject(
+        user.tenantId, 
+        user.id, 
+        folder.id, 
+        newS3Key, 
+        filename,
+        fileStats.size,
+        mimeType
+      );
+      
       await db.update(users)
         .set({ avatarObjectPath: newS3Key })
         .where(eq(users.id, user.id));
@@ -231,13 +322,30 @@ async function migrateAvatars(): Promise<void> {
         newPath: newS3Key,
         status: 'migrated'
       });
-      console.log(`   ✅ Already exists on S3, updated DB path`);
+      console.log(`   ✅ Already exists on S3, registered in DB`);
       continue;
     }
 
     const uploaded = await uploadToS3(s3Client, finalLocalPath, newS3Key);
     
     if (uploaded) {
+      const fileStats = fs.statSync(finalLocalPath);
+      const ext = path.extname(finalLocalPath).toLowerCase();
+      const mimeType = ext === '.png' ? 'image/png' : 
+                       ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+                       ext === '.webp' ? 'image/webp' : 'image/png';
+      
+      const folder = await getOrCreateAvatarFolder(user.tenantId, user.id);
+      await registerStorageObject(
+        user.tenantId, 
+        user.id, 
+        folder.id, 
+        newS3Key, 
+        filename,
+        fileStats.size,
+        mimeType
+      );
+      
       await db.update(users)
         .set({ avatarObjectPath: newS3Key })
         .where(eq(users.id, user.id));
@@ -252,7 +360,7 @@ async function migrateAvatars(): Promise<void> {
         newPath: newS3Key,
         status: 'migrated'
       });
-      console.log(`   ✅ Uploaded to S3: ${newS3Key}`);
+      console.log(`   ✅ Uploaded to S3 and registered in DB: ${newS3Key}`);
     } else {
       results.push({
         userId: user.id,
