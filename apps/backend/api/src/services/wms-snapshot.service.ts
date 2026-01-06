@@ -24,8 +24,9 @@ import {
 } from '../db/schema/w3suite';
 import { logger } from '../core/logger';
 
-const STAGING_TENANT_ID = '00000000-0000-0000-0000-000000000001';
-const WMS_ALL_TENANTS = process.env.WMS_SNAPSHOT_ALL_TENANTS === 'true';
+// WMS Snapshot runs for all active tenants by default
+// Set WMS_SNAPSHOT_ENABLED=false to disable automatic snapshots entirely
+const WMS_SNAPSHOT_ENABLED = process.env.WMS_SNAPSHOT_ENABLED !== 'false';
 
 export interface SnapshotResult {
   tenantId: string;
@@ -143,36 +144,29 @@ class WmsSnapshotService {
   }
 
   /**
-   * 📸 Crea snapshot per tenant attivi (STAGING only in dev, all in prod with WMS_SNAPSHOT_ALL_TENANTS=true)
+   * 📸 Crea snapshot per TUTTI i tenant attivi (dinamico, multi-tenant)
    */
   async createAllTenantsSnapshots(timeLabel: string): Promise<SnapshotResult[]> {
     const results: SnapshotResult[] = [];
     const scheduledTime = this.getScheduledSnapshotTime(timeLabel);
 
     try {
-      let activeTenants;
-      
-      if (WMS_ALL_TENANTS) {
-        activeTenants = await db
-          .select({ id: tenants.id, name: tenants.name })
-          .from(tenants)
-          .where(eq(tenants.status, 'active'));
-      } else {
-        activeTenants = await db
-          .select({ id: tenants.id, name: tenants.name })
-          .from(tenants)
-          .where(and(
-            eq(tenants.status, 'active'),
-            eq(tenants.id, STAGING_TENANT_ID)
-          ));
-        
-        logger.info('📸 [WMS-SNAPSHOT] Running in STAGING-ONLY mode (set WMS_SNAPSHOT_ALL_TENANTS=true for all tenants)');
+      if (!WMS_SNAPSHOT_ENABLED) {
+        logger.info('📸 [WMS-SNAPSHOT] Snapshot disabled via WMS_SNAPSHOT_ENABLED=false');
+        return results;
       }
+      
+      // Get ALL active tenants dynamically (multi-tenant RLS compliant)
+      const activeTenants = await db
+        .select({ id: tenants.id, name: tenants.name })
+        .from(tenants)
+        .where(eq(tenants.status, 'active'));
 
-      logger.info('📸 [WMS-SNAPSHOT] Starting snapshot creation', {
+      logger.info('📸 [WMS-SNAPSHOT] Starting snapshot creation for all active tenants', {
         timeLabel,
         scheduledTime: scheduledTime.toISOString(),
-        tenantsCount: activeTenants.length
+        tenantsCount: activeTenants.length,
+        tenantIds: activeTenants.map(t => t.id)
       });
 
       for (const tenant of activeTenants) {
