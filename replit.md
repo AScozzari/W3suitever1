@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, leveraging advanced AI to enhance efficiency and strategic decision-making. The platform aims to streamline operations and provide data-driven insights to foster a competitive advantage across various industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates core modules like CRM, POS, WMS, Analytics, HR, and CMS, leveraging advanced AI for enhanced efficiency and strategic decision-making. The platform aims to streamline operations, provide data-driven insights, and secure a competitive advantage across diverse industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -152,7 +152,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers and sidebars, white backgrounds. Uses `shadcn/ui` (built on Radix UI for accessibility) and Tailwind CSS. UI scaling is handled by `VITE_FONT_SCALE=80` at build-time, enforcing `rem` units for responsiveness.
+- **UI/UX Decisions**: WindTre Glassmorphism design with fixed headers and sidebars, white backgrounds. Utilizes `shadcn/ui` (built on Radix UI for accessibility) and Tailwind CSS. UI scaling is managed at build-time using `VITE_FONT_SCALE=80`, enforcing `rem` units for responsiveness.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level RBAC.

@@ -124,43 +124,50 @@ export default function TenantDetailView({
 
   return (
     <div>
-      {/* Header con Glassmorphism - sfondo quasi trasparente */}
+      {/* Header con Glassmorphism - design contrastato */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.12), rgba(255, 133, 51, 0.08))',
-        backdropFilter: 'blur(1.25rem) saturate(120%)',
+        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.55), rgba(255, 133, 51, 0.45))',
+        backdropFilter: 'blur(1.25rem) saturate(150%)',
         borderRadius: '1rem',
-        padding: '1.5rem 2rem',
+        padding: '1.75rem 2rem',
         marginBottom: '1.5rem',
-        border: '0.0625rem solid rgba(255, 105, 0, 0.15)',
-        boxShadow: '0 0.25rem 1.5rem rgba(255, 105, 0, 0.08)',
+        border: '0.0625rem solid rgba(255, 255, 255, 0.18)',
+        boxShadow: '0 1rem 2.5rem rgba(255, 105, 0, 0.22)',
       }}>
         {/* Riga 1: Back + Info Tenant + Modifica */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          marginBottom: '1.5rem',
-          paddingBottom: '1.25rem',
-          borderBottom: '0.0625rem solid rgba(255, 105, 0, 0.1)',
+          marginBottom: '1.75rem',
+          paddingBottom: '1.5rem',
+          borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.2)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <button
               onClick={onBack}
               data-testid="button-back-to-list"
               style={{
-                background: 'rgba(255, 105, 0, 0.1)',
-                border: '0.0625rem solid rgba(255, 105, 0, 0.2)',
+                background: 'rgba(255, 255, 255, 0.9)',
+                border: 'none',
                 borderRadius: '0.5rem',
-                padding: '0.625rem',
+                padding: '0.75rem',
                 cursor: 'pointer',
-                color: COLORS.primary.orange,
+                color: 'rgba(17, 24, 39, 0.92)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.2s ease',
+                boxShadow: '0 0.125rem 0.5rem rgba(0, 0, 0, 0.1)',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 105, 0, 0.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 1)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
             >
               <ArrowLeft size={20} />
             </button>
@@ -168,35 +175,36 @@ export default function TenantDetailView({
               width: '3.5rem',
               height: '3.5rem',
               borderRadius: '0.75rem',
-              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.15), rgba(255, 133, 51, 0.1))',
-              border: '0.0625rem solid rgba(255, 105, 0, 0.2)',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '0.0625rem solid rgba(255, 255, 255, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: COLORS.primary.orange,
+              color: 'white',
             }}>
               <Building2 size={24} />
             </div>
-            <div style={{ marginLeft: '0.5rem' }}>
+            <div style={{ marginLeft: '0.25rem' }}>
               <h2 style={{ 
-                fontSize: '1.5rem', 
+                fontSize: '1.625rem', 
                 fontWeight: 700, 
                 margin: 0,
-                marginBottom: '0.5rem',
+                marginBottom: '0.625rem',
                 letterSpacing: '-0.01em',
-                color: COLORS.neutral.dark,
+                color: 'white',
+                textShadow: '0 0.0625rem 0.25rem rgba(0, 0, 0, 0.15)',
               }}>
                 {tenant.name}
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <code style={{
                   fontSize: '0.8125rem',
-                  padding: '0.375rem 0.75rem',
-                  background: 'rgba(255, 105, 0, 0.08)',
-                  border: '0.0625rem solid rgba(255, 105, 0, 0.15)',
+                  padding: '0.375rem 0.875rem',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '0.0625rem solid rgba(255, 255, 255, 0.25)',
                   borderRadius: '0.375rem',
                   fontFamily: 'monospace',
-                  color: COLORS.neutral.dark,
+                  color: 'white',
                 }}>
                   {tenant.slug}
                 </code>
@@ -209,20 +217,23 @@ export default function TenantDetailView({
             onClick={() => onEditTenant(tenant)}
             data-testid="button-edit-tenant-detail"
             style={{
-              background: COLORS.primary.orange,
-              color: 'white',
+              background: 'rgba(255, 255, 255, 0.95)',
+              color: COLORS.primary.orange,
               border: 'none',
               padding: '0.75rem 1.5rem',
+              fontWeight: 600,
               transition: 'all 0.2s ease',
-              boxShadow: '0 0.25rem 0.75rem rgba(255, 105, 0, 0.25)',
+              boxShadow: '0 0.25rem 0.75rem rgba(0, 0, 0, 0.15)',
             }}
             onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 1)';
               e.currentTarget.style.transform = 'translateY(-0.125rem)';
-              e.currentTarget.style.boxShadow = '0 0.5rem 1rem rgba(255, 105, 0, 0.35)';
+              e.currentTarget.style.boxShadow = '0 0.5rem 1rem rgba(0, 0, 0, 0.2)';
             }}
             onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 0.25rem 0.75rem rgba(255, 105, 0, 0.25)';
+              e.currentTarget.style.boxShadow = '0 0.25rem 0.75rem rgba(0, 0, 0, 0.15)';
             }}
           >
             <Edit2 className="h-4 w-4 mr-2" />
@@ -230,7 +241,7 @@ export default function TenantDetailView({
           </Button>
         </div>
 
-        {/* Riga 2: KPI Cards colorate con glassmorphism */}
+        {/* Riga 2: KPI Cards con vetro colorato intenso */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -239,57 +250,71 @@ export default function TenantDetailView({
           {kpiCards.map((kpi, idx) => {
             const Icon = kpi.icon;
             const colorHex = kpi.color;
+            // Colori più saturi per le card
+            const cardColors: Record<number, { bg1: string; bg2: string; border: string }> = {
+              0: { bg1: 'rgba(123, 44, 191, 0.22)', bg2: 'rgba(151, 71, 255, 0.18)', border: 'rgba(151, 71, 255, 0.35)' }, // Purple
+              1: { bg1: 'rgba(16, 185, 129, 0.22)', bg2: 'rgba(52, 211, 153, 0.18)', border: 'rgba(52, 211, 153, 0.35)' }, // Green
+              2: { bg1: 'rgba(59, 130, 246, 0.22)', bg2: 'rgba(96, 165, 250, 0.18)', border: 'rgba(96, 165, 250, 0.35)' }, // Blue
+              3: { bg1: 'rgba(255, 124, 67, 0.22)', bg2: 'rgba(255, 176, 102, 0.18)', border: 'rgba(255, 176, 102, 0.35)' }, // Orange
+            };
+            const colors = cardColors[idx] || cardColors[0];
+            
             return (
               <div
                 key={idx}
                 data-testid={`kpi-card-${idx}`}
                 title={kpi.fullValue || undefined}
                 style={{
-                  background: `linear-gradient(135deg, ${colorHex}12, ${colorHex}08)`,
-                  backdropFilter: 'blur(1rem) saturate(120%)',
+                  background: `linear-gradient(135deg, ${colors.bg1}, ${colors.bg2})`,
+                  backdropFilter: 'blur(1rem) saturate(130%)',
                   borderRadius: '0.75rem',
-                  padding: '1.25rem',
-                  border: `0.0625rem solid ${colorHex}20`,
+                  padding: '0.25rem',
+                  border: `0.0625rem solid ${colors.border}`,
                   cursor: kpi.fullValue ? 'help' : 'default',
                   transition: 'all 0.2s ease',
-                  boxShadow: `0 0.25rem 1rem ${colorHex}10`,
+                  boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.08)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = `linear-gradient(135deg, ${colorHex}20, ${colorHex}12)`;
                   e.currentTarget.style.transform = 'translateY(-0.125rem)';
-                  e.currentTarget.style.boxShadow = `0 0.5rem 1.5rem ${colorHex}25`;
+                  e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0, 0, 0, 0.15)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = `linear-gradient(135deg, ${colorHex}12, ${colorHex}08)`;
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = `0 0.25rem 1rem ${colorHex}10`;
+                  e.currentTarget.style.boxShadow = '0 0.25rem 1rem rgba(0, 0, 0, 0.08)';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.625rem' }}>
-                  <div style={{
-                    width: '2rem',
-                    height: '2rem',
-                    borderRadius: '0.5rem',
-                    background: `${colorHex}15`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <Icon size={16} style={{ color: colorHex }} />
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium, fontWeight: 500 }}>
-                    {kpi.label}
-                  </span>
-                </div>
-                <p style={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: 700, 
-                  margin: 0,
-                  letterSpacing: '-0.02em',
-                  color: COLORS.neutral.dark,
+                {/* Contenuto interno su sfondo bianco semi-opaco */}
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.85)',
+                  borderRadius: '0.625rem',
+                  padding: '1rem 1.25rem',
                 }}>
-                  {kpi.value}
-                </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.5rem' }}>
+                    <div style={{
+                      width: '2rem',
+                      height: '2rem',
+                      borderRadius: '0.5rem',
+                      background: `${colorHex}18`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Icon size={16} style={{ color: colorHex }} />
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: COLORS.neutral.medium, fontWeight: 500 }}>
+                      {kpi.label}
+                    </span>
+                  </div>
+                  <p style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: 700, 
+                    margin: 0,
+                    letterSpacing: '-0.02em',
+                    color: COLORS.neutral.dark,
+                  }}>
+                    {kpi.value}
+                  </p>
+                </div>
               </div>
             );
           })}
