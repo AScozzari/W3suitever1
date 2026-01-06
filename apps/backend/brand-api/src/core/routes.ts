@@ -1,5 +1,6 @@
 import express from "express";
 import http from "http";
+import bcrypt from "bcryptjs";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
 import { insertStoreSchema } from "../../../api/src/db/schema/w3suite.js";
@@ -196,7 +197,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Legal Entities management endpoints
+  // Create organization (tenant) with admin user
   app.post("/brand-api/organizations", express.json(), async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
@@ -211,18 +212,56 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
-      const { name, slug, status, notes } = req.body;
+      const { name, slug, status, notes, admin } = req.body;
 
       if (!name) {
         return res.status(400).json({ error: "Organization name is required" });
       }
 
+      // Validate admin data if provided
+      if (admin) {
+        if (!admin.email) {
+          return res.status(400).json({ error: "Admin email is required" });
+        }
+        if (!admin.password || admin.password.length < 8) {
+          return res.status(400).json({ error: "Admin password must be at least 8 characters" });
+        }
+      }
+
+      // Generate slug from name if not provided
+      const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      // Check if slug already exists
+      const slugExists = await brandStorage.validateSlug(finalSlug);
+      if (!slugExists) {
+        return res.status(400).json({ error: `Slug "${finalSlug}" is already in use` });
+      }
+
+      // Create organization
       const organization = await brandStorage.createOrganization({
         name,
-        slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+        slug: finalSlug,
         status: status || 'active',
         notes: notes || ''
       });
+
+      let adminUser = null;
+
+      // Create admin user if data provided
+      if (admin) {
+        const passwordHash = await bcrypt.hash(admin.password, 10);
+        
+        adminUser = await brandStorage.createTenantAdmin({
+          tenantId: organization.id,
+          email: admin.email.toLowerCase().trim(),
+          passwordHash,
+          firstName: admin.firstName || 'Admin',
+          lastName: admin.lastName || organization.name,
+          role: 'admin',
+          status: 'attivo',
+          isSystemAdmin: true
+        });
+      }
 
       res.status(201).json({
         success: true,
@@ -234,11 +273,150 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
           notes: organization.notes,
           createdAt: organization.createdAt
         },
-        message: "Organization created successfully"
+        admin: adminUser ? {
+          id: adminUser.id,
+          email: adminUser.email,
+          firstName: adminUser.firstName,
+          lastName: adminUser.lastName,
+          role: adminUser.role
+        } : null,
+        message: adminUser 
+          ? "Organization and admin user created successfully" 
+          : "Organization created successfully (no admin)"
       });
     } catch (error) {
       console.error("Error creating organization:", error);
       res.status(500).json({ error: "Failed to create organization" });
+    }
+  });
+
+  // Suspend organization (tenant)
+  app.patch("/brand-api/organizations/:id/suspend", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to suspend organizations" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const organization = await brandStorage.updateOrganization(id, { 
+        status: 'sospeso' 
+      });
+
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      res.json({
+        success: true,
+        organization: {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          status: organization.status
+        },
+        message: "Organization suspended successfully"
+      });
+    } catch (error) {
+      console.error("Error suspending organization:", error);
+      res.status(500).json({ error: "Failed to suspend organization" });
+    }
+  });
+
+  // Reactivate organization (tenant)
+  app.patch("/brand-api/organizations/:id/reactivate", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to reactivate organizations" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const organization = await brandStorage.updateOrganization(id, { 
+        status: 'attivo' 
+      });
+
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      res.json({
+        success: true,
+        organization: {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          status: organization.status
+        },
+        message: "Organization reactivated successfully"
+      });
+    } catch (error) {
+      console.error("Error reactivating organization:", error);
+      res.status(500).json({ error: "Failed to reactivate organization" });
+    }
+  });
+
+  // Delete organization (soft delete - sets archived_at)
+  app.delete("/brand-api/organizations/:id", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id } = req.params;
+    const { confirmationText } = req.body || {};
+
+    // Only super_admin can delete organizations
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super administrators can delete organizations" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    // Require confirmation text "ELIMINA" for safety
+    if (confirmationText !== 'ELIMINA') {
+      return res.status(400).json({ 
+        error: "Confirmation required",
+        message: "Please send confirmationText: 'ELIMINA' to confirm deletion"
+      });
+    }
+
+    try {
+      // Get organization first to check it exists
+      const organization = await brandStorage.getOrganization(id);
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      // Soft delete - set archived_at timestamp
+      const deletedOrg = await brandStorage.updateOrganization(id, { 
+        status: 'inactive',
+        archivedAt: new Date()
+      });
+
+      res.json({
+        success: true,
+        organization: {
+          id: deletedOrg?.id,
+          name: deletedOrg?.name,
+          status: deletedOrg?.status
+        },
+        message: "Organization deleted (archived) successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting organization:", error);
+      res.status(500).json({ error: "Failed to delete organization" });
     }
   });
 

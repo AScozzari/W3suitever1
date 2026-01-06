@@ -111,6 +111,16 @@ export interface IBrandStorage {
   getItalianCities(): Promise<ItalianCity[]>;
   updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null>;
   validateSlug(slug: string): Promise<boolean>;
+  createTenantAdmin(data: {
+    tenantId: string;
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    status: string;
+    isSystemAdmin: boolean;
+  }): Promise<any>;
   
   // ==================== LEGAL ENTITIES MANAGEMENT ====================
   
@@ -1214,6 +1224,44 @@ class BrandDrizzleStorage implements IBrandStorage {
     } catch (error) {
       console.error('Error validating slug:', error);
       return false; // Safe default - assume slug is taken
+    }
+  }
+
+  // Create tenant admin user in w3suite.users
+  async createTenantAdmin(data: {
+    tenantId: string;
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    status: string;
+    isSystemAdmin: boolean;
+  }): Promise<any> {
+    try {
+      const userId = `admin-${data.tenantId.slice(0, 8)}`;
+      
+      const results = await w3db.insert(w3Users)
+        .values({
+          id: userId,
+          tenantId: data.tenantId,
+          email: data.email,
+          passwordHash: data.passwordHash,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role: data.role,
+          status: data.status,
+          isSystemAdmin: data.isSystemAdmin,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`✅ Created admin user ${data.email} for tenant ${data.tenantId}`);
+      return results[0];
+    } catch (error) {
+      console.error('Error creating tenant admin:', error);
+      throw error;
     }
   }
 

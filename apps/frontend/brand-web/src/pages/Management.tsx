@@ -253,12 +253,18 @@ export default function Management() {
     tenantName?: string;
   }>({ isActive: false });
   
-  // Organization form state
+  // Organization form state with admin section
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
     slug: '',
     status: 'active',
-    notes: ''
+    notes: '',
+    admin: {
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: ''
+    }
   });
 
   // Audit filters
@@ -393,6 +399,14 @@ export default function Management() {
     enabled: activeTab === 'audit' && isAuthenticated
   });
 
+  // Delete confirmation modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    orgId: string;
+    orgName: string;
+    confirmText: string;
+  }>({ isOpen: false, orgId: '', orgName: '', confirmText: '' });
+
   // 4. ORGANIZATION CREATION MUTATION
   const createOrganizationMutation = useMutation({
     mutationFn: async (data: typeof organizationForm) => {
@@ -401,20 +415,71 @@ export default function Management() {
         body: JSON.stringify(data)
       });
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setShowOrganizationModal(false);
       setOrganizationForm({
         name: '',
         slug: '',
         status: 'active',
-        notes: ''
+        notes: '',
+        admin: { email: '', password: '', firstName: '', lastName: '' }
       });
-      console.log('✅ Organizzazione creata con successo!');
+      console.log('✅ Organizzazione creata con successo!', result.admin ? `Admin: ${result.admin.email}` : '');
     },
     onError: (error) => {
       console.error('Error creating organization:', error);
       console.error('❌ Errore nella creazione dell\'organizzazione');
+    }
+  });
+
+  // SUSPEND ORGANIZATION MUTATION
+  const suspendOrganizationMutation = useMutation({
+    mutationFn: async (orgId: string) => {
+      return apiRequest(`/brand-api/organizations/${orgId}/suspend`, {
+        method: 'PATCH'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
+      console.log('✅ Organizzazione sospesa con successo!');
+    },
+    onError: (error) => {
+      console.error('Error suspending organization:', error);
+    }
+  });
+
+  // REACTIVATE ORGANIZATION MUTATION
+  const reactivateOrganizationMutation = useMutation({
+    mutationFn: async (orgId: string) => {
+      return apiRequest(`/brand-api/organizations/${orgId}/reactivate`, {
+        method: 'PATCH'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
+      console.log('✅ Organizzazione riattivata con successo!');
+    },
+    onError: (error) => {
+      console.error('Error reactivating organization:', error);
+    }
+  });
+
+  // DELETE ORGANIZATION MUTATION
+  const deleteOrganizationMutation = useMutation({
+    mutationFn: async ({ orgId, confirmationText }: { orgId: string; confirmationText: string }) => {
+      return apiRequest(`/brand-api/organizations/${orgId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ confirmationText })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
+      setDeleteModal({ isOpen: false, orgId: '', orgName: '', confirmText: '' });
+      console.log('✅ Organizzazione eliminata con successo!');
+    },
+    onError: (error) => {
+      console.error('Error deleting organization:', error);
     }
   });
 
@@ -969,6 +1034,175 @@ export default function Management() {
                 data-testid="textarea-organization-notes"
               />
             </div>
+
+            {/* Admin Section Separator */}
+            <div style={{
+              borderTop: `1px solid ${COLORS.neutral.lighter}`,
+              margin: '0.5rem 0',
+              paddingTop: '1rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1rem'
+              }}>
+                <Users size={18} style={{ color: COLORS.primary.orange }} />
+                <span style={{
+                  fontSize: '0.9375rem',
+                  fontWeight: 700,
+                  color: COLORS.neutral.dark
+                }}>
+                  Amministratore Tenant
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark,
+                    marginBottom: '0.5rem'
+                  }}>
+                    Nome
+                  </label>
+                  <input
+                    type="text"
+                    value={organizationForm.admin.firstName}
+                    onChange={(e) => setOrganizationForm(prev => ({ 
+                      ...prev, 
+                      admin: { ...prev.admin, firstName: e.target.value } 
+                    }))}
+                    placeholder="Nome admin"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '0.5rem',
+                      background: COLORS.neutral.white,
+                      color: COLORS.neutral.dark,
+                      fontSize: '0.875rem',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                    onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+                    data-testid="input-admin-firstname"
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark,
+                    marginBottom: '0.5rem'
+                  }}>
+                    Cognome
+                  </label>
+                  <input
+                    type="text"
+                    value={organizationForm.admin.lastName}
+                    onChange={(e) => setOrganizationForm(prev => ({ 
+                      ...prev, 
+                      admin: { ...prev.admin, lastName: e.target.value } 
+                    }))}
+                    placeholder="Cognome admin"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '0.5rem',
+                      background: COLORS.neutral.white,
+                      color: COLORS.neutral.dark,
+                      fontSize: '0.875rem',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                    onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+                    data-testid="input-admin-lastname"
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: COLORS.neutral.dark,
+                  marginBottom: '0.5rem'
+                }}>
+                  Email Admin *
+                </label>
+                <input
+                  type="email"
+                  value={organizationForm.admin.email}
+                  onChange={(e) => setOrganizationForm(prev => ({ 
+                    ...prev, 
+                    admin: { ...prev.admin, email: e.target.value } 
+                  }))}
+                  placeholder="admin@organizzazione.com"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    background: COLORS.neutral.white,
+                    color: COLORS.neutral.dark,
+                    fontSize: '0.875rem',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                  onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+                  data-testid="input-admin-email"
+                />
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: COLORS.neutral.dark,
+                  marginBottom: '0.5rem'
+                }}>
+                  Password Admin * (min. 8 caratteri)
+                </label>
+                <input
+                  type="password"
+                  value={organizationForm.admin.password}
+                  onChange={(e) => setOrganizationForm(prev => ({ 
+                    ...prev, 
+                    admin: { ...prev.admin, password: e.target.value } 
+                  }))}
+                  placeholder="••••••••"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: `1px solid ${organizationForm.admin.password.length > 0 && organizationForm.admin.password.length < 8 ? COLORS.semantic.error : COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    background: COLORS.neutral.white,
+                    color: COLORS.neutral.dark,
+                    fontSize: '0.875rem',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                  onBlur={(e) => e.currentTarget.style.borderColor = organizationForm.admin.password.length > 0 && organizationForm.admin.password.length < 8 ? COLORS.semantic.error : COLORS.neutral.lighter}
+                  data-testid="input-admin-password"
+                />
+                {organizationForm.admin.password.length > 0 && organizationForm.admin.password.length < 8 && (
+                  <span style={{ fontSize: '0.75rem', color: COLORS.semantic.error, marginTop: '0.25rem', display: 'block' }}>
+                    La password deve avere almeno 8 caratteri
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           <div style={{
@@ -1004,14 +1238,23 @@ export default function Management() {
             </button>
             <button
               onClick={() => createOrganizationMutation.mutate(organizationForm)}
-              disabled={!organizationForm.name || createOrganizationMutation.isPending}
+              disabled={
+                !organizationForm.name || 
+                !organizationForm.admin.email || 
+                organizationForm.admin.password.length < 8 || 
+                createOrganizationMutation.isPending
+              }
               style={{
                 padding: '0.75rem 1.5rem',
                 border: 'none',
                 borderRadius: '0.5rem',
-                background: organizationForm.name ? COLORS.gradients.orange : COLORS.neutral.light,
+                background: (organizationForm.name && organizationForm.admin.email && organizationForm.admin.password.length >= 8) 
+                  ? COLORS.gradients.orange 
+                  : COLORS.neutral.light,
                 color: 'white',
-                cursor: organizationForm.name ? 'pointer' : 'not-allowed',
+                cursor: (organizationForm.name && organizationForm.admin.email && organizationForm.admin.password.length >= 8) 
+                  ? 'pointer' 
+                  : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
@@ -1020,7 +1263,7 @@ export default function Management() {
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => {
-                if (organizationForm.name) {
+                if (organizationForm.name && organizationForm.admin.email && organizationForm.admin.password.length >= 8) {
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = '0 6px 24px rgba(255, 105, 0, 0.3)';
                 }
@@ -1032,7 +1275,7 @@ export default function Management() {
               data-testid="button-create-organization"
             >
               {createOrganizationMutation.isPending && <Loader2 size={16} className="animate-spin" />}
-              Crea Organizzazione
+              Crea Organizzazione + Admin
             </button>
           </div>
         </div>
@@ -2318,6 +2561,78 @@ export default function Management() {
                         >
                           <Eye size={16} />
                         </button>
+
+                        {/* Suspend/Reactivate Organization */}
+                        <button
+                          onClick={() => {
+                            if (org.status === 'sospeso') {
+                              reactivateOrganizationMutation.mutate(org.id);
+                            } else {
+                              suspendOrganizationMutation.mutate(org.id);
+                            }
+                          }}
+                          disabled={suspendOrganizationMutation.isPending || reactivateOrganizationMutation.isPending}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0.375rem',
+                            borderRadius: '0.375rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            color: org.status === 'sospeso' ? COLORS.semantic.success : COLORS.semantic.warning
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = org.status === 'sospeso' 
+                              ? `${COLORS.semantic.success}20` 
+                              : `${COLORS.semantic.warning}20`;
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          title={org.status === 'sospeso' ? 'Riattiva organizzazione' : 'Sospendi organizzazione'}
+                          data-testid={`button-suspend-org-${org.id}`}
+                        >
+                          {org.status === 'sospeso' ? <Unlock size={16} /> : <Lock size={16} />}
+                        </button>
+
+                        {/* Delete Organization */}
+                        <button
+                          onClick={() => setDeleteModal({ 
+                            isOpen: true, 
+                            orgId: org.id, 
+                            orgName: org.name, 
+                            confirmText: '' 
+                          })}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0.375rem',
+                            borderRadius: '0.375rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            color: COLORS.semantic.error
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = `${COLORS.semantic.error}20`;
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          title="Elimina organizzazione"
+                          data-testid={`button-delete-org-${org.id}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -2661,6 +2976,153 @@ export default function Management() {
 
         {/* Organization Modal */}
         {renderOrganizationModal()}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal.isOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            animation: 'fadeIn 0.3s ease'
+          }}>
+            <div style={{
+              ...cardStyle,
+              width: '90%',
+              maxWidth: '28rem',
+              padding: '2rem',
+              textAlign: 'center',
+              animation: 'slideUp 0.3s ease'
+            }}>
+              <div style={{
+                width: '4rem',
+                height: '4rem',
+                borderRadius: '50%',
+                background: `${COLORS.semantic.error}15`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.5rem'
+              }}>
+                <AlertTriangle size={32} style={{ color: COLORS.semantic.error }} />
+              </div>
+
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                color: COLORS.neutral.dark,
+                marginBottom: '0.75rem'
+              }}>
+                Eliminare "{deleteModal.orgName}"?
+              </h3>
+
+              <p style={{
+                fontSize: '0.875rem',
+                color: COLORS.neutral.medium,
+                marginBottom: '1.5rem',
+                lineHeight: 1.5
+              }}>
+                Questa azione è <strong>irreversibile</strong>. L'organizzazione verrà archiviata 
+                e non sarà più accessibile. Tutti gli utenti perderanno l'accesso.
+              </p>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: COLORS.neutral.dark,
+                  marginBottom: '0.5rem'
+                }}>
+                  Scrivi <span style={{ color: COLORS.semantic.error, fontWeight: 700 }}>ELIMINA</span> per confermare
+                </label>
+                <input
+                  type="text"
+                  value={deleteModal.confirmText}
+                  onChange={(e) => setDeleteModal(prev => ({ ...prev, confirmText: e.target.value }))}
+                  placeholder="Scrivi ELIMINA"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: `2px solid ${deleteModal.confirmText === 'ELIMINA' ? COLORS.semantic.error : COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    outline: 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  data-testid="input-delete-confirm"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setDeleteModal({ isOpen: false, orgId: '', orgName: '', confirmText: '' })}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    background: COLORS.neutral.white,
+                    color: COLORS.neutral.dark,
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = COLORS.neutral.lightest}
+                  onMouseOut={(e) => e.currentTarget.style.background = COLORS.neutral.white}
+                  data-testid="button-cancel-delete"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={() => deleteOrganizationMutation.mutate({ 
+                    orgId: deleteModal.orgId, 
+                    confirmationText: deleteModal.confirmText 
+                  })}
+                  disabled={deleteModal.confirmText !== 'ELIMINA' || deleteOrganizationMutation.isPending}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    background: deleteModal.confirmText === 'ELIMINA' ? COLORS.semantic.error : COLORS.neutral.light,
+                    color: 'white',
+                    cursor: deleteModal.confirmText === 'ELIMINA' ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (deleteModal.confirmText === 'ELIMINA') {
+                      e.currentTarget.style.background = '#dc2626';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (deleteModal.confirmText === 'ELIMINA') {
+                      e.currentTarget.style.background = COLORS.semantic.error;
+                    }
+                  }}
+                  data-testid="button-confirm-delete"
+                >
+                  {deleteOrganizationMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+                  Elimina Organizzazione
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal Ragione Sociale - ESATTA COPIA DEL MODAL W3 SUITE */}
         {legalEntityModal.isOpen && (
