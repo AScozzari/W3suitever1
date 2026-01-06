@@ -147,9 +147,10 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Inline styles**: Usare rem anche in style={{}} (es: `padding: '1.25rem'` non `padding: '20px'`)
   - **Tailwind OK**: Le classi Tailwind (p-4, w-6, gap-2) usano già rem internamente
   - **W3 Suite convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
-  - **Brand Interface convertite**: Login.tsx ✅, Management.tsx ✅, CloudStoragePage.tsx ✅
+  - **Brand Interface convertite**: Login.tsx ✅, Management.tsx ✅, CloudStoragePage.tsx ✅, Dashboard.tsx ✅, BrandLayout.tsx ✅, ErrorBoundary.tsx ✅
   - **Brand Interface hook**: `useProductionScale()` in App.tsx + CSS var `--font-scale` in index.css
   - **Refactor continuo**: Convertire pagine esistenti quando vengono toccate
+  - **File rimanenti Brand Interface (px→rem)**: AIManagement.tsx, DeployCenterPage.tsx, OrganizationDetail.tsx, CRM.tsx, Entities.tsx, DeployModal.tsx, DashboardTab.tsx, BrowseCommitsTab.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.tsx, WMSCatalogPage.tsx, BrandPriceListsTab.tsx
 
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism design, fixed headers/sidebars, white backgrounds. Uses `shadcn/ui` (Radix UI-based) with Tailwind CSS. UI zoom is managed by `VITE_FONT_SCALE=80` at build-time, requiring `rem` units for proper scaling.
