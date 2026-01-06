@@ -229,21 +229,21 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
         top: 0,
         left: 0,
         right: 0,
-        height: isMobile ? '56px' : '64px',
+        height: isMobile ? '3.5rem' : '4rem',
         background: 'hsla(255, 255, 255, 0.15)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        backdropFilter: 'blur(1.5rem) saturate(180%)',
+        WebkitBackdropFilter: 'blur(1.5rem) saturate(180%)',
         borderBottom: '1px solid hsla(255, 255, 255, 0.25)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isMobile ? '0 16px' : '0 24px',
+        padding: isMobile ? '0 1rem' : '0 1.5rem',
         zIndex: 50,
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        borderRadius: '0 0 20px 20px'
+        boxShadow: '0 0.5rem 2rem rgba(0, 0, 0, 0.08)',
+        borderRadius: '0 0 1.25rem 1.25rem'
       }}>
         {/* Logo e Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Hamburger menu for mobile */}
           {isMobile && (
             <button
@@ -251,9 +251,9 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
               style={{
                 background: 'transparent',
                 border: 'none',
-                padding: '8px',
+                padding: '0.5rem',
                 cursor: 'pointer',
-                borderRadius: '8px',
+                borderRadius: '0.5rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -263,43 +263,43 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             </button>
           )}
           <div style={{
-            width: '32px',
-            height: '32px',
+            width: '2rem',
+            height: '2rem',
             background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-            borderRadius: '8px',
+            borderRadius: '0.5rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
             fontWeight: 'bold',
-            fontSize: '16px'
+            fontSize: '1rem'
           }}>B</div>
           {!isMobile && (
             <div>
-              <p style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>Brand Interface</p>
-              <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: 1 }}>Control Panel</p>
+              <p style={{ fontSize: '1rem', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>Brand Interface</p>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0, lineHeight: 1 }}>Control Panel</p>
             </div>
           )}
         </div>
 
         {/* Sezione destra - Responsive */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem' }}>
           {/* Notifiche */}
           <button style={{
             position: 'relative',
             background: 'transparent',
             border: 'none',
-            padding: '8px',
+            padding: '0.5rem',
             cursor: 'pointer',
-            borderRadius: '8px'
+            borderRadius: '0.5rem'
           }}>
             <Bell size={20} />
             <div style={{
               position: 'absolute',
-              top: '6px',
-              right: '6px',
-              width: '8px',
-              height: '8px',
+              top: '0.375rem',
+              right: '0.375rem',
+              width: '0.5rem',
+              height: '0.5rem',
               background: '#ef4444',
               borderRadius: '50%'
             }}></div>
@@ -310,15 +310,15 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               style={{
-                width: '32px',
-                height: '32px',
+                width: '2rem',
+                height: '2rem',
                 background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                fontSize: '14px',
+                fontSize: '0.875rem',
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
@@ -337,33 +337,33 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   position: 'absolute',
                   right: 0,
                   top: '100%',
-                  marginTop: '8px',
-                  width: '220px',
+                  marginTop: '0.5rem',
+                  width: '13.75rem',
                   background: 'hsla(0, 0%, 100%, 0.95)',
-                  backdropFilter: 'blur(20px)',
+                  backdropFilter: 'blur(1.25rem)',
                   border: '1px solid hsla(0, 0%, 100%, 0.2)',
-                  borderRadius: '12px',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 1.25rem 1.5rem -0.3rem rgba(0, 0, 0, 0.1), 0 0.625rem 0.625rem -0.3rem rgba(0, 0, 0, 0.04)',
                   zIndex: 1000,
-                  padding: '8px'
+                  padding: '0.5rem'
                 }}
               >
                 {/* Header utente */}
                 <div style={{
-                  padding: '12px',
+                  padding: '0.75rem',
                   borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
-                  marginBottom: '8px'
+                  marginBottom: '0.5rem'
                 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>
                     {user?.name || 'Utente'}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#666' }}>
                     {user?.email || 'admin@brandinterface.com'}
                   </div>
                 </div>
 
                 {/* Menu items */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
@@ -372,13 +372,13 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
+                      gap: '0.625rem',
+                      padding: '0.625rem 0.75rem',
                       background: 'transparent',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '0.5rem',
                       cursor: 'pointer',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       color: '#ef4444',
                       transition: 'background-color 0.15s ease'
                     }}
