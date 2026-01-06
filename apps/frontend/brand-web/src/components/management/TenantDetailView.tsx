@@ -95,6 +95,30 @@ export default function TenantDetailView({
     },
   });
   
+  const updateLegalEntityMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest(`/brand-api/legal-entities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...data, tenantId: tenant.id }),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations', tenant.id, 'legal-entities'] });
+      setShowLegalEntityModal(false);
+      setEditingLegalEntity(null);
+    },
+  });
+  
+  const updateStoreMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest(`/brand-api/stores/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...data, tenantId: tenant.id }),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations', tenant.id, 'stores'] });
+      setShowStoreModal(false);
+      setEditingStore(null);
+    },
+  });
+  
   const handleOpenLegalEntityModal = () => {
     setEditingLegalEntity(null);
     setShowLegalEntityModal(true);
@@ -106,11 +130,19 @@ export default function TenantDetailView({
   };
   
   const handleSaveLegalEntity = async (data: any) => {
-    await createLegalEntityMutation.mutateAsync(data);
+    if (editingLegalEntity) {
+      await updateLegalEntityMutation.mutateAsync({ id: editingLegalEntity.id, data });
+    } else {
+      await createLegalEntityMutation.mutateAsync(data);
+    }
   };
   
   const handleSaveStore = async (data: any) => {
-    await createStoreMutation.mutateAsync(data);
+    if (editingStore) {
+      await updateStoreMutation.mutateAsync({ id: editingStore.id, data });
+    } else {
+      await createStoreMutation.mutateAsync(data);
+    }
   };
 
   const { data: legalEntitiesData, isLoading: legalEntitiesLoading } = useQuery({
@@ -642,7 +674,6 @@ export default function TenantDetailView({
                     borderRadius: '0.75rem',
                     padding: '1.25rem',
                     border: `0.0625rem solid ${COLORS.neutral.lighter}`,
-                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
@@ -695,7 +726,32 @@ export default function TenantDetailView({
                         </p>
                       )}
                     </div>
-                    <ChevronRight size={16} style={{ color: COLORS.neutral.light }} />
+                    <button
+                      onClick={() => {
+                        setEditingLegalEntity(entity);
+                        setShowLegalEntityModal(true);
+                      }}
+                      data-testid={`button-edit-legal-entity-${entity.id}`}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.375rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = `${COLORS.primary.purple}15`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <ChevronRight size={16} style={{ color: COLORS.primary.purple }} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -774,7 +830,6 @@ export default function TenantDetailView({
                     borderRadius: '0.75rem',
                     padding: '1.25rem',
                     border: `0.0625rem solid ${COLORS.neutral.lighter}`,
-                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
@@ -836,7 +891,32 @@ export default function TenantDetailView({
                         </p>
                       )}
                     </div>
-                    <ChevronRight size={16} style={{ color: COLORS.neutral.light }} />
+                    <button
+                      onClick={() => {
+                        setEditingStore(store);
+                        setShowStoreModal(true);
+                      }}
+                      data-testid={`button-edit-store-${store.id}`}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '0.375rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = `${COLORS.semantic.success}15`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <ChevronRight size={16} style={{ color: COLORS.semantic.success }} />
+                    </button>
                   </div>
                 </div>
               ))}
