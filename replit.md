@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, leveraging advanced AI for enhanced efficiency, strategic decision-making, and comprehensive operational excellence. Its core purpose is to streamline operations and provide data-driven insights to foster a competitive advantage for businesses across various industries.
+W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations. It integrates CRM, POS, WMS, Analytics, HR, and CMS modules, leveraging advanced AI for enhanced efficiency, strategic decision-making, and comprehensive operational excellence. Its purpose is to streamline operations and provide data-driven insights to foster a competitive advantage across various industries.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -142,8 +142,8 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius, icon sizes
   - **✅ px OK SOLO**: border-width (1-2px), box-shadow offset/blur (piccoli valori fissi)
   - **❌ MAI px per**: font-size, padding, margin, gap, width, height - CAUSA BUG DI SCALING!
-  - **Formula**: `rem = px / 16` (es: 20px → 1.25rem, 16px → 1rem, 14px → 0.875rem, 12px → 0.75rem)
   - **Motivo**: VITE_FONT_SCALE=80 scala solo rem/em, px resta fisso e rompe il layout
+  - **Formula**: `rem = px / 16` (es: 20px → 1.25rem, 16px → 1rem, 14px → 0.875rem, 12px → 0.75rem)
   - **Inline styles**: Usare rem anche in style={{}} (es: `padding: '1.25rem'` non `padding: '20px'`)
   - **Tailwind OK**: Le classi Tailwind (p-4, w-6, gap-2) usano già rem internamente
   - **W3 Suite convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅

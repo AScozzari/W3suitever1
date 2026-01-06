@@ -2,19 +2,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
 import { 
-  Building2, Search, Filter, Eye, Pause, Play, Trash2,
-  ChevronRight, Clock, MoreVertical, CheckCircle, AlertCircle,
-  Plus
+  Building2, Search, Eye, Trash2, Edit2,
+  Clock, Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,11 +52,15 @@ interface Tenant {
 interface ManagementTenantsTabProps {
   onSelectTenant: (tenant: Tenant) => void;
   onCreateTenant: () => void;
+  onEditTenant: (tenant: Tenant) => void;
+  onDeleteTenant: (tenant: Tenant) => void;
 }
 
 export default function ManagementTenantsTab({ 
   onSelectTenant, 
-  onCreateTenant 
+  onCreateTenant,
+  onEditTenant,
+  onDeleteTenant
 }: ManagementTenantsTabProps) {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
