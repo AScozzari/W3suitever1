@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../lib/queryClient';
 import { 
   Building2, ArrowLeft, BarChart3, Briefcase, Store, Plus,
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
+import LegalEntityFormModal from './LegalEntityFormModal';
+import StoreFormModal from './StoreFormModal';
 
 const COLORS = {
   primary: {
@@ -62,6 +64,54 @@ export default function TenantDetailView({
   onEditTenant,
 }: TenantDetailViewProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('analytics');
+  const [showLegalEntityModal, setShowLegalEntityModal] = useState(false);
+  const [showStoreModal, setShowStoreModal] = useState(false);
+  const [editingLegalEntity, setEditingLegalEntity] = useState<any>(null);
+  const [editingStore, setEditingStore] = useState<any>(null);
+  
+  const queryClient = useQueryClient();
+  
+  const createLegalEntityMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/brand-api/legal-entities', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, tenantId: tenant.id }),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations', tenant.id, 'legal-entities'] });
+      setShowLegalEntityModal(false);
+      setEditingLegalEntity(null);
+    },
+  });
+  
+  const createStoreMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/brand-api/stores', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, tenantId: tenant.id }),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations', tenant.id, 'stores'] });
+      setShowStoreModal(false);
+      setEditingStore(null);
+    },
+  });
+  
+  const handleOpenLegalEntityModal = () => {
+    setEditingLegalEntity(null);
+    setShowLegalEntityModal(true);
+  };
+  
+  const handleOpenStoreModal = () => {
+    setEditingStore(null);
+    setShowStoreModal(true);
+  };
+  
+  const handleSaveLegalEntity = async (data: any) => {
+    await createLegalEntityMutation.mutateAsync(data);
+  };
+  
+  const handleSaveStore = async (data: any) => {
+    await createStoreMutation.mutateAsync(data);
+  };
 
   const { data: legalEntitiesData, isLoading: legalEntitiesLoading } = useQuery({
     queryKey: ['/brand-api/organizations', tenant.id, 'legal-entities'],
@@ -384,7 +434,7 @@ export default function TenantDetailView({
           {/* Azioni Rapide */}
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <Button
-              onClick={() => onCreateLegalEntity(tenant.id)}
+              onClick={handleOpenLegalEntityModal}
               data-testid="button-header-add-legal-entity"
               size="sm"
               style={{
@@ -400,7 +450,7 @@ export default function TenantDetailView({
               Ragione Sociale
             </Button>
             <Button
-              onClick={() => onCreateStore(tenant.id)}
+              onClick={handleOpenStoreModal}
               data-testid="button-header-add-store"
               size="sm"
               style={{
@@ -597,7 +647,7 @@ export default function TenantDetailView({
               Ragioni Sociali ({legalEntities.length})
             </h3>
             <Button
-              onClick={() => onCreateLegalEntity(tenant.id)}
+              onClick={handleOpenLegalEntityModal}
               data-testid="button-tab-add-legal-entity"
               style={{
                 background: COLORS.gradients.purple,
@@ -628,7 +678,7 @@ export default function TenantDetailView({
                 Nessuna ragione sociale
               </p>
               <Button
-                onClick={() => onCreateLegalEntity(tenant.id)}
+                onClick={handleOpenLegalEntityModal}
                 style={{
                   background: COLORS.gradients.purple,
                   color: 'white',
@@ -729,7 +779,7 @@ export default function TenantDetailView({
               Punti Vendita ({stores.length})
             </h3>
             <Button
-              onClick={() => onCreateStore(tenant.id)}
+              onClick={handleOpenStoreModal}
               data-testid="button-tab-add-store"
               style={{
                 background: COLORS.gradients.green,
@@ -760,7 +810,7 @@ export default function TenantDetailView({
                 Nessun punto vendita
               </p>
               <Button
-                onClick={() => onCreateStore(tenant.id)}
+                onClick={handleOpenStoreModal}
                 style={{
                   background: COLORS.gradients.green,
                   color: 'white',
@@ -852,6 +902,31 @@ export default function TenantDetailView({
           )}
         </div>
       )}
+      
+      {/* Modal Nuova Ragione Sociale */}
+      <LegalEntityFormModal
+        isOpen={showLegalEntityModal}
+        mode={editingLegalEntity ? 'edit' : 'create'}
+        data={editingLegalEntity}
+        onClose={() => {
+          setShowLegalEntityModal(false);
+          setEditingLegalEntity(null);
+        }}
+        onSave={handleSaveLegalEntity}
+      />
+      
+      {/* Modal Nuovo Punto Vendita */}
+      <StoreFormModal
+        isOpen={showStoreModal}
+        mode={editingStore ? 'edit' : 'create'}
+        data={editingStore}
+        onClose={() => {
+          setShowStoreModal(false);
+          setEditingStore(null);
+        }}
+        onSave={handleSaveStore}
+        organizationEntities={legalEntities}
+      />
     </div>
   );
 }
