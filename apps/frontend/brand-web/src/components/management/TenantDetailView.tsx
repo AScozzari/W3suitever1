@@ -184,16 +184,16 @@ export default function TenantDetailView({
         border: '0.0625rem solid rgba(255, 255, 255, 0.22)',
         boxShadow: '0 1rem 2.5rem rgba(255, 140, 60, 0.18)',
       }}>
-        {/* Riga 1: Back + Info Tenant + Modifica */}
+        {/* Riga 1: Back + Icona + Nome Tenant + Status + Tabs + Modifica - tutto allineato */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          marginBottom: '1.75rem',
-          paddingBottom: '1.5rem',
+          marginBottom: '1.5rem',
+          paddingBottom: '1.25rem',
           borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.2)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button
               onClick={onBack}
               data-testid="button-back-to-list"
@@ -201,7 +201,7 @@ export default function TenantDetailView({
                 background: 'rgba(255, 255, 255, 0.9)',
                 border: 'none',
                 borderRadius: '0.5rem',
-                padding: '0.75rem',
+                padding: '0.625rem',
                 cursor: 'pointer',
                 color: 'rgba(17, 24, 39, 0.92)',
                 display: 'flex',
@@ -219,12 +219,12 @@ export default function TenantDetailView({
                 e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
             <div style={{
-              width: '3.5rem',
-              height: '3.5rem',
-              borderRadius: '0.75rem',
+              width: '2.5rem',
+              height: '2.5rem',
+              borderRadius: '0.5rem',
               background: 'rgba(255, 255, 255, 0.2)',
               border: '0.0625rem solid rgba(255, 255, 255, 0.3)',
               display: 'flex',
@@ -232,34 +232,79 @@ export default function TenantDetailView({
               justifyContent: 'center',
               color: 'white',
             }}>
-              <Building2 size={24} />
+              <Building2 size={18} />
             </div>
-            <div style={{ marginLeft: '0.25rem' }}>
-              <h2 style={{ 
-                fontSize: '1.625rem', 
-                fontWeight: 700, 
-                margin: 0,
-                marginBottom: '0.625rem',
-                letterSpacing: '-0.01em',
-                color: 'white',
-                textShadow: '0 0.0625rem 0.25rem rgba(0, 0, 0, 0.15)',
-              }}>
-                {tenant.name}
-              </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <code style={{
-                  fontSize: '0.8125rem',
-                  padding: '0.375rem 0.875rem',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  border: '0.0625rem solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '0.375rem',
-                  fontFamily: 'monospace',
-                  color: 'white',
-                }}>
-                  {tenant.slug}
-                </code>
-                {getStatusBadge(tenant.status)}
-              </div>
+            <h2 style={{ 
+              fontSize: '1.375rem', 
+              fontWeight: 700, 
+              margin: 0,
+              letterSpacing: '-0.01em',
+              color: 'white',
+              textShadow: '0 0.0625rem 0.25rem rgba(0, 0, 0, 0.15)',
+            }}>
+              {tenant.name}
+            </h2>
+            {getStatusBadge(tenant.status)}
+            
+            {/* Tabs inline */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    data-testid={`tab-detail-${tab.id}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: '0.5rem 0.875rem',
+                      background: isActive ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
+                      color: isActive ? COLORS.primary.orange : 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      fontSize: '0.8125rem',
+                      fontWeight: isActive ? 600 : 500,
+                      transition: 'all 0.2s ease',
+                      boxShadow: isActive ? '0 0.25rem 0.75rem rgba(0, 0, 0, 0.15)' : 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                      } else {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 1)';
+                        e.currentTarget.style.transform = 'translateY(-0.0625rem)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      } else {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                  >
+                    <Icon size={14} />
+                    {tab.label}
+                    {tab.count !== undefined && (
+                      <span style={{
+                        background: isActive ? `${COLORS.primary.orange}18` : 'rgba(255, 255, 255, 0.25)',
+                        color: isActive ? COLORS.primary.orange : 'white',
+                        padding: '0.125rem 0.375rem',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.6875rem',
+                        fontWeight: 600,
+                      }}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
           
@@ -270,7 +315,7 @@ export default function TenantDetailView({
               background: 'rgba(255, 255, 255, 0.95)',
               color: COLORS.primary.orange,
               border: 'none',
-              padding: '0.75rem 1.5rem',
+              padding: '0.625rem 1.25rem',
               fontWeight: 600,
               transition: 'all 0.2s ease',
               boxShadow: '0 0.25rem 0.75rem rgba(0, 0, 0, 0.15)',
@@ -364,103 +409,6 @@ export default function TenantDetailView({
           })}
         </div>
 
-        {/* Riga 3: Tabs + Azioni Rapide */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderTop: '0.0625rem solid rgba(255, 255, 255, 0.15)',
-          paddingTop: '1rem',
-        }}>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  data-testid={`tab-detail-${tab.id}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.625rem 1rem',
-                    background: isActive ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                    color: 'white',
-                    border: isActive ? '0.0625rem solid rgba(255, 255, 255, 0.25)' : '0.0625rem solid transparent',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: isActive ? 600 : 500,
-                    opacity: isActive ? 1 : 0.85,
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  <Icon size={16} />
-                  {tab.label}
-                  {tab.count !== undefined && (
-                    <span style={{
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      padding: '0.125rem 0.5rem',
-                      borderRadius: '0.75rem',
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                    }}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          
-          {/* Azioni Rapide */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button
-              onClick={handleOpenLegalEntityModal}
-              data-testid="button-header-add-legal-entity"
-              size="sm"
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                border: '0.0625rem solid rgba(255, 255, 255, 0.2)',
-                fontSize: '0.8125rem',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Ragione Sociale
-            </Button>
-            <Button
-              onClick={handleOpenStoreModal}
-              data-testid="button-header-add-store"
-              size="sm"
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                color: 'white',
-                border: '0.0625rem solid rgba(255, 255, 255, 0.2)',
-                fontSize: '0.8125rem',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Punto Vendita
-            </Button>
-          </div>
-        </div>
       </div>
 
       {activeTab === 'analytics' && (
