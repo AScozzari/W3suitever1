@@ -529,11 +529,10 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
     const ctx = getContext(req);
     const targetUserId = req.params.userId;
     
-    // First try Object Storage (Replit environment)
+    // Get avatar from S3 storage
     const result = await storageService.getAvatarSignedUrl(ctx, targetUserId);
     
     if (result) {
-      // Object Storage avatar found
       return res.json({ 
         ...result, 
         hasAvatar: true,
@@ -541,55 +540,13 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
       });
     }
     
-    // Fallback: Check for static avatar file via avatar_object_path in users table
-    // This handles VPS environments where Object Storage isn't available
-    const { db } = await import('../core/db');
-    const { users } = await import('../db/schema/w3suite');
-    const { eq } = await import('drizzle-orm');
-    
-    const [user] = await db.select({ 
-      avatarObjectPath: users.avatarObjectPath,
-      firstName: users.firstName,
-      lastName: users.lastName
-    })
-    .from(users)
-    .where(eq(users.id, targetUserId))
-    .limit(1);
-    
-    if (user?.avatarObjectPath) {
-      // Build static serve URL from avatar_object_path
-      const filename = user.avatarObjectPath.split('/').pop();
-      const staticUrl = `/api/storage/avatars/serve/${ctx.tenantId}/${filename}`;
-      
-      // Calculate initials
-      let initials = 'U';
-      if (user.firstName && user.lastName) {
-        initials = (user.firstName[0] + user.lastName[0]).toUpperCase();
-      } else if (user.firstName) {
-        initials = user.firstName.substring(0, 2).toUpperCase();
-      }
-      
-      return res.json({
-        hasAvatar: true,
-        url: staticUrl,
-        expiresAt: null, // Static files don't expire
-        mimeType: 'image/png',
-        fileName: filename,
-        initials,
-        isLegacy: true // Flag to indicate this is a static file, not object storage
-      });
-    }
-    
-    // No avatar found in either system
+    // No avatar found
     return res.json({ hasAvatar: false, url: null, expiresAt: null, initials: 'U' });
   } catch (error: any) {
     console.error('Error getting avatar signed URL:', error);
     res.status(500).json({ error: error.message });
   }
 });
-
-// DEPRECATED: Old filesystem avatar serve endpoint removed
-// Avatar retrieval now uses S3 signed URLs via GET /api/users/:userId/avatar
 
 // ==================== TRASH & DELETE ====================
 
