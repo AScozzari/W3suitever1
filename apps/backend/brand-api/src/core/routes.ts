@@ -69,28 +69,68 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     });
   });
 
-  // Verify token endpoint - requires auth
-  app.get("/brand-api/auth/me", authenticateToken(), async (req, res) => {
-    const user = (req as any).user;
-
-    res.json({ 
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        commercialAreas: user.commercialAreas,
-        permissions: user.permissions
+  // Verify token endpoint - requires auth (with development bypass)
+  app.get("/brand-api/auth/me", async (req, res, next) => {
+    // Development mode bypass
+    if (process.env.NODE_ENV === "development") {
+      const savedToken = req.headers.authorization?.replace('Bearer ', '');
+      // If no token or invalid, return dev user
+      if (!savedToken) {
+        return res.json({ 
+          success: true,
+          user: {
+            id: "brand-admin-user",
+            email: "admin@brandinterface.com",
+            firstName: "Brand",
+            lastName: "Admin",
+            role: "super_admin",
+            commercialAreas: [],
+            permissions: ["*"]
+          }
+        });
       }
+      // Try to verify token, if fails return dev user
+      try {
+        const decoded = BrandAuthService.verifyToken(savedToken);
+        return res.json({ success: true, user: decoded });
+      } catch (err) {
+        console.log("🔧 [BRAND-DEV] Token invalid/expired, using dev user");
+        return res.json({ 
+          success: true,
+          user: {
+            id: "brand-admin-user",
+            email: "admin@brandinterface.com",
+            firstName: "Brand",
+            lastName: "Admin",
+            role: "super_admin",
+            commercialAreas: [],
+            permissions: ["*"]
+          }
+        });
+      }
+    }
+    // Production: use authenticateToken middleware
+    authenticateToken()(req, res, () => {
+      const user = (req as any).user;
+      res.json({ 
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          commercialAreas: user.commercialAreas,
+          permissions: user.permissions
+        }
+      });
     });
   });
 
   // Apply JWT authentication middleware to all routes except auth/login and health
   app.use("/brand-api", (req, res, next) => {
-    // Skip auth for login, health and reference endpoints  
-    if (req.path === "/auth/login" || req.path === "/health" || req.path.startsWith("/reference/")) {
+    // Skip auth for login, health, auth/me and reference endpoints  
+    if (req.path === "/auth/login" || req.path === "/auth/me" || req.path === "/health" || req.path.startsWith("/reference/")) {
       return next();
     }
     

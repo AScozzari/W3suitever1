@@ -137,15 +137,19 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_SCALE=80` when building frontend for VPS
-- **CSS UNITS RULE (OBBLIGATORIO da Gen 2026)**:
-  - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius
-  - **✅ px OK**: border-width (1-2px), box-shadow offset/blur (piccoli valori)
-  - **Formula**: `rem = px / 16` (es: 16px = 1rem, 14px = 0.875rem)
-  - **Motivo**: VITE_FONT_SCALE=80 scala solo rem/em, non px
-  - **W3 Suite pagine convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
-  - **Brand Interface pagine convertite**: Login.tsx ✅, Management.tsx ✅, CloudStoragePage.tsx ✅ (usa Tailwind)
-  - **Brand Interface**: Hook `useProductionScale()` in App.tsx + CSS var `--font-scale` in index.css
-  - **Refactor graduale**: Convertire pagine quando vengono toccate
+- **🚨 CSS UNITS RULE - OBBLIGATORIO PER TUTTI I NUOVI SVILUPPI (da Gen 2026)**:
+  - **⚠️ REGOLA ASSOLUTA**: TUTTI i nuovi file e modifiche DEVONO usare `rem` per dimensioni
+  - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius, icon sizes
+  - **✅ px OK SOLO**: border-width (1-2px), box-shadow offset/blur (piccoli valori fissi)
+  - **❌ MAI px per**: font-size, padding, margin, gap, width, height - CAUSA BUG DI SCALING!
+  - **Formula**: `rem = px / 16` (es: 20px → 1.25rem, 16px → 1rem, 14px → 0.875rem, 12px → 0.75rem)
+  - **Motivo**: VITE_FONT_SCALE=80 scala solo rem/em, px resta fisso e rompe il layout
+  - **Inline styles**: Usare rem anche in style={{}} (es: `padding: '1.25rem'` non `padding: '20px'`)
+  - **Tailwind OK**: Le classi Tailwind (p-4, w-6, gap-2) usano già rem internamente
+  - **W3 Suite convertite**: Login.tsx ✅, ForgotPassword.tsx ✅, ResetPassword.tsx ✅, SettingsPage.tsx ✅
+  - **Brand Interface convertite**: Login.tsx ✅, Management.tsx ✅, CloudStoragePage.tsx ✅
+  - **Brand Interface hook**: `useProductionScale()` in App.tsx + CSS var `--font-scale` in index.css
+  - **Refactor continuo**: Convertire pagine esistenti quando vengono toccate
 
 # System Architecture
 - **UI/UX Decisions**: WindTre Glassmorphism design, fixed headers/sidebars, white backgrounds. Uses `shadcn/ui` (Radix UI-based) with Tailwind CSS. UI zoom is managed by `VITE_FONT_SCALE=80` at build-time, requiring `rem` units for proper scaling.
