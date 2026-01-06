@@ -1673,6 +1673,10 @@ export class HRNotificationHelper {
       }
 
       if (templateKey && targetUsers.length > 0) {
+        // Get tenant slug for URL construction
+        const tenantData = await db.select({ slug: tenants.slug }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+        const tenantSlug = tenantData[0]?.slug || tenantId;
+        
         const variables: NotificationVariables = {
           requestId: request.id,
           requestTitle: request.title,
@@ -1683,7 +1687,7 @@ export class HRNotificationHelper {
           fromStatus: fromStatus || undefined,
           priority: request.priority || undefined,
           reason,
-          url: `/staging/hr/requests/${request.id}` // Deep link to request details
+          url: `/${tenantSlug}/hr/requests/${request.id}`
         };
 
         await notificationService.sendTemplatedNotification(
@@ -1755,6 +1759,10 @@ export class HRNotificationHelper {
       }
 
       const request = hrRequest[0];
+      
+      // Get tenant slug for URL construction
+      const tenantData = await db.select({ slug: tenants.slug }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+      const tenantSlug = tenantData[0]?.slug || tenantId;
 
       const variables: NotificationVariables = {
         requestId: request.id,
@@ -1763,7 +1771,7 @@ export class HRNotificationHelper {
         requestCategory: request.category || undefined,
         requesterName: `${request.requester?.firstName} ${request.requester?.lastName}`.trim(),
         priority: 'urgent',
-        url: `/staging/hr/requests/${request.id}`
+        url: `/${tenantSlug}/hr/requests/${request.id}`
       };
 
       await notificationService.sendTemplatedNotification(
@@ -1824,6 +1832,10 @@ export class HRNotificationHelper {
       const pusherName = pusher.length > 0 
         ? `${pusher[0].firstName} ${pusher[0].lastName}`.trim()
         : 'HR';
+      
+      // Get tenant slug for URL construction
+      const tenantData = await db.select({ slug: tenants.slug }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+      const tenantSlug = tenantData[0]?.slug || tenantId;
 
       const variables: NotificationVariables = {
         requestId: documentId,
@@ -1834,7 +1846,7 @@ export class HRNotificationHelper {
         status: 'new',
         priority: 'medium',
         comments: message || undefined,
-        url: `/staging/documents?highlight=${documentId}` // Deep link to documents with highlight
+        url: `/${tenantSlug}/documents?highlight=${documentId}`
       };
 
       await notificationService.sendTemplatedNotification(
