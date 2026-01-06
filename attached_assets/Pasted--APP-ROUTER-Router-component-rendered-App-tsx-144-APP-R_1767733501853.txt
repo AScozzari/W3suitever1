@@ -1,0 +1,95 @@
+[APP-ROUTER] 🚀 Router component rendered
+App.tsx:144 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'settings', tenant: 'staging', *: 'settings'}
+App.tsx:154 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:155 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+installHook.js:1 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'settings', tenant: 'staging', *: 'settings'}
+installHook.js:1 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+installHook.js:1 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+queryClient.ts:305 [API-REQUEST] 📖 Public endpoint: /api/reference/payment-methods
+queryClient.ts:305 [API-REQUEST] 📖 Public endpoint: /api/reference/payment-methods
+SettingsPage.tsx:905 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:908 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+ApiService.ts:319 [LOAD-SETTINGS] 🚀 Starting loadSettingsData...
+queryClient.ts:163 [QUERY-CLIENT] 📖 Public endpoint: /api/reference/legal-forms
+SettingsPage.tsx:1869 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+queryClient.ts:163 [QUERY-CLIENT] 📖 Public endpoint: /api/reference/countries
+queryClient.ts:163 [QUERY-CLIENT] 📖 Public endpoint: /api/reference/italian-cities
+queryClient.ts:163 [QUERY-CLIENT] 📖 Public endpoint: /api/reference/payment-methods
+SettingsPage.tsx:2149 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage.tsx:905 🆕 SettingsPage: Loading data for Entity Management tab...
+SettingsPage.tsx:908 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+ApiService.ts:319 [LOAD-SETTINGS] 🚀 Starting loadSettingsData...
+SettingsPage.tsx:1869 [RBAC-DEBUG] Role Permissions Query State: {selectedRole: null, enabled: false, isLoading: false, hasData: false, data: undefined, …}
+SettingsPage.tsx:2149 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/avatars/admin-user/signed-url 500 (Internal Server Error)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+ApiService.ts:332 [LOAD-SETTINGS] 📊 Raw results: {orgEntities: {…}, users: {…}, stores: {…}}
+ApiService.ts:366 [LOAD-SETTINGS] ✅ Extracted data: {organizationEntities: 4, users: 21, stores: 5}
+SettingsPage.tsx:910 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, error: undefined, warnings: Array(0)}
+SettingsPage.tsx:923 📝 Setting state with data: {organizationEntities: 4, users: 21, stores: 5}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:2149 [RBAC] 🔄 Permission initialization effect triggered {hasSelectedRole: false, selectedRole: null, hasRolePermissions: false, rolePermissions: undefined, rolePermissionsCount: undefined, …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+ApiService.ts:332 [LOAD-SETTINGS] 📊 Raw results: {orgEntities: {…}, users: {…}, stores: {…}}
+ApiService.ts:366 [LOAD-SETTINGS] ✅ Extracted data: {organizationEntities: 4, users: 21, stores: 5}
+SettingsPage.tsx:910 📦 SettingsPage: loadSettingsData

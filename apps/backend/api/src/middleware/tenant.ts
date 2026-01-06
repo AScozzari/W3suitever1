@@ -280,9 +280,11 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
     }
     
     // In development mode with demo user, always give all permissions
-    // Includes admin-user and all demo users (user-xxx)
+    // Includes admin-user, admin@w3suite.com and all demo users (user-xxx)
     const demoUserHeader = req.headers['x-demo-user'] as string;
     const isDemoUser = req.user.id === 'admin-user' || 
+                       req.user.id === 'admin@w3suite.com' ||
+                       req.user.email === 'admin@w3suite.com' ||
                        req.user.email === 'demo-user' || 
                        req.user.id?.startsWith('user-') ||
                        (demoUserHeader && demoUserHeader.startsWith('user-'));
@@ -331,7 +333,15 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
             
             // Ricarica i permessi
             req.userPermissions = ['*'];
+          } else {
+            // FIX: Ensure userPermissions is never undefined
+            console.log('[RBAC] ⚠️ No admin role found, setting empty permissions for user:', req.user.id);
+            req.userPermissions = [];
           }
+        } else {
+          // FIX: In production, if no permissions found, set empty array instead of leaving undefined
+          console.log('[RBAC] ⚠️ No permissions found for user in production:', req.user.id);
+          req.userPermissions = [];
         }
       } else {
         req.userPermissions = userPermissions;
