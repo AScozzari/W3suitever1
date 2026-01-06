@@ -64,19 +64,19 @@ const COLORS = {
 // Glassmorphism styles aligned with W3 Suite
 const glassStyle = {
   background: 'hsla(255, 255, 255, 0.08)',
-  backdropFilter: 'blur(24px) saturate(140%)',
-  WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+  backdropFilter: 'blur(1.5rem) saturate(140%)',
+  WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
   border: '1px solid hsla(255, 255, 255, 0.12)',
-  borderRadius: '16px',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  borderRadius: '1rem',
+  boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
 const cardStyle = {
   background: 'white',
-  borderRadius: '16px',
+  borderRadius: '1rem',
   overflow: 'hidden',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
   border: '1px solid #e5e7eb',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
@@ -108,8 +108,8 @@ const AnimatedCounter = ({ value, duration = 2000 }: { value: number; duration?:
 const PulseIndicator = ({ color = COLORS.semantic.success }: { color?: string }) => (
   <span style={{
     display: 'inline-block',
-    width: '8px',
-    height: '8px',
+    width: '0.5rem',
+    height: '0.5rem',
     borderRadius: '50%',
     background: color,
     position: 'relative',
@@ -118,8 +118,8 @@ const PulseIndicator = ({ color = COLORS.semantic.success }: { color?: string })
       position: 'absolute',
       top: 0,
       left: 0,
-      width: '8px',
-      height: '8px',
+      width: '0.5rem',
+      height: '0.5rem',
       borderRadius: '50%',
       background: color,
       animation: 'pulse 2s infinite',
@@ -148,13 +148,13 @@ const StatusBadge = ({ status }: { status: 'active' | 'inactive' | 'deprecated' 
     <span style={{
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '6px',
-      padding: '4px 12px',
-      fontSize: '12px',
+      gap: '0.375rem',
+      padding: '0.25rem 0.75rem',
+      fontSize: '0.75rem',
       fontWeight: 600,
       color: config.color,
       background: `${config.color}15`,
-      borderRadius: '12px',
+      borderRadius: '0.75rem',
       border: `1px solid ${config.color}30`
     }}>
       <PulseIndicator color={config.color} />

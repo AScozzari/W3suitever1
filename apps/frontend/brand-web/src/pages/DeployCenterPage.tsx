@@ -49,35 +49,35 @@ export default function DeployCenterPage() {
         <div 
           style={{
             background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
+            backdropFilter: 'blur(1.5rem) saturate(140%)',
             borderBottom: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '12px',
-            marginBottom: '24px'
+            borderRadius: '0.75rem',
+            marginBottom: '1.5rem'
           }}
         >
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <h1 style={{ 
-                  fontSize: '24px', 
+                  fontSize: '1.5rem', 
                   fontWeight: 'bold', 
                   color: '#1f2937',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '0.5rem',
                   margin: 0
                 }}>
                   <GitBranch size={24} style={{ color: '#FF6900' }} />
                   Deploy Center
                 </h1>
-                <p style={{ color: '#6b7280', marginTop: '4px', margin: 0 }}>
+                <p style={{ color: '#6b7280', marginTop: '0.25rem', margin: 0 }}>
                   Gestione centralizzata deployment CRM, WMS, POS e Analytics
                 </p>
               </div>
             </div>
             
             {/* Navigation Tabs */}
-            <div style={{ display: 'flex', gap: '4px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', marginTop: '1rem' }}>
               {tabConfigs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -89,16 +89,16 @@ export default function DeployCenterPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 16px',
+                      gap: '0.5rem',
+                      padding: '0.625rem 1rem',
                       background: isActive 
                         ? 'linear-gradient(135deg, #FF6900, #ff8533)'
                         : 'transparent',
                       color: isActive ? 'white' : '#374151',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '0.5rem',
                       cursor: 'pointer',
-                      fontSize: '14px',
+                      fontSize: '0.875rem',
                       fontWeight: isActive ? 600 : 400,
                       transition: 'all 0.2s ease'
                     }}

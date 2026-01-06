@@ -31,12 +31,12 @@ export default function Entities() {
 
   return (
     <BrandLayout>
-      <div style={{ padding: '24px' }}>
+      <div style={{ padding: '1.5rem' }}>
         <h1 style={{ 
-          fontSize: '24px', 
+          fontSize: '1.5rem', 
           fontWeight: 600, 
           color: '#1f2937',
-          marginBottom: '24px'
+          marginBottom: '1.5rem'
         }}>
           Gestione Entità Cross-Tenant
         </h1>
@@ -45,36 +45,36 @@ export default function Entities() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-          gap: '24px',
-          height: 'calc(100vh - 200px)'
+          gap: '1.5rem',
+          height: 'calc(100vh - 12.5rem)'
         }}>
           
           {/* Tenants Column */}
           <div style={{
             background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            borderRadius: '12px',
+            backdropFilter: 'blur(1.5rem) saturate(140%)',
+            WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
+            borderRadius: '0.75rem',
             border: '1px solid hsla(255, 255, 255, 0.12)',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column'
           }}>
             <div style={{
-              padding: '16px',
+              padding: '1rem',
               borderBottom: '1px solid hsla(255, 255, 255, 0.12)',
               background: 'linear-gradient(135deg, #FF6900, #ff8533)',
               color: 'white'
             }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>
                 Tenant
               </h2>
-              <p style={{ fontSize: '12px', opacity: 0.9, margin: 0 }}>
+              <p style={{ fontSize: '0.75rem', opacity: 0.9, margin: 0 }}>
                 {tenants.length} organizzazioni
               </p>
             </div>
             
-            <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
+            <div style={{ flex: 1, overflow: 'auto', padding: '0.5rem' }}>
               {tenants.map((tenant) => (
                 <div
                   key={tenant.id}
@@ -83,14 +83,14 @@ export default function Entities() {
                     setSelectedRagioneSociale(null); // Reset dependent selection
                   }}
                   style={{
-                    padding: '12px',
-                    marginBottom: '8px',
+                    padding: '0.75rem',
+                    marginBottom: '0.5rem',
                     background: selectedTenant === tenant.id ? 'rgba(255, 105, 0, 0.1)' : 'rgba(255, 255, 255, 0.03)',
                     border: selectedTenant === tenant.id ? '1px solid #FF6900' : '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: '8px',
+                    borderRadius: '0.5rem',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(0.5rem)'
                   }}
                   onMouseEnter={(e) => {
                     if (selectedTenant !== tenant.id) {
@@ -103,13 +103,13 @@ export default function Entities() {
                     }
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Building2 size={20} color="#6b7280" />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 600, color: '#1f2937', margin: 0 }}>
                         {tenant.name}
                       </p>
-                      <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                      <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>
                         Codice: {tenant.code}
                       </p>
                     </div>
@@ -119,10 +119,10 @@ export default function Entities() {
               ))}
             </div>
             
-            <div style={{ padding: '16px', borderTop: '1px solid hsla(255, 255, 255, 0.12)' }}>
+            <div style={{ padding: '1rem', borderTop: '1px solid hsla(255, 255, 255, 0.12)' }}>
               <button style={{
                 width: '100%',
-                padding: '12px',
+                padding: '0.75rem',
                 background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                 color: 'white',
                 border: 'none',

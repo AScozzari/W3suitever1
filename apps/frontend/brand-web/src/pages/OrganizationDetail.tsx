@@ -64,19 +64,19 @@ const COLORS = {
 
 const glassStyle = {
   background: 'hsla(255, 255, 255, 0.08)',
-  backdropFilter: 'blur(24px) saturate(140%)',
-  WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+  backdropFilter: 'blur(1.5rem) saturate(140%)',
+  WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
   border: '1px solid hsla(255, 255, 255, 0.12)',
-  borderRadius: '16px',
-  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+  borderRadius: '1rem',
+  boxShadow: '0 0.25rem 1.25rem rgba(0, 0, 0, 0.08)',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
 const cardStyle = {
   background: 'white',
-  borderRadius: '16px',
+  borderRadius: '1rem',
   border: '1px solid #e5e7eb',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+  boxShadow: '0 0.125rem 0.5rem rgba(0, 0, 0, 0.04)',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
@@ -201,28 +201,28 @@ export default function OrganizationDetail() {
   if (orgError) {
     return (
       <BrandLayout>
-        <div style={{ padding: '24px', background: '#fafbfc', minHeight: '100vh' }}>
+        <div style={{ padding: '1.5rem', background: '#fafbfc', minHeight: '100vh' }}>
           <div style={{
             ...cardStyle,
-            padding: '48px',
+            padding: '3rem',
             textAlign: 'center',
             background: 'linear-gradient(135deg, #fef2f2, #ffffff)',
             border: '1px solid #fecaca',
           }}>
             <div style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
+              width: '4rem',
+              height: '4rem',
+              borderRadius: '1rem',
               background: COLORS.semantic.error,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 16px',
+              margin: '0 auto 1rem',
             }}>
               <AlertTriangle size={32} style={{ color: 'white' }} />
             </div>
             <h2 style={{
-              fontSize: '20px',
+              fontSize: '1.25rem',
               fontWeight: '600',
               color: COLORS.neutral.dark,
               marginBottom: '8px',

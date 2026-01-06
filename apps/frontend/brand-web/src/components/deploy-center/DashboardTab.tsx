@@ -118,10 +118,10 @@ export default function DashboardTab() {
               data-testid={`card-tool-${tool.id}`}
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(24px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                backdropFilter: 'blur(1.5rem) saturate(180%)',
+                WebkitBackdropFilter: 'blur(1.5rem) saturate(180%)',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
-                borderRadius: '12px',
+                borderRadius: '0.75rem',
                 padding: '1.5rem',
                 position: 'relative',
                 overflow: 'hidden',

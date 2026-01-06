@@ -63,9 +63,9 @@ export default function BrowseCommitsTab() {
       {isLoading ? (
         <Card style={{
           background: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(180%)',
+          backdropFilter: 'blur(1.5rem) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.25)',
-          borderRadius: '12px',
+          borderRadius: '0.75rem',
           padding: '3rem',
           textAlign: 'center'
         }}>
@@ -76,9 +76,9 @@ export default function BrowseCommitsTab() {
       ) : allCommits.length === 0 ? (
         <Card style={{
           background: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(180%)',
+          backdropFilter: 'blur(1.5rem) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.25)',
-          borderRadius: '12px',
+          borderRadius: '0.75rem',
           padding: '3rem',
           textAlign: 'center'
         }}>
@@ -93,9 +93,9 @@ export default function BrowseCommitsTab() {
       ) : (
         <Card style={{
           background: 'rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(180%)',
+          backdropFilter: 'blur(1.5rem) saturate(180%)',
           border: '1px solid rgba(255, 255, 255, 0.25)',
-          borderRadius: '12px',
+          borderRadius: '0.75rem',
           overflow: 'hidden'
         }}>
           <div style={{ overflowX: 'auto' }}>
