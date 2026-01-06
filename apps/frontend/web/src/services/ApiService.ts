@@ -316,6 +316,8 @@ class ApiService {
    * Uses organization-entities for RS dell'organizzazione (linked to stores)
    */
   async loadSettingsData() {
+    console.log('[LOAD-SETTINGS] 🚀 Starting loadSettingsData...');
+    
     // Optimized parallel loading with graceful degradation
     // Now uses getOrganizationEntities for RS (not getLegalEntities which is for partners)
     const apiCalls = await Promise.allSettled([
@@ -325,6 +327,25 @@ class ApiService {
     ]);
 
     const [orgEntitiesResult, usersResult, storesResult] = apiCalls;
+
+    // DEBUG: Log raw results
+    console.log('[LOAD-SETTINGS] 📊 Raw results:', {
+      orgEntities: {
+        status: orgEntitiesResult.status,
+        value: orgEntitiesResult.status === 'fulfilled' ? orgEntitiesResult.value : null,
+        reason: orgEntitiesResult.status === 'rejected' ? (orgEntitiesResult as any).reason?.message : null
+      },
+      users: {
+        status: usersResult.status,
+        success: usersResult.status === 'fulfilled' ? usersResult.value.success : null,
+        dataLength: usersResult.status === 'fulfilled' && usersResult.value.data ? usersResult.value.data.length : 0
+      },
+      stores: {
+        status: storesResult.status,
+        success: storesResult.status === 'fulfilled' ? storesResult.value.success : null,
+        dataLength: storesResult.status === 'fulfilled' && storesResult.value.data ? storesResult.value.data.length : 0
+      }
+    });
 
     // Map fields from API format (snake_case/lowercase) to frontend format (camelCase)
     const mapOrgEntity = (item: any) => ({
@@ -341,6 +362,12 @@ class ApiService {
     
     const stores = storesResult.status === 'fulfilled' && storesResult.value.success 
       ? storesResult.value.data : [];
+    
+    console.log('[LOAD-SETTINGS] ✅ Extracted data:', {
+      organizationEntities: organizationEntities.length,
+      users: users.length,
+      stores: stores.length
+    });
 
     // Check for authentication requirements
     const authRequired = [orgEntitiesResult, usersResult, storesResult].some(
