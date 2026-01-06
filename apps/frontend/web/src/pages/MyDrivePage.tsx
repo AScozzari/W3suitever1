@@ -44,7 +44,7 @@ const DotsVerticalIcon = ({ className }: { className?: string }) => (
 interface StorageFolder {
   id: string;
   tenantId: string;
-  parentFolderId: string | null;
+  parentId: string | null;
   name: string;
   path: string;
   isSystemFolder: boolean;
@@ -163,7 +163,7 @@ function FolderTreeItem({
 }: FolderTreeItemProps) {
   const isExpanded = expandedFolders.has(folder.id);
   const isSelected = currentFolderId === folder.id;
-  const childFolders = allFolders.filter(f => (f.parentFolderId ?? null) === folder.id);
+  const childFolders = allFolders.filter(f => (f.parentId ?? null) === folder.id);
   const childObjects = allObjects.filter(o => (o.folderId ?? null) === folder.id);
   const hasChildren = childFolders.length > 0 || childObjects.length > 0;
   
@@ -399,7 +399,7 @@ function FolderTreeNavigator({
       const folder = folders.find(f => f.id === currentId);
       if (folder) {
         path.unshift({ id: folder.id, name: folder.name });
-        currentId = folder.parentFolderId;
+        currentId = folder.parentId;
       } else {
         break;
       }
@@ -408,7 +408,7 @@ function FolderTreeNavigator({
     return path;
   }, [folders]);
 
-  const rootFolders = folders.filter(f => (f.parentFolderId ?? null) === null);
+  const rootFolders = folders.filter(f => (f.parentId ?? null) === null);
   const rootObjects = objects.filter(o => (o.folderId ?? null) === null);
 
   if (rootFolders.length === 0 && rootObjects.length === 0) {
@@ -1025,9 +1025,9 @@ export function MyDriveContent({ embedded = false }: { embedded?: boolean }) {
 
     // CRITICAL: Filter by current folder - show only direct children
     if (activeSection === 'my-files') {
-      // Filter folders: show only those whose parentFolderId matches currentFolderId
+      // Filter folders: show only those whose parentId matches currentFolderId
       // Normalize: treat undefined and null as the same (root level)
-      folders = folders.filter(f => (f.parentFolderId ?? null) === currentFolderId);
+      folders = folders.filter(f => (f.parentId ?? null) === currentFolderId);
       // Filter objects: show only those whose folderId matches currentFolderId
       objects = objects.filter(o => (o.folderId ?? null) === currentFolderId);
     }

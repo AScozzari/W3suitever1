@@ -124,9 +124,7 @@ router.get('/team-drive/:teamId/folders', requirePermission('storage:read'), asy
 router.post('/folders', requirePermission('storage:write'), async (req: Request, res: Response) => {
   try {
     const ctx = getContext(req);
-    console.log('[DEBUG] Creating folder with body:', JSON.stringify(req.body, null, 2));
     const folder = await storageService.createFolder(ctx, req.body);
-    console.log('[DEBUG] Folder created:', JSON.stringify({ id: folder.id, parentId: folder.parentId, name: folder.name }, null, 2));
     res.status(201).json(folder);
   } catch (error: any) {
     console.error('Error creating folder:', error);
