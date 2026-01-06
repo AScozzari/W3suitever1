@@ -241,14 +241,14 @@ export default function LeftSidebar({
           onClick={() => onToggleCollapse?.(!collapsed)}
           style={{
             position: 'fixed',
-            top: '14px',
-            left: '16px',
-            width: '28px',
-            height: '28px',
+            top: '0.875rem',
+            left: '1rem',
+            width: '1.75rem',
+            height: '1.75rem',
             background: 'hsla(0, 0%, 100%, 0.35)',
-            backdropFilter: 'blur(16px)',
+            backdropFilter: 'blur(1rem)',
             border: '1px solid hsla(0, 0%, 100%, 0.18)',
-            borderRadius: '8px',
+            borderRadius: '0.5rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -267,19 +267,19 @@ export default function LeftSidebar({
         style={{
           position: isMobile ? 'static' : 'fixed',
           left: 0,
-          top: isMobile ? '0' : '64px',
-          height: isMobile ? 'auto' : 'calc(100vh - 64px)',
-          width: isMobile ? '100%' : (collapsed ? '64px' : '256px'),
+          top: isMobile ? '0' : '4rem',
+          height: isMobile ? 'auto' : 'calc(100vh - 4rem)',
+          width: isMobile ? '100%' : (collapsed ? '4rem' : '16rem'),
           background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          backdropFilter: 'blur(1.5rem) saturate(140%)',
+          WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
           borderRight: isMobile ? 'none' : '1px solid hsla(255, 255, 255, 0.12)',
           borderBottom: isMobile ? '1px solid hsla(255, 255, 255, 0.12)' : 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           zIndex: 40,
           display: isMobile && collapsed ? 'none' : 'flex',
           flexDirection: 'column',
-          padding: isMobile ? '16px' : '16px 8px',
+          padding: isMobile ? '1rem' : '1rem 0.5rem',
           overflowY: 'auto',
           overflowX: 'hidden'
         }}
@@ -290,12 +290,12 @@ export default function LeftSidebar({
             onClick={() => onToggleCollapse?.(!collapsed)}
             style={{
               position: 'absolute',
-              top: '16px',
-              right: '-12px',
-              width: '24px',
-              height: '24px',
+              top: '1rem',
+              right: '-0.75rem',
+              width: '1.5rem',
+              height: '1.5rem',
               background: 'hsla(0, 0%, 100%, 0.9)',
-              backdropFilter: 'blur(16px)',
+              backdropFilter: 'blur(1rem)',
               border: '1px solid hsla(0, 0%, 100%, 0.25)',
               borderRadius: '50%',
               cursor: 'pointer',
@@ -304,7 +304,7 @@ export default function LeftSidebar({
               justifyContent: 'center',
               zIndex: 50,
               transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+              boxShadow: '0 0.25rem 0.75rem rgba(0, 0, 0, 0.1)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'scale(1.1)';
@@ -323,10 +323,10 @@ export default function LeftSidebar({
         <nav style={{
           display: 'flex',
           flexDirection: isMobile ? 'row' : 'column',
-          gap: isMobile ? '12px' : '4px',
-          paddingTop: isMobile ? '0' : '24px',
+          gap: isMobile ? '0.75rem' : '0.25rem',
+          paddingTop: isMobile ? '0' : '1.5rem',
           overflowX: isMobile ? 'auto' : 'visible',
-          paddingBottom: '16px'
+          paddingBottom: '1rem'
         }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -339,25 +339,25 @@ export default function LeftSidebar({
                 <button
                     onClick={() => handleMenuClick(item)}
                   style={{
-                    width: isMobile ? 'auto' : (collapsed ? '40px' : '100%'),
-                    height: collapsed && !isMobile ? '40px' : 'auto',
-                    minWidth: isMobile ? '80px' : 'auto',
-                    padding: isMobile ? '12px' : (collapsed ? '12px' : '12px 16px'),
-                    marginBottom: isMobile ? '0' : (collapsed ? '0' : '4px'),
+                    width: isMobile ? 'auto' : (collapsed ? '2.5rem' : '100%'),
+                    height: collapsed && !isMobile ? '2.5rem' : 'auto',
+                    minWidth: isMobile ? '5rem' : 'auto',
+                    padding: isMobile ? '0.75rem' : (collapsed ? '0.75rem' : '0.75rem 1rem'),
+                    marginBottom: isMobile ? '0' : (collapsed ? '0' : '0.25rem'),
                     background: isActive 
                       ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
                       : 'transparent',
                     backdropFilter: 'none',
                     WebkitBackdropFilter: 'none',
                     border: 'none',
-                    borderRadius: collapsed ? '12px' : '8px',
+                    borderRadius: collapsed ? '0.75rem' : '0.5rem',
                     color: isActive ? 'white' : '#374151',
-                    fontSize: isMobile ? '12px' : '14px',
+                    fontSize: isMobile ? '0.75rem' : '0.875rem',
                     fontWeight: isActive ? 600 : 500,
                     display: 'flex',
                     alignItems: 'center',
                     flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? '4px' : (collapsed ? '0' : '12px'),
+                    gap: isMobile ? '0.25rem' : (collapsed ? '0' : '0.75rem'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     textAlign: collapsed ? 'center' : 'left',
@@ -377,7 +377,7 @@ export default function LeftSidebar({
                     }
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? '0' : '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? '0' : '0.75rem' }}>
                     {/* Icon */}
                     <div style={{
                       display: 'flex',
@@ -425,14 +425,14 @@ export default function LeftSidebar({
                   {collapsed && !isMobile && (
                     <div style={{
                       position: 'absolute',
-                      left: '60px',
+                      left: '3.75rem',
                       top: '50%',
                       transform: 'translateY(-50%)',
                       background: 'rgba(0, 0, 0, 0.8)',
                       color: 'white',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.75rem',
                       fontWeight: 500,
                       whiteSpace: 'nowrap',
                       opacity: 0,
@@ -450,10 +450,10 @@ export default function LeftSidebar({
                 {/* Submenu items */}
                 {item.hasSubmenu && isExpanded && !collapsed && (
                   <div style={{
-                    marginLeft: '16px',
+                    marginLeft: '1rem',
                     borderLeft: '2px solid hsla(255, 255, 255, 0.1)',
-                    paddingLeft: '16px',
-                    marginBottom: '8px'
+                    paddingLeft: '1rem',
+                    marginBottom: '0.5rem'
                   }}>
                     {item.submenuItems?.map((subItem) => {
                       const SubIcon = subItem.icon;
@@ -465,19 +465,19 @@ export default function LeftSidebar({
                           onClick={() => handleMenuClick(subItem)}
                           style={{
                             width: '100%',
-                            padding: '8px 12px',
-                            marginBottom: '2px',
+                            padding: '0.5rem 0.75rem',
+                            marginBottom: '0.125rem',
                             background: isSubActive 
                               ? `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})` 
                               : 'transparent',
                             border: 'none',
-                            borderRadius: '6px',
+                            borderRadius: '0.375rem',
                             color: isSubActive ? 'white' : '#6b7280',
-                            fontSize: '13px',
+                            fontSize: '0.8125rem',
                             fontWeight: isSubActive ? 600 : 500,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
+                            gap: '0.5rem',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
                             textAlign: 'left',
@@ -513,19 +513,19 @@ export default function LeftSidebar({
         {/* Footer info quando expanded */}
         {!collapsed && !isMobile && (
           <div style={{
-            padding: '16px',
+            padding: '1rem',
             borderTop: '1px solid hsla(255, 255, 255, 0.1)',
             textAlign: 'center'
           }}>
             <div style={{
-              fontSize: '11px',
+              fontSize: '0.6875rem',
               color: '#6b7280',
-              marginBottom: '4px'
+              marginBottom: '0.25rem'
             }}>
               W3 Suite v2.0
             </div>
             <div style={{
-              fontSize: '10px',
+              fontSize: '0.625rem',
               color: '#9ca3af'
             }}>
               Enterprise Platform
