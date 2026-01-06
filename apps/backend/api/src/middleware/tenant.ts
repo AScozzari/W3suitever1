@@ -76,8 +76,6 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
         req.path.startsWith('/reference/') || // Reference data endpoints (legal-forms, countries, etc.) - public schema data
         req.path.startsWith('/action-definitions') || // Action definitions are global evergreen data
         req.path.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth, not tenant header
-        req.path.startsWith('/avatars/serve/') || // Avatar serve uses tenantId from URL path, not header
-        req.path.startsWith('/storage/avatars/serve/') || // Storage avatar serve uses tenantId from URL path
         req.path.startsWith('/storage/serve') || // Signed URL serve uses token, not tenant header
         isOAuthEndpoint || // OAuth endpoints use query params or session, not headers
         req.path === '/health' ||

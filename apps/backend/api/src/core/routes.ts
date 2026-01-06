@@ -177,7 +177,8 @@ const createCalendarEventSchema = z.object({
 const updateCalendarEventSchema = createCalendarEventSchema.partial();
 
 import hierarchyRouter from "../routes/hierarchy";
-import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
+import { avatarService as legacyAvatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
+import { avatarService as s3AvatarService } from "../services/avatar.service";
 import { objectAclService } from "./objectAcl";
 import { HRStorage, CalendarScope } from "./hr-storage";
 import { encryptionKeyService } from "./encryption-service";
@@ -1159,8 +1160,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         apiPath === '/utm-mediums' || // UTM parameters are public reference data
         apiPath.startsWith('/action-definitions') || // Action definitions are global evergreen data
         apiPath.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth
-        apiPath.startsWith('/avatars/serve/') || // Avatar images - public endpoint (tenantId in URL enforces isolation)
-        apiPath.startsWith('/storage/avatars/serve/') || // Storage avatar images - public endpoint (tenantId in URL enforces isolation)
         apiPath.startsWith('/storage/serve') || // Signed URL serve - uses token for auth, not session
         apiPath === '/' // Skip auth for /api/ root endpoint
       ) {
@@ -1411,8 +1410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/tenants/resolve' ||
         req.path === '/utm-sources' || // UTM parameters are public reference data
         req.path === '/utm-mediums' || // UTM parameters are public reference data
-        req.path.startsWith('/action-definitions') || // Action definitions are global evergreen data
-        req.path.startsWith('/avatars/serve/')) { // Avatar images use tenantId from URL, not header
+        req.path.startsWith('/action-definitions')) { // Action definitions are global evergreen data
       console.log(`[TENANT-SKIP] Bypassing tenant middleware for public endpoint: ${req.path}`);
       return next();
     }
@@ -1874,11 +1872,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Session endpoint with tenant info
   app.get('/api/auth/session', async (req: any, res) => {
-    // Helper to build avatar URL from object path
+    // Helper: avatarUrl is now fetched separately via GET /api/users/:userId/avatar (S3 signed URL)
+    // Returns null - frontend should call avatar endpoint if avatarObjectPath exists
     const buildAvatarUrl = (objectPath: string | null, tenantId: string): string | null => {
-      if (!objectPath) return null;
-      const filename = objectPath.split('/').pop();
-      return `/api/storage/avatars/serve/${tenantId}/${filename}`;
+      // Deprecated: use GET /api/users/:userId/avatar for S3 signed URL
+      return null;
     };
 
     // Check for development mode authentication first
@@ -3830,12 +3828,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // ✅ Build avatar URL from avatar_object_path (proxy URL pattern)
+      // ✅ Avatar URL is now S3 signed URL - frontend calls GET /api/users/:userId/avatar
+      // We only indicate if user has avatar, URL comes from dedicated endpoint
       let avatarUrl: string | null = null;
-      if (user.avatarObjectPath) {
-        const filename = user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/storage/avatars/serve/${tenantId}/${filename}`;
-      }
+      // avatarObjectPath is stored, frontend uses it to determine if avatar exists
 
       res.json({
         success: true,
@@ -4129,87 +4125,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update user avatar URL after successful upload
+  // Get S3 presigned URL for avatar upload
+  app.post('/api/users/:userId/avatar/upload-url', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const requesterId = req.user?.id;
+      const targetUserId = req.params.userId;
+      const { contentType = 'image/png' } = req.body;
+
+      if (!tenantId || !requesterId) {
+        return res.status(401).json({ error: 'authentication_required', message: 'Autenticazione richiesta' });
+      }
+
+      if (targetUserId !== requesterId && !req.userPermissions?.includes('*')) {
+        return res.status(403).json({ error: 'forbidden', message: 'Non autorizzato' });
+      }
+
+      const result = await s3AvatarService.getUploadUrl({
+        tenantId,
+        userId: targetUserId,
+        requestingUserId: requesterId
+      }, contentType);
+
+      res.json({
+        success: true,
+        data: {
+          uploadUrl: result.url,
+          objectKey: result.objectKey,
+          expiresAt: result.expiresAt,
+          method: 'PUT'
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'generazione URL upload avatar');
+    }
+  });
+
+  // Confirm avatar upload after successful S3 PUT
   app.put('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       const requesterId = req.user?.id;
       const targetUserId = req.params.userId;
+      const { objectKey } = req.body;
 
       if (!tenantId || !requesterId) {
-        return res.status(401).json({
-          error: 'authentication_required',
-          message: 'Autenticazione richiesta per aggiornamento avatar'
-        });
+        return res.status(401).json({ error: 'authentication_required', message: 'Autenticazione richiesta' });
       }
 
-      // Validate UUID parameter
-      if (!validateUUIDParam && targetUserId.includes('-') && targetUserId.length > 10) {
-        // Basic validation for user ID
-      } else if (!targetUserId || targetUserId.trim() === '') {
-        return res.status(400).json({
-          error: 'missing_parameter',
-          message: 'ID utente non specificato'
-        });
+      if (!objectKey) {
+        return res.status(400).json({ error: 'missing_parameter', message: 'objectKey richiesto' });
       }
 
-      // Users can only update their own avatar (unless admin)
-      if (targetUserId !== requesterId && !req.userPermissions?.includes('*') && !req.userPermissions?.includes('admin.users.update')) {
-        return res.status(403).json({
-          error: 'forbidden',
-          message: 'Non autorizzato a modificare avatar di altri utenti'
-        });
+      if (targetUserId !== requesterId && !req.userPermissions?.includes('*')) {
+        return res.status(403).json({ error: 'forbidden', message: 'Non autorizzato' });
       }
 
-      // Validate request body
-      const avatarSchema = z.object({
-        objectPath: z.string().min(1, 'Percorso oggetto richiesto'),
-        avatarUrl: z.string().url('URL avatar non valido').optional()
-      });
+      await s3AvatarService.confirmUpload({
+        tenantId,
+        userId: targetUserId,
+        requestingUserId: requesterId
+      }, objectKey);
 
-      const validatedData = validateRequestBody(avatarSchema, req.body, res);
-      if (!validatedData) return;
-
-      // Verify object access permissions
-      const hasAccess = await avatarService.validateAvatarAccess(
-        validatedData.objectPath,
-        requesterId,
-        tenantId
-      );
-
-      if (!hasAccess) {
-        return res.status(403).json({
-          error: 'access_denied',
-          message: 'Accesso negato al file avatar specificato'
-        });
-      }
-
-      // Update user's avatarObjectPath in database (new evergreen system)
-      await db
-        .update(users)
-        .set({ 
-          avatarObjectPath: validatedData.objectPath,
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, targetUserId));
-
+      const avatarInfo = await s3AvatarService.getDownloadUrl(tenantId, targetUserId);
 
       res.json({
         success: true,
         data: {
           userId: targetUserId,
-          avatarUrl,
-          objectPath: validatedData.objectPath
+          avatarUrl: avatarInfo.url,
+          objectKey
         },
         message: 'Avatar aggiornato con successo'
       });
-
     } catch (error) {
-      handleApiError(error, res, 'aggiornamento avatar utente');
+      handleApiError(error, res, 'conferma upload avatar');
     }
   });
 
-  // Get user avatar URL
+  // Get user avatar URL (S3 signed URL)
   app.get('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
@@ -4222,7 +4216,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Basic validation for userId parameter
       if (!targetUserId || targetUserId.trim() === '') {
         return res.status(400).json({
           error: 'missing_parameter',
@@ -4230,42 +4223,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Get user data from database - use avatarObjectPath for proxy URL generation
-      const userResult = await db
-        .select({
-          id: users.id,
-          tenantId: users.tenantId,
-          avatarObjectPath: users.avatarObjectPath,
-          firstName: users.firstName,
-          lastName: users.lastName
-        })
-        .from(users)
-        .where(eq(users.id, targetUserId))
-        .limit(1);
-
-      if (userResult.length === 0) {
-        return res.status(404).json({
-          error: 'user_not_found',
-          message: 'Utente non trovato'
-        });
-      }
-
-      const user = userResult[0];
-      
-      // Generate proxy URL from avatarObjectPath (NEVER use direct storage URL)
-      let avatarUrl: string | null = null;
-      if (user.avatarObjectPath) {
-        const filename = user.avatarObjectPath.split('/').pop();
-        avatarUrl = `/api/storage/avatars/serve/${user.tenantId}/${filename}`;
-      }
+      // Use new S3-based avatar service
+      const avatarInfo = await s3AvatarService.getDownloadUrl(tenantId, targetUserId);
 
       res.json({
         success: true,
         data: {
-          userId: user.id,
-          avatarUrl,
-          displayName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.id,
-          hasAvatar: !!user.avatarObjectPath
+          userId: targetUserId,
+          avatarUrl: avatarInfo.url,
+          expiresAt: avatarInfo.expiresAt,
+          displayName: avatarInfo.initials,
+          hasAvatar: avatarInfo.hasAvatar,
+          initials: avatarInfo.initials
         }
       });
 
