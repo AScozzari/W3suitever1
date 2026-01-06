@@ -1546,7 +1546,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ==================== ENTITIES MANAGEMENT ROUTES ====================
   // Legal entities, stores, and users management API routes
-  app.use('/api', entitiesRoutes);
+  // ⚠️ CRITICAL: Must include tenantMiddleware to set RLS tenant context before queries
+  app.use('/api', tenantMiddleware, rbacMiddleware, entitiesRoutes);
   
   // ==================== PRODUCTS & HIERARCHY ROUTES ====================
   // Product hierarchy API routes (drivers, categories, typologies, search)
