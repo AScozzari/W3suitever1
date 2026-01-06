@@ -159,7 +159,7 @@ export default function TenantDetailView({
   const stores = storesData?.stores || [];
 
   const tabs: { id: DetailTab; label: string; icon: React.ElementType; count?: number }[] = [
-    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'analytics', label: 'Dashboard Analytics', icon: TrendingUp },
     { id: 'legal-entities', label: 'Ragioni Sociali', icon: Briefcase, count: legalEntities.length },
     { id: 'stores', label: 'Punti Vendita', icon: Store, count: stores.length },
   ];
@@ -277,67 +277,6 @@ export default function TenantDetailView({
               {tenant.name}
             </h2>
             {getStatusBadge(tenant.status)}
-            
-            {/* Tabs inline */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    data-testid={`tab-detail-${tab.id}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.375rem',
-                      padding: '0.5rem 0.875rem',
-                      background: isActive ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.15)',
-                      color: isActive ? COLORS.primary.orange : 'white',
-                      border: 'none',
-                      borderRadius: '0.5rem',
-                      cursor: 'pointer',
-                      fontSize: '0.8125rem',
-                      fontWeight: isActive ? 600 : 500,
-                      transition: 'all 0.2s ease',
-                      boxShadow: isActive ? '0 0.25rem 0.75rem rgba(0, 0, 0, 0.15)' : 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                      } else {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 1)';
-                        e.currentTarget.style.transform = 'translateY(-0.0625rem)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                      } else {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }
-                    }}
-                  >
-                    <Icon size={14} />
-                    {tab.label}
-                    {tab.count !== undefined && (
-                      <span style={{
-                        background: isActive ? `${COLORS.primary.orange}18` : 'rgba(255, 255, 255, 0.25)',
-                        color: isActive ? COLORS.primary.orange : 'white',
-                        padding: '0.125rem 0.375rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.6875rem',
-                        fontWeight: 600,
-                      }}>
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
           </div>
           
           <Button
@@ -441,6 +380,70 @@ export default function TenantDetailView({
           })}
         </div>
 
+      </div>
+
+      {/* Tab Menu sotto le KPI */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '0.5rem', 
+        marginBottom: '1.5rem',
+        padding: '0.5rem',
+        background: 'rgba(255, 255, 255, 0.8)',
+        borderRadius: '0.75rem',
+        border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+      }}>
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              data-testid={`tab-detail-${tab.id}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.625rem 1rem',
+                background: isActive ? COLORS.primary.orange : 'transparent',
+                color: isActive ? 'white' : COLORS.neutral.medium,
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: isActive ? 600 : 500,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = COLORS.neutral.lightest;
+                  e.currentTarget.style.color = COLORS.neutral.dark;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = COLORS.neutral.medium;
+                }
+              }}
+            >
+              <Icon size={16} />
+              {tab.label}
+              {tab.count !== undefined && (
+                <span style={{
+                  background: isActive ? 'rgba(255, 255, 255, 0.25)' : `${COLORS.neutral.medium}18`,
+                  color: isActive ? 'white' : COLORS.neutral.medium,
+                  padding: '0.125rem 0.5rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === 'analytics' && (
@@ -629,8 +632,7 @@ export default function TenantDetailView({
                 border: 'none',
               }}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova
+              Nuova Ragione Sociale
             </Button>
           </div>
 
@@ -785,8 +787,7 @@ export default function TenantDetailView({
                 border: 'none',
               }}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo
+              Nuovo Punto Vendita
             </Button>
           </div>
 
