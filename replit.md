@@ -157,7 +157,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
     - **Security**: OAuth2/OIDC, MFA, JWTs, and 3-level RBAC.
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), and an AI Voice Agent with RAG.
-    - **Unified Object Storage**: Enterprise-grade, multi-tenant object storage with RLS via signed URLs, a three-tier quota system, Google Drive-style permission inheritance, and ACLs. Dual storage architecture: Replit's object storage for development and AWS S3 for production.
+    - **Unified Object Storage**: Enterprise-grade, multi-tenant object storage with RLS via signed URLs, a three-tier quota system, Google Drive-style permission inheritance, and ACLs.
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 360° Dashboard.
     - **HR Module**: Manages shifts, leave requests, and time tracking.

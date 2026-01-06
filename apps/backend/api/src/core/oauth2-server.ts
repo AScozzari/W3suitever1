@@ -1374,6 +1374,7 @@ export function setupOAuth2Server(app: express.Application) {
             iss: OAUTH2_CONFIG.issuer,
             scope: authCodeData.scopes.join(' '),
             tenant_id: authCodeData.tenantId,
+            tenantId: authCodeData.tenantId, // 🔒 camelCase for middleware compatibility
             client_id: client_id,
             roles: authCodeData.roles || ['user'], // 🔒 Include roles for RBAC
             email: authCodeData.email // 🔒 Include email for user context
@@ -1428,6 +1429,7 @@ export function setupOAuth2Server(app: express.Application) {
             iss: OAUTH2_CONFIG.issuer,
             scope: refreshData.scopes.join(' '),
             tenant_id: refreshData.tenantId,
+            tenantId: refreshData.tenantId, // 🔒 camelCase for middleware compatibility
             client_id: refreshData.clientId,
             roles: (refreshData as any).roles || ['user'], // 🔒 Include roles for RBAC
             email: (refreshData as any).email // 🔒 Include email for user context
