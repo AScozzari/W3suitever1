@@ -1242,9 +1242,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        // Normalize user id: if demoUser is an email (contains @), extract the user id from DB users
+        // Common mappings: admin@w3suite.com → admin-user, admindemo@w3suite.com → admin-demo
+        let userId = demoUser || 'admin-user';
+        let userEmail = demoUser || 'admin@w3suite.com';
+        
+        // Map email to proper user id (critical for foreign key constraints)
+        if (typeof demoUser === 'string') {
+          if (demoUser === 'admin@w3suite.com') {
+            userId = 'admin-user';
+            userEmail = 'admin@w3suite.com';
+          } else if (demoUser === 'admindemo@w3suite.com') {
+            userId = 'admin-demo';
+            userEmail = 'admindemo@w3suite.com';
+          } else if (demoUser.includes('@')) {
+            // Generic email case: use first part of email as fallback
+            userEmail = demoUser;
+            userId = 'admin-user'; // Fallback to admin-user for unknown emails
+          } else {
+            // demoUser is already an id (not an email)
+            userId = demoUser;
+            userEmail = `${demoUser}@w3suite.com`;
+          }
+        }
+        
         req.user = {
-          id: demoUser || 'admin-user',
-          email: demoUser || 'admin@w3suite.com',
+          id: userId,
+          email: userEmail,
           tenantId: devTenantId,
           roles: ['admin', 'manager'],
           permissions: ['*'], // DEVELOPMENT ONLY: All permissions
