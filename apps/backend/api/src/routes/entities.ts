@@ -182,7 +182,8 @@ router.get('/organization-entities', async (req, res) => {
     // Use transaction to ensure same connection for RLS context and queries
     const result = await db.transaction(async (tx) => {
       // Set tenant context on this specific connection
-      await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`));
+      // CRITICAL: Must use 'app.current_tenant_id' to match RLS policies on VPS
+      await tx.execute(sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`));
       console.log('[ORG-ENTITIES] Tenant context set in transaction for:', tenantId);
 
       // Get all organization entities for the tenant with their linked stores

@@ -63,9 +63,9 @@ export const setTenantContext = async (
 ) => {
   const tenantId = secondArg !== undefined ? secondArg : (firstArg as string);
   // Use raw SQL to avoid Drizzle template literal issues with set_config
-  // CRITICAL: Must use 'app.tenant_id' to match RLS policies (not 'app.current_tenant_id')
+  // CRITICAL: Must use 'app.current_tenant_id' to match RLS policies on VPS
   await db.execute(
-    sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`)
+    sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
   );
 };
 
@@ -75,7 +75,7 @@ export const setTenantContext = async (
 export const getCurrentTenant = async (): Promise<string | null> => {
   try {
     const result = await db.execute(
-      sql`SELECT current_setting('app.tenant_id', true) as tenant_id`
+      sql`SELECT current_setting('app.current_tenant_id', true) as tenant_id`
     );
     return result.rows[0]?.tenant_id as string || null;
   } catch (error) {
@@ -110,9 +110,9 @@ export const withTenantTransaction = async <T>(
 ): Promise<T> => {
   return await db.transaction(async (tx) => {
     // Imposta il tenant context sulla stessa connessione della transazione
-    // CRITICAL: Must use 'app.tenant_id' to match RLS policies
+    // CRITICAL: Must use 'app.current_tenant_id' to match RLS policies on VPS
     await tx.execute(
-      sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`)
+      sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
     );
     
     // Esegui l'operazione con la transazione tenant-scoped
