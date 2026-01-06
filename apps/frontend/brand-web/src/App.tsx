@@ -5,8 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import BrandCRM from "./pages/BrandCRM";
 import AIManagement from "./pages/AIManagement";
-import Management from "./pages/Management";
-import OrganizationDetail from "./pages/OrganizationDetail";
+import ManagementPage from "./pages/ManagementPage";
 import WMSCatalogPage from "./pages/wms/WMSCatalogPage";
 import DeployCenterPage from "./pages/DeployCenterPage";
 import CommitBrowser from "./pages/CommitBrowser";
@@ -74,13 +73,10 @@ function Routes() {
         <BrandTenantWrapper params={null}><AIManagement /></BrandTenantWrapper>
       </Route>
       <Route path="/management">
-        <BrandTenantWrapper params={null}><Management /></BrandTenantWrapper>
+        <BrandTenantWrapper params={null}><ManagementPage /></BrandTenantWrapper>
       </Route>
       <Route path="/cloud-storage">
         <BrandTenantWrapper params={null}><CloudStoragePage /></BrandTenantWrapper>
-      </Route>
-      <Route path="/organizations/:orgId">
-        <BrandTenantWrapper params={null}><OrganizationDetail /></BrandTenantWrapper>
       </Route>
       
       {/* Default route */}
