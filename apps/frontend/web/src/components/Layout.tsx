@@ -90,13 +90,13 @@ function ChatIconButton({ isMobile, isIdle }: { isMobile: boolean; isIdle: boole
       data-testid="button-chat"
       style={{
         position: 'relative',
-        width: isMobile ? '36px' : '40px',
-        height: isMobile ? '36px' : '40px',
+        width: isMobile ? '2.25rem' : '2.5rem',
+        height: isMobile ? '2.25rem' : '2.5rem',
         padding: 0,
         background: 'hsla(0, 0%, 100%, 0.1)',
-        backdropFilter: 'blur(10px)',
+        backdropFilter: 'blur(0.625rem)',
         border: '1px solid hsla(0, 0%, 100%, 0.15)',
-        borderRadius: '10px',
+        borderRadius: '0.625rem',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -120,21 +120,21 @@ function ChatIconButton({ isMobile, isIdle }: { isMobile: boolean; isIdle: boole
           data-testid="badge-chat-unread"
           style={{
             position: 'absolute',
-            top: '-4px',
-            right: '-4px',
-            minWidth: '18px',
-            height: '18px',
-            padding: '0 4px',
+            top: '-0.25rem',
+            right: '-0.25rem',
+            minWidth: '1.125rem',
+            height: '1.125rem',
+            padding: '0 0.25rem',
             background: '#ef4444',
-            borderRadius: '9px',
+            borderRadius: '0.5625rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '11px',
+            fontSize: '0.6875rem',
             fontWeight: 600,
             color: 'white',
             border: '2px solid white',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+            boxShadow: '0 0.125rem 0.5rem rgba(239, 68, 68, 0.3)'
           }}
         >
           {unreadCount > 99 ? '99+' : unreadCount}
@@ -1208,10 +1208,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
           {/* Navigation menu originale */}
           <nav style={{
-            padding: isMobile ? '8px' : (leftSidebarCollapsed ? '16px 8px' : '24px 16px'),
+            padding: isMobile ? '0.5rem' : (leftSidebarCollapsed ? '1rem 0.5rem' : '1.5rem 1rem'),
             display: 'flex',
             flexDirection: isMobile ? 'row' : 'column',
-            gap: isMobile ? '0' : '8px',
+            gap: isMobile ? '0' : '0.5rem',
             overflowX: isMobile ? 'auto' : 'visible'
           }}>
             {menuItems.map((item) => {
@@ -1258,11 +1258,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
         {/* Main Content - IDENTICO margini WindTreDashboard */}
         <main style={{
-          width: isMobile ? '100%' : `calc(100vw - ${leftSidebarCollapsed ? 64 : 256}px - ${!workspaceCollapsed ? 320 : 64}px)`,
-          marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
-          padding: isMobile ? '16px' : '24px',
+          width: isMobile ? '100%' : `calc(100vw - ${leftSidebarCollapsed ? 4 : 16}rem - ${!workspaceCollapsed ? 20 : 4}rem)`,
+          marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '4rem' : '16rem'),
+          padding: isMobile ? '1rem' : '1.5rem',
           transition: 'all 0.3s ease',
-          height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 64px)',
+          height: isMobile ? 'calc(100vh - 7.5rem)' : 'calc(100vh - 4rem)',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
@@ -1304,36 +1304,36 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             style={{
             position: 'fixed',
             right: 0,
-            top: '64px',
-            height: 'calc(100vh - 64px)',
-            width: workspaceCollapsed ? '64px' : '320px',
+            top: '4rem',
+            height: 'calc(100vh - 4rem)',
+            width: workspaceCollapsed ? '4rem' : '20rem',
             background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            backdropFilter: 'blur(1.5rem) saturate(140%)',
+            WebkitBackdropFilter: 'blur(1.5rem) saturate(140%)',
             borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 40,
-            boxShadow: '4px 0 24px rgba(0, 0, 0, 0.04)',
+            boxShadow: '0.25rem 0 1.5rem rgba(0, 0, 0, 0.04)',
             overflow: 'visible'
           }}>
             {workspaceCollapsed ? (
               <div style={{
-                padding: '16px 8px',
+                padding: '1rem 0.5rem',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '0.75rem'
               }}>
                 <button 
                   onClick={() => handleWorkspaceTabClick('Tasks')}
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '2.5rem',
+                    height: '2.5rem',
                     background: activeWorkspaceTab === 'Tasks' 
                       ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
                       : 'transparent',
                     border: 'none',
-                    borderRadius: '12px',
+                    borderRadius: '0.75rem',
                     color: activeWorkspaceTab === 'Tasks' ? 'white' : '#6b7280',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1346,16 +1346,16 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   {tasks.filter(t => !t.completato).length > 0 && (
                     <div style={{
                       position: 'absolute',
-                      top: '-4px',
-                      right: '-4px',
-                      width: '18px',
-                      height: '18px',
+                      top: '-0.25rem',
+                      right: '-0.25rem',
+                      width: '1.125rem',
+                      height: '1.125rem',
                       background: '#ef4444',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '10px',
+                      fontSize: '0.625rem',
                       fontWeight: '600',
                       color: 'white',
                       border: '2px solid rgba(255, 255, 255, 0.2)'
@@ -1368,13 +1368,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <button 
                   onClick={() => handleWorkspaceTabClick('Leads')}
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '2.5rem',
+                    height: '2.5rem',
                     background: activeWorkspaceTab === 'Leads'
                       ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
                       : 'transparent',
                     border: 'none',
-                    borderRadius: '12px',
+                    borderRadius: '0.75rem',
                     color: activeWorkspaceTab === 'Leads' ? 'white' : '#6b7280',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1387,16 +1387,16 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   {leads.filter(l => !l.letto).length > 0 && (
                     <div style={{
                       position: 'absolute',
-                      top: '-4px',
-                      right: '-4px',
-                      width: '18px',
-                      height: '18px',
+                      top: '-0.25rem',
+                      right: '-0.25rem',
+                      width: '1.125rem',
+                      height: '1.125rem',
                       background: '#10b981',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '10px',
+                      fontSize: '0.625rem',
                       fontWeight: '600',
                       color: 'white',
                       border: '2px solid rgba(255, 255, 255, 0.2)'
@@ -1409,13 +1409,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <button 
                   onClick={() => handleWorkspaceTabClick('Calendar')}
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '2.5rem',
+                    height: '2.5rem',
                     background: activeWorkspaceTab === 'Calendar'
                       ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
                       : 'transparent',
                     border: 'none',
-                    borderRadius: '12px',
+                    borderRadius: '0.75rem',
                     color: activeWorkspaceTab === 'Calendar' ? 'white' : '#6b7280',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1428,16 +1428,16 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   {eventiTotali > 0 && (
                     <div style={{
                       position: 'absolute',
-                      top: '-4px',
-                      right: '-4px',
-                      width: '18px',
-                      height: '18px',
+                      top: '-0.25rem',
+                      right: '-0.25rem',
+                      width: '1.125rem',
+                      height: '1.125rem',
                       background: '#7B2CBF',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '10px',
+                      fontSize: '0.625rem',
                       fontWeight: '600',
                       color: 'white',
                       border: '2px solid rgba(255, 255, 255, 0.2)'
@@ -1448,15 +1448,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 </button>
               </div>
             ) : (
-              <div style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '20px'
+                  marginBottom: '1.25rem'
                 }}>
                   <h3 style={{
-                    fontSize: '16px',
+                    fontSize: '1rem',
                     fontWeight: 600,
                     color: '#1f2937',
                     margin: 0
@@ -1466,10 +1466,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <div style={{
                   display: 'flex',
                   background: 'rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  padding: '4px',
-                  marginBottom: '20px',
-                  gap: '4px'
+                  borderRadius: '0.75rem',
+                  padding: '0.25rem',
+                  marginBottom: '1.25rem',
+                  gap: '0.25rem'
                 }}>
                   {['Tasks', 'Leads', 'Calendar'].map((tab) => (
                     <button
@@ -1477,14 +1477,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       onClick={() => handleWorkspaceTabClick(tab)}
                       style={{
                         flex: 1,
-                        padding: '8px 12px',
+                        padding: '0.5rem 0.75rem',
                         background: activeWorkspaceTab === tab 
                           ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
                           : 'transparent',
                         color: activeWorkspaceTab === tab ? 'white' : '#6b7280',
                         border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '14px',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
                         fontWeight: 500,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
@@ -1499,8 +1499,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   flex: 1, 
                   overflowY: 'auto',
                   overflowX: 'visible',
-                  paddingRight: '8px',
-                  marginRight: '-8px'
+                  paddingRight: '0.5rem',
+                  marginRight: '-0.5rem'
                 }}>
                   {/* Tab Tasks */}
                   {activeWorkspaceTab === 'Tasks' && (
@@ -1509,10 +1509,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginBottom: '12px'
+                      marginBottom: '0.75rem'
                     }}>
                       <h4 style={{
-                        fontSize: '15px',
+                        fontSize: '0.9375rem',
                         fontWeight: 600,
                         color: '#1f2937',
                         margin: 0
@@ -1520,10 +1520,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       <span style={{
                         background: COLORS.primary.orange,
                         color: 'white',
-                        fontSize: '10px',
+                        fontSize: '0.625rem',
                         fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: '10px'
+                        padding: '0.125rem 0.5rem',
+                        borderRadius: '0.625rem'
                       }}>{tasks.filter(t => !t.completato).length} attive</span>
                     </div>
 
@@ -1531,39 +1531,39 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
-                      gap: '6px',
-                      marginBottom: '12px'
+                      gap: '0.375rem',
+                      marginBottom: '0.75rem'
                     }}>
                       <div style={{
                         background: 'rgba(255, 105, 0, 0.08)',
-                        borderRadius: '6px',
-                        padding: '8px',
+                        borderRadius: '0.375rem',
+                        padding: '0.5rem',
                         border: '1px solid rgba(255, 105, 0, 0.15)'
                       }}>
                         <div style={{
-                          fontSize: '14px',
+                          fontSize: '0.875rem',
                           fontWeight: 700,
                           color: COLORS.primary.orange
                         }}>{tasksOggi}</div>
                         <div style={{
-                          fontSize: '8px',
+                          fontSize: '0.5rem',
                           color: '#b45309',
                           fontWeight: 500
                         }}>Oggi</div>
                       </div>
                       <div style={{
                         background: 'rgba(16, 185, 129, 0.08)',
-                        borderRadius: '6px',
-                        padding: '8px',
+                        borderRadius: '0.375rem',
+                        padding: '0.5rem',
                         border: '1px solid rgba(16, 185, 129, 0.15)'
                       }}>
                         <div style={{
-                          fontSize: '14px',
+                          fontSize: '0.875rem',
                           fontWeight: 700,
                           color: COLORS.semantic.success
                         }}>{tasksCompletate}</div>
                         <div style={{
-                          fontSize: '8px',
+                          fontSize: '0.5rem',
                           color: '#065f46',
                           fontWeight: 500
                         }}>Completate</div>
@@ -1574,11 +1574,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '8px',
-                      marginBottom: '16px',
-                      maxHeight: '400px',
+                      gap: '0.5rem',
+                      marginBottom: '1rem',
+                      maxHeight: '25rem',
                       overflowY: 'auto',
-                      paddingRight: '4px'
+                      paddingRight: '0.25rem'
                     }}>
                       {tasksLoading ? (
                         <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', fontSize: '12px' }}>
