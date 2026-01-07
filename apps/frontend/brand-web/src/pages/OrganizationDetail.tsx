@@ -776,64 +776,66 @@ export default function OrganizationDetail() {
                 <div
                   key={index}
                   style={{
-                    ...cardStyle,
-                    padding: '20px',
+                    borderRadius: '1rem',
+                    background: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.06)',
                     position: 'relative',
                     cursor: 'pointer',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     overflow: 'hidden',
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
+                    e.currentTarget.style.transform = 'translateY(-0.25rem)';
+                    e.currentTarget.style.boxShadow = '0 0.75rem 2rem rgba(0, 0, 0, 0.12)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                    e.currentTarget.style.boxShadow = '0 0.25rem 1rem rgba(0, 0, 0, 0.06)';
                   }}
                   data-testid={`metric-card-${metric.title.toLowerCase().replace(/\s+/g, '-')}`}
                 >
-                  {/* Gradient accent bar */}
+                  {/* Colored Header with Icon */}
                   <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: `linear-gradient(90deg, ${metric.color}, ${metric.color}80)`,
-                  }} />
-                  
-                  <div style={{
+                    background: `linear-gradient(135deg, ${metric.color}, ${metric.color}dd)`,
+                    padding: '1rem 1.25rem',
                     display: 'flex',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: '12px',
                   }}>
                     <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '12px',
-                      background: `${metric.color}15`,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: '0.75rem',
                     }}>
-                      <metric.icon size={24} style={{ color: metric.color }} />
+                      <div style={{
+                        width: '2.5rem',
+                        height: '2.5rem',
+                        borderRadius: '0.625rem',
+                        background: 'rgba(255,255,255,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <metric.icon size={20} style={{ color: '#ffffff' }} />
+                      </div>
+                      <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        color: '#ffffff',
+                      }}>
+                        {metric.title}
+                      </span>
                     </div>
-                    
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 8px',
-                      borderRadius: '8px',
-                      background: metric.trend === 'up' ? `${COLORS.semantic.success}15` : 
-                                 metric.trend === 'down' ? `${COLORS.semantic.error}15` : 
-                                 `${COLORS.neutral.light}15`,
-                      color: metric.trend === 'up' ? COLORS.semantic.success : 
-                             metric.trend === 'down' ? COLORS.semantic.error : 
-                             COLORS.neutral.medium,
-                      fontSize: '12px',
+                      gap: '0.25rem',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '0.5rem',
+                      background: 'rgba(255,255,255,0.2)',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
                       fontWeight: '600',
                     }}>
                       {metric.trend === 'up' && <TrendingUp size={12} />}
@@ -843,26 +845,19 @@ export default function OrganizationDetail() {
                     </div>
                   </div>
                   
-                  <div>
+                  {/* Card Body */}
+                  <div style={{ padding: '1.25rem' }}>
                     <h3 style={{
-                      fontSize: '32px',
+                      fontSize: '2rem',
                       fontWeight: '700',
                       color: COLORS.neutral.dark,
-                      margin: '0 0 4px 0',
+                      margin: '0 0 0.25rem 0',
                       lineHeight: '1',
                     }}>
                       {metric.value}
                     </h3>
                     <p style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: COLORS.neutral.dark,
-                      margin: '0 0 4px 0',
-                    }}>
-                      {metric.title}
-                    </p>
-                    <p style={{
-                      fontSize: '13px',
+                      fontSize: '0.8125rem',
                       color: COLORS.neutral.medium,
                       margin: '0',
                     }}>
