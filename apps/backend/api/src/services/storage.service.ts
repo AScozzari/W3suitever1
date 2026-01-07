@@ -1042,6 +1042,7 @@ export const storageService = {
     };
 
     if (tokenRecord.singleUse) {
+      // Note: storageSignedTokens has NO RLS enabled, so this update is safe without tenant context
       await db.update(storageSignedTokens)
         .set({ usedAt: new Date() })
         .where(eq(storageSignedTokens.id, tokenRecord.id));
