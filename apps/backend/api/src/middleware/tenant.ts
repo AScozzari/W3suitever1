@@ -146,6 +146,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       // Cache miss - query database
       console.log(`[TENANT-CACHE-MISS] Querying database for tenant: ${tenantId}`);
       
+      // Support both Italian ('attivo') and English ('active') status values
       const tenantResult = await db
         .select({
           id: tenants.id,
@@ -156,7 +157,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
         .from(tenants)
         .where(and(
           eq(tenants.id, tenantId),
-          eq(tenants.status, 'active')
+          or(eq(tenants.status, 'active'), eq(tenants.status, 'attivo'))
         ))
         .limit(1);
       
