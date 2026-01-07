@@ -1,0 +1,680 @@
+🔍 Token expiry check: Current time: 12:27:47, Token expires: 12:41:11
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:47, Token expires: 12:41:11
+2index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:47, Token expires: 12:41:11
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:47, Token expires: 12:41:11
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/chat/unread-count 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/storage/avatars/admin-user/signed-url 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/tasks/my-tasks 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/workflow-actions 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/workflow-triggers 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/teams 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/workflow-templates 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/team-workflow-assignments 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/organization-entities 404 (Not Found)
+Bo @ index-mwxPdDRx.js:2
+await in Bo
+makeRequest @ ApiService-B-4hfi8u.js:1
+getOrganizationEntities @ ApiService-B-4hfi8u.js:1
+loadSettingsData @ ApiService-B-4hfi8u.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/organization-entities: Tenant not found or inactive
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-B-4hfi8u.js:1
+await in makeRequest
+getOrganizationEntities @ ApiService-B-4hfi8u.js:1
+loadSettingsData @ ApiService-B-4hfi8u.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'avviso
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/users 404 (Not Found)
+Bo @ index-mwxPdDRx.js:2
+await in Bo
+makeRequest @ ApiService-B-4hfi8u.js:1
+getUsers @ ApiService-B-4hfi8u.js:1
+loadSettingsData @ ApiService-B-4hfi8u.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/users: Tenant not found or inactive
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-B-4hfi8u.js:1
+await in makeRequest
+getUsers @ ApiService-B-4hfi8u.js:1
+loadSettingsData @ ApiService-B-4hfi8u.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'avviso
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/stores 404 (Not Found)
+Bo @ index-mwxPdDRx.js:2
+await in Bo
+makeRequest @ ApiService-B-4hfi8u.js:1
+getStores @ ApiService-B-4hfi8u.js:1
+loadSettingsData @ ApiService-B-4hfi8u.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+installHook.js:1 ⚠️ ApiService: Failed request to /api/stores: Tenant not found or inactive
+overrideMethod @ installHook.js:1
+makeRequest @ ApiService-B-4hfi8u.js:1
+await in makeRequest
+getStores @ ApiService-B-4hfi8u.js:1
+loadSettingsData @ ApiService-B-4hfi8u.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'avviso
+ApiService-B-4hfi8u.js:1 [LOAD-SETTINGS] 📊 Raw results: {orgEntities: {…}, users: {…}, stores: {…}}
+ApiService-B-4hfi8u.js:1 [LOAD-SETTINGS] ✅ Extracted data: {organizationEntities: 0, users: 0, stores: 0}
+SettingsPage-lw9gZ8XE.js:1 📦 SettingsPage: loadSettingsData result: {success: false, data: {…}, error: 'Organization entities service unavailable, Users service unavailable, Stores service unavailable', warnings: Array(3)}
+installHook.js:1 Failed to load settings data: Organization entities service unavailable, Users service unavailable, Stores service unavailable
+overrideMethod @ installHook.js:1
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+await in (anonime)
+(anonime) @ SettingsPage-lw9gZ8XE.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/rbac/roles 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/rbac/permissions 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/commercial-areas 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:47, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/hr/calendar/events 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/voip/extensions/me 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+setOptions @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+2index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:47, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/notifications/unread-count 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+setOptions @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/notifications?status=unread&limit=5 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+setOptions @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+6index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/chat/unread-count 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/tasks/my-tasks 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/workflow-actions 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/workflow-triggers 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/teams 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/workflow-templates 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/team-workflow-assignments 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/rbac/roles 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/rbac/permissions 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+SettingsPage-lw9gZ8XE.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/commercial-areas 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/hr/calendar/events 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+2index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:48, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/notifications/unread-count 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+setOptions @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/notifications?status=unread&limit=5 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.then
+(anonime) @ query-i2gUkQ5G.js:1
+Promise.catch
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+setOptions @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-mwxPdDRx.js:2 🔍 Token expiry check: Current time: 12:27:58, Token expires: 12:41:11
+index-mwxPdDRx.js:2  GET https://w3suite.it/api/chat/unread-count 404 (Not Found)
+queryFn @ index-mwxPdDRx.js:2
+await in queryFn
+a @ query-i2gUkQ5G.js:1
+E @ query-i2gUkQ5G.js:1
+start @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+Kt @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+setInterval
+setInterval @ query-i2gUkQ5G.js:1
+setInterval @ query-i2gUkQ5G.js:1
+oe @ query-i2gUkQ5G.js:1
+ue @ query-i2gUkQ5G.js:1
+onQueryUpdate @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+batch @ query-i2gUkQ5G.js:1
+W @ query-i2gUkQ5G.js:1
+fetch @ query-i2gUkQ5G.js:1
+await in fetch
+Kt @ query-i2gUkQ5G.js:1
+onSubscribe @ query-i2gUkQ5G.js:1
+subscribe @ query-i2gUkQ5G.js:1
+(anonime) @ query-i2gUkQ5G.js:1
+vs @ react-core-CmNK3XIx.js:30
+dl @ react-core-CmNK3XIx.js:32
+Rn @ react-core-CmNK3XIx.js:32
+(anonime) @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore

@@ -1210,17 +1210,19 @@ class BrandDrizzleStorage implements IBrandStorage {
   }
 
   // Update organization in w3suite.tenants
-  // NOTE: tenants table should NOT have RLS, but we use transaction for consistency
+  // NOTE: tenants table has RLS with policy using app.current_tenant_id
+  // We use transaction with is_local=true to set context only for this transaction
   async updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null> {
     try {
       console.log(`📝 [STORAGE] updateOrganization called for tenant: ${id}`);
       console.log(`📝 [STORAGE] Update data:`, JSON.stringify(data));
       
-      // Use transaction to bypass any potential RLS issues
-      // For tenants table, we set a dummy tenant_id since this is a system table
+      // Use transaction to set RLS context for this operation only
+      // is_local=true ensures the setting is transaction-scoped (not session-scoped)
+      // Using app.current_tenant_id to match the RLS policy on w3suite.tenants
       const results = await w3db.transaction(async (tx) => {
-        // Set system context to bypass RLS if any
-        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${id}', false)`));
+        // Set tenant context for RLS - transaction-local scope (true = safe for connection pooling)
+        await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${id}, true)`);
         
         return await tx.update(w3Tenants)
           .set({ ...data, updatedAt: new Date() })
