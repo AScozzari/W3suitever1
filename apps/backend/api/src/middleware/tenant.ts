@@ -77,6 +77,8 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
         req.path.startsWith('/action-definitions') || // Action definitions are global evergreen data
         req.path.startsWith('/mcp-public/') || // MCP Public gateway uses API key auth, not tenant header
         req.path.startsWith('/storage/serve') || // Signed URL serve uses token, not tenant header
+        req.path === '/operators' || // Global operators list (public schema)
+        req.path === '/channels' || // Global sales channels list (public schema)
         isOAuthEndpoint || // OAuth endpoints use query params or session, not headers
         req.path === '/health' ||
         req.path === '/tenants/resolve' ||

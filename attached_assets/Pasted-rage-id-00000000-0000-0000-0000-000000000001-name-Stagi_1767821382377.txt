@@ -1,0 +1,287 @@
+rage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=338df46259e47b2522b0fe94c893b670e45be5eca3a0e92e98eda0900878b6ff771a92533c8f407487c7dd6f9c5e67c59849ccae1da0ca91a1c9e7aed6a81013&expires=1767821663471 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=8c93f217:103
+flush @ @tanstack_react-query.js?v=8c93f217:610
+batch @ @tanstack_react-query.js?v=8c93f217:628
+dispatch_fn @ @tanstack_react-query.js?v=8c93f217:1260
+setData @ @tanstack_react-query.js?v=8c93f217:931
+fetch @ @tanstack_react-query.js?v=8c93f217:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=8c93f217:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+useUserAvatar.ts:156 [useUserAvatar] Image load failed, refreshing signed URL (attempt 1 )
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=338df46259e47b2522b0fe94c893b670e45be5eca3a0e92e98eda0900878b6ff771a92533c8f407487c7dd6f9c5e67c59849ccae1da0ca91a1c9e7aed6a81013&expires=1767821663471 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+useUserAvatar.ts:156 [useUserAvatar] Image load failed, refreshing signed URL (attempt 2 )
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=338df46259e47b2522b0fe94c893b670e45be5eca3a0e92e98eda0900878b6ff771a92533c8f407487c7dd6f9c5e67c59849ccae1da0ca91a1c9e7aed6a81013&expires=1767821663471 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=901b1868be50f631d7b078d456b377d3af086ca35dfdb55f18d1cdb2f0cbbac25de36997727c36da1620b1406194b812432d0288c4349992b645dddd72d568ee&expires=1767821666275 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=8c93f217:103
+flush @ @tanstack_react-query.js?v=8c93f217:610
+batch @ @tanstack_react-query.js?v=8c93f217:628
+dispatch_fn @ @tanstack_react-query.js?v=8c93f217:1260
+setData @ @tanstack_react-query.js?v=8c93f217:931
+fetch @ @tanstack_react-query.js?v=8c93f217:1153
+await in fetch
+(anonime) @ @tanstack_react-query.js?v=8c93f217:2887
+(anonime) @ @tanstack_react-query.js?v=8c93f217:2886
+batch @ @tanstack_react-query.js?v=8c93f217:624
+refetchQueries @ @tanstack_react-query.js?v=8c93f217:2885
+(anonime) @ @tanstack_react-query.js?v=8c93f217:2871
+batch @ @tanstack_react-query.js?v=8c93f217:624
+invalidateQueries @ @tanstack_react-query.js?v=8c93f217:2864
+img.onerror @ useUserAvatar.ts:158Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/channels 404 (Not Found)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/races?type=operatore 400 (Bad Request)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/channels 404 (Not Found)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+(anonime) @ @tanstack_react-query.js?v=8c93f217:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=8c93f217:816
+Promise.catch
+run @ @tanstack_react-query.js?v=8c93f217:799
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/races?type=operatore 400 (Bad Request)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+(anonime) @ @tanstack_react-query.js?v=8c93f217:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=8c93f217:816
+Promise.catch
+run @ @tanstack_react-query.js?v=8c93f217:799
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/races?type=interna 400 (Bad Request)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/races?type=interna 400 (Bad Request)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+(anonime) @ @tanstack_react-query.js?v=8c93f217:820
+Promise.then
+(anonime) @ @tanstack_react-query.js?v=8c93f217:816
+Promise.catch
+run @ @tanstack_react-query.js?v=8c93f217:799
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/clusters 400 (Bad Request)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/clusters 400 (Bad Request)

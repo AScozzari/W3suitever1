@@ -5542,6 +5542,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all operators (WindTre, etc.)
+  app.get('/api/operators', async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT id, name, code, is_active 
+        FROM public.operators 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      handleApiError(error, res, 'recupero operatori');
+    }
+  });
+
+  // Get all channels (sales channels)
+  app.get('/api/channels', async (req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT id, name, code, is_active 
+        FROM public.channels 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `);
+      res.json(result.rows);
+    } catch (error) {
+      handleApiError(error, res, 'recupero canali');
+    }
+  });
+
   // ==================== STORE LOCATION API ====================
   
   // Get available timetracking methods for a specific store
