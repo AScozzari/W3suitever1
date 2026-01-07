@@ -1278,11 +1278,16 @@ class BrandDrizzleStorage implements IBrandStorage {
   // ==================== LEGAL ENTITIES MANAGEMENT (Partner Entities) ====================
 
   // Get legal entities for specific tenant (partner entities from legal_entities table)
+  // Uses transaction with RLS context for proper tenant isolation
   async getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]> {
     try {
-      const results = await w3db.select()
-        .from(w3LegalEntities)
-        .where(eq(w3LegalEntities.tenantId, tenantId));
+      // Use transaction with RLS context to ensure proper tenant isolation
+      const results = await w3db.transaction(async (tx) => {
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', true)`));
+        return await tx.select()
+          .from(w3LegalEntities)
+          .where(eq(w3LegalEntities.tenantId, tenantId));
+      });
       return results;
     } catch (error) {
       console.error(`Error fetching legal entities for tenant ${tenantId}:`, error);
@@ -1306,12 +1311,21 @@ class BrandDrizzleStorage implements IBrandStorage {
   // ==================== ORGANIZATION ENTITIES (Ragioni Sociali) ====================
 
   // Get organization entities (Ragioni Sociali) for specific tenant
+  // Uses transaction with RLS context for proper tenant isolation
   async getOrganizationEntitiesByTenant(tenantId: string): Promise<OrganizationEntity[]> {
     try {
       console.log(`🔍 [BRAND-STORAGE] Fetching organization_entities for tenant: ${tenantId}`);
-      const results = await w3db.select()
-        .from(w3OrganizationEntities)
-        .where(eq(w3OrganizationEntities.tenantId, tenantId));
+      
+      // Use transaction with RLS context to ensure proper tenant isolation
+      const results = await w3db.transaction(async (tx) => {
+        // Set RLS tenant context (must use app.tenant_id to match VPS RLS policies)
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', true)`));
+        
+        return await tx.select()
+          .from(w3OrganizationEntities)
+          .where(eq(w3OrganizationEntities.tenantId, tenantId));
+      });
+      
       console.log(`✅ [BRAND-STORAGE] Found ${results.length} organization entities`);
       return results;
     } catch (error) {
@@ -1336,11 +1350,16 @@ class BrandDrizzleStorage implements IBrandStorage {
   // ==================== STORES MANAGEMENT IMPLEMENTATION ====================
 
   // Get stores by tenant (organization)
+  // Uses transaction with RLS context for proper tenant isolation
   async getStoresByTenant(tenantId: string): Promise<Store[]> {
     try {
-      const results = await w3db.select()
-        .from(w3Stores)
-        .where(eq(w3Stores.tenantId, tenantId));
+      // Use transaction with RLS context to ensure proper tenant isolation
+      const results = await w3db.transaction(async (tx) => {
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', true)`));
+        return await tx.select()
+          .from(w3Stores)
+          .where(eq(w3Stores.tenantId, tenantId));
+      });
       return results;
     } catch (error) {
       console.error(`Error fetching stores for tenant ${tenantId}:`, error);
