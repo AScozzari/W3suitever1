@@ -1066,6 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[TENANT-RESOLVE] 🔍 Resolving slug "${slug}" to tenant UUID`);
       
       // Query tenant by slug from database
+      // Support both Italian ('attivo') and English ('active') status values
       const tenantResult = await db
         .select({
           id: tenants.id,
@@ -1076,7 +1077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(tenants)
         .where(and(
           eq(tenants.slug, slug),
-          eq(tenants.status, 'active')
+          or(eq(tenants.status, 'active'), eq(tenants.status, 'attivo'))
         ))
         .limit(1);
 
