@@ -4,7 +4,7 @@ import { apiRequest } from '../../lib/queryClient';
 import { 
   Building2, ArrowLeft, BarChart3, Briefcase, Store, Plus,
   Calendar, Globe, Shield, TrendingUp, MapPin, Phone, Mail,
-  Edit2, Loader2, ChevronRight
+  Edit2, Loader2, ChevronRight, Search
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
@@ -68,6 +68,8 @@ export default function TenantDetailView({
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [editingLegalEntity, setEditingLegalEntity] = useState<any>(null);
   const [editingStore, setEditingStore] = useState<any>(null);
+  const [legalEntitySearch, setLegalEntitySearch] = useState('');
+  const [storeSearch, setStoreSearch] = useState('');
   
   const queryClient = useQueryClient();
   
@@ -157,6 +159,25 @@ export default function TenantDetailView({
 
   const legalEntities = legalEntitiesData?.legalEntities || [];
   const stores = storesData?.stores || [];
+
+  // Filtered lists based on search
+  const filteredLegalEntities = legalEntities.filter((entity: any) => {
+    if (!legalEntitySearch.trim()) return true;
+    const search = legalEntitySearch.toLowerCase();
+    const name = (entity.businessName || entity.nome || '').toLowerCase();
+    const vat = (entity.vatNumber || entity.pIva || '').toLowerCase();
+    const code = (entity.code || entity.codice || '').toLowerCase();
+    return name.includes(search) || vat.includes(search) || code.includes(search);
+  });
+
+  const filteredStores = stores.filter((store: any) => {
+    if (!storeSearch.trim()) return true;
+    const search = storeSearch.toLowerCase();
+    const name = (store.name || store.nome || '').toLowerCase();
+    const code = (store.code || store.codice || '').toLowerCase();
+    const city = (store.city || store.citta || '').toLowerCase();
+    return name.includes(search) || code.includes(search) || city.includes(search);
+  });
 
   const tabs: { id: DetailTab; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'analytics', label: 'Dashboard Analytics', icon: TrendingUp },
@@ -613,7 +634,9 @@ export default function TenantDetailView({
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
-            marginBottom: '1rem'
+            marginBottom: '1rem',
+            gap: '1rem',
+            flexWrap: 'wrap',
           }}>
             <h3 style={{ 
               fontSize: '1.125rem', 
@@ -623,17 +646,43 @@ export default function TenantDetailView({
             }}>
               Ragioni Sociali ({legalEntities.length})
             </h3>
-            <Button
-              onClick={handleOpenLegalEntityModal}
-              data-testid="button-tab-add-legal-entity"
-              style={{
-                background: COLORS.gradients.purple,
-                color: 'white',
-                border: 'none',
-              }}
-            >
-              Nuova Ragione Sociale
-            </Button>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ 
+                  position: 'absolute', 
+                  left: '0.75rem', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)',
+                  color: COLORS.neutral.light,
+                }} />
+                <input
+                  type="text"
+                  placeholder="Cerca per nome, P.IVA o codice..."
+                  value={legalEntitySearch}
+                  onChange={(e) => setLegalEntitySearch(e.target.value)}
+                  data-testid="input-search-legal-entities"
+                  style={{
+                    padding: '0.5rem 0.75rem 0.5rem 2.25rem',
+                    border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    width: '16rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+              <Button
+                onClick={handleOpenLegalEntityModal}
+                data-testid="button-tab-add-legal-entity"
+                style={{
+                  background: COLORS.gradients.purple,
+                  color: 'white',
+                  border: 'none',
+                }}
+              >
+                Nuova Ragione Sociale
+              </Button>
+            </div>
           </div>
 
           {legalEntitiesLoading ? (
@@ -665,9 +714,22 @@ export default function TenantDetailView({
                 Crea la prima
               </Button>
             </div>
+          ) : filteredLegalEntities.length === 0 ? (
+            <div style={{
+              background: 'white',
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+              textAlign: 'center',
+            }}>
+              <Search size={32} style={{ color: COLORS.neutral.lighter, marginBottom: '0.75rem' }} />
+              <p style={{ color: COLORS.neutral.medium, margin: 0 }}>
+                Nessun risultato per "{legalEntitySearch}"
+              </p>
+            </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-              {legalEntities.map((entity: any) => (
+              {filteredLegalEntities.map((entity: any) => (
                 <div
                   key={entity.id}
                   data-testid={`card-legal-entity-${entity.id}`}
@@ -710,11 +772,26 @@ export default function TenantDetailView({
                       }}>
                         {entity.businessName || entity.nome}
                       </p>
+                      {(entity.code || entity.codice) && (
+                        <code style={{
+                          fontSize: '0.6875rem',
+                          padding: '0.125rem 0.375rem',
+                          background: COLORS.neutral.lightest,
+                          borderRadius: '0.25rem',
+                          color: COLORS.primary.purple,
+                          fontWeight: 600,
+                          marginBottom: '0.5rem',
+                          display: 'inline-block',
+                        }}>
+                          {entity.code || entity.codice}
+                        </code>
+                      )}
                       <p style={{ 
                         fontSize: '0.75rem', 
                         color: COLORS.neutral.light,
                         margin: 0,
-                        marginBottom: '0.5rem',
+                        marginBottom: '0.25rem',
+                        marginTop: (entity.code || entity.codice) ? '0.5rem' : 0,
                       }}>
                         P.IVA: {entity.vatNumber || entity.pIva || '--'}
                       </p>
@@ -768,7 +845,9 @@ export default function TenantDetailView({
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
-            marginBottom: '1rem'
+            marginBottom: '1rem',
+            gap: '1rem',
+            flexWrap: 'wrap',
           }}>
             <h3 style={{ 
               fontSize: '1.125rem', 
@@ -778,17 +857,43 @@ export default function TenantDetailView({
             }}>
               Punti Vendita ({stores.length})
             </h3>
-            <Button
-              onClick={handleOpenStoreModal}
-              data-testid="button-tab-add-store"
-              style={{
-                background: COLORS.gradients.green,
-                color: 'white',
-                border: 'none',
-              }}
-            >
-              Nuovo Punto Vendita
-            </Button>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ 
+                  position: 'absolute', 
+                  left: '0.75rem', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)',
+                  color: COLORS.neutral.light,
+                }} />
+                <input
+                  type="text"
+                  placeholder="Cerca per nome, codice o città..."
+                  value={storeSearch}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  data-testid="input-search-stores"
+                  style={{
+                    padding: '0.5rem 0.75rem 0.5rem 2.25rem',
+                    border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    width: '16rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+              <Button
+                onClick={handleOpenStoreModal}
+                data-testid="button-tab-add-store"
+                style={{
+                  background: COLORS.gradients.green,
+                  color: 'white',
+                  border: 'none',
+                }}
+              >
+                Nuovo Punto Vendita
+              </Button>
+            </div>
           </div>
 
           {storesLoading ? (
@@ -820,9 +925,22 @@ export default function TenantDetailView({
                 Crea il primo
               </Button>
             </div>
+          ) : filteredStores.length === 0 ? (
+            <div style={{
+              background: 'white',
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              border: `0.0625rem solid ${COLORS.neutral.lighter}`,
+              textAlign: 'center',
+            }}>
+              <Search size={32} style={{ color: COLORS.neutral.lighter, marginBottom: '0.75rem' }} />
+              <p style={{ color: COLORS.neutral.medium, margin: 0 }}>
+                Nessun risultato per "{storeSearch}"
+              </p>
+            </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-              {stores.map((store: any) => (
+              {filteredStores.map((store: any) => (
                 <div
                   key={store.id}
                   data-testid={`card-store-${store.id}`}

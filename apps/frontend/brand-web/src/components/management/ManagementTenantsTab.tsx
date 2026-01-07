@@ -72,6 +72,7 @@ export default function ManagementTenantsTab({
     type: 'suspend' | 'delete' | 'reactivate';
     tenant: Tenant | null;
   }>({ open: false, type: 'suspend', tenant: null });
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const { data: tenantsData, isLoading } = useQuery({
     queryKey: ['/brand-api/organizations'],
@@ -119,8 +120,12 @@ export default function ManagementTenantsTab({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (tenantId: string) => 
-      apiRequest(`/brand-api/organizations/${tenantId}`, { method: 'DELETE' }),
+    mutationFn: ({ tenantId, confirmationText }: { tenantId: string; confirmationText: string }) => 
+      apiRequest(`/brand-api/organizations/${tenantId}`, { 
+        method: 'DELETE',
+        body: JSON.stringify({ confirmationText }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       setConfirmDialog({ open: false, type: 'delete', tenant: null });
@@ -440,7 +445,10 @@ export default function ManagementTenantsTab({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDeleteTenant(tenant)}
+                      onClick={() => {
+                        setDeleteConfirmText('');
+                        setConfirmDialog({ open: true, type: 'delete', tenant });
+                      }}
                       data-testid={`button-delete-${tenant.id}`}
                       title="Elimina"
                       style={{ padding: '0.5rem' }}
@@ -468,7 +476,10 @@ export default function ManagementTenantsTab({
 
       <AlertDialog 
         open={confirmDialog.open} 
-        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmText('');
+          setConfirmDialog(prev => ({ ...prev, open }));
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -482,12 +493,46 @@ export default function ManagementTenantsTab({
                 `Sei sicuro di voler sospendere "${confirmDialog.tenant?.name}"? Gli utenti non potranno accedere.`}
               {confirmDialog.type === 'reactivate' && 
                 `Sei sicuro di voler riattivare "${confirmDialog.tenant?.name}"?`}
-              {confirmDialog.type === 'delete' && 
-                `Sei sicuro di voler eliminare "${confirmDialog.tenant?.name}"? Questa azione è irreversibile.`}
+              {confirmDialog.type === 'delete' && (
+                <span>
+                  Sei sicuro di voler eliminare <strong>"{confirmDialog.tenant?.name}"</strong>? 
+                  <br /><br />
+                  <span style={{ color: COLORS.semantic.error, fontWeight: 600 }}>
+                    Questa azione è irreversibile.
+                  </span>
+                  <br /><br />
+                  Per confermare, digita <strong>ELIMINA</strong> nel campo sottostante:
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {confirmDialog.type === 'delete' && (
+            <div style={{ padding: '0 1.5rem', marginBottom: '1rem' }}>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                placeholder="Digita ELIMINA per confermare"
+                data-testid="input-delete-confirmation"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: `0.125rem solid ${deleteConfirmText === 'ELIMINA' ? COLORS.semantic.success : COLORS.neutral.lighter}`,
+                  borderRadius: '0.5rem',
+                  fontSize: '1rem',
+                  textAlign: 'center',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                }}
+              />
+            </div>
+          )}
+          
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Annulla</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (confirmDialog.tenant) {
@@ -495,18 +540,24 @@ export default function ManagementTenantsTab({
                     suspendMutation.mutate(confirmDialog.tenant.id);
                   } else if (confirmDialog.type === 'reactivate') {
                     reactivateMutation.mutate(confirmDialog.tenant.id);
-                  } else {
-                    deleteMutation.mutate(confirmDialog.tenant.id);
+                  } else if (confirmDialog.type === 'delete' && deleteConfirmText === 'ELIMINA') {
+                    deleteMutation.mutate({ 
+                      tenantId: confirmDialog.tenant.id, 
+                      confirmationText: deleteConfirmText 
+                    });
                   }
                 }
               }}
+              disabled={confirmDialog.type === 'delete' && deleteConfirmText !== 'ELIMINA'}
               style={{
                 background: confirmDialog.type === 'delete' 
                   ? COLORS.semantic.error 
                   : COLORS.primary.orange,
+                opacity: (confirmDialog.type === 'delete' && deleteConfirmText !== 'ELIMINA') ? 0.5 : 1,
+                cursor: (confirmDialog.type === 'delete' && deleteConfirmText !== 'ELIMINA') ? 'not-allowed' : 'pointer',
               }}
             >
-              Conferma
+              {confirmDialog.type === 'delete' ? 'Elimina Definitivamente' : 'Conferma'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
