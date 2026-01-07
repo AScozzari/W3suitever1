@@ -476,7 +476,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Delete organization (soft delete - sets archived_at)
+  // Delete organization (HARD DELETE - permanent removal)
   app.delete("/brand-api/organizations/:id", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
@@ -507,24 +507,75 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         return res.status(404).json({ error: "Organization not found" });
       }
 
-      // Soft delete - set archived_at timestamp
-      const deletedOrg = await brandStorage.updateOrganization(id, { 
-        status: 'inactive',
-        archivedAt: new Date()
+      console.log(`🗑️ [HARD DELETE] Starting permanent deletion of tenant: ${organization.name} (${id})`);
+
+      // HARD DELETE - Permanently remove tenant and all related records
+      // Use raw SQL for cascade deletion in correct order
+      await db.transaction(async (tx) => {
+        // Set RLS context for cross-tenant operation
+        await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${id}, true)`);
+
+        // 1. Delete stores (must be before organization_entities due to FK)
+        const storesDeleted = await tx.execute(sql`
+          DELETE FROM w3suite.stores WHERE tenant_id = ${id}::uuid
+        `);
+        console.log(`   ✓ Deleted stores`);
+
+        // 2. Delete organization_entities (legal entities)
+        const entitiesDeleted = await tx.execute(sql`
+          DELETE FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid
+        `);
+        console.log(`   ✓ Deleted organization entities`);
+
+        // 3. Delete user associations for this tenant
+        await tx.execute(sql`
+          DELETE FROM w3suite.user_stores WHERE store_id IN (
+            SELECT id FROM w3suite.stores WHERE tenant_id = ${id}::uuid
+          )
+        `);
+        await tx.execute(sql`
+          DELETE FROM w3suite.user_organization_entities WHERE organization_entity_id IN (
+            SELECT id FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid
+          )
+        `);
+        console.log(`   ✓ Deleted user associations`);
+
+        // 4. Delete users belonging to this tenant
+        await tx.execute(sql`
+          DELETE FROM w3suite.users WHERE tenant_id = ${id}::uuid
+        `);
+        console.log(`   ✓ Deleted users`);
+
+        // 5. Delete brand_interface related records if they exist
+        try {
+          await tx.execute(sql`
+            DELETE FROM brand_interface.brand_tenants WHERE tenant_id = ${id}::uuid
+          `);
+          console.log(`   ✓ Deleted brand_tenants`);
+        } catch (e) {
+          // Table might not exist, ignore
+        }
+
+        // 6. Finally delete the tenant itself
+        await tx.execute(sql`
+          DELETE FROM w3suite.tenants WHERE id = ${id}::uuid
+        `);
+        console.log(`   ✓ Deleted tenant record`);
       });
+
+      console.log(`✅ [HARD DELETE] Tenant ${organization.name} permanently deleted`);
 
       res.json({
         success: true,
         organization: {
-          id: deletedOrg?.id,
-          name: deletedOrg?.name,
-          status: deletedOrg?.status
+          id: organization.id,
+          name: organization.name,
         },
-        message: "Organization deleted (archived) successfully"
+        message: "Organization permanently deleted"
       });
     } catch (error) {
-      console.error("Error deleting organization:", error);
-      res.status(500).json({ error: "Failed to delete organization" });
+      console.error("❌ [HARD DELETE] Error deleting organization:", error);
+      res.status(500).json({ error: "Failed to delete organization permanently" });
     }
   });
 
