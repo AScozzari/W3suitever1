@@ -1024,11 +1024,28 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       const tenants = await brandStorage.getTenants();
       const users = await brandStorage.getUsers();
 
+      // Count active tenants (support both 'active' and 'attivo')
+      const activeTenants = tenants.filter(t => 
+        t.status === 'active' || t.status === 'attivo'
+      ).length;
+
+      // Count suspended tenants (support 'sospeso', 'inactive', 'suspended')
+      const suspendedTenants = tenants.filter(t => 
+        t.status === 'sospeso' || t.status === 'inactive' || t.status === 'suspended'
+      ).length;
+
+      // Count active users cross-tenant (support both 'active' and 'attivo')
+      const activeUsers = users.filter((u: any) => 
+        !u.deletedAt && (u.status === 'active' || u.status === 'attivo')
+      ).length;
+
       res.json({
         summary: {
           totalTenants: tenants.length,
           totalUsers: users.length,
-          activeTenants: tenants.filter(t => t.status === 'active').length,
+          activeUsers: activeUsers,
+          activeTenants: activeTenants,
+          suspendedTenants: suspendedTenants,
           totalRevenue: 1250000, // Mock per ora
           growthRate: "+12.5%" // Mock per ora
         },

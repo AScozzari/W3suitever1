@@ -136,9 +136,22 @@ export default function ManagementDashboardTab() {
     queryFn: () => apiRequest('/brand-api/organizations'),
   });
 
+  const { data: analyticsData } = useQuery({
+    queryKey: ['/brand-api/analytics/cross-tenant'],
+    queryFn: () => apiRequest('/brand-api/analytics/cross-tenant'),
+  });
+
   const tenants = tenantsData?.organizations || [];
-  const activeTenants = tenants.filter((t: any) => t.status === 'active').length;
-  const suspendedTenants = tenants.filter((t: any) => t.status === 'suspended').length;
+  const analytics = analyticsData?.summary || {};
+  
+  // Use real analytics data (supports both 'active'/'attivo' and 'suspended'/'sospeso')
+  const activeTenants = analytics.activeTenants ?? tenants.filter((t: any) => 
+    t.status === 'active' || t.status === 'attivo'
+  ).length;
+  const suspendedTenants = analytics.suspendedTenants ?? tenants.filter((t: any) => 
+    t.status === 'suspended' || t.status === 'sospeso' || t.status === 'inactive'
+  ).length;
+  const totalUsers = analytics.activeUsers ?? analytics.totalUsers ?? '--';
 
   const recentActivities = [
     {
@@ -214,7 +227,7 @@ export default function ManagementDashboardTab() {
         />
         <StatCard
           title="Utenti Totali"
-          value="--"
+          value={totalUsers}
           subtitle="Cross-tenant"
           icon={Users}
           gradient={COLORS.gradients.blue}
