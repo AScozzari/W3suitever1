@@ -158,9 +158,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: Utilizes a Glassmorphism design with fixed headers and sidebars, and white backgrounds. The UI is built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is managed by `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness. All new UI developments must use `rem` units for dimensions to ensure proper scaling.
+- **UI/UX Decisions**: Utilizes a Glassmorphism design with fixed headers and sidebars, and white backgrounds. The UI is built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is managed by `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS). `app.tenant_id` is critically used for tenant context in RLS policies.
+    - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) where `app.tenant_id` is crucial for tenant context.
     - **Security**: Incorporates OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
     - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage with RLS.
     - **AI Integration**: Implements AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
@@ -168,7 +168,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **HR Module**: Manages shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Designed to support diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
     - **Brand Interface**: Provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface for external interactions. `action_definitions` serves as the single source of truth for MCP Gateway actions.
+    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface, with `action_definitions` as the single source of truth for actions.
     - **User Scope**: `user_stores` is the single source of truth for user scope, with organization entities derived automatically.
     - **Italian Business Validation**: Comprehensive validation for email, PEC email, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, and addresses with real-time feedback and Zod schemas.
 - **System Design Choices**:

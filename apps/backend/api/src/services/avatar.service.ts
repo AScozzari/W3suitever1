@@ -5,7 +5,7 @@
  * Path: avatars/{tenant_id}/{user_id}/avatar.{ext}
  */
 
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { db } from '../core/db';
 import { eq, and } from 'drizzle-orm';
@@ -294,9 +294,72 @@ export async function deleteAvatar(ctx: AvatarContext): Promise<boolean> {
   return true;
 }
 
+/**
+ * List all avatars in user's avatar folder (for MyDrive picker)
+ * Returns presigned URLs for each avatar image
+ */
+export async function listUserAvatars(
+  tenantId: string,
+  userId: string
+): Promise<Array<{
+  objectKey: string;
+  url: string;
+  fileName: string;
+  uploadedAt: string;
+  sizeBytes: number;
+}>> {
+  const ready = await initializeS3();
+  if (!ready || !s3Client || !bucketName) {
+    return [];
+  }
+
+  const prefix = `avatars/${tenantId}/${userId}/`;
+
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix,
+      MaxKeys: 50
+    });
+
+    const response = await s3Client.send(command);
+    const objects = response.Contents || [];
+
+    // Generate presigned URLs for each avatar
+    const avatars = await Promise.all(
+      objects
+        .filter(obj => obj.Key && obj.Size && obj.Size > 0)
+        .map(async (obj) => {
+          const getCommand = new GetObjectCommand({
+            Bucket: bucketName!,
+            Key: obj.Key!
+          });
+
+          const url = await getSignedUrl(s3Client!, getCommand, { expiresIn: SIGNED_URL_EXPIRY_SECONDS });
+
+          return {
+            objectKey: obj.Key!,
+            url,
+            fileName: obj.Key!.split('/').pop() || 'avatar',
+            uploadedAt: obj.LastModified?.toISOString() || new Date().toISOString(),
+            sizeBytes: obj.Size || 0
+          };
+        })
+    );
+
+    logger.info('[Avatar] Listed user avatars', { userId, count: avatars.length });
+    return avatars;
+
+  } catch (error) {
+    logger.error('[Avatar] Failed to list avatars', { userId, error });
+    return [];
+  }
+}
+
 export const avatarService = {
   getUploadUrl: getAvatarUploadUrl,
   confirmUpload: confirmAvatarUpload,
   getDownloadUrl: getAvatarDownloadUrl,
-  deleteAvatar
+  deleteAvatar,
+  listUserAvatars
 };

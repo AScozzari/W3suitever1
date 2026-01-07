@@ -4268,6 +4268,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // List all saved avatars for user (MyDrive picker)
+  app.get('/api/users/:userId/avatars', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const requesterId = req.user?.id;
+      const targetUserId = req.params.userId;
+
+      if (!tenantId || !requesterId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+
+      // Users can only list their own avatars unless they have admin permissions
+      if (targetUserId !== requesterId && !req.userPermissions?.includes('*')) {
+        return res.status(403).json({
+          error: 'forbidden',
+          message: 'Non autorizzato a visualizzare avatar di altri utenti'
+        });
+      }
+
+      const avatars = await s3AvatarService.listUserAvatars(tenantId, targetUserId);
+
+      res.json({
+        success: true,
+        data: {
+          userId: targetUserId,
+          avatars
+        }
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'elenco avatar utente');
+    }
+  });
+
   // Serve avatar images with ACL check (public endpoint with optional auth)
   app.get('/objects/:objectPath(*)', async (req: any, res) => {
     try {
