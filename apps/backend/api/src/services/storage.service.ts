@@ -531,7 +531,7 @@ export const storageService = {
     await this.ensureUserEvergreenFolders(ctx);
     
     const folders = await db.transaction(async (tx) => {
-      await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${ctx.tenantId}, true)`);
+      await tx.execute(sql`SELECT set_config('app.tenant_id', ${ctx.tenantId}, true)`);
       
       return tx.select().from(storageFolders)
         .where(and(
@@ -621,7 +621,7 @@ export const storageService = {
 
     try {
       await db.transaction(async (tx) => {
-        await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${ctx.tenantId}, true)`);
+        await tx.execute(sql`SELECT set_config('app.tenant_id', ${ctx.tenantId}, true)`);
         
         const existingFolders = await tx.select({ name: storageFolders.name }).from(storageFolders)
           .where(and(

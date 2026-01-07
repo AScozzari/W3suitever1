@@ -1360,7 +1360,7 @@ router.post('/sse', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Res
       // Set RLS context for tenant isolation using pool connection
       const client = await pool.connect();
       try {
-        await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [tenantId]);
+        await client.query(`SELECT set_config('app.tenant_id', $1, true)`, [tenantId]);
         
         const startTime = Date.now();
         logger.info(`[MCP-SSE] Executing secure query:`, { query: sqlQuery.substring(0, 200), paramCount: queryParams.length });

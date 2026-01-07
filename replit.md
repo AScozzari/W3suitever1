@@ -46,12 +46,12 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - `mcp_tool_settings` - Configurazioni MCP (query_template_id + variable_config per query tool)
     - `mcp_tool_permissions` - Permessi MCP ora referenziano `action_definition_id` (non più action_config_id)
   - **⚠️ REGOLA CHIAVE**: MCP Gateway legge SOLO da `action_definitions`. Per operative, `sourceId` passa a `triggerAction` per backwards compatibility
-  - **Policy RLS**: `USING (tenant_id = current_setting('app.current_tenant_id')::uuid)` ⚠️ NOTA: Usa `app.current_tenant_id` NON `app.tenant_id`
+  - **Policy RLS**: `USING (tenant_id = current_setting('app.tenant_id')::uuid)` 
   - **Nuovo Tenant**: Eredita tool globali automaticamente (tenant_id IS NULL), può aggiungere tool tenant-specific
 - **🔒 RLS TENANT CONTEXT (CRITICO)**:
-  - **⚠️ VARIABILE CORRETTA**: Usare SEMPRE `app.current_tenant_id` per impostare il tenant context
-  - **❌ SBAGLIATO**: `set_config('app.tenant_id', ...)` - NON funziona con le policy RLS!
-  - **✅ CORRETTO**: `set_config('app.current_tenant_id', ...)` - Corrisponde alle policy RLS
+  - **⚠️ VARIABILE CORRETTA**: Usare SEMPRE `app.tenant_id` per impostare il tenant context
+  - **❌ SBAGLIATO**: `set_config('app.current_tenant_id', ...)` - NON allineato con le policy RLS sulla VPS!
+  - **✅ CORRETTO**: `set_config('app.tenant_id', ...)` - Corrisponde alle policy RLS
   - **🔄 CONNECTION POOLING**: Usare SEMPRE `db.transaction()` o `withTenantTransaction()` per garantire che `set_config` e le query usino la stessa connessione dal pool
 - **COMPONENT-FIRST APPROACH (OBBLIGATORIO)**:
   1. **SEMPRE shadcn/ui FIRST** - Check 48 componenti disponibili prima di creare custom
@@ -163,7 +163,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Security**: Incorporates OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
     - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage with RLS.
     - **AI Integration**: Implements AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
-    - **CRM Module**: Focuses on person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 360° Dashboard.
+    - **CRM Module**: Focuses on person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
     - **HR Module**: Manages shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Designed to support diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
     - **Brand Interface**: Provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
