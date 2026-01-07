@@ -1,0 +1,55 @@
+{id: 'admin-user', firstName: 'Admin', lastName: 'User', avatarUrl: undefined, orgs: 0, …}
+SettingsPage-ucY6QgZ-.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-DtyMQGrk.js:21 [APP-ROUTER] 🚀 Router component rendered
+SettingsPage-ucY6QgZ-.js:15 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+index-DtyMQGrk.js:21 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 ReferenceError: isEditMode is not defined
+    at un (SettingsPage-ucY6QgZ-.js:17:111420)
+    at Uu (react-core-CmNK3XIx.js:30:17038)
+    at Xu (react-core-CmNK3XIx.js:32:3159)
+    at Sa (react-core-CmNK3XIx.js:32:45053)
+    at va (react-core-CmNK3XIx.js:32:39963)
+    at Of (react-core-CmNK3XIx.js:32:39891)
+    at Sl (react-core-CmNK3XIx.js:32:39745)
+    at co (react-core-CmNK3XIx.js:32:36089)
+    at da (react-core-CmNK3XIx.js:32:35037)
+    at et (react-core-CmNK3XIx.js:17:1598)
+overrideMethod @ installHook.js:1
+Yu @ react-core-CmNK3XIx.js:32
+n.callback @ react-core-CmNK3XIx.js:32
+cs @ react-core-CmNK3XIx.js:30
+aa @ react-core-CmNK3XIx.js:32
+sa @ react-core-CmNK3XIx.js:32
+Lf @ react-core-CmNK3XIx.js:32
+Mf @ react-core-CmNK3XIx.js:32
+ln @ react-core-CmNK3XIx.js:32
+da @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+react-core-CmNK3XIx.js:32 Uncaught ReferenceError: isEditMode is not defined
+    at un (SettingsPage-ucY6QgZ-.js:17:111420)
+    at Uu (react-core-CmNK3XIx.js:30:17038)
+    at Xu (react-core-CmNK3XIx.js:32:3159)
+    at Sa (react-core-CmNK3XIx.js:32:45053)
+    at va (react-core-CmNK3XIx.js:32:39963)
+    at Of (react-core-CmNK3XIx.js:32:39891)
+    at Sl (react-core-CmNK3XIx.js:32:39745)
+    at co (react-core-CmNK3XIx.js:32:36089)
+    at da (react-core-CmNK3XIx.js:32:35037)
+    at et (react-core-CmNK3XIx.js:17:1598)
+un @ SettingsPage-ucY6QgZ-.js:17
+Uu @ react-core-CmNK3XIx.js:30
+Xu @ react-core-CmNK3XIx.js:32
+Sa @ react-core-CmNK3XIx.js:32
+va @ react-core-CmNK3XIx.js:32
+Of @ react-core-CmNK3XIx.js:32
+Sl @ react-core-CmNK3XIx.js:32
+co @ react-core-CmNK3XIx.js:32
+da @ react-core-CmNK3XIx.js:32
+et @ react-core-CmNK3XIx.js:17
+ct @ react-core-CmNK3XIx.js:17Comprendi l'errore
+index-DtyMQGrk.js:15 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+Layout-DzbYKt81.js:58 Wed Jan 07 2026 17:40:34 GMT+0100 (Ora standard dell’Europa centrale) | sip.Registerer | Waiting toggled to true
+Layout-DzbYKt81.js:58 Wed Jan 07 2026 17:40:34 GMT+0100 (Ora standard dell’Europa centrale) | sip.Transport | Sending WebSocket message:
+
+REGISTER sip:demo.edgvoip.it SIP/2.0
