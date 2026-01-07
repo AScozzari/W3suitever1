@@ -11850,7 +11850,158 @@ export const storageAuditEvents = w3suiteSchema.table("storage_audit_events", {
   index("storage_audit_date_idx").on(table.createdAt),
 ]);
 
+// ==================== COMMISSIONING SYSTEM ====================
+
+// Commissioning Enums
+export const commissioningClusterEntityTypeEnum = pgEnum('commissioning_cluster_entity_type', ['RS', 'PDV', 'RISORSA']);
+export const commissioningRaceTypeEnum = pgEnum('commissioning_race_type', ['operatore', 'interna']);
+export const commissioningRaceStatusEnum = pgEnum('commissioning_race_status', ['draft', 'active', 'completed', 'cancelled']);
+export const commissioningScopeTypeEnum = pgEnum('commissioning_scope_type', ['PDV', 'RS', 'MULTI_RS', 'USER', 'MULTI_USER']);
+export const commissioningVariableTypeEnum = pgEnum('commissioning_variable_type', ['valenza', 'gettone_contrattuale', 'gettone_gara', 'canone']);
+
+// Commissioning Clusters - Raggruppamento omogeneo di entità
+export const commissioningClusters = w3suiteSchema.table("commissioning_clusters", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 255 }).notNull(),
+  entityType: commissioningClusterEntityTypeEnum("entity_type").notNull(), // 'RS' | 'PDV' | 'RISORSA' - esclusivo!
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_clusters_tenant_idx").on(table.tenantId),
+  index("commissioning_clusters_entity_type_idx").on(table.entityType),
+  index("commissioning_clusters_active_idx").on(table.isActive),
+]);
+
+// Cluster → Entità (N:M) - Link cluster a RS/PDV/Users
+export const commissioningClusterEntities = w3suiteSchema.table("commissioning_cluster_entities", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clusterId: uuid("cluster_id").notNull().references(() => commissioningClusters.id, { onDelete: 'cascade' }),
+  entityId: uuid("entity_id").notNull(), // ID della RS/PDV/User (FK logico)
+  entityType: commissioningClusterEntityTypeEnum("entity_type").notNull(), // Ridondante per sicurezza
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_cluster_entities_cluster_idx").on(table.clusterId),
+  index("commissioning_cluster_entities_entity_idx").on(table.entityId),
+  uniqueIndex("commissioning_cluster_entities_unique").on(table.clusterId, table.entityId),
+]);
+
+// Cluster → Driver (N:M) - FK a tabella drivers esistente
+export const commissioningClusterDrivers = w3suiteSchema.table("commissioning_cluster_drivers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clusterId: uuid("cluster_id").notNull().references(() => commissioningClusters.id, { onDelete: 'cascade' }),
+  driverId: uuid("driver_id").notNull().references(() => drivers.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_cluster_drivers_cluster_idx").on(table.clusterId),
+  index("commissioning_cluster_drivers_driver_idx").on(table.driverId),
+  uniqueIndex("commissioning_cluster_drivers_unique").on(table.clusterId, table.driverId),
+]);
+
+// Commissioning Races - Gare (contenitore con info base e validità)
+// tenant_id NULL = brand-pushed (solo view), UUID = custom (full CRUD)
+export const commissioningRaces = w3suiteSchema.table("commissioning_races", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = brand-pushed
+  raceType: commissioningRaceTypeEnum("race_type").notNull(), // 'operatore' | 'interna'
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  validFrom: date("valid_from").notNull(),
+  validTo: date("valid_to"),
+  isEvergreen: boolean("is_evergreen").default(false).notNull(),
+  operatorId: uuid("operator_id").references(() => operators.id), // Solo per Gare Operatore
+  channelId: uuid("channel_id").references(() => channels.id), // Obbligatorio per Operatore, opzionale per Interne
+  status: commissioningRaceStatusEnum("status").default('draft').notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_races_tenant_idx").on(table.tenantId),
+  index("commissioning_races_type_idx").on(table.raceType),
+  index("commissioning_races_status_idx").on(table.status),
+  index("commissioning_races_valid_idx").on(table.validFrom, table.validTo),
+  index("commissioning_races_operator_idx").on(table.operatorId),
+  index("commissioning_races_channel_idx").on(table.channelId),
+]);
+
+// Commissioning Configurators - Regole del gioco per ogni gara
+export const commissioningConfigurators = w3suiteSchema.table("commissioning_configurators", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  raceId: uuid("race_id").notNull().references(() => commissioningRaces.id, { onDelete: 'cascade' }),
+  name: varchar("name", { length: 255 }).notNull(),
+  
+  // Chi partecipa
+  clusterId: uuid("cluster_id").references(() => commissioningClusters.id, { onDelete: 'set null' }),
+  driverIds: uuid("driver_ids").array(), // Subset dei driver del cluster
+  
+  // Da dove conto (scope)
+  scopeType: commissioningScopeTypeEnum("scope_type").notNull(), // 'PDV' | 'RS' | 'MULTI_RS' | 'USER' | 'MULTI_USER'
+  scopeEntityIds: uuid("scope_entity_ids").array(), // Array di ID entità per lo scope
+  
+  // Cosa conto
+  variableType: commissioningVariableTypeEnum("variable_type").notNull(), // 'valenza' | 'gettone_contrattuale' | 'gettone_gara' | 'canone'
+  valuePackageId: uuid("value_package_id"), // FK a pacchetto valenze (futuro)
+  
+  // Condizioni e regole
+  palpietti: jsonb("paletti").default({}), // Condizioni da soddisfare
+  rules: jsonb("rules").default({}), // Configurazione regole (soglie, %, etc.)
+  
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_configurators_race_idx").on(table.raceId),
+  index("commissioning_configurators_cluster_idx").on(table.clusterId),
+  index("commissioning_configurators_scope_idx").on(table.scopeType),
+  index("commissioning_configurators_variable_idx").on(table.variableType),
+]);
+
 // ==================== INSERT SCHEMAS AND TYPES ====================
+
+// Commissioning Insert Schemas
+export const insertCommissioningClusterSchema = createInsertSchema(commissioningClusters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningCluster = z.infer<typeof insertCommissioningClusterSchema>;
+export type CommissioningCluster = typeof commissioningClusters.$inferSelect;
+
+export const insertCommissioningClusterEntitySchema = createInsertSchema(commissioningClusterEntities).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCommissioningClusterEntity = z.infer<typeof insertCommissioningClusterEntitySchema>;
+export type CommissioningClusterEntity = typeof commissioningClusterEntities.$inferSelect;
+
+export const insertCommissioningClusterDriverSchema = createInsertSchema(commissioningClusterDrivers).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCommissioningClusterDriver = z.infer<typeof insertCommissioningClusterDriverSchema>;
+export type CommissioningClusterDriver = typeof commissioningClusterDrivers.$inferSelect;
+
+export const insertCommissioningRaceSchema = createInsertSchema(commissioningRaces).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningRace = z.infer<typeof insertCommissioningRaceSchema>;
+export type CommissioningRace = typeof commissioningRaces.$inferSelect;
+
+export const insertCommissioningConfiguratorSchema = createInsertSchema(commissioningConfigurators).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningConfigurator = z.infer<typeof insertCommissioningConfiguratorSchema>;
+export type CommissioningConfigurator = typeof commissioningConfigurators.$inferSelect;
 
 // Storage Insert Schemas
 export const insertStorageFolderSchema = createInsertSchema(storageFolders).omit({
