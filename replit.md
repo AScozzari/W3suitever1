@@ -46,7 +46,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - `mcp_tool_settings` - Configurazioni MCP (query_template_id + variable_config per query tool)
     - `mcp_tool_permissions` - Permessi MCP ora referenziano `action_definition_id` (non più action_config_id)
   - **⚠️ REGOLA CHIAVE**: MCP Gateway legge SOLO da `action_definitions`. Per operative, `sourceId` passa a `triggerAction` per backwards compatibility
-  - **Policy RLS**: `USING (tenant_id = current_setting('app.tenant_id')::uuid)` 
+  - **Policy RLS**: `USING (tenant_id = current_setting('app.tenant_id')::uuid)`
   - **Nuovo Tenant**: Eredita tool globali automaticamente (tenant_id IS NULL), può aggiungere tool tenant-specific
 - **🔒 RLS TENANT CONTEXT (CRITICO)**:
   - **⚠️ VARIABILE CORRETTA**: Usare SEMPRE `app.tenant_id` per impostare il tenant context

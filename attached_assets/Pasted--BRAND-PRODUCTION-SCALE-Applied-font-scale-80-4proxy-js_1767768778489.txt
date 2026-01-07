@@ -1,0 +1,67 @@
+[BRAND-PRODUCTION-SCALE] 📐 Applied --font-scale: 80%
+4proxy.js:1 Uncaught Error: Attempting to use a disconnected port object
+    at handleMessageFromPage (proxy.js:1:850)
+handleMessageFromPage @ proxy.js:1
+postMessage
+send @ backendManager.js:1
+(anonime) @ react_devtools_backend_compact.js:1Comprendi l'errore
+proxy.js:1 Uncaught Error: Attempting to use a disconnected port object
+    at handleMessageFromPage (proxy.js:1:850)
+handleMessageFromPage @ proxy.js:1
+postMessage
+send @ backendManager.js:1
+(anonime) @ react_devtools_backend_compact.js:1
+setTimeout
+X6 @ App-74Q0_ROK.js:1
+s @ App-74Q0_ROK.js:1
+batch @ App-74Q0_ROK.js:1
+Ni @ App-74Q0_ROK.js:1
+setData @ App-74Q0_ROK.js:1
+fetch @ App-74Q0_ROK.js:1
+await in fetch
+ou @ App-74Q0_ROK.js:1
+onSubscribe @ App-74Q0_ROK.js:1
+subscribe @ App-74Q0_ROK.js:1
+(anonime) @ App-74Q0_ROK.js:1
+va @ index-B72GIhYJ.js:39
+sl @ index-B72GIhYJ.js:41
+Gn @ index-B72GIhYJ.js:41
+xd @ index-B72GIhYJ.js:41
+gn @ index-B72GIhYJ.js:41
+Ai @ index-B72GIhYJ.js:41
+mn @ index-B72GIhYJ.js:39
+(anonime) @ index-B72GIhYJ.js:41Comprendi l'errore
+134proxy.js:1 Uncaught Error: Attempting to use a disconnected port object
+    at handleMessageFromPage (proxy.js:1:850)
+handleMessageFromPage @ proxy.js:1
+postMessage
+send @ backendManager.js:1
+(anonime) @ react_devtools_backend_compact.js:1Comprendi l'errore
+proxy.js:1 Uncaught Error: Attempting to use a disconnected port object
+    at handleMessageFromPage (proxy.js:1:850)
+handleMessageFromPage @ proxy.js:1
+postMessage
+send @ backendManager.js:1
+(anonime) @ react_devtools_backend_compact.js:1
+setTimeout
+X6 @ App-74Q0_ROK.js:1
+s @ App-74Q0_ROK.js:1
+batch @ App-74Q0_ROK.js:1
+Ni @ App-74Q0_ROK.js:1
+setData @ App-74Q0_ROK.js:1
+fetch @ App-74Q0_ROK.js:1
+await in fetch
+ou @ App-74Q0_ROK.js:1
+onSubscribe @ App-74Q0_ROK.js:1
+subscribe @ App-74Q0_ROK.js:1
+(anonime) @ App-74Q0_ROK.js:1
+va @ index-B72GIhYJ.js:39
+sl @ index-B72GIhYJ.js:41
+Gn @ index-B72GIhYJ.js:41
+xd @ index-B72GIhYJ.js:41
+gn @ index-B72GIhYJ.js:41
+Ai @ index-B72GIhYJ.js:41
+mn @ index-B72GIhYJ.js:39
+(anonime) @ index-B72GIhYJ.js:41Comprendi l'errore
+8proxy.js:1 Uncaught Error: Attempting to use a disconnected port object
+    at handleMessageFromPage (proxy.js:1:850)
