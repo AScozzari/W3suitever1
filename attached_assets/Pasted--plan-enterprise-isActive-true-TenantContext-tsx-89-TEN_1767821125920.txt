@@ -1,0 +1,93 @@
+ plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+useTenantSafety.tsx:178 [TENANT-NAV] Navigating to: /staging/commissioning
+App.tsx:144 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'commissioning', tenant: 'staging', *: 'commissioning'}
+App.tsx:154 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:155 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+installHook.js:1 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'commissioning', tenant: 'staging', *: 'commissioning'}
+installHook.js:1 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+installHook.js:1 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=9500cf0f111606597b7ddf5583464d05a1ea73770da0617a04a30db72bdeaa021ddf97ed6783106be6dd37fdff60b84aad43d2ce78ffe0143f0588933b608460&expires=1767821377279 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=8c93f217:103
+flush @ @tanstack_react-query.js?v=8c93f217:610
+batch @ @tanstack_react-query.js?v=8c93f217:628
+dispatch_fn @ @tanstack_react-query.js?v=8c93f217:1260
+setData @ @tanstack_react-query.js?v=8c93f217:931
+fetch @ @tanstack_react-query.js?v=8c93f217:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+useUserAvatar.ts:156 [useUserAvatar] Image load failed, refreshing signed URL (attempt 1 )
+ImpostazioniTabContent.tsx:79  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/commissioning/ClusterFormModal.tsx net::ERR_ABORTED 500 (Internal Server Error)Comprendi l'errore
+2chunk-L7SIRVDC.js?v=8c93f217:903 Uncaught TypeError: Failed to fetch dynamically imported module: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/commissioning/CommissioningPage.tsxComprendi l'errore
+installHook.js:1 The above error occurred in the <Context.Provider> component:
+
+    at StoreProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/StoreContext.tsx:23:33)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:1030:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=8c93f217:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=8c93f217:262:17)
+    at Suspense
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:275:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:133:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=8c93f217:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=8c93f217:262:17)
+    at Suspense
+    at Router
+    at IdleDetectionProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/IdleDetectionContext.tsx:23:41)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=8c93f217:3081:3)
+    at App (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:37:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ installHook.js:1
+logCapturedError @ chunk-ZHRYBLGQ.js?v=8c93f217:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=8c93f217:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=8c93f217:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=8c93f217:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=8c93f217:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+chunk-ZHRYBLGQ.js?v=8c93f217:19413 Uncaught TypeError: Failed to fetch dynamically imported module: https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/commissioning/CommissioningPage.tsxComprendi l'errore
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped

@@ -271,7 +271,10 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
             <Tabs defaultValue="entities" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="entities" className="flex items-center gap-2">
-                  {entityTypeInfo[entityType]?.icon && <entityTypeInfo[entityType].icon className="h-4 w-4" />}
+                  {(() => {
+                    const EntityIcon = entityTypeInfo[entityType]?.icon;
+                    return EntityIcon ? <EntityIcon className="h-4 w-4" /> : null;
+                  })()}
                   Entità ({selectedEntityIds.length})
                 </TabsTrigger>
                 <TabsTrigger value="drivers" className="flex items-center gap-2">
