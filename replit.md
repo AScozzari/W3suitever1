@@ -100,7 +100,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - ❌ Never use hex colors directly - use CSS variables
 - **CRITICAL BUG PREVENTION: Double Tenant Slug in URLs**
   - **✅ ALWAYS use `useTenantNavigation` hook**
-  - **❌ FORBIDDEN - Template Literals with tenantSlug**
+  - **❌ FORBIDDEN - Template Literals con tenantSlug**
 - **VPS Deploy Rules (OBBLIGATORIO)**:
   - **🚀 DEPLOY COMMAND**: Quando l'utente scrive "deploia sulla VPS", usare SEMPRE lo script incrementale chiedendo quale tipo:
     - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)

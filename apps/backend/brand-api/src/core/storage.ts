@@ -1282,8 +1282,9 @@ class BrandDrizzleStorage implements IBrandStorage {
   async getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]> {
     try {
       // Use transaction with RLS context to ensure proper tenant isolation
+      // CRITICAL: set_config third param must be FALSE to persist for the session
       const results = await w3db.transaction(async (tx) => {
-        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', true)`));
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`));
         return await tx.select()
           .from(w3LegalEntities)
           .where(eq(w3LegalEntities.tenantId, tenantId));
@@ -1317,9 +1318,9 @@ class BrandDrizzleStorage implements IBrandStorage {
       console.log(`🔍 [BRAND-STORAGE] Fetching organization_entities for tenant: ${tenantId}`);
       
       // Use transaction with RLS context to ensure proper tenant isolation
+      // CRITICAL: set_config third param must be FALSE to persist for the session (not transaction-local)
       const results = await w3db.transaction(async (tx) => {
-        // Set RLS tenant context (must use app.tenant_id to match VPS RLS policies)
-        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', true)`));
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`));
         
         return await tx.select()
           .from(w3OrganizationEntities)
@@ -1354,8 +1355,9 @@ class BrandDrizzleStorage implements IBrandStorage {
   async getStoresByTenant(tenantId: string): Promise<Store[]> {
     try {
       // Use transaction with RLS context to ensure proper tenant isolation
+      // CRITICAL: set_config third param must be FALSE to persist for the session
       const results = await w3db.transaction(async (tx) => {
-        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', true)`));
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${tenantId}', false)`));
         return await tx.select()
           .from(w3Stores)
           .where(eq(w3Stores.tenantId, tenantId));
