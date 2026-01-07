@@ -53,6 +53,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **❌ SBAGLIATO**: `set_config('app.current_tenant_id', ...)` - NON allineato con le policy RLS sulla VPS!
   - **✅ CORRETTO**: `set_config('app.tenant_id', ...)` - Corrisponde alle policy RLS
   - **🔄 CONNECTION POOLING**: Usare SEMPRE `db.transaction()` o `withTenantTransaction()` per garantire che `set_config` e le query usino la stessa connessione dal pool
+  - **⚠️ SET_CONFIG TERZO PARAMETRO**: Usare SEMPRE `false` (session-scoped), MAI `true` (transaction-local, non funziona con Drizzle savepoints!)
 - **COMPONENT-FIRST APPROACH (OBBLIGATORIO)**:
   1. **SEMPRE shadcn/ui FIRST** - Check 48 componenti disponibili prima di creare custom
   2. **Copy & Paste workflow** - `npx shadcn@latest add [component-name]`
