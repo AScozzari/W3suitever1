@@ -20,16 +20,20 @@ import { db as w3db } from "../../../api/src/core/db.js";
 import { 
   tenants as w3Tenants, 
   legalEntities as w3LegalEntities,
+  organizationEntities as w3OrganizationEntities,
   stores as w3Stores,
   users as w3Users,
   suppliers as w3Suppliers,
   insertTenantSchema, 
   insertLegalEntitySchema,
+  insertOrganizationEntitySchema,
   insertStoreSchema,
   type Tenant, 
   type InsertTenant,
   type LegalEntity,
   type InsertLegalEntity,
+  type OrganizationEntity,
+  type InsertOrganizationEntity,
   type Store,
   type InsertStore,
   type Supplier,
@@ -124,16 +128,22 @@ export interface IBrandStorage {
   
   // ==================== LEGAL ENTITIES MANAGEMENT ====================
   
-  // Legal Entities operations using w3suite.legal_entities
+  // Legal Entities operations using w3suite.legal_entities (Partner entities)
   getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]>;
   createLegalEntity(data: InsertLegalEntity): Promise<LegalEntity>;
+  
+  // ==================== ORGANIZATION ENTITIES (Ragioni Sociali) ====================
+  
+  // Organization Entities operations using w3suite.organization_entities
+  getOrganizationEntitiesByTenant(tenantId: string): Promise<OrganizationEntity[]>;
+  createOrganizationEntity(data: InsertOrganizationEntity): Promise<OrganizationEntity>;
   
   // ==================== STORES MANAGEMENT ====================
   
   // Stores operations using w3suite.stores
   getStoresByTenant(tenantId: string): Promise<Store[]>;
   getStoresByOrganization(tenantId: string): Promise<Store[]>;
-  getLegalEntitiesByOrganization(tenantId: string): Promise<LegalEntity[]>;
+  getLegalEntitiesByOrganization(tenantId: string): Promise<OrganizationEntity[]>;
   createStore(data: InsertStore): Promise<Store>;
   updateStore(id: string, data: Partial<Store>): Promise<Store | null>;
   
@@ -1265,9 +1275,9 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  // ==================== LEGAL ENTITIES MANAGEMENT ====================
+  // ==================== LEGAL ENTITIES MANAGEMENT (Partner Entities) ====================
 
-  // Get legal entities for specific tenant
+  // Get legal entities for specific tenant (partner entities from legal_entities table)
   async getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]> {
     try {
       const results = await w3db.select()
@@ -1293,6 +1303,36 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
+  // ==================== ORGANIZATION ENTITIES (Ragioni Sociali) ====================
+
+  // Get organization entities (Ragioni Sociali) for specific tenant
+  async getOrganizationEntitiesByTenant(tenantId: string): Promise<OrganizationEntity[]> {
+    try {
+      console.log(`🔍 [BRAND-STORAGE] Fetching organization_entities for tenant: ${tenantId}`);
+      const results = await w3db.select()
+        .from(w3OrganizationEntities)
+        .where(eq(w3OrganizationEntities.tenantId, tenantId));
+      console.log(`✅ [BRAND-STORAGE] Found ${results.length} organization entities`);
+      return results;
+    } catch (error) {
+      console.error(`Error fetching organization entities for tenant ${tenantId}:`, error);
+      throw error;
+    }
+  }
+
+  // Create new organization entity (Ragione Sociale)
+  async createOrganizationEntity(data: InsertOrganizationEntity): Promise<OrganizationEntity> {
+    try {
+      const results = await w3db.insert(w3OrganizationEntities)
+        .values(data)
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating organization entity:', error);
+      throw error;
+    }
+  }
+
   // ==================== STORES MANAGEMENT IMPLEMENTATION ====================
 
   // Get stores by tenant (organization)
@@ -1313,8 +1353,9 @@ class BrandDrizzleStorage implements IBrandStorage {
     return this.getStoresByTenant(tenantId);
   }
 
-  async getLegalEntitiesByOrganization(tenantId: string): Promise<LegalEntity[]> {
-    return this.getLegalEntitiesByTenant(tenantId);
+  // Get organization entities (Ragioni Sociali) - used by routes as getLegalEntitiesByOrganization
+  async getLegalEntitiesByOrganization(tenantId: string): Promise<OrganizationEntity[]> {
+    return this.getOrganizationEntitiesByTenant(tenantId);
   }
 
   // Create new store
