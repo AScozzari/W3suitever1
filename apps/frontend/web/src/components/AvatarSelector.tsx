@@ -1,5 +1,14 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, X, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import AvatarPickerDialog from './AvatarPickerDialog';
+
+interface SavedAvatar {
+  objectKey: string;
+  url: string;
+  fileName: string;
+  uploadedAt: string;
+  sizeBytes?: number;
+}
 
 interface AvatarSelectorProps {
   /** Current avatar URL if any */
@@ -10,6 +19,8 @@ interface AvatarSelectorProps {
   lastName?: string;
   /** Username as fallback for initials */
   username?: string;
+  /** User ID for MyDrive integration (optional) */
+  userId?: string;
   /** Callback when avatar changes */
   onAvatarChange?: (avatarData: { url?: string; blob?: Blob; type: 'upload' | 'generated' }) => void;
   /** Loading state */
@@ -18,6 +29,8 @@ interface AvatarSelectorProps {
   error?: string;
   /** Size of avatar preview in pixels */
   size?: number;
+  /** Enable picker dialog with Device/MyDrive tabs */
+  enablePicker?: boolean;
 }
 
 export default function AvatarSelector({
@@ -25,10 +38,12 @@ export default function AvatarSelector({
   firstName,
   lastName,
   username,
+  userId,
   onAvatarChange,
   loading = false,
   error,
-  size = 120
+  size = 120,
+  enablePicker = false
 }: AvatarSelectorProps) {
   // Generate initials from firstName/lastName or username
   const getInitials = (): string => {
@@ -50,8 +65,43 @@ export default function AvatarSelector({
   const [isUploading, setIsUploading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false); // ✅ Track image load errors
+  const [pickerOpen, setPickerOpen] = useState(false); // 🖼️ Picker dialog state
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 🖼️ Handler for file selected from picker dialog (Device tab)
+  const handlePickerLocalFile = useCallback((file: File) => {
+    // Create preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    setValidationError(null);
+    setImageLoadError(false);
+    
+    // Notify parent
+    onAvatarChange?.({
+      url: objectUrl,
+      blob: file,
+      type: 'upload'
+    });
+    
+    setPickerOpen(false);
+  }, [onAvatarChange]);
+
+  // 🖼️ Handler for avatar selected from MyDrive
+  const handlePickerMyDrive = useCallback((avatar: SavedAvatar) => {
+    setPreviewUrl(avatar.url);
+    setValidationError(null);
+    setImageLoadError(false);
+    
+    // Notify parent with URL only (no blob, already on S3)
+    onAvatarChange?.({
+      url: avatar.url,
+      blob: undefined,
+      type: 'upload'
+    });
+    
+    setPickerOpen(false);
+  }, [onAvatarChange]);
 
   // Sync previewUrl when currentAvatarUrl changes (e.g., when opening edit modal)
   useEffect(() => {
@@ -289,7 +339,7 @@ export default function AvatarSelector({
 
       {/* Upload Button - Full Width */}
       <button
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => enablePicker && userId ? setPickerOpen(true) : fileInputRef.current?.click()}
         disabled={loading || isUploading}
         style={{
           width: '100%',
@@ -378,6 +428,20 @@ export default function AvatarSelector({
         style={{ display: 'none' }}
         data-testid="input-file-upload"
       />
+
+      {/* 🖼️ Avatar Picker Dialog */}
+      {enablePicker && userId && (
+        <AvatarPickerDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          userId={userId}
+          currentAvatarUrl={previewUrl || undefined}
+          onSelectLocalFile={handlePickerLocalFile}
+          onSelectFromMyDrive={handlePickerMyDrive}
+          isUploading={isUploading}
+          uploadProgress={uploadProgress}
+        />
+      )}
     </div>
   );
 }

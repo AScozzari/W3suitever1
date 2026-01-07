@@ -9213,9 +9213,11 @@ export default function SettingsPage() {
                     firstName={newUser.nome}
                     lastName={newUser.cognome}
                     username={newUser.username}
+                    userId={isEditMode ? userModal.data?.id : undefined}
                     onAvatarChange={handleAvatarChange}
                     loading={false}
                     size={120}
+                    enablePicker={isEditMode}
                   />
                 </div>
                 
@@ -9987,6 +9989,61 @@ export default function SettingsPage() {
                     
                     const saveUser = async () => {
                       try {
+                        // 🖼️ AVATAR UPLOAD: Se c'è un blob, prima upload su S3
+                        let avatarUrl = newUser.avatar?.url || null;
+                        
+                        if (newUser.avatar?.blob) {
+                          console.log('📤 Uploading avatar to S3...');
+                          
+                          // Determina il userId - in edit mode usiamo l'id esistente, in create useremo dopo la creazione
+                          const targetUserId = isEditMode ? userModal.data?.id : null;
+                          
+                          if (isEditMode && targetUserId) {
+                            // EDIT MODE: Upload avatar subito
+                            try {
+                              const contentType = newUser.avatar.blob.type || 'image/png';
+                              
+                              // Step 1: Get presigned URL
+                              const presignedRes = await authenticatedFetch(`/api/users/${targetUserId}/avatar/upload-url`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contentType })
+                              });
+                              
+                              if (!presignedRes.ok) throw new Error('Failed to get upload URL');
+                              const presignedData = await presignedRes.json();
+                              
+                              // Step 2: Upload to S3
+                              const uploadRes = await fetch(presignedData.data.uploadUrl, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': contentType },
+                                body: newUser.avatar.blob
+                              });
+                              
+                              if (!uploadRes.ok) throw new Error('Failed to upload to S3');
+                              
+                              // Step 3: Confirm upload
+                              const confirmRes = await authenticatedFetch(`/api/users/${targetUserId}/avatar`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ objectKey: presignedData.data.objectKey })
+                              });
+                              
+                              if (confirmRes.ok) {
+                                const confirmData = await confirmRes.json();
+                                avatarUrl = confirmData.data?.avatarUrl || null;
+                                console.log('✅ Avatar uploaded to S3:', avatarUrl);
+                              }
+                            } catch (uploadError) {
+                              console.error('⚠️ Avatar upload failed, continuing without avatar:', uploadError);
+                              avatarUrl = null;
+                            }
+                          } else {
+                            // CREATE MODE: Clear blob URL, avatar will be uploaded after user creation
+                            avatarUrl = null; // Don't save blob URL to database
+                          }
+                        }
+                        
                         const userData: Record<string, any> = {
                           username: newUser.username,
                           nome: newUser.nome,
@@ -9995,7 +10052,7 @@ export default function SettingsPage() {
                           telefono: newUser.telefono,
                           ruolo: newUser.ruolo,
                           stato: newUser.stato,
-                          foto: newUser.avatar?.url || null,
+                          foto: avatarUrl, // ✅ Use S3 URL instead of blob URL
                           tenant_id: getCurrentTenantId(),
                           // ✅ SCOPE DATA
                           selectAllLegalEntities: newUser.selectAllLegalEntities,
@@ -10049,6 +10106,44 @@ export default function SettingsPage() {
                         console.log(`✅ User ${isEditMode ? 'updated' : 'created'} successfully:`, result);
                         
                         const userId = isEditMode ? userModal.data?.id : (result.data?.id || result.id);
+                        
+                        // 🖼️ CREATE MODE: Upload avatar dopo creazione utente
+                        if (!isEditMode && userId && newUser.avatar?.blob) {
+                          console.log('📤 CREATE MODE: Uploading avatar for new user...');
+                          try {
+                            const contentType = newUser.avatar.blob.type || 'image/png';
+                            
+                            // Step 1: Get presigned URL
+                            const presignedRes = await authenticatedFetch(`/api/users/${userId}/avatar/upload-url`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ contentType })
+                            });
+                            
+                            if (presignedRes.ok) {
+                              const presignedData = await presignedRes.json();
+                              
+                              // Step 2: Upload to S3
+                              const uploadRes = await fetch(presignedData.data.uploadUrl, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': contentType },
+                                body: newUser.avatar.blob
+                              });
+                              
+                              if (uploadRes.ok) {
+                                // Step 3: Confirm upload
+                                await authenticatedFetch(`/api/users/${userId}/avatar`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ objectKey: presignedData.data.objectKey })
+                                });
+                                console.log('✅ Avatar uploaded for new user');
+                              }
+                            }
+                          } catch (uploadError) {
+                            console.error('⚠️ Avatar upload failed for new user:', uploadError);
+                          }
+                        }
                         
                         // ✅ Set user scope via new relational APIs
                         // Map legacy selectedLegalEntities to organization entity UUIDs
