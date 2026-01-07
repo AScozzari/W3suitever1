@@ -442,26 +442,26 @@ export default function OrganizationDetail() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
+              gap: '0.5rem',
+              padding: '0.75rem 1.25rem',
               background: COLORS.gradients.orange,
               color: 'white',
               border: 'none',
-              borderRadius: '10px',
-              fontSize: '14px',
+              borderRadius: '0.625rem',
+              fontSize: '0.875rem',
               fontWeight: '600',
               cursor: 'pointer',
-              boxShadow: '0 3px 12px rgba(255, 105, 0, 0.3)',
+              boxShadow: '0 0.1875rem 0.75rem rgba(255, 105, 0, 0.3)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+              e.currentTarget.style.transform = 'translateY(-0.125rem)';
+              e.currentTarget.style.boxShadow = '0 0.375rem 1.25rem rgba(255, 105, 0, 0.4)';
               e.currentTarget.style.background = COLORS.primary.orangeLight;
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 3px 12px rgba(255, 105, 0, 0.3)';
+              e.currentTarget.style.boxShadow = '0 0.1875rem 0.75rem rgba(255, 105, 0, 0.3)';
               e.currentTarget.style.background = COLORS.gradients.orange;
             }}
             data-testid="button-edit-organization"
@@ -474,12 +474,12 @@ export default function OrganizationDetail() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '8px',
+            gap: '0.5rem',
+            padding: '0.5rem',
             background: 'white',
-            borderRadius: '10px',
+            borderRadius: '0.625rem',
             border: `1px solid ${COLORS.neutral.lighter}`,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+            boxShadow: '0 0.125rem 0.5rem rgba(0, 0, 0, 0.06)',
           }}>
             {[
               { icon: RefreshCw, label: 'Aggiorna', color: COLORS.semantic.info, testId: 'refresh' },
@@ -493,8 +493,8 @@ export default function OrganizationDetail() {
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: '6px',
+                  padding: '0.5rem',
+                  borderRadius: '0.375rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -522,9 +522,9 @@ export default function OrganizationDetail() {
       {/* Professional KPI Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px',
-        marginBottom: '24px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(17.5rem, 1fr))',
+        gap: '1.25rem',
+        marginBottom: '1.5rem',
       }}>
         {[
           { 
@@ -728,12 +728,12 @@ export default function OrganizationDetail() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Overview Metrics Cards */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '20px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))',
+              gap: '1.25rem',
             }}>
               {[
                 {
@@ -1134,7 +1134,7 @@ export default function OrganizationDetail() {
       
       case 'analytics':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Analytics Header */}
             <div style={{
               display: 'flex',
@@ -1785,7 +1785,7 @@ export default function OrganizationDetail() {
       
       case 'legal-entities':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Legal Entities Header */}
             <div style={{
               display: 'flex',
@@ -2331,7 +2331,7 @@ export default function OrganizationDetail() {
       
       case 'stores':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Stores Header */}
             <div style={{
               display: 'flex',

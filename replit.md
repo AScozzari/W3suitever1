@@ -158,9 +158,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: Utilizes a Glassmorphism design with fixed headers and sidebars, and white backgrounds. The UI is built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is managed by `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness.
+- **UI/UX Decisions**: Utilizes a Glassmorphism design with fixed headers and sidebars, and white backgrounds. The UI is built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is managed by `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness. All new UI developments must use `rem` units for dimensions to ensure proper scaling.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS).
+    - **Database**: PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS). `app.tenant_id` is critically used for tenant context in RLS policies.
     - **Security**: Incorporates OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
     - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage with RLS.
     - **AI Integration**: Implements AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
@@ -168,13 +168,15 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **HR Module**: Manages shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Designed to support diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
     - **Brand Interface**: Provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface for external interactions.
+    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface for external interactions. `action_definitions` serves as the single source of truth for MCP Gateway actions.
+    - **User Scope**: `user_stores` is the single source of truth for user scope, with organization entities derived automatically.
+    - **Italian Business Validation**: Comprehensive validation for email, PEC email, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, and addresses with real-time feedback and Zod schemas.
 - **System Design Choices**:
     - **Organizational Hierarchy**: Employs a pyramidal scoping model: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
     - **Cross-Store Architecture**: Enables tenant-wide data views with role-based access and optional filtering capabilities.
     - **Request Routing**: Utilizes "Functional First → First Wins" for team task assignment and "Shift-Based Routing."
     - **Action Management System**: Centralized configuration via `action_definitions`, with actions routed by the `UnifiedTriggerService`.
-    - **Deployment & Governance**: Features an incremental VPS deployment process to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access is secured using `deploy/keys/vps_key`. The `w3suite_prod` database is accessed via a local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
+    - **Deployment & Governance**: Features an incremental VPS deployment process to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access is secured using `deploy/keys/vps_key`. The `w3suite_prod` database is accessed via a local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
 
 # External Dependencies
 - PostgreSQL
