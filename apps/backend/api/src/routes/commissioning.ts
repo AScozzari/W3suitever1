@@ -9,7 +9,7 @@ const router = Router();
 
 router.get("/races", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant context required" });
     }
@@ -73,7 +73,7 @@ router.get("/races", async (req: Request, res: Response) => {
 
 router.get("/races/:id", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant context required" });
     }
@@ -208,7 +208,7 @@ async function validateDriverIds(tenantId: string, driverIds: string[]) {
 
 router.post("/races", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const userId = req.user?.id;
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant context required" });
@@ -246,7 +246,7 @@ router.post("/races", async (req: Request, res: Response) => {
 
 router.patch("/races/:id", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const userId = req.user?.id;
     const { id } = req.params;
 
@@ -301,7 +301,7 @@ router.patch("/races/:id", async (req: Request, res: Response) => {
 
 router.get("/clusters", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant context required" });
     }
@@ -341,7 +341,7 @@ router.get("/clusters", async (req: Request, res: Response) => {
 
 router.get("/clusters/:id", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
 
     const clusterResult = await db.execute(sql`
@@ -391,7 +391,7 @@ const createClusterSchema = z.object({
 
 router.post("/clusters", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const userId = req.user?.id;
     if (!tenantId) {
       return res.status(400).json({ error: "Tenant context required" });
@@ -451,7 +451,7 @@ router.post("/clusters", async (req: Request, res: Response) => {
 
 router.patch("/clusters/:id", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const userId = req.user?.id;
     const { id } = req.params;
 
@@ -524,7 +524,7 @@ router.patch("/clusters/:id", async (req: Request, res: Response) => {
 
 router.delete("/clusters/:id", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
 
     const existingResult = await db.execute(sql`
@@ -546,7 +546,7 @@ router.delete("/clusters/:id", async (req: Request, res: Response) => {
 
 router.get("/entities/:type", async (req: Request, res: Response) => {
   try {
-    const tenantId = req.tenantContext?.tenantId;
+    const tenantId = req.tenant?.id;
     const { type } = req.params;
 
     let result;

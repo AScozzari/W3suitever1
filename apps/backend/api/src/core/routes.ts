@@ -5561,9 +5561,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/channels', async (req, res) => {
     try {
       const result = await db.execute(sql`
-        SELECT id, name, code, is_active 
+        SELECT id, name, code 
         FROM public.channels 
-        WHERE is_active = true 
         ORDER BY name ASC
       `);
       res.json(result.rows);
