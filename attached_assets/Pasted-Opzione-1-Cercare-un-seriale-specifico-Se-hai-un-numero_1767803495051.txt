@@ -1,0 +1,239 @@
+Opzione 1: Cercare un seriale specifico
+Se hai un numero seriale da tracciare:Mcp wms serial lookupRichiesta{
+  `serialNumber`: `ESEMPIO-SN-12345`
+}Risposta[
+  {
+    "product_id": "PROD-APL-I16P-256-TIT",
+    "sku": "APL-I16P-256-TIT",
+    "product_name": "iPhone 16 Pro 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 5,
+    "quantity_available": 5
+  },
+  {
+    "product_id": "PROD-APL-I16P-256-TIT",
+    "sku": "APL-I16P-256-TIT",
+    "product_name": "iPhone 16 Pro 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 3,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-APL-I16P-256-TIT",
+    "sku": "APL-I16P-256-TIT",
+    "product_name": "iPhone 16 Pro 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 2,
+    "quantity_available": 2
+  },
+  {
+    "product_id": "PROD-APL-I17-256-BLK",
+    "sku": "APL-I17-256-BLK",
+    "product_name": "iPhone 17 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 2,
+    "quantity_available": 2
+  },
+  {
+    "product_id": "PROD-APL-I17-256-BLK",
+    "sku": "APL-I17-256-BLK",
+    "product_name": "iPhone 17 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 3,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-APL-I17-256-BLK",
+    "sku": "APL-I17-256-BLK",
+    "product_name": "iPhone 17 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 3,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-APL-I17P-256-ORG",
+    "sku": "APL-I17P-256-ORG",
+    "product_name": "iPhone 17 Pro 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 3,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-APL-I17P-256-ORG",
+    "sku": "APL-I17P-256-ORG",
+    "product_name": "iPhone 17 Pro 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 3,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-APL-I17P-256-ORG",
+    "sku": "APL-I17P-256-ORG",
+    "product_name": "iPhone 17 Pro 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 2,
+    "quantity_available": 2
+  },
+  {
+    "product_id": "PROD-APL-I17PM-256-ORG",
+    "sku": "APL-I17PM-256-ORG",
+    "product_name": "iPhone 17 Pro Max 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 2,
+    "quantity_available": 2
+  },
+  {
+    "product_id": "PROD-APL-I17PM-256-ORG",
+    "sku": "APL-I17PM-256-ORG",
+    "product_name": "iPhone 17 Pro Max 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 2,
+    "quantity_available": 2
+  },
+  {
+    "product_id": "PROD-APL-I17PM-256-ORG",
+    "sku": "APL-I17PM-256-ORG",
+    "product_name": "iPhone 17 Pro Max 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": null,
+    "quantity_on_hand": 1,
+    "quantity_available": 1
+  },
+  {
+    "product_id": "PROD-MOT-RZRU25-512-BLK",
+    "sku": "MOT-RZRU25-512-BLK",
+    "product_name": "Motorola Razr Ultra 2025 512GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 8,
+    "quantity_available": 5
+  },
+  {
+    "product_id": "PROD-SAM-S25P-256-BLK",
+    "sku": "SAM-S25P-256-BLK",
+    "product_name": "Samsung Galaxy S25+ 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 8,
+    "quantity_available": 4
+  },
+  {
+    "product_id": "PROD-SAM-S25P-512-WHT",
+    "sku": "SAM-S25P-512-WHT",
+    "product_name": "Samsung Galaxy S25+ 512GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 38,
+    "quantity_available": 34
+  },
+  {
+    "product_id": "PROD-SAM-S25U-1TB-GRY",
+    "sku": "SAM-S25U-1TB-GRY",
+    "product_name": "Samsung Galaxy S25 Ultra 1TB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 25,
+    "quantity_available": 24
+  },
+  {
+    "product_id": "PROD-SAM-S25U-256-BLK",
+    "sku": "SAM-S25U-256-BLK",
+    "product_name": "Samsung Galaxy S25 Ultra 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 5,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-SAM-S25U-512-SBL",
+    "sku": "SAM-S25U-512-SBL",
+    "product_name": "Samsung Galaxy S25 Ultra 512GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Milano",
+    "quantity_on_hand": 3,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "a209ffec-b2e9-4939-b418-4a7f8ae79813",
+    "sku": "TEST-SKU-001",
+    "product_name": "Updated Test Product Name",
+    "product_type": null,
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 28,
+    "quantity_available": 28
+  },
+  {
+    "product_id": "ecd168e0-15ae-4b22-b6bc-4592410a55a0",
+    "sku": "TEST-SKU-DELETE",
+    "product_name": "Product for DELETE Test",
+    "product_type": null,
+    "warehouse_name": "Magazzino Roma",
+    "quantity_on_hand": 8,
+    "quantity_available": 3
+  },
+  {
+    "product_id": "PROD-ZTE-NF2-256-PPL",
+    "sku": "ZTE-NF2-256-PPL",
+    "product_name": "ZTE nubia Flip 2 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 14,
+    "quantity_available": 13
+  },
+  {
+    "product_id": "PROD-ZTE-Z70S-512-BLK",
+    "sku": "ZTE-Z70S-512-BLK",
+    "product_name": "ZTE nubia Z70S Ultra 512GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 43,
+    "quantity_available": 41
+  },
+  {
+    "product_id": "PROD-ZTE-Z70U-1TB-GLD",
+    "sku": "ZTE-Z70U-1TB-GLD",
+    "product_name": "ZTE nubia Z70 Ultra 1TB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 53,
+    "quantity_available": 52
+  },
+  {
+    "product_id": "PROD-ZTE-Z70U-256-ORG",
+    "sku": "ZTE-Z70U-256-ORG",
+    "product_name": "ZTE nubia Z70 Ultra 256GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 15,
+    "quantity_available": 15
+  },
+  {
+    "product_id": "PROD-ZTE-Z70U-512-STR",
+    "sku": "ZTE-Z70U-512-STR",
+    "product_name": "ZTE nubia Z70 Ultra 512GB",
+    "product_type": "Smartphone",
+    "warehouse_name": "Magazzino Centrale Bologna",
+    "quantity_on_hand": 39,
+    "quantity_available": 39
+  }
+]Interessante! La ricerca con un seriale di esempio ha restituito un elenco di prodotti, ma ancora senza i numeri seriali effettivi.
+Limitazione attuale:
+Il sistema w3suite tramite MCP non espone i numeri seriali individuali dei prodotti in giacenza. Le API disponibili permettono solo di:
+✅ Vedere le quantità aggregate per prodotto
+✅ Tracciare un seriale specifico se lo conosci già
+❌ NON elencare tutti i seriali in magazzino
+Cosa serve:
+Per avere l'elenco completo dei seriali, servirebbe un nuovo tool MCP tipo:
+wms_list_serials_by_warehouse
+wms_list_serials_by_product

@@ -8285,7 +8285,7 @@ export default function SettingsPage() {
                       onClick={() => setNewStore({ ...newStore, hasWarehouse: !newStore.hasWarehouse })}
                       style={{
                         width: '3rem',
-                        height: '20.375rem',
+                        height: '1.625rem',
                         borderRadius: '0.8125rem',
                         background: newStore.hasWarehouse 
                           ? 'linear-gradient(135deg, #10b981, #059669)' 

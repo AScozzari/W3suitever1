@@ -1,0 +1,44 @@
+1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=49a415f570c70ed4ad13c2f80f4c27293ad2ec1dd0cf1d30ce8c7335a331a512dc22cf54145942ddabc1de078c9ccee0a80b9d7d079ca4aec088146ec5021951&expires=1767803609956 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:148
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=8c93f217:103
+flush @ @tanstack_react-query.js?v=8c93f217:610
+batch @ @tanstack_react-query.js?v=8c93f217:628
+dispatch_fn @ @tanstack_react-query.js?v=8c93f217:1260
+setData @ @tanstack_react-query.js?v=8c93f217:931
+fetch @ @tanstack_react-query.js?v=8c93f217:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+installHook.js:1 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
+SettingsPage.tsx:1881 [DATATABLE-FILTERS] Query params: {page: 1, limit: 25, sortBy: 'created_at', sortOrder: 'desc', logType: 'all', …}
