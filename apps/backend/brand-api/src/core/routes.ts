@@ -1,6 +1,8 @@
 import express from "express";
 import http from "http";
 import bcrypt from "bcryptjs";
+import { sql } from "drizzle-orm";
+import { db } from "../../../api/src/core/db.js";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
 import { insertStoreSchema } from "../../../api/src/db/schema/w3suite.js";
