@@ -993,6 +993,7 @@ export const storageService = {
   async serveByToken(token: string) {
     const tokenHash = hashToken(token);
 
+    // storage_signed_tokens does NOT have RLS, so direct query is OK
     const [tokenRecord] = await db.select().from(storageSignedTokens)
       .where(eq(storageSignedTokens.token, token))
       .limit(1);
@@ -1009,13 +1010,36 @@ export const storageService = {
       throw new Error('Token already used');
     }
 
-    const [object] = await db.select().from(storageObjects)
-      .where(eq(storageObjects.id, tokenRecord.objectId))
-      .limit(1);
+    // Use SECURITY DEFINER function to bypass RLS for token-based file access
+    // This is safe because we already validated the token above
+    const result = await db.execute(
+      sql`SELECT * FROM w3suite.get_storage_object_by_id(${tokenRecord.objectId}::uuid)`
+    );
+    
+    const objectRow = result.rows[0] as {
+      id: string;
+      tenant_id: string;
+      name: string;
+      object_key: string;
+      mime_type: string;
+      size_bytes: number;
+      storage_provider: string;
+    } | undefined;
 
-    if (!object) {
+    if (!objectRow) {
       throw new Error('Object not found');
     }
+    
+    // Map snake_case to camelCase for compatibility with existing code
+    const object = {
+      id: objectRow.id,
+      tenantId: objectRow.tenant_id,
+      name: objectRow.name,
+      objectKey: objectRow.object_key,
+      mimeType: objectRow.mime_type,
+      sizeBytes: objectRow.size_bytes,
+      storageProvider: objectRow.storage_provider,
+    };
 
     if (tokenRecord.singleUse) {
       await db.update(storageSignedTokens)

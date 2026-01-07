@@ -335,70 +335,73 @@ async function handleApiKeyAuth(
 ) {
   const keyHash = hashApiKey(apiKey);
   
-  const [keyRecord] = await db
-    .select({
-      id: mcpApiKeys.id,
-      name: mcpApiKeys.name,
-      tenantId: mcpApiKeys.tenantId,
-      allowedDepartments: mcpApiKeys.allowedDepartments,
-      rateLimitPerMinute: mcpApiKeys.rateLimitPerMinute,
-      dailyQuota: mcpApiKeys.dailyQuota,
-      isActive: mcpApiKeys.isActive,
-      expiresAt: mcpApiKeys.expiresAt,
-      allowedIps: mcpApiKeys.allowedIps,
-    })
-    .from(mcpApiKeys)
-    .where(eq(mcpApiKeys.keyHash, keyHash))
-    .limit(1);
+  // Use SECURITY DEFINER function to bypass RLS for initial API key validation
+  // This is safe because the function only returns the key matching the exact hash
+  const result = await db.execute(
+    sql`SELECT * FROM w3suite.validate_mcp_api_key(${keyHash})`
+  );
+  
+  const keyRecord = result.rows[0] as {
+    id: string;
+    tenant_id: string;
+    name: string;
+    is_active: boolean;
+    expires_at: Date | null;
+    allowed_ips: string[] | null;
+    rate_limit_per_minute: number | null;
+    daily_quota: number | null;
+    allowed_departments: string[] | null;
+  } | undefined;
   
   if (!keyRecord) {
     logger.warn('🔑 [MCP-GATEWAY] Invalid API key attempt');
     return res.status(401).json({ error: 'Invalid API key' });
   }
   
-  if (!keyRecord.isActive) {
+  if (!keyRecord.is_active) {
     return res.status(403).json({ error: 'API key is revoked' });
   }
   
-  if (keyRecord.expiresAt && new Date(keyRecord.expiresAt) < new Date()) {
+  if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
     return res.status(403).json({ error: 'API key has expired' });
   }
   
-  if (keyRecord.allowedIps && keyRecord.allowedIps.length > 0) {
+  if (keyRecord.allowed_ips && keyRecord.allowed_ips.length > 0) {
     const clientIp = getClientIpFromRequest(req);
-    if (!keyRecord.allowedIps.includes(clientIp)) {
+    if (!keyRecord.allowed_ips.includes(clientIp)) {
       logger.warn(`🔑 [MCP-GATEWAY] IP not allowed: ${clientIp} for key ${keyRecord.name}`);
       return res.status(403).json({ error: 'IP address not allowed' });
     }
   }
   
   // Rate limiting
-  const minuteCheck = checkMinuteRateLimit(keyRecord.id, keyRecord.rateLimitPerMinute);
+  const minuteCheck = checkMinuteRateLimit(keyRecord.id, keyRecord.rate_limit_per_minute);
   if (!minuteCheck.allowed) {
     logger.warn(`🔑 [MCP-GATEWAY] ${minuteCheck.error} for key ${keyRecord.name}`);
     return res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: minuteCheck.error });
   }
   
-  const dailyCheck = await checkDailyQuota(keyRecord.id, keyRecord.dailyQuota);
+  const dailyCheck = await checkDailyQuota(keyRecord.id, keyRecord.daily_quota);
   if (!dailyCheck.allowed) {
     logger.warn(`🔑 [MCP-GATEWAY] ${dailyCheck.error} for key ${keyRecord.name}`);
     return res.status(429).json({ error: 'QUOTA_EXCEEDED', message: dailyCheck.error });
   }
+  
+  // Set tenant context BEFORE updating last_used_at (RLS requires it)
+  await setTenantContext(keyRecord.tenant_id);
   
   await db
     .update(mcpApiKeys)
     .set({ lastUsedAt: new Date() })
     .where(eq(mcpApiKeys.id, keyRecord.id));
   
-  await setTenantContext(keyRecord.tenantId);
-  
   req.mcpAuth = {
     apiKeyId: keyRecord.id,
     apiKeyName: keyRecord.name,
-    tenantId: keyRecord.tenantId,
-    allowedDepartments: keyRecord.allowedDepartments,
-    rateLimitPerMinute: keyRecord.rateLimitPerMinute,
-    dailyQuota: keyRecord.dailyQuota,
+    tenantId: keyRecord.tenant_id,
+    allowedDepartments: keyRecord.allowed_departments,
+    rateLimitPerMinute: keyRecord.rate_limit_per_minute,
+    dailyQuota: keyRecord.daily_quota,
     authMethod: 'api_key',
   };
   
