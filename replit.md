@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and optimizes business operations across CRM, POS, WMS, Analytics, HR, and CMS modules. Its purpose is to enhance efficiency, provide data-driven insights, and support strategic decision-making through advanced AI, offering a unified solution for complex business processes with significant market potential.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules, including CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to boost operational efficiency, provide data-driven insights, and support strategic decision-making through advanced AI capabilities, offering a unified solution for complex business processes with significant market potential.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -146,7 +146,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
   - **⚠️ REGOLA ASSOLUTA**: TUTTI i nuovi file e modifiche DEVONO usare `rem` per dimensioni
   - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius, icon sizes
   - **✅ px OK SOLO**: border-width (1-2px), box-shadow offset/blur (piccoli valori fissi)
-  - **❌ MAI px per**: font-size, padding, margin, gap, width, height - CAUSA BUG DI SCALING!
+  - **❌ MAI px per**: font-size, padding, margin, gap, width, height - CAUSE BUG DI SCALING!
   - **Motivo**: VITE_FONT_SCALE=80 scala solo rem/em, px resta fisso e rompe il layout
   - **Formula**: `rem = px / 16` (es: 20px → 1.25rem, 16px → 1rem, 14px → 0.875rem, 12px → 0.75rem)
   - **Inline styles**: Usare rem anche in style={{}} (es: `padding: '1.25rem'` non `padding: '20px'`)
@@ -176,18 +176,18 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes and
     - **Deployment & Governance**: Features an incremental VPS deployment process to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access is secured using `deploy/keys/vps_key`. The `w3suite_prod` database is accessed via a local socket. VoIP WebSocket connections target `wss://{extension.sipServer}/ws`.
 
 # External Dependencies
-- **PostgreSQL**: Replit Native PostgreSQL 16 (via Neon)
-- **Redis**: Used for BullMQ and the Unified Notification System.
-- **OAuth2/OIDC Enterprise**: Provides authentication and authorization services.
-- **SHADCN/UI**: The primary UI component library.
-- **Radix UI**: Supplies accessible component primitives.
-- **Lucide React**: The chosen icon library.
-- **TanStack React Query**: Manages server state.
-- **React Hook Form**: Handles form state and validation.
-- **Vite**: The frontend build tool.
-- **Drizzle Kit**: Used for database schema management.
-- **PostCSS**: A CSS pre-processor.
-- **ESBuild**: Utilized for server-side code bundling.
-- **Nginx**: Functions as a reverse proxy.
-- **OpenAI**: Provides AI services, specifically `gpt-4o` and `gpt-4o-realtime`.
-- **AWS S3**: Employed for production object storage.
+- **PostgreSQL**
+- **Redis**
+- **OAuth2/OIDC Enterprise**
+- **SHADCN/UI**
+- **Radix UI**
+- **Lucide React**
+- **TanStack React Query**
+- **React Hook Form**
+- **Vite**
+- **Drizzle Kit**
+- **PostCSS**
+- **ESBuild**
+- **Nginx**
+- **OpenAI**
+- **AWS S3**
