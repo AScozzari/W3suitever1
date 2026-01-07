@@ -11962,6 +11962,163 @@ export const commissioningConfigurators = w3suiteSchema.table("commissioning_con
   index("commissioning_configurators_variable_idx").on(table.variableType),
 ]);
 
+// ==================== COMMISSIONING L1 - VARIABLE MAPPINGS ====================
+// Mapping variabili: nome variabile → colonna DB / @placeholder
+export const commissioningVariableDataTypeEnum = pgEnum('commissioning_variable_data_type', [
+  'number', 'currency', 'percentage', 'text', 'boolean', 'enum'
+]);
+
+export const commissioningVariableMappings = w3suiteSchema.table("commissioning_variable_mappings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = globale
+  code: varchar("code", { length: 100 }).notNull(), // Codice univoco es: @prezzo_vendita
+  name: varchar("name", { length: 255 }).notNull(), // Nome display
+  description: text("description"),
+  dataType: commissioningVariableDataTypeEnum("data_type").notNull(),
+  
+  // Mapping a DB
+  sourceTable: varchar("source_table", { length: 255 }), // es: price_list_items
+  sourceColumn: varchar("source_column", { length: 255 }), // es: sales_price_vat_incl
+  sourceJoinPath: text("source_join_path"), // Path JOIN se necessario (JSONB)
+  
+  // Per variabili con logica complessa (es: @costo_magazzino)
+  isComputed: boolean("is_computed").default(false).notNull(),
+  computeLogic: jsonb("compute_logic"), // Logica di calcolo per variabili derivate
+  
+  // Placeholder per le funzioni L3
+  isPlaceholder: boolean("is_placeholder").default(false).notNull(), // true = @placeholder runtime
+  
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_var_mappings_tenant_idx").on(table.tenantId),
+  index("commissioning_var_mappings_code_idx").on(table.code),
+  uniqueIndex("commissioning_var_mappings_code_tenant_unique").on(table.tenantId, table.code),
+]);
+
+// ==================== COMMISSIONING L2 - VALUE PACKAGES ====================
+// Pacchetti commissioning con valori per prodotto
+export const commissioningValuePackageListTypeEnum = pgEnum('commissioning_value_package_list_type', [
+  'standard', 'promo', 'canvas', 'device_canvas'
+]);
+
+export const commissioningValuePackageStatusEnum = pgEnum('commissioning_value_package_status', [
+  'draft', 'active', 'expired', 'archived'
+]);
+
+export const commissioningValuePackages = w3suiteSchema.table("commissioning_value_packages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = brand-pushed
+  code: varchar("code", { length: 100 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Tipo listino a cui si applica
+  listType: commissioningValuePackageListTypeEnum("list_type").notNull(),
+  operatorId: uuid("operator_id").references(() => operators.id), // Filtra per operatore
+  
+  // Validità temporale
+  validFrom: date("valid_from").notNull(),
+  validTo: date("valid_to"),
+  
+  // Per duplicazione/versioning
+  basePackageId: uuid("base_package_id"), // Package da cui è stato duplicato
+  version: integer("version").default(1).notNull(),
+  
+  status: commissioningValuePackageStatusEnum("status").default('draft').notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_value_packages_tenant_idx").on(table.tenantId),
+  index("commissioning_value_packages_list_type_idx").on(table.listType),
+  index("commissioning_value_packages_valid_idx").on(table.validFrom, table.validTo),
+  index("commissioning_value_packages_status_idx").on(table.status),
+  index("commissioning_value_packages_operator_idx").on(table.operatorId),
+]);
+
+// Dettaglio valori per prodotto nel pacchetto
+export const commissioningValuePackageItems = w3suiteSchema.table("commissioning_value_package_items", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  packageId: uuid("package_id").notNull().references(() => commissioningValuePackages.id, { onDelete: 'cascade' }),
+  
+  // Riferimento prodotto
+  productId: varchar("product_id", { length: 255 }).notNull(), // SKU prodotto
+  productVersionId: uuid("product_version_id"), // Versione prodotto (per tracking)
+  priceListItemId: uuid("price_list_item_id"), // FK opzionale a price_list_items
+  
+  // Variabili L2 assegnabili
+  valenza: decimal("valenza", { precision: 10, scale: 2 }), // Peso/punteggio
+  gettoneContrattuale: decimal("gettone_contrattuale", { precision: 10, scale: 2 }), // Bonus contratto
+  gettoneGara: decimal("gettone_gara", { precision: 10, scale: 2 }), // Bonus gara
+  canone: decimal("canone", { precision: 10, scale: 2 }), // Solo per canvas
+  
+  // Metadata
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_value_package_items_package_idx").on(table.packageId),
+  index("commissioning_value_package_items_product_idx").on(table.productId),
+  uniqueIndex("commissioning_value_package_items_unique").on(table.packageId, table.productId),
+]);
+
+// ==================== COMMISSIONING L3 - FUNCTIONS ====================
+// Funzioni/regole che usano L1 per modificare L2
+export const commissioningFunctionEvalModeEnum = pgEnum('commissioning_function_eval_mode', [
+  'first_match', 'accumulate', 'weighted_average'
+]);
+
+export const commissioningFunctions = w3suiteSchema.table("commissioning_functions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = brand-pushed
+  code: varchar("code", { length: 100 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Modalità valutazione
+  evaluationMode: commissioningFunctionEvalModeEnum("evaluation_mode").default('first_match').notNull(),
+  
+  // Variabile L2 target (output)
+  targetVariable: varchar("target_variable", { length: 100 }).notNull(), // es: 'valenza', 'gettone_gara'
+  
+  // Bundle regole JSONB
+  // Struttura: { rules: [{ id, priority, conditions: [{variable, operator, value}], result: {type, value} }] }
+  ruleBundle: jsonb("rule_bundle").notNull().default({}),
+  
+  // Dipendenze da altre funzioni (DAG)
+  dependsOn: uuid("depends_on").array(), // Array di function_id da cui dipende
+  
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_functions_tenant_idx").on(table.tenantId),
+  index("commissioning_functions_code_idx").on(table.code),
+  index("commissioning_functions_target_idx").on(table.targetVariable),
+  uniqueIndex("commissioning_functions_code_tenant_unique").on(table.tenantId, table.code),
+]);
+
+// Link funzioni ai configuratori
+export const commissioningConfiguratorFunctions = w3suiteSchema.table("commissioning_configurator_functions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  configuratorId: uuid("configurator_id").notNull().references(() => commissioningConfigurators.id, { onDelete: 'cascade' }),
+  functionId: uuid("function_id").notNull().references(() => commissioningFunctions.id, { onDelete: 'cascade' }),
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_config_funcs_configurator_idx").on(table.configuratorId),
+  index("commissioning_config_funcs_function_idx").on(table.functionId),
+  uniqueIndex("commissioning_config_funcs_unique").on(table.configuratorId, table.functionId),
+]);
+
 // ==================== INSERT SCHEMAS AND TYPES ====================
 
 // Commissioning Insert Schemas
@@ -12002,6 +12159,48 @@ export const insertCommissioningConfiguratorSchema = createInsertSchema(commissi
 });
 export type InsertCommissioningConfigurator = z.infer<typeof insertCommissioningConfiguratorSchema>;
 export type CommissioningConfigurator = typeof commissioningConfigurators.$inferSelect;
+
+// L1 - Variable Mappings Insert Schema
+export const insertCommissioningVariableMappingSchema = createInsertSchema(commissioningVariableMappings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningVariableMapping = z.infer<typeof insertCommissioningVariableMappingSchema>;
+export type CommissioningVariableMapping = typeof commissioningVariableMappings.$inferSelect;
+
+// L2 - Value Packages Insert Schemas
+export const insertCommissioningValuePackageSchema = createInsertSchema(commissioningValuePackages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningValuePackage = z.infer<typeof insertCommissioningValuePackageSchema>;
+export type CommissioningValuePackage = typeof commissioningValuePackages.$inferSelect;
+
+export const insertCommissioningValuePackageItemSchema = createInsertSchema(commissioningValuePackageItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningValuePackageItem = z.infer<typeof insertCommissioningValuePackageItemSchema>;
+export type CommissioningValuePackageItem = typeof commissioningValuePackageItems.$inferSelect;
+
+// L3 - Functions Insert Schemas
+export const insertCommissioningFunctionSchema = createInsertSchema(commissioningFunctions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningFunction = z.infer<typeof insertCommissioningFunctionSchema>;
+export type CommissioningFunction = typeof commissioningFunctions.$inferSelect;
+
+export const insertCommissioningConfiguratorFunctionSchema = createInsertSchema(commissioningConfiguratorFunctions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCommissioningConfiguratorFunction = z.infer<typeof insertCommissioningConfiguratorFunctionSchema>;
+export type CommissioningConfiguratorFunction = typeof commissioningConfiguratorFunctions.$inferSelect;
 
 // Storage Insert Schemas
 export const insertStorageFolderSchema = createInsertSchema(storageFolders).omit({
