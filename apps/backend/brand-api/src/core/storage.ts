@@ -1209,16 +1209,26 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  // Update organization
+  // Update organization in w3suite.tenants
   async updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null> {
     try {
+      console.log(`📝 [STORAGE] updateOrganization called for tenant: ${id}`);
+      console.log(`📝 [STORAGE] Update data:`, JSON.stringify(data));
+      
       const results = await w3db.update(w3Tenants)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(w3Tenants.id, id))
         .returning();
+      
+      if (results[0]) {
+        console.log(`✅ [STORAGE] Tenant ${id} updated. New status: ${results[0].status}`);
+      } else {
+        console.log(`⚠️ [STORAGE] No tenant found with id: ${id}`);
+      }
+      
       return results[0] || null;
     } catch (error) {
-      console.error('Error updating organization:', error);
+      console.error('❌ [STORAGE] Error updating organization:', error);
       throw error;
     }
   }

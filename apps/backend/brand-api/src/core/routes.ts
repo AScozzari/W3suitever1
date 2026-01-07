@@ -277,13 +277,15 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         return res.status(400).json({ error: `Slug "${finalSlug}" is already in use` });
       }
 
-      // Create organization
-      const organization = await brandStorage.createOrganization({
+      // Create organization in w3suite.tenants (NOT brand_interface.tenants!)
+      console.log(`📝 Creating tenant in w3suite.tenants: ${name} (${finalSlug})`);
+      const organization = await brandStorage.createOrganizationRecord({
         name,
         slug: finalSlug,
-        status: status || 'active',
-        notes: notes || ''
+        status: status || 'attivo',
+        notes: notes || null
       });
+      console.log(`✅ Tenant created in w3suite.tenants: ${organization.id}`);
 
       let adminUser = null;
 
@@ -392,6 +394,8 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const user = (req as any).user;
     const { id } = req.params;
 
+    console.log(`🔒 [SUSPEND] Request to suspend tenant: ${id} by user: ${user.email}`);
+
     if (user.role !== 'super_admin' && user.role !== 'national_manager') {
       return res.status(403).json({ error: "Insufficient permissions to suspend organizations" });
     }
@@ -401,14 +405,17 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
+      console.log(`🔒 [SUSPEND] Updating tenant ${id} status to 'sospeso'`);
       const organization = await brandStorage.updateOrganization(id, { 
         status: 'sospeso' 
       });
 
       if (!organization) {
+        console.log(`❌ [SUSPEND] Tenant not found: ${id}`);
         return res.status(404).json({ error: "Organization not found" });
       }
 
+      console.log(`✅ [SUSPEND] Tenant ${id} suspended. New status: ${organization.status}`);
       res.json({
         success: true,
         organization: {
@@ -420,7 +427,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         message: "Organization suspended successfully"
       });
     } catch (error) {
-      console.error("Error suspending organization:", error);
+      console.error("❌ [SUSPEND] Error suspending organization:", error);
       res.status(500).json({ error: "Failed to suspend organization" });
     }
   });
@@ -431,6 +438,8 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const user = (req as any).user;
     const { id } = req.params;
 
+    console.log(`🔓 [REACTIVATE] Request to reactivate tenant: ${id} by user: ${user.email}`);
+
     if (user.role !== 'super_admin' && user.role !== 'national_manager') {
       return res.status(403).json({ error: "Insufficient permissions to reactivate organizations" });
     }
@@ -440,14 +449,17 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
+      console.log(`🔓 [REACTIVATE] Updating tenant ${id} status to 'attivo'`);
       const organization = await brandStorage.updateOrganization(id, { 
         status: 'attivo' 
       });
 
       if (!organization) {
+        console.log(`❌ [REACTIVATE] Tenant not found: ${id}`);
         return res.status(404).json({ error: "Organization not found" });
       }
 
+      console.log(`✅ [REACTIVATE] Tenant ${id} reactivated. New status: ${organization.status}`);
       res.json({
         success: true,
         organization: {
@@ -459,7 +471,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         message: "Organization reactivated successfully"
       });
     } catch (error) {
-      console.error("Error reactivating organization:", error);
+      console.error("❌ [REACTIVATE] Error reactivating organization:", error);
       res.status(500).json({ error: "Failed to reactivate organization" });
     }
   });
