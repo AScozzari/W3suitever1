@@ -383,6 +383,7 @@ router.get('/custom-actions', async (req: Request, res: Response) => {
     const actions = await db
       .select({
         id: actionDefinitions.id,
+        tenantId: actionDefinitions.tenantId, // NULL = evergreen/system, UUID = custom tenant
         actionId: actionDefinitions.actionId,
         actionName: actionDefinitions.actionName,
         description: actionDefinitions.description,
@@ -393,6 +394,7 @@ router.get('/custom-actions', async (req: Request, res: Response) => {
         isMcpEnabled: actionDefinitions.isMcpEnabled,
         exposedViaMcp: actionDefinitions.exposedViaMcp,
         mcpInputSchema: actionDefinitions.mcpInputSchema,
+        queryTemplateId: actionDefinitions.queryTemplateId, // For edit modal pre-population
         isActive: actionDefinitions.isActive,
         createdAt: actionDefinitions.createdAt,
         updatedAt: actionDefinitions.updatedAt,
@@ -514,21 +516,15 @@ router.put('/custom-actions/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Action not found' });
     }
 
-    // For global system actions (tenant_id IS NULL), only allow updating limited fields
+    // SECURITY: Global system actions (tenant_id IS NULL) cannot be modified by tenants
+    // They are managed exclusively via Brand Interface
     if (existing.tenantId === null) {
-      // System actions - can only toggle exposure and active status
-      const [updated] = await db
-        .update(actionDefinitions)
-        .set({
-          exposedViaMcp: exposedViaMcp ?? existing.exposedViaMcp,
-          isActive: isActive ?? existing.isActive,
-          updatedAt: new Date(),
-        })
-        .where(eq(actionDefinitions.id, id))
-        .returning();
-
-      logger.info('[MCP-MGMT] Updated system action visibility:', { id, exposedViaMcp, isActive });
-      return res.json({ success: true, data: updated });
+      logger.warn('[MCP-MGMT] Blocked attempt to modify system action:', { id, tenantId });
+      return res.status(403).json({ 
+        success: false, 
+        error: 'SYSTEM_ACTION_NOT_EDITABLE',
+        message: 'Le azioni di sistema non sono modificabili. Utilizzare Brand Interface per gestirle.'
+      });
     }
 
     // For tenant-specific custom actions, allow full update

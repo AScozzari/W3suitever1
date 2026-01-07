@@ -51,7 +51,9 @@ import {
   Trash2,
   MoreHorizontal,
   Search,
-  X
+  X,
+  Eye,
+  Lock
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -97,13 +99,15 @@ interface QueryTemplate {
 
 interface CustomAction {
   id: string;
+  tenantId: string | null; // NULL = evergreen/system action, UUID = custom tenant action
   code: string;
   name: string;
   description: string;
   department: string;
   mcpActionType: string;
-  queryTemplateId: string;
+  queryTemplateId: string | null;
   mcpInputSchema: any;
+  actionCategory?: 'operative' | 'query';
   isActive: boolean;
   createdAt: string;
 }
@@ -164,6 +168,7 @@ export function ActionBuilderTab() {
   const [actionDescription, setActionDescription] = useState('');
   const [actionCategory, setActionCategory] = useState<'operative' | 'query'>('query');
   const [editingAction, setEditingAction] = useState<CustomAction | null>(null);
+  const [isViewOnly, setIsViewOnly] = useState(false); // Read-only mode for evergreen actions
   
   // Filtri per la lista azioni
   const [searchQuery, setSearchQuery] = useState('');
@@ -255,16 +260,20 @@ export function ActionBuilderTab() {
     setActionDescription('');
     setActionCategory('query');
     setEditingAction(null);
+    setIsViewOnly(false);
   };
 
   const openEditWizard = (action: CustomAction) => {
     setEditingAction(action);
     setActionCode(action.code || '');
     setActionName(action.name || '');
-    setActionDescription(action.mcpDescription || '');
-    setActionCategory((action as any).actionCategory === 'operative' ? 'operative' : 'query');
+    setActionDescription(action.description || '');
+    setActionCategory(action.actionCategory === 'operative' ? 'operative' : 'query');
     setSelectedDepartment(action.department || '');
     setSelectedActionType(action.mcpActionType || '');
+    
+    // Set view-only mode for evergreen/system actions (tenantId === null)
+    setIsViewOnly(action.tenantId === null);
     
     // Extract variables from inputSchema
     const inputProps = action.mcpInputSchema?.properties || {};
@@ -274,9 +283,15 @@ export function ActionBuilderTab() {
     const required = action.mcpInputSchema?.required || [];
     setRequiredVariables(required);
     
-    // Find matching template if possible
-    const matchingTemplate = queryTemplates.find(t => t.department === action.department);
-    setSelectedTemplate(matchingTemplate || null);
+    // Find matching template by queryTemplateId (priority) or by department (fallback)
+    let matchingTemplate: QueryTemplate | null = null;
+    if (action.queryTemplateId) {
+      matchingTemplate = queryTemplates.find(t => t.id === action.queryTemplateId) || null;
+    }
+    if (!matchingTemplate) {
+      matchingTemplate = queryTemplates.find(t => t.department === action.department) || null;
+    }
+    setSelectedTemplate(matchingTemplate);
     
     setStep(1);
     setWizardOpen(true);
@@ -619,54 +634,88 @@ export function ActionBuilderTab() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={() => openEditWizard(action)}
-                                  data-testid={`btn-edit-${action.id}`}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Modifica</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                                  onClick={() => { setSelectedActionForAction(action); setArchiveDialogOpen(true); }}
-                                  data-testid={`btn-archive-${action.id}`}
-                                >
-                                  <Archive className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Archivia</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => { setSelectedActionForAction(action); setDeleteDialogOpen(true); }}
-                                  data-testid={`btn-delete-${action.id}`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Elimina</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          {/* Evergreen actions (tenantId === null) are read-only */}
+                          {action.tenantId === null ? (
+                            <>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                      onClick={() => openEditWizard(action)}
+                                      data-testid={`btn-view-${action.id}`}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Visualizza</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="h-8 w-8 flex items-center justify-center text-gray-300">
+                                      <Lock className="h-4 w-4" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Azione di sistema - gestita da Brand Interface</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </>
+                          ) : (
+                            <>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8"
+                                      onClick={() => openEditWizard(action)}
+                                      data-testid={`btn-edit-${action.id}`}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Modifica</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                      onClick={() => { setSelectedActionForAction(action); setArchiveDialogOpen(true); }}
+                                      data-testid={`btn-archive-${action.id}`}
+                                    >
+                                      <Archive className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Archivia</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      onClick={() => { setSelectedActionForAction(action); setDeleteDialogOpen(true); }}
+                                      data-testid={`btn-delete-${action.id}`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Elimina</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -683,11 +732,23 @@ export function ActionBuilderTab() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-orange-500" />
-              {editingAction ? 'Modifica Azione' : 'Action Builder'}
+              {isViewOnly ? (
+                <>
+                  <Eye className="h-5 w-5 text-blue-500" />
+                  Visualizza Azione di Sistema
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5 text-orange-500" />
+                  {editingAction ? 'Modifica Azione' : 'Action Builder'}
+                </>
+              )}
             </DialogTitle>
             <DialogDescription>
-              Crea una nuova azione custom in {5 - step + 1} passaggi
+              {isViewOnly 
+                ? 'Questa azione è gestita centralmente da Brand Interface e non può essere modificata.'
+                : `Crea una nuova azione custom in ${5 - step + 1} passaggi`
+              }
             </DialogDescription>
           </DialogHeader>
 
@@ -1116,36 +1177,50 @@ export function ActionBuilderTab() {
                 <ArrowLeft className="h-4 w-4" />
                 {step > 1 ? 'Indietro' : 'Annulla'}
               </Button>
-              <Button
-                onClick={() => {
-                  if (step < 5) {
-                    setStep(step + 1);
-                  } else {
-                    handleSaveAction();
-                  }
-                }}
-                disabled={
-                  (step === 1 && (!actionCode || !actionName)) ||
-                  (step === 2 && !selectedDepartment) ||
-                  (step === 3 && !selectedTemplate && !editingAction) ||
-                  (step === 4 && !selectedActionType) ||
-                  (step === 5 && selectedVariables.length === 0)
-                }
-                className="gap-2"
-                data-testid="btn-wizard-next"
-              >
-                {step < 5 ? (
-                  <>
+              {isViewOnly ? (
+                // View-only mode: show only Close button at the last step
+                step === 5 ? (
+                  <Button onClick={resetWizard} className="gap-2" data-testid="btn-wizard-close">
+                    Chiudi
+                  </Button>
+                ) : (
+                  <Button onClick={() => setStep(step + 1)} className="gap-2" data-testid="btn-wizard-next">
                     Avanti
                     <ArrowRight className="h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4" />
-                    {editingAction ? 'Salva Modifiche' : 'Crea Azione'}
-                  </>
-                )}
-              </Button>
+                  </Button>
+                )
+              ) : (
+                <Button
+                  onClick={() => {
+                    if (step < 5) {
+                      setStep(step + 1);
+                    } else {
+                      handleSaveAction();
+                    }
+                  }}
+                  disabled={
+                    (step === 1 && (!actionCode || !actionName)) ||
+                    (step === 2 && !selectedDepartment) ||
+                    (step === 3 && !selectedTemplate && !editingAction) ||
+                    (step === 4 && !selectedActionType) ||
+                    (step === 5 && selectedVariables.length === 0)
+                  }
+                  className="gap-2"
+                  data-testid="btn-wizard-next"
+                >
+                  {step < 5 ? (
+                    <>
+                      Avanti
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      {editingAction ? 'Salva Modifiche' : 'Crea Azione'}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </DialogFooter>
         </DialogContent>
