@@ -552,16 +552,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         await tx.execute(sql`DELETE FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid`);
         console.log(`   ✓ Deleted organization entities`);
 
-        // 6. Delete brand_interface.brand_tenants if table exists (use DO block to handle missing table)
-        await tx.execute(sql`
-          DO $$ 
-          BEGIN
-            DELETE FROM brand_interface.brand_tenants WHERE tenant_id = ${id}::uuid;
-          EXCEPTION WHEN undefined_table THEN
-            -- Table doesn't exist, ignore
-          END $$
-        `);
-        console.log(`   ✓ Deleted brand_tenants (if exists)`);
+        // 6. brand_interface.brand_tenants is NOT linked to w3suite.tenants (different schema)
+        // Skip this step - brand_tenants has its own id, not tenant_id FK
+        console.log(`   ⊘ brand_interface separate, skipping`);
 
         // 7. Finally delete the tenant itself
         await tx.execute(sql`DELETE FROM w3suite.tenants WHERE id = ${id}::uuid`);
@@ -1024,31 +1017,29 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
-      const tenants = await brandStorage.getTenants();
-      const users = await brandStorage.getUsers();
+      // Get real counts from w3suite schema directly
+      const tenantStats = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status IN ('active', 'attivo')) as active,
+          COUNT(*) FILTER (WHERE status IN ('sospeso', 'suspended', 'inactive')) as suspended
+        FROM w3suite.tenants
+      `);
 
-      // Count active tenants (support both 'active' and 'attivo')
-      const activeTenants = tenants.filter(t => 
-        t.status === 'active' || t.status === 'attivo'
-      ).length;
+      const userStats = await db.execute(sql`
+        SELECT COUNT(*) as total FROM w3suite.users
+      `);
 
-      // Count suspended tenants (support 'sospeso', 'inactive', 'suspended')
-      const suspendedTenants = tenants.filter(t => 
-        t.status === 'sospeso' || t.status === 'inactive' || t.status === 'suspended'
-      ).length;
-
-      // Count active users cross-tenant (support both 'active' and 'attivo')
-      const activeUsers = users.filter((u: any) => 
-        !u.deletedAt && (u.status === 'active' || u.status === 'attivo')
-      ).length;
+      const stats = tenantStats.rows[0] as any;
+      const userCount = userStats.rows[0] as any;
 
       res.json({
         summary: {
-          totalTenants: tenants.length,
-          totalUsers: users.length,
-          activeUsers: activeUsers,
-          activeTenants: activeTenants,
-          suspendedTenants: suspendedTenants,
+          totalTenants: parseInt(stats.total) || 0,
+          totalUsers: parseInt(userCount.total) || 0,
+          activeUsers: parseInt(userCount.total) || 0, // All users in system
+          activeTenants: parseInt(stats.active) || 0,
+          suspendedTenants: parseInt(stats.suspended) || 0,
           totalRevenue: 1250000, // Mock per ora
           growthRate: "+12.5%" // Mock per ora
         },
