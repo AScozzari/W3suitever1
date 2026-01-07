@@ -125,11 +125,16 @@ export function useUserAvatar(
     }
   }, [signedUrlData?.expiresAt, signedUrlData?.isLegacy, userData?.id, queryClient]);
 
+  // Track retry count to prevent infinite loops
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
+
   useEffect(() => {
     const url = signedUrlData?.url;
     if (!url) {
       setImageError(false);
       setImageLoaded(false);
+      setRetryCount(0);
       return;
     }
 
@@ -140,13 +145,23 @@ export function useUserAvatar(
     img.onload = () => {
       setImageLoaded(true);
       setImageError(false);
+      setRetryCount(0);
     };
     img.onerror = () => {
       setImageError(true);
       setImageLoaded(false);
+      
+      // Auto-refresh token on load failure (likely expired)
+      if (retryCount < MAX_RETRIES && userData?.id) {
+        console.log('[useUserAvatar] Image load failed, refreshing signed URL (attempt', retryCount + 1, ')');
+        setRetryCount(prev => prev + 1);
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/storage/avatars/${userData.id}/signed-url`] 
+        });
+      }
     };
     img.src = url;
-  }, [signedUrlData?.url]);
+  }, [signedUrlData?.url, retryCount, userData?.id, queryClient]);
 
   const avatarUrl = useMemo(() => {
     // Only use Signed URL from Object Storage (legacy profileImageUrl removed)
