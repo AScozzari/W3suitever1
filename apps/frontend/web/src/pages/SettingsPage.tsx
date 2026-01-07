@@ -9213,11 +9213,11 @@ export default function SettingsPage() {
                     firstName={newUser.nome}
                     lastName={newUser.cognome}
                     username={newUser.username}
-                    userId={isEditMode ? userModal.data?.id : undefined}
+                    userId={userModal.data ? userModal.data.id : undefined}
                     onAvatarChange={handleAvatarChange}
                     loading={false}
                     size={120}
-                    enablePicker={isEditMode}
+                    enablePicker={!!userModal.data}
                   />
                 </div>
                 
