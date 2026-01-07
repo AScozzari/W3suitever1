@@ -512,56 +512,59 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       console.log(`🗑️ [HARD DELETE] Starting permanent deletion of tenant: ${organization.name} (${id})`);
 
       // HARD DELETE - Permanently remove tenant and all related records
-      // Use raw SQL for cascade deletion in correct order
+      // Use raw SQL for cascade deletion - order matters!
       await db.transaction(async (tx) => {
         // Set RLS context for cross-tenant operation
         await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${id}, true)`);
 
-        // 1. Delete stores (must be before organization_entities due to FK)
-        const storesDeleted = await tx.execute(sql`
-          DELETE FROM w3suite.stores WHERE tenant_id = ${id}::uuid
+        // 1. First get IDs of stores and entities BEFORE deleting them (for user associations)
+        const storeIds = await tx.execute(sql`
+          SELECT id FROM w3suite.stores WHERE tenant_id = ${id}::uuid
         `);
-        console.log(`   ✓ Deleted stores`);
+        const entityIds = await tx.execute(sql`
+          SELECT id FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid
+        `);
 
-        // 2. Delete organization_entities (legal entities)
-        const entitiesDeleted = await tx.execute(sql`
-          DELETE FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid
-        `);
-        console.log(`   ✓ Deleted organization entities`);
-
-        // 3. Delete user associations for this tenant
-        await tx.execute(sql`
-          DELETE FROM w3suite.user_stores WHERE store_id IN (
-            SELECT id FROM w3suite.stores WHERE tenant_id = ${id}::uuid
-          )
-        `);
-        await tx.execute(sql`
-          DELETE FROM w3suite.user_organization_entities WHERE organization_entity_id IN (
-            SELECT id FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid
-          )
-        `);
+        // 2. Delete user associations using the IDs we just fetched
+        if (storeIds.rows && storeIds.rows.length > 0) {
+          const storeIdList = storeIds.rows.map((r: any) => r.id);
+          for (const storeId of storeIdList) {
+            await tx.execute(sql`DELETE FROM w3suite.user_stores WHERE store_id = ${storeId}::uuid`);
+          }
+        }
+        if (entityIds.rows && entityIds.rows.length > 0) {
+          const entityIdList = entityIds.rows.map((r: any) => r.id);
+          for (const entityId of entityIdList) {
+            await tx.execute(sql`DELETE FROM w3suite.user_organization_entities WHERE organization_entity_id = ${entityId}::uuid`);
+          }
+        }
         console.log(`   ✓ Deleted user associations`);
 
-        // 4. Delete users belonging to this tenant
-        await tx.execute(sql`
-          DELETE FROM w3suite.users WHERE tenant_id = ${id}::uuid
-        `);
+        // 3. Delete users belonging to this tenant
+        await tx.execute(sql`DELETE FROM w3suite.users WHERE tenant_id = ${id}::uuid`);
         console.log(`   ✓ Deleted users`);
 
-        // 5. Delete brand_interface related records if they exist
-        try {
-          await tx.execute(sql`
-            DELETE FROM brand_interface.brand_tenants WHERE tenant_id = ${id}::uuid
-          `);
-          console.log(`   ✓ Deleted brand_tenants`);
-        } catch (e) {
-          // Table might not exist, ignore
-        }
+        // 4. Delete stores
+        await tx.execute(sql`DELETE FROM w3suite.stores WHERE tenant_id = ${id}::uuid`);
+        console.log(`   ✓ Deleted stores`);
 
-        // 6. Finally delete the tenant itself
+        // 5. Delete organization_entities (legal entities)
+        await tx.execute(sql`DELETE FROM w3suite.organization_entities WHERE tenant_id = ${id}::uuid`);
+        console.log(`   ✓ Deleted organization entities`);
+
+        // 6. Delete brand_interface.brand_tenants if table exists (use DO block to handle missing table)
         await tx.execute(sql`
-          DELETE FROM w3suite.tenants WHERE id = ${id}::uuid
+          DO $$ 
+          BEGIN
+            DELETE FROM brand_interface.brand_tenants WHERE tenant_id = ${id}::uuid;
+          EXCEPTION WHEN undefined_table THEN
+            -- Table doesn't exist, ignore
+          END $$
         `);
+        console.log(`   ✓ Deleted brand_tenants (if exists)`);
+
+        // 7. Finally delete the tenant itself
+        await tx.execute(sql`DELETE FROM w3suite.tenants WHERE id = ${id}::uuid`);
         console.log(`   ✓ Deleted tenant record`);
       });
 
