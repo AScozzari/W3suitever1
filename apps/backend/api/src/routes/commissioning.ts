@@ -583,4 +583,436 @@ router.get("/entities/:type", async (req: Request, res: Response) => {
   }
 });
 
+// ==================== L1 - VARIABLE MAPPINGS ====================
+
+// Catalogo @placeholder disponibili (hardcoded per ora)
+const AVAILABLE_PLACEHOLDERS = [
+  { code: '@prezzo_vendita', name: 'Prezzo Vendita', dataType: 'currency', sourceTable: 'price_list_items', sourceColumn: 'sales_price_vat_incl' },
+  { code: '@costo_acquisto', name: 'Costo Acquisto', dataType: 'currency', sourceTable: 'price_list_items', sourceColumn: 'purchase_cost' },
+  { code: '@sconto_percent', name: 'Sconto %', dataType: 'percentage', sourceTable: 'price_list_items', sourceColumn: 'discount_percent' },
+  { code: '@numero_rate', name: 'Numero Rate', dataType: 'number', sourceTable: 'price_list_items', sourceColumn: 'number_of_installments' },
+  { code: '@importo_rata', name: 'Importo Rata', dataType: 'currency', sourceTable: 'price_list_items', sourceColumn: 'installment_amount' },
+  { code: '@totale_finanziato', name: 'Totale Finanziato', dataType: 'currency', sourceTable: 'price_list_items', sourceColumn: 'total_financed_amount' },
+  { code: '@canone_mensile', name: 'Canone Mensile', dataType: 'currency', sourceTable: 'price_list_items_canvas', sourceColumn: 'monthly_fee' },
+  { code: '@costo_attivazione', name: 'Costo Attivazione', dataType: 'currency', sourceTable: 'price_list_items_canvas', sourceColumn: 'entry_fee' },
+  { code: '@durata_contratto', name: 'Durata Contratto (mesi)', dataType: 'number', sourceTable: 'price_list_items_canvas', sourceColumn: 'contract_duration' },
+  { code: '@fornitore', name: 'Fornitore', dataType: 'text', sourceTable: 'suppliers', sourceColumn: 'name', isPlaceholder: true },
+  { code: '@ente_finanziante', name: 'Ente Finanziante', dataType: 'text', sourceTable: 'financial_entities', sourceColumn: 'name', isPlaceholder: true },
+  { code: '@modalita_vendita', name: 'Modalità Vendita', dataType: 'enum', sourceTable: 'sales_modes', sourceColumn: 'code', isPlaceholder: true },
+  { code: '@metodo_pagamento', name: 'Metodo Pagamento', dataType: 'enum', sourceTable: 'payment_methods', sourceColumn: 'code', isPlaceholder: true },
+  { code: '@metodo_rateizzazione', name: 'Metodo Rateizzazione', dataType: 'enum', sourceTable: 'installment_methods', sourceColumn: 'code', isPlaceholder: true },
+  { code: '@categoria', name: 'Categoria Prodotto', dataType: 'text', sourceTable: 'driver_category_mappings', sourceColumn: 'category_id', isPlaceholder: true },
+  { code: '@tipologia', name: 'Tipologia Prodotto', dataType: 'text', sourceTable: 'driver_category_mappings', sourceColumn: 'typology_id', isPlaceholder: true },
+  { code: '@brand', name: 'Brand Prodotto', dataType: 'text', sourceTable: 'products', sourceColumn: 'brand', isPlaceholder: true },
+  { code: '@condizione', name: 'Condizione', dataType: 'enum', sourceTable: 'product_items', sourceColumn: 'condition', isPlaceholder: true },
+  { code: '@costo_magazzino', name: 'Costo Magazzino', dataType: 'currency', isComputed: true, computeLogic: { type: 'wms_cost' } },
+  { code: '@sorgente_lead', name: 'Sorgente Lead', dataType: 'text', sourceTable: 'crm_leads', sourceColumn: 'lead_source', isPlaceholder: true },
+  { code: '@canale_lead', name: 'Canale Lead', dataType: 'text', sourceTable: 'crm_leads', sourceColumn: 'source_channel', isPlaceholder: true },
+  { code: '@utm_source', name: 'UTM Source', dataType: 'text', sourceTable: 'crm_leads', sourceColumn: 'utm_source', isPlaceholder: true },
+];
+
+router.get("/variable-mappings/placeholders", async (req: Request, res: Response) => {
+  res.json(AVAILABLE_PLACEHOLDERS);
+});
+
+router.get("/variable-mappings", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const result = await db.execute(sql`
+      SELECT * FROM w3suite.commissioning_variable_mappings
+      WHERE tenant_id = ${tenantId} OR tenant_id IS NULL
+      ORDER BY sort_order ASC, name ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching variable mappings", { error });
+    res.status(500).json({ error: "Failed to fetch variable mappings" });
+  }
+});
+
+router.post("/variable-mappings", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { code, name, description, dataType, sourceTable, sourceColumn, sourceJoinPath, isComputed, computeLogic, isPlaceholder, sortOrder } = req.body;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_variable_mappings 
+      (tenant_id, code, name, description, data_type, source_table, source_column, source_join_path, is_computed, compute_logic, is_placeholder, sort_order)
+      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${dataType}, ${sourceTable}, ${sourceColumn}, ${sourceJoinPath}, ${isComputed || false}, ${computeLogic ? JSON.stringify(computeLogic) : null}::jsonb, ${isPlaceholder || false}, ${sortOrder || 0})
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error creating variable mapping", { error });
+    res.status(500).json({ error: "Failed to create variable mapping" });
+  }
+});
+
+router.delete("/variable-mappings/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { id } = req.params;
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_variable_mappings 
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+    `);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error deleting variable mapping", { error });
+    res.status(500).json({ error: "Failed to delete variable mapping" });
+  }
+});
+
+// ==================== L2 - VALUE PACKAGES ====================
+
+router.get("/value-packages", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const result = await db.execute(sql`
+      SELECT vp.*, o.name as operator_name,
+        (SELECT COUNT(*) FROM w3suite.commissioning_value_package_items WHERE package_id = vp.id) as items_count
+      FROM w3suite.commissioning_value_packages vp
+      LEFT JOIN public.operators o ON o.id = vp.operator_id
+      WHERE vp.tenant_id = ${tenantId} OR vp.tenant_id IS NULL
+      ORDER BY vp.valid_from DESC, vp.name ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching value packages", { error });
+    res.status(500).json({ error: "Failed to fetch value packages" });
+  }
+});
+
+router.get("/value-packages/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { id } = req.params;
+
+    const packageResult = await db.execute(sql`
+      SELECT vp.*, o.name as operator_name
+      FROM w3suite.commissioning_value_packages vp
+      LEFT JOIN public.operators o ON o.id = vp.operator_id
+      WHERE vp.id = ${id} AND (vp.tenant_id = ${tenantId} OR vp.tenant_id IS NULL)
+    `);
+
+    if (packageResult.rows.length === 0) {
+      return res.status(404).json({ error: "Value package not found" });
+    }
+
+    const itemsResult = await db.execute(sql`
+      SELECT vpi.*, p.name as product_name, p.sku as product_sku
+      FROM w3suite.commissioning_value_package_items vpi
+      LEFT JOIN w3suite.products p ON p.id = vpi.product_id
+      WHERE vpi.package_id = ${id}
+      ORDER BY p.name ASC
+    `);
+
+    res.json({
+      ...packageResult.rows[0],
+      items: itemsResult.rows
+    });
+  } catch (error) {
+    logger.error("Error fetching value package", { error });
+    res.status(500).json({ error: "Failed to fetch value package" });
+  }
+});
+
+router.post("/value-packages", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { code, name, description, listType, operatorId, validFrom, validTo, status } = req.body;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_value_packages 
+      (tenant_id, code, name, description, list_type, operator_id, valid_from, valid_to, status, created_by)
+      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${listType}, ${operatorId}, ${validFrom}, ${validTo}, ${status || 'draft'}, ${userId})
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error creating value package", { error });
+    res.status(500).json({ error: "Failed to create value package" });
+  }
+});
+
+router.put("/value-packages/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { code, name, description, listType, operatorId, validFrom, validTo, status } = req.body;
+
+    const result = await db.execute(sql`
+      UPDATE w3suite.commissioning_value_packages SET
+        code = ${code}, name = ${name}, description = ${description},
+        list_type = ${listType}, operator_id = ${operatorId},
+        valid_from = ${validFrom}, valid_to = ${validTo}, status = ${status},
+        modified_by = ${userId}, updated_at = NOW()
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+      RETURNING *
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Value package not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error updating value package", { error });
+    res.status(500).json({ error: "Failed to update value package" });
+  }
+});
+
+router.delete("/value-packages/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { id } = req.params;
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_value_packages 
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+    `);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error deleting value package", { error });
+    res.status(500).json({ error: "Failed to delete value package" });
+  }
+});
+
+// Duplicate value package
+router.post("/value-packages/:id/duplicate", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { newName, newValidFrom, newValidTo } = req.body;
+
+    // Get original package
+    const originalResult = await db.execute(sql`
+      SELECT * FROM w3suite.commissioning_value_packages WHERE id = ${id} AND tenant_id = ${tenantId}
+    `);
+
+    if (originalResult.rows.length === 0) {
+      return res.status(404).json({ error: "Original package not found" });
+    }
+
+    const original: any = originalResult.rows[0];
+
+    // Create new package
+    const newPackageResult = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_value_packages 
+      (tenant_id, code, name, description, list_type, operator_id, valid_from, valid_to, base_package_id, version, status, created_by)
+      VALUES (${tenantId}, ${original.code + '_copy'}, ${newName || original.name + ' (Copia)'}, ${original.description}, 
+              ${original.list_type}, ${original.operator_id}, ${newValidFrom || original.valid_from}, ${newValidTo}, 
+              ${id}, ${(original.version || 1) + 1}, 'draft', ${userId})
+      RETURNING *
+    `);
+
+    const newPackageId = (newPackageResult.rows[0] as any).id;
+
+    // Copy items
+    await db.execute(sql`
+      INSERT INTO w3suite.commissioning_value_package_items (package_id, product_id, product_version_id, price_list_item_id, valenza, gettone_contrattuale, gettone_gara, canone, notes)
+      SELECT ${newPackageId}, product_id, product_version_id, price_list_item_id, valenza, gettone_contrattuale, gettone_gara, canone, notes
+      FROM w3suite.commissioning_value_package_items WHERE package_id = ${id}
+    `);
+
+    res.status(201).json(newPackageResult.rows[0]);
+  } catch (error) {
+    logger.error("Error duplicating value package", { error });
+    res.status(500).json({ error: "Failed to duplicate value package" });
+  }
+});
+
+// Value package items
+router.post("/value-packages/:packageId/items", async (req: Request, res: Response) => {
+  try {
+    const { packageId } = req.params;
+    const { productId, productVersionId, priceListItemId, valenza, gettoneContrattuale, gettoneGara, canone, notes } = req.body;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_value_package_items 
+      (package_id, product_id, product_version_id, price_list_item_id, valenza, gettone_contrattuale, gettone_gara, canone, notes)
+      VALUES (${packageId}, ${productId}, ${productVersionId}, ${priceListItemId}, ${valenza}, ${gettoneContrattuale}, ${gettoneGara}, ${canone}, ${notes})
+      ON CONFLICT (package_id, product_id) DO UPDATE SET
+        valenza = EXCLUDED.valenza, gettone_contrattuale = EXCLUDED.gettone_contrattuale,
+        gettone_gara = EXCLUDED.gettone_gara, canone = EXCLUDED.canone, notes = EXCLUDED.notes, updated_at = NOW()
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error upserting value package item", { error });
+    res.status(500).json({ error: "Failed to save value package item" });
+  }
+});
+
+router.delete("/value-packages/:packageId/items/:itemId", async (req: Request, res: Response) => {
+  try {
+    const { packageId, itemId } = req.params;
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_value_package_items 
+      WHERE id = ${itemId} AND package_id = ${packageId}
+    `);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error deleting value package item", { error });
+    res.status(500).json({ error: "Failed to delete value package item" });
+  }
+});
+
+// ==================== L3 - FUNCTIONS ====================
+
+// Variabili L2 target disponibili
+const L2_TARGET_VARIABLES = [
+  { code: 'valenza', name: 'Valenza', type: 'number' },
+  { code: 'gettone_contrattuale', name: 'Gettone Contrattuale', type: 'currency' },
+  { code: 'gettone_gara', name: 'Gettone Gara', type: 'currency' },
+  { code: 'canone', name: 'Canone', type: 'currency' },
+  { code: 'volumi', name: 'Volumi', type: 'number' },
+  { code: 'valore_prodotto', name: 'Valore € Prodotto', type: 'currency' },
+  { code: 'valore_vendita', name: 'Valore € Vendita', type: 'currency' },
+];
+
+router.get("/functions/target-variables", async (req: Request, res: Response) => {
+  res.json(L2_TARGET_VARIABLES);
+});
+
+router.get("/functions", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const result = await db.execute(sql`
+      SELECT * FROM w3suite.commissioning_functions
+      WHERE tenant_id = ${tenantId} OR tenant_id IS NULL
+      ORDER BY sort_order ASC, name ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching functions", { error });
+    res.status(500).json({ error: "Failed to fetch functions" });
+  }
+});
+
+router.get("/functions/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { id } = req.params;
+
+    const result = await db.execute(sql`
+      SELECT * FROM w3suite.commissioning_functions
+      WHERE id = ${id} AND (tenant_id = ${tenantId} OR tenant_id IS NULL)
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Function not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error fetching function", { error });
+    res.status(500).json({ error: "Failed to fetch function" });
+  }
+});
+
+router.post("/functions", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder } = req.body;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_functions 
+      (tenant_id, code, name, description, evaluation_mode, target_variable, rule_bundle, depends_on, sort_order, created_by)
+      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${evaluationMode || 'first_match'}, ${targetVariable}, ${JSON.stringify(ruleBundle || {})}::jsonb, ${dependsOn || null}, ${sortOrder || 0}, ${userId})
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error creating function", { error });
+    res.status(500).json({ error: "Failed to create function" });
+  }
+});
+
+router.put("/functions/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder, isActive } = req.body;
+
+    const result = await db.execute(sql`
+      UPDATE w3suite.commissioning_functions SET
+        code = ${code}, name = ${name}, description = ${description},
+        evaluation_mode = ${evaluationMode}, target_variable = ${targetVariable},
+        rule_bundle = ${JSON.stringify(ruleBundle || {})}::jsonb, depends_on = ${dependsOn || null},
+        sort_order = ${sortOrder || 0}, is_active = ${isActive !== false},
+        modified_by = ${userId}, updated_at = NOW()
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+      RETURNING *
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Function not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error updating function", { error });
+    res.status(500).json({ error: "Failed to update function" });
+  }
+});
+
+router.delete("/functions/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { id } = req.params;
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_functions 
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+    `);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error deleting function", { error });
+    res.status(500).json({ error: "Failed to delete function" });
+  }
+});
+
 export default router;
