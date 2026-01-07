@@ -496,12 +496,45 @@ router.post('/custom-actions/:id/duplicate', async (req: Request, res: Response)
   }
 });
 
-// PUT /api/mcp-gateway/custom-actions/:id - Update custom action
+// PUT /api/mcp-gateway/custom-actions/:id - Update custom action or MCP query tool
 router.put('/custom-actions/:id', async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const { id } = req.params;
-    const { code, name, description, department, actionType, actionCategory, selectedVariables, requiredVariables } = req.body;
+    const { code, name, description, department, actionType, actionCategory, selectedVariables, requiredVariables, exposedViaMcp, isActive } = req.body;
+
+    // First, find the action to determine its type
+    const [existing] = await db
+      .select()
+      .from(actionDefinitions)
+      .where(eq(actionDefinitions.id, id))
+      .limit(1);
+
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Action not found' });
+    }
+
+    // For global system actions (tenant_id IS NULL), only allow updating limited fields
+    if (existing.tenantId === null) {
+      // System actions - can only toggle exposure and active status
+      const [updated] = await db
+        .update(actionDefinitions)
+        .set({
+          exposedViaMcp: exposedViaMcp ?? existing.exposedViaMcp,
+          isActive: isActive ?? existing.isActive,
+          updatedAt: new Date(),
+        })
+        .where(eq(actionDefinitions.id, id))
+        .returning();
+
+      logger.info('[MCP-MGMT] Updated system action visibility:', { id, exposedViaMcp, isActive });
+      return res.json({ success: true, data: updated });
+    }
+
+    // For tenant-specific custom actions, allow full update
+    if (existing.tenantId !== tenantId) {
+      return res.status(403).json({ success: false, error: 'Cannot modify action from another tenant' });
+    }
 
     // Build input schema from variables
     const inputSchema: any = { type: 'object', properties: {}, required: requiredVariables || [] };
@@ -514,19 +547,20 @@ router.put('/custom-actions/:id', async (req: Request, res: Response) => {
     const [updated] = await db
       .update(actionDefinitions)
       .set({
-        actionId: code,
-        actionName: name,
-        description: description || null,
-        department: department || null,
-        actionCategory: actionCategory || 'query',
-        mcpActionType: actionType || 'read',
-        mcpInputSchema: inputSchema,
+        actionId: code || existing.actionId,
+        actionName: name || existing.actionName,
+        description: description ?? existing.description,
+        department: department || existing.department,
+        actionCategory: actionCategory || existing.actionCategory || 'query',
+        mcpActionType: actionType || existing.mcpActionType || 'read',
+        mcpInputSchema: selectedVariables ? inputSchema : existing.mcpInputSchema,
+        exposedViaMcp: exposedViaMcp ?? existing.exposedViaMcp,
+        isActive: isActive ?? existing.isActive,
         updatedAt: new Date(),
       })
       .where(and(
         eq(actionDefinitions.id, id),
-        eq(actionDefinitions.tenantId, tenantId),
-        eq(actionDefinitions.sourceTable, 'custom')
+        eq(actionDefinitions.tenantId, tenantId)
       ))
       .returning();
 
