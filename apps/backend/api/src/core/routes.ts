@@ -32,6 +32,7 @@ import activityLogsRoutes from "../routes/activity-logs";
 import actionConfigurationsRoutes from "../routes/action-configurations";
 import actionDefinitionsRoutes from "../routes/action-definitions";
 import storageRoutes from "../routes/storage";
+import commissioningRoutes from "../routes/commissioning";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { enforceAIEnabled, enforceAgentEnabled, enforceAIWithAgent } from "../middleware/ai-enforcement";
@@ -1645,6 +1646,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enterprise Object Storage with signed URLs, ACL, quotas
   // /serve endpoint is public (token-based), other routes need tenant/rbac middleware
   app.use('/api/storage', storageRoutes);
+
+  // ==================== COMMISSIONING ROUTES ====================
+  // Gestione gare operatore/interne, cluster, configuratori
+  app.use('/api/commissioning', tenantMiddleware, rbacMiddleware, commissioningRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 
