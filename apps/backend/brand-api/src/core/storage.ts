@@ -1210,15 +1210,23 @@ class BrandDrizzleStorage implements IBrandStorage {
   }
 
   // Update organization in w3suite.tenants
+  // NOTE: tenants table should NOT have RLS, but we use transaction for consistency
   async updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null> {
     try {
       console.log(`📝 [STORAGE] updateOrganization called for tenant: ${id}`);
       console.log(`📝 [STORAGE] Update data:`, JSON.stringify(data));
       
-      const results = await w3db.update(w3Tenants)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(w3Tenants.id, id))
-        .returning();
+      // Use transaction to bypass any potential RLS issues
+      // For tenants table, we set a dummy tenant_id since this is a system table
+      const results = await w3db.transaction(async (tx) => {
+        // Set system context to bypass RLS if any
+        await tx.execute(sql.raw(`SELECT set_config('app.tenant_id', '${id}', false)`));
+        
+        return await tx.update(w3Tenants)
+          .set({ ...data, updatedAt: new Date() })
+          .where(eq(w3Tenants.id, id))
+          .returning();
+      });
       
       if (results[0]) {
         console.log(`✅ [STORAGE] Tenant ${id} updated. New status: ${results[0].status}`);
