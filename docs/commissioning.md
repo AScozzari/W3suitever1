@@ -77,6 +77,274 @@ Lo Scope definisce **DA DOVE** prendere i dati per calcolare le variabili (Valen
 
 ---
 
+## 🏗️ ARCHITETTURA 3 LIVELLI (L1 → L2 → L3)
+
+Il sistema commissioning si basa su **tre livelli** di configurazione che lavorano insieme:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        L1 - VARIABLE MAPPINGS                    │
+│                    (Mappature Variabili Globali)                 │
+│─────────────────────────────────────────────────────────────────│
+│  • Definizioni variabili di sistema disponibili                 │
+│  • Codice + Nome + Tipo dato + Descrizione                      │
+│  • Esempi: valenza, gettone_contrattuale, gettone_gara, canone  │
+│  • Gestione: Brand-pushed (NULL) o Custom (tenant_id)           │
+└─────────────────────────────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      L2 - VALUE PACKAGES                         │
+│                  (Pacchetti Valori per Prodotti)                 │
+│─────────────────────────────────────────────────────────────────│
+│  • Contenitore che associa MULTIPLI LISTINI                     │
+│  • Ogni listino → griglia prodotti con valori commissioning     │
+│  • Valori per prodotto: valenza, gettone_contrattuale,          │
+│    gettone_gara, canone (solo canvas)                           │
+│  • Wizard 3 step: Dati base → Selezione listini → Griglie       │
+└─────────────────────────────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                       L3 - FUNCTIONS                             │
+│                   (Funzioni di Calcolo Gara)                     │
+│─────────────────────────────────────────────────────────────────│
+│  • Logica di calcolo applicata ai valori L2                     │
+│  • Soglie progressive/regressive                                │
+│  • Moltiplicatori, percentuali, bonus                           │
+│  • Condizioni e paletti                                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## L1 - VARIABLE MAPPINGS (Mappature Variabili)
+
+### Definizione
+
+Le **Variable Mappings** definiscono le variabili di sistema disponibili per il commissioning. Sono le "colonne" che possono essere valorizzate nei pacchetti L2.
+
+### Variabili Standard di Sistema
+
+| Codice | Nome | Tipo | Descrizione |
+|--------|------|------|-------------|
+| `valenza` | Valenza | number | Peso/punteggio del prodotto nel contesto gara |
+| `gettone_contrattuale` | Gettone Contrattuale | currency | Importo fisso da contratto base |
+| `gettone_gara` | Gettone Gara | currency | Importo specifico per la gara in corso |
+| `canone` | Canone | currency | Canone mensile (solo per offerte Canvas) |
+| `volumi` | Volumi | number | Quantità pezzi venduti |
+| `valore_prodotto` | Valore € Prodotto | currency | Valore economico del prodotto |
+| `valore_vendita` | Valore € Vendita | currency | Valore economico della vendita |
+
+### Pattern RLS
+
+```sql
+-- Variabili visibili al tenant
+SELECT * FROM commissioning_variable_mappings 
+WHERE tenant_id = current_setting('app.tenant_id')::uuid  -- Custom
+   OR tenant_id IS NULL;                                   -- Brand-pushed (globali)
+```
+
+---
+
+## L2 - VALUE PACKAGES (Pacchetti Valori)
+
+### Definizione
+
+I **Value Packages** sono contenitori che associano **MULTIPLI LISTINI** e definiscono i valori commissioning per ogni prodotto di ogni listino.
+
+### Struttura Multi-Listino
+
+```
+VALUE PACKAGE "Gara Q1 2026"
+├── DATI BASE
+│   ├── Codice: PKG_GARA_Q1_2026
+│   ├── Nome: Pacchetto Gara Q1 2026
+│   ├── Validità: 01/01/2026 - 31/03/2026
+│   └── Stato: Attivo
+│
+├── LISTINI ASSOCIATI (N listini per pacchetto)
+│   │
+│   ├── LISTINO CANVAS "WindTre Consumer Q1"
+│   │   └── GRIGLIA PRODOTTI:
+│   │       ├── SIM Gold → valenza: 5, gett.contr: €10, gett.gara: €8, canone: €29
+│   │       ├── SIM Silver → valenza: 3, gett.contr: €6, gett.gara: €5, canone: €19
+│   │       └── Fibra Home → valenza: 8, gett.contr: €25, gett.gara: €20, canone: €35
+│   │
+│   ├── LISTINO CANVAS "VeryMobile Business Q1"
+│   │   └── GRIGLIA PRODOTTI:
+│   │       ├── Very Unlimited → valenza: 4, gett.contr: €8, gett.gara: €6, canone: €14.99
+│   │       └── Very Business → valenza: 6, gett.contr: €12, gett.gara: €10, canone: €24.99
+│   │
+│   └── LISTINO PRODOTTI "Accessori Q1" (no canone!)
+│       └── GRIGLIA PRODOTTI:
+│           ├── Cover Premium → valenza: 1, gett.contr: €2, gett.gara: €1
+│           └── Caricatore Fast → valenza: 1, gett.contr: €1.5, gett.gara: €1
+│
+└── ORIGINE: Custom (tenant_id = UUID)
+```
+
+### Differenze Canvas vs Prodotti
+
+| Tipo Listino | Campi Griglia | Filtro Selezione |
+|--------------|---------------|------------------|
+| **Canvas** (offerte) | valenza, gettone_contrattuale, gettone_gara, **canone** | Operatore |
+| **Prodotti** (fisico/servizio/digitale) | valenza, gettone_contrattuale, gettone_gara | Fornitore + Tipo (standard/promo) |
+
+### Logica Canone
+
+Per i listini **Canvas**:
+- Il campo `canone` è **ereditato** automaticamente dal listino (`monthly_fee` di `price_list_items_canvas`)
+- L'utente può **sovrascrivere** il canone con un valore custom
+- Flag `canone_inherited`: `true` = usa valore listino, `false` = usa valore override
+
+```
+PRODOTTO CANVAS
+├── canone_listino: €29.99 (da price_list_items_canvas.monthly_fee)
+├── canone_inherited: true/false
+└── canone_override: €24.99 (valore custom se inherited=false)
+```
+
+### Wizard UI (3 Step)
+
+```
+STEP 1: DATI BASE
+├── Codice pacchetto
+├── Nome pacchetto
+├── Descrizione
+├── Validità (dal - al)
+└── Stato (bozza/attivo/archiviato)
+
+STEP 2: SELEZIONE LISTINI
+├── Toggle: [Canvas] [Prodotti]
+├── FILTRI CANVAS:
+│   └── Operatore (WindTre, VeryMobile, etc.)
+├── FILTRI PRODOTTI:
+│   ├── Fornitore
+│   └── Tipo listino (standard/promo)
+├── Ricerca libera
+├── Checkbox multi-select listini
+└── Chip listini selezionati con rimozione
+
+STEP 3: GRIGLIE PRODOTTI
+├── TABS (una per listino selezionato)
+│   ├── Tab "WindTre Consumer Q1" [12 prodotti] ●
+│   ├── Tab "VeryMobile Business Q1" [8 prodotti]
+│   └── Tab "Accessori Q1" [25 prodotti]
+│
+└── GRIGLIA PRODOTTO (per tab attiva):
+    ├── Colonne: Prodotto | SKU | Valenza | Gett.Contr. | Gett.Gara | Canone*
+    ├── Input editabili per ogni cella
+    ├── Indicatore modifiche pendenti (●)
+    └── Bulk actions toolbar
+    
+    * Colonna Canone visibile SOLO per listini Canvas
+```
+
+### Tabelle Database L2
+
+```sql
+-- Pacchetti valori (header)
+commissioning_value_packages (
+  id UUID PRIMARY KEY,
+  tenant_id UUID,                       -- NULL = brand-pushed, UUID = custom
+  code VARCHAR(50) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  list_type VARCHAR(30),                -- deprecated, ora multi-listino
+  operator_id UUID,                     -- deprecated
+  valid_from DATE,
+  valid_to DATE,
+  status VARCHAR(20) DEFAULT 'draft',
+  version INTEGER DEFAULT 1,
+  base_package_id UUID,                 -- per versionamento
+  created_by UUID,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+
+-- Ponte pacchetto ↔ listini (N:M)
+commissioning_value_package_price_lists (
+  id UUID PRIMARY KEY,
+  package_id UUID REFERENCES commissioning_value_packages(id),
+  price_list_id UUID REFERENCES price_lists(id),
+  sort_order SMALLINT DEFAULT 0,
+  created_at TIMESTAMP,
+  UNIQUE(package_id, price_list_id)
+)
+
+-- Valori commissioning per prodotto/listino
+commissioning_value_package_items (
+  id UUID PRIMARY KEY,
+  package_id UUID REFERENCES commissioning_value_packages(id),
+  price_list_id UUID REFERENCES price_lists(id),   -- quale listino
+  product_id VARCHAR(100) NOT NULL,                -- FK logica a products
+  product_version_id UUID,
+  price_list_item_id UUID,                         -- FK a items specifico
+  
+  -- Valori commissioning
+  valenza NUMERIC(10,2),
+  gettone_contrattuale NUMERIC(12,2),
+  gettone_gara NUMERIC(12,2),
+  canone NUMERIC(12,2),                            -- override (solo canvas)
+  canone_inherited BOOLEAN DEFAULT true,           -- usa valore listino?
+  
+  notes TEXT,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP,
+  UNIQUE(package_id, price_list_id, product_id)
+)
+```
+
+### API Endpoints L2
+
+```
+GET  /api/commissioning/value-packages                              # Lista pacchetti
+GET  /api/commissioning/value-packages/:id                          # Dettaglio pacchetto
+POST /api/commissioning/value-packages                              # Crea pacchetto
+PUT  /api/commissioning/value-packages/:id                          # Aggiorna pacchetto
+DELETE /api/commissioning/value-packages/:id                        # Elimina pacchetto
+
+GET  /api/commissioning/value-packages/:id/price-lists              # Listini associati
+POST /api/commissioning/value-packages/:id/price-lists              # Aggiungi listino
+DELETE /api/commissioning/value-packages/:id/price-lists/:plId      # Rimuovi listino
+
+GET  /api/commissioning/value-packages/:id/price-lists/:plId/products      # Prodotti griglia
+POST /api/commissioning/value-packages/:id/price-lists/:plId/products/bulk # Bulk update
+```
+
+---
+
+## L3 - FUNCTIONS (Funzioni di Calcolo)
+
+### Definizione
+
+Le **Functions** definiscono la logica di calcolo applicata ai valori L2 per determinare l'economia finale della gara.
+
+### Variabili Target (Output L3)
+
+Le funzioni L3 possono modificare/calcolare queste variabili target:
+
+| Codice | Nome | Tipo | Descrizione |
+|--------|------|------|-------------|
+| `valenza` | Valenza | number | Valore calcolato valenza |
+| `gettone_contrattuale` | Gettone Contrattuale | currency | Importo calcolato |
+| `gettone_gara` | Gettone Gara | currency | Importo calcolato per gara |
+| `canone` | Canone | currency | Canone calcolato |
+| `volumi` | Volumi | number | Quantità calcolata |
+| `valore_prodotto` | Valore € Prodotto | currency | Valore calcolato prodotto |
+| `valore_vendita` | Valore € Vendita | currency | Valore calcolato vendita |
+
+### Tipi di Funzione
+
+| Tipo | Descrizione | Esempio |
+|------|-------------|---------|
+| **Soglie Progressive** | Valore cresce con il raggiungimento soglie | 0-10 vendite = €5, 11-50 = €10 |
+| **Soglie Regressive** | Rivalorizzazione retroattiva | Salgo a soglia 3 → tutte le vendite a €15 |
+| **Moltiplicatore** | Fattore moltiplicativo | Canone × 2 |
+| **Percentuale** | Quota sul valore | 5% del fatturato |
+| **Bonus Fisso** | Importo una tantum | €500 se raggiungi 100 vendite |
+
+---
+
 ## 🔒 Pattern RLS Gare (Stesso di action_definitions)
 
 Le gare seguono lo stesso pattern RLS delle action_definitions:
@@ -165,9 +433,9 @@ GARA (contenitore)
 │   │   ├── Driver: subset filtrato dal cluster
 │   │   ├── Scope: PDV/RS/Multi-RS/User/Multi-User
 │   │   ├── Variabile: Valenza/Gettone/Canone
-│   │   ├── Pacchetto Valenze
+│   │   ├── Pacchetto Valenze (L2)
 │   │   ├── Paletti: condizioni da soddisfare
-│   │   └── Regole: soglie, %, moltiplicatori
+│   │   └── Regole: soglie, %, moltiplicatori (L3)
 │   │
 │   └── CONFIGURATORE N...
 │
@@ -250,7 +518,7 @@ commissioning_configurators (
   
   -- Cosa conto
   variable_type VARCHAR(30) NOT NULL,   -- 'valenza' | 'gettone_contrattuale' | 'gettone_gara' | 'canone'
-  value_package_id UUID,                -- FK a pacchetto valenze
+  value_package_id UUID,                -- FK a pacchetto valenze (L2)
   
   -- Condizioni e regole
   paletti JSONB,                        -- Condizioni da soddisfare
@@ -274,76 +542,10 @@ CREATE INDEX idx_cluster_entities ON commissioning_cluster_entities(cluster_id);
 CREATE INDEX idx_cluster_drivers ON commissioning_cluster_drivers(cluster_id);
 CREATE INDEX idx_configurators_race ON commissioning_configurators(race_id);
 CREATE INDEX idx_configurators_cluster ON commissioning_configurators(cluster_id);
+CREATE INDEX idx_value_packages_tenant ON commissioning_value_packages(tenant_id);
+CREATE INDEX idx_value_package_items_package ON commissioning_value_package_items(package_id);
+CREATE INDEX idx_value_package_items_pricelist ON commissioning_value_package_items(price_list_id);
 ```
-
----
-
-## Variabili Configuratori (da Prodotto/Listino)
-
-Le variabili utilizzabili nei configuratori sono legate al prodotto/listino:
-
-| # | Variabile | Descrizione | Esempio Uso |
-|---|-----------|-------------|-------------|
-| 1 | **Valenza** | Peso del prodotto nel contesto gara | Soglia valenze |
-| 2 | **Gettone Contrattuale** | Importo fisso da contratto | Pay-per-sale |
-| 3 | **Gettone Gara** | Importo specifico per questa gara | Bonus gara |
-| 4 | **Canone Offerta Canvass** | Canone dell'offerta | Moltiplicatore soglie |
-
----
-
-## Template Configuratore
-
-### Definizione
-
-Il **Template Configuratore** è uno schema vuoto/flessibile che definisce le "regole del gioco" di una gara.
-
-### Struttura Template
-
-```
-TEMPLATE CONFIGURATORE
-├── 1. CLUSTER (chi partecipa)
-│   └── Selezione cluster esistente
-│
-├── 2. DRIVER (subset del cluster)
-│   └── Multiselect tra driver del cluster
-│
-├── 3. SCOPE (da dove conteggiare)
-│   ├── PDV singolo
-│   ├── Ragione Sociale (tutti PDV figli)
-│   ├── Multi-RS
-│   ├── Singolo User (solo Gare Interne)
-│   └── Multi-User (solo Gare Interne)
-│
-├── 4. VARIABILE DI LAVORO (cosa conteggiare)
-│   ├── Valenze (numero valenze accumulate)
-│   ├── Volumi (pezzi venduti)
-│   ├── Moltiplicatore Canone
-│   └── Gettone Gara (€ per vendita)
-│
-├── 5. PACCHETTO VALENZE (valori di riferimento)
-│   └── 1 Configuratore = 1 Pacchetto Valenze
-│
-├── 6. PALETTI (condizioni da soddisfare)
-│   ├── Produttività Negozio
-│   ├── Produttività Multi-Negozio
-│   └── Produttività Risorsa
-│
-└── 7. REGOLE (come calcolare)
-    ├── Soglie progressive/regressive
-    ├── Percentuali
-    ├── Gettoni fissi
-    └── Moltiplicatori
-```
-
-### Esempi Configuratori
-
-| Variabile | Esempio Configuratore |
-|-----------|----------------------|
-| **Valenze** | Soglia 1: 0-50 valenze = €100, Soglia 2: 51-100 = €300 |
-| **Volumi** | Vendi 20 pezzi = premio €50, Vendi 50 pezzi = premio €150 |
-| **Moltiplicatore Canone** | Soglia 1: 1x canone (€9), Soglia 2: 2x canone (€18) |
-| **Gettone Gara** | €5 fissi per ogni SIM venduta |
-| **% Fatturato** | 3% del fatturato generato dalla Gara Brand X |
 
 ---
 
@@ -425,39 +627,6 @@ T+90: Vendita in KO → Storno €100 (valore ATTUALE, non €10)
 
 ---
 
-## Pacchetto Valenze
-
-### Definizione
-
-Il **Pacchetto Valenze** è l'entità che assegna i valori delle variabili ai prodotti/listini.
-
-### Struttura
-
-```
-Pacchetto Valenze "Q4 2025"
-├── ORIGINE: Brand (pushato) / Custom (tenant)
-├── VALIDITÀ: dal - al
-├── LISTINI INCLUSI: [Listino Retail Q4, Listino Business Q4]
-└── PRODOTTI VALORIZZATI:
-    ├── SIM Gold → Valenza: 5, Gettone C.: €10, Gettone G.: €8, Canone: €29
-    └── Fibra Home → Valenza: 8, Gettone C.: €25, Gettone G.: €20, Canone: €35
-```
-
-### Relazione con Configuratori
-
-**Regola: 1 Configuratore = 1 Pacchetto Valenze**
-
-```
-GARA "Sprint Natalizio"
-├── Configuratore Soglie → Pacchetto "Q4 Retail" → €250
-├── Configuratore Gettone → Pacchetto "Q4 Accessori" → €80
-└── Configuratore % Fatturato → Pacchetto "Q4 Servizi" → €45
-═══════════════════════════════════════════════════
-ECONOMIA TOTALE GARA = €375
-```
-
----
-
 ## Paletti (Condizioni)
 
 I paletti sono condizioni che devono essere soddisfatte per maturare l'incentivo:
@@ -510,7 +679,24 @@ Cluster "Negozi Premium Milano" (tipo: PDV)
 - Tutte le azioni disponibili (sempre custom)
 - Modal "Nuova Gara" con scope user/multi-user
 
-### Tab Impostazioni → Card Cluster
+### Tab Impostazioni
+
+**L1 - Variable Mappings:**
+- DataTable variabili con filtri
+- Modal creazione/modifica variabile
+
+**L2 - Value Packages:**
+- DataTable pacchetti con filtri
+- Wizard 3 step per creazione/modifica:
+  - Step 1: Dati base
+  - Step 2: Selezione listini (Canvas/Prodotti con filtri)
+  - Step 3: Tabs con griglie prodotti per ogni listino
+
+**L3 - Functions:**
+- DataTable funzioni con filtri
+- Modal creazione/modifica funzione
+
+**Cluster:**
 - DataTable cluster con filtri (tipo, data, ricerca)
 - Modal creazione cluster: entity_type selector → entità → driver
 
@@ -525,9 +711,12 @@ Cluster "Negozi Premium Milano" (tipo: PDV)
 | `users` | Entità per cluster tipo RISORSA |
 | `drivers` | FK N:M per cluster (tabella esistente!) |
 | `products` | Prodotti che generano commissioni |
-| `price_lists` | Listini collegati alle gare |
+| `price_lists` | Listini associati ai Value Packages (L2) |
+| `price_list_items` | Prodotti normali nei listini |
+| `price_list_items_canvas` | Prodotti canvas con monthly_fee |
 | `channels` | Canali per filtro gare |
-| `operators` | Operatori per Gare Operatore |
+| `operators` | Operatori per Gare Operatore e filtro listini Canvas |
+| `suppliers` | Fornitori per filtro listini Prodotti |
 
 ---
 
@@ -535,12 +724,17 @@ Cluster "Negozi Premium Milano" (tipo: PDV)
 
 | # | Task | Stato |
 |---|------|-------|
-| 1 | Schema DB Cluster + Races + Configurators | 🔄 In corso |
-| 2 | UI Gare Operatore | ⏳ Pending |
-| 3 | UI Gare Interne | ⏳ Pending |
-| 4 | UI Cluster (Impostazioni) | ⏳ Pending |
-| 5 | Backend API con RLS | ⏳ Pending |
+| 1 | Schema DB Cluster + Races + Configurators | ✅ Completato |
+| 2 | L1 - Variable Mappings UI + API | ✅ Completato |
+| 3 | L2 - Value Packages Multi-Listino + Wizard | ✅ Completato |
+| 4 | L2 - Griglia prodotti con bulk edit | ✅ Completato |
+| 5 | L3 - Functions UI + API | 🔄 In corso |
+| 6 | UI Gare Operatore | ⏳ Pending |
+| 7 | UI Gare Interne | ⏳ Pending |
+| 8 | UI Cluster (Impostazioni) | ⏳ Pending |
+| 9 | Backend Calcolo Commissioning | ⏳ Pending |
+| 10 | Dashboard Report Gare | ⏳ Pending |
 
 ---
 
-*Ultimo aggiornamento: Gennaio 2026 - GARA=contenitore, CONFIGURATORE=Cluster+Driver(subset)+Scope+Pacchetto+Paletti+Regole, Economia=Σ configuratori*
+*Ultimo aggiornamento: Gennaio 2026 - Architettura L1/L2/L3, Value Packages multi-listino con wizard 3 step, griglie prodotti con canone ereditato/override per Canvas*
