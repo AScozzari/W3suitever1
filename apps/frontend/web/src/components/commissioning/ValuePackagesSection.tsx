@@ -103,9 +103,7 @@ export default function ValuePackagesSection() {
       const url = queryParams 
         ? `/api/commissioning/value-packages?${queryParams}` 
         : '/api/commissioning/value-packages';
-      const res = await fetch(url, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch');
-      return res.json();
+      return apiRequest(url);
     },
   });
 
