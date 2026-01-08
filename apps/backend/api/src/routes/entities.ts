@@ -1497,11 +1497,34 @@ router.get('/stores', async (req, res) => {
 
     await setTenantContext(tenantId);
 
-    // ✅ Use Drizzle query builder - auto-converts snake_case to camelCase
-    const storesList = await db.query.stores.findMany({
-      where: eq(stores.tenantId, tenantId),
-      orderBy: [desc(stores.createdAt)]
-    });
+    // Query with LEFT JOINs to get channel and commercial area names
+    const storesList = await db
+      .select({
+        id: stores.id,
+        code: stores.code,
+        nome: stores.nome,
+        address: stores.address,
+        citta: stores.citta,
+        provincia: stores.provincia,
+        cap: stores.cap,
+        category: stores.category,
+        status: stores.status,
+        email: stores.email,
+        phone: stores.phone,
+        channelId: stores.channelId,
+        commercialAreaId: stores.commercialAreaId,
+        organizationEntityId: stores.organizationEntityId,
+        tenantId: stores.tenantId,
+        createdAt: stores.createdAt,
+        updatedAt: stores.updatedAt,
+        channel_name: channels.name,
+        commercial_area_name: commercialAreas.name,
+      })
+      .from(stores)
+      .leftJoin(channels, eq(stores.channelId, channels.id))
+      .leftJoin(commercialAreas, eq(stores.commercialAreaId, commercialAreas.id))
+      .where(eq(stores.tenantId, tenantId))
+      .orderBy(desc(stores.createdAt));
 
     // Map 'nome' to 'name' for frontend compatibility
     const mappedStores = storesList.map(store => ({
