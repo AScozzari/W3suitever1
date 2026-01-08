@@ -43,15 +43,13 @@ const operationsSchema = z.object({
 });
 
 // Schema per creazione/update funzione
+// Nota: evaluationMode, targetVariable e sortOrder sono gestiti nei Configuratori, non qui
 const createFunctionSchema = z.object({
   code: z.string().min(1).max(100),
   name: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
-  evaluationMode: z.enum(['first_match', 'accumulate', 'weighted_average']).default('first_match'),
-  targetVariable: z.string().min(1).max(100),
   ruleBundle: ruleBundleSchema.optional().default({ conditions: [] }),
   dependsOn: z.array(z.string().uuid()).optional().nullable(),
-  sortOrder: z.number().int().min(0).optional().default(0),
   isActive: z.boolean().optional().default(true),
 });
 
@@ -1374,18 +1372,16 @@ router.get("/functions", async (req: Request, res: Response) => {
       ORDER BY sort_order ASC, name ASC
     `);
 
-    // Extract used variables from rule_bundle for each function
+    // Extract used variables from rule_bundle.conditions for each function
     const functions = result.rows.map((row: any) => {
       const usedVariables: string[] = [];
       try {
         const ruleBundle = row.rule_bundle || {};
-        const rules = ruleBundle.rules || [];
-        for (const rule of rules) {
-          const conditions = rule.conditions || [];
-          for (const cond of conditions) {
-            if (cond.variable && !usedVariables.includes(cond.variable)) {
-              usedVariables.push(cond.variable);
-            }
+        // Le condizioni sono direttamente in ruleBundle.conditions (non più in rules)
+        const conditions = ruleBundle.conditions || [];
+        for (const cond of conditions) {
+          if (cond.variable && !usedVariables.includes(cond.variable)) {
+            usedVariables.push(cond.variable);
           }
         }
       } catch (e) { /* ignore parse errors */ }
@@ -1441,12 +1437,12 @@ router.post("/functions", async (req: Request, res: Response) => {
       });
     }
 
-    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder } = parseResult.data;
+    const { code, name, description, ruleBundle, dependsOn } = parseResult.data;
 
     const result = await db.execute(sql`
       INSERT INTO w3suite.commissioning_functions 
-      (tenant_id, code, name, description, evaluation_mode, target_variable, rule_bundle, depends_on, sort_order, created_by)
-      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${evaluationMode}, ${targetVariable}, ${JSON.stringify(ruleBundle)}::jsonb, ${dependsOn || null}, ${sortOrder}, ${userId})
+      (tenant_id, code, name, description, rule_bundle, depends_on, created_by)
+      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${JSON.stringify(ruleBundle)}::jsonb, ${dependsOn || null}, ${userId})
       RETURNING *
     `);
 
@@ -1472,14 +1468,13 @@ router.put("/functions/:id", async (req: Request, res: Response) => {
       });
     }
 
-    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder, isActive } = parseResult.data;
+    const { code, name, description, ruleBundle, dependsOn, isActive } = parseResult.data;
 
     const result = await db.execute(sql`
       UPDATE w3suite.commissioning_functions SET
         code = ${code}, name = ${name}, description = ${description},
-        evaluation_mode = ${evaluationMode}, target_variable = ${targetVariable},
         rule_bundle = ${JSON.stringify(ruleBundle)}::jsonb, depends_on = ${dependsOn || null},
-        sort_order = ${sortOrder}, is_active = ${isActive},
+        is_active = ${isActive},
         modified_by = ${userId}, updated_at = NOW()
       WHERE id = ${id} AND tenant_id = ${tenantId}
       RETURNING *

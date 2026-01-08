@@ -72,13 +72,10 @@ interface CommissioningFunction {
   code: string;
   name: string;
   description: string | null;
-  evaluation_mode: 'first_match' | 'accumulate' | 'weighted_average';
-  target_variable: string;
   rule_bundle: Record<string, any>;
   depends_on: string[] | null;
   is_active: boolean;
   status: 'active' | 'suspended' | 'archived';
-  sort_order: number;
   created_at: string;
   updated_at: string;
   usedVariables?: string[];
@@ -111,10 +108,7 @@ export default function FunctionsSection() {
     code: '',
     name: '',
     description: '',
-    evaluationMode: 'first_match' as string,
-    targetVariable: '',
     ruleBundle: { conditions: [] } as RuleBundle,
-    sortOrder: 0,
     isActive: true,
   });
 
@@ -245,7 +239,7 @@ export default function FunctionsSection() {
 
   const resetForm = () => {
     setEditingFunction(null);
-    setFormData({ code: '', name: '', description: '', evaluationMode: 'first_match', targetVariable: '', ruleBundle: { conditions: [] }, sortOrder: 0, isActive: true });
+    setFormData({ code: '', name: '', description: '', ruleBundle: { conditions: [] }, isActive: true });
   };
 
   const openEdit = (fn: CommissioningFunction) => {
@@ -260,10 +254,7 @@ export default function FunctionsSection() {
       code: fn.code,
       name: fn.name,
       description: fn.description || '',
-      evaluationMode: fn.evaluation_mode,
-      targetVariable: fn.target_variable,
       ruleBundle: { conditions },
-      sortOrder: fn.sort_order,
       isActive: fn.is_active,
     });
     setModalOpen(true);
@@ -281,14 +272,36 @@ export default function FunctionsSection() {
   };
 
   const handleSubmit = () => {
-    if (!formData.code || !formData.name || !formData.targetVariable) {
-      toast({ title: 'Errore', description: 'Codice, nome e variabile target sono obbligatori', variant: 'destructive' });
+    if (!formData.code || !formData.name) {
+      toast({ title: 'Errore', description: 'Codice e nome sono obbligatori', variant: 'destructive' });
       return;
     }
+    
+    // Normalizza i valori delle condizioni (converti stringhe in numeri dove appropriato)
+    const normalizedConditions = formData.ruleBundle.conditions.map(c => {
+      // Per operatori unari, value deve essere null
+      if (UNARY_OPERATORS_LIST.includes(c.operator)) {
+        return { ...c, value: null };
+      }
+      // Per altri operatori, prova a convertire in numero se possibile
+      if (c.value !== null && c.value !== undefined && c.value !== '') {
+        const numVal = parseFloat(String(c.value));
+        if (!isNaN(numVal)) {
+          return { ...c, value: numVal };
+        }
+      }
+      return c;
+    });
+    
+    const payload = {
+      ...formData,
+      ruleBundle: { conditions: normalizedConditions }
+    };
+    
     if (editingFunction) {
-      updateMutation.mutate({ id: editingFunction.id, data: formData });
+      updateMutation.mutate({ id: editingFunction.id, data: payload });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     }
   };
 
@@ -530,50 +543,39 @@ export default function FunctionsSection() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Codice *</Label>
-                <Input value={formData.code} onChange={(e) => setFormData(f => ({ ...f, code: e.target.value }))} placeholder="FN_BONUS_BRAND" data-testid="input-function-code" />
+                <div className="flex gap-2">
+                  <Input value={formData.code} onChange={(e) => setFormData(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="FN_BONUS_BRAND" className="flex-1" data-testid="input-function-code" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const timestamp = Date.now().toString(36).toUpperCase();
+                      setFormData(f => ({ ...f, code: `FN_${timestamp}` }));
+                    }}
+                    title="Genera codice automatico"
+                    data-testid="button-generate-code"
+                  >
+                    <Zap className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div>
-                <Label>Ordine Esecuzione</Label>
-                <Input type="number" value={formData.sortOrder} onChange={(e) => setFormData(f => ({ ...f, sortOrder: parseInt(e.target.value) || 0 }))} data-testid="input-sort-order" />
+                <Label>Nome *</Label>
+                <Input value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} placeholder="Bonus per Brand Premium" data-testid="input-function-name" />
               </div>
-            </div>
-            <div>
-              <Label>Nome *</Label>
-              <Input value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} placeholder="Bonus per Brand Premium" data-testid="input-function-name" />
             </div>
             <div>
               <Label>Descrizione</Label>
               <Textarea value={formData.description} onChange={(e) => setFormData(f => ({ ...f, description: e.target.value }))} rows={2} data-testid="input-function-desc" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Variabile Target (L2) *</Label>
-                <Select value={formData.targetVariable} onValueChange={(v) => setFormData(f => ({ ...f, targetVariable: v }))}>
-                  <SelectTrigger data-testid="select-target-variable">
-                    <SelectValue placeholder="Seleziona variabile..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {targetVariables.map((tv) => (
-                      <SelectItem key={tv.code} value={tv.code}>{tv.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Modalità Valutazione</Label>
-                <Select value={formData.evaluationMode} onValueChange={(v) => setFormData(f => ({ ...f, evaluationMode: v }))}>
-                  <SelectTrigger data-testid="select-eval-mode">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="first_match">Prima Corrispondenza</SelectItem>
-                    <SelectItem value="accumulate">Accumula Tutte</SelectItem>
-                    <SelectItem value="weighted_average">Media Ponderata</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
             <div className="border-t pt-4">
+              <div className="p-3 mb-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>Nota:</strong> Questa funzione restituisce <strong>TRUE</strong> quando le condizioni sono soddisfatte. 
+                  Le operazioni sui valori commissioning (×, +, −) vengono definite nei <strong>Configuratori</strong>.
+                </p>
+              </div>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <Label className="text-base font-medium">Condizioni Logiche</Label>
@@ -644,7 +646,7 @@ export default function FunctionsSection() {
                         value={condition.operator} 
                         onValueChange={(v) => updateCondition(idx, 'operator', v)}
                       >
-                        <SelectTrigger className="w-[8rem] h-8 text-xs" data-testid={`select-operator-${idx}`}>
+                        <SelectTrigger className="w-[11rem] h-8 text-xs" data-testid={`select-operator-${idx}`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
