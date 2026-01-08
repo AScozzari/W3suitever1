@@ -12127,10 +12127,18 @@ export const commissioningFunctions = w3suiteSchema.table("commissioning_functio
 ]);
 
 // Link funzioni ai configuratori
+// Quando la funzione restituisce TRUE, applica le operazioni sui 4 valori chiave
 export const commissioningConfiguratorFunctions = w3suiteSchema.table("commissioning_configurator_functions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   configuratorId: uuid("configurator_id").notNull().references(() => commissioningConfigurators.id, { onDelete: 'cascade' }),
   functionId: uuid("function_id").notNull().references(() => commissioningFunctions.id, { onDelete: 'cascade' }),
+  
+  // Operazioni da applicare quando la funzione è TRUE
+  // Struttura: { operations: [{ target: 'gettone_contrattuale', operator: 'multiply', value: 0.7 }] }
+  // Targets: gettone_contrattuale, gettone_gara, canone, valenza
+  // Operators: multiply, add, subtract, divide, percentage
+  operations: jsonb("operations").notNull().default({ operations: [] }),
+  
   sortOrder: smallint("sort_order").default(0),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
