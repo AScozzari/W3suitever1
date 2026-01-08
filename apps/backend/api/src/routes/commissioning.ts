@@ -899,11 +899,16 @@ router.put("/value-packages/:id", async (req: Request, res: Response) => {
     const { id } = req.params;
     const { code, name, description, listType, operatorId, validFrom, validTo, status } = req.body;
 
+    // Handle empty strings as null for UUID and date fields
+    const safeOperatorId = operatorId && operatorId.trim() !== '' ? operatorId : null;
+    const safeValidTo = validTo && validTo.trim() !== '' ? validTo : null;
+    const safeValidFrom = validFrom && validFrom.trim() !== '' ? validFrom : null;
+
     const result = await db.execute(sql`
       UPDATE w3suite.commissioning_value_packages SET
-        code = ${code}, name = ${name}, description = ${description},
-        list_type = ${listType}, operator_id = ${operatorId},
-        valid_from = ${validFrom}, valid_to = ${validTo}, status = ${status},
+        code = ${code}, name = ${name}, description = ${description || null},
+        list_type = ${listType}, operator_id = ${safeOperatorId},
+        valid_from = ${safeValidFrom}, valid_to = ${safeValidTo}, status = ${status},
         modified_by = ${userId}, updated_at = NOW()
       WHERE id = ${id} AND tenant_id = ${tenantId}
       RETURNING *
