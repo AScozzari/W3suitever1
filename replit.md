@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, aiming to enhance enterprise value through AI-driven operational efficiency, data-driven insights, and strategic decision-making. The platform provides a unified ecosystem with advanced capabilities such as workflow automation, intelligent routing, and AI agent assistance.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, aiming to enhance enterprise value through AI-driven operational efficiency, data-driven insights, and strategic decision-making. The business vision is to become the leading AI-native operating system for enterprises, offering unparalleled optimization and strategic advantage in a competitive market.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -182,7 +182,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - PostgreSQL
 - Redis
 - OAuth2/OIDC Enterprise
-- SHADCN/UI
+- shadcn/ui
 - Radix UI
 - Lucide React
 - TanStack React Query

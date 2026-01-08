@@ -316,7 +316,7 @@ router.get("/entities", async (req: Request, res: Response) => {
         // Ragioni Sociali - organization entities for the tenant
         result = await db.execute(sql`
           SELECT id, nome as name FROM w3suite.organization_entities 
-          WHERE tenant_id = ${tenantId} AND is_active = true
+          WHERE tenant_id = ${tenantId} AND stato = 'Attiva'
           ORDER BY nome
         `);
         break;
