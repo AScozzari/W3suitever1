@@ -8,11 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search, Edit, Trash2, MoreHorizontal, Play, Pause, Zap, GitBranch, Layers, FunctionSquare } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Edit, Trash2, MoreHorizontal, Zap, GitBranch, Layers, FunctionSquare, Pause, Play, Archive, AlertTriangle, Calendar } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 interface CommissioningFunction {
   id: string;
@@ -24,7 +27,11 @@ interface CommissioningFunction {
   rule_bundle: Record<string, any>;
   depends_on: string[] | null;
   is_active: boolean;
+  status: 'active' | 'suspended' | 'archived';
   sort_order: number;
+  created_at: string;
+  updated_at: string;
+  usedVariables?: string[];
 }
 
 interface TargetVariable {
@@ -42,7 +49,13 @@ const evalModeLabels: Record<string, { label: string; icon: typeof Zap; color: s
 export default function FunctionsSection() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [functionToDelete, setFunctionToDelete] = useState<CommissioningFunction | null>(null);
   const [editingFunction, setEditingFunction] = useState<CommissioningFunction | null>(null);
   const [formData, setFormData] = useState({
     code: '',
@@ -55,8 +68,23 @@ export default function FunctionsSection() {
     isActive: true,
   });
 
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.append('search', searchTerm);
+    if (dateFrom) params.append('dateFrom', dateFrom);
+    if (dateTo) params.append('dateTo', dateTo);
+    if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+    return params.toString();
+  }, [searchTerm, dateFrom, dateTo, statusFilter]);
+
   const { data: functions = [], isLoading } = useQuery<CommissioningFunction[]>({
-    queryKey: ['/api/commissioning/functions'],
+    queryKey: ['/api/commissioning/functions', queryParams],
+    queryFn: async () => {
+      const url = queryParams ? `/api/commissioning/functions?${queryParams}` : '/api/commissioning/functions';
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch functions');
+      return res.json();
+    },
   });
 
   const { data: targetVariables = [] } = useQuery<TargetVariable[]>({
@@ -92,20 +120,27 @@ export default function FunctionsSection() {
     mutationFn: (id: string) => apiRequest(`/api/commissioning/functions/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/commissioning/functions'] });
+      setDeleteModalOpen(false);
+      setDeleteConfirmText('');
+      setFunctionToDelete(null);
       toast({ title: 'Funzione eliminata' });
     },
+    onError: () => toast({ title: 'Errore', description: 'Impossibile eliminare la funzione', variant: 'destructive' }),
   });
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => 
-      apiRequest(`/api/commissioning/functions/${id}`, { 
-        method: 'PUT', 
-        body: JSON.stringify({ isActive }), 
+  const statusMutation = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'activate' | 'suspend' | 'archive' }) => 
+      apiRequest(`/api/commissioning/functions/${id}/status`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ action }), 
         headers: { 'Content-Type': 'application/json' } 
       }),
-    onSuccess: () => {
+    onSuccess: (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/commissioning/functions'] });
+      const actionLabels = { activate: 'attivata', suspend: 'sospesa', archive: 'archiviata' };
+      toast({ title: `Funzione ${actionLabels[action]}` });
     },
+    onError: () => toast({ title: 'Errore', description: 'Impossibile aggiornare lo stato', variant: 'destructive' }),
   });
 
   const resetForm = () => {
@@ -128,6 +163,17 @@ export default function FunctionsSection() {
     setModalOpen(true);
   };
 
+  const openDeleteConfirm = (fn: CommissioningFunction) => {
+    setFunctionToDelete(fn);
+    setDeleteConfirmText('');
+    setDeleteModalOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (deleteConfirmText !== 'ELIMINA' || !functionToDelete) return;
+    deleteMutation.mutate(functionToDelete.id);
+  };
+
   const handleSubmit = () => {
     if (!formData.code || !formData.name || !formData.targetVariable) {
       toast({ title: 'Errore', description: 'Codice, nome e variabile target sono obbligatori', variant: 'destructive' });
@@ -140,96 +186,234 @@ export default function FunctionsSection() {
     }
   };
 
-  const filteredFunctions = useMemo(() => {
-    if (!searchTerm) return functions;
-    const lower = searchTerm.toLowerCase();
-    return functions.filter(f => f.name.toLowerCase().includes(lower) || f.code.toLowerCase().includes(lower));
-  }, [functions, searchTerm]);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDateFrom('');
+    setDateTo('');
+    setStatusFilter('all');
+  };
+
+  const hasFilters = searchTerm || dateFrom || dateTo || statusFilter !== 'all';
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      {/* Filters Row */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[12.5rem] max-w-[18.75rem]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input placeholder="Cerca funzioni..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" data-testid="input-search-functions" />
+          <Input 
+            placeholder="Cerca codice, descrizione, variabili..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="pl-10" 
+            data-testid="input-search-functions" 
+          />
         </div>
-        <Button onClick={() => { resetForm(); setModalOpen(true); }} className="flex items-center gap-2" style={{ background: 'hsl(var(--brand-orange))' }} data-testid="button-nuova-funzione">
-          <Plus className="h-4 w-4" /> Nuova Funzione
-        </Button>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2" data-testid="button-date-filter">
+              <Calendar className="h-4 w-4" />
+              {dateFrom || dateTo ? `${dateFrom || '...'} - ${dateTo || '...'}` : 'Filtra per data'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-4" align="start">
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Data creazione da</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="mt-1" data-testid="input-date-from" />
+              </div>
+              <div>
+                <Label className="text-xs">Data creazione a</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="mt-1" data-testid="input-date-to" />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[9.375rem]" data-testid="select-status-filter">
+            <SelectValue placeholder="Stato" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti gli stati</SelectItem>
+            <SelectItem value="active">Attive</SelectItem>
+            <SelectItem value="suspended">Sospese</SelectItem>
+            <SelectItem value="archived">Archiviate</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-gray-500" data-testid="button-clear-filters">
+            Azzera filtri
+          </Button>
+        )}
+
+        <div className="ml-auto">
+          <Button onClick={() => { resetForm(); setModalOpen(true); }} className="flex items-center gap-2" style={{ background: 'hsl(var(--brand-orange))' }} data-testid="button-nuova-funzione">
+            <Plus className="h-4 w-4" /> Nuova Funzione
+          </Button>
+        </div>
       </div>
 
+      {/* DataTable */}
       {isLoading ? (
         <div className="h-48 flex items-center justify-center text-gray-400">Caricamento...</div>
-      ) : filteredFunctions.length === 0 ? (
+      ) : functions.length === 0 ? (
         <div className="h-48 flex items-center justify-center border rounded-lg bg-gray-50">
           <div className="text-center text-gray-400">
             <FunctionSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Nessuna funzione configurata</p>
-            <p className="text-sm">Crea funzioni per modificare valenze e gettoni in base a condizioni</p>
+            <p className="font-medium">Nessuna funzione trovata</p>
+            <p className="text-sm">{hasFilters ? 'Prova a modificare i filtri' : 'Crea funzioni per modificare valenze e gettoni'}</p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredFunctions.map((fn) => {
-            const evalMode = evalModeLabels[fn.evaluation_mode];
-            const Icon = evalMode?.icon || Zap;
-            const targetVar = targetVariables.find(t => t.code === fn.target_variable);
-            return (
-              <Card key={fn.id} className={`border transition-colors ${fn.is_active ? 'hover:border-gray-300' : 'opacity-60 bg-gray-50'}`} data-testid={`card-function-${fn.id}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded ${fn.is_active ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        <FunctionSquare className={`h-4 w-4 ${fn.is_active ? 'text-green-600' : 'text-gray-400'}`} />
-                      </div>
-                      <code className="text-xs font-mono text-gray-500">{fn.code}</code>
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50/80">
+                <TableHead className="w-[9.375rem]">Codice</TableHead>
+                <TableHead>Descrizione</TableHead>
+                <TableHead className="w-[8.125rem]">Data Creazione</TableHead>
+                <TableHead className="w-[15.625rem]">Variabili Utilizzate</TableHead>
+                <TableHead className="w-[6.25rem] text-center">Stato</TableHead>
+                <TableHead className="w-[5rem] text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {functions.map((fn) => (
+                <TableRow key={fn.id} className={fn.status !== 'active' ? 'bg-gray-50/50' : ''} data-testid={`row-function-${fn.id}`}>
+                  <TableCell>
+                    <code className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded">{fn.code}</code>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium text-gray-900">{fn.name}</div>
+                      {fn.description && (
+                        <div className="text-sm text-gray-500 line-clamp-1">{fn.description}</div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        checked={fn.is_active} 
-                        onCheckedChange={(checked) => toggleActiveMutation.mutate({ id: fn.id, isActive: checked })}
-                        data-testid={`toggle-function-${fn.id}`}
-                      />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`actions-function-${fn.id}`}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(fn)} data-testid="action-edit-function">
-                            <Edit className="h-4 w-4 mr-2" /> Modifica
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={() => deleteMutation.mutate(fn.id)} data-testid="action-delete-function">
-                            <Trash2 className="h-4 w-4 mr-2" /> Elimina
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {fn.created_at ? format(new Date(fn.created_at), 'dd MMM yyyy', { locale: it }) : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(fn.usedVariables || []).slice(0, 3).map((v) => (
+                        <Badge key={v} variant="outline" className="text-xs font-mono">
+                          @{v}
+                        </Badge>
+                      ))}
+                      {(fn.usedVariables || []).length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{fn.usedVariables!.length - 3}
+                        </Badge>
+                      )}
+                      {(!fn.usedVariables || fn.usedVariables.length === 0) && (
+                        <span className="text-xs text-gray-400 italic">Nessuna variabile</span>
+                      )}
                     </div>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{fn.name}</h3>
-                  {fn.description && <p className="text-sm text-gray-500 mb-3 line-clamp-2">{fn.description}</p>}
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className={`${evalMode?.color || 'bg-gray-100'} border-0 text-xs flex items-center gap-1`}>
-                      <Icon className="h-3 w-3" /> {evalMode?.label}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Target: {targetVar?.name || fn.target_variable}
-                    </Badge>
-                    {fn.rule_bundle && Object.keys(fn.rule_bundle).length > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {Object.keys(fn.rule_bundle).length} regole
-                      </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {fn.status === 'active' && (
+                      <Badge className="bg-green-100 text-green-700 border-0">Attiva</Badge>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    {fn.status === 'suspended' && (
+                      <Badge className="bg-yellow-100 text-yellow-700 border-0">Sospesa</Badge>
+                    )}
+                    {fn.status === 'archived' && (
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600">Archiviata</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`actions-function-${fn.id}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(fn)} data-testid="action-edit-function">
+                          <Edit className="h-4 w-4 mr-2" /> Modifica
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {fn.status === 'active' && (
+                          <>
+                            <DropdownMenuItem onClick={() => statusMutation.mutate({ id: fn.id, action: 'suspend' })} data-testid="action-suspend-function">
+                              <Pause className="h-4 w-4 mr-2" /> Sospendi
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => statusMutation.mutate({ id: fn.id, action: 'archive' })} data-testid="action-archive-function">
+                              <Archive className="h-4 w-4 mr-2" /> Archivia
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {fn.status === 'suspended' && (
+                          <>
+                            <DropdownMenuItem onClick={() => statusMutation.mutate({ id: fn.id, action: 'activate' })} data-testid="action-activate-function">
+                              <Play className="h-4 w-4 mr-2" /> Attiva
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => statusMutation.mutate({ id: fn.id, action: 'archive' })} data-testid="action-archive-function">
+                              <Archive className="h-4 w-4 mr-2" /> Archivia
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {fn.status === 'archived' && (
+                          <DropdownMenuItem onClick={() => statusMutation.mutate({ id: fn.id, action: 'activate' })} data-testid="action-activate-function">
+                            <Play className="h-4 w-4 mr-2" /> Riattiva
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600" onClick={() => openDeleteConfirm(fn)} data-testid="action-delete-function">
+                          <Trash2 className="h-4 w-4 mr-2" /> Elimina
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={(open) => { if (!open) { setDeleteModalOpen(false); setDeleteConfirmText(''); setFunctionToDelete(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Conferma Eliminazione
+            </DialogTitle>
+            <DialogDescription>
+              Stai per eliminare definitivamente la funzione <strong className="text-gray-900">{functionToDelete?.name}</strong> ({functionToDelete?.code}).
+              Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="text-sm">Scrivi <span className="font-mono font-bold">ELIMINA</span> per confermare:</Label>
+            <Input 
+              value={deleteConfirmText} 
+              onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())} 
+              placeholder="ELIMINA"
+              className="mt-2"
+              data-testid="input-delete-confirm"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>Annulla</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={deleteConfirmText !== 'ELIMINA' || deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? 'Eliminazione...' : 'Elimina Definitivamente'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit/Create Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -286,7 +470,7 @@ export default function FunctionsSection() {
             <div className="border-t pt-4">
               <Label className="text-base font-medium">Regole (Rule Builder)</Label>
               <p className="text-sm text-gray-500 mb-3">Definisci condizioni IF/THEN usando variabili L1 (@placeholder)</p>
-              <div className="bg-gray-50 border rounded-lg p-4 min-h-[120px] flex items-center justify-center">
+              <div className="bg-gray-50 border rounded-lg p-4 min-h-[7.5rem] flex items-center justify-center">
                 <div className="text-center text-gray-400">
                   <Zap className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Rule Builder visuale in sviluppo</p>

@@ -1311,19 +1311,15 @@ router.get("/functions", async (req: Request, res: Response) => {
     }
     
     // Status filter: active, suspended, archived
-    if (status && typeof status === 'string') {
-      if (status === 'active') {
-        conditions = sql`${conditions} AND is_active = true`;
-      } else if (status === 'suspended' || status === 'archived') {
-        conditions = sql`${conditions} AND is_active = false`;
-      }
+    if (status && typeof status === 'string' && ['active', 'suspended', 'archived'].includes(status)) {
+      conditions = sql`${conditions} AND status = ${status}`;
     }
 
     const result = await db.execute(sql`
       SELECT 
         id, tenant_id, code, name, description, 
         evaluation_mode, target_variable, rule_bundle,
-        depends_on, sort_order, is_active,
+        depends_on, sort_order, is_active, status,
         created_by, modified_by, created_at, updated_at
       FROM w3suite.commissioning_functions
       WHERE ${conditions}
@@ -1445,11 +1441,19 @@ router.patch("/functions/:id/status", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid action. Use 'activate', 'suspend', or 'archive'" });
     }
 
+    // Map action to status value
+    const statusMap: Record<string, string> = {
+      activate: 'active',
+      suspend: 'suspended',
+      archive: 'archived',
+    };
+    const newStatus = statusMap[action];
     const isActive = action === 'activate';
 
     const result = await db.execute(sql`
       UPDATE w3suite.commissioning_functions SET
         is_active = ${isActive},
+        status = ${newStatus},
         modified_by = ${userId},
         updated_at = NOW()
       WHERE id = ${id} AND tenant_id = ${tenantId}

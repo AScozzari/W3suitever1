@@ -12088,6 +12088,10 @@ export const commissioningFunctionEvalModeEnum = pgEnum('commissioning_function_
   'first_match', 'accumulate', 'weighted_average'
 ]);
 
+export const commissioningFunctionStatusEnum = pgEnum('commissioning_function_status', [
+  'active', 'suspended', 'archived'
+]);
+
 export const commissioningFunctions = w3suiteSchema.table("commissioning_functions", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = brand-pushed
@@ -12110,6 +12114,7 @@ export const commissioningFunctions = w3suiteSchema.table("commissioning_functio
   
   sortOrder: smallint("sort_order").default(0),
   isActive: boolean("is_active").default(true).notNull(),
+  status: commissioningFunctionStatusEnum("status").default('active').notNull(),
   createdBy: varchar("created_by").references(() => users.id),
   modifiedBy: varchar("modified_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
