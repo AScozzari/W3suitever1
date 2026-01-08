@@ -1076,8 +1076,12 @@ router.get("/value-packages/:packageId/price-lists", async (req: Request, res: R
 
     const result = await db.execute(sql`
       SELECT vppl.*, pl.code as price_list_code, pl.name as price_list_name, pl.type as price_list_type,
-        (SELECT COUNT(*) FROM w3suite.commissioning_value_package_items 
-         WHERE package_id = ${packageId} AND price_list_id = pl.id) as items_count
+        (SELECT COUNT(*)::int FROM w3suite.commissioning_value_package_items 
+         WHERE package_id = ${packageId} AND price_list_id = pl.id) as items_count,
+        CASE 
+          WHEN pl.type = 'canvas' THEN (SELECT COUNT(*)::int FROM w3suite.price_list_items_canvas WHERE price_list_id = pl.id AND is_active = true)
+          ELSE (SELECT COUNT(*)::int FROM w3suite.price_list_items WHERE price_list_id = pl.id AND is_active = true)
+        END as total_products
       FROM w3suite.commissioning_value_package_price_lists vppl
       JOIN w3suite.price_lists pl ON pl.id = vppl.price_list_id
       WHERE vppl.package_id = ${packageId}

@@ -1,0 +1,67 @@
+Nuovo Pacchetto Commissioning
+Configura i valori commissioning per i prodotti dei listini selezionati
+
+Dati Base
+Selezione Listini
+Valori Prodotti
+
+Listino 1
+0
+
+Listino 2
+0
+
+Listino 3
+0
+
+Listino 4
+0
+Prodotto SKU Valenza Gett. Contratt. Gett. Gara
+Nessun prodotto nel listino
+Prodotto SKU Valenza Gett. Contratt. Gett. Gara
+Nessun prodotto nel listino
+Prodotto SKU Valenza Gett. Contratt. Gett. Gara
+Nessun prodotto nel listino
+Prodotto SKU Valenza Gett. Contratt. Gett. Gara
+Nessun prodotto nel listino
+Indietro
+Annulla
+Salva e in questo step io dovre avere elenco dei prodotti del listino selezionato e matteri i valo nelle velle della specifica variabile quando ho finallizzato tutti proddoti posso salvare e torno allo step precedente e selezionare un altro listino acc nello step di seleziona il listino accanto ho un tab alert rosso nessun prodotto completato , arancione parziale , verde completo!!!!!!! quando voglio chiedere il pacchetto valenze clicco su salva pacchetto in questo step e crea riga in db solo in quel momento non so se sono stato chiaro?
+
+nello step 3 valori prodotti del listino selezionato sono valenza, gettone contrattuale, gettone gara , canone ( che eredito in caso di prodotto canvass ma posso override)
+
+Indicatori colorati sui tab:
+🔴 Rosso = nessun valore inserito
+🟠 Arancione = parzialmente completato
+🟢 Verde = tutti i prodotti completati questi accanto al listino selezionato per campire se tutti i prodotti interni hanno valori delle variabili inseriti
+
+mi spieghi i tab dopo la scritta " selezionati "cosa indicano e a cosa servono?
+
+il clicca sul listino non funziona non te lo fa selezionare poi c'è un listino solo e dice 3!!!
+
+i listini canvas deve prendere solo quelli canvas non canvass device!!!!! poi i tipi di listini quando seleziono prodotti appaiono standard, promo e nno promo , ma da quale tabella sta leggendo noi abbiamo solo standard e Promo Listino Base
+Prodotti fisici, virtuali e servizi a prezzo standard senza promozioni
+
+Listino Canvas
+Solo prodotti Canvas (abbonamenti) con canone mensile
+
+Listino Promo
+Dispositivi con prezzo promozionale che generano informazioni contabili
+
+Promo Canvas Device
+Bundle: dispositivo fisico abbinato a offerta Canvas con rate ( promo canvas device non sono da prendere in considerazione per ora
+
+si promo canvass non esiste vanno eliminati i riferimenti esiste canvas o promo vcanvas device dove c' promo canvas va eliminato come tipologia e quelo presente abbinato a canvas
+
+Chiaro! Riassumo:
+
+Tipi listino validi:
+
+canvas - Offerte Canvas (canone)
+standard - Prodotti fisici/virtuali
+promo - Dispositivi promo
+promo_canvas_device - Bundle (ignorare per ora)
+Da fare:
+
+Cambiare il listino esistente da promo_canvas → canvas
+Rimuovere promo_canvas dal codice

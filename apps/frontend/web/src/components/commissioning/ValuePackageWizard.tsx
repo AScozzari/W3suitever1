@@ -51,6 +51,21 @@ interface PackagePriceList {
   price_list_name: string;
   price_list_type: string;
   items_count: number;
+  total_products: number;
+}
+
+// Calculate completion status for price list tab badge
+function getCompletionStatus(itemsCount: number, totalProducts: number): { color: string; icon: string; label: string } {
+  if (totalProducts === 0) {
+    return { color: 'bg-gray-200 text-gray-500', icon: '○', label: 'Vuoto' };
+  }
+  if (itemsCount === 0) {
+    return { color: 'bg-red-100 text-red-600', icon: '○', label: 'Da configurare' };
+  }
+  if (itemsCount >= totalProducts) {
+    return { color: 'bg-green-100 text-green-600', icon: '●', label: 'Completo' };
+  }
+  return { color: 'bg-orange-100 text-orange-600', icon: '◐', label: 'Parziale' };
 }
 
 interface ProductItem {
@@ -191,10 +206,12 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
 
       // Category filter
       if (categoryFilter === 'canvas') {
-        if (!['canvas', 'promo_canvas'].includes(pl.type)) return false;
+        // Solo listini canvas (escludi promo_canvas_device)
+        if (pl.type !== 'canvas') return false;
         if (operatorFilter && pl.operatorId !== operatorFilter) return false;
       } else {
-        if (['canvas', 'promo_canvas'].includes(pl.type)) return false;
+        // Solo listini prodotti: standard e promo
+        if (!['standard', 'promo'].includes(pl.type)) return false;
         if (supplierFilter && (!pl.supplierIds || !pl.supplierIds.includes(supplierFilter))) return false;
         if (typeFilter !== 'all' && pl.type !== typeFilter) return false;
       }
@@ -284,7 +301,11 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   };
 
   const handleTogglePriceList = useCallback((priceListId: string) => {
-    if (!packageId || !priceListId) return;
+    if (!priceListId) return;
+    if (!packageId) {
+      toast({ title: 'Attenzione', description: 'Prima salva i dati base (Step 1)', variant: 'destructive' });
+      return;
+    }
 
     const isSelected = packagePriceLists.some(pl => pl.price_list_id === priceListId);
     if (isSelected) {
@@ -292,7 +313,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
     } else {
       addPriceListMutation.mutate({ packageId, priceListId });
     }
-  }, [packageId, packagePriceLists, addPriceListMutation, removePriceListMutation]);
+  }, [packageId, packagePriceLists, addPriceListMutation, removePriceListMutation, toast]);
 
   const handleStep2Next = () => {
     if (packagePriceLists.length === 0) {
@@ -546,7 +567,6 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                               <SelectItem value="all">Tutti</SelectItem>
                               <SelectItem value="standard">Standard</SelectItem>
                               <SelectItem value="promo">Promo</SelectItem>
-                              <SelectItem value="no_promo">No Promo</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -657,21 +677,27 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               ) : (
                 <Tabs value={activeListTab} onValueChange={setActiveListTab}>
                   <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1 bg-gray-100 rounded-lg">
-                    {packagePriceLists.map((pl, idx) => (
-                      <TabsTrigger 
-                        key={pl.price_list_id || `tab-${idx}`} 
-                        value={pl.price_list_id}
-                        className="bg-white border border-gray-200 data-[state=active]:bg-orange-100 data-[state=active]:border-orange-300 data-[state=active]:text-orange-800 text-gray-700 flex items-center gap-2 px-3 py-1.5 rounded-md"
-                      >
-                        <span className="font-medium">{pl.price_list_name || `Listino ${idx + 1}`}</span>
-                        <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
-                          {pl.items_count || 0}
-                        </Badge>
-                        {pendingChanges[pl.price_list_id] && (
-                          <span className="w-2 h-2 bg-orange-500 rounded-full" />
-                        )}
-                      </TabsTrigger>
-                    ))}
+                    {packagePriceLists.map((pl, idx) => {
+                      const itemsCount = Number(pl.items_count) || 0;
+                      const totalProducts = Number(pl.total_products) || 0;
+                      const status = getCompletionStatus(itemsCount, totalProducts);
+                      return (
+                        <TabsTrigger 
+                          key={pl.price_list_id || `tab-${idx}`} 
+                          value={pl.price_list_id}
+                          className="bg-white border border-gray-200 data-[state=active]:bg-orange-100 data-[state=active]:border-orange-300 data-[state=active]:text-orange-800 text-gray-700 flex items-center gap-2 px-3 py-1.5 rounded-md"
+                          title={`${status.label}: ${itemsCount}/${totalProducts} prodotti configurati`}
+                        >
+                          <span className="font-medium">{pl.price_list_name || `Listino ${idx + 1}`}</span>
+                          <Badge variant="secondary" className={`text-xs ${status.color}`}>
+                            {status.icon} {itemsCount}/{totalProducts}
+                          </Badge>
+                          {pendingChanges[pl.price_list_id] && (
+                            <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                          )}
+                        </TabsTrigger>
+                      );
+                    })}
                   </TabsList>
                   
                   {packagePriceLists.map((pl, idx) => (
@@ -762,10 +788,12 @@ interface ProductGridProps {
 }
 
 function ProductGrid({ packageId, priceListId, priceListType, pendingChanges, onChangesUpdate }: ProductGridProps) {
-  const isCanvas = priceListType === 'canvas' || priceListType === 'promo_canvas';
+  const isCanvas = priceListType === 'canvas';
 
   const { data: productsData, isLoading } = useQuery<{ priceListType: string; isCanvas: boolean; products: ProductItem[] }>({
     queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists', priceListId, 'products'],
+    queryFn: () => apiRequest(`/api/commissioning/value-packages/${packageId}/price-lists/${priceListId}/products`),
+    enabled: !!packageId && !!priceListId,
   });
 
   const products = productsData?.products || [];
