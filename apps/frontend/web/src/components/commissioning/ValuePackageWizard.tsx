@@ -813,11 +813,22 @@ function ProductGrid({ packageId, priceListId, priceListType, pendingChanges, on
     });
   }, [pendingChanges, onChangesUpdate]);
 
-  const getDisplayValue = useCallback((product: ProductItem, field: keyof ProductItem) => {
+  const getDisplayValue = useCallback((product: ProductItem, field: keyof ProductItem): string | number | null | undefined => {
     if (pendingChanges[product.product_id]?.[field] !== undefined) {
-      return pendingChanges[product.product_id][field];
+      const val = pendingChanges[product.product_id][field];
+      if (typeof val === 'boolean') return undefined;
+      return val as string | number | null | undefined;
     }
-    return product[field];
+    const val = product[field];
+    if (typeof val === 'boolean') return undefined;
+    return val as string | number | null | undefined;
+  }, [pendingChanges]);
+  
+  const getDisplayBoolean = useCallback((product: ProductItem, field: keyof ProductItem): boolean => {
+    if (pendingChanges[product.product_id]?.[field] !== undefined) {
+      return !!pendingChanges[product.product_id][field];
+    }
+    return !!product[field];
   }, [pendingChanges]);
 
   if (isLoading) {
@@ -909,14 +920,14 @@ function ProductGrid({ packageId, priceListId, priceListType, pendingChanges, on
                         {product.canone_listino && (
                           <Badge 
                             variant="outline" 
-                            className={`text-xs cursor-pointer ${getDisplayValue(product, 'canone_inherited') ? 'bg-green-50 text-green-700' : 'bg-gray-50'}`}
+                            className={`text-xs cursor-pointer ${getDisplayBoolean(product, 'canone_inherited') ? 'bg-green-50 text-green-700' : 'bg-gray-50'}`}
                             onClick={() => {
                               handleValueChange(product.product_id, 'canone_inherited', true);
                               handleValueChange(product.product_id, 'canone_override', null);
                             }}
                             title="Eredita dal listino"
                           >
-                            {getDisplayValue(product, 'canone_inherited') ? '✓' : '↩'}
+                            {getDisplayBoolean(product, 'canone_inherited') ? '✓' : '↩'}
                           </Badge>
                         )}
                       </div>
