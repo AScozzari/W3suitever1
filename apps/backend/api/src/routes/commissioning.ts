@@ -1672,4 +1672,64 @@ router.put("/configurators/:configuratorId/functions", async (req: Request, res:
   }
 });
 
+// Entities endpoint for clusters - returns entities based on type
+router.get("/entities", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    
+    const { type } = req.query;
+    let result;
+    
+    switch (type) {
+      case 'RS':
+        // Ragioni Sociali - Organization Entities
+        result = await db.execute(sql`
+          SELECT id, nome as name, codice as code
+          FROM w3suite.organization_entities
+          WHERE tenant_id = ${tenantId}
+            AND stato = 'active'
+          ORDER BY nome ASC
+        `);
+        break;
+        
+      case 'PDV':
+        // Punti Vendita - Stores
+        result = await db.execute(sql`
+          SELECT id, nome as name, code
+          FROM w3suite.stores
+          WHERE tenant_id = ${tenantId}
+            AND (status = 'active' OR status = 'Attivo')
+          ORDER BY nome ASC
+        `);
+        break;
+        
+      case 'RISORSA':
+        // Risorse - Users
+        result = await db.execute(sql`
+          SELECT id, COALESCE(first_name || ' ' || last_name, email) as name, email as code
+          FROM w3suite.users
+          WHERE tenant_id = ${tenantId}
+            AND status = 'active'
+          ORDER BY first_name, last_name ASC
+        `);
+        break;
+        
+      default:
+        return res.status(400).json({ error: "Invalid entity type. Must be RS, PDV, or RISORSA" });
+    }
+    
+    const entities = result.rows.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      code: row.code || null,
+    }));
+    
+    res.json(entities);
+  } catch (error) {
+    logger.error("Error fetching entities for clusters", { error, type: req.query.type });
+    res.status(500).json({ error: "Failed to fetch entities" });
+  }
+});
+
 export default router;
