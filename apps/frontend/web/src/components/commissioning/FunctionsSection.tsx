@@ -391,12 +391,12 @@ export default function FunctionsSection() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50/80">
-                <TableHead className="w-[9.375rem]">Codice</TableHead>
-                <TableHead>Descrizione</TableHead>
-                <TableHead className="w-[8.125rem]">Data Creazione</TableHead>
-                <TableHead className="w-[15.625rem]">Variabili Utilizzate</TableHead>
-                <TableHead className="w-[6.25rem] text-center">Stato</TableHead>
-                <TableHead className="w-[5rem] text-right">Azioni</TableHead>
+                <TableHead className="w-[10%]">Codice</TableHead>
+                <TableHead className="w-[35%]">Descrizione</TableHead>
+                <TableHead className="w-[12%]">Data Creazione</TableHead>
+                <TableHead className="w-[23%]">Variabili Utilizzate</TableHead>
+                <TableHead className="w-[10%] text-center">Stato</TableHead>
+                <TableHead className="w-[10%] text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
