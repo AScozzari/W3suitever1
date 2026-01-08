@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search, Edit, Trash2, Function, MoreHorizontal, Play, Pause, Zap, GitBranch, Layers } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MoreHorizontal, Play, Pause, Zap, GitBranch, Layers, FunctionSquare } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -163,7 +163,7 @@ export default function FunctionsSection() {
       ) : filteredFunctions.length === 0 ? (
         <div className="h-48 flex items-center justify-center border rounded-lg bg-gray-50">
           <div className="text-center text-gray-400">
-            <Function className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <FunctionSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Nessuna funzione configurata</p>
             <p className="text-sm">Crea funzioni per modificare valenze e gettoni in base a condizioni</p>
           </div>
@@ -180,7 +180,7 @@ export default function FunctionsSection() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className={`p-1.5 rounded ${fn.is_active ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        <Function className={`h-4 w-4 ${fn.is_active ? 'text-green-600' : 'text-gray-400'}`} />
+                        <FunctionSquare className={`h-4 w-4 ${fn.is_active ? 'text-green-600' : 'text-gray-400'}`} />
                       </div>
                       <code className="text-xs font-mono text-gray-500">{fn.code}</code>
                     </div>
@@ -289,7 +289,7 @@ export default function FunctionsSection() {
                 <div className="text-center text-gray-400">
                   <Zap className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Rule Builder visuale in sviluppo</p>
-                  <p className="text-xs">Usa operatori: IF, THEN, >, &lt;, =, ×, +%, -%, AND, OR</p>
+                  <p className="text-xs">Usa operatori: IF, THEN, &gt;, &lt;, =, ×, +%, -%, AND, OR</p>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">

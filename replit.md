@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules like CRM, POS, WMS, Analytics, HR, and CMS to boost operational efficiency, deliver data-driven insights, and support strategic decision-making through advanced AI. The platform aims to be a comprehensive enterprise solution, leveraging AI to drive business value and improve overall organizational effectiveness.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging AI for enhanced operational efficiency, data-driven insights, and strategic decision-making. The platform aims to be a comprehensive solution for increasing enterprise value and organizational effectiveness.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -158,25 +158,25 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: Employs a Glassmorphism design with consistent headers, sidebars, and white backgrounds. It leverages `shadcn/ui` (built on Radix UI for accessibility) and Tailwind CSS. UI scaling uses `VITE_FONT_SCALE=80` and strictly enforces `rem` units for responsive design.
+- **UI/UX Decisions**: Utilizes a Glassmorphism design, consistent headers, sidebars, and white backgrounds. It's built with `shadcn/ui` (Radix UI for accessibility) and Tailwind CSS. UI scaling uses `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL, utilizing a 3-schema architecture (`w3suite`, `public`, `brand_interface`) with Row Level Security (RLS) managed by `app.tenant_id`.
-    - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage with RLS.
-    - **AI Integration**: Incorporates AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
-    - **CRM Module**: Focuses on person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
-    - **HR Module**: Manages shift schedules, leave requests, and time tracking.
+    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) managed by `app.tenant_id`.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), AI Voice Agent with RAG, and multi-tenant object storage.
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
+    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
+    - **HR Module**: Shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
-    - **Brand Interface**: Provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface, using `action_definitions` as the single source of truth for all actions.
-    - **User Scope**: `user_stores` is the single source of truth for user scope, with organization entities automatically derived.
+    - **Brand Interface**: Workflow Builder and a Git-versioned JSON-based Master Catalog System.
+    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface using `action_definitions` as the single source of truth.
+    - **User Scope**: `user_stores` is the single source of truth, with organization entities automatically derived.
     - **Italian Business Validation**: Comprehensive validation for Italian business data (email, PEC, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, addresses) with real-time feedback and Zod schemas.
 - **System Design Choices**:
-    - **Organizational Hierarchy**: Utilizes a pyramidal scoping model: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
-    - **Cross-Store Architecture**: Allows tenant-wide data views with role-based access and optional filtering.
-    - **Request Routing**: Employs "Functional First → First Wins" for team task assignment and "Shift-Based Routing."
-    - **Action Management System**: Centralized configuration via `action_definitions`, with routing handled by the `UnifiedTriggerService`.
-    - **Deployment & Governance**: Features an incremental VPS deployment to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access is secured with `deploy/keys/vps_key`. The `w3suite_prod` database is accessed via a local socket. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
+    - **Organizational Hierarchy**: Pyramidal scoping: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
+    - **Cross-Store Architecture**: Tenant-wide data views with role-based access and optional filtering.
+    - **Request Routing**: "Functional First → First Wins" for task assignment and "Shift-Based Routing."
+    - **Action Management System**: Centralized configuration via `action_definitions`, with routing by `UnifiedTriggerService`.
+    - **Deployment & Governance**: Incremental VPS deployment to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access via `deploy/keys/vps_key`. `w3suite_prod` database accessed via local socket. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
 
 # External Dependencies
 - PostgreSQL
