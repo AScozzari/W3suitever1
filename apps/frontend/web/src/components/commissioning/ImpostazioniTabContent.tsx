@@ -42,6 +42,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Settings,
   Bell,
@@ -61,8 +62,14 @@ import {
   Store,
   Building,
   User,
+  AtSign,
+  Package,
+  Function,
 } from 'lucide-react';
 import ClusterFormModal from './ClusterFormModal';
+import VariableMappingsSection from './VariableMappingsSection';
+import ValuePackagesSection from './ValuePackagesSection';
+import FunctionsSection from './FunctionsSection';
 
 interface Cluster {
   id: string;
@@ -406,22 +413,47 @@ export default function ImpostazioniTabContent() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="rules" className="border rounded-lg bg-white">
+        <AccordionItem value="commissioning-system" className="border rounded-lg bg-white">
           <AccordionTrigger className="px-4 hover:no-underline">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100">
                 <Calculator className="h-5 w-5 text-blue-600" />
               </div>
               <div className="text-left">
-                <div className="font-semibold text-gray-900">Regole Calcolo Commissioni</div>
-                <div className="text-sm text-gray-500 font-normal">Definisci come vengono calcolate le commissioni</div>
+                <div className="font-semibold text-gray-900">Sistema Commissioning</div>
+                <div className="text-sm text-gray-500 font-normal">Variabili, Pacchetti e Funzioni per il calcolo commissioni</div>
               </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4">
-            <div className="h-32 flex items-center justify-center border rounded-lg bg-gray-50">
-              <p className="text-gray-400">Configurazione in arrivo...</p>
-            </div>
+            <Tabs defaultValue="variables" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="variables" className="flex items-center gap-2" data-testid="tab-mapping-variabili">
+                  <AtSign className="h-4 w-4" />
+                  <span className="hidden sm:inline">Mapping Variabili</span>
+                  <span className="sm:hidden">L1</span>
+                </TabsTrigger>
+                <TabsTrigger value="packages" className="flex items-center gap-2" data-testid="tab-pacchetto-commissioning">
+                  <Package className="h-4 w-4" />
+                  <span className="hidden sm:inline">Pacchetto Commissioning</span>
+                  <span className="sm:hidden">L2</span>
+                </TabsTrigger>
+                <TabsTrigger value="functions" className="flex items-center gap-2" data-testid="tab-funzioni">
+                  <Function className="h-4 w-4" />
+                  <span className="hidden sm:inline">Funzioni</span>
+                  <span className="sm:hidden">L3</span>
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="variables">
+                <VariableMappingsSection />
+              </TabsContent>
+              <TabsContent value="packages">
+                <ValuePackagesSection />
+              </TabsContent>
+              <TabsContent value="functions">
+                <FunctionsSection />
+              </TabsContent>
+            </Tabs>
           </AccordionContent>
         </AccordionItem>
 
