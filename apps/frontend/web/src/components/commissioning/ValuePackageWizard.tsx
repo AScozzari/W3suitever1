@@ -170,10 +170,9 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
     queryKey: ['/api/wms/suppliers'],
   });
 
-  const { data: priceListsResponse } = useQuery<{ success: boolean; data: PriceList[] }>({
+  const { data: allPriceLists = [] } = useQuery<PriceList[]>({
     queryKey: ['/api/wms/price-lists', { status: 'active' }],
   });
-  const allPriceLists = priceListsResponse?.data || [];
 
   const { data: packagePriceLists = [], refetch: refetchPackageLists } = useQuery<PackagePriceList[]>({
     queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists'],
