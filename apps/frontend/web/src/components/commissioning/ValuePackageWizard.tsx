@@ -422,6 +422,37 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <Label>Tipo Listino *</Label>
+                  <Select value={formData.listType} onValueChange={(v) => setFormData(f => ({ ...f, listType: v }))}>
+                    <SelectTrigger data-testid="select-list-type">
+                      <SelectValue placeholder="Seleziona tipo listino" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {listTypeOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Operatore</Label>
+                  <Select value={formData.operatorId || '_none'} onValueChange={(v) => setFormData(f => ({ ...f, operatorId: v === '_none' ? '' : v }))}>
+                    <SelectTrigger data-testid="select-operator">
+                      <SelectValue placeholder="Seleziona operatore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">Nessuno</SelectItem>
+                      {operators.map(op => (
+                        <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label>Valido Dal *</Label>
                   <Input 
                     type="date" 
@@ -625,14 +656,14 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                 </div>
               ) : (
                 <Tabs value={activeListTab} onValueChange={setActiveListTab}>
-                  <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1 bg-gray-100">
+                  <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1 bg-gray-100 rounded-lg">
                     {packagePriceLists.map((pl, idx) => (
                       <TabsTrigger 
                         key={pl.price_list_id || `tab-${idx}`} 
                         value={pl.price_list_id}
-                        className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-700 flex items-center gap-2"
+                        className="bg-white border border-gray-200 data-[state=active]:bg-orange-100 data-[state=active]:border-orange-300 data-[state=active]:text-orange-800 text-gray-700 flex items-center gap-2 px-3 py-1.5 rounded-md"
                       >
-                        <span>{pl.price_list_name}</span>
+                        <span className="font-medium">{pl.price_list_name || `Listino ${idx + 1}`}</span>
                         <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
                           {pl.items_count || 0}
                         </Badge>
