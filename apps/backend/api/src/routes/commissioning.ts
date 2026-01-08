@@ -299,6 +299,44 @@ router.patch("/races/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Get entities for cluster form based on entity type
+router.get("/entities", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const entityType = (req.query.type as string) || 'PDV';
+    let result;
+
+    switch (entityType) {
+      case 'RS':
+        result = await db.execute(sql`
+          SELECT id, name FROM w3suite.organization_entities WHERE tenant_id = ${tenantId} ORDER BY name
+        `);
+        break;
+      case 'PDV':
+        result = await db.execute(sql`
+          SELECT id, name FROM w3suite.stores WHERE tenant_id = ${tenantId} ORDER BY name
+        `);
+        break;
+      case 'RISORSA':
+        result = await db.execute(sql`
+          SELECT id, CONCAT(first_name, ' ', last_name) as name FROM w3suite.users WHERE tenant_id = ${tenantId} ORDER BY first_name, last_name
+        `);
+        break;
+      default:
+        return res.status(400).json({ error: "Invalid entity type" });
+    }
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching entities", { error });
+    res.status(500).json({ error: "Failed to fetch entities" });
+  }
+});
+
 router.get("/clusters", async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant?.id;

@@ -122,6 +122,11 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
 
   const { data: entities = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['/api/commissioning/entities', entityType],
+    queryFn: async () => {
+      const res = await fetch(`/api/commissioning/entities?type=${entityType}`);
+      if (!res.ok) throw new Error('Failed to fetch entities');
+      return res.json();
+    },
     enabled: open,
   });
 
