@@ -807,11 +807,15 @@ router.post("/value-packages", async (req: Request, res: Response) => {
     }
 
     const { code, name, description, listType, operatorId, validFrom, validTo, status } = req.body;
+    
+    // Handle empty strings as null for date fields
+    const parsedValidFrom = validFrom && validFrom !== '' ? validFrom : null;
+    const parsedValidTo = validTo && validTo !== '' ? validTo : null;
 
     const result = await db.execute(sql`
       INSERT INTO w3suite.commissioning_value_packages 
       (tenant_id, code, name, description, list_type, operator_id, valid_from, valid_to, status, created_by)
-      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${listType}, ${operatorId}, ${validFrom}, ${validTo}, ${status || 'draft'}, ${userId})
+      VALUES (${tenantId}, ${code}, ${name}, ${description || null}, ${listType}, ${operatorId || null}, ${parsedValidFrom}, ${parsedValidTo}, ${status || 'draft'}, ${userId})
       RETURNING *
     `);
 

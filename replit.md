@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, aiming to enhance enterprise value through AI-driven operational efficiency, data-driven insights, and strategic decision-making. The business vision is to become the leading AI-native operating system for enterprises, offering unparalleled optimization and strategic advantage in a competitive market.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging AI for enhanced operational efficiency, data-driven insights, and strategic decision-making. The project's vision is to become the leading AI-native operating system for enterprises, providing unparalleled optimization and a strategic market advantage.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -158,12 +158,12 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: The platform features a Glassmorphism design with consistent headers, sidebars, and white backgrounds. It uses `shadcn/ui` components leveraging Radix UI for accessibility, styled with Tailwind CSS. UI scaling is managed by `VITE_FONT_SCALE=80`, enforcing `rem` units for new developments for responsiveness.
+- **UI/UX Decisions**: The platform utilizes a Glassmorphism design with consistent headers, sidebars, and white backgrounds. It employs `shadcn/ui` components based on Radix UI for accessibility, styled with Tailwind CSS. UI scaling is controlled by `VITE_FONT_SCALE=80`, requiring new developments to exclusively use `rem` units for responsiveness.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) based on `app.tenant_id`.
+    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) managed by `app.tenant_id`.
     - **Security**: Implements OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Includes a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage.
-    - **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
+    - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage.
+    - **AI Integration**: Includes AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
     - **CRM Module**: Supports person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
     - **HR Module**: Manages shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Handles diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
@@ -173,10 +173,10 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Cross-Store Architecture**: Tenant-wide data views with RBA and filtering.
     - **Request Routing**: "Functional First → First Wins" for task assignment and "Shift-Based Routing."
     - **Action Management System**: Centralized configuration via `action_definitions`, routed by `UnifiedTriggerService`.
-    - **MCP Public Gateway**: JSON-RPC 2.0 interface using `action_definitions` as the single source of truth.
-    - **User Scope**: `user_stores` is the single source of truth, deriving organization entities automatically.
+    - **MCP Public Gateway**: JSON-RPC 2.0 interface using `action_definitions` as the single source of truth for actions.
+    - **User Scope**: `user_stores` serves as the single source of truth for user scope, automatically deriving organization entities.
     - **Italian Business Validation**: Comprehensive validation for Italian data types (email, PEC, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, addresses) with real-time feedback, Italian messages, and Zod schemas.
-    - **Deployment & Governance**: Incremental deployment to VPS (`/var/www/w3suite/`) using `./deploy/incremental-deploy.sh`. SSH access via `deploy/keys/vps_key`. Production database `w3suite_prod` accessed via local socket. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
+    - **Deployment & Governance**: Incremental deployment to VPS (`/var/www/w3suite/`) using `./deploy/incremental-deploy.sh`. SSH access is via `deploy/keys/vps_key`. The production database `w3suite_prod` is accessed via local socket. Frontend builds necessitate `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
 
 # External Dependencies
 - PostgreSQL
