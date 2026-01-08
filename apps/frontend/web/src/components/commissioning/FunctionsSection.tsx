@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,63 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Edit, Trash2, MoreHorizontal, Zap, GitBranch, Layers, FunctionSquare, Pause, Play, Archive, AlertTriangle, Calendar } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MoreHorizontal, Zap, GitBranch, Layers, FunctionSquare, Pause, Play, Archive, AlertTriangle, Calendar, X, GripVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+
+// ==================== CONDITION BUILDER TYPES ====================
+interface Condition {
+  variable: string;
+  operator: string;
+  value: string | number | boolean | null;
+  logic: 'AND' | 'OR';
+}
+
+interface RuleBundle {
+  conditions: Condition[];
+}
+
+// Operatori disponibili per le condizioni
+const CONDITION_OPERATORS = [
+  { value: '>', label: 'Maggiore di (>)', symbol: '>' },
+  { value: '<', label: 'Minore di (<)', symbol: '<' },
+  { value: '=', label: 'Uguale a (=)', symbol: '=' },
+  { value: '!=', label: 'Diverso da (≠)', symbol: '≠' },
+  { value: '>=', label: 'Maggiore o uguale (≥)', symbol: '≥' },
+  { value: '<=', label: 'Minore o uguale (≤)', symbol: '≤' },
+  { value: '%+', label: 'Percentuale positiva (%+)', symbol: '%+' },
+  { value: '%-', label: 'Percentuale negativa (%-)', symbol: '%-' },
+  { value: 'contains', label: 'Contiene', symbol: '∈' },
+  { value: 'startsWith', label: 'Inizia con', symbol: '^' },
+  { value: 'isEmpty', label: 'È vuoto', symbol: '∅' },
+  { value: 'isNotEmpty', label: 'Non è vuoto', symbol: '≠∅' },
+];
+
+// Operatori unari che non richiedono un valore
+const UNARY_OPERATORS_LIST = ['isEmpty', 'isNotEmpty'];
+
+// Helper per formattare la formula leggibile
+const formatConditionFormula = (conditions: Condition[]): string => {
+  if (conditions.length === 0) return 'Nessuna condizione definita';
+  
+  return conditions.map((c, idx) => {
+    const op = CONDITION_OPERATORS.find(o => o.value === c.operator);
+    const opSymbol = op?.symbol || c.operator;
+    
+    // Per operatori unari, non mostrare il valore
+    const isUnary = UNARY_OPERATORS_LIST.includes(c.operator);
+    const condStr = isUnary 
+      ? `${c.variable} ${opSymbol}`
+      : `${c.variable} ${opSymbol} ${c.value ?? '?'}`;
+    
+    if (idx === 0) return `IF ${condStr}`;
+    return `${c.logic} ${condStr}`;
+  }).join(' ') + ' → TRUE';
+};
 
 interface CommissioningFunction {
   id: string;
@@ -63,10 +113,55 @@ export default function FunctionsSection() {
     description: '',
     evaluationMode: 'first_match' as string,
     targetVariable: '',
-    ruleBundle: {} as Record<string, any>,
+    ruleBundle: { conditions: [] } as RuleBundle,
     sortOrder: 0,
     isActive: true,
   });
+
+  // Gestione condizioni nel builder
+  const addCondition = useCallback(() => {
+    setFormData(f => ({
+      ...f,
+      ruleBundle: {
+        ...f.ruleBundle,
+        conditions: [
+          ...f.ruleBundle.conditions,
+          { variable: '', operator: '>', value: '', logic: 'AND' as const }
+        ]
+      }
+    }));
+  }, []);
+
+  const UNARY_OPERATORS = ['isEmpty', 'isNotEmpty'];
+  
+  const updateCondition = useCallback((index: number, field: keyof Condition, value: any) => {
+    setFormData(f => ({
+      ...f,
+      ruleBundle: {
+        ...f.ruleBundle,
+        conditions: f.ruleBundle.conditions.map((c, i) => {
+          if (i !== index) return c;
+          
+          // Se l'operatore cambia a unario, resetta il valore a null
+          if (field === 'operator' && UNARY_OPERATORS.includes(value)) {
+            return { ...c, operator: value, value: null };
+          }
+          
+          return { ...c, [field]: value };
+        })
+      }
+    }));
+  }, []);
+
+  const removeCondition = useCallback((index: number) => {
+    setFormData(f => ({
+      ...f,
+      ruleBundle: {
+        ...f.ruleBundle,
+        conditions: f.ruleBundle.conditions.filter((_, i) => i !== index)
+      }
+    }));
+  }, []);
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
@@ -150,18 +245,24 @@ export default function FunctionsSection() {
 
   const resetForm = () => {
     setEditingFunction(null);
-    setFormData({ code: '', name: '', description: '', evaluationMode: 'first_match', targetVariable: '', ruleBundle: {}, sortOrder: 0, isActive: true });
+    setFormData({ code: '', name: '', description: '', evaluationMode: 'first_match', targetVariable: '', ruleBundle: { conditions: [] }, sortOrder: 0, isActive: true });
   };
 
   const openEdit = (fn: CommissioningFunction) => {
     setEditingFunction(fn);
+    // Assicura che ruleBundle abbia la struttura corretta
+    const existingBundle = fn.rule_bundle || {};
+    const conditions = Array.isArray((existingBundle as any).conditions) 
+      ? (existingBundle as any).conditions 
+      : [];
+    
     setFormData({
       code: fn.code,
       name: fn.name,
       description: fn.description || '',
       evaluationMode: fn.evaluation_mode,
       targetVariable: fn.target_variable,
-      ruleBundle: fn.rule_bundle || {},
+      ruleBundle: { conditions },
       sortOrder: fn.sort_order,
       isActive: fn.is_active,
     });
@@ -473,15 +574,131 @@ export default function FunctionsSection() {
               </div>
             </div>
             <div className="border-t pt-4">
-              <Label className="text-base font-medium">Regole (Rule Builder)</Label>
-              <p className="text-sm text-gray-500 mb-3">Definisci condizioni IF/THEN usando variabili L1 (@placeholder)</p>
-              <div className="bg-gray-50 border rounded-lg p-4 min-h-[7.5rem] flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <Zap className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Rule Builder visuale in sviluppo</p>
-                  <p className="text-xs">Usa operatori: IF, THEN, &gt;, &lt;, =, ×, +%, -%, AND, OR</p>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <Label className="text-base font-medium">Condizioni Logiche</Label>
+                  <p className="text-sm text-gray-500">Definisci quando questa funzione restituisce TRUE</p>
                 </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addCondition}
+                  className="flex items-center gap-1"
+                  data-testid="button-add-condition"
+                >
+                  <Plus className="h-3 w-3" /> Aggiungi Condizione
+                </Button>
               </div>
+
+              {/* Condition Builder */}
+              <div className="space-y-2 bg-gray-50 border rounded-lg p-4 min-h-[6rem]">
+                {formData.ruleBundle.conditions.length === 0 ? (
+                  <div className="text-center text-gray-400 py-4">
+                    <Zap className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Nessuna condizione definita</p>
+                    <p className="text-xs">Clicca "Aggiungi Condizione" per iniziare</p>
+                  </div>
+                ) : (
+                  formData.ruleBundle.conditions.map((condition, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-white rounded-lg border p-2" data-testid={`condition-row-${idx}`}>
+                      {/* Logic connector (AND/OR) - hidden for first row */}
+                      {idx === 0 ? (
+                        <div className="w-[4.5rem] flex-shrink-0 text-center">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">IF</Badge>
+                        </div>
+                      ) : (
+                        <Select 
+                          value={condition.logic} 
+                          onValueChange={(v) => updateCondition(idx, 'logic', v)}
+                        >
+                          <SelectTrigger className="w-[4.5rem] h-8 text-xs" data-testid={`select-logic-${idx}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="AND">AND</SelectItem>
+                            <SelectItem value="OR">OR</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {/* Variable selector */}
+                      <Select 
+                        value={condition.variable} 
+                        onValueChange={(v) => updateCondition(idx, 'variable', v)}
+                      >
+                        <SelectTrigger className="flex-1 h-8 text-xs font-mono" data-testid={`select-variable-${idx}`}>
+                          <SelectValue placeholder="Variabile..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {variableMappings.map((vm: any) => (
+                            <SelectItem key={vm.code || vm.id} value={vm.code} className="font-mono text-xs">
+                              {vm.code} <span className="text-gray-400 ml-1">({vm.name})</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Operator selector */}
+                      <Select 
+                        value={condition.operator} 
+                        onValueChange={(v) => updateCondition(idx, 'operator', v)}
+                      >
+                        <SelectTrigger className="w-[8rem] h-8 text-xs" data-testid={`select-operator-${idx}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CONDITION_OPERATORS.map((op) => (
+                            <SelectItem key={op.value} value={op.value}>
+                              <span className="font-mono mr-2">{op.symbol}</span> {op.label.split('(')[0]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Value input - hidden for isEmpty/isNotEmpty */}
+                      {!['isEmpty', 'isNotEmpty'].includes(condition.operator) && (
+                        <Input
+                          value={condition.value?.toString() || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            // Try to parse as number if it looks like one
+                            const numVal = parseFloat(val);
+                            updateCondition(idx, 'value', isNaN(numVal) ? val : numVal);
+                          }}
+                          placeholder="Valore..."
+                          className="w-[6rem] h-8 text-xs"
+                          data-testid={`input-value-${idx}`}
+                        />
+                      )}
+
+                      {/* Remove button */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeCondition(idx)}
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-red-500"
+                        data-testid={`button-remove-condition-${idx}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Formula Preview */}
+              {formData.ruleBundle.conditions.length > 0 && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Label className="text-xs text-blue-600 uppercase tracking-wide">Formula</Label>
+                  <p className="font-mono text-sm text-blue-800 mt-1">
+                    {formatConditionFormula(formData.ruleBundle.conditions)}
+                  </p>
+                </div>
+              )}
+
+              {/* Available Variables */}
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="text-xs text-gray-500">Variabili disponibili:</span>
                 {variableMappings.slice(0, 5).map((vm: any) => (
