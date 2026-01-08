@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, aiming to boost enterprise value through AI-enhanced operational efficiency, data-driven insights, and strategic decision-making.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, aiming to enhance enterprise value through AI-driven operational efficiency, data-driven insights, and strategic decision-making. The platform provides a comprehensive, unified ecosystem for managing various business functions.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -158,25 +158,25 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: Utilizes a Glassmorphism design with consistent headers, sidebars, and white backgrounds. Built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is controlled by `VITE_FONT_SCALE=80`, enforcing `rem` units for responsive design across all new developments.
+- **UI/UX Decisions**: Employs a Glassmorphism design with consistent headers, sidebars, and white backgrounds. The frontend is built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is enforced through `VITE_FONT_SCALE=80` and the mandatory use of `rem` units for all new developments to ensure responsive design.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) driven by `app.tenant_id`.
-    - **Security**: Implements OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC).
-    - **Core Systems**: Features a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage.
-    - **AI Integration**: Includes AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
+    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) managed via `app.tenant_id`.
+    - **Security**: Features OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC).
+    - **Core Systems**: Includes a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP), an AI Voice Agent with RAG, and multi-tenant object storage.
+    - **AI Integration**: Comprises AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and an AI Tools Ecosystem.
     - **CRM Module**: Focuses on person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
     - **HR Module**: Manages shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
     - **Brand Interface**: Provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System.
 - **System Design Choices**:
-    - **Organizational Hierarchy**: A pyramidal scoping structure: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
-    - **Cross-Store Architecture**: Offers tenant-wide data views with role-based access and optional filtering capabilities.
-    - **Request Routing**: Utilizes "Functional First → First Wins" for task assignment and "Shift-Based Routing."
-    - **Action Management System**: Centralized configuration through `action_definitions`, with routing handled by `UnifiedTriggerService`.
-    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface, with `action_definitions` serving as the single source of truth for actions.
-    - **User Scope**: `user_stores` is the single source of truth for user scope, with organization entities automatically derived from assigned stores.
+    - **Organizational Hierarchy**: A pyramidal structure: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
+    - **Cross-Store Architecture**: Provides tenant-wide data views with role-based access and filtering.
+    - **Request Routing**: Uses "Functional First → First Wins" for task assignment and "Shift-Based Routing."
+    - **Action Management System**: Centralized configuration via `action_definitions`, with routing handled by `UnifiedTriggerService`.
+    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface, with `action_definitions` as the single source of truth for actions.
+    - **User Scope**: `user_stores` is the single source of truth for user scope, with organization entities derived automatically.
     - **Italian Business Validation**: Comprehensive validation for Italian business-specific data (email, PEC, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, addresses) with real-time feedback and Zod schemas.
-    - **Deployment & Governance**: Features incremental VPS deployment to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access is managed using `deploy/keys/vps_key`. The `w3suite_prod` database is accessed via a local socket. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
+    - **Deployment & Governance**: Features incremental VPS deployment to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access uses `deploy/keys/vps_key`. The `w3suite_prod` database is accessed via a local socket. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
 
 # External Dependencies
 - PostgreSQL
