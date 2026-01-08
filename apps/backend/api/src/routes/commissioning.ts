@@ -748,16 +748,82 @@ router.get("/value-packages", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Tenant context required" });
     }
 
+    // Parse query filters
+    const { status, dateFrom, dateTo, listType, operatorId } = req.query;
+
+    // Build dynamic WHERE conditions
+    let statusCondition = sql``;
+    if (status && status !== 'all') {
+      if (status === 'expired') {
+        // Expired = validTo < today AND status != 'archived'
+        statusCondition = sql`AND vp.valid_to < CURRENT_DATE AND vp.status != 'archived'`;
+      } else {
+        statusCondition = sql`AND vp.status = ${status}`;
+      }
+    }
+
+    let dateCondition = sql``;
+    if (dateFrom) {
+      dateCondition = sql`${dateCondition} AND vp.created_at >= ${dateFrom}::date`;
+    }
+    if (dateTo) {
+      dateCondition = sql`${dateCondition} AND vp.created_at <= ${dateTo}::date`;
+    }
+
+    let listTypeCondition = sql``;
+    if (listType) {
+      listTypeCondition = sql`AND vp.list_type = ${listType}`;
+    }
+
+    let operatorCondition = sql``;
+    if (operatorId) {
+      operatorCondition = sql`AND vp.operator_id = ${operatorId}::uuid`;
+    }
+
     const result = await db.execute(sql`
       SELECT vp.*, o.name as operator_name,
-        (SELECT COUNT(*) FROM w3suite.commissioning_value_package_items WHERE package_id = vp.id) as items_count
+        (SELECT COUNT(*) FROM w3suite.commissioning_value_package_items WHERE package_id = vp.id) as items_count,
+        (SELECT COUNT(*) FROM w3suite.commissioning_value_package_price_lists WHERE package_id = vp.id) as price_lists_count,
+        CASE 
+          WHEN vp.status = 'archived' THEN 'archived'
+          WHEN vp.valid_to IS NOT NULL AND vp.valid_to < CURRENT_DATE THEN 'expired'
+          ELSE vp.status
+        END as computed_status
       FROM w3suite.commissioning_value_packages vp
       LEFT JOIN public.operators o ON o.id = vp.operator_id
-      WHERE vp.tenant_id = ${tenantId} OR vp.tenant_id IS NULL
-      ORDER BY vp.valid_from DESC, vp.name ASC
+      WHERE (vp.tenant_id = ${tenantId} OR vp.tenant_id IS NULL)
+        ${statusCondition}
+        ${dateCondition}
+        ${listTypeCondition}
+        ${operatorCondition}
+      ORDER BY vp.created_at DESC, vp.name ASC
     `);
 
-    res.json(result.rows);
+    // Transform rows for frontend
+    const packages = result.rows.map((row: any) => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      listType: row.list_type,
+      operatorId: row.operator_id,
+      operatorName: row.operator_name,
+      validFrom: row.valid_from,
+      validTo: row.valid_to,
+      status: row.status,
+      computedStatus: row.computed_status,
+      version: row.version,
+      basePackageId: row.base_package_id,
+      itemsCount: parseInt(row.items_count) || 0,
+      priceListsCount: parseInt(row.price_lists_count) || 0,
+      createdBy: row.created_by,
+      modifiedBy: row.modified_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+
+    res.json(packages);
   } catch (error) {
     logger.error("Error fetching value packages", { error });
     res.status(500).json({ error: "Failed to fetch value packages" });
@@ -868,6 +934,46 @@ router.delete("/value-packages/:id", async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Error deleting value package", { error });
     res.status(500).json({ error: "Failed to delete value package" });
+  }
+});
+
+// Archive/Unarchive value package
+router.patch("/value-packages/:id/archive", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { archived } = req.body; // true = archive, false = unarchive (set to draft)
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    // Check if package exists and belongs to tenant
+    const existingResult = await db.execute(sql`
+      SELECT * FROM w3suite.commissioning_value_packages 
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+    `);
+
+    if (existingResult.rows.length === 0) {
+      return res.status(404).json({ error: "Value package not found" });
+    }
+
+    const newStatus = archived === true ? 'archived' : 'draft';
+
+    const result = await db.execute(sql`
+      UPDATE w3suite.commissioning_value_packages SET
+        status = ${newStatus},
+        modified_by = ${userId},
+        updated_at = NOW()
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+      RETURNING *
+    `);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error archiving value package", { error });
+    res.status(500).json({ error: "Failed to archive value package" });
   }
 });
 
