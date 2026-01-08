@@ -4,7 +4,7 @@ import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel,
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -235,6 +235,7 @@ export default function VariableMappingsSection() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Nuova Variabile</DialogTitle>
+            <DialogDescription>Configura una nuova variabile per il calcolo delle commissioni</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>

@@ -339,7 +339,7 @@ router.get("/entities", async (req: Request, res: Response) => {
             LEFT JOIN w3suite.user_assignments ua ON ua.user_id = u.id
             LEFT JOIN w3suite.roles r ON r.id = ua.role_id
             WHERE u.tenant_id = ${tenantId} 
-              AND u.is_active = true
+              AND u.status = 'active'
               AND r.code = ${roleFilter}
             ORDER BY u.first_name, u.last_name
           `);
@@ -347,7 +347,7 @@ router.get("/entities", async (req: Request, res: Response) => {
           result = await db.execute(sql`
             SELECT id, CONCAT(first_name, ' ', last_name) as name 
             FROM w3suite.users 
-            WHERE tenant_id = ${tenantId} AND is_active = true
+            WHERE tenant_id = ${tenantId} AND status = 'active'
             ORDER BY first_name, last_name
           `);
         }

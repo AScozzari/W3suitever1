@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -200,6 +201,7 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
             <Layers className="h-5 w-5 text-purple-600" />
             {cluster ? 'Modifica Cluster' : 'Nuovo Cluster'}
           </DialogTitle>
+          <DialogDescription>Raggruppa entità per applicare regole di commissioning specifiche</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
