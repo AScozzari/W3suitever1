@@ -543,9 +543,9 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               {packagePriceLists.length > 0 && (
                 <div className="flex flex-wrap gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
                   <span className="text-sm text-orange-700 font-medium">Selezionati ({packagePriceLists.length}):</span>
-                  {packagePriceLists.map(pl => (
+                  {packagePriceLists.map((pl, idx) => (
                     <Badge 
-                      key={pl.price_list_id} 
+                      key={pl.price_list_id || `pl-${idx}`} 
                       variant="secondary" 
                       className="bg-white border flex items-center gap-1"
                     >
@@ -627,13 +627,13 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               ) : (
                 <Tabs value={activeListTab} onValueChange={setActiveListTab}>
                   <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1 bg-gray-100">
-                    {packagePriceLists.map(pl => (
+                    {packagePriceLists.map((pl, idx) => (
                       <TabsTrigger 
-                        key={pl.price_list_id} 
+                        key={pl.price_list_id || `tab-${idx}`} 
                         value={pl.price_list_id}
                         className="data-[state=active]:bg-white flex items-center gap-2"
                       >
-                        {pl.price_list_name}
+                        <span>{pl.price_list_name}</span>
                         <Badge variant="secondary" className="text-xs">
                           {pl.items_count || 0}
                         </Badge>
@@ -644,8 +644,8 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                     ))}
                   </TabsList>
                   
-                  {packagePriceLists.map(pl => (
-                    <TabsContent key={pl.price_list_id} value={pl.price_list_id} className="mt-4">
+                  {packagePriceLists.map((pl, idx) => (
+                    <TabsContent key={pl.price_list_id || `content-${idx}`} value={pl.price_list_id} className="mt-4">
                       <ProductGrid 
                         packageId={packageId!}
                         priceListId={pl.price_list_id}

@@ -165,14 +165,14 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and robust Row Level Security (RLS) managed by `app.tenant_id`.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
-    - **Core Systems**: Includes a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP) for external integrations, AI Voice Agent with RAG, and multi-tenant object storage.
-    - **AI Integration**: Features AI Enforcement Middleware, an AI Workflow Builder, Intelligent Workflow Routing, and a comprehensive AI Tools Ecosystem.
-    - **CRM Module**: Focuses on person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
+    - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP) for external integrations, AI Voice Agent with RAG, and multi-tenant object storage.
+    - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and a comprehensive AI Tools Ecosystem.
+    - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
     - **HR Module**: Manages employee shift schedules, leave requests, and time tracking.
-    - **WMS Module (CQRS)**: Designed to support diverse product types with dual-layer versioning, 13 distinct logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
+    - **WMS Module (CQRS)**: Supports diverse product types with dual-layer versioning, 13 distinct logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
     - **Brand Interface**: Provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System for managing brand-specific data.
 - **System Design Choices**:
-    - **Organizational Hierarchy**: A clear structure from Tenant down to User (Tenant → Commercial Area → Organization Entity → Store → Department → Team → User).
+    - **Organizational Hierarchy**: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
     - **Cross-Store Architecture**: Enables tenant-wide data views with Role-Based Access (RBA) and advanced filtering capabilities.
     - **Request Routing**: Implements "Functional First → First Wins" for task assignment and "Shift-Based Routing" for efficient workload distribution.
     - **Action Management System**: Centralizes the configuration and management of all actions via `action_definitions`, which are routed through a `UnifiedTriggerService`.
