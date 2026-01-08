@@ -1,0 +1,132 @@
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=163deeecbd1719e125a0858f9a403867dfb0a9da93319c82c83efbd6bd57b9348144980c4a5b81b9f378bf19803b1b4ad1b8920592b1636a721c2b0a0467e018&expires=1767855847676 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=8c93f217:103
+flush @ @tanstack_react-query.js?v=8c93f217:610
+batch @ @tanstack_react-query.js?v=8c93f217:628
+dispatch_fn @ @tanstack_react-query.js?v=8c93f217:1260
+setData @ @tanstack_react-query.js?v=8c93f217:931
+fetch @ @tanstack_react-query.js?v=8c93f217:1153
+await in fetch
+(anonime) @ @tanstack_react-query.js?v=8c93f217:2887
+(anonime) @ @tanstack_react-query.js?v=8c93f217:2886
+batch @ @tanstack_react-query.js?v=8c93f217:624
+refetchQueries @ @tanstack_react-query.js?v=8c93f217:2885
+(anonime) @ @tanstack_react-query.js?v=8c93f217:2871
+batch @ @tanstack_react-query.js?v=8c93f217:624
+invalidateQueries @ @tanstack_react-query.js?v=8c93f217:2864
+img.onerror @ useUserAvatar.ts:158Comprendi l'errore
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-N75MCOMS.js?v=8c93f217:335:29)
+    at chunk-N75MCOMS.js?v=8c93f217:239:13
+    at chunk-N75MCOMS.js?v=8c93f217:162:58
+    at Presence (chunk-3RPIZZKC.js?v=8c93f217:24:11)
+    at chunk-N75MCOMS.js?v=8c93f217:153:64
+    at chunk-TCRT5IO7.js?v=8c93f217:43:13
+    at chunk-TCRT5IO7.js?v=8c93f217:20:13
+    at chunk-7JN5FQRM.js?v=8c93f217:42:13
+    at chunk-R54IPKTL.js?v=8c93f217:244:22
+    at Presence (chunk-3RPIZZKC.js?v=8c93f217:24:11)
+    at Provider (chunk-3WVMON5O.js?v=8c93f217:38:15)
+    at DialogPortal (chunk-N75MCOMS.js?v=8c93f217:115:11)
+    at _c3 (dialog.tsx:30:6)
+    at Provider (chunk-3WVMON5O.js?v=8c93f217:38:15)
+    at Dialog (chunk-N75MCOMS.js?v=8c93f217:56:5)
+    at ClusterFormModal (ClusterFormModal.tsx:80:44)
+    at div (<anonymous>)
+    at ImpostazioniTabContent (ImpostazioniTabContent.tsx:94:33)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=8c93f217:42:13
+    at Presence (chunk-3RPIZZKC.js?v=8c93f217:24:11)
+    at @radix-ui_react-tabs.js?v=8c93f217:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=8c93f217:42:13
+    at Provider (chunk-3WVMON5O.js?v=8c93f217:38:15)
+    at @radix-ui_react-tabs.js?v=8c93f217:55:7
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:147:34)
+    at CommissioningPage (CommissioningPage.tsx:21:45)
+    at StoreProvider (StoreContext.tsx:35:33)
+    at AuthenticatedRoute (TenantShell.tsx:621:72)
+    at Route (wouter.js?v=8c93f217:206:16)
+    at Switch (wouter.js?v=8c93f217:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:247:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:100:59)
+    at Route (wouter.js?v=8c93f217:206:16)
+    at Switch (wouter.js?v=8c93f217:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=8c93f217:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-N75MCOMS.js?v=8c93f217:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'avviso
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-N75MCOMS.js?v=8c93f217:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=8c93f217:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=8c93f217:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=8c93f217:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'avviso
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/entities?type=RS 500 (Internal Server Error)
+queryFn @ queryClient.ts:234
+fetchFn @ @tanstack_react-query.js?v=8c93f217:1097
+run @ @tanstack_react-query.js?v=8c93f217:795
+start @ @tanstack_react-query.js?v=8c93f217:838
+fetch @ @tanstack_react-query.js?v=8c93f217:1144
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+setOptions @ @tanstack_react-query.js?v=8c93f217:1392
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3308
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'errore
+queryClient.ts:234  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commissioning/entities?type=RS 500 (Internal Server Error)
