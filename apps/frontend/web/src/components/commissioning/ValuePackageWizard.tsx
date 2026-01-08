@@ -545,7 +545,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                       variant="secondary" 
                       className="bg-white border flex items-center gap-1"
                     >
-                      {pl.price_list_name}
+                      <span>{pl.price_list_name}</span>
                       <X 
                         className="h-3 w-3 cursor-pointer hover:text-red-500" 
                         onClick={() => handleTogglePriceList(pl.price_list_id)}
