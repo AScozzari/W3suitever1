@@ -64,7 +64,7 @@ import {
   User,
   AtSign,
   Package,
-  Function,
+  FunctionSquare,
 } from 'lucide-react';
 import ClusterFormModal from './ClusterFormModal';
 import VariableMappingsSection from './VariableMappingsSection';
@@ -439,7 +439,7 @@ export default function ImpostazioniTabContent() {
                   <span className="sm:hidden">L2</span>
                 </TabsTrigger>
                 <TabsTrigger value="functions" className="flex items-center gap-2" data-testid="tab-funzioni">
-                  <Function className="h-4 w-4" />
+                  <FunctionSquare className="h-4 w-4" />
                   <span className="hidden sm:inline">Funzioni</span>
                   <span className="sm:hidden">L3</span>
                 </TabsTrigger>

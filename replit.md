@@ -158,7 +158,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: Utilizes a Glassmorphism design, consistent headers, sidebars, and white backgrounds. It's built with `shadcn/ui` (Radix UI for accessibility) and Tailwind CSS. UI scaling uses `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness.
+- **UI/UX Decisions**: Utilizes a Glassmorphism design, consistent headers, sidebars, and white backgrounds. Built with `shadcn/ui` (Radix UI for accessibility) and Tailwind CSS. UI scaling uses `VITE_FONT_SCALE=80` and enforces `rem` units for responsiveness.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) managed by `app.tenant_id`.
     - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
@@ -168,14 +168,14 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **HR Module**: Shift schedules, leave requests, and time tracking.
     - **WMS Module (CQRS)**: Supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized product handling, immutable event logs, read models, historical snapshots, and dedicated document tables.
     - **Brand Interface**: Workflow Builder and a Git-versioned JSON-based Master Catalog System.
-    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface using `action_definitions` as the single source of truth.
-    - **User Scope**: `user_stores` is the single source of truth, with organization entities automatically derived.
-    - **Italian Business Validation**: Comprehensive validation for Italian business data (email, PEC, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, addresses) with real-time feedback and Zod schemas.
 - **System Design Choices**:
     - **Organizational Hierarchy**: Pyramidal scoping: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
     - **Cross-Store Architecture**: Tenant-wide data views with role-based access and optional filtering.
     - **Request Routing**: "Functional First → First Wins" for task assignment and "Shift-Based Routing."
     - **Action Management System**: Centralized configuration via `action_definitions`, with routing by `UnifiedTriggerService`.
+    - **MCP Public Gateway**: Exposes a JSON-RPC 2.0 interface using `action_definitions` as the single source of truth.
+    - **User Scope**: `user_stores` is the single source of truth, with organization entities automatically derived.
+    - **Italian Business Validation**: Comprehensive validation for Italian business data (email, PEC, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, addresses) with real-time feedback and Zod schemas.
     - **Deployment & Governance**: Incremental VPS deployment to `/var/www/w3suite/` via `./deploy/incremental-deploy.sh`. SSH access via `deploy/keys/vps_key`. `w3suite_prod` database accessed via local socket. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`.
 
 # External Dependencies
