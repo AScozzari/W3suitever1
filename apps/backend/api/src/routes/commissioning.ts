@@ -1286,13 +1286,73 @@ router.get("/functions", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Tenant context required" });
     }
 
+    const { search, dateFrom, dateTo, status } = req.query;
+    
+    // Build WHERE conditions
+    let conditions = sql`(tenant_id = ${tenantId} OR tenant_id IS NULL)`;
+    
+    // Free text search on code, name, description, and rule_bundle variables
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      conditions = sql`${conditions} AND (
+        code ILIKE ${searchTerm} OR 
+        name ILIKE ${searchTerm} OR 
+        description ILIKE ${searchTerm} OR
+        rule_bundle::text ILIKE ${searchTerm}
+      )`;
+    }
+    
+    // Date range filters
+    if (dateFrom && typeof dateFrom === 'string') {
+      conditions = sql`${conditions} AND created_at >= ${dateFrom}::timestamp`;
+    }
+    if (dateTo && typeof dateTo === 'string') {
+      conditions = sql`${conditions} AND created_at <= ${dateTo}::timestamp + interval '1 day'`;
+    }
+    
+    // Status filter: active, suspended, archived
+    if (status && typeof status === 'string') {
+      if (status === 'active') {
+        conditions = sql`${conditions} AND is_active = true`;
+      } else if (status === 'suspended' || status === 'archived') {
+        conditions = sql`${conditions} AND is_active = false`;
+      }
+    }
+
     const result = await db.execute(sql`
-      SELECT * FROM w3suite.commissioning_functions
-      WHERE tenant_id = ${tenantId} OR tenant_id IS NULL
+      SELECT 
+        id, tenant_id, code, name, description, 
+        evaluation_mode, target_variable, rule_bundle,
+        depends_on, sort_order, is_active,
+        created_by, modified_by, created_at, updated_at
+      FROM w3suite.commissioning_functions
+      WHERE ${conditions}
       ORDER BY sort_order ASC, name ASC
     `);
 
-    res.json(result.rows);
+    // Extract used variables from rule_bundle for each function
+    const functions = result.rows.map((row: any) => {
+      const usedVariables: string[] = [];
+      try {
+        const ruleBundle = row.rule_bundle || {};
+        const rules = ruleBundle.rules || [];
+        for (const rule of rules) {
+          const conditions = rule.conditions || [];
+          for (const cond of conditions) {
+            if (cond.variable && !usedVariables.includes(cond.variable)) {
+              usedVariables.push(cond.variable);
+            }
+          }
+        }
+      } catch (e) { /* ignore parse errors */ }
+      
+      return {
+        ...row,
+        usedVariables,
+      };
+    });
+
+    res.json(functions);
   } catch (error) {
     logger.error("Error fetching functions", { error });
     res.status(500).json({ error: "Failed to fetch functions" });
@@ -1370,6 +1430,40 @@ router.put("/functions/:id", async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Error updating function", { error });
     res.status(500).json({ error: "Failed to update function" });
+  }
+});
+
+// PATCH - Update status only (activate, suspend, archive)
+router.patch("/functions/:id/status", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { action } = req.body; // 'activate' | 'suspend' | 'archive'
+
+    if (!['activate', 'suspend', 'archive'].includes(action)) {
+      return res.status(400).json({ error: "Invalid action. Use 'activate', 'suspend', or 'archive'" });
+    }
+
+    const isActive = action === 'activate';
+
+    const result = await db.execute(sql`
+      UPDATE w3suite.commissioning_functions SET
+        is_active = ${isActive},
+        modified_by = ${userId},
+        updated_at = NOW()
+      WHERE id = ${id} AND tenant_id = ${tenantId}
+      RETURNING *
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Function not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error updating function status", { error });
+    res.status(500).json({ error: "Failed to update function status" });
   }
 });
 
