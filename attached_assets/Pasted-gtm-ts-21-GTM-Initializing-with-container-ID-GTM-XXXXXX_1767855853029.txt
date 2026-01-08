@@ -1,0 +1,172 @@
+gtm.ts:21 [GTM] Initializing with container ID: GTM-XXXXXXX
+gtm.ts:44 [GTM] Initialized successfully
+App.tsx:75 [APP-ROUTER] 🚀 Router component rendered
+installHook.js:1 [APP-ROUTER] 🚀 Router component rendered
+App.tsx:144 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'commissioning', tenant: 'staging', *: 'commissioning'}
+App.tsx:154 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:155 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+installHook.js:1 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'commissioning', tenant: 'staging', *: 'commissioning'}
+installHook.js:1 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+installHook.js:1 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+useSessionKeepAlive.ts:165 [SESSION-KEEPALIVE] 🛑 Session keep-alive stopped
+useSessionKeepAlive.ts:150 [SESSION-KEEPALIVE] 🚀 Session keep-alive initialized (12-min interval)
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
+TenantContext.tsx:103 [TENANT-PROVIDER] ⚠️ Skipping session tenant update - using routing tenant: 00000000-0000-0000-0000-000000000001
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. Error Component Stack
+    at DescriptionWarning (chunk-N75MCOMS.js?v=8c93f217:335:29)
+    at chunk-N75MCOMS.js?v=8c93f217:239:13
+    at chunk-N75MCOMS.js?v=8c93f217:162:58
+    at Presence (chunk-3RPIZZKC.js?v=8c93f217:24:11)
+    at chunk-N75MCOMS.js?v=8c93f217:153:64
+    at chunk-TCRT5IO7.js?v=8c93f217:43:13
+    at chunk-TCRT5IO7.js?v=8c93f217:20:13
+    at chunk-7JN5FQRM.js?v=8c93f217:42:13
+    at chunk-R54IPKTL.js?v=8c93f217:244:22
+    at Presence (chunk-3RPIZZKC.js?v=8c93f217:24:11)
+    at Provider (chunk-3WVMON5O.js?v=8c93f217:38:15)
+    at DialogPortal (chunk-N75MCOMS.js?v=8c93f217:115:11)
+    at _c3 (dialog.tsx:30:6)
+    at Provider (chunk-3WVMON5O.js?v=8c93f217:38:15)
+    at Dialog (chunk-N75MCOMS.js?v=8c93f217:56:5)
+    at ClusterFormModal (ClusterFormModal.tsx:80:44)
+    at div (<anonymous>)
+    at ImpostazioniTabContent (ImpostazioniTabContent.tsx:94:33)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=8c93f217:42:13
+    at Presence (chunk-3RPIZZKC.js?v=8c93f217:24:11)
+    at @radix-ui_react-tabs.js?v=8c93f217:177:13
+    at _c5 (tabs.tsx:33:6)
+    at div (<anonymous>)
+    at chunk-7JN5FQRM.js?v=8c93f217:42:13
+    at Provider (chunk-3WVMON5O.js?v=8c93f217:38:15)
+    at @radix-ui_react-tabs.js?v=8c93f217:55:7
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at main (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:147:34)
+    at CommissioningPage (CommissioningPage.tsx:21:45)
+    at StoreProvider (StoreContext.tsx:35:33)
+    at AuthenticatedRoute (TenantShell.tsx:621:72)
+    at Route (wouter.js?v=8c93f217:206:16)
+    at Switch (wouter.js?v=8c93f217:262:17)
+    at Suspense (<anonymous>)
+    at TenantRoutes (TenantShell.tsx:247:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:100:59)
+    at Route (wouter.js?v=8c93f217:206:16)
+    at Switch (wouter.js?v=8c93f217:262:17)
+    at Suspense (<anonymous>)
+    at Router (<anonymous>)
+    at IdleDetectionProvider (IdleDetectionContext.tsx:14:41)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=8c93f217:3081:3)
+    at App (App.tsx:42:3)
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-N75MCOMS.js?v=8c93f217:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'avviso
+installHook.js:1 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+overrideMethod @ installHook.js:1
+(anonime) @ chunk-N75MCOMS.js?v=8c93f217:343
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+invokePassiveEffectMountInDEV @ chunk-ZHRYBLGQ.js?v=8c93f217:18324
+invokeEffectsInDev @ chunk-ZHRYBLGQ.js?v=8c93f217:19701
+commitDoubleInvokeEffectsInDEV @ chunk-ZHRYBLGQ.js?v=8c93f217:19686
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19503
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627Comprendi l'avviso
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=a21d0c4aca8635317cbc846264b461989b83e86cedaccf0e84540fa982216de2fb60b85a9d13dff48554c0bbce2e94d56900a8c499f219b96a054c66dc436a68&expires=1767856070103 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=8c93f217:103
+flush @ @tanstack_react-query.js?v=8c93f217:610
+batch @ @tanstack_react-query.js?v=8c93f217:628
+dispatch_fn @ @tanstack_react-query.js?v=8c93f217:1260
+setData @ @tanstack_react-query.js?v=8c93f217:931
+fetch @ @tanstack_react-query.js?v=8c93f217:1153
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=8c93f217:1639
+onSubscribe @ @tanstack_react-query.js?v=8c93f217:1335
+subscribe @ @tanstack_react-query.js?v=8c93f217:24
+(anonime) @ @tanstack_react-query.js?v=8c93f217:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=8c93f217:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18868
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=8c93f217:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=8c93f217:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+useUserAvatar.ts:156 [useUserAvatar] Image load failed, refreshing signed URL (attempt 1 )
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=a21d0c4aca8635317cbc846264b461989b83e86cedaccf0e84540fa982216de2fb60b85a9d13dff48554c0bbce2e94d56900a8c499f219b96a054c66dc436a68&expires=1767856070103 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+(anonime) @ chunk-ZHRYBLGQ.js?v=8c93f217:19328
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+useUserAvatar.ts:156 [useUserAvatar] Image load failed, refreshing signed URL (attempt 2 )
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=a21d0c4aca8635317cbc846264b461989b83e86cedaccf0e84540fa982216de2fb60b85a9d13dff48554c0bbce2e94d56900a8c499f219b96a054c66dc436a68&expires=1767856070103 403 (Forbidden)
+Image
+(anonime) @ useUserAvatar.ts:163
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=8c93f217:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=8c93f217:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=8c93f217:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=8c93f217:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=8c93f217:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=8c93f217:19447
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=8c93f217:18667
+workLoop @ chunk-ZHRYBLGQ.js?v=8c93f217:197
+flushWork @ chunk-ZHRYBLGQ.js?v=8c93f217:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=8c93f217:384Comprendi l'errore
+serve:1  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/storage/serve?token=33e1e8e7fd695565b8200f85c7ab7e320c06e121d1422387b6e849c2181f70c657f57d20930098e9917478c63639a452e0c7df3e221705ace92874988c1e6e0c&expires=1767856073607 403 (Forbidden)
