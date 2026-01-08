@@ -1015,4 +1015,401 @@ router.delete("/functions/:id", async (req: Request, res: Response) => {
   }
 });
 
+// ==================== CONFIGURATORS ====================
+
+// Schema validation for configurator
+const configuratorSchema = z.object({
+  name: z.string().min(1).max(255),
+  clusterId: z.string().uuid().optional().nullable(),
+  driverIds: z.array(z.string().uuid()).optional().default([]),
+  scopeType: z.enum(['RS', 'PDV', 'RISORSA']).optional().nullable(),
+  scopeEntityIds: z.array(z.string().uuid()).optional().default([]),
+  variableType: z.enum(['volumi', 'valore_prodotto', 'valore_vendita']).optional().nullable(),
+  valuePackageId: z.string().uuid().optional().nullable(),
+  paletti: z.any().optional().nullable(),
+  rules: z.any().optional().nullable(),
+  sortOrder: z.number().int().optional().default(0),
+  isActive: z.boolean().optional().default(true),
+});
+
+// Helper to verify race belongs to tenant
+async function verifyRaceAccess(raceId: string, tenantId: string) {
+  const result = await db.execute(sql`
+    SELECT id, tenant_id FROM w3suite.commissioning_races 
+    WHERE id = ${raceId} AND (tenant_id = ${tenantId} OR tenant_id IS NULL)
+  `);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+// Helper to verify configurator belongs to tenant (via race)
+async function verifyConfiguratorAccess(configuratorId: string, tenantId: string) {
+  const result = await db.execute(sql`
+    SELECT c.id, r.tenant_id FROM w3suite.commissioning_configurators c
+    JOIN w3suite.commissioning_races r ON r.id = c.race_id
+    WHERE c.id = ${configuratorId} AND (r.tenant_id = ${tenantId} OR r.tenant_id IS NULL)
+  `);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+// Helper to verify cluster belongs to tenant
+async function verifyClusterAccess(clusterId: string, tenantId: string): Promise<boolean> {
+  const result = await db.execute(sql`
+    SELECT id FROM w3suite.commissioning_clusters 
+    WHERE id = ${clusterId} AND tenant_id = ${tenantId}
+  `);
+  return result.rows.length > 0;
+}
+
+// Helper to verify scope entities belong to tenant based on scope type
+async function verifyScopeEntities(scopeType: string | null | undefined, entityIds: string[], tenantId: string): Promise<boolean> {
+  if (!scopeType || !entityIds || entityIds.length === 0) return true;
+  
+  let tableName: string;
+  switch (scopeType) {
+    case 'RS': tableName = 'w3suite.legal_entities'; break;
+    case 'PDV': tableName = 'w3suite.stores'; break;
+    case 'RISORSA': tableName = 'w3suite.users'; break;
+    default: return true;
+  }
+  
+  const result = await db.execute(sql`
+    SELECT id FROM ${sql.raw(tableName)} 
+    WHERE id = ANY(${entityIds}::uuid[]) AND tenant_id = ${tenantId}
+  `);
+  return result.rows.length === entityIds.length;
+}
+
+// Helper to verify driver IDs belong to the cluster
+async function verifyDriverIds(driverIds: string[], tenantId: string): Promise<boolean> {
+  if (!driverIds || driverIds.length === 0) return true;
+  const result = await db.execute(sql`
+    SELECT id FROM w3suite.commissioning_drivers 
+    WHERE id = ANY(${driverIds}::uuid[]) AND tenant_id = ${tenantId}
+  `);
+  return result.rows.length === driverIds.length;
+}
+
+router.get("/races/:raceId/configurators", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { raceId } = req.params;
+
+    const race = await verifyRaceAccess(raceId, tenantId);
+    if (!race) return res.status(404).json({ error: "Race not found or access denied" });
+
+    const result = await db.execute(sql`
+      SELECT c.*, 
+        cl.name as cluster_name, cl.entity_type as cluster_entity_type,
+        vp.name as value_package_name, vp.code as value_package_code,
+        (SELECT COUNT(*) FROM w3suite.commissioning_configurator_functions WHERE configurator_id = c.id) as functions_count
+      FROM w3suite.commissioning_configurators c
+      LEFT JOIN w3suite.commissioning_clusters cl ON cl.id = c.cluster_id
+      LEFT JOIN w3suite.commissioning_value_packages vp ON vp.id = c.value_package_id
+      WHERE c.race_id = ${raceId}
+      ORDER BY c.sort_order ASC, c.name ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching configurators", { error });
+    res.status(500).json({ error: "Failed to fetch configurators" });
+  }
+});
+
+router.get("/configurators/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { id } = req.params;
+
+    const access = await verifyConfiguratorAccess(id, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+
+    const configResult = await db.execute(sql`
+      SELECT c.*, 
+        cl.name as cluster_name, cl.entity_type as cluster_entity_type,
+        vp.name as value_package_name, vp.code as value_package_code
+      FROM w3suite.commissioning_configurators c
+      LEFT JOIN w3suite.commissioning_clusters cl ON cl.id = c.cluster_id
+      LEFT JOIN w3suite.commissioning_value_packages vp ON vp.id = c.value_package_id
+      WHERE c.id = ${id}
+    `);
+
+    if (configResult.rows.length === 0) {
+      return res.status(404).json({ error: "Configurator not found" });
+    }
+
+    const functionsResult = await db.execute(sql`
+      SELECT cf.*, f.name as function_name, f.code as function_code, f.target_variable
+      FROM w3suite.commissioning_configurator_functions cf
+      JOIN w3suite.commissioning_functions f ON f.id = cf.function_id
+      WHERE cf.configurator_id = ${id}
+      ORDER BY cf.sort_order ASC
+    `);
+
+    res.json({
+      ...configResult.rows[0],
+      functions: functionsResult.rows
+    });
+  } catch (error) {
+    logger.error("Error fetching configurator", { error });
+    res.status(500).json({ error: "Failed to fetch configurator" });
+  }
+});
+
+router.post("/races/:raceId/configurators", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { raceId } = req.params;
+
+    const race = await verifyRaceAccess(raceId, tenantId);
+    if (!race) return res.status(404).json({ error: "Race not found or access denied" });
+    if ((race as any).tenant_id === null) return res.status(403).json({ error: "Cannot modify brand-pushed races" });
+
+    const parsed = configuratorSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
+    const { name, clusterId, driverIds, scopeType, scopeEntityIds, variableType, valuePackageId, paletti, rules, sortOrder } = parsed.data;
+
+    // Verify cluster belongs to tenant if provided
+    if (clusterId) {
+      const clusterValid = await verifyClusterAccess(clusterId, tenantId);
+      if (!clusterValid) return res.status(400).json({ error: "Cluster not found or access denied" });
+    }
+
+    // Verify scope entities belong to tenant
+    if (scopeEntityIds && scopeEntityIds.length > 0) {
+      const entitiesValid = await verifyScopeEntities(scopeType, scopeEntityIds, tenantId);
+      if (!entitiesValid) return res.status(400).json({ error: "Some scope entities not found or access denied" });
+    }
+
+    // Verify driver IDs belong to tenant
+    if (driverIds && driverIds.length > 0) {
+      const driversValid = await verifyDriverIds(driverIds, tenantId);
+      if (!driversValid) return res.status(400).json({ error: "Some drivers not found or access denied" });
+    }
+
+    // Verify value package belongs to tenant if provided
+    if (valuePackageId) {
+      const vpCheck = await db.execute(sql`SELECT id FROM w3suite.commissioning_value_packages WHERE id = ${valuePackageId} AND (tenant_id = ${tenantId} OR tenant_id IS NULL)`);
+      if (vpCheck.rows.length === 0) return res.status(400).json({ error: "Value package not found or access denied" });
+    }
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_configurators 
+      (race_id, name, cluster_id, driver_ids, scope_type, scope_entity_ids, variable_type, value_package_id, paletti, rules, sort_order)
+      VALUES (${raceId}, ${name}, ${clusterId}, ${driverIds || []}::uuid[], ${scopeType}, ${scopeEntityIds || []}::uuid[], ${variableType}, ${valuePackageId}, ${paletti ? JSON.stringify(paletti) : null}::jsonb, ${rules ? JSON.stringify(rules) : null}::jsonb, ${sortOrder || 0})
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error creating configurator", { error });
+    res.status(500).json({ error: "Failed to create configurator" });
+  }
+});
+
+router.put("/configurators/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { id } = req.params;
+
+    const access = await verifyConfiguratorAccess(id, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+    if ((access as any).tenant_id === null) return res.status(403).json({ error: "Cannot modify brand-pushed configurators" });
+
+    const parsed = configuratorSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
+    const { name, clusterId, driverIds, scopeType, scopeEntityIds, variableType, valuePackageId, paletti, rules, sortOrder, isActive } = parsed.data;
+
+    // Verify cluster belongs to tenant if provided
+    if (clusterId) {
+      const clusterValid = await verifyClusterAccess(clusterId, tenantId);
+      if (!clusterValid) return res.status(400).json({ error: "Cluster not found or access denied" });
+    }
+
+    // Verify scope entities belong to tenant
+    if (scopeEntityIds && scopeEntityIds.length > 0) {
+      const entitiesValid = await verifyScopeEntities(scopeType, scopeEntityIds, tenantId);
+      if (!entitiesValid) return res.status(400).json({ error: "Some scope entities not found or access denied" });
+    }
+
+    // Verify driver IDs belong to tenant
+    if (driverIds && driverIds.length > 0) {
+      const driversValid = await verifyDriverIds(driverIds, tenantId);
+      if (!driversValid) return res.status(400).json({ error: "Some drivers not found or access denied" });
+    }
+
+    // Verify value package belongs to tenant if provided
+    if (valuePackageId) {
+      const vpCheck = await db.execute(sql`SELECT id FROM w3suite.commissioning_value_packages WHERE id = ${valuePackageId} AND (tenant_id = ${tenantId} OR tenant_id IS NULL)`);
+      if (vpCheck.rows.length === 0) return res.status(400).json({ error: "Value package not found or access denied" });
+    }
+
+    const result = await db.execute(sql`
+      UPDATE w3suite.commissioning_configurators SET
+        name = ${name}, cluster_id = ${clusterId}, driver_ids = ${driverIds || []}::uuid[],
+        scope_type = ${scopeType}, scope_entity_ids = ${scopeEntityIds || []}::uuid[],
+        variable_type = ${variableType}, value_package_id = ${valuePackageId},
+        paletti = ${paletti ? JSON.stringify(paletti) : null}::jsonb,
+        rules = ${rules ? JSON.stringify(rules) : null}::jsonb,
+        sort_order = ${sortOrder || 0}, is_active = ${isActive !== false}, updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Configurator not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error updating configurator", { error });
+    res.status(500).json({ error: "Failed to update configurator" });
+  }
+});
+
+router.delete("/configurators/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { id } = req.params;
+
+    const access = await verifyConfiguratorAccess(id, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+    if ((access as any).tenant_id === null) return res.status(403).json({ error: "Cannot delete brand-pushed configurators" });
+
+    await db.execute(sql`DELETE FROM w3suite.commissioning_configurators WHERE id = ${id}`);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error deleting configurator", { error });
+    res.status(500).json({ error: "Failed to delete configurator" });
+  }
+});
+
+// Configurator-Functions link
+router.get("/configurators/:configuratorId/functions", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { configuratorId } = req.params;
+
+    const access = await verifyConfiguratorAccess(configuratorId, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+
+    const result = await db.execute(sql`
+      SELECT cf.*, f.name as function_name, f.code as function_code, f.target_variable, f.evaluation_mode
+      FROM w3suite.commissioning_configurator_functions cf
+      JOIN w3suite.commissioning_functions f ON f.id = cf.function_id
+      WHERE cf.configurator_id = ${configuratorId}
+      ORDER BY cf.sort_order ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching configurator functions", { error });
+    res.status(500).json({ error: "Failed to fetch configurator functions" });
+  }
+});
+
+router.post("/configurators/:configuratorId/functions", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { configuratorId } = req.params;
+    const { functionId, sortOrder } = req.body;
+
+    if (!functionId) return res.status(400).json({ error: "functionId is required" });
+
+    const access = await verifyConfiguratorAccess(configuratorId, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+    if ((access as any).tenant_id === null) return res.status(403).json({ error: "Cannot modify brand-pushed configurators" });
+
+    // Verify function belongs to tenant
+    const fnCheck = await db.execute(sql`SELECT id FROM w3suite.commissioning_functions WHERE id = ${functionId} AND (tenant_id = ${tenantId} OR tenant_id IS NULL)`);
+    if (fnCheck.rows.length === 0) return res.status(400).json({ error: "Function not found or access denied" });
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_configurator_functions (configurator_id, function_id, sort_order)
+      VALUES (${configuratorId}, ${functionId}, ${sortOrder || 0})
+      ON CONFLICT (configurator_id, function_id) DO UPDATE SET sort_order = EXCLUDED.sort_order
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    logger.error("Error adding function to configurator", { error });
+    res.status(500).json({ error: "Failed to add function to configurator" });
+  }
+});
+
+router.delete("/configurators/:configuratorId/functions/:functionId", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { configuratorId, functionId } = req.params;
+
+    const access = await verifyConfiguratorAccess(configuratorId, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+    if ((access as any).tenant_id === null) return res.status(403).json({ error: "Cannot modify brand-pushed configurators" });
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_configurator_functions 
+      WHERE configurator_id = ${configuratorId} AND function_id = ${functionId}
+    `);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error removing function from configurator", { error });
+    res.status(500).json({ error: "Failed to remove function from configurator" });
+  }
+});
+
+// Update configurator functions in bulk
+router.put("/configurators/:configuratorId/functions", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const { configuratorId } = req.params;
+    const { functionIds } = req.body;
+
+    const access = await verifyConfiguratorAccess(configuratorId, tenantId);
+    if (!access) return res.status(404).json({ error: "Configurator not found or access denied" });
+    if ((access as any).tenant_id === null) return res.status(403).json({ error: "Cannot modify brand-pushed configurators" });
+
+    // Verify all functions belong to tenant
+    if (functionIds && functionIds.length > 0) {
+      const fnCheck = await db.execute(sql`SELECT id FROM w3suite.commissioning_functions WHERE id = ANY(${functionIds}::uuid[]) AND (tenant_id = ${tenantId} OR tenant_id IS NULL)`);
+      if (fnCheck.rows.length !== functionIds.length) return res.status(400).json({ error: "Some functions not found or access denied" });
+    }
+
+    await db.execute(sql`DELETE FROM w3suite.commissioning_configurator_functions WHERE configurator_id = ${configuratorId}`);
+
+    if (functionIds && functionIds.length > 0) {
+      for (let i = 0; i < functionIds.length; i++) {
+        await db.execute(sql`
+          INSERT INTO w3suite.commissioning_configurator_functions (configurator_id, function_id, sort_order)
+          VALUES (${configuratorId}, ${functionIds[i]}, ${i})
+        `);
+      }
+    }
+
+    const result = await db.execute(sql`
+      SELECT cf.*, f.name as function_name, f.code as function_code
+      FROM w3suite.commissioning_configurator_functions cf
+      JOIN w3suite.commissioning_functions f ON f.id = cf.function_id
+      WHERE cf.configurator_id = ${configuratorId}
+      ORDER BY cf.sort_order ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error updating configurator functions", { error });
+    res.status(500).json({ error: "Failed to update configurator functions" });
+  }
+});
+
 export default router;
