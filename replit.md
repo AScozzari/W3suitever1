@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging AI for enhanced operational efficiency, data-driven insights, and strategic decision-making. The platform aims to boost enterprise value and organizational effectiveness across various business functions.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS. The platform aims to boost enterprise value and organizational effectiveness through AI-enhanced operational efficiency, data-driven insights, and strategic decision-making.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -158,7 +158,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **File rimanenti Brand Interface (px→rem)**: CRM.tsx, AgentDetailsModal.tsx, RagKnowledgeSection.tsx, DeploymentWizard.deploy/DeployModal.tsx
 
 # System Architecture
-- **UI/UX Decisions**: Employs a Glassmorphism design with consistent headers, sidebars, and white backgrounds. Built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is controlled by `VITE_FONT_SCALE=80`, enforcing `rem` units for responsive design.
+- **UI/UX Decisions**: Utilizes a Glassmorphism design with consistent headers, sidebars, and white backgrounds. Built using `shadcn/ui` (leveraging Radix UI for accessibility) and Tailwind CSS. UI scaling is controlled by `VITE_FONT_SCALE=80`, enforcing `rem` units for responsive design across all new developments.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) driven by `app.tenant_id`.
     - **Security**: Implements OAuth2/OIDC, Multi-Factor Authentication (MFA), JSON Web Tokens (JWTs), and a 3-level Role-Based Access Control (RBAC).

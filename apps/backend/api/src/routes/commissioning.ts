@@ -308,23 +308,49 @@ router.get("/entities", async (req: Request, res: Response) => {
     }
 
     const entityType = (req.query.type as string) || 'PDV';
+    const roleFilter = req.query.role as string | undefined;
     let result;
 
     switch (entityType) {
       case 'RS':
+        // Ragioni Sociali - organization entities for the tenant
         result = await db.execute(sql`
-          SELECT id, name FROM w3suite.organization_entities WHERE tenant_id = ${tenantId} ORDER BY name
+          SELECT id, name FROM w3suite.organization_entities 
+          WHERE tenant_id = ${tenantId} AND is_active = true
+          ORDER BY name
         `);
         break;
       case 'PDV':
+        // Punti Vendita - stores with category 'sales_point' only (not office/warehouse)
         result = await db.execute(sql`
-          SELECT id, name FROM w3suite.stores WHERE tenant_id = ${tenantId} ORDER BY name
+          SELECT id, nome as name FROM w3suite.stores 
+          WHERE tenant_id = ${tenantId} 
+            AND category = 'sales_point'
+            AND status = 'active'
+          ORDER BY nome
         `);
         break;
       case 'RISORSA':
-        result = await db.execute(sql`
-          SELECT id, CONCAT(first_name, ' ', last_name) as name FROM w3suite.users WHERE tenant_id = ${tenantId} ORDER BY first_name, last_name
-        `);
+        // Risorse - users, optionally filtered by role
+        if (roleFilter) {
+          result = await db.execute(sql`
+            SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) as name, r.code as role_code
+            FROM w3suite.users u
+            LEFT JOIN w3suite.user_assignments ua ON ua.user_id = u.id
+            LEFT JOIN w3suite.roles r ON r.id = ua.role_id
+            WHERE u.tenant_id = ${tenantId} 
+              AND u.is_active = true
+              AND r.code = ${roleFilter}
+            ORDER BY u.first_name, u.last_name
+          `);
+        } else {
+          result = await db.execute(sql`
+            SELECT id, CONCAT(first_name, ' ', last_name) as name 
+            FROM w3suite.users 
+            WHERE tenant_id = ${tenantId} AND is_active = true
+            ORDER BY first_name, last_name
+          `);
+        }
         break;
       default:
         return res.status(400).json({ error: "Invalid entity type" });
