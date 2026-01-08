@@ -326,7 +326,7 @@ router.get("/entities", async (req: Request, res: Response) => {
           SELECT id, nome as name FROM w3suite.stores 
           WHERE tenant_id = ${tenantId} 
             AND category = 'sales_point'
-            AND status = 'active'
+            AND (status = 'active' OR status = 'Attivo')
           ORDER BY nome
         `);
         break;

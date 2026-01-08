@@ -191,6 +191,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
 
   const { data: packagePriceLists = [], refetch: refetchPackageLists } = useQuery<PackagePriceList[]>({
     queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists'],
+    queryFn: () => apiRequest(`/api/commissioning/value-packages/${packageId}/price-lists`),
     enabled: !!packageId,
   });
 
@@ -339,9 +340,13 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
       }
     }
 
-    queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
-    onSuccess?.();
-    onOpenChange(false);
+    // Invalida le query per aggiornare i dati
+    queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists'] });
+    
+    // Resetta pendingChanges e torna a Step 2
+    setPendingChanges({});
+    toast({ title: 'Valori salvati', description: 'I valori dei prodotti sono stati salvati correttamente' });
+    setCurrentStep(2);
   };
 
   const handleClose = () => {
@@ -769,7 +774,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              Salva e Chiudi
+              Salva Valori
             </Button>
           )}
         </DialogFooter>
