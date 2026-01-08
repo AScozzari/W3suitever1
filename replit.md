@@ -105,6 +105,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **VPS Deploy Rules (OBBLIGATORIO)**:
   - **🚀 DEPLOY COMMAND**: Quando l'utente scrive "deploia sulla VPS", usare SEMPRE lo script incrementale chiedendo quale tipo:
     - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)
+    - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)
     - `./deploy/incremental-deploy.sh frontend` - Solo frontend
     - `./deploy/incremental-deploy.sh full` - Entrambi
   - **✅ INCREMENTAL DEPLOY**: Lo script sincronizza solo file sorgenti modificati e builda sulla VPS
