@@ -7,6 +7,54 @@ import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 
 const router = Router();
 
+// ==================== COMMISSIONING VALIDATION SCHEMAS ====================
+
+// Operatori per condizioni nelle funzioni
+const conditionOperators = ['>', '<', '=', '!=', '>=', '<=', '%+', '%-', 'contains', 'startsWith', 'endsWith', 'isEmpty', 'isNotEmpty'] as const;
+const logicConnectors = ['AND', 'OR'] as const;
+
+// Schema per singola condizione nel ruleBundle
+const conditionSchema = z.object({
+  variable: z.string().min(1, "La variabile è obbligatoria"),
+  operator: z.enum(conditionOperators),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  logic: z.enum(logicConnectors).optional().default('AND'),
+});
+
+// Schema per ruleBundle completo (solo condizioni - le operazioni vanno nel configuratore)
+const ruleBundleSchema = z.object({
+  conditions: z.array(conditionSchema).default([]),
+});
+
+// Operatori per operazioni nel configurator-function link
+const operationOperators = ['multiply', 'add', 'subtract', 'divide', 'percentage'] as const;
+const operationTargets = ['gettone_contrattuale', 'gettone_gara', 'canone', 'valenza'] as const;
+
+// Schema per singola operazione
+const operationSchema = z.object({
+  target: z.enum(operationTargets),
+  operator: z.enum(operationOperators),
+  value: z.number(),
+});
+
+// Schema per operations nel configurator-function link
+const operationsSchema = z.object({
+  operations: z.array(operationSchema).default([]),
+});
+
+// Schema per creazione/update funzione
+const createFunctionSchema = z.object({
+  code: z.string().min(1).max(100),
+  name: z.string().min(1).max(255),
+  description: z.string().optional().nullable(),
+  evaluationMode: z.enum(['first_match', 'accumulate', 'weighted_average']).default('first_match'),
+  targetVariable: z.string().min(1).max(100),
+  ruleBundle: ruleBundleSchema.optional().default({ conditions: [] }),
+  dependsOn: z.array(z.string().uuid()).optional().nullable(),
+  sortOrder: z.number().int().min(0).optional().default(0),
+  isActive: z.boolean().optional().default(true),
+});
+
 router.get("/races", async (req: Request, res: Response) => {
   try {
     const tenantId = req.tenant?.id;
@@ -1384,12 +1432,21 @@ router.post("/functions", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Tenant context required" });
     }
 
-    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder } = req.body;
+    // Validate request body
+    const parseResult = createFunctionSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Dati non validi", 
+        details: parseResult.error.flatten().fieldErrors 
+      });
+    }
+
+    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder } = parseResult.data;
 
     const result = await db.execute(sql`
       INSERT INTO w3suite.commissioning_functions 
       (tenant_id, code, name, description, evaluation_mode, target_variable, rule_bundle, depends_on, sort_order, created_by)
-      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${evaluationMode || 'first_match'}, ${targetVariable}, ${JSON.stringify(ruleBundle || {})}::jsonb, ${dependsOn || null}, ${sortOrder || 0}, ${userId})
+      VALUES (${tenantId}, ${code}, ${name}, ${description}, ${evaluationMode}, ${targetVariable}, ${JSON.stringify(ruleBundle)}::jsonb, ${dependsOn || null}, ${sortOrder}, ${userId})
       RETURNING *
     `);
 
@@ -1405,14 +1462,24 @@ router.put("/functions/:id", async (req: Request, res: Response) => {
     const tenantId = req.tenant?.id;
     const userId = req.user?.id;
     const { id } = req.params;
-    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder, isActive } = req.body;
+    
+    // Validate request body
+    const parseResult = createFunctionSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Dati non validi", 
+        details: parseResult.error.flatten().fieldErrors 
+      });
+    }
+
+    const { code, name, description, evaluationMode, targetVariable, ruleBundle, dependsOn, sortOrder, isActive } = parseResult.data;
 
     const result = await db.execute(sql`
       UPDATE w3suite.commissioning_functions SET
         code = ${code}, name = ${name}, description = ${description},
         evaluation_mode = ${evaluationMode}, target_variable = ${targetVariable},
-        rule_bundle = ${JSON.stringify(ruleBundle || {})}::jsonb, depends_on = ${dependsOn || null},
-        sort_order = ${sortOrder || 0}, is_active = ${isActive !== false},
+        rule_bundle = ${JSON.stringify(ruleBundle)}::jsonb, depends_on = ${dependsOn || null},
+        sort_order = ${sortOrder}, is_active = ${isActive},
         modified_by = ${userId}, updated_at = NOW()
       WHERE id = ${id} AND tenant_id = ${tenantId}
       RETURNING *
