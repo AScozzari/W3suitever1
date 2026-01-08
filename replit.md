@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations. It integrates modules for CRM, POS, WMS, Analytics, HR, and CMS, leveraging AI for enhanced efficiency, data-driven insights, and strategic decision-making. The platform aims to become the leading AI-native operating system for enterprises, offering unparalleled optimization and a strategic market advantage.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules including CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to leverage AI for enhanced efficiency, data-driven insights, and strategic decision-making, aiming to become the leading AI-native operating system for enterprises.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -160,7 +160,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 # System Architecture
 - **UI/UX Decisions**:
     - Consistent Glassmorphism design with headers, sidebars, and white backgrounds.
-    - Utilizes `shadcn/ui` components (built on Radix UI) for accessibility and styled with Tailwind CSS.
+    - Utilizes `shadcn/ui` components (built on Radix UI) for accessibility, styled with Tailwind CSS.
     - UI scaling is controlled by `VITE_FONT_SCALE=80`, mandating `rem` units for all new developments to ensure responsiveness.
 - **Technical Implementations**:
     - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) managed by `app.tenant_id`.
