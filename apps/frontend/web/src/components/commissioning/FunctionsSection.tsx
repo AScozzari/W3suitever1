@@ -77,14 +77,9 @@ export default function FunctionsSection() {
     return params.toString();
   }, [searchTerm, dateFrom, dateTo, statusFilter]);
 
+  const functionsUrl = queryParams ? `/api/commissioning/functions?${queryParams}` : '/api/commissioning/functions';
   const { data: functions = [], isLoading } = useQuery<CommissioningFunction[]>({
-    queryKey: ['/api/commissioning/functions', queryParams],
-    queryFn: async () => {
-      const url = queryParams ? `/api/commissioning/functions?${queryParams}` : '/api/commissioning/functions';
-      const res = await fetch(url, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch functions');
-      return res.json();
-    },
+    queryKey: [functionsUrl],
   });
 
   const { data: targetVariables = [] } = useQuery<TargetVariable[]>({
@@ -95,10 +90,20 @@ export default function FunctionsSection() {
     queryKey: ['/api/commissioning/variable-mappings'],
   });
 
+  const invalidateFunctions = () => {
+    // Invalidate all queries starting with /api/commissioning/functions
+    queryClient.invalidateQueries({ 
+      predicate: (query) => {
+        const key = query.queryKey[0];
+        return typeof key === 'string' && key.startsWith('/api/commissioning/functions');
+      }
+    });
+  };
+
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/commissioning/functions', { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/commissioning/functions'] });
+      invalidateFunctions();
       setModalOpen(false);
       resetForm();
       toast({ title: 'Funzione creata', description: 'La funzione commissioning è stata creata' });
@@ -109,7 +114,7 @@ export default function FunctionsSection() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest(`/api/commissioning/functions/${id}`, { method: 'PUT', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/commissioning/functions'] });
+      invalidateFunctions();
       setModalOpen(false);
       resetForm();
       toast({ title: 'Funzione aggiornata' });
@@ -119,7 +124,7 @@ export default function FunctionsSection() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest(`/api/commissioning/functions/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/commissioning/functions'] });
+      invalidateFunctions();
       setDeleteModalOpen(false);
       setDeleteConfirmText('');
       setFunctionToDelete(null);
@@ -136,7 +141,7 @@ export default function FunctionsSection() {
         headers: { 'Content-Type': 'application/json' } 
       }),
     onSuccess: (_, { action }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/commissioning/functions'] });
+      invalidateFunctions();
       const actionLabels = { activate: 'attivata', suspend: 'sospesa', archive: 'archiviata' };
       toast({ title: `Funzione ${actionLabels[action]}` });
     },
