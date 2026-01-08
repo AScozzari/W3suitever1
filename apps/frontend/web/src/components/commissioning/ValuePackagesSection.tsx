@@ -3,9 +3,10 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
@@ -19,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { 
   Plus, Search, Copy, Edit, Trash2, Package, Calendar as CalendarIcon, 
-  MoreHorizontal, Archive, ArchiveRestore, ChevronUp, ChevronDown, ArrowUpDown, X
+  MoreHorizontal, Archive, ArchiveRestore, ChevronUp, ChevronDown, ArrowUpDown, X, Filter
 } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +88,6 @@ export default function ValuePackagesSection() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [packageToDelete, setPackageToDelete] = useState<ValuePackage | null>(null);
-  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
@@ -247,101 +247,170 @@ export default function ValuePackagesSection() {
     setDeleteDialogOpen(true);
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full lg:w-auto">
-          <TabsList className="grid grid-cols-5 w-full lg:w-auto">
-            <TabsTrigger value="all" data-testid="tab-all">
-              Tutti ({statusCounts.all})
-            </TabsTrigger>
-            <TabsTrigger value="draft" data-testid="tab-draft">
-              Bozze ({statusCounts.draft})
-            </TabsTrigger>
-            <TabsTrigger value="active" data-testid="tab-active">
-              Attivi ({statusCounts.active})
-            </TabsTrigger>
-            <TabsTrigger value="expired" data-testid="tab-expired">
-              Scaduti ({statusCounts.expired})
-            </TabsTrigger>
-            <TabsTrigger value="archived" data-testid="tab-archived">
-              Archiviati ({statusCounts.archived})
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+  const hasActiveFilters = statusFilter !== 'all' || dateFrom || dateTo || searchTerm;
 
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 lg:w-64">
+  return (
+    <div className="flex gap-6">
+      {/* Sidebar Filtri */}
+      <div className="w-64 shrink-0 space-y-5 p-4 bg-gray-50 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <Filter className="h-4 w-4" />
+            Filtri
+          </div>
+          {hasActiveFilters && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => { setStatusFilter('all'); setDateFrom(undefined); setDateTo(undefined); setSearchTerm(''); }}
+              className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700"
+              data-testid="button-clear-all-filters"
+            >
+              Pulisci tutto
+            </Button>
+          )}
+        </div>
+
+        {/* Ricerca */}
+        <div className="space-y-2">
+          <Label className="text-xs text-gray-500 uppercase tracking-wide">Cerca</Label>
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
-              placeholder="Cerca pacchetti..." 
+              placeholder="Nome, codice..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
-              className="pl-10" 
+              className="pl-9 h-9 text-sm" 
               data-testid="input-search-packages" 
             />
           </div>
+        </div>
 
-          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="gap-2 shrink-0" data-testid="button-date-filter">
-                <CalendarIcon className="h-4 w-4" />
-                {dateFrom || dateTo ? (
-                  <span className="text-sm">
-                    {dateFrom ? format(dateFrom, 'dd/MM', { locale: it }) : '...'}
-                    {' - '}
-                    {dateTo ? format(dateTo, 'dd/MM', { locale: it }) : '...'}
-                  </span>
-                ) : (
-                  <span className="hidden sm:inline">Filtra date</span>
-                )}
+        {/* Stato */}
+        <div className="space-y-2">
+          <Label className="text-xs text-gray-500 uppercase tracking-wide">Stato</Label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9" data-testid="select-status-filter">
+              <SelectValue placeholder="Seleziona stato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti ({statusCounts.all})</SelectItem>
+              <SelectItem value="draft">Bozze ({statusCounts.draft})</SelectItem>
+              <SelectItem value="active">Attivi ({statusCounts.active})</SelectItem>
+              <SelectItem value="expired">Scaduti ({statusCounts.expired})</SelectItem>
+              <SelectItem value="archived">Archiviati ({statusCounts.archived})</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Date Range */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-gray-500 uppercase tracking-wide">Periodo</Label>
+            {(dateFrom || dateTo) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearDateFilter} 
+                className="h-5 px-1 text-xs text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3 w-3" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <div className="p-3 border-b flex items-center justify-between">
-                <span className="font-medium text-sm">Filtra per data creazione</span>
-                {(dateFrom || dateTo) && (
-                  <Button variant="ghost" size="sm" onClick={clearDateFilter} className="h-6 px-2 text-xs">
-                    <X className="h-3 w-3 mr-1" /> Pulisci
-                  </Button>
-                )}
-              </div>
-              <div className="flex gap-2 p-2">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1 px-1">Da</p>
-                  <Calendar
-                    mode="single"
-                    selected={dateFrom}
-                    onSelect={setDateFrom}
-                    locale={it}
-                    className="rounded-md border"
-                  />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1 px-1">A</p>
-                  <Calendar
-                    mode="single"
-                    selected={dateTo}
-                    onSelect={setDateTo}
-                    locale={it}
-                    className="rounded-md border"
-                  />
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-9 text-sm font-normal"
+                  data-testid="button-date-from"
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  {dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: it }) : 'Data inizio'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  locale={it}
+                  className="rounded-md border"
+                />
+              </PopoverContent>
+            </Popover>
 
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start h-9 text-sm font-normal"
+                  data-testid="button-date-to"
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  {dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: it }) : 'Data fine'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  locale={it}
+                  className="rounded-md border"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Riepilogo filtri attivi */}
+        {hasActiveFilters && (
+          <div className="pt-3 border-t">
+            <p className="text-xs text-gray-500 mb-2">Filtri attivi:</p>
+            <div className="flex flex-wrap gap-1">
+              {statusFilter !== 'all' && (
+                <Badge variant="secondary" className="text-xs">
+                  {statusLabels[statusFilter]?.label}
+                </Badge>
+              )}
+              {searchTerm && (
+                <Badge variant="secondary" className="text-xs">
+                  "{searchTerm}"
+                </Badge>
+              )}
+              {(dateFrom || dateTo) && (
+                <Badge variant="secondary" className="text-xs">
+                  {dateFrom ? format(dateFrom, 'dd/MM', { locale: it }) : '...'}
+                  {' → '}
+                  {dateTo ? format(dateTo, 'dd/MM', { locale: it }) : '...'}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 space-y-4">
+        {/* Header con bottone nuovo */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            {sortedAndFilteredPackages.length} pacchett{sortedAndFilteredPackages.length === 1 ? 'o' : 'i'}
+            {hasActiveFilters && ' (filtrati)'}
+          </div>
           <Button 
             onClick={openCreate} 
-            className="flex items-center gap-2 shrink-0" 
+            className="flex items-center gap-2" 
             style={{ background: 'hsl(var(--brand-orange))' }} 
             data-testid="button-nuovo-pacchetto"
           >
             <Plus className="h-4 w-4" /> 
-            <span className="hidden sm:inline">Nuovo Pacchetto</span>
+            Nuovo Pacchetto
           </Button>
         </div>
-      </div>
 
       {isLoading ? (
         <div className="h-48 flex items-center justify-center text-gray-400">Caricamento...</div>
@@ -494,6 +563,7 @@ export default function ValuePackagesSection() {
           </Table>
         </div>
       )}
+      </div>
 
       <ValuePackageWizard
         open={wizardOpen}
