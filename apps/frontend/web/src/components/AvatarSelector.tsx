@@ -339,7 +339,19 @@ export default function AvatarSelector({
 
       {/* Upload Button - Full Width */}
       <button
-        onClick={() => enablePicker && userId ? setPickerOpen(true) : fileInputRef.current?.click()}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[AvatarSelector] Button clicked, enablePicker:', enablePicker, 'userId:', userId);
+          if (enablePicker && userId) {
+            setPickerOpen(true);
+          } else {
+            // Fallback: open file picker directly
+            console.log('[AvatarSelector] Opening file picker directly');
+            fileInputRef.current?.click();
+          }
+        }}
         disabled={loading || isUploading}
         style={{
           width: '100%',
