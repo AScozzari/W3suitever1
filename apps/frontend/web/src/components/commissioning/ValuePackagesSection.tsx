@@ -3,11 +3,28 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search, Copy, Edit, Trash2, Package, Calendar, Tag, MoreHorizontal } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+} from '@/components/ui/table';
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
+  DropdownMenuTrigger, DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
+import { 
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
+import { 
+  Plus, Search, Copy, Edit, Trash2, Package, Calendar as CalendarIcon, 
+  MoreHorizontal, Archive, ArchiveRestore, ChevronUp, ChevronDown, ArrowUpDown, X
+} from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import ValuePackageWizard from './ValuePackageWizard';
 
 interface ValuePackage {
@@ -15,15 +32,30 @@ interface ValuePackage {
   code: string;
   name: string;
   description: string | null;
+  listType: string;
+  operatorId: string | null;
+  operatorName: string | null;
+  validFrom: string;
+  validTo: string | null;
+  status: string;
+  computedStatus: string;
+  version: number;
+  itemsCount: number;
+  priceListsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ValuePackageForWizard {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
   list_type: string;
   operator_id: string | null;
-  operator_name: string | null;
   valid_from: string;
   valid_to: string | null;
   status: string;
-  version: number;
-  items_count: number;
-  created_at: string;
 }
 
 const listTypeLabels: Record<string, { label: string; color: string }> = {
@@ -40,29 +72,87 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   archived: { label: 'Archiviato', color: 'bg-gray-100 text-gray-500' },
 };
 
+type SortField = 'name' | 'code' | 'listType' | 'status' | 'createdAt' | 'validFrom' | 'itemsCount';
+type SortDirection = 'asc' | 'desc';
+
 export default function ValuePackagesSection() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<ValuePackage | null>(null);
+  const [editingPackage, setEditingPackage] = useState<ValuePackageForWizard | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [packageToDelete, setPackageToDelete] = useState<ValuePackage | null>(null);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
-  const { data: packages = [], isLoading } = useQuery<ValuePackage[]>({
-    queryKey: ['/api/commissioning/value-packages'],
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (statusFilter !== 'all') params.append('status', statusFilter);
+    if (dateFrom) params.append('dateFrom', format(dateFrom, 'yyyy-MM-dd'));
+    if (dateTo) params.append('dateTo', format(dateTo, 'yyyy-MM-dd'));
+    return params.toString();
+  }, [statusFilter, dateFrom, dateTo]);
+
+  const { data: packages = [], isLoading, refetch } = useQuery<ValuePackage[]>({
+    queryKey: ['/api/commissioning/value-packages', queryParams],
+    queryFn: async () => {
+      const url = queryParams 
+        ? `/api/commissioning/value-packages?${queryParams}` 
+        : '/api/commissioning/value-packages';
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest(`/api/commissioning/value-packages/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
-      toast({ title: 'Pacchetto eliminato' });
+      toast({ title: 'Pacchetto eliminato', description: 'Il pacchetto è stato eliminato definitivamente' });
+      setDeleteDialogOpen(false);
+      setPackageToDelete(null);
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile eliminare il pacchetto', variant: 'destructive' });
     },
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/commissioning/value-packages/${id}/duplicate`, { method: 'POST', body: JSON.stringify({ newName: null }), headers: { 'Content-Type': 'application/json' } }),
+    mutationFn: (id: string) => apiRequest(`/api/commissioning/value-packages/${id}/duplicate`, { 
+      method: 'POST', 
+      body: JSON.stringify({ newName: null }), 
+      headers: { 'Content-Type': 'application/json' } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
       toast({ title: 'Pacchetto duplicato', description: 'Una copia del pacchetto è stata creata' });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Impossibile duplicare il pacchetto', variant: 'destructive' });
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) => 
+      apiRequest(`/api/commissioning/value-packages/${id}/archive`, { 
+        method: 'PATCH', 
+        body: JSON.stringify({ archived }), 
+        headers: { 'Content-Type': 'application/json' } 
+      }),
+    onSuccess: (_, { archived }) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
+      toast({ 
+        title: archived ? 'Pacchetto archiviato' : 'Pacchetto ripristinato', 
+        description: archived ? 'Il pacchetto è stato archiviato' : 'Il pacchetto è stato ripristinato come bozza'
+      });
+    },
+    onError: () => {
+      toast({ title: 'Errore', description: 'Operazione non riuscita', variant: 'destructive' });
     },
   });
 
@@ -72,7 +162,18 @@ export default function ValuePackagesSection() {
   };
 
   const openEdit = (pkg: ValuePackage) => {
-    setEditingPackage(pkg);
+    const wizardPkg: ValuePackageForWizard = {
+      id: pkg.id,
+      code: pkg.code,
+      name: pkg.name,
+      description: pkg.description,
+      list_type: pkg.listType,
+      operator_id: pkg.operatorId,
+      valid_from: pkg.validFrom,
+      valid_to: pkg.validTo,
+      status: pkg.status,
+    };
+    setEditingPackage(wizardPkg);
     setWizardOpen(true);
   };
 
@@ -81,89 +182,318 @@ export default function ValuePackagesSection() {
     setEditingPackage(null);
   };
 
-  const filteredPackages = useMemo(() => {
-    if (!searchTerm) return packages;
-    const lower = searchTerm.toLowerCase();
-    return packages.filter(p => p.name.toLowerCase().includes(lower) || p.code.toLowerCase().includes(lower));
-  }, [packages, searchTerm]);
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 ml-1 opacity-40" />;
+    return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />;
+  };
+
+  const sortedAndFilteredPackages = useMemo(() => {
+    let result = [...packages];
+    
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(lower) || 
+        p.code.toLowerCase().includes(lower) ||
+        (p.operatorName?.toLowerCase().includes(lower))
+      );
+    }
+
+    result.sort((a, b) => {
+      let aVal: any, bVal: any;
+      switch (sortField) {
+        case 'name': aVal = a.name; bVal = b.name; break;
+        case 'code': aVal = a.code; bVal = b.code; break;
+        case 'listType': aVal = a.listType; bVal = b.listType; break;
+        case 'status': aVal = a.computedStatus; bVal = b.computedStatus; break;
+        case 'createdAt': aVal = new Date(a.createdAt); bVal = new Date(b.createdAt); break;
+        case 'validFrom': aVal = a.validFrom ? new Date(a.validFrom) : null; bVal = b.validFrom ? new Date(b.validFrom) : null; break;
+        case 'itemsCount': aVal = a.itemsCount; bVal = b.itemsCount; break;
+        default: aVal = a.createdAt; bVal = b.createdAt;
+      }
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [packages, searchTerm, sortField, sortDirection]);
+
+  const statusCounts = useMemo(() => {
+    const counts = { all: packages.length, draft: 0, active: 0, expired: 0, archived: 0 };
+    packages.forEach(p => {
+      const status = p.computedStatus as keyof typeof counts;
+      if (status in counts) counts[status]++;
+    });
+    return counts;
+  }, [packages]);
+
+  const clearDateFilter = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
+
+  const confirmDelete = (pkg: ValuePackage) => {
+    setPackageToDelete(pkg);
+    setDeleteDialogOpen(true);
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input placeholder="Cerca pacchetti..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" data-testid="input-search-packages" />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full lg:w-auto">
+          <TabsList className="grid grid-cols-5 w-full lg:w-auto">
+            <TabsTrigger value="all" data-testid="tab-all">
+              Tutti ({statusCounts.all})
+            </TabsTrigger>
+            <TabsTrigger value="draft" data-testid="tab-draft">
+              Bozze ({statusCounts.draft})
+            </TabsTrigger>
+            <TabsTrigger value="active" data-testid="tab-active">
+              Attivi ({statusCounts.active})
+            </TabsTrigger>
+            <TabsTrigger value="expired" data-testid="tab-expired">
+              Scaduti ({statusCounts.expired})
+            </TabsTrigger>
+            <TabsTrigger value="archived" data-testid="tab-archived">
+              Archiviati ({statusCounts.archived})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 lg:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Cerca pacchetti..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              className="pl-10" 
+              data-testid="input-search-packages" 
+            />
+          </div>
+
+          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2 shrink-0" data-testid="button-date-filter">
+                <CalendarIcon className="h-4 w-4" />
+                {dateFrom || dateTo ? (
+                  <span className="text-sm">
+                    {dateFrom ? format(dateFrom, 'dd/MM', { locale: it }) : '...'}
+                    {' - '}
+                    {dateTo ? format(dateTo, 'dd/MM', { locale: it }) : '...'}
+                  </span>
+                ) : (
+                  <span className="hidden sm:inline">Filtra date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 border-b flex items-center justify-between">
+                <span className="font-medium text-sm">Filtra per data creazione</span>
+                {(dateFrom || dateTo) && (
+                  <Button variant="ghost" size="sm" onClick={clearDateFilter} className="h-6 px-2 text-xs">
+                    <X className="h-3 w-3 mr-1" /> Pulisci
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2 p-2">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1 px-1">Da</p>
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    locale={it}
+                    className="rounded-md border"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1 px-1">A</p>
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    locale={it}
+                    className="rounded-md border"
+                  />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button 
+            onClick={openCreate} 
+            className="flex items-center gap-2 shrink-0" 
+            style={{ background: 'hsl(var(--brand-orange))' }} 
+            data-testid="button-nuovo-pacchetto"
+          >
+            <Plus className="h-4 w-4" /> 
+            <span className="hidden sm:inline">Nuovo Pacchetto</span>
+          </Button>
         </div>
-        <Button onClick={openCreate} className="flex items-center gap-2" style={{ background: 'hsl(var(--brand-orange))' }} data-testid="button-nuovo-pacchetto">
-          <Plus className="h-4 w-4" /> Nuovo Pacchetto
-        </Button>
       </div>
 
       {isLoading ? (
         <div className="h-48 flex items-center justify-center text-gray-400">Caricamento...</div>
-      ) : filteredPackages.length === 0 ? (
+      ) : sortedAndFilteredPackages.length === 0 ? (
         <div className="h-48 flex items-center justify-center border rounded-lg bg-gray-50">
           <div className="text-center text-gray-400">
             <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Nessun pacchetto commissioning</p>
-            <p className="text-sm">Crea un pacchetto per definire valenze e gettoni per prodotti</p>
+            <p className="font-medium">Nessun pacchetto trovato</p>
+            <p className="text-sm">
+              {searchTerm || statusFilter !== 'all' || dateFrom || dateTo
+                ? 'Prova a modificare i filtri'
+                : 'Crea un pacchetto per definire valenze e gettoni per prodotti'
+              }
+            </p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPackages.map((pkg) => {
-            const listType = listTypeLabels[pkg.list_type];
-            const status = statusLabels[pkg.status];
-            return (
-              <Card key={pkg.id} className="border hover:border-gray-300 transition-colors cursor-pointer" onClick={() => openEdit(pkg)} data-testid={`card-package-${pkg.id}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-5 w-5 text-gray-400" />
-                      <code className="text-xs font-mono text-gray-500">{pkg.code}</code>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`actions-package-${pkg.id}`}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEdit(pkg); }} data-testid="action-edit-package">
-                          <Edit className="h-4 w-4 mr-2" /> Modifica
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); duplicateMutation.mutate(pkg.id); }} data-testid="action-duplicate-package">
-                          <Copy className="h-4 w-4 mr-2" /> Duplica
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(pkg.id); }} data-testid="action-delete-package">
-                          <Trash2 className="h-4 w-4 mr-2" /> Elimina
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{pkg.name}</h3>
-                  {pkg.description && <p className="text-sm text-gray-500 mb-3 line-clamp-2">{pkg.description}</p>}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge className={`${listType?.color || 'bg-gray-100'} border-0 text-xs`}>{listType?.label || pkg.list_type}</Badge>
-                    <Badge className={`${status?.color || 'bg-gray-100'} border-0 text-xs`}>{status?.label || pkg.status}</Badge>
-                    {pkg.operator_name && <Badge variant="outline" className="text-xs">{pkg.operator_name}</Badge>}
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{pkg.valid_from?.split('T')[0]}</span>
-                      {pkg.valid_to && <span>→ {pkg.valid_to.split('T')[0]}</span>}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Tag className="h-3 w-3" />
-                      <span>{pkg.items_count || 0} prodotti</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100 whitespace-nowrap" 
+                  onClick={() => handleSort('code')}
+                >
+                  <div className="flex items-center">Codice <SortIcon field="code" /></div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100" 
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center">Nome <SortIcon field="name" /></div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100 whitespace-nowrap" 
+                  onClick={() => handleSort('listType')}
+                >
+                  <div className="flex items-center">Tipo <SortIcon field="listType" /></div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100 whitespace-nowrap" 
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center">Stato <SortIcon field="status" /></div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100 whitespace-nowrap" 
+                  onClick={() => handleSort('validFrom')}
+                >
+                  <div className="flex items-center">Validità <SortIcon field="validFrom" /></div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100 text-center whitespace-nowrap" 
+                  onClick={() => handleSort('itemsCount')}
+                >
+                  <div className="flex items-center justify-center">Prodotti <SortIcon field="itemsCount" /></div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-100 whitespace-nowrap" 
+                  onClick={() => handleSort('createdAt')}
+                >
+                  <div className="flex items-center">Creato il <SortIcon field="createdAt" /></div>
+                </TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedAndFilteredPackages.map((pkg) => {
+                const listType = listTypeLabels[pkg.listType];
+                const status = statusLabels[pkg.computedStatus];
+                const isArchived = pkg.computedStatus === 'archived';
+                
+                return (
+                  <TableRow 
+                    key={pkg.id} 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => openEdit(pkg)}
+                    data-testid={`row-package-${pkg.id}`}
+                  >
+                    <TableCell className="font-mono text-sm text-gray-600">{pkg.code}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{pkg.name}</div>
+                      {pkg.operatorName && (
+                        <div className="text-xs text-gray-500">{pkg.operatorName}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${listType?.color || 'bg-gray-100'} border-0 text-xs`}>
+                        {listType?.label || pkg.listType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${status?.color || 'bg-gray-100'} border-0 text-xs`}>
+                        {status?.label || pkg.computedStatus}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600 whitespace-nowrap">
+                      {pkg.validFrom ? format(new Date(pkg.validFrom), 'dd/MM/yyyy') : '-'}
+                      {pkg.validTo && (
+                        <span className="text-gray-400"> → {format(new Date(pkg.validTo), 'dd/MM/yyyy')}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="text-xs">
+                        {pkg.itemsCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500 whitespace-nowrap">
+                      {pkg.createdAt ? format(new Date(pkg.createdAt), 'dd/MM/yyyy') : '-'}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`actions-package-${pkg.id}`}>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(pkg)} data-testid="action-edit-package">
+                            <Edit className="h-4 w-4 mr-2" /> Modifica
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => duplicateMutation.mutate(pkg.id)} data-testid="action-duplicate-package">
+                            <Copy className="h-4 w-4 mr-2" /> Duplica
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {isArchived ? (
+                            <DropdownMenuItem onClick={() => archiveMutation.mutate({ id: pkg.id, archived: false })} data-testid="action-unarchive-package">
+                              <ArchiveRestore className="h-4 w-4 mr-2" /> Ripristina
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => archiveMutation.mutate({ id: pkg.id, archived: true })} data-testid="action-archive-package">
+                              <Archive className="h-4 w-4 mr-2" /> Archivia
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={() => confirmDelete(pkg)} 
+                            data-testid="action-delete-package"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Elimina
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -173,6 +503,29 @@ export default function ValuePackagesSection() {
         editingPackage={editingPackage}
         onSuccess={handleWizardSuccess}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare questo pacchetto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stai per eliminare definitivamente il pacchetto <strong>{packageToDelete?.name}</strong>.
+              <br />
+              Questa azione non può essere annullata. Tutti i dati associati verranno persi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Annulla</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => packageToDelete && deleteMutation.mutate(packageToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-delete"
+            >
+              Elimina definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
