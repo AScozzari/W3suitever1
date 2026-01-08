@@ -179,7 +179,7 @@ const updateCalendarEventSchema = createCalendarEventSchema.partial();
 
 import hierarchyRouter from "../routes/hierarchy";
 import { avatarService as legacyAvatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
-import { avatarService as s3AvatarService } from "../services/avatar.service";
+import { storageService } from "../services/storage.service";
 import { objectAclService } from "./objectAcl";
 import { HRStorage, CalendarScope } from "./hr-storage";
 import { encryptionKeyService } from "./encryption-service";
@@ -4156,91 +4156,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get S3 presigned URL for avatar upload
-  app.post('/api/users/:userId/avatar/upload-url', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const requesterId = req.user?.id;
-      const targetUserId = req.params.userId;
-      const { contentType = 'image/png' } = req.body;
-
-      if (!tenantId || !requesterId) {
-        return res.status(401).json({ error: 'authentication_required', message: 'Autenticazione richiesta' });
-      }
-
-      if (targetUserId !== requesterId && !req.userPermissions?.includes('*')) {
-        return res.status(403).json({ error: 'forbidden', message: 'Non autorizzato' });
-      }
-
-      const result = await s3AvatarService.getUploadUrl({
-        tenantId,
-        userId: targetUserId,
-        requestingUserId: requesterId
-      }, contentType);
-
-      res.json({
-        success: true,
-        data: {
-          uploadUrl: result.url,
-          objectKey: result.objectKey,
-          expiresAt: result.expiresAt,
-          method: 'PUT'
-        }
-      });
-    } catch (error) {
-      handleApiError(error, res, 'generazione URL upload avatar');
-    }
-  });
-
-  // Confirm avatar upload after successful S3 PUT
-  app.put('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const requesterId = req.user?.id;
-      const targetUserId = req.params.userId;
-      const { objectKey } = req.body;
-
-      if (!tenantId || !requesterId) {
-        return res.status(401).json({ error: 'authentication_required', message: 'Autenticazione richiesta' });
-      }
-
-      if (!objectKey) {
-        return res.status(400).json({ error: 'missing_parameter', message: 'objectKey richiesto' });
-      }
-
-      if (targetUserId !== requesterId && !req.userPermissions?.includes('*')) {
-        return res.status(403).json({ error: 'forbidden', message: 'Non autorizzato' });
-      }
-
-      await s3AvatarService.confirmUpload({
-        tenantId,
-        userId: targetUserId,
-        requestingUserId: requesterId
-      }, objectKey);
-
-      const avatarInfo = await s3AvatarService.getDownloadUrl(tenantId, targetUserId);
-
-      res.json({
-        success: true,
-        data: {
-          userId: targetUserId,
-          avatarUrl: avatarInfo.url,
-          objectKey
-        },
-        message: 'Avatar aggiornato con successo'
-      });
-    } catch (error) {
-      handleApiError(error, res, 'conferma upload avatar');
-    }
-  });
-
-  // Get user avatar URL (S3 signed URL)
+  // Get user avatar URL - uses new storageService (MyDrive Avatar folder)
   app.get('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
+      const requesterId = req.user?.id;
       const targetUserId = req.params.userId;
 
-      if (!tenantId) {
+      if (!tenantId || !requesterId) {
         return res.status(401).json({
           error: 'authentication_required',
           message: 'Autenticazione richiesta per visualizzazione avatar'
@@ -4254,60 +4177,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Use new S3-based avatar service
-      const avatarInfo = await s3AvatarService.getDownloadUrl(tenantId, targetUserId);
+      const ctx = { tenantId, userId: requesterId };
+      const avatarInfo = await storageService.getAvatarSignedUrl(ctx, targetUserId);
 
-      res.json({
-        success: true,
-        data: {
-          userId: targetUserId,
-          avatarUrl: avatarInfo.url,
-          expiresAt: avatarInfo.expiresAt,
-          displayName: avatarInfo.initials,
-          hasAvatar: avatarInfo.hasAvatar,
-          initials: avatarInfo.initials
-        }
-      });
+      if (avatarInfo) {
+        res.json({
+          success: true,
+          data: {
+            userId: targetUserId,
+            avatarUrl: avatarInfo.url,
+            expiresAt: avatarInfo.expiresAt,
+            hasAvatar: true,
+            initials: targetUserId.substring(0, 2).toUpperCase()
+          }
+        });
+      } else {
+        res.json({
+          success: true,
+          data: {
+            userId: targetUserId,
+            avatarUrl: null,
+            expiresAt: null,
+            hasAvatar: false,
+            initials: targetUserId.substring(0, 2).toUpperCase()
+          }
+        });
+      }
 
     } catch (error) {
       handleApiError(error, res, 'recupero avatar utente');
-    }
-  });
-
-  // List all saved avatars for user (MyDrive picker)
-  app.get('/api/users/:userId/avatars', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const requesterId = req.user?.id;
-      const targetUserId = req.params.userId;
-
-      if (!tenantId || !requesterId) {
-        return res.status(401).json({
-          error: 'authentication_required',
-          message: 'Autenticazione richiesta'
-        });
-      }
-
-      // Users can only list their own avatars unless they have admin permissions
-      if (targetUserId !== requesterId && !req.userPermissions?.includes('*')) {
-        return res.status(403).json({
-          error: 'forbidden',
-          message: 'Non autorizzato a visualizzare avatar di altri utenti'
-        });
-      }
-
-      const avatars = await s3AvatarService.listUserAvatars(tenantId, targetUserId);
-
-      res.json({
-        success: true,
-        data: {
-          userId: targetUserId,
-          avatars
-        }
-      });
-
-    } catch (error) {
-      handleApiError(error, res, 'elenco avatar utente');
     }
   });
 

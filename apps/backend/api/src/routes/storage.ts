@@ -334,7 +334,8 @@ router.get('/serve', async (req: Request, res: Response) => {
     res.send(Buffer.from(result.buffer));
   } catch (error: any) {
     console.error('Error serving file:', error);
-    res.status(403).json({ error: error.message });
+    const isNotFound = error.message?.includes('not found') || error.message?.includes('orphan');
+    res.status(isNotFound ? 404 : 403).json({ error: error.message });
   }
 });
 
@@ -544,6 +545,19 @@ router.get('/avatars/:userId/signed-url', requirePermission('storage:read'), asy
     return res.json({ hasAvatar: false, url: null, expiresAt: null, initials: 'U' });
   } catch (error: any) {
     console.error('Error getting avatar signed URL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/avatars/:userId/list', requirePermission('storage:read'), async (req: Request, res: Response) => {
+  try {
+    const ctx = getContext(req);
+    const targetUserId = req.params.userId;
+    
+    const avatars = await storageService.listUserAvatars(ctx, targetUserId);
+    res.json({ success: true, data: { userId: targetUserId, avatars } });
+  } catch (error: any) {
+    console.error('Error listing avatars:', error);
     res.status(500).json({ error: error.message });
   }
 });

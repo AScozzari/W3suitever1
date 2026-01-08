@@ -96,7 +96,7 @@ export default function AvatarPickerDialog({
     setLoadError(null);
     
     try {
-      const response = await fetch(`/api/users/${userId}/avatars`, {
+      const response = await fetch(`/api/storage/avatars/${userId}/list`, {
         credentials: 'include'
       });
       

@@ -1,36 +1,15 @@
 /**
- * 🖼️ USE AVATAR UPLOAD HOOK
+ * USE AVATAR UPLOAD HOOK
  * 
- * Hook per gestire upload avatar su S3 con presigned URL.
+ * Hook per gestire upload avatar tramite storageService.
  * Flusso:
- * 1. Richiede presigned URL dal backend
- * 2. Carica file direttamente su S3
- * 3. Conferma upload al backend
- * 4. Restituisce URL permanente S3
+ * 1. Carica file direttamente al backend
+ * 2. Backend salva in MyDrive Avatar folder
+ * 3. Restituisce URL firmato per visualizzazione
  */
 
 import { useState, useCallback } from 'react';
-
-interface PresignedUrlResponse {
-  success: boolean;
-  data: {
-    uploadUrl: string;
-    objectKey: string;
-    expiresAt: string;
-    method: string;
-  };
-  message?: string;
-}
-
-interface ConfirmResponse {
-  success: boolean;
-  data: {
-    userId: string;
-    avatarUrl: string;
-    objectKey: string;
-  };
-  message?: string;
-}
+import { queryClient } from '@/lib/queryClient';
 
 interface AvatarUploadResult {
   success: boolean;
@@ -48,7 +27,7 @@ interface UseAvatarUploadReturn {
 }
 
 /**
- * Hook per upload avatar su S3
+ * Hook per upload avatar tramite storageService
  */
 export function useAvatarUpload(): UseAvatarUploadReturn {
   const [isUploading, setIsUploading] = useState(false);
@@ -58,10 +37,10 @@ export function useAvatarUpload(): UseAvatarUploadReturn {
   const clearError = useCallback(() => setError(null), []);
 
   /**
-   * Carica avatar su S3
+   * Carica avatar al backend
    * @param file - Blob del file avatar
    * @param userId - ID dell'utente
-   * @param fileName - Nome file opzionale (per determinare content type)
+   * @param fileName - Nome file opzionale
    */
   const uploadAvatar = useCallback(async (
     file: Blob,
@@ -73,86 +52,47 @@ export function useAvatarUpload(): UseAvatarUploadReturn {
     setError(null);
 
     try {
-      // Determina content type
-      let contentType = 'image/png';
-      if (file.type && file.type.startsWith('image/')) {
-        contentType = file.type;
-      } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
-        contentType = 'image/jpeg';
-      } else if (fileName.endsWith('.webp')) {
-        contentType = 'image/webp';
-      } else if (fileName.endsWith('.gif')) {
-        contentType = 'image/gif';
-      }
+      setUploadProgress(20);
 
-      setUploadProgress(10);
+      const formData = new FormData();
+      formData.append('avatar', file, fileName);
 
-      // Step 1: Ottieni presigned URL dal backend
-      const presignedResponse = await fetch(`/api/users/${userId}/avatar/upload-url`, {
+      setUploadProgress(40);
+
+      const uploadResponse = await fetch(`/api/storage/avatars/${userId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include',
-        body: JSON.stringify({ contentType })
-      });
-
-      if (!presignedResponse.ok) {
-        const errData = await presignedResponse.json().catch(() => ({}));
-        throw new Error(errData.message || 'Errore generazione URL upload');
-      }
-
-      const presignedData: PresignedUrlResponse = await presignedResponse.json();
-      
-      if (!presignedData.success || !presignedData.data?.uploadUrl) {
-        throw new Error(presignedData.message || 'URL upload non valido');
-      }
-
-      setUploadProgress(30);
-      console.log('[AvatarUpload] Got presigned URL:', presignedData.data.objectKey);
-
-      // Step 2: Carica file direttamente su S3
-      const uploadResponse = await fetch(presignedData.data.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': contentType,
-        },
-        body: file
+        body: formData
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Errore caricamento file su S3');
+        const errData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errData.error || errData.message || 'Errore caricamento avatar');
       }
 
-      setUploadProgress(70);
-      console.log('[AvatarUpload] File uploaded to S3');
+      const avatarObject = await uploadResponse.json();
+      
+      setUploadProgress(80);
+      console.log('[AvatarUpload] Avatar uploaded:', avatarObject.id);
 
-      // Step 3: Conferma upload al backend
-      const confirmResponse = await fetch(`/api/users/${userId}/avatar`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          objectKey: presignedData.data.objectKey
-        })
+      const signedUrlResponse = await fetch(`/api/storage/avatars/${userId}/signed-url`, {
+        credentials: 'include'
       });
 
-      if (!confirmResponse.ok) {
-        const errData = await confirmResponse.json().catch(() => ({}));
-        throw new Error(errData.message || 'Errore conferma upload avatar');
+      let avatarUrl = null;
+      if (signedUrlResponse.ok) {
+        const signedData = await signedUrlResponse.json();
+        avatarUrl = signedData.url;
       }
 
-      const confirmData: ConfirmResponse = await confirmResponse.json();
-      
       setUploadProgress(100);
-      console.log('[AvatarUpload] Upload confirmed, URL:', confirmData.data?.avatarUrl);
+
+      queryClient.invalidateQueries({ queryKey: [`/api/storage/avatars/${userId}/signed-url`] });
 
       return {
         success: true,
-        url: confirmData.data?.avatarUrl,
-        objectKey: presignedData.data.objectKey
+        url: avatarUrl,
+        objectKey: avatarObject.objectKey
       };
 
     } catch (err) {
@@ -165,7 +105,6 @@ export function useAvatarUpload(): UseAvatarUploadReturn {
       };
     } finally {
       setIsUploading(false);
-      // Reset progress after short delay
       setTimeout(() => setUploadProgress(0), 1000);
     }
   }, []);

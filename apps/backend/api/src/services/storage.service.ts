@@ -1055,12 +1055,25 @@ export const storageService = {
         tenantId: object.tenantId,
         userId: tokenRecord.userId || 'system',
       };
-      const result = await aws.downloadObject(awsCtx, object.objectKey);
-      return {
-        buffer: result.buffer,
-        mimeType: result.mimeType || object.mimeType,
-        fileName: object.name,
-      };
+      try {
+        // Token già validato sopra - bypass access check per supportare path legacy
+        const result = await aws.downloadObject(awsCtx, object.objectKey, undefined, { skipAccessCheck: true });
+        return {
+          buffer: result.buffer,
+          mimeType: result.mimeType || object.mimeType,
+          fileName: object.name,
+        };
+      } catch (err: any) {
+        // Se il file non esiste su S3 (record legacy), elimina il record orfano dal database
+        if (err?.Code === 'NoSuchKey' || err?.name === 'NoSuchKey') {
+          console.warn(`[Storage] Orphan record found: ${object.objectKey} - marking as deleted`);
+          await db.update(storageObjects)
+            .set({ deletedAt: new Date() })
+            .where(eq(storageObjects.id, object.id));
+          throw new Error('File not found - orphan record cleaned up');
+        }
+        throw err;
+      }
     }
 
     const client = await getObjectStorageClient();
@@ -2011,7 +2024,7 @@ export const storageService = {
     }
 
     const ext = fileName.split('.').pop() || 'webp';
-    const objectKey = `users/${targetUserId}/avatar/profile.${ext}`;
+    const objectKey = `tenants/${ctx.tenantId}/users/${targetUserId}/avatars/profile.${ext}`;
     const sizeBytes = fileBuffer.length;
 
     const client = await getObjectStorageClient();
@@ -2173,6 +2186,40 @@ export const storageService = {
     });
 
     return { deleted: true, objectsDeleted: avatarObjects.length, bytesFreed: totalBytesDeleted };
+  },
+
+  async listUserAvatars(ctx: StorageServiceContext, targetUserId: string) {
+    const avatarFolder = await db.select().from(storageFolders)
+      .where(and(
+        eq(storageFolders.tenantId, ctx.tenantId),
+        eq(storageFolders.ownerUserId, targetUserId),
+        eq(storageFolders.name, 'Avatar'),
+        eq(storageFolders.scopeLevel, 'user'),
+        isNull(storageFolders.parentId),
+        isNull(storageFolders.deletedAt),
+      )).limit(1);
+
+    if (!avatarFolder[0]) {
+      return [];
+    }
+
+    const avatarObjects = await db.select().from(storageObjects)
+      .where(and(
+        eq(storageObjects.tenantId, ctx.tenantId),
+        eq(storageObjects.folderId, avatarFolder[0].id),
+        eq(storageObjects.objectType, 'avatar'),
+        isNull(storageObjects.deletedAt),
+      ))
+      .orderBy(desc(storageObjects.createdAt));
+
+    return avatarObjects.map(obj => ({
+      id: obj.id,
+      name: obj.name,
+      objectKey: obj.objectKey,
+      mimeType: obj.mimeType,
+      sizeBytes: obj.sizeBytes,
+      createdAt: obj.createdAt,
+    }));
   },
 
   // ==================== MIGRATION ====================

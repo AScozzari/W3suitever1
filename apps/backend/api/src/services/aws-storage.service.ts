@@ -269,13 +269,14 @@ export class AWSStorageService {
   async downloadObject(
     ctx: TenantStorageContext,
     objectKey: string,
-    versionId?: string
+    versionId?: string,
+    options?: { skipAccessCheck?: boolean }
   ): Promise<{ buffer: Buffer; metadata: Record<string, string>; mimeType: string }> {
     if (!this.s3Client || !this.config) {
       throw new Error('AWS Storage not configured');
     }
 
-    if (!this.validatePrefixAccess(ctx, objectKey)) {
+    if (!options?.skipAccessCheck && !this.validatePrefixAccess(ctx, objectKey)) {
       throw new Error('Access denied: Cannot access this object');
     }
 
@@ -566,13 +567,14 @@ export class AWSStorageService {
       expiresInSeconds?: number;
       versionId?: string;
       responseContentDisposition?: string;
+      skipAccessCheck?: boolean;
     } = {}
   ): Promise<PresignedUrlResult> {
     if (!this.s3Client || !this.config) {
       throw new Error('AWS Storage not configured');
     }
 
-    if (!this.validatePrefixAccess(ctx, objectKey)) {
+    if (!options.skipAccessCheck && !this.validatePrefixAccess(ctx, objectKey)) {
       throw new Error('Access denied: Cannot access this object');
     }
 
