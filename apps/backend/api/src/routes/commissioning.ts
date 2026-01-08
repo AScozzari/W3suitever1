@@ -955,6 +955,198 @@ router.delete("/value-packages/:packageId/items/:itemId", async (req: Request, r
   }
 });
 
+// ==================== VALUE PACKAGE PRICE LISTS ====================
+
+// Get price lists associated with a package
+router.get("/value-packages/:packageId/price-lists", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { packageId } = req.params;
+
+    const result = await db.execute(sql`
+      SELECT vppl.*, pl.code as price_list_code, pl.name as price_list_name, pl.type as price_list_type,
+        (SELECT COUNT(*) FROM w3suite.commissioning_value_package_items 
+         WHERE package_id = ${packageId} AND price_list_id = pl.id) as items_count
+      FROM w3suite.commissioning_value_package_price_lists vppl
+      JOIN w3suite.price_lists pl ON pl.id = vppl.price_list_id
+      WHERE vppl.package_id = ${packageId}
+      ORDER BY vppl.sort_order ASC, pl.name ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    logger.error("Error fetching package price lists", { error });
+    res.status(500).json({ error: "Failed to fetch package price lists" });
+  }
+});
+
+// Add price list to package
+router.post("/value-packages/:packageId/price-lists", async (req: Request, res: Response) => {
+  try {
+    const { packageId } = req.params;
+    const { priceListId, sortOrder } = req.body;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_value_package_price_lists (package_id, price_list_id, sort_order)
+      VALUES (${packageId}, ${priceListId}, ${sortOrder || 0})
+      ON CONFLICT (package_id, price_list_id) DO NOTHING
+      RETURNING *
+    `);
+
+    res.status(201).json(result.rows[0] || { message: "Price list already added" });
+  } catch (error) {
+    logger.error("Error adding price list to package", { error });
+    res.status(500).json({ error: "Failed to add price list to package" });
+  }
+});
+
+// Remove price list from package
+router.delete("/value-packages/:packageId/price-lists/:priceListId", async (req: Request, res: Response) => {
+  try {
+    const { packageId, priceListId } = req.params;
+
+    // Delete items first, then the association
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_value_package_items 
+      WHERE package_id = ${packageId} AND price_list_id = ${priceListId}
+    `);
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_value_package_price_lists 
+      WHERE package_id = ${packageId} AND price_list_id = ${priceListId}
+    `);
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error("Error removing price list from package", { error });
+    res.status(500).json({ error: "Failed to remove price list from package" });
+  }
+});
+
+// Get products from a price list (for grid population)
+router.get("/value-packages/:packageId/price-lists/:priceListId/products", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { packageId, priceListId } = req.params;
+
+    // Get price list type to determine which table to query
+    const priceListResult = await db.execute(sql`
+      SELECT type FROM w3suite.price_lists WHERE id = ${priceListId} AND tenant_id = ${tenantId}
+    `);
+
+    if (priceListResult.rows.length === 0) {
+      return res.status(404).json({ error: "Price list not found" });
+    }
+
+    const priceListType = (priceListResult.rows[0] as any).type;
+    const isCanvas = priceListType === 'canvas';
+
+    let productsQuery;
+    if (isCanvas) {
+      // Canvas products with monthly_fee (canone)
+      productsQuery = await db.execute(sql`
+        SELECT 
+          plic.id as price_list_item_id,
+          plic.product_id,
+          p.name as product_name,
+          p.sku as product_sku,
+          plic.monthly_fee as canone_listino,
+          TRUE as is_canvas,
+          vpi.id as item_id,
+          vpi.valenza,
+          vpi.gettone_contrattuale,
+          vpi.gettone_gara,
+          vpi.canone as canone_override,
+          COALESCE(vpi.canone_inherited, true) as canone_inherited,
+          vpi.notes
+        FROM w3suite.price_list_items_canvas plic
+        LEFT JOIN w3suite.products p ON p.id = plic.product_id
+        LEFT JOIN w3suite.commissioning_value_package_items vpi 
+          ON vpi.package_id = ${packageId} 
+          AND vpi.price_list_id = ${priceListId} 
+          AND vpi.product_id = plic.product_id
+        WHERE plic.price_list_id = ${priceListId} AND plic.is_active = true
+        ORDER BY p.name ASC
+      `);
+    } else {
+      // Normal products
+      productsQuery = await db.execute(sql`
+        SELECT 
+          pli.id as price_list_item_id,
+          pli.product_id,
+          p.name as product_name,
+          p.sku as product_sku,
+          NULL as canone_listino,
+          FALSE as is_canvas,
+          vpi.id as item_id,
+          vpi.valenza,
+          vpi.gettone_contrattuale,
+          vpi.gettone_gara,
+          NULL as canone_override,
+          NULL as canone_inherited,
+          vpi.notes
+        FROM w3suite.price_list_items pli
+        LEFT JOIN w3suite.products p ON p.id = pli.product_id
+        LEFT JOIN w3suite.commissioning_value_package_items vpi 
+          ON vpi.package_id = ${packageId} 
+          AND vpi.price_list_id = ${priceListId} 
+          AND vpi.product_id = pli.product_id
+        WHERE pli.price_list_id = ${priceListId} AND pli.is_active = true
+        ORDER BY p.name ASC
+      `);
+    }
+
+    res.json({
+      priceListType,
+      isCanvas,
+      products: productsQuery.rows
+    });
+  } catch (error) {
+    logger.error("Error fetching price list products", { error });
+    res.status(500).json({ error: "Failed to fetch price list products" });
+  }
+});
+
+// Bulk update products for a price list
+router.post("/value-packages/:packageId/price-lists/:priceListId/products/bulk", async (req: Request, res: Response) => {
+  try {
+    const { packageId, priceListId } = req.params;
+    const { products } = req.body; // Array of { productId, valenza, gettoneContrattuale, gettoneGara, canone, canoneInherited, notes }
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Products array required" });
+    }
+
+    const results = [];
+    for (const product of products) {
+      const { productId, priceListItemId, valenza, gettoneContrattuale, gettoneGara, canone, canoneInherited, notes } = product;
+      
+      const result = await db.execute(sql`
+        INSERT INTO w3suite.commissioning_value_package_items 
+        (package_id, price_list_id, product_id, price_list_item_id, valenza, gettone_contrattuale, gettone_gara, canone, canone_inherited, notes)
+        VALUES (${packageId}, ${priceListId}, ${productId}, ${priceListItemId || null}, 
+                ${valenza || null}, ${gettoneContrattuale || null}, ${gettoneGara || null}, 
+                ${canone || null}, ${canoneInherited !== false}, ${notes || null})
+        ON CONFLICT (package_id, price_list_id, product_id) DO UPDATE SET
+          valenza = EXCLUDED.valenza,
+          gettone_contrattuale = EXCLUDED.gettone_contrattuale,
+          gettone_gara = EXCLUDED.gettone_gara,
+          canone = EXCLUDED.canone,
+          canone_inherited = EXCLUDED.canone_inherited,
+          notes = EXCLUDED.notes,
+          updated_at = NOW()
+        RETURNING *
+      `);
+      results.push(result.rows[0]);
+    }
+
+    res.json({ updated: results.length, items: results });
+  } catch (error) {
+    logger.error("Error bulk updating products", { error });
+    res.status(500).json({ error: "Failed to bulk update products" });
+  }
+});
+
 // ==================== L3 - FUNCTIONS ====================
 
 // Variabili L2 target disponibili
