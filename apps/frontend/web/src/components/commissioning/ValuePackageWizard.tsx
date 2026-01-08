@@ -285,7 +285,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   };
 
   const handleTogglePriceList = useCallback((priceListId: string) => {
-    if (!packageId) return;
+    if (!packageId || !priceListId) return;
 
     const isSelected = packagePriceLists.some(pl => pl.price_list_id === priceListId);
     if (isSelected) {
@@ -631,10 +631,10 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                       <TabsTrigger 
                         key={pl.price_list_id || `tab-${idx}`} 
                         value={pl.price_list_id}
-                        className="data-[state=active]:bg-white flex items-center gap-2"
+                        className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-700 flex items-center gap-2"
                       >
                         <span>{pl.price_list_name}</span>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">
                           {pl.items_count || 0}
                         </Badge>
                         {pendingChanges[pl.price_list_id] && (

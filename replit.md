@@ -105,7 +105,6 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - **VPS Deploy Rules (OBBLIGATORIO)**:
   - **🚀 DEPLOY COMMAND**: Quando l'utente scrive "deploia sulla VPS", usare SEMPRE lo script incrementale chiedendo quale tipo:
     - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)
-    - `./deploy/incremental-deploy.sh backend` - Solo backend (più comune)
     - `./deploy/incremental-deploy.sh frontend` - Solo frontend
     - `./deploy/incremental-deploy.sh full` - Entrambi
   - **✅ INCREMENTAL DEPLOY**: Lo script sincronizza solo file sorgenti modificati e builda sulla VPS
@@ -160,12 +159,12 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 
 # System Architecture
 - **UI/UX Decisions**:
-    - Consistent Glassmorphism design with headers, sidebars, and white backgrounds across all pages.
-    - Utilizes `shadcn/ui` components (built on Radix UI) for accessibility and adheres to a component-first approach.
-    - Styling is based on Tailwind CSS, with a strict rule for using `rem` units for all new developments to ensure proper UI scaling via `VITE_FONT_SCALE`.
+    - Consistent design with headers, sidebars, and white backgrounds.
+    - Uses `shadcn/ui` components (built on Radix UI) for accessibility and a component-first approach.
+    - Styling with Tailwind CSS, strictly using `rem` units for new developments to ensure proper UI scaling via `VITE_FONT_SCALE`.
 - **Technical Implementations**:
-    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and robust Row Level Security (RLS) managed by `app.tenant_id`.
-    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) system.
+    - **Database**: PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`) and Row Level Security (RLS) managed by `app.tenant_id`.
+    - **Security**: OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC).
     - **Core Systems**: Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP) for external integrations, AI Voice Agent with RAG, and multi-tenant object storage.
     - **AI Integration**: AI Enforcement Middleware, AI Workflow Builder, Intelligent Workflow Routing, and a comprehensive AI Tools Ecosystem.
     - **CRM Module**: Person-centric identity graphs, omnichannel engagement, pipeline management, GDPR compliance, and a Customer 300° Dashboard.
@@ -176,9 +175,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - **Organizational Hierarchy**: Tenant → Commercial Area → Organization Entity → Store → Department → Team → User.
     - **Cross-Store Architecture**: Enables tenant-wide data views with Role-Based Access (RBA) and advanced filtering capabilities.
     - **Request Routing**: Implements "Functional First → First Wins" for task assignment and "Shift-Based Routing" for efficient workload distribution.
-    - **Action Management System**: Centralizes the configuration and management of all actions via `action_definitions`, which are routed through a `UnifiedTriggerService`.
+    - **Action Management System**: Centralizes the configuration and management of all actions via `action_definitions`, routed through a `UnifiedTriggerService`.
     - **MCP Public Gateway**: A JSON-RPC 2.0 interface that uses `action_definitions` as the single source of truth for both operational workflows and query tools.
-    - **User Scope Management**: `user_stores` serves as the single source of truth for defining user scope, with associated organization entities being automatically derived.
+    - **User Scope Management**: `user_stores` is the single source of truth for defining user scope, with associated organization entities automatically derived.
     - **Italian Business Validation**: Comprehensive validation for Italian-specific data types (email, PEC, VAT, fiscal code, phone, IBAN, website, BIC/SWIFT, addresses), featuring real-time feedback, Italian error messages, and Zod schemas.
     - **Deployment & Governance**: Features an incremental deployment process to the VPS (`/var/www/w3suite/`) using dedicated `deploy/incremental-deploy.sh` scripts. SSH access is secured via `deploy/keys/vps_key`. The production database `w3suite_prod` is accessed exclusively via a local socket. Frontend builds necessitate `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80` environment variables.
 
