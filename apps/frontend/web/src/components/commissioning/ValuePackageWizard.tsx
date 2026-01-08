@@ -116,46 +116,50 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   const [activeListTab, setActiveListTab] = useState<string>('');
   const [pendingChanges, setPendingChanges] = useState<Record<string, Record<string, Partial<ProductItem>>>>({});
 
+  // Store editingPackage id to avoid object reference issues
+  const editingPackageId = editingPackage?.id ?? null;
+
   // Reset state when wizard opens or editingPackage changes
   useEffect(() => {
-    if (open) {
-      setCurrentStep(1);
-      setPendingChanges({});
-      setActiveListTab('');
-      setCategoryFilter('canvas');
-      setOperatorFilter('');
-      setSupplierFilter('');
-      setTypeFilter('all');
-      setSearchFilter('');
-      setSelectedPriceLists([]);
-      
-      if (editingPackage) {
-        setPackageId(editingPackage.id);
-        setFormData({
-          code: editingPackage.code || '',
-          name: editingPackage.name || '',
-          description: editingPackage.description || '',
-          listType: editingPackage.list_type || 'canvas',
-          operatorId: editingPackage.operator_id || '',
-          validFrom: editingPackage.valid_from?.split('T')[0] || format(new Date(), 'yyyy-MM-dd'),
-          validTo: editingPackage.valid_to?.split('T')[0] || '',
-          status: editingPackage.status || 'draft',
-        });
-      } else {
-        setPackageId(null);
-        setFormData({
-          code: '',
-          name: '',
-          description: '',
-          listType: 'canvas',
-          operatorId: '',
-          validFrom: format(new Date(), 'yyyy-MM-dd'),
-          validTo: '',
-          status: 'draft',
-        });
-      }
+    if (!open) return;
+    
+    setCurrentStep(1);
+    setPendingChanges({});
+    setActiveListTab('');
+    setCategoryFilter('canvas');
+    setOperatorFilter('');
+    setSupplierFilter('');
+    setTypeFilter('all');
+    setSearchFilter('');
+    setSelectedPriceLists([]);
+    
+    if (editingPackage) {
+      setPackageId(editingPackage.id);
+      setFormData({
+        code: editingPackage.code || '',
+        name: editingPackage.name || '',
+        description: editingPackage.description || '',
+        listType: editingPackage.list_type || 'canvas',
+        operatorId: editingPackage.operator_id || '',
+        validFrom: editingPackage.valid_from?.split('T')[0] || format(new Date(), 'yyyy-MM-dd'),
+        validTo: editingPackage.valid_to?.split('T')[0] || '',
+        status: editingPackage.status || 'draft',
+      });
+    } else {
+      setPackageId(null);
+      setFormData({
+        code: '',
+        name: '',
+        description: '',
+        listType: 'canvas',
+        operatorId: '',
+        validFrom: format(new Date(), 'yyyy-MM-dd'),
+        validTo: '',
+        status: 'draft',
+      });
     }
-  }, [open, editingPackage]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editingPackageId]);
 
   // Queries
   const { data: operators = [] } = useQuery<{ id: string; name: string }[]>({
