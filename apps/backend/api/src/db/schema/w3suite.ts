@@ -12040,10 +12040,24 @@ export const commissioningValuePackages = w3suiteSchema.table("commissioning_val
   index("commissioning_value_packages_operator_idx").on(table.operatorId),
 ]);
 
-// Dettaglio valori per prodotto nel pacchetto
+// Tabella ponte: pacchetto <-> listini (un pacchetto può avere più listini)
+export const commissioningValuePackagePriceLists = w3suiteSchema.table("commissioning_value_package_price_lists", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  packageId: uuid("package_id").notNull().references(() => commissioningValuePackages.id, { onDelete: 'cascade' }),
+  priceListId: uuid("price_list_id").notNull().references(() => priceLists.id, { onDelete: 'cascade' }),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_vp_price_lists_package_idx").on(table.packageId),
+  index("commissioning_vp_price_lists_pricelist_idx").on(table.priceListId),
+  uniqueIndex("commissioning_vp_price_lists_unique").on(table.packageId, table.priceListId),
+]);
+
+// Dettaglio valori per prodotto nel pacchetto (per ogni listino)
 export const commissioningValuePackageItems = w3suiteSchema.table("commissioning_value_package_items", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   packageId: uuid("package_id").notNull().references(() => commissioningValuePackages.id, { onDelete: 'cascade' }),
+  priceListId: uuid("price_list_id").notNull().references(() => priceLists.id, { onDelete: 'cascade' }),
   
   // Riferimento prodotto
   productId: varchar("product_id", { length: 255 }).notNull(), // SKU prodotto
@@ -12054,7 +12068,8 @@ export const commissioningValuePackageItems = w3suiteSchema.table("commissioning
   valenza: decimal("valenza", { precision: 10, scale: 2 }), // Peso/punteggio
   gettoneContrattuale: decimal("gettone_contrattuale", { precision: 10, scale: 2 }), // Bonus contratto
   gettoneGara: decimal("gettone_gara", { precision: 10, scale: 2 }), // Bonus gara
-  canone: decimal("canone", { precision: 10, scale: 2 }), // Solo per canvas
+  canone: decimal("canone", { precision: 10, scale: 2 }), // Solo per canvass - override o null per ereditare
+  canoneInherited: boolean("canone_inherited").default(true).notNull(), // true = usa canone da listino
   
   // Metadata
   notes: text("notes"),
@@ -12062,8 +12077,9 @@ export const commissioningValuePackageItems = w3suiteSchema.table("commissioning
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("commissioning_value_package_items_package_idx").on(table.packageId),
+  index("commissioning_value_package_items_pricelist_idx").on(table.priceListId),
   index("commissioning_value_package_items_product_idx").on(table.productId),
-  uniqueIndex("commissioning_value_package_items_unique").on(table.packageId, table.productId),
+  uniqueIndex("commissioning_value_package_items_unique").on(table.packageId, table.priceListId, table.productId),
 ]);
 
 // ==================== COMMISSIONING L3 - FUNCTIONS ====================
