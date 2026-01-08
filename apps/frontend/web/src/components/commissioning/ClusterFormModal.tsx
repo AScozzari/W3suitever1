@@ -64,7 +64,7 @@ interface ClusterFormModalProps {
 const formSchema = z.object({
   name: z.string().min(1, 'Nome obbligatorio').max(255),
   description: z.string().optional(),
-  entityType: z.enum(['RS', 'PDV', 'RISORSA']),
+  entityType: z.enum(['RS', 'PDV', 'RISORSA'], { required_error: 'Seleziona un tipo entità' }),
   isActive: z.boolean().default(true),
   entityIds: z.array(z.string()).default([]),
   driverIds: z.array(z.string()).default([]),
@@ -88,7 +88,7 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
     defaultValues: {
       name: cluster?.name || '',
       description: cluster?.description || '',
-      entityType: cluster?.entityType || 'PDV',
+      entityType: cluster?.entityType || undefined,
       isActive: cluster?.isActive ?? true,
       entityIds: cluster?.entityIds || [],
       driverIds: cluster?.driverIds || [],
@@ -113,7 +113,7 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
       form.reset({
         name: '',
         description: '',
-        entityType: 'PDV',
+        entityType: undefined,
         isActive: true,
         entityIds: [],
         driverIds: [],
@@ -121,9 +121,9 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
     }
   }, [cluster, form]);
 
-  const { data: entities = [] } = useQuery<{ id: string; name: string }[]>({
+  const { data: entities = [], isLoading: entitiesLoading } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['/api/commissioning/entities', { type: entityType }],
-    enabled: open,
+    enabled: open && !!entityType,
   });
 
   const { data: drivers = [] } = useQuery<{ id: string; name: string; code: string }[]>({
@@ -307,7 +307,15 @@ export default function ClusterFormModal({ open, onOpenChange, cluster }: Cluste
                 </div>
 
                 <ScrollArea className="h-[200px]">
-                  {filteredEntities.length === 0 ? (
+                  {!entityType ? (
+                    <div className="text-center py-8 text-gray-400">
+                      Seleziona prima un tipo entità
+                    </div>
+                  ) : entitiesLoading ? (
+                    <div className="text-center py-8 text-gray-400">
+                      Caricamento...
+                    </div>
+                  ) : filteredEntities.length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
                       Nessuna entità trovata
                     </div>
