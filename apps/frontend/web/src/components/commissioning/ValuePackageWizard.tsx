@@ -474,12 +474,12 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                     {categoryFilter === 'canvas' ? (
                       <div className="w-64">
                         <Label className="text-xs">Operatore</Label>
-                        <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                        <Select value={operatorFilter || '_all'} onValueChange={(v) => setOperatorFilter(v === '_all' ? '' : v)}>
                           <SelectTrigger data-testid="filter-operator">
                             <SelectValue placeholder="Tutti gli operatori" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Tutti</SelectItem>
+                            <SelectItem value="_all">Tutti</SelectItem>
                             {operators.map(op => (
                               <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
                             ))}
@@ -490,12 +490,12 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                       <>
                         <div className="w-64">
                           <Label className="text-xs">Fornitore</Label>
-                          <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                          <Select value={supplierFilter || '_all'} onValueChange={(v) => setSupplierFilter(v === '_all' ? '' : v)}>
                             <SelectTrigger data-testid="filter-supplier">
                               <SelectValue placeholder="Tutti i fornitori" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">Tutti</SelectItem>
+                              <SelectItem value="_all">Tutti</SelectItem>
                               {suppliers.map((s: any) => (
                                 <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                               ))}
