@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   ChevronLeft, ChevronRight, Check, Package, List, Grid3X3, 
   Search, X, Plus, Filter, AlertCircle, Loader2, Save, Wand2
@@ -400,14 +401,38 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            {editingPackage ? 'Modifica Pacchetto Commissioning' : 'Nuovo Pacchetto Commissioning'}
-          </DialogTitle>
-          <DialogDescription>
-            Configura i valori commissioning per i prodotti dei listini selezionati
-          </DialogDescription>
+        <DialogHeader className="relative">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                {editingPackage ? 'Modifica Pacchetto Commissioning' : 'Nuovo Pacchetto Commissioning'}
+              </DialogTitle>
+              <DialogDescription>
+                Configura i valori commissioning per i prodotti dei listini selezionati
+              </DialogDescription>
+            </div>
+            {/* Salva Pacchetto in alto a destra - visibile solo quando ci sono listini lavorati */}
+            {workedPriceLists.size > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={handleFinalSave}
+                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                      data-testid="button-save-package-header"
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Salva Pacchetto
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p>Salva definitivamente il pacchetto con tutti i listini lavorati e i relativi valori configurati</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </DialogHeader>
 
         {/* Steps indicator */}
@@ -503,36 +528,19 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                   data-testid="input-package-desc" 
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Tipo Listino *</Label>
-                  <Select value={formData.listType} onValueChange={(v) => setFormData(f => ({ ...f, listType: v }))}>
-                    <SelectTrigger data-testid="select-list-type">
-                      <SelectValue placeholder="Seleziona tipo listino" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {listTypeOptions.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Operatore</Label>
-                  <Select value={formData.operatorId || '_none'} onValueChange={(v) => setFormData(f => ({ ...f, operatorId: v === '_none' ? '' : v }))}>
-                    <SelectTrigger data-testid="select-operator">
-                      <SelectValue placeholder="Seleziona operatore" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none">Nessuno</SelectItem>
-                      {operators.map(op => (
-                        <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label>Operatore</Label>
+                <Select value={formData.operatorId || '_none'} onValueChange={(v) => setFormData(f => ({ ...f, operatorId: v === '_none' ? '' : v }))}>
+                  <SelectTrigger data-testid="select-operator">
+                    <SelectValue placeholder="Seleziona operatore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Nessuno</SelectItem>
+                    {operators.map(op => (
+                      <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -659,7 +667,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                     <Badge 
                       key={pl.price_list_id || `pl-${idx}`} 
                       variant="secondary" 
-                      className="bg-white border flex items-center gap-1"
+                      className="bg-white border border-orange-300 text-gray-800 flex items-center gap-1"
                     >
                       <span>{pl.price_list_name}</span>
                       <X 
@@ -851,27 +859,23 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
           )}
           
           {currentStep === 2 && (
-            <>
-              {/* Show "Salva Pacchetto" only when at least one price list has been worked */}
-              {workedPriceLists.size > 0 && (
-                <Button 
-                  onClick={handleFinalSave}
-                  className="bg-green-600 hover:bg-green-700"
-                  data-testid="button-save-package"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Salva Pacchetto
-                </Button>
-              )}
-              <Button 
-                onClick={handleStep2Next}
-                disabled={packagePriceLists.length === 0}
-                className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid="button-next-step2"
-              >
-                Avanti <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleStep2Next}
+                    disabled={packagePriceLists.length === 0}
+                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="button-next-step2"
+                  >
+                    Avanti <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Configura i valori per i listini selezionati</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           
           {currentStep === 3 && (
