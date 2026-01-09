@@ -498,26 +498,24 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="relative">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                {editingPackage ? 'Modifica Pacchetto Commissioning' : 'Nuovo Pacchetto Commissioning'}
-              </DialogTitle>
-              <DialogDescription>
-                Configura i valori commissioning per i prodotti dei listini selezionati
-              </DialogDescription>
-            </div>
-            {/* Salva Pacchetto in alto a destra - visibile quando ci sono listini selezionati */}
-            {draftPriceLists.length > 0 && (
+        <DialogHeader className="pr-10">
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            {editingPackage ? 'Modifica Pacchetto Commissioning' : 'Nuovo Pacchetto Commissioning'}
+          </DialogTitle>
+          <DialogDescription>
+            Configura i valori commissioning per i prodotti dei listini selezionati
+          </DialogDescription>
+          {/* Salva Pacchetto - sotto il titolo con colore verde distinguibile */}
+          {draftPriceLists.length > 0 && (
+            <div className="pt-3">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={handleFinalSave}
                       disabled={isSavingFinal}
-                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                      className="bg-green-600 hover:bg-green-700 text-white shadow-md"
                       data-testid="button-save-package-header"
                     >
                       {isSavingFinal ? (
@@ -528,13 +526,13 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                       {isSavingFinal ? 'Salvataggio...' : 'Salva Pacchetto'}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left" className="max-w-xs">
+                  <TooltipContent side="right" className="max-w-xs">
                     <p>Salva definitivamente il pacchetto con tutti i listini selezionati e i relativi valori configurati</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
-          </div>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Steps indicator */}
@@ -952,7 +950,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                 <TooltipTrigger asChild>
                   <Button 
                     onClick={handleStep2Next}
-                    disabled={packagePriceLists.length === 0}
+                    disabled={draftPriceLists.length === 0}
                     className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     data-testid="button-next-step2"
                   >
