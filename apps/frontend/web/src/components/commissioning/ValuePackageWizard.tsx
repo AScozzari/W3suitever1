@@ -630,20 +630,6 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                   data-testid="input-package-desc" 
                 />
               </div>
-              <div>
-                <Label>Operatore</Label>
-                <Select value={formData.operatorId || '_none'} onValueChange={(v) => setFormData(f => ({ ...f, operatorId: v === '_none' ? '' : v }))}>
-                  <SelectTrigger data-testid="select-operator">
-                    <SelectValue placeholder="Seleziona operatore" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">Nessuno</SelectItem>
-                    {operators.map(op => (
-                      <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Valido Dal *</Label>
