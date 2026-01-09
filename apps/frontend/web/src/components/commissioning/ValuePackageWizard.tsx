@@ -299,9 +299,29 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   const [draftSelectedListIds, setDraftSelectedListIds] = useState<Set<string>>(new Set());
 
   // Sync draft state with existing package price lists when editing
+  // Also rehydrate workedPriceLists and priceListStatus from backend data
   useEffect(() => {
     if (packageId && packagePriceLists.length > 0) {
-      setDraftSelectedListIds(new Set(packagePriceLists.map(pl => pl.price_list_id)));
+      const ids = packagePriceLists.map(pl => pl.price_list_id);
+      setDraftSelectedListIds(new Set(ids));
+      
+      // Rehydrate workedPriceLists - all existing lists are considered "worked"
+      setWorkedPriceLists(new Set(ids));
+      
+      // Rehydrate priceListStatus based on items_count vs total_products
+      const statusMap: Record<string, 'complete' | 'partial' | 'pending'> = {};
+      packagePriceLists.forEach(pl => {
+        const itemsCount = Number(pl.items_count) || 0;
+        const totalProducts = Number(pl.total_products) || 0;
+        if (itemsCount >= totalProducts && totalProducts > 0) {
+          statusMap[pl.price_list_id] = 'complete';
+        } else if (itemsCount > 0) {
+          statusMap[pl.price_list_id] = 'partial';
+        } else {
+          statusMap[pl.price_list_id] = 'pending';
+        }
+      });
+      setPriceListStatus(statusMap);
     }
   }, [packageId, packagePriceLists]);
 
@@ -747,121 +767,155 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                 </CardContent>
               </Card>
 
-              {/* Selected chips */}
-              {draftPriceLists.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                  <span className="text-sm text-orange-700 font-medium">Selezionati ({draftPriceLists.length}):</span>
-                  {draftPriceLists.map((pl, idx) => (
-                    <Badge 
-                      key={pl.price_list_id || `pl-${idx}`} 
-                      variant="secondary" 
-                      className="bg-white border border-orange-300 text-gray-800 flex items-center gap-1"
-                    >
-                      <span>{pl.price_list_name}</span>
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-red-500" 
-                        onClick={() => handleTogglePriceList(pl.price_list_id)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Worked Price Lists Section (with traffic light) */}
-              {workedPriceLists.size > 0 && (
-                <Card className="border-2 border-green-200 bg-green-50/50">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm flex items-center gap-2 text-green-800">
-                      <Check className="h-4 w-4" /> Listini Lavorati ({workedPriceLists.size})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2">
-                    <div className="flex flex-wrap gap-2">
-                      {draftPriceLists.filter(pl => workedPriceLists.has(pl.price_list_id)).map((pl, idx) => {
-                        const itemsCount = Number(pl.items_count) || 0;
-                        const totalProducts = Number(pl.total_products) || 0;
-                        const status = priceListStatus[pl.price_list_id] || 
-                          (itemsCount >= totalProducts ? 'complete' : itemsCount > 0 ? 'partial' : 'pending');
-                        
-                        const statusConfig = {
-                          complete: { bg: 'bg-green-100 border-green-300', icon: '🟢', text: 'text-green-700' },
-                          partial: { bg: 'bg-orange-100 border-orange-300', icon: '🟠', text: 'text-orange-700' },
-                          error: { bg: 'bg-red-100 border-red-300', icon: '🔴', text: 'text-red-700' },
-                          pending: { bg: 'bg-gray-100 border-gray-300', icon: '⚪', text: 'text-gray-700' },
-                        }[status];
-                        
-                        return (
-                          <Badge 
-                            key={pl.price_list_id || `worked-${idx}`}
-                            variant="outline"
-                            className={`${statusConfig.bg} ${statusConfig.text} border flex items-center gap-2 px-3 py-1.5`}
-                          >
-                            <span>{statusConfig.icon}</span>
-                            <span className="font-medium">{pl.price_list_name}</span>
-                            <span className="text-xs opacity-75">({itemsCount}/{totalProducts})</span>
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Price list table */}
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="w-12 p-3"></th>
-                      <th className="text-left p-3">Codice</th>
-                      <th className="text-left p-3">Nome</th>
-                      <th className="text-left p-3">Tipo</th>
-                      <th className="text-left p-3">Validità</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPriceLists.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-gray-400">
-                          <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          Nessun listino trovato con i filtri selezionati
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredPriceLists.map(pl => {
-                        const isSelected = draftSelectedListIds.has(pl.id);
-                        const isWorked = workedPriceLists.has(pl.id);
-                        return (
-                          <tr 
-                            key={pl.id} 
-                            className={`border-t hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-orange-50' : ''} ${isWorked ? 'opacity-50' : ''}`}
-                            onClick={() => handleTogglePriceList(pl.id)}
-                            data-testid={`row-pricelist-${pl.id}`}
-                          >
-                            <td className="p-3 text-center">
-                              <Checkbox 
-                                checked={isSelected}
-                                onCheckedChange={() => handleTogglePriceList(pl.id)}
-                              />
-                            </td>
-                            <td className="p-3 font-mono text-xs">{pl.code}</td>
-                            <td className="p-3 font-medium">{pl.name}</td>
-                            <td className="p-3">
-                              <Badge variant="outline" className="text-xs">
-                                {pl.type}
-                              </Badge>
-                            </td>
-                            <td className="p-3 text-gray-500 text-xs">
-                              {pl.validFrom?.split('T')[0]}
-                              {pl.validTo && ` → ${pl.validTo.split('T')[0]}`}
+              {/* SEZIONE 1: Listini da aggiungere */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Plus className="h-4 w-4" /> Listini da Aggiungere
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="w-12 p-3"></th>
+                          <th className="text-left p-3">Codice</th>
+                          <th className="text-left p-3">Nome</th>
+                          <th className="text-left p-3">Tipo</th>
+                          <th className="text-left p-3">Validità</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPriceLists.filter(pl => !workedPriceLists.has(pl.id)).length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-gray-400">
+                              <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              Nessun listino disponibile da aggiungere
                             </td>
                           </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                        ) : (
+                          filteredPriceLists.filter(pl => !workedPriceLists.has(pl.id)).map(pl => {
+                            const isSelected = draftSelectedListIds.has(pl.id);
+                            return (
+                              <tr 
+                                key={pl.id} 
+                                className={`border-t hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-orange-50' : ''}`}
+                                onClick={() => handleTogglePriceList(pl.id)}
+                                data-testid={`row-pricelist-${pl.id}`}
+                              >
+                                <td className="p-3 text-center">
+                                  <Checkbox 
+                                    checked={isSelected}
+                                    onCheckedChange={() => handleTogglePriceList(pl.id)}
+                                  />
+                                </td>
+                                <td className="p-3 font-mono text-xs">{pl.code}</td>
+                                <td className="p-3 font-medium">{pl.name}</td>
+                                <td className="p-3">
+                                  <Badge variant="outline" className="text-xs">
+                                    {pl.type}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 text-gray-500 text-xs">
+                                  {pl.validFrom?.split('T')[0]}
+                                  {pl.validTo && ` → ${pl.validTo.split('T')[0]}`}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* SEZIONE 2: Listini già lavorati (con semaforo) */}
+              <Card className="border-2 border-green-200 bg-green-50/30">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm flex items-center gap-2 text-green-800">
+                    <Check className="h-4 w-4" /> Listini Già Lavorati ({workedPriceLists.size})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {workedPriceLists.size === 0 ? (
+                    <div className="p-6 text-center text-gray-400">
+                      <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Nessun listino lavorato</p>
+                      <p className="text-xs mt-1">Seleziona un listino, vai allo Step 3 e configura i valori</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden m-4 mt-0">
+                      <table className="w-full text-sm">
+                        <thead className="bg-green-50">
+                          <tr>
+                            <th className="w-16 p-3 text-left">Stato</th>
+                            <th className="text-left p-3">Codice</th>
+                            <th className="text-left p-3">Nome</th>
+                            <th className="text-left p-3">Tipo</th>
+                            <th className="text-left p-3">Prodotti</th>
+                            <th className="w-12 p-3"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {draftPriceLists.filter(pl => workedPriceLists.has(pl.price_list_id)).map((pl, idx) => {
+                            const itemsCount = Number(pl.items_count) || 0;
+                            const totalProducts = Number(pl.total_products) || 0;
+                            const status = priceListStatus[pl.price_list_id] || 
+                              (itemsCount >= totalProducts && totalProducts > 0 ? 'complete' : itemsCount > 0 ? 'partial' : 'pending');
+                            
+                            const statusConfig = {
+                              complete: { bg: 'bg-green-100', icon: '🟢', label: 'Completo' },
+                              partial: { bg: 'bg-orange-100', icon: '🟠', label: 'Parziale' },
+                              error: { bg: 'bg-red-100', icon: '🔴', label: 'Errore' },
+                              pending: { bg: 'bg-gray-100', icon: '⚪', label: 'In attesa' },
+                            }[status];
+                            
+                            return (
+                              <tr 
+                                key={pl.price_list_id || `worked-${idx}`}
+                                className={`border-t ${statusConfig.bg}`}
+                              >
+                                <td className="p-3">
+                                  <Badge variant="outline" className={`${statusConfig.bg} border-0`}>
+                                    {statusConfig.icon} {statusConfig.label}
+                                  </Badge>
+                                </td>
+                                <td className="p-3 font-mono text-xs">{pl.price_list_code}</td>
+                                <td className="p-3 font-medium">{pl.price_list_name}</td>
+                                <td className="p-3">
+                                  <Badge variant="outline" className="text-xs">
+                                    {pl.price_list_type}
+                                  </Badge>
+                                </td>
+                                <td className="p-3">
+                                  <span className="font-medium">{itemsCount}</span>
+                                  <span className="text-gray-400">/{totalProducts}</span>
+                                </td>
+                                <td className="p-3">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTogglePriceList(pl.price_list_id);
+                                    }}
+                                    title="Rimuovi listino"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
 
