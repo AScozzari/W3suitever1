@@ -155,6 +155,8 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
     setSelectedPriceLists([]);
     setWorkedPriceLists(new Set());
     setPriceListStatus({});
+    // Reset draft state - will be populated by sync useEffect when packagePriceLists loads
+    setDraftSelectedListIds(new Set());
     
     if (editingPackage) {
       setPackageId(editingPackage.id);

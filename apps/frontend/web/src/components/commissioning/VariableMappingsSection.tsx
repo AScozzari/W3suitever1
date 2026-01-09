@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Search, Trash2, ArrowUpDown, AtSign, Database, Calculator } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -61,6 +62,7 @@ export default function VariableMappingsSection() {
     isPlaceholder: false,
     isComputed: false,
   });
+  const [placeholderSearch, setPlaceholderSearch] = useState('');
 
   const { data: mappings = [], isLoading } = useQuery<VariableMapping[]>({
     queryKey: ['/api/commissioning/variable-mappings'],
@@ -91,7 +93,18 @@ export default function VariableMappingsSection() {
 
   const resetForm = () => {
     setFormData({ code: '', name: '', description: '', dataType: 'currency', sourceTable: '', sourceColumn: '', isPlaceholder: false, isComputed: false });
+    setPlaceholderSearch('');
   };
+
+  // Filter placeholders based on search
+  const filteredPlaceholders = useMemo(() => {
+    if (!placeholderSearch) return placeholders;
+    const search = placeholderSearch.toLowerCase();
+    return placeholders.filter(ph => 
+      ph.code.toLowerCase().includes(search) || 
+      ph.name.toLowerCase().includes(search)
+    );
+  }, [placeholders, placeholderSearch]);
 
   const handlePlaceholderSelect = (code: string) => {
     const ph = placeholders.find(p => p.code === code);
@@ -244,15 +257,35 @@ export default function VariableMappingsSection() {
                 <SelectTrigger data-testid="select-placeholder">
                   <SelectValue placeholder="Scegli un placeholder predefinito..." />
                 </SelectTrigger>
-                <SelectContent>
-                  {placeholders.map((ph) => (
-                    <SelectItem key={ph.code} value={ph.code}>
-                      <span className="flex items-center gap-2">
-                        <code className="font-mono text-xs">{ph.code}</code>
-                        <span className="text-gray-500">- {ph.name}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
+                <SelectContent className="p-0">
+                  <div className="p-2 border-b sticky top-0 bg-white z-10">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input 
+                        placeholder="Cerca placeholder..." 
+                        value={placeholderSearch}
+                        onChange={(e) => setPlaceholderSearch(e.target.value)}
+                        className="pl-8 h-8 text-sm"
+                        data-testid="input-search-placeholder"
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[10rem]">
+                    <div className="p-1">
+                      {filteredPlaceholders.length === 0 ? (
+                        <div className="text-sm text-gray-400 text-center py-4">Nessun placeholder trovato</div>
+                      ) : (
+                        filteredPlaceholders.map((ph) => (
+                          <SelectItem key={ph.code} value={ph.code}>
+                            <span className="flex items-center gap-2">
+                              <code className="font-mono text-xs">{ph.code}</code>
+                              <span className="text-gray-500">- {ph.name}</span>
+                            </span>
+                          </SelectItem>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
                 </SelectContent>
               </Select>
             </div>
