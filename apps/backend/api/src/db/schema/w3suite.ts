@@ -12148,7 +12148,252 @@ export const commissioningConfiguratorFunctions = w3suiteSchema.table("commissio
   uniqueIndex("commissioning_config_funcs_unique").on(table.configuratorId, table.functionId),
 ]);
 
+// ==================== ARCHITETTURA CONFIGURATORI 3 LIVELLI ====================
+
+// Enum per layer di calcolo
+export const commissioningLayerEnum = pgEnum('commissioning_layer', ['RS', 'PDV', 'USER']);
+
+// Enum per comportamento CAP
+export const commissioningCapBehaviorEnum = pgEnum('commissioning_cap_behavior', ['block', 'scale']);
+
+// Enum per modalità soglie
+export const commissioningThresholdModeEnum = pgEnum('commissioning_threshold_mode', ['progressive', 'regressive']);
+
+// Enum per stato template
+export const commissioningTemplateStatusEnum = pgEnum('commissioning_template_status', ['draft', 'active', 'archived']);
+
+// LIVELLO 0 - CONFIGURATORI TIPO (Backend - Solo globali tenant_id NULL)
+// Definiti dagli sviluppatori, non modificabili da utenti
+export const commissioningConfiguratorTypes = w3suiteSchema.table("commissioning_configurator_types", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Schema variabili disponibili per questo tipo (JSON)
+  availableVariables: jsonb("available_variables").default([]),
+  
+  // Configurazione UI
+  uiComponent: varchar("ui_component", { length: 100 }), // Nome componente React
+  wizardSteps: jsonb("wizard_steps").default([]),
+  
+  // Logica
+  calculationModes: jsonb("calculation_modes").default(['progressive', 'regressive']),
+  supportsMultipleThresholds: boolean("supports_multiple_thresholds").default(true),
+  
+  // Validazione schema
+  validationRules: jsonb("validation_rules").default([]),
+  
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_config_types_code_idx").on(table.code),
+  index("commissioning_config_types_active_idx").on(table.isActive),
+]);
+
+// LIVELLO 1 - TEMPLATE CONFIGURATORE (Frontend - RLS Mixed)
+// tenant_id NULL = brand-pushed (read-only), UUID = custom tenant
+export const commissioningConfiguratorTemplates = w3suiteSchema.table("commissioning_configurator_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = brand-pushed
+  
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // Riferimento al tipo (Livello 0)
+  typeCode: varchar("type_code", { length: 50 }).notNull(),
+  
+  // Layer principale di calcolo
+  primaryLayer: commissioningLayerEnum("primary_layer").notNull(),
+  
+  // Driver disponibili (FK array a drivers)
+  availableDriverIds: uuid("available_driver_ids").array(),
+  
+  // Configurazione specifica del tipo (soglie, modalità, etc.)
+  typeConfig: jsonb("type_config").default({}),
+  
+  // Modalità soglie (se applicabile)
+  thresholdMode: commissioningThresholdModeEnum("threshold_mode"),
+  thresholdCount: smallint("threshold_count").default(3),
+  
+  status: commissioningTemplateStatusEnum("status").default('draft').notNull(),
+  sortOrder: smallint("sort_order").default(0),
+  createdBy: varchar("created_by").references(() => users.id),
+  modifiedBy: varchar("modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_config_templates_tenant_idx").on(table.tenantId),
+  index("commissioning_config_templates_type_idx").on(table.typeCode),
+  index("commissioning_config_templates_layer_idx").on(table.primaryLayer),
+  index("commissioning_config_templates_status_idx").on(table.status),
+  uniqueIndex("commissioning_config_templates_code_tenant_unique").on(table.tenantId, table.code),
+]);
+
+// PALETTI del template (condizioni di sblocco)
+export const commissioningTemplatePaletti = w3suiteSchema.table("commissioning_template_paletti", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: uuid("template_id").notNull().references(() => commissioningConfiguratorTemplates.id, { onDelete: 'cascade' }),
+  functionId: uuid("function_id").notNull().references(() => commissioningFunctions.id, { onDelete: 'cascade' }),
+  
+  // Layer override (opzionale, altrimenti usa layer template)
+  layerOverride: commissioningLayerEnum("layer_override"),
+  
+  description: text("description"),
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_template_paletti_template_idx").on(table.templateId),
+  index("commissioning_template_paletti_function_idx").on(table.functionId),
+]);
+
+// CAP del template (limiti di counting)
+export const commissioningTemplateCaps = w3suiteSchema.table("commissioning_template_caps", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: uuid("template_id").notNull().references(() => commissioningConfiguratorTemplates.id, { onDelete: 'cascade' }),
+  functionId: uuid("function_id").notNull().references(() => commissioningFunctions.id, { onDelete: 'cascade' }),
+  
+  // Layer override (opzionale)
+  layerOverride: commissioningLayerEnum("layer_override"),
+  
+  // Comportamento: blocco o scala
+  behavior: commissioningCapBehaviorEnum("behavior").notNull().default('block'),
+  
+  // Valore limite
+  limitValue: numeric("limit_value", { precision: 12, scale: 2 }),
+  
+  description: text("description"),
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_template_caps_template_idx").on(table.templateId),
+  index("commissioning_template_caps_function_idx").on(table.functionId),
+]);
+
+// LIVELLO 2 - ISTANZA CONFIGURATORE IN GARA
+// Sempre tenant_id UUID (istanze sono sempre custom per gara)
+export const commissioningConfiguratorInstances = w3suiteSchema.table("commissioning_configurator_instances", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  raceId: uuid("race_id").notNull().references(() => commissioningRaces.id, { onDelete: 'cascade' }),
+  templateId: uuid("template_id").notNull().references(() => commissioningConfiguratorTemplates.id, { onDelete: 'restrict' }),
+  
+  name: varchar("name", { length: 255 }),
+  
+  // Configurazione istanza (override del template)
+  instanceConfig: jsonb("instance_config").default({}),
+  
+  status: commissioningRaceStatusEnum("status").default('active').notNull(),
+  sortOrder: smallint("sort_order").default(0),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_config_instances_race_idx").on(table.raceId),
+  index("commissioning_config_instances_template_idx").on(table.templateId),
+  index("commissioning_config_instances_status_idx").on(table.status),
+]);
+
+// CLUSTER dell'istanza (chi gioca + valori specifici)
+export const commissioningInstanceClusters = w3suiteSchema.table("commissioning_instance_clusters", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  instanceId: uuid("instance_id").notNull().references(() => commissioningConfiguratorInstances.id, { onDelete: 'cascade' }),
+  
+  name: varchar("name", { length: 255 }).notNull(),
+  entityType: commissioningClusterEntityTypeEnum("entity_type").notNull(),
+  
+  // Driver attivi per questo cluster (subset dei disponibili nel template)
+  activeDriverIds: uuid("active_driver_ids").array(),
+  
+  // Valori specifici per questo cluster (soglie, operazioni, etc.)
+  clusterConfig: jsonb("cluster_config").default({}),
+  
+  // Pacchetti valenze abbinati
+  valuePackageIds: uuid("value_package_ids").array(),
+  
+  sortOrder: smallint("sort_order").default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_instance_clusters_instance_idx").on(table.instanceId),
+  index("commissioning_instance_clusters_type_idx").on(table.entityType),
+]);
+
+// MEMBRI del cluster istanza
+export const commissioningInstanceClusterMembers = w3suiteSchema.table("commissioning_instance_cluster_members", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  clusterId: uuid("cluster_id").notNull().references(() => commissioningInstanceClusters.id, { onDelete: 'cascade' }),
+  
+  entityId: uuid("entity_id").notNull(), // ID della RS/PDV/User
+  entityType: commissioningClusterEntityTypeEnum("entity_type").notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("commissioning_instance_cluster_members_cluster_idx").on(table.clusterId),
+  index("commissioning_instance_cluster_members_entity_idx").on(table.entityId),
+  uniqueIndex("commissioning_instance_cluster_members_unique").on(table.clusterId, table.entityId),
+]);
+
 // ==================== INSERT SCHEMAS AND TYPES ====================
+
+// Architettura Configuratori 3 Livelli - Insert Schemas
+export const insertCommissioningConfiguratorTypeSchema = createInsertSchema(commissioningConfiguratorTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningConfiguratorType = z.infer<typeof insertCommissioningConfiguratorTypeSchema>;
+export type CommissioningConfiguratorType = typeof commissioningConfiguratorTypes.$inferSelect;
+
+export const insertCommissioningConfiguratorTemplateSchema = createInsertSchema(commissioningConfiguratorTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningConfiguratorTemplate = z.infer<typeof insertCommissioningConfiguratorTemplateSchema>;
+export type CommissioningConfiguratorTemplate = typeof commissioningConfiguratorTemplates.$inferSelect;
+
+export const insertCommissioningTemplatePalettoSchema = createInsertSchema(commissioningTemplatePaletti).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCommissioningTemplatePaletto = z.infer<typeof insertCommissioningTemplatePalettoSchema>;
+export type CommissioningTemplatePaletto = typeof commissioningTemplatePaletti.$inferSelect;
+
+export const insertCommissioningTemplateCapSchema = createInsertSchema(commissioningTemplateCaps).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCommissioningTemplateCap = z.infer<typeof insertCommissioningTemplateCapSchema>;
+export type CommissioningTemplateCap = typeof commissioningTemplateCaps.$inferSelect;
+
+export const insertCommissioningConfiguratorInstanceSchema = createInsertSchema(commissioningConfiguratorInstances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningConfiguratorInstance = z.infer<typeof insertCommissioningConfiguratorInstanceSchema>;
+export type CommissioningConfiguratorInstance = typeof commissioningConfiguratorInstances.$inferSelect;
+
+export const insertCommissioningInstanceClusterSchema = createInsertSchema(commissioningInstanceClusters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCommissioningInstanceCluster = z.infer<typeof insertCommissioningInstanceClusterSchema>;
+export type CommissioningInstanceCluster = typeof commissioningInstanceClusters.$inferSelect;
+
+export const insertCommissioningInstanceClusterMemberSchema = createInsertSchema(commissioningInstanceClusterMembers).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCommissioningInstanceClusterMember = z.infer<typeof insertCommissioningInstanceClusterMemberSchema>;
+export type CommissioningInstanceClusterMember = typeof commissioningInstanceClusterMembers.$inferSelect;
 
 // Commissioning Insert Schemas
 export const insertCommissioningClusterSchema = createInsertSchema(commissioningClusters).omit({
