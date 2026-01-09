@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { 
   ChevronLeft, ChevronRight, Check, Package, List, Grid3X3, 
-  Search, X, Plus, Filter, AlertCircle, Loader2, Save
+  Search, X, Plus, Filter, AlertCircle, Loader2, Save, Wand2
 } from 'lucide-react';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -444,12 +444,31 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Codice *</Label>
-                  <Input 
-                    value={formData.code} 
-                    onChange={(e) => setFormData(f => ({ ...f, code: e.target.value }))} 
-                    placeholder="PKG_GARA_001" 
-                    data-testid="input-package-code" 
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      value={formData.code} 
+                      onChange={(e) => setFormData(f => ({ ...f, code: e.target.value }))} 
+                      placeholder="PKG_GARA_001" 
+                      data-testid="input-package-code" 
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+                        setFormData(f => ({ ...f, code: `PKG_${year}${month}${day}_${random}` }));
+                      }}
+                      title="Genera codice automatico"
+                      data-testid="button-generate-code"
+                    >
+                      <Wand2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <Label>Stato</Label>
