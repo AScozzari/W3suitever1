@@ -19,10 +19,10 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
     - Quando si salvano le sedi di un utente, le org entities vengono sincronizzate automaticamente
     - Mai assegnare org entities direttamente - sempre tramite sedi
   - **🔄 FLUSSO**:
-    1. Utente seleziona sedi nel modal → salva in `user_stores`
-    2. Backend deriva automaticamente org entities da `stores.organization_entity_id`
-    3. Backend sincronizza `user_organization_entities` nella stessa transazione
-    4. Lettura: GET /users deriva org entities da stores, non da tabella separata
+  1. Utente seleziona sedi nel modal → salva in `user_stores`
+  2. Backend deriva automaticamente org entities da `stores.organization_entity_id`
+  3. Backend sincronizza `user_organization_entities` nella stessa transazione
+  4. Lettura: GET /users deriva org entities da stores, non da tabella separata
   - **✅ BENEFICI**:
     - Zero inconsistenze tra sedi e ragioni sociali
     - Modal mostra solo ragioni sociali/sedi ATTIVE

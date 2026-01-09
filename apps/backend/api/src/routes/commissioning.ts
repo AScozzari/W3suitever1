@@ -2007,4 +2007,923 @@ router.get("/entities", async (req: Request, res: Response) => {
   }
 });
 
+// ==================== ARCHITETTURA CONFIGURATORI 3 LIVELLI ====================
+
+// Schema per creazione/update template configuratore
+const createTemplateSchema = z.object({
+  code: z.string().min(1).max(50),
+  name: z.string().min(1).max(255),
+  description: z.string().optional().nullable(),
+  typeCode: z.string().min(1).max(50),
+  primaryLayer: z.enum(['RS', 'PDV', 'USER']),
+  availableDriverIds: z.array(z.string().uuid()).optional().nullable(),
+  typeConfig: z.record(z.any()).optional().default({}),
+  thresholdMode: z.enum(['progressive', 'regressive']).optional().nullable(),
+  thresholdCount: z.number().min(1).max(20).optional().default(3),
+  status: z.enum(['draft', 'active', 'archived']).optional().default('draft'),
+  sortOrder: z.number().optional().default(0),
+});
+
+// Schema per paletto
+const createPalettoSchema = z.object({
+  functionId: z.string().uuid(),
+  layerOverride: z.enum(['RS', 'PDV', 'USER']).optional().nullable(),
+  description: z.string().optional().nullable(),
+  sortOrder: z.number().optional().default(0),
+  isActive: z.boolean().optional().default(true),
+});
+
+// Schema per CAP
+const createCapSchema = z.object({
+  functionId: z.string().uuid(),
+  layerOverride: z.enum(['RS', 'PDV', 'USER']).optional().nullable(),
+  behavior: z.enum(['block', 'scale']).default('block'),
+  limitValue: z.number().optional().nullable(),
+  description: z.string().optional().nullable(),
+  sortOrder: z.number().optional().default(0),
+  isActive: z.boolean().optional().default(true),
+});
+
+// Schema per istanza configuratore
+const createInstanceSchema = z.object({
+  raceId: z.string().uuid(),
+  templateId: z.string().uuid(),
+  name: z.string().optional().nullable(),
+  instanceConfig: z.record(z.any()).optional().default({}),
+  status: z.enum(['draft', 'active', 'completed', 'cancelled']).optional().default('active'),
+  sortOrder: z.number().optional().default(0),
+});
+
+// Schema per cluster istanza
+const createInstanceClusterSchema = z.object({
+  name: z.string().min(1).max(255),
+  entityType: z.enum(['RS', 'PDV', 'RISORSA']),
+  activeDriverIds: z.array(z.string().uuid()).optional().nullable(),
+  clusterConfig: z.record(z.any()).optional().default({}),
+  valuePackageIds: z.array(z.string().uuid()).optional().nullable(),
+  sortOrder: z.number().optional().default(0),
+  memberIds: z.array(z.string().uuid()).optional().default([]),
+});
+
+// ==================== CONFIGURATOR TYPES (Livello 0 - Read Only) ====================
+
+// GET /configurator-types - Lista tipi globali (read-only)
+router.get("/configurator-types", async (req: Request, res: Response) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT id, code, name, description, available_variables, ui_component, 
+             wizard_steps, calculation_modes, supports_multiple_thresholds, 
+             validation_rules, is_active, sort_order, created_at, updated_at
+      FROM w3suite.commissioning_configurator_types
+      WHERE is_active = true
+      ORDER BY sort_order ASC, name ASC
+    `);
+
+    const types = result.rows.map((row: any) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      availableVariables: row.available_variables || [],
+      uiComponent: row.ui_component,
+      wizardSteps: row.wizard_steps || [],
+      calculationModes: row.calculation_modes || [],
+      supportsMultipleThresholds: row.supports_multiple_thresholds,
+      validationRules: row.validation_rules || [],
+      isActive: row.is_active,
+      sortOrder: row.sort_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+
+    res.json(types);
+  } catch (error) {
+    logger.error("Error fetching configurator types", { error });
+    res.status(500).json({ error: "Failed to fetch configurator types" });
+  }
+});
+
+// GET /configurator-types/:code - Dettaglio tipo
+router.get("/configurator-types/:code", async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+    
+    const result = await db.execute(sql`
+      SELECT * FROM w3suite.commissioning_configurator_types
+      WHERE code = ${code} AND is_active = true
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Configurator type not found" });
+    }
+
+    const row: any = result.rows[0];
+    res.json({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      availableVariables: row.available_variables || [],
+      uiComponent: row.ui_component,
+      wizardSteps: row.wizard_steps || [],
+      calculationModes: row.calculation_modes || [],
+      supportsMultipleThresholds: row.supports_multiple_thresholds,
+      validationRules: row.validation_rules || [],
+      isActive: row.is_active,
+      sortOrder: row.sort_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    });
+  } catch (error) {
+    logger.error("Error fetching configurator type", { error });
+    res.status(500).json({ error: "Failed to fetch configurator type" });
+  }
+});
+
+// ==================== CONFIGURATOR TEMPLATES (Livello 1 - RLS Mixed) ====================
+
+// GET /configurator-templates - Lista template con RLS Mixed
+router.get("/configurator-templates", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { typeCode, status, search } = req.query;
+
+    const result = await db.execute(sql`
+      SELECT t.*, ct.name as type_name,
+             (SELECT COUNT(*) FROM w3suite.commissioning_template_paletti p WHERE p.template_id = t.id) as paletti_count,
+             (SELECT COUNT(*) FROM w3suite.commissioning_template_caps c WHERE c.template_id = t.id) as caps_count
+      FROM w3suite.commissioning_configurator_templates t
+      LEFT JOIN w3suite.commissioning_configurator_types ct ON ct.code = t.type_code
+      WHERE (t.tenant_id = ${tenantId} OR t.tenant_id IS NULL)
+        ${typeCode ? sql`AND t.type_code = ${typeCode as string}` : sql``}
+        ${status ? sql`AND t.status = ${status as string}` : sql``}
+        ${search ? sql`AND (t.name ILIKE ${'%' + search + '%'} OR t.code ILIKE ${'%' + search + '%'})` : sql``}
+      ORDER BY t.sort_order ASC, t.name ASC
+    `);
+
+    const templates = result.rows.map((row: any) => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      typeCode: row.type_code,
+      typeName: row.type_name,
+      primaryLayer: row.primary_layer,
+      availableDriverIds: row.available_driver_ids || [],
+      typeConfig: row.type_config || {},
+      thresholdMode: row.threshold_mode,
+      thresholdCount: row.threshold_count,
+      status: row.status,
+      sortOrder: row.sort_order,
+      palettiCount: parseInt(row.paletti_count) || 0,
+      capsCount: parseInt(row.caps_count) || 0,
+      isBrandPushed: row.tenant_id === null,
+      createdBy: row.created_by,
+      modifiedBy: row.modified_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+
+    res.json(templates);
+  } catch (error) {
+    logger.error("Error fetching configurator templates", { error });
+    res.status(500).json({ error: "Failed to fetch configurator templates" });
+  }
+});
+
+// GET /configurator-templates/:id - Dettaglio template con paletti e CAP
+router.get("/configurator-templates/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    const templateResult = await db.execute(sql`
+      SELECT t.*, ct.name as type_name, ct.available_variables as type_variables,
+             ct.calculation_modes, ct.supports_multiple_thresholds
+      FROM w3suite.commissioning_configurator_templates t
+      LEFT JOIN w3suite.commissioning_configurator_types ct ON ct.code = t.type_code
+      WHERE t.id = ${id} AND (t.tenant_id = ${tenantId} OR t.tenant_id IS NULL)
+    `);
+
+    if (templateResult.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+
+    const palettiResult = await db.execute(sql`
+      SELECT p.*, f.name as function_name, f.code as function_code
+      FROM w3suite.commissioning_template_paletti p
+      JOIN w3suite.commissioning_functions f ON f.id = p.function_id
+      WHERE p.template_id = ${id}
+      ORDER BY p.sort_order ASC
+    `);
+
+    const capsResult = await db.execute(sql`
+      SELECT c.*, f.name as function_name, f.code as function_code
+      FROM w3suite.commissioning_template_caps c
+      JOIN w3suite.commissioning_functions f ON f.id = c.function_id
+      WHERE c.template_id = ${id}
+      ORDER BY c.sort_order ASC
+    `);
+
+    const row: any = templateResult.rows[0];
+    res.json({
+      id: row.id,
+      tenantId: row.tenant_id,
+      code: row.code,
+      name: row.name,
+      description: row.description,
+      typeCode: row.type_code,
+      typeName: row.type_name,
+      typeVariables: row.type_variables || [],
+      calculationModes: row.calculation_modes || [],
+      supportsMultipleThresholds: row.supports_multiple_thresholds,
+      primaryLayer: row.primary_layer,
+      availableDriverIds: row.available_driver_ids || [],
+      typeConfig: row.type_config || {},
+      thresholdMode: row.threshold_mode,
+      thresholdCount: row.threshold_count,
+      status: row.status,
+      sortOrder: row.sort_order,
+      isBrandPushed: row.tenant_id === null,
+      createdBy: row.created_by,
+      modifiedBy: row.modified_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      paletti: palettiResult.rows.map((p: any) => ({
+        id: p.id,
+        functionId: p.function_id,
+        functionName: p.function_name,
+        functionCode: p.function_code,
+        layerOverride: p.layer_override,
+        description: p.description,
+        sortOrder: p.sort_order,
+        isActive: p.is_active,
+        createdAt: p.created_at,
+      })),
+      caps: capsResult.rows.map((c: any) => ({
+        id: c.id,
+        functionId: c.function_id,
+        functionName: c.function_name,
+        functionCode: c.function_code,
+        layerOverride: c.layer_override,
+        behavior: c.behavior,
+        limitValue: c.limit_value ? parseFloat(c.limit_value) : null,
+        description: c.description,
+        sortOrder: c.sort_order,
+        isActive: c.is_active,
+        createdAt: c.created_at,
+      })),
+    });
+  } catch (error) {
+    logger.error("Error fetching configurator template", { error });
+    res.status(500).json({ error: "Failed to fetch configurator template" });
+  }
+});
+
+// POST /configurator-templates - Crea template (solo custom tenant)
+router.post("/configurator-templates", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const validation = createTemplateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    // Verifica che il tipo esista
+    const typeCheck = await db.execute(sql`
+      SELECT code FROM w3suite.commissioning_configurator_types WHERE code = ${data.typeCode} AND is_active = true
+    `);
+    if (typeCheck.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid configurator type code" });
+    }
+
+    // Verifica unicità codice per tenant
+    const codeCheck = await db.execute(sql`
+      SELECT id FROM w3suite.commissioning_configurator_templates 
+      WHERE tenant_id = ${tenantId} AND code = ${data.code}
+    `);
+    if (codeCheck.rows.length > 0) {
+      return res.status(400).json({ error: "Template code already exists for this tenant" });
+    }
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_configurator_templates 
+      (tenant_id, code, name, description, type_code, primary_layer, available_driver_ids, 
+       type_config, threshold_mode, threshold_count, status, sort_order, created_by)
+      VALUES (${tenantId}, ${data.code}, ${data.name}, ${data.description || null}, 
+              ${data.typeCode}, ${data.primaryLayer}, ${data.availableDriverIds || null}, 
+              ${JSON.stringify(data.typeConfig)}, ${data.thresholdMode || null}, 
+              ${data.thresholdCount}, ${data.status}, ${data.sortOrder}, ${userId || null})
+      RETURNING id
+    `);
+
+    const templateId = (result.rows[0] as any).id;
+    
+    res.status(201).json({ id: templateId, message: "Template created successfully" });
+  } catch (error) {
+    logger.error("Error creating configurator template", { error });
+    res.status(500).json({ error: "Failed to create configurator template" });
+  }
+});
+
+// PUT /configurator-templates/:id - Aggiorna template (solo custom tenant)
+router.put("/configurator-templates/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    // Verifica che il template sia custom (non brand-pushed)
+    const templateCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_configurator_templates WHERE id = ${id}
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id === null) {
+      return res.status(403).json({ error: "Cannot modify brand-pushed template" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id !== tenantId) {
+      return res.status(403).json({ error: "Template belongs to another tenant" });
+    }
+
+    const validation = createTemplateSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    await db.execute(sql`
+      UPDATE w3suite.commissioning_configurator_templates SET
+        name = COALESCE(${data.name}, name),
+        description = COALESCE(${data.description}, description),
+        primary_layer = COALESCE(${data.primaryLayer}, primary_layer),
+        available_driver_ids = COALESCE(${data.availableDriverIds || null}, available_driver_ids),
+        type_config = COALESCE(${data.typeConfig ? JSON.stringify(data.typeConfig) : null}, type_config),
+        threshold_mode = COALESCE(${data.thresholdMode || null}, threshold_mode),
+        threshold_count = COALESCE(${data.thresholdCount}, threshold_count),
+        status = COALESCE(${data.status}, status),
+        sort_order = COALESCE(${data.sortOrder}, sort_order),
+        modified_by = ${userId || null},
+        updated_at = now()
+      WHERE id = ${id}
+    `);
+
+    res.json({ message: "Template updated successfully" });
+  } catch (error) {
+    logger.error("Error updating configurator template", { error });
+    res.status(500).json({ error: "Failed to update configurator template" });
+  }
+});
+
+// DELETE /configurator-templates/:id - Elimina template (solo custom tenant)
+router.delete("/configurator-templates/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    // Verifica che il template sia custom
+    const templateCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_configurator_templates WHERE id = ${id}
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id === null) {
+      return res.status(403).json({ error: "Cannot delete brand-pushed template" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id !== tenantId) {
+      return res.status(403).json({ error: "Template belongs to another tenant" });
+    }
+
+    // Verifica che non ci siano istanze attive che usano questo template
+    const instanceCheck = await db.execute(sql`
+      SELECT COUNT(*) as count FROM w3suite.commissioning_configurator_instances 
+      WHERE template_id = ${id} AND status IN ('draft', 'active')
+    `);
+    if (parseInt((instanceCheck.rows[0] as any).count) > 0) {
+      return res.status(400).json({ error: "Cannot delete template with active instances" });
+    }
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_configurator_templates WHERE id = ${id}
+    `);
+
+    res.json({ message: "Template deleted successfully" });
+  } catch (error) {
+    logger.error("Error deleting configurator template", { error });
+    res.status(500).json({ error: "Failed to delete configurator template" });
+  }
+});
+
+// ==================== TEMPLATE PALETTI ====================
+
+// POST /configurator-templates/:id/paletti - Aggiungi paletto
+router.post("/configurator-templates/:id/paletti", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    // Verifica template custom
+    const templateCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_configurator_templates WHERE id = ${id}
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id === null) {
+      return res.status(403).json({ error: "Cannot modify brand-pushed template" });
+    }
+
+    const validation = createPalettoSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_template_paletti 
+      (template_id, function_id, layer_override, description, sort_order, is_active)
+      VALUES (${id}, ${data.functionId}, ${data.layerOverride || null}, 
+              ${data.description || null}, ${data.sortOrder}, ${data.isActive})
+      RETURNING id
+    `);
+
+    res.status(201).json({ id: (result.rows[0] as any).id, message: "Paletto added successfully" });
+  } catch (error) {
+    logger.error("Error adding template paletto", { error });
+    res.status(500).json({ error: "Failed to add paletto" });
+  }
+});
+
+// DELETE /configurator-templates/:templateId/paletti/:palettoId
+router.delete("/configurator-templates/:templateId/paletti/:palettoId", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { templateId, palettoId } = req.params;
+
+    // Verifica template custom
+    const templateCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_configurator_templates WHERE id = ${templateId}
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id === null) {
+      return res.status(403).json({ error: "Cannot modify brand-pushed template" });
+    }
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_template_paletti WHERE id = ${palettoId} AND template_id = ${templateId}
+    `);
+
+    res.json({ message: "Paletto deleted successfully" });
+  } catch (error) {
+    logger.error("Error deleting template paletto", { error });
+    res.status(500).json({ error: "Failed to delete paletto" });
+  }
+});
+
+// ==================== TEMPLATE CAPS ====================
+
+// POST /configurator-templates/:id/caps - Aggiungi CAP
+router.post("/configurator-templates/:id/caps", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    // Verifica template custom
+    const templateCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_configurator_templates WHERE id = ${id}
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id === null) {
+      return res.status(403).json({ error: "Cannot modify brand-pushed template" });
+    }
+
+    const validation = createCapSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_template_caps 
+      (template_id, function_id, layer_override, behavior, limit_value, description, sort_order, is_active)
+      VALUES (${id}, ${data.functionId}, ${data.layerOverride || null}, ${data.behavior}, 
+              ${data.limitValue || null}, ${data.description || null}, ${data.sortOrder}, ${data.isActive})
+      RETURNING id
+    `);
+
+    res.status(201).json({ id: (result.rows[0] as any).id, message: "CAP added successfully" });
+  } catch (error) {
+    logger.error("Error adding template CAP", { error });
+    res.status(500).json({ error: "Failed to add CAP" });
+  }
+});
+
+// DELETE /configurator-templates/:templateId/caps/:capId
+router.delete("/configurator-templates/:templateId/caps/:capId", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { templateId, capId } = req.params;
+
+    // Verifica template custom
+    const templateCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_configurator_templates WHERE id = ${templateId}
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+    if ((templateCheck.rows[0] as any).tenant_id === null) {
+      return res.status(403).json({ error: "Cannot modify brand-pushed template" });
+    }
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_template_caps WHERE id = ${capId} AND template_id = ${templateId}
+    `);
+
+    res.json({ message: "CAP deleted successfully" });
+  } catch (error) {
+    logger.error("Error deleting template CAP", { error });
+    res.status(500).json({ error: "Failed to delete CAP" });
+  }
+});
+
+// ==================== CONFIGURATOR INSTANCES (Livello 2) ====================
+
+// GET /configurator-instances - Lista istanze per gara
+router.get("/configurator-instances", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { raceId } = req.query;
+    if (!raceId) {
+      return res.status(400).json({ error: "raceId query parameter required" });
+    }
+
+    const result = await db.execute(sql`
+      SELECT i.*, t.name as template_name, t.type_code, t.primary_layer,
+             (SELECT COUNT(*) FROM w3suite.commissioning_instance_clusters c WHERE c.instance_id = i.id) as clusters_count
+      FROM w3suite.commissioning_configurator_instances i
+      JOIN w3suite.commissioning_configurator_templates t ON t.id = i.template_id
+      JOIN w3suite.commissioning_races r ON r.id = i.race_id
+      WHERE i.race_id = ${raceId as string}
+        AND (r.tenant_id = ${tenantId} OR r.tenant_id IS NULL)
+      ORDER BY i.sort_order ASC, i.created_at DESC
+    `);
+
+    const instances = result.rows.map((row: any) => ({
+      id: row.id,
+      raceId: row.race_id,
+      templateId: row.template_id,
+      templateName: row.template_name,
+      typeCode: row.type_code,
+      primaryLayer: row.primary_layer,
+      name: row.name,
+      instanceConfig: row.instance_config || {},
+      status: row.status,
+      sortOrder: row.sort_order,
+      clustersCount: parseInt(row.clusters_count) || 0,
+      createdBy: row.created_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+
+    res.json(instances);
+  } catch (error) {
+    logger.error("Error fetching configurator instances", { error });
+    res.status(500).json({ error: "Failed to fetch configurator instances" });
+  }
+});
+
+// GET /configurator-instances/:id - Dettaglio istanza con cluster
+router.get("/configurator-instances/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    const instanceResult = await db.execute(sql`
+      SELECT i.*, t.name as template_name, t.type_code, t.primary_layer, 
+             t.type_config as template_config, t.threshold_mode, t.threshold_count
+      FROM w3suite.commissioning_configurator_instances i
+      JOIN w3suite.commissioning_configurator_templates t ON t.id = i.template_id
+      JOIN w3suite.commissioning_races r ON r.id = i.race_id
+      WHERE i.id = ${id} AND (r.tenant_id = ${tenantId} OR r.tenant_id IS NULL)
+    `);
+
+    if (instanceResult.rows.length === 0) {
+      return res.status(404).json({ error: "Instance not found" });
+    }
+
+    const clustersResult = await db.execute(sql`
+      SELECT c.*,
+             (SELECT json_agg(json_build_object('id', m.id, 'entityId', m.entity_id, 'entityType', m.entity_type))
+              FROM w3suite.commissioning_instance_cluster_members m WHERE m.cluster_id = c.id) as members
+      FROM w3suite.commissioning_instance_clusters c
+      WHERE c.instance_id = ${id}
+      ORDER BY c.sort_order ASC
+    `);
+
+    const row: any = instanceResult.rows[0];
+    res.json({
+      id: row.id,
+      raceId: row.race_id,
+      templateId: row.template_id,
+      templateName: row.template_name,
+      typeCode: row.type_code,
+      primaryLayer: row.primary_layer,
+      templateConfig: row.template_config || {},
+      thresholdMode: row.threshold_mode,
+      thresholdCount: row.threshold_count,
+      name: row.name,
+      instanceConfig: row.instance_config || {},
+      status: row.status,
+      sortOrder: row.sort_order,
+      createdBy: row.created_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      clusters: clustersResult.rows.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        entityType: c.entity_type,
+        activeDriverIds: c.active_driver_ids || [],
+        clusterConfig: c.cluster_config || {},
+        valuePackageIds: c.value_package_ids || [],
+        sortOrder: c.sort_order,
+        isActive: c.is_active,
+        members: c.members || [],
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      })),
+    });
+  } catch (error) {
+    logger.error("Error fetching configurator instance", { error });
+    res.status(500).json({ error: "Failed to fetch configurator instance" });
+  }
+});
+
+// POST /configurator-instances - Crea istanza
+router.post("/configurator-instances", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const userId = req.user?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const validation = createInstanceSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    // Verifica che la gara sia del tenant o accessibile
+    const raceCheck = await db.execute(sql`
+      SELECT tenant_id FROM w3suite.commissioning_races WHERE id = ${data.raceId}
+    `);
+    if (raceCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Race not found" });
+    }
+    const raceTenantId = (raceCheck.rows[0] as any).tenant_id;
+    if (raceTenantId !== null && raceTenantId !== tenantId) {
+      return res.status(403).json({ error: "Race belongs to another tenant" });
+    }
+
+    // Verifica che il template esista e sia accessibile
+    const templateCheck = await db.execute(sql`
+      SELECT id FROM w3suite.commissioning_configurator_templates 
+      WHERE id = ${data.templateId} AND (tenant_id = ${tenantId} OR tenant_id IS NULL)
+    `);
+    if (templateCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Template not found or not accessible" });
+    }
+
+    const result = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_configurator_instances 
+      (race_id, template_id, name, instance_config, status, sort_order, created_by)
+      VALUES (${data.raceId}, ${data.templateId}, ${data.name || null}, 
+              ${JSON.stringify(data.instanceConfig)}, ${data.status}, ${data.sortOrder}, ${userId || null})
+      RETURNING id
+    `);
+
+    res.status(201).json({ id: (result.rows[0] as any).id, message: "Instance created successfully" });
+  } catch (error) {
+    logger.error("Error creating configurator instance", { error });
+    res.status(500).json({ error: "Failed to create configurator instance" });
+  }
+});
+
+// DELETE /configurator-instances/:id
+router.delete("/configurator-instances/:id", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    // Verifica che la gara sia del tenant
+    const instanceCheck = await db.execute(sql`
+      SELECT r.tenant_id FROM w3suite.commissioning_configurator_instances i
+      JOIN w3suite.commissioning_races r ON r.id = i.race_id
+      WHERE i.id = ${id}
+    `);
+    if (instanceCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Instance not found" });
+    }
+    const raceTenantId = (instanceCheck.rows[0] as any).tenant_id;
+    if (raceTenantId !== null && raceTenantId !== tenantId) {
+      return res.status(403).json({ error: "Instance belongs to another tenant" });
+    }
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_configurator_instances WHERE id = ${id}
+    `);
+
+    res.json({ message: "Instance deleted successfully" });
+  } catch (error) {
+    logger.error("Error deleting configurator instance", { error });
+    res.status(500).json({ error: "Failed to delete configurator instance" });
+  }
+});
+
+// ==================== INSTANCE CLUSTERS ====================
+
+// POST /configurator-instances/:id/clusters - Aggiungi cluster con membri
+router.post("/configurator-instances/:id/clusters", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { id } = req.params;
+
+    const validation = createInstanceClusterSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    // Crea cluster
+    const clusterResult = await db.execute(sql`
+      INSERT INTO w3suite.commissioning_instance_clusters 
+      (instance_id, name, entity_type, active_driver_ids, cluster_config, value_package_ids, sort_order)
+      VALUES (${id}, ${data.name}, ${data.entityType}, ${data.activeDriverIds || null}, 
+              ${JSON.stringify(data.clusterConfig)}, ${data.valuePackageIds || null}, ${data.sortOrder})
+      RETURNING id
+    `);
+
+    const clusterId = (clusterResult.rows[0] as any).id;
+
+    // Aggiungi membri
+    if (data.memberIds && data.memberIds.length > 0) {
+      for (const memberId of data.memberIds) {
+        await db.execute(sql`
+          INSERT INTO w3suite.commissioning_instance_cluster_members (cluster_id, entity_id, entity_type)
+          VALUES (${clusterId}, ${memberId}, ${data.entityType})
+          ON CONFLICT DO NOTHING
+        `);
+      }
+    }
+
+    res.status(201).json({ id: clusterId, message: "Cluster created successfully" });
+  } catch (error) {
+    logger.error("Error creating instance cluster", { error });
+    res.status(500).json({ error: "Failed to create cluster" });
+  }
+});
+
+// PUT /configurator-instances/:instanceId/clusters/:clusterId - Aggiorna cluster
+router.put("/configurator-instances/:instanceId/clusters/:clusterId", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { instanceId, clusterId } = req.params;
+
+    const validation = createInstanceClusterSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Validation failed", details: validation.error.errors });
+    }
+
+    const data = validation.data;
+
+    // Aggiorna cluster
+    await db.execute(sql`
+      UPDATE w3suite.commissioning_instance_clusters SET
+        name = COALESCE(${data.name}, name),
+        active_driver_ids = COALESCE(${data.activeDriverIds || null}, active_driver_ids),
+        cluster_config = COALESCE(${data.clusterConfig ? JSON.stringify(data.clusterConfig) : null}, cluster_config),
+        value_package_ids = COALESCE(${data.valuePackageIds || null}, value_package_ids),
+        sort_order = COALESCE(${data.sortOrder}, sort_order),
+        updated_at = now()
+      WHERE id = ${clusterId} AND instance_id = ${instanceId}
+    `);
+
+    // Aggiorna membri se forniti
+    if (data.memberIds !== undefined) {
+      // Rimuovi vecchi membri
+      await db.execute(sql`
+        DELETE FROM w3suite.commissioning_instance_cluster_members WHERE cluster_id = ${clusterId}
+      `);
+      // Aggiungi nuovi membri
+      if (data.memberIds && data.memberIds.length > 0) {
+        for (const memberId of data.memberIds) {
+          await db.execute(sql`
+            INSERT INTO w3suite.commissioning_instance_cluster_members (cluster_id, entity_id, entity_type)
+            VALUES (${clusterId}, ${memberId}, ${data.entityType || 'USER'})
+            ON CONFLICT DO NOTHING
+          `);
+        }
+      }
+    }
+
+    res.json({ message: "Cluster updated successfully" });
+  } catch (error) {
+    logger.error("Error updating instance cluster", { error });
+    res.status(500).json({ error: "Failed to update cluster" });
+  }
+});
+
+// DELETE /configurator-instances/:instanceId/clusters/:clusterId
+router.delete("/configurator-instances/:instanceId/clusters/:clusterId", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant context required" });
+    }
+
+    const { instanceId, clusterId } = req.params;
+
+    await db.execute(sql`
+      DELETE FROM w3suite.commissioning_instance_clusters 
+      WHERE id = ${clusterId} AND instance_id = ${instanceId}
+    `);
+
+    res.json({ message: "Cluster deleted successfully" });
+  } catch (error) {
+    logger.error("Error deleting instance cluster", { error });
+    res.status(500).json({ error: "Failed to delete cluster" });
+  }
+});
+
 export default router;
