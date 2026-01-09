@@ -1184,6 +1184,80 @@ router.delete("/value-packages/:packageId/price-lists/:priceListId", async (req:
   }
 });
 
+// Get products from a price list directly (for draft mode without packageId)
+router.get("/price-lists/:priceListId/products-for-commissioning", async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.tenant?.id;
+    const { priceListId } = req.params;
+
+    // Get price list type to determine which table to query
+    const priceListResult = await db.execute(sql`
+      SELECT type FROM w3suite.price_lists WHERE id = ${priceListId} AND tenant_id = ${tenantId}
+    `);
+
+    if (priceListResult.rows.length === 0) {
+      return res.status(404).json({ error: "Price list not found" });
+    }
+
+    const priceListType = (priceListResult.rows[0] as any).type;
+    const isCanvas = priceListType === 'canvas';
+
+    let productsQuery;
+    if (isCanvas) {
+      productsQuery = await db.execute(sql`
+        SELECT 
+          plic.id as price_list_item_id,
+          plic.product_id,
+          p.name as product_name,
+          p.sku as product_sku,
+          plic.monthly_fee as canone_listino,
+          TRUE as is_canvas,
+          NULL::uuid as item_id,
+          NULL::integer as valenza,
+          NULL::numeric as gettone_contrattuale,
+          NULL::numeric as gettone_gara,
+          NULL::numeric as canone_override,
+          TRUE as canone_inherited,
+          NULL::text as notes
+        FROM w3suite.price_list_items_canvas plic
+        LEFT JOIN w3suite.products p ON p.id = plic.product_id
+        WHERE plic.price_list_id = ${priceListId} AND plic.is_active = true
+        ORDER BY p.name ASC
+      `);
+    } else {
+      productsQuery = await db.execute(sql`
+        SELECT 
+          pli.id as price_list_item_id,
+          pli.product_id,
+          p.name as product_name,
+          p.sku as product_sku,
+          NULL::numeric as canone_listino,
+          FALSE as is_canvas,
+          NULL::uuid as item_id,
+          NULL::integer as valenza,
+          NULL::numeric as gettone_contrattuale,
+          NULL::numeric as gettone_gara,
+          NULL::numeric as canone_override,
+          NULL::boolean as canone_inherited,
+          NULL::text as notes
+        FROM w3suite.price_list_items pli
+        LEFT JOIN w3suite.products p ON p.id = pli.product_id
+        WHERE pli.price_list_id = ${priceListId} AND pli.is_active = true
+        ORDER BY p.name ASC
+      `);
+    }
+
+    res.json({
+      priceListType,
+      isCanvas,
+      products: productsQuery.rows
+    });
+  } catch (error) {
+    logger.error("Error fetching price list products for commissioning", { error });
+    res.status(500).json({ error: "Failed to fetch price list products" });
+  }
+});
+
 // Get products from a price list (for grid population)
 router.get("/value-packages/:packageId/price-lists/:priceListId/products", async (req: Request, res: Response) => {
   try {

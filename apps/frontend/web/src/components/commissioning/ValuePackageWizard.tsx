@@ -293,106 +293,203 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
     },
   });
 
+  // Local draft state for selected price lists (only IDs, no API until final save)
+  const [draftSelectedListIds, setDraftSelectedListIds] = useState<Set<string>>(new Set());
+
+  // Sync draft state with existing package price lists when editing
+  useEffect(() => {
+    if (packageId && packagePriceLists.length > 0) {
+      setDraftSelectedListIds(new Set(packagePriceLists.map(pl => pl.price_list_id)));
+    }
+  }, [packageId, packagePriceLists]);
+
+  // Compute draft price lists with metadata from allPriceLists
+  const draftPriceLists = useMemo(() => {
+    return Array.from(draftSelectedListIds).map(plId => {
+      // Check if already exists in packagePriceLists (edit mode)
+      const existing = packagePriceLists.find(pl => pl.price_list_id === plId);
+      if (existing) return existing;
+      
+      // Otherwise, build from allPriceLists
+      const pl = allPriceLists.find(p => p.id === plId);
+      if (!pl) return null;
+      
+      return {
+        id: '', // Will be assigned on save
+        price_list_id: pl.id,
+        price_list_code: pl.code,
+        price_list_name: pl.name,
+        price_list_type: pl.type,
+        items_count: 0,
+        total_products: 0,
+      } as PackagePriceList;
+    }).filter(Boolean) as PackagePriceList[];
+  }, [draftSelectedListIds, packagePriceLists, allPriceLists]);
+
   // Handlers
-  const handleStep1Next = async () => {
+  const handleStep1Next = () => {
+    // Local validation only - NO API call
     if (!formData.code || !formData.name || !formData.validFrom) {
       toast({ title: 'Errore', description: 'Codice, nome e data inizio sono obbligatori', variant: 'destructive' });
       return;
-    }
-
-    if (packageId) {
-      await updatePackageMutation.mutateAsync({ id: packageId, data: formData });
-    } else {
-      const result = await createPackageMutation.mutateAsync(formData);
-      if (result?.id) setPackageId(result.id);
     }
     setCurrentStep(2);
   };
 
   const handleTogglePriceList = useCallback((priceListId: string) => {
     if (!priceListId) return;
-    if (!packageId) {
-      toast({ title: 'Attenzione', description: 'Prima salva i dati base (Step 1)', variant: 'destructive' });
-      return;
-    }
-
-    const isSelected = packagePriceLists.some(pl => pl.price_list_id === priceListId);
-    if (isSelected) {
-      removePriceListMutation.mutate({ packageId, priceListId });
-    } else {
-      addPriceListMutation.mutate({ packageId, priceListId });
-    }
-  }, [packageId, packagePriceLists, addPriceListMutation, removePriceListMutation, toast]);
+    
+    // Local state only - NO API call until final save
+    setDraftSelectedListIds(prev => {
+      const next = new Set(prev);
+      if (next.has(priceListId)) {
+        next.delete(priceListId);
+        // Clean up related state when deselecting
+        setPendingChanges(pc => {
+          const nextPc = { ...pc };
+          delete nextPc[priceListId];
+          return nextPc;
+        });
+        setWorkedPriceLists(wpl => {
+          const nextWpl = new Set(wpl);
+          nextWpl.delete(priceListId);
+          return nextWpl;
+        });
+        setPriceListStatus(pls => {
+          const nextPls = { ...pls };
+          delete nextPls[priceListId];
+          return nextPls;
+        });
+      } else {
+        next.add(priceListId);
+      }
+      return next;
+    });
+  }, []);
 
   const handleStep2Next = () => {
-    if (packagePriceLists.length === 0) {
+    if (draftPriceLists.length === 0) {
       toast({ title: 'Attenzione', description: 'Seleziona almeno un listino', variant: 'destructive' });
       return;
     }
-    if (packagePriceLists.length > 0) {
-      setActiveListTab(packagePriceLists[0].price_list_id);
+    if (draftPriceLists.length > 0) {
+      setActiveListTab(draftPriceLists[0].price_list_id);
     }
     setCurrentStep(3);
   };
 
-  const handleSaveAll = async () => {
-    if (!packageId) return;
-
-    const savedListIds: string[] = [];
-    const errorListIds: string[] = [];
+  const handleSaveAll = () => {
+    // In draft mode: just mark lists as "worked" and go back to step 2
+    // Actual API calls happen in handleFinalSave
     
-    for (const [priceListId, changes] of Object.entries(pendingChanges)) {
-      const products = Object.entries(changes).map(([productId, data]) => ({
-        productId,
-        ...data,
-      }));
-      if (products.length > 0) {
-        try {
-          await bulkUpdateMutation.mutateAsync({ packageId, priceListId, products });
-          savedListIds.push(priceListId);
-        } catch (err) {
-          errorListIds.push(priceListId);
-        }
+    // Get all price list IDs that have pending changes
+    const workedListIds = Object.keys(pendingChanges).filter(plId => 
+      Object.keys(pendingChanges[plId] || {}).length > 0
+    );
+    
+    if (workedListIds.length === 0) {
+      // If no pending changes, mark the active tab as worked
+      if (activeListTab) {
+        workedListIds.push(activeListTab);
       }
     }
-
-    // Invalida le query per aggiornare i dati
-    queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists'] });
     
-    // Track worked price lists
+    // Track worked price lists (local state)
     setWorkedPriceLists(prev => {
       const next = new Set(prev);
-      savedListIds.forEach(id => next.add(id));
+      workedListIds.forEach(id => next.add(id));
       return next;
     });
     
-    // Update status for each worked list (will be recalculated from API data after refetch)
+    // Update status for each worked list
     setPriceListStatus(prev => {
       const next = { ...prev };
-      savedListIds.forEach(id => { next[id] = 'complete'; }); // Provisional, will update from API
-      errorListIds.forEach(id => { next[id] = 'error'; });
+      workedListIds.forEach(id => { 
+        // Check if all products have values (partial check)
+        const changes = pendingChanges[id] || {};
+        const hasValues = Object.keys(changes).length > 0;
+        next[id] = hasValues ? 'partial' : 'pending'; 
+      });
       return next;
     });
     
-    // Resetta pendingChanges e torna a Step 2
-    setPendingChanges({});
-    toast({ title: 'Valori salvati', description: 'I valori dei prodotti sono stati salvati correttamente' });
+    // Keep pendingChanges in memory - DON'T reset them!
+    toast({ title: 'Valori salvati in bozza', description: 'Clicca "Salva Pacchetto" per salvare definitivamente' });
     setCurrentStep(2);
   };
   
-  // Handler per salvare il pacchetto finale
-  const handleFinalSave = () => {
-    queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
-    toast({ title: 'Pacchetto salvato', description: 'Il pacchetto commissioning è stato completato con successo.' });
-    handleClose();
-    onSuccess?.();
+  // State for final save in progress
+  const [isSavingFinal, setIsSavingFinal] = useState(false);
+
+  // Handler per salvare il pacchetto finale - orchestrates all API calls
+  const handleFinalSave = async () => {
+    setIsSavingFinal(true);
+    try {
+      let finalPackageId = packageId;
+      
+      // Step 1: Create or update the package
+      if (!finalPackageId) {
+        // Create new package
+        const result = await createPackageMutation.mutateAsync(formData);
+        finalPackageId = result.id;
+        setPackageId(finalPackageId);
+      } else {
+        // Update existing package with any form changes
+        await updatePackageMutation.mutateAsync({ id: finalPackageId, data: formData });
+      }
+      
+      // Step 2: Sync price lists (add new ones, remove deselected ones)
+      const existingListIds = new Set(packagePriceLists.map(pl => pl.price_list_id));
+      const targetListIds = draftSelectedListIds;
+      
+      // Add new price lists
+      for (const plId of targetListIds) {
+        if (!existingListIds.has(plId)) {
+          await addPriceListMutation.mutateAsync({ packageId: finalPackageId, priceListId: plId });
+        }
+      }
+      
+      // Remove deselected price lists
+      for (const plId of existingListIds) {
+        if (!targetListIds.has(plId)) {
+          await removePriceListMutation.mutateAsync({ packageId: finalPackageId, priceListId: plId });
+        }
+      }
+      
+      // Step 3: Save all pending product value changes (only for lists still selected)
+      for (const [priceListId, changes] of Object.entries(pendingChanges)) {
+        // Only save changes for lists that are still in the selection
+        if (!targetListIds.has(priceListId)) continue;
+        
+        const products = Object.entries(changes).map(([productId, data]) => ({
+          productId,
+          ...data,
+        }));
+        if (products.length > 0) {
+          await bulkUpdateMutation.mutateAsync({ packageId: finalPackageId, priceListId, products });
+        }
+      }
+      
+      // Success - invalidate cache and close
+      queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
+      toast({ title: 'Pacchetto salvato', description: 'Il pacchetto commissioning è stato salvato con successo.' });
+      handleClose();
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error saving package:', error);
+      toast({ title: 'Errore', description: 'Impossibile salvare il pacchetto. Riprova.', variant: 'destructive' });
+    } finally {
+      setIsSavingFinal(false);
+    }
   };
 
   const handleClose = () => {
     setCurrentStep(1);
     setPackageId(null);
     setSelectedPriceLists([]);
+    setDraftSelectedListIds(new Set());
     setPendingChanges({});
+    setIsSavingFinal(false);
     onOpenChange(false);
   };
 
@@ -412,22 +509,27 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                 Configura i valori commissioning per i prodotti dei listini selezionati
               </DialogDescription>
             </div>
-            {/* Salva Pacchetto in alto a destra - visibile solo quando ci sono listini lavorati */}
-            {workedPriceLists.size > 0 && (
+            {/* Salva Pacchetto in alto a destra - visibile quando ci sono listini selezionati */}
+            {draftPriceLists.length > 0 && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={handleFinalSave}
+                      disabled={isSavingFinal}
                       className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
                       data-testid="button-save-package-header"
                     >
-                      <Check className="h-4 w-4 mr-2" />
-                      Salva Pacchetto
+                      {isSavingFinal ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4 mr-2" />
+                      )}
+                      {isSavingFinal ? 'Salvataggio...' : 'Salva Pacchetto'}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="max-w-xs">
-                    <p>Salva definitivamente il pacchetto con tutti i listini lavorati e i relativi valori configurati</p>
+                    <p>Salva definitivamente il pacchetto con tutti i listini selezionati e i relativi valori configurati</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -660,10 +762,10 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               </Card>
 
               {/* Selected chips */}
-              {packagePriceLists.length > 0 && (
+              {draftPriceLists.length > 0 && (
                 <div className="flex flex-wrap gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                  <span className="text-sm text-orange-700 font-medium">Selezionati ({packagePriceLists.length}):</span>
-                  {packagePriceLists.map((pl, idx) => (
+                  <span className="text-sm text-orange-700 font-medium">Selezionati ({draftPriceLists.length}):</span>
+                  {draftPriceLists.map((pl, idx) => (
                     <Badge 
                       key={pl.price_list_id || `pl-${idx}`} 
                       variant="secondary" 
@@ -689,7 +791,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                   </CardHeader>
                   <CardContent className="py-2">
                     <div className="flex flex-wrap gap-2">
-                      {packagePriceLists.filter(pl => workedPriceLists.has(pl.price_list_id)).map((pl, idx) => {
+                      {draftPriceLists.filter(pl => workedPriceLists.has(pl.price_list_id)).map((pl, idx) => {
                         const itemsCount = Number(pl.items_count) || 0;
                         const totalProducts = Number(pl.total_products) || 0;
                         const status = priceListStatus[pl.price_list_id] || 
@@ -741,7 +843,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                       </tr>
                     ) : (
                       filteredPriceLists.map(pl => {
-                        const isSelected = packagePriceLists.some(p => p.price_list_id === pl.id);
+                        const isSelected = draftSelectedListIds.has(pl.id);
                         const isWorked = workedPriceLists.has(pl.id);
                         return (
                           <tr 
@@ -780,7 +882,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
           {/* Step 3: Product Values Grid */}
           {currentStep === 3 && (
             <div className="py-4">
-              {packagePriceLists.length === 0 ? (
+              {draftPriceLists.length === 0 ? (
                 <div className="p-8 text-center text-gray-400">
                   <AlertCircle className="h-8 w-8 mx-auto mb-2" />
                   Nessun listino selezionato
@@ -788,7 +890,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
               ) : (
                 <Tabs value={activeListTab} onValueChange={setActiveListTab}>
                   <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1 bg-gray-100 rounded-lg">
-                    {packagePriceLists.map((pl, idx) => {
+                    {draftPriceLists.map((pl, idx) => {
                       const itemsCount = Number(pl.items_count) || 0;
                       const totalProducts = Number(pl.total_products) || 0;
                       const status = getCompletionStatus(itemsCount, totalProducts);
@@ -811,10 +913,10 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                     })}
                   </TabsList>
                   
-                  {packagePriceLists.map((pl, idx) => (
+                  {draftPriceLists.map((pl, idx) => (
                     <TabsContent key={pl.price_list_id || `content-${idx}`} value={pl.price_list_id} className="mt-4">
                       <ProductGrid 
-                        packageId={packageId!}
+                        packageId={packageId}
                         priceListId={pl.price_list_id}
                         priceListType={pl.price_list_type}
                         pendingChanges={pendingChanges[pl.price_list_id] || {}}
@@ -879,19 +981,23 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
           )}
           
           {currentStep === 3 && (
-            <Button 
-              onClick={handleSaveAll}
-              disabled={bulkUpdateMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
-              data-testid="button-save-all"
-            >
-              {bulkUpdateMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Salva Valori
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={handleSaveAll}
+                    className="bg-green-600 hover:bg-green-700"
+                    data-testid="button-save-all"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Conferma Valori
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Conferma i valori inseriti e torna alla selezione listini</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </DialogFooter>
       </DialogContent>
@@ -901,7 +1007,7 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
 
 // Product Grid Component
 interface ProductGridProps {
-  packageId: string;
+  packageId: string | null;
   priceListId: string;
   priceListType: string;
   pendingChanges: Record<string, Partial<ProductItem>>;
@@ -911,10 +1017,15 @@ interface ProductGridProps {
 function ProductGrid({ packageId, priceListId, priceListType, pendingChanges, onChangesUpdate }: ProductGridProps) {
   const isCanvas = priceListType === 'canvas';
 
+  // Use package-specific endpoint if packageId exists, otherwise use direct price list endpoint
   const { data: productsData, isLoading } = useQuery<{ priceListType: string; isCanvas: boolean; products: ProductItem[] }>({
-    queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists', priceListId, 'products'],
-    queryFn: () => apiRequest(`/api/commissioning/value-packages/${packageId}/price-lists/${priceListId}/products`),
-    enabled: !!packageId && !!priceListId,
+    queryKey: packageId 
+      ? ['/api/commissioning/value-packages', packageId, 'price-lists', priceListId, 'products']
+      : ['/api/commissioning/price-lists', priceListId, 'products-for-commissioning'],
+    queryFn: () => packageId
+      ? apiRequest(`/api/commissioning/value-packages/${packageId}/price-lists/${priceListId}/products`)
+      : apiRequest(`/api/commissioning/price-lists/${priceListId}/products-for-commissioning`),
+    enabled: !!priceListId,
   });
 
   const products = productsData?.products || [];
