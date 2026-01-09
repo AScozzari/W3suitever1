@@ -157,6 +157,16 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **📈 SOGLIE**: Progressive (somma fasce) o Regressive (tutto al valore max)
   - **🔧 FUNZIONI**: Solo condizioni logiche (`ruleBundle.conditions[]`) → TRUE/FALSE
   - **⚙️ OPERAZIONI**: Definite nel configuratore quando funzione = TRUE
+  - **🤖 REGOLA BRAINSTORMING (OBBLIGATORIO)**:
+    - Quando l'utente chiede "implementiamo una tipologia di configuratore" → **PRIMA fare brainstorming**
+    - Porre domande basate su `docs/commissioning.md` per coprire tutti gli aspetti:
+      - Layer principale? (RS/PdV/User)
+      - Driver disponibili? (valenza/fatturato/n.vendite/canone)
+      - Paletti? (condizioni sblocco)
+      - CAP? (limiti counting con comportamento blocco/scala)
+      - Modalità soglie? (progressive/regressive)
+      - Operazioni sui 4 valori? (×, +, −, ÷, %)
+    - **⚠️ CONFIGURATORI TIPO SONO GLOBALI**: Disponibili a TUTTI i tenant (`tenant_id = NULL`)
 - **🚨 CSS UNITS RULE - OBBLIGATORIO PER TUTTI I NUOVI SVILUPPI (da Gen 2026)**:
   - **⚠️ REGOLA ASSOLUTA**: TUTTI i nuovi file e modifiche DEVONO usare `rem` per dimensioni
   - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius, icon sizes
