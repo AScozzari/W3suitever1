@@ -130,6 +130,11 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   // Step 3 - Active tab and product edits
   const [activeListTab, setActiveListTab] = useState<string>('');
   const [pendingChanges, setPendingChanges] = useState<Record<string, Record<string, Partial<ProductItem>>>>({});
+  
+  // Track worked price lists (after "Salva Valori" was clicked)
+  const [workedPriceLists, setWorkedPriceLists] = useState<Set<string>>(new Set());
+  // Track price list completion status: 'complete' | 'partial' | 'error' | 'pending'
+  const [priceListStatus, setPriceListStatus] = useState<Record<string, 'complete' | 'partial' | 'error' | 'pending'>>({});
 
   // Store editingPackage id to avoid object reference issues
   const editingPackageId = editingPackage?.id ?? null;
@@ -147,6 +152,8 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
     setTypeFilter('all');
     setSearchFilter('');
     setSelectedPriceLists([]);
+    setWorkedPriceLists(new Set());
+    setPriceListStatus({});
     
     if (editingPackage) {
       setPackageId(editingPackage.id);
@@ -330,23 +337,54 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
   const handleSaveAll = async () => {
     if (!packageId) return;
 
+    const savedListIds: string[] = [];
+    const errorListIds: string[] = [];
+    
     for (const [priceListId, changes] of Object.entries(pendingChanges)) {
       const products = Object.entries(changes).map(([productId, data]) => ({
         productId,
         ...data,
       }));
       if (products.length > 0) {
-        await bulkUpdateMutation.mutateAsync({ packageId, priceListId, products });
+        try {
+          await bulkUpdateMutation.mutateAsync({ packageId, priceListId, products });
+          savedListIds.push(priceListId);
+        } catch (err) {
+          errorListIds.push(priceListId);
+        }
       }
     }
 
     // Invalida le query per aggiornare i dati
     queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages', packageId, 'price-lists'] });
     
+    // Track worked price lists
+    setWorkedPriceLists(prev => {
+      const next = new Set(prev);
+      savedListIds.forEach(id => next.add(id));
+      return next;
+    });
+    
+    // Update status for each worked list (will be recalculated from API data after refetch)
+    setPriceListStatus(prev => {
+      const next = { ...prev };
+      savedListIds.forEach(id => { next[id] = 'complete'; }); // Provisional, will update from API
+      errorListIds.forEach(id => { next[id] = 'error'; });
+      return next;
+    });
+    
     // Resetta pendingChanges e torna a Step 2
     setPendingChanges({});
     toast({ title: 'Valori salvati', description: 'I valori dei prodotti sono stati salvati correttamente' });
     setCurrentStep(2);
+  };
+  
+  // Handler per salvare il pacchetto finale
+  const handleFinalSave = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/commissioning/value-packages'] });
+    toast({ title: 'Pacchetto salvato', description: 'Il pacchetto commissioning è stato completato con successo.' });
+    handleClose();
+    onSuccess?.();
   };
 
   const handleClose = () => {
@@ -614,6 +652,46 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                 </div>
               )}
 
+              {/* Worked Price Lists Section (with traffic light) */}
+              {workedPriceLists.size > 0 && (
+                <Card className="border-2 border-green-200 bg-green-50/50">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-green-800">
+                      <Check className="h-4 w-4" /> Listini Lavorati ({workedPriceLists.size})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <div className="flex flex-wrap gap-2">
+                      {packagePriceLists.filter(pl => workedPriceLists.has(pl.price_list_id)).map((pl, idx) => {
+                        const itemsCount = Number(pl.items_count) || 0;
+                        const totalProducts = Number(pl.total_products) || 0;
+                        const status = priceListStatus[pl.price_list_id] || 
+                          (itemsCount >= totalProducts ? 'complete' : itemsCount > 0 ? 'partial' : 'pending');
+                        
+                        const statusConfig = {
+                          complete: { bg: 'bg-green-100 border-green-300', icon: '🟢', text: 'text-green-700' },
+                          partial: { bg: 'bg-orange-100 border-orange-300', icon: '🟠', text: 'text-orange-700' },
+                          error: { bg: 'bg-red-100 border-red-300', icon: '🔴', text: 'text-red-700' },
+                          pending: { bg: 'bg-gray-100 border-gray-300', icon: '⚪', text: 'text-gray-700' },
+                        }[status];
+                        
+                        return (
+                          <Badge 
+                            key={pl.price_list_id || `worked-${idx}`}
+                            variant="outline"
+                            className={`${statusConfig.bg} ${statusConfig.text} border flex items-center gap-2 px-3 py-1.5`}
+                          >
+                            <span>{statusConfig.icon}</span>
+                            <span className="font-medium">{pl.price_list_name}</span>
+                            <span className="text-xs opacity-75">({itemsCount}/{totalProducts})</span>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Price list table */}
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full text-sm">
@@ -637,10 +715,11 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
                     ) : (
                       filteredPriceLists.map(pl => {
                         const isSelected = packagePriceLists.some(p => p.price_list_id === pl.id);
+                        const isWorked = workedPriceLists.has(pl.id);
                         return (
                           <tr 
                             key={pl.id} 
-                            className={`border-t hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-orange-50' : ''}`}
+                            className={`border-t hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-orange-50' : ''} ${isWorked ? 'opacity-50' : ''}`}
                             onClick={() => handleTogglePriceList(pl.id)}
                             data-testid={`row-pricelist-${pl.id}`}
                           >
@@ -753,13 +832,27 @@ export default function ValuePackageWizard({ open, onOpenChange, editingPackage,
           )}
           
           {currentStep === 2 && (
-            <Button 
-              onClick={handleStep2Next}
-              className="bg-orange-500 hover:bg-orange-600"
-              data-testid="button-next-step2"
-            >
-              Avanti <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+            <>
+              {/* Show "Salva Pacchetto" only when at least one price list has been worked */}
+              {workedPriceLists.size > 0 && (
+                <Button 
+                  onClick={handleFinalSave}
+                  className="bg-green-600 hover:bg-green-700"
+                  data-testid="button-save-package"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Salva Pacchetto
+                </Button>
+              )}
+              <Button 
+                onClick={handleStep2Next}
+                disabled={packagePriceLists.length === 0}
+                className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="button-next-step2"
+              >
+                Avanti <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </>
           )}
           
           {currentStep === 3 && (
