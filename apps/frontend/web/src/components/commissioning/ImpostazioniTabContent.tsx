@@ -65,11 +65,13 @@ import {
   AtSign,
   Package,
   FunctionSquare,
+  Puzzle,
 } from 'lucide-react';
 import ClusterFormModal from './ClusterFormModal';
 import VariableMappingsSection from './VariableMappingsSection';
 import ValuePackagesSection from './ValuePackagesSection';
 import FunctionsSection from './FunctionsSection';
+import ConfiguratoriTemplateSection from './ConfiguratoriTemplateSection';
 
 interface Cluster {
   id: string;
@@ -454,6 +456,23 @@ export default function ImpostazioniTabContent() {
                 <FunctionsSection />
               </TabsContent>
             </Tabs>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="configurators" className="border rounded-lg bg-white">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-violet-100">
+                <Puzzle className="h-5 w-5 text-violet-600" />
+              </div>
+              <div className="text-left">
+                <div className="font-semibold text-gray-900">Configuratori Template</div>
+                <div className="text-sm text-gray-500 font-normal">Template riutilizzabili per soglie, gettoni e bonus/malus</div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <ConfiguratoriTemplateSection />
           </AccordionContent>
         </AccordionItem>
 
