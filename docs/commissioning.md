@@ -317,31 +317,555 @@ POST /api/commissioning/value-packages/:id/price-lists/:plId/products/bulk # Bul
 
 ### Definizione
 
-Le **Functions** definiscono la logica di calcolo applicata ai valori L2 per determinare l'economia finale della gara.
+Le **Functions** sono condizioni logiche riutilizzabili che restituiscono **TRUE** o **FALSE**. Non contengono operazioni sui valori - quelle sono definite nei Configuratori.
 
-### Variabili Target (Output L3)
+### Struttura ruleBundle
 
-Le funzioni L3 possono modificare/calcolare queste variabili target:
+```json
+{
+  "conditions": [
+    { "variable": "@sconto", "operator": ">", "value": 20, "logic": "AND" },
+    { "variable": "@giacenza", "operator": "<", "value": 10 }
+  ]
+}
+```
 
-| Codice | Nome | Tipo | Descrizione |
-|--------|------|------|-------------|
-| `valenza` | Valenza | number | Valore calcolato valenza |
-| `gettone_contrattuale` | Gettone Contrattuale | currency | Importo calcolato |
-| `gettone_gara` | Gettone Gara | currency | Importo calcolato per gara |
-| `canone` | Canone | currency | Canone calcolato |
-| `volumi` | Volumi | number | Quantità calcolata |
-| `valore_prodotto` | Valore € Prodotto | currency | Valore calcolato prodotto |
-| `valore_vendita` | Valore € Vendita | currency | Valore calcolato vendita |
+### Operatori Condizioni Disponibili
 
-### Tipi di Funzione
+| Operatore | Descrizione | Esempio |
+|-----------|-------------|---------|
+| `>` | Maggiore di | `@valenza > 100` |
+| `<` | Minore di | `@sconto < 50` |
+| `=` | Uguale a | `@categoria = "premium"` |
+| `!=` | Diverso da | `@stato != "annullato"` |
+| `>=` | Maggiore o uguale | `@quantita >= 10` |
+| `<=` | Minore o uguale | `@prezzo <= 999` |
+| `%+` | Scostamento positivo % | `@margine %+ 20` (margine +20%) |
+| `%-` | Scostamento negativo % | `@costo %- 10` (costo -10%) |
+| `contains` | Contiene testo | `@nome contains "Gold"` |
+| `startsWith` | Inizia con | `@codice startsWith "SIM"` |
+| `isEmpty` | È vuoto/nullo | `@note isEmpty` (unario) |
+| `isNotEmpty` | Non è vuoto | `@telefono isNotEmpty` (unario) |
 
-| Tipo | Descrizione | Esempio |
-|------|-------------|---------|
-| **Soglie Progressive** | Valore cresce con il raggiungimento soglie | 0-10 vendite = €5, 11-50 = €10 |
-| **Soglie Regressive** | Rivalorizzazione retroattiva | Salgo a soglia 3 → tutte le vendite a €15 |
-| **Moltiplicatore** | Fattore moltiplicativo | Canone × 2 |
-| **Percentuale** | Quota sul valore | 5% del fatturato |
-| **Bonus Fisso** | Importo una tantum | €500 se raggiungi 100 vendite |
+### Logic Connector
+
+- `AND` = tutte le condizioni devono essere TRUE
+- `OR` = almeno una condizione deve essere TRUE
+
+---
+
+## 🏗️ ARCHITETTURA CONFIGURATORI (3 LIVELLI)
+
+Il sistema Configuratori è strutturato su **tre livelli** distinti:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              LIVELLO 0 - CONFIGURATORE TIPO (Backend)           │
+│                    (Costruito da Sviluppatori)                   │
+│─────────────────────────────────────────────────────────────────│
+│  • Codice tipo: "soglie", "gettone", "bonus_malus"              │
+│  • Schema variabili disponibili per quel tipo                   │
+│  • Logica di calcolo specifica (progressivo/regressivo)         │
+│  • UI/UX proprietaria (componente React dedicato)               │
+│  • API endpoints dedicati per quel tipo                         │
+│  • NON modificabile da utenti - è il "motore"                   │
+└─────────────────────────────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────┐
+│            LIVELLO 1 - TEMPLATE CONFIGURATORE (Frontend)        │
+│                    (Creato da Utente Admin)                      │
+│─────────────────────────────────────────────────────────────────│
+│  • Seleziona un TIPO dal livello 0                              │
+│  • Configura: paletti, CAP, driver disponibili                  │
+│  • Imposta valori default e struttura soglie                    │
+│  • Riutilizzabile in più gare                                   │
+│  • Salvato nel tab "Configuratori"                              │
+└─────────────────────────────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────┐
+│              LIVELLO 2 - ISTANZA GARA (Frontend)                 │
+│                    (Creato quando importi in Gara)               │
+│─────────────────────────────────────────────────────────────────│
+│  • Importa un TEMPLATE dal livello 1                            │
+│  • Definisce CLUSTER con membri specifici                       │
+│  • Personalizza valori per ogni cluster                         │
+│  • Assegna pacchetti valenze                                    │
+│  • Imposta validità gara (date reset)                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔧 LIVELLO 0 - CONFIGURATORI TIPO (Backend)
+
+### Definizione
+
+I **Configuratori Tipo** sono costruiti da sviluppatori nel backend. Ogni tipo ha:
+- Schema dati specifico
+- Variabili disponibili
+- Logica di calcolo
+- Componente UI/UX proprietario
+
+### Tipi Disponibili
+
+| Tipo | Codice | Descrizione | Logica |
+|------|--------|-------------|--------|
+| **Soglie** | `soglie` | Range con moltiplicatori | Progressivo/Regressivo |
+| **Gettone** | `gettone` | Bonus fisso per vendita | Fisso per evento |
+| **Bonus/Malus** | `bonus_malus` | Operazioni condizionali | +/- su valori |
+
+### Struttura Tipo (Backend)
+
+```typescript
+interface ConfiguratorType {
+  code: string;                    // "soglie", "gettone", etc.
+  name: string;                    // "Configuratore a Soglie"
+  description: string;
+  
+  // Schema variabili disponibili per questo tipo
+  availableVariables: VariableSchema[];
+  
+  // Configurazione UI
+  uiComponent: string;             // Nome componente React
+  wizardSteps: WizardStep[];       // Step del wizard
+  
+  // Logica
+  calculationModes: string[];      // ["progressive", "regressive"]
+  supportsMultipleThresholds: boolean;
+  
+  // Validazione
+  validationRules: ValidationRule[];
+}
+```
+
+### API Endpoints (Read-Only per Frontend)
+
+```
+GET  /api/commissioning/configurator-types           # Lista tipi disponibili
+GET  /api/commissioning/configurator-types/:code     # Dettaglio tipo con schema
+```
+
+---
+
+## 📋 LIVELLO 1 - TEMPLATE CONFIGURATORE
+
+### Definizione
+
+I **Template** sono creati dagli utenti admin nel tab "Configuratori". Basandosi su un TIPO, configurano paletti, CAP, e driver.
+
+### Struttura Template
+
+```
+TEMPLATE CONFIGURATORE
+├── Info Base
+│   ├── Codice template
+│   ├── Nome
+│   ├── Descrizione
+│   └── Tipo (FK a configurator_types)
+│
+├── Layer Principale
+│   └── RS | PdV | User
+│
+├── Driver Disponibili
+│   └── [FK a drivers esistenti] (multiselect)
+│
+├── Struttura Soglie (se tipo=soglie)
+│   ├── Numero soglie
+│   ├── Driver per soglia (valenza/fatturato/vendite)
+│   └── Modalità: progressivo | regressivo
+│
+├── PALETTI[]
+│   ├── Funzione FK
+│   ├── Layer Override (opzionale)
+│   └── Descrizione
+│
+└── CAP[]
+    ├── Funzione FK
+    ├── Layer Override (opzionale)
+    ├── Comportamento: blocco | scala
+    └── Valore limite
+```
+
+### Tabella Database
+
+```sql
+commissioning_configurator_templates (
+  id UUID PRIMARY KEY,
+  tenant_id UUID,                     -- NULL = brand-pushed
+  code VARCHAR(50) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  
+  -- Riferimento al tipo (Livello 0)
+  type_code VARCHAR(30) NOT NULL,     -- "soglie", "gettone", etc.
+  
+  -- Layer principale
+  primary_layer VARCHAR(20) NOT NULL, -- 'RS' | 'PDV' | 'USER'
+  
+  -- Driver disponibili (FK array)
+  available_driver_ids UUID[],
+  
+  -- Configurazione specifica del tipo (JSON)
+  type_config JSONB,                  -- Struttura soglie, modalità, etc.
+  
+  status VARCHAR(20) DEFAULT 'draft',
+  created_by UUID,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+
+-- Paletti del template
+commissioning_template_paletti (
+  id UUID PRIMARY KEY,
+  template_id UUID REFERENCES commissioning_configurator_templates(id),
+  function_id UUID REFERENCES commissioning_functions(id),
+  layer_override VARCHAR(20),         -- NULL = usa layer template
+  description TEXT,
+  sort_order SMALLINT DEFAULT 0
+)
+
+-- CAP del template
+commissioning_template_caps (
+  id UUID PRIMARY KEY,
+  template_id UUID REFERENCES commissioning_configurator_templates(id),
+  function_id UUID REFERENCES commissioning_functions(id),
+  layer_override VARCHAR(20),
+  behavior VARCHAR(20) NOT NULL,      -- 'block' | 'scale'
+  limit_value NUMERIC(12,2),
+  description TEXT,
+  sort_order SMALLINT DEFAULT 0
+)
+```
+
+---
+
+## 🎯 LIVELLO 2 - ISTANZA GARA
+
+### Definizione
+
+L'**Istanza** viene creata quando si importa un template in una gara. Contiene i valori specifici per quella gara.
+
+### Struttura Istanza
+
+```
+ISTANZA IN GARA
+├── Template FK
+├── Gara FK
+├── Validità (date gara = periodo reset)
+│
+└── CLUSTER[] (array di cluster con valori specifici)
+    │
+    ├── CLUSTER A
+    │   ├── Nome cluster
+    │   ├── Membri (User[] o RS[] - tipo omogeneo!)
+    │   ├── Driver ATTIVI (subset dei disponibili nel template)
+    │   ├── Pacchetti Valenze abbinati (per driver)
+    │   ├── Valori Soglie specifici (override)
+    │   └── Funzioni + Operazioni (per driver)
+    │
+    └── CLUSTER B
+        ├── Membri diversi
+        └── Valori soglie DIVERSI da Cluster A!
+```
+
+### Esempio Concreto
+
+```
+Template "Soglie Canvas" (tipo: soglie)
+├── Layer: User
+├── Driver disponibili: [Valenza, Fatturato]
+├── Soglie: 3
+
+ISTANZA GARA GENNAIO 2026:
+│
+├── CLUSTER "Top Seller"
+│   ├── Membri: [Marco, Filippo]
+│   ├── Driver attivi: [Valenza]
+│   ├── Soglie Valenza:
+│   │   ├── 10-20 → 2.0× canoni
+│   │   ├── 21-30 → 3.0× canoni
+│   │   └── 31+   → 4.0× canoni
+│   └── Pacchetto Valenze: PKG_CANVAS_Q1
+│
+└── CLUSTER "Junior"
+    ├── Membri: [Maria, Andrea]
+    ├── Driver attivi: [Valenza, Fatturato]
+    ├── Soglie Valenza:
+    │   ├── 10-20 → 1.5× canoni   ← DIVERSO!
+    │   ├── 21-30 → 2.0× canoni
+    │   └── 31+   → 2.5× canoni
+    ├── Soglie Fatturato:
+    │   ├── 0-1000€     → 1.0×
+    │   └── 1001-5000€  → 1.5×
+    └── Pacchetto Valenze: PKG_CANVAS_Q1
+```
+
+### Tabelle Database Istanza
+
+```sql
+-- Istanza configuratore in gara
+commissioning_configurator_instances (
+  id UUID PRIMARY KEY,
+  race_id UUID REFERENCES commissioning_races(id),
+  template_id UUID REFERENCES commissioning_configurator_templates(id),
+  
+  -- Configurazione istanza (override template)
+  instance_config JSONB,
+  
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+
+-- Cluster dell'istanza
+commissioning_instance_clusters (
+  id UUID PRIMARY KEY,
+  instance_id UUID REFERENCES commissioning_configurator_instances(id),
+  name VARCHAR(255) NOT NULL,
+  entity_type VARCHAR(20) NOT NULL,   -- 'RS' | 'PDV' | 'USER'
+  
+  -- Driver attivi per questo cluster (subset del template)
+  active_driver_ids UUID[],
+  
+  -- Valori specifici per questo cluster
+  cluster_config JSONB,               -- Soglie, operazioni, etc.
+  
+  -- Pacchetti valenze abbinati
+  value_package_ids UUID[],
+  
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+
+-- Membri del cluster
+commissioning_instance_cluster_members (
+  id UUID PRIMARY KEY,
+  cluster_id UUID REFERENCES commissioning_instance_clusters(id),
+  entity_id UUID NOT NULL,            -- ID RS/PDV/User
+  entity_type VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP
+)
+```
+
+---
+
+## 📊 LAYER DI CALCOLO
+
+### Definizione
+
+Il **Layer** determina il livello di aggregazione per il counting delle vendite.
+
+### Livelli Disponibili
+
+| Layer | Aggregazione | Esempio |
+|-------|--------------|---------|
+| `RS` | Ragione Sociale | Somma vendite di tutti i PdV della RS |
+| `PdV` | Punto Vendita | Somma vendite del singolo PdV |
+| `User` | Utente | Conteggio individuale per utente |
+
+### Layer Multipli
+
+Il sistema supporta layer diversi per componenti diversi:
+
+```
+CONFIGURATORE
+├── Layer PRINCIPALE: User (ogni utente ha il suo conteggio)
+│
+├── PALETTO "Sblocco Bonus Team"
+│   └── Layer Override: RS
+│   └── "Si sblocca quando la RS supera 1000 valenza totale"
+│
+└── CAP "Limite PdV"
+    └── Layer Override: PdV
+    └── "Max 500 valenza per singolo PdV"
+```
+
+### Logica di Valutazione
+
+1. Il **configuratore** calcola sul suo layer principale
+2. Ogni **paletto/CAP** con layer override calcola sul proprio layer
+3. Il risultato del paletto/CAP influenza il calcolo principale
+
+---
+
+## 👥 CLUSTER (Doppia Funzione)
+
+### Definizione
+
+I **Cluster** hanno una doppia funzione:
+
+| Funzione | Descrizione |
+|----------|-------------|
+| **Chi Gioca** | Definisce quali entità partecipano |
+| **Valori Specifici** | Ogni cluster può avere soglie/parametri diversi |
+
+### Tipologie Membri
+
+| Tipo | Entità | Note |
+|------|--------|------|
+| `RS` | Ragioni Sociali | `organization_entities` |
+| `PdV` | Punti Vendita | `stores` |
+| `User` | Utenti | `users` |
+
+> **⚠️ REGOLA**: Un cluster contiene SOLO entità dello stesso tipo. Mai mix RS + PdV + User!
+
+### Esempio Valori Differenziati
+
+```
+Stesso Configuratore, Cluster diversi:
+
+CLUSTER A (Marco, Filippo)
+├── Soglia 1: 10-20 → 2.0× canoni
+├── Soglia 2: 21-30 → 3.0× canoni
+└── Soglia 3: 31+   → 4.0× canoni
+
+CLUSTER B (Maria, Andrea)
+├── Soglia 1: 10-20 → 1.5× canoni  ← DIVERSO!
+├── Soglia 2: 21-30 → 2.0× canoni
+└── Soglia 3: 31+   → 2.5× canoni
+```
+
+---
+
+## 🎯 DRIVER
+
+### Definizione
+
+I **Driver** sono le metriche target su cui si basa il counting. Sono già definiti nel sistema (pushati da Brand o custom tenant).
+
+### Caratteristiche
+
+- **Già esistenti**: NON si creano nel configuratore
+- **Solo FK/Select**: Il configuratore li referenzia
+- **Filtrati per compatibilità**: Con il layer scelto
+
+### Modello Ibrido
+
+```
+TEMPLATE
+├── Driver DISPONIBILI: [Valenza, Fatturato, N.Vendite]
+│   └── Definiti a livello template
+
+CLUSTER (in istanza gara)
+├── Driver ATTIVI: [Valenza]
+│   └── Subset selezionato dal template
+│   └── Valori specifici per questo cluster/driver
+```
+
+### Metriche Comuni
+
+| Driver | Tipo | Descrizione |
+|--------|------|-------------|
+| `valenza` | number | Punti valenza accumulati |
+| `fatturato` | currency | Fatturato € generato |
+| `n_vendite` | number | Numero vendite effettuate |
+| `canone` | currency | Canoni mensili |
+| `margine` | currency | Margine € |
+
+---
+
+## 🚧 PALETTI vs CAP
+
+### Paletti (Condizioni di Sblocco)
+
+I **Paletti** sono funzioni che **sbloccano** soglie, bonus o gettoni.
+
+```
+PALETTO "Produttività Minima"
+├── Funzione: @vendite_mese >= 50
+├── Layer: User
+└── Effetto: Se TRUE → sblocca accesso al bonus
+```
+
+### CAP (Limiti di Counting)
+
+I **CAP** sono funzioni che **limitano** il counting di un prodotto.
+
+```
+CAP "Limite Valenza Prodotto"
+├── Funzione: @valenza_prodotto > 200
+├── Layer: PdV
+├── Comportamento: blocco | scala
+└── Effetto: Se TRUE → stop counting oltre 200 valenza
+```
+
+### Comportamento CAP
+
+| Tipo | Descrizione |
+|------|-------------|
+| `blocco` | Stop counting, non conta oltre il limite |
+| `scala` | Riduce proporzionalmente il valore |
+
+---
+
+## 📈 MODALITÀ SOGLIE
+
+### Progressive
+
+Ogni soglia ha il suo valore. Il totale è la **somma** di tutte le fasce.
+
+```
+Soglia 1 (10-20): 10 vendite × 1.5× = 15 canoni
+Soglia 2 (21-30): 5 vendite × 2.5× = 12.5 canoni
+Soglia 3 (31+):   3 vendite × 3.5× = 10.5 canoni
+─────────────────────────────────────────────
+TOTALE PROGRESSIVO = 38 canoni
+```
+
+### Regressive
+
+Raggiunta la soglia massima, **tutto** viene commissionato al valore più alto.
+
+```
+Raggiungo Soglia 3 (31+ vendite)
+→ TUTTE le 18 vendite × 3.5× = 63 canoni
+```
+
+### Reset
+
+Le soglie si resettano in base alla **validità della gara**.
+
+```
+Gara Q1 2026: 01/01 - 31/03
+├── Reset automatico a fine periodo
+└── Nuovo conteggio da zero per Q2
+```
+
+---
+
+## 🔧 STRUTTURA OPERAZIONI (Configuratore)
+
+Le **operazioni** sono definite nel configuratore (non nella funzione) e si applicano quando la funzione restituisce TRUE.
+
+### Struttura JSON
+
+```json
+{
+  "operations": [
+    { "target": "gettone_contrattuale", "operator": "multiply", "value": 0.7 },
+    { "target": "valenza", "operator": "add", "value": 50 },
+    { "target": "canone", "operator": "percentage", "value": 10 }
+  ]
+}
+```
+
+### Operatori Disponibili
+
+| Operatore | Simbolo | Esempio |
+|-----------|---------|---------|
+| `multiply` | × | `gettone × 1.5` |
+| `add` | + | `valenza + 50` |
+| `subtract` | − | `canone - 10` |
+| `divide` | ÷ | `valore ÷ 2` |
+| `percentage` | % | `+10% del valore` |
+
+### Tipi di Valore
+
+| Tipo | Formato | Esempio |
+|------|---------|---------|
+| Economico | € | `€ 10.00` |
+| Numerico | N | `50` |
+| Percentuale | % | `10%` |
 
 ---
 
@@ -728,13 +1252,19 @@ Cluster "Negozi Premium Milano" (tipo: PDV)
 | 2 | L1 - Variable Mappings UI + API | ✅ Completato |
 | 3 | L2 - Value Packages Multi-Listino + Wizard | ✅ Completato |
 | 4 | L2 - Griglia prodotti con bulk edit | ✅ Completato |
-| 5 | L3 - Functions UI + API | 🔄 In corso |
-| 6 | UI Gare Operatore | ⏳ Pending |
-| 7 | UI Gare Interne | ⏳ Pending |
-| 8 | UI Cluster (Impostazioni) | ⏳ Pending |
-| 9 | Backend Calcolo Commissioning | ⏳ Pending |
-| 10 | Dashboard Report Gare | ⏳ Pending |
+| 5 | L3 - Functions UI + API (condizioni logiche) | ✅ Completato |
+| 6 | Architettura Configuratori 3 livelli (Tipo/Template/Istanza) | ✅ Completato |
+| 7 | Configuratore TIPO "Soglie" (Backend + UI) | ⏳ Pending |
+| 8 | Configuratore TIPO "Gettone" (Backend + UI) | ⏳ Pending |
+| 9 | Configuratore TIPO "Bonus/Malus" (Backend + UI) | ⏳ Pending |
+| 10 | Tab Configuratori - Gestione Template | ⏳ Pending |
+| 11 | UI Gare Operatore | ⏳ Pending |
+| 12 | UI Gare Interne | ⏳ Pending |
+| 13 | Importazione Template in Gara (Istanza) | ⏳ Pending |
+| 14 | UI Cluster (Impostazioni) con doppia funzione | ⏳ Pending |
+| 15 | Backend Calcolo Commissioning (Engine) | ⏳ Pending |
+| 16 | Dashboard Report Gare | ⏳ Pending |
 
 ---
 
-*Ultimo aggiornamento: Gennaio 2026 - Architettura L1/L2/L3, Value Packages multi-listino con wizard 3 step, griglie prodotti con canone ereditato/override per Canvas*
+*Ultimo aggiornamento: Gennaio 2026 - Architettura Configuratori 3 livelli (Tipo BE/Template/Istanza Gara), Layer di calcolo (RS/PdV/User), Cluster doppia funzione, Paletti vs CAP, Functions come condizioni logiche TRUE/FALSE*

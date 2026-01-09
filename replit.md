@@ -143,44 +143,20 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_MODE=oauth2` when building frontend for VPS
-- **💰 COMMISSIONING MODULE ARCHITECTURE (Gen 2026)**:
-  - **📋 FLUSSO BUSINESS**:
-    1. **Vendita prodotto** → Legge 4 valori BASE da Pacchetto Valenze
-    2. **Configuratore** → Valuta funzioni abbinate in ordine/cumulative
-    3. **Funzioni TRUE** → Applicano operazioni sui 4 valori
-    4. **Output** = Commissioning effettivo per quella vendita
-  - **🎯 4 VALORI CHIAVE** (in `commissioning_value_package_items`):
-    - `gettone_contrattuale` - Bonus contratto
-    - `gettone_gara` - Bonus gara
-    - `canone` - Canone (solo canvas)
-    - `valenza` - Peso/punteggio
-  - **📦 ENTITÀ**:
-    - **Pacchetto Valenze** = Template valori BASE per prodotti specifici operatore/fornitore
-    - **Variabili** = Mappature a listino/magazzino/amministrative (`commissioning_variable_mappings`)
-    - **Funzioni** = SOLO condizioni logiche (`ruleBundle.conditions[]`) - riutilizzabili
-    - **Configuratori** = Abbinano funzioni + definiscono operazioni sui 4 valori quando TRUE
-  - **🔧 STRUTTURA ruleBundle (in commissioning_functions)**:
-    ```json
-    {
-      "conditions": [
-        { "variable": "@sconto", "operator": ">", "value": 20, "logic": "AND" },
-        { "variable": "@giacenza", "operator": "<", "value": 10 }
-      ]
-    ```
-  - **🔧 STRUTTURA operations (in commissioning_configurator_functions)**:
-    ```json
-    {
-      "operations": [
-        { "target": "gettone_contrattuale", "operator": "multiply", "value": 0.7 },
-        { "target": "valenza", "operator": "add", "value": 50 }
-      ]
-    }
-    ```
-  - **⚙️ OPERATORI CONDIZIONI**: `>`, `<`, `=`, `!=`, `>=`, `<=`, `%+`, `%-`, `contains`, `startsWith`
-  - **⚙️ OPERATORI OPERAZIONI**: `multiply` (×), `add` (+), `subtract` (−), `divide` (÷), `percentage` (%)
-  - **🔄 EVALUATION MODE** (nel configuratore):
-    - `first_match` = Prima funzione TRUE vince, stop
-    - `cumulative` = Tutte le funzioni TRUE applicano operazioni in sequenza
+- **💰 COMMISSIONING MODULE** → Vedi `docs/commissioning.md` per documentazione completa
+  - **📋 ARCHITETTURA 3 LIVELLI**:
+    - **Livello 0 - TIPO** (Backend): Configuratori tipo costruiti da sviluppatori (`soglie`, `gettone`, `bonus_malus`)
+    - **Livello 1 - TEMPLATE** (Frontend): Template riutilizzabili creati da admin
+    - **Livello 2 - ISTANZA** (Gara): Importazione template con cluster e valori specifici
+  - **🎯 4 VALORI CHIAVE**: `gettone_contrattuale`, `gettone_gara`, `canone`, `valenza`
+  - **📊 LAYER CALCOLO**: RS (ragione sociale) | PdV (punto vendita) | User (utente)
+  - **👥 CLUSTER**: Doppia funzione = chi gioca + valori specifici per cluster
+  - **🎯 DRIVER**: FK a driver esistenti (pushati da Brand), solo lettura
+  - **🚧 PALETTI**: Funzioni che sbloccano soglie/bonus
+  - **🔒 CAP**: Funzioni che limitano counting (blocco o scala)
+  - **📈 SOGLIE**: Progressive (somma fasce) o Regressive (tutto al valore max)
+  - **🔧 FUNZIONI**: Solo condizioni logiche (`ruleBundle.conditions[]`) → TRUE/FALSE
+  - **⚙️ OPERAZIONI**: Definite nel configuratore quando funzione = TRUE
 - **🚨 CSS UNITS RULE - OBBLIGATORIO PER TUTTI I NUOVI SVILUPPI (da Gen 2026)**:
   - **⚠️ REGOLA ASSOLUTA**: TUTTI i nuovi file e modifiche DEVONO usare `rem` per dimensioni
   - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius, icon sizes
