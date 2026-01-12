@@ -1944,50 +1944,131 @@ ESEMPI ACTION_CODE:
 
         {/* Endpoints Section */}
         {activeSection === 'endpoints' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-[#FF6900]" />
-                API Endpoints
-              </CardTitle>
-              <CardDescription>
-                Base URL: <code className="bg-gray-100 px-2 py-0.5 rounded text-sm">{apiUrl}</code>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-green-100 text-green-700">GET</Badge>
-                  <code className="text-sm font-mono font-medium">/tools</code>
+          <div className="space-y-6">
+            {/* Overview Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-[#FF6900]" />
+                  API Endpoints - Riepilogo
+                </CardTitle>
+                <CardDescription>
+                  Scegli il tipo di integrazione in base al tuo caso d'uso
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left p-3 bg-gray-50 font-semibold">Caso d'uso</th>
+                        <th className="text-left p-3 bg-gray-50 font-semibold">Endpoint</th>
+                        <th className="text-left p-3 bg-gray-50 font-semibold">Trasporto</th>
+                        <th className="text-left p-3 bg-gray-50 font-semibold">Autenticazione</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="p-3 font-medium">MCP Client (Claude, ChatGPT, n8n MCP)</td>
+                        <td className="p-3"><code className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">{baseUrl}/api/mcp-public/sse</code></td>
+                        <td className="p-3"><Badge className="bg-purple-100 text-purple-700">Streamable HTTP</Badge></td>
+                        <td className="p-3"><code className="text-xs">Bearer sk_live_* o JWT OAuth2</code></td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="p-3 font-medium">REST API (script, automazioni)</td>
+                        <td className="p-3"><code className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">{baseUrl}/api/mcp-gateway/execute</code></td>
+                        <td className="p-3"><Badge className="bg-green-100 text-green-700">JSON sincrono</Badge></td>
+                        <td className="p-3"><code className="text-xs">Bearer sk_live_*</code></td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="p-3 font-medium">Lista Tools disponibili</td>
+                        <td className="p-3"><code className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">{baseUrl}/api/mcp-gateway/tools</code></td>
+                        <td className="p-3"><Badge className="bg-green-100 text-green-700">JSON sincrono</Badge></td>
+                        <td className="p-3"><code className="text-xs">Bearer sk_live_*</code></td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">Restituisce la lista di tutti i tools abilitati per la tua API Key</p>
-                <div className="text-xs text-gray-500">
-                  <strong>Response:</strong> <code>{'{ "data": [{ "actionCode": "...", "actionName": "...", "departmentId": "..." }] }'}</code>
-                </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-blue-100 text-blue-700">POST</Badge>
-                  <code className="text-sm font-mono font-medium">/actions/:actionCode/execute</code>
+            {/* MCP Streaming Section */}
+            <Card className="border-2 border-purple-200">
+              <CardHeader className="bg-purple-50">
+                <CardTitle className="flex items-center gap-2 text-purple-800">
+                  <Zap className="h-5 w-5" />
+                  MCP Streaming (Streamable HTTP)
+                </CardTitle>
+                <CardDescription>
+                  Per client MCP come Claude Desktop, ChatGPT, n8n MCP node
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-purple-600 text-white">POST</Badge>
+                    <code className="text-sm font-mono font-medium text-purple-800">/api/mcp-public/sse</code>
+                  </div>
+                  <p className="text-sm text-purple-700 mb-3">Endpoint MCP principale - supporta API Key e OAuth2</p>
+                  <div className="space-y-2 text-xs text-purple-600">
+                    <div><strong>URL completo:</strong> <code className="bg-white px-2 py-0.5 rounded">{baseUrl}/api/mcp-public/sse</code></div>
+                    <div><strong>Trasporto:</strong> Streamable HTTP (SSE per risposte streaming)</div>
+                    <div><strong>Protocollo:</strong> JSON-RPC 2.0 (Model Context Protocol)</div>
+                    <div><strong>Auth API Key:</strong> <code className="bg-white px-2 py-0.5 rounded">Authorization: Bearer sk_live_xxxx</code></div>
+                    <div><strong>Auth OAuth2:</strong> <code className="bg-white px-2 py-0.5 rounded">Authorization: Bearer eyJhbG...</code></div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">Esegue un'azione specifica con i parametri forniti</p>
-                <div className="space-y-2 text-xs">
-                  <div><strong>Path param:</strong> <code>actionCode</code> - Codice dell'azione (es. CRM_CREATE_LEAD)</div>
-                  <div><strong>Body:</strong> <code>{'{ "parameters": { ... } }'}</code></div>
-                  <div><strong>Response:</strong> <code>{'{ "success": true, "data": { ... }, "executionTime": 123 }'}</code></div>
+                <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-sm text-yellow-800">
+                  <strong>Nota:</strong> Questo è l'endpoint da inserire nei client MCP (Claude Desktop, ChatGPT Custom MCP, n8n MCP node)
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-purple-100 text-purple-700">GET</Badge>
-                  <code className="text-sm font-mono font-medium">/health</code>
+            {/* REST API Section */}
+            <Card className="border-2 border-green-200">
+              <CardHeader className="bg-green-50">
+                <CardTitle className="flex items-center gap-2 text-green-800">
+                  <Code className="h-5 w-5" />
+                  REST API (JSON sincrono)
+                </CardTitle>
+                <CardDescription>
+                  Per script, automazioni, integrazioni custom
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-green-600 text-white">GET</Badge>
+                    <code className="text-sm font-mono font-medium text-green-800">/api/mcp-gateway/tools</code>
+                  </div>
+                  <p className="text-sm text-green-700 mb-2">Restituisce la lista di tutti i tools abilitati per la tua API Key</p>
+                  <div className="text-xs text-green-600">
+                    <strong>Response:</strong> <code className="bg-white px-2 py-0.5 rounded">{'{ "data": [{ "actionCode": "...", "actionName": "...", "departmentId": "..." }] }'}</code>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">Verifica lo stato del gateway (non richiede autenticazione)</p>
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-blue-600 text-white">POST</Badge>
+                    <code className="text-sm font-mono font-medium text-green-800">/api/mcp-gateway/execute</code>
+                  </div>
+                  <p className="text-sm text-green-700 mb-2">Esegue un tool con i parametri forniti</p>
+                  <div className="space-y-1 text-xs text-green-600">
+                    <div><strong>Body:</strong> <code className="bg-white px-2 py-0.5 rounded">{'{ "tool": "CRM_CREATE_LEAD", "params": { ... } }'}</code></div>
+                    <div><strong>Response:</strong> <code className="bg-white px-2 py-0.5 rounded">{'{ "success": true, "data": { ... }, "executionTime": 123 }'}</code></div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-gray-500 text-white">GET</Badge>
+                    <code className="text-sm font-mono font-medium">/api/mcp-gateway/health</code>
+                  </div>
+                  <p className="text-sm text-gray-600">Verifica lo stato del gateway (non richiede autenticazione)</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Code Examples Section */}

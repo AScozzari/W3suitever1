@@ -29,10 +29,12 @@ router.get('/keys', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'MISSING_TENANT_ID' });
     }
 
+    // Get keys with enabled tools count and total calls
     const keys = await db
       .select({
         id: mcpApiKeys.id,
         name: mcpApiKeys.name,
+        description: mcpApiKeys.description,
         keyPrefix: mcpApiKeys.keyPrefix,
         allowedDepartments: mcpApiKeys.allowedDepartments,
         rateLimitPerMinute: mcpApiKeys.rateLimitPerMinute,
@@ -42,6 +44,19 @@ router.get('/keys', async (req: Request, res: Response) => {
         expiresAt: mcpApiKeys.expiresAt,
         createdAt: mcpApiKeys.createdAt,
         revokedAt: mcpApiKeys.revokedAt,
+        // Count enabled tools from permissions
+        enabledTools: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM ${mcpToolPermissions} 
+          WHERE ${mcpToolPermissions.apiKeyId} = ${mcpApiKeys.id} 
+          AND ${mcpToolPermissions.isEnabled} = true
+        )`,
+        // Count total API calls from usage logs
+        totalCalls: sql<number>`(
+          SELECT COUNT(*)::int 
+          FROM ${mcpUsageLogs} 
+          WHERE ${mcpUsageLogs.apiKeyId} = ${mcpApiKeys.id}
+        )`,
       })
       .from(mcpApiKeys)
       .where(and(

@@ -1,0 +1,55 @@
+error-handler.ts:121  POST https://edgvoip.it/api/demo/mcp/test-connection 400 (Bad Request)
+window.fetch @ error-handler.ts:121
+request @ api.ts:105
+post @ api.ts:48
+w @ MCPToolsTab.tsx:208
+tt @ react-dom.production.min.js:54
+Bt @ react-dom.production.min.js:54
+Dd @ react-dom.production.min.js:55
+bP @ react-dom.production.min.js:105
+wP @ react-dom.production.min.js:106
+(anonime) @ react-dom.production.min.js:117
+sj @ react-dom.production.min.js:273
+He @ react-dom.production.min.js:52
+sw @ react-dom.production.min.js:109
+zb @ react-dom.production.min.js:74
+uG @ react-dom.production.min.js:73Comprendi l'errore
+installHook.js:1 API request failed: Error: Failed to connect: Streamable HTTP error: Error POSTing to endpoint: {"error":"invalid_token","message":"Malformed JWT token structure","loginUrl":"/oauth2/authorize"}
+    at OQ.request (api.ts:139:15)
+    at async w (MCPToolsTab.tsx:208:7)
+overrideMethod @ installHook.js:1
+console.error @ error-handler.ts:31
+request @ api.ts:144
+await in request
+post @ api.ts:48
+w @ MCPToolsTab.tsx:208
+tt @ react-dom.production.min.js:54
+Bt @ react-dom.production.min.js:54
+Dd @ react-dom.production.min.js:55
+bP @ react-dom.production.min.js:105
+wP @ react-dom.production.min.js:106
+(anonime) @ react-dom.production.min.js:117
+sj @ react-dom.production.min.js:273
+He @ react-dom.production.min.js:52
+sw @ react-dom.production.min.js:109
+zb @ react-dom.production.min.js:74
+uG @ react-dom.production.min.js:73Comprendi l'errore
+error-handler.ts:121  POST https://edgvoip.it/api/demo/mcp/test-connection 400 (Bad Request)
+window.fetch @ error-handler.ts:121
+request @ api.ts:105
+post @ api.ts:48
+w @ MCPToolsTab.tsx:208
+tt @ react-dom.production.min.js:54
+Bt @ react-dom.production.min.js:54
+Dd @ react-dom.production.min.js:55
+bP @ react-dom.production.min.js:105
+wP @ react-dom.production.min.js:106
+(anonime) @ react-dom.production.min.js:117
+sj @ react-dom.production.min.js:273
+He @ react-dom.production.min.js:52
+sw @ react-dom.production.min.js:109
+zb @ react-dom.production.min.js:74
+uG @ react-dom.production.min.js:73Comprendi l'errore
+installHook.js:1 API request failed: Error: Failed to connect: Streamable HTTP error: Error POSTing to endpoint: {"error":"unauthorized","message":"No authentication token provided","loginUrl":"/oauth2/authorize"}
+    at OQ.request (api.ts:139:15)
+    at async w (MCPToolsTab.tsx:208:7)
