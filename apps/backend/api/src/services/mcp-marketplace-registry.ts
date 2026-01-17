@@ -298,45 +298,6 @@ export class MCPMarketplaceRegistry {
       sourceType: 'PyPI'
     },
     {
-      id: 'google-tag-manager-mcp',
-      name: 'google-tag-manager-mcp',
-      displayName: 'Google Tag Manager MCP',
-      description: 'Enterprise GTM automation by Stape. Full API coverage: accounts, containers, workspaces, tags, triggers, variables, version control. Deploy analytics without touching GTM interface.',
-      category: 'analytics',
-      language: 'typescript',
-      packageManager: 'none',
-      packageName: 'mcp-remote',
-      version: 'latest',
-      authType: 'oauth2',
-      iconUrl: 'https://www.gstatic.com/analytics-suite/header/suite/v2/ic_tag_manager.svg',
-      officialSupport: false,
-      verified: true,
-      transport: 'http-sse',
-      repoUrl: 'https://github.com/stape-io/google-tag-manager-mcp-server',
-      installHints: {
-        envVars: [],
-        postInstallNotes: 'Remote server hosted by Stape. Use: npx -y mcp-remote https://gtm-mcp.stape.ai/mcp',
-        dependencies: ['Node.js 16+']
-      },
-      oauthConfig: {
-        scopes: ['tagmanager.edit.containers', 'tagmanager.publish'],
-        provider: 'google'
-      },
-      exampleTools: [
-        'create_tag',
-        'update_trigger',
-        'list_variables',
-        'deploy_container',
-        'manage_workspaces',
-        'version_control'
-      ],
-      trustLevel: 'verified',
-      securityNotes: 'Developed by Stape analytics team. Enterprise-grade, actively maintained. Praised by analytics professionals.',
-      rating: 5.0,
-      developer: 'stape-io',
-      sourceType: 'Remote'
-    },
-    {
       id: 'meta-ads-mcp',
       name: 'meta-ads-mcp',
       displayName: 'Meta Ads MCP (Facebook & Instagram)',
@@ -696,13 +657,6 @@ export class MCPMarketplaceRegistry {
       specialty: 'Google Workspace, Enterprise MCP',
       rating: 4.5,
       servers: ['workspace-mcp']
-    },
-    'stape-io': {
-      name: 'Stape Team',
-      github: 'https://github.com/stape-io',
-      specialty: 'Analytics, GTM, Marketing Tech',
-      rating: 5.0,
-      servers: ['google-tag-manager-mcp']
     },
     'nictuku': {
       name: 'Pipeboard (nictuku)',

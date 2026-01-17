@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules like CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to leverage AI for enhanced efficiency, data-driven insights, and strategic decision-making, aiming to become the leading AI-native operating system for enterprises. The platform offers a unified, intelligent solution to manage and automate diverse business functions.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize and optimize business operations across various modules including CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to leverage AI for enhanced efficiency, data-driven insights, and strategic decision-making, aiming to become a leading AI-native operating system for enterprises by providing a unified, intelligent solution for managing and automating diverse business functions.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -143,7 +143,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Scales**: Everything using `rem`/`em` (Tailwind, shadcn) - NOT `px` values
   - **❌ NEVER**: Use custom CSS folder approach (gets overwritten on deploy)
   - **❌ NEVER**: Forget `VITE_FONT_MODE=oauth2` when building frontend for VPS
-- **💰 COMMISSIONING MODULE** → Vedi `docs/commissioning.md` per documentazione completa
+- **💰 COMMISSIONING MODULE**:
   - **📋 ARCHITETTURA 3 LIVELLI**:
     - **Livello 0 - TIPO** (Backend): Configuratori tipo costruiti da sviluppatori (`soglie`, `gettone`, `bonus_malus`)
     - **Livello 1 - TEMPLATE** (Frontend): Template riutilizzabili creati da admin
@@ -167,7 +167,20 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
       - Modalità soglie? (progressive/regressive)
       - Operazioni sui 4 valori? (×, +, −, ÷, %)
     - **⚠️ CONFIGURATORI TIPO SONO GLOBALI**: Disponibili a TUTTI i tenant (`tenant_id = NULL`)
-- **🚨 CSS UNITS RULE - OBBLIGATORIO PER TUTTI I NUOVI SVILUPPI (da Gen 2026)**:
+- **📊 GTM (GOOGLE TAG MANAGER) ARCHITECTURE**:
+  - **❌ NO MCP AUTO-CONFIG**: Rimosso google-tag-manager-mcp, niente auto-configurazione
+  - **📋 TABELLA CENTRALIZZATA**: `tenant_gtm_config` con Mixed RLS pattern
+    - `tenant_id = NULL` → Row globale con Container ID (GTM-XXXXXXX)
+    - `tenant_id = UUID` → Row per tenant con API Secret (encrypted via EncryptionKeyService)
+  - **🏪 STORE TRACKING**: `store_tracking_config` contiene IDs per store (GA4, Google Ads, Facebook, TikTok)
+  - **📢 CAMPAGNE**: Ereditano config da store + aggiungono UTM parameters
+  - **🔒 ENCRYPTION**: API Secrets criptati con AES-256-GCM via `EncryptionKeyService` centralizzato
+  - **📄 SNIPPET FLOW**:
+    1. Store configura tracking IDs nel modal Settings → Store → Marketing
+    2. GTMSnippetGeneratorService legge Container ID da global row
+    3. Campagna genera snippet con UTM: `GET /api/crm/stores/:storeId/gtm-snippet`
+  - **📡 MEASUREMENT PROTOCOL**: GTMEventsService invia eventi a GA4 con API Secret tenant-specific
+- **🚨 CSS UNITS RULE - OBBLIGATORIO PER TUTTI I NUOVI SVILUPPI**:
   - **⚠️ REGOLA ASSOLUTA**: TUTTI i nuovi file e modifiche DEVONO usare `rem` per dimensioni
   - **✅ SEMPRE rem**: font-size, padding, margin, gap, width, height, border-radius, icon sizes
   - **✅ px OK SOLO**: border-width (1-2px), box-shadow offset/blur (piccoli valori fissi)
@@ -179,9 +192,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
   - **Refactor continuo**: Convertire pagine esistenti quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: The platform utilizes a component-first approach with `shadcn/ui` (Radix UI) for consistent design, accessibility, and reusability. Pages adhere to standardized headers, sidebars, and white backgrounds. Tailwind CSS is used, with a strict rule for new developments to use `rem` units for all dimensions to ensure proper scaling with `VITE_FONT_SCALE`. Italian Business Validation is integrated into forms, offering real-time feedback, Italian error messages, and Zod schemas.
-- **Technical Implementations**: The backend uses PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`). Security is managed via OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) enforced with Row Level Security (RLS) using `app.tenant_id`. Key modules include a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP) for integrations, and multi-tenant object storage. AI integration is provided through an AI Voice Agent with RAG, AI Enforcement Middleware, an AI Workflow Builder, and Intelligent Workflow Routing. The WMS module supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized handling, immutable event logs, read models, and historical snapshots. The Brand Interface features a Workflow Builder and a Git-versioned JSON-based Master Catalog System. The Commissioning Module calculates commissions based on product sales, using configurable functions and variables with 'first_match' or 'cumulative' evaluation logic.
-- **System Design Choices**: The organizational hierarchy is Tenant → Commercial Area → Organization Entity → Store → Department → Team → User. A Cross-Store Architecture provides tenant-wide data views with RBA and advanced filtering. Request routing employs "Functional First → First Wins" for task assignment and "Shift-Based Routing" for workload distribution. All actions are managed via `action_definitions`, which serve as the single source of truth for the MCP Gateway and are routed by a `UnifiedTriggerService`. User scope data is primarily sourced from `user_stores`, with organization entities automatically derived. VPS deployment (`/var/www/w3suite/`) is an incremental process using `deploy/incremental-deploy.sh` scripts, secured by SSH with `deploy/keys/vps_key`. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`. The production database `w3suite_prod` is accessed exclusively via a local socket over SSH.
+- **UI/UX Decisions**: The platform uses a component-first approach with `shadcn/ui` (Radix UI) for consistent design, accessibility, and reusability. Pages feature standardized headers, sidebars, and white backgrounds. Tailwind CSS is used, with a strict rule for new developments to use `rem` units for all dimensions to ensure proper scaling with `VITE_FONT_SCALE`. Forms incorporate Italian Business Validation, providing real-time feedback, Italian error messages, and Zod schemas.
+- **Technical Implementations**: The backend uses PostgreSQL with a 3-schema structure (`w3suite`, `public`, `brand_interface`). Security includes OAuth2/OIDC, MFA, JWTs, and a 3-level Role-Based Access Control (RBAC) enforced with Row Level Security (RLS) using `app.tenant_id`. Key modules are a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, Multi-Provider OAuth (MCP) for integrations, and multi-tenant object storage. AI integration features an AI Voice Agent with RAG, AI Enforcement Middleware, an AI Workflow Builder, and Intelligent Workflow Routing. The WMS module supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized handling, immutable event logs, read models, and historical snapshots. The Brand Interface includes a Workflow Builder and a Git-versioned JSON-based Master Catalog System. The Commissioning Module calculates commissions based on product sales using configurable functions and variables. Google Tag Manager (GTM) is integrated via a centralized `tenant_gtm_config` table and `store_tracking_config` for store-specific IDs, with API Secrets encrypted via `EncryptionKeyService`.
+- **System Design Choices**: The organizational hierarchy is Tenant → Commercial Area → Organization Entity → Store → Department → Team → User. A Cross-Store Architecture provides tenant-wide data views with RBA and advanced filtering. Request routing uses "Functional First → First Wins" for task assignment and "Shift-Based Routing" for workload distribution. All actions are managed via `action_definitions`, the single source of truth for the MCP Gateway, routed by a `UnifiedTriggerService`. User scope data is primarily from `user_stores`, with organization entities automatically derived. VPS deployment (`/var/www/w3suite/`) is an incremental process using `deploy/incremental-deploy.sh` scripts, secured by SSH with `deploy/keys/vps_key`. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`. The production database `w3suite_prod` is accessed exclusively via a local socket over SSH.
 
 # External Dependencies
 - PostgreSQL
@@ -198,3 +211,4 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - Nginx
 - OpenAI
 - AWS S3
+- Google Tag Manager (GTM)

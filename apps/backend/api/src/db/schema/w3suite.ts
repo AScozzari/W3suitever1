@@ -909,21 +909,18 @@ export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type Store = typeof stores.$inferSelect;
 
 // ==================== STORE TRACKING CONFIGURATION ====================
-// GTM Auto-Configuration System for Multi-Tenant Marketing Attribution
+// Marketing Tracking IDs per Store (GA4, Google Ads, Facebook, TikTok)
 export const storeTrackingConfig = w3suiteSchema.table("store_tracking_config", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
   
-  // Marketing Tracking IDs
+  // Marketing Tracking IDs (per store)
   ga4MeasurementId: varchar("ga4_measurement_id", { length: 50 }), // Format: G-XXXXXXXXX
   googleAdsConversionId: varchar("google_ads_conversion_id", { length: 50 }), // Format: AW-XXXXXXXX
+  googleAdsConversionLabel: varchar("google_ads_conversion_label", { length: 100 }), // Conversion label
   facebookPixelId: varchar("facebook_pixel_id", { length: 50 }), // Numeric
   tiktokPixelId: varchar("tiktok_pixel_id", { length: 50 }), // Alphanumeric
-  
-  // GTM Auto-Configuration Status
-  gtmConfigured: boolean("gtm_configured").default(false).notNull(),
-  gtmTriggerId: varchar("gtm_trigger_id", { length: 100 }), // GTM API trigger ID
   
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -940,6 +937,40 @@ export const insertStoreTrackingConfigSchema = createInsertSchema(storeTrackingC
 });
 export type InsertStoreTrackingConfig = z.infer<typeof insertStoreTrackingConfigSchema>;
 export type StoreTrackingConfig = typeof storeTrackingConfig.$inferSelect;
+
+// ==================== TENANT GTM CONFIGURATION ====================
+// Centralized GTM configuration per tenant (Mixed RLS pattern)
+// tenant_id = NULL → Global container config (Container ID)
+// tenant_id = UUID → Tenant-specific config (API Secret for Measurement Protocol)
+export const tenantGtmConfig = w3suiteSchema.table("tenant_gtm_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }), // NULL = global config
+  
+  // GTM Container (set on global row with tenant_id = NULL)
+  containerId: varchar("container_id", { length: 50 }), // Format: GTM-XXXXXXX
+  
+  // GA4 Configuration (per tenant for Measurement Protocol)
+  ga4MeasurementId: varchar("ga4_measurement_id", { length: 50 }), // Format: G-XXXXXXXXX (tenant default)
+  ga4ApiSecretEncrypted: text("ga4_api_secret_encrypted"), // Encrypted API secret for Measurement Protocol
+  
+  // Status
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("tenant_gtm_config_tenant_unique").on(table.tenantId),
+  index("tenant_gtm_config_active_idx").on(table.isActive),
+]);
+
+export const insertTenantGtmConfigSchema = createInsertSchema(tenantGtmConfig).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertTenantGtmConfig = z.infer<typeof insertTenantGtmConfigSchema>;
+export type TenantGtmConfig = typeof tenantGtmConfig.$inferSelect;
 
 // ==================== STORE CALENDAR & OPENING HOURS ====================
 // Day of week enum for opening rules

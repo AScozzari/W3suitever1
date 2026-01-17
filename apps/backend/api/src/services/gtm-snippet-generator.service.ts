@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { db } from '../core/db';
-import { mcpServers } from '../db/schema/w3suite';
-import { eq, and } from 'drizzle-orm';
+import { tenantGtmConfig } from '../db/schema/w3suite';
+import { isNull } from 'drizzle-orm';
 import { logger } from '../core/logger';
 
 /**
@@ -12,17 +12,28 @@ import { logger } from '../core/logger';
  * - Tenant and store ID in dataLayer
  * - Tracking IDs (GA4, Google Ads, Facebook Pixel, TikTok)
  * - Enhanced Conversions data (SHA-256 hashed email/phone)
- * - Social media references (Facebook Page, Instagram)
+ * - UTM parameters from campaigns
+ * 
+ * Architecture:
+ * - Container ID from tenant_gtm_config (global row with tenant_id = NULL)
+ * - Store tracking IDs from store_tracking_config
+ * - Campaigns inherit from store + add UTM
  */
 
 export interface SnippetGeneratorInput {
   tenantId: string;
   storeId: string;
-  // Tracking IDs
+  // Tracking IDs (from store_tracking_config)
   ga4MeasurementId?: string | null;
   googleAdsConversionId?: string | null;
   facebookPixelId?: string | null;
   tiktokPixelId?: string | null;
+  // UTM Parameters (from campaign)
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
   // Enhanced Conversions Data
   email?: string | null;
   phone?: string | null;
@@ -37,7 +48,6 @@ export class GTMSnippetGeneratorService {
   private static hashValue(value: string | null | undefined): string | null {
     if (!value || value.trim() === '') return null;
     
-    // Normalize: trim and lowercase
     const normalized = value.trim().toLowerCase();
     
     return crypto
@@ -47,41 +57,27 @@ export class GTMSnippetGeneratorService {
   }
 
   /**
-   * Get GTM Container ID from MCP config or environment
+   * Get GTM Container ID from tenant_gtm_config (global row with tenant_id = NULL)
    */
-  private static async getGTMContainerId(tenantId: string): Promise<string> {
+  private static async getGTMContainerId(): Promise<string> {
     try {
-      // Try to get from MCP server config (google-tag-manager-mcp)
-      const [server] = await db
+      // Get global config (tenant_id = NULL)
+      const [globalConfig] = await db
         .select()
-        .from(mcpServers)
-        .where(and(
-          eq(mcpServers.name, 'google-tag-manager-mcp'),
-          eq(mcpServers.tenantId, tenantId)
-        ))
+        .from(tenantGtmConfig)
+        .where(isNull(tenantGtmConfig.tenantId))
         .limit(1);
 
-      let containerId = process.env.GTM_CONTAINER_ID;
-
-      // Override with server config if available
-      if (server?.config) {
-        const config = server.config as any;
-        if (config.gtm_container_id) {
-          containerId = config.gtm_container_id;
-        }
+      if (globalConfig?.containerId) {
+        return globalConfig.containerId;
       }
 
-      if (!containerId) {
-        // Return a placeholder if no container ID configured
-        return 'GTM-XXXXXX';
-      }
-
-      return containerId;
+      logger.warn('⚠️ [GTM Snippet] No global GTM container configured');
+      return 'GTM-XXXXXX';
 
     } catch (error) {
       logger.error('❌ [GTM Snippet] Failed to get container ID', {
-        error: error instanceof Error ? error.message : String(error),
-        tenantId
+        error: error instanceof Error ? error.message : String(error)
       });
       return 'GTM-XXXXXX';
     }
@@ -98,6 +94,11 @@ export class GTMSnippetGeneratorService {
       googleAdsConversionId,
       facebookPixelId,
       tiktokPixelId,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
+      utmTerm,
       email,
       phone,
       facebookPageUrl,
@@ -105,7 +106,7 @@ export class GTMSnippetGeneratorService {
     } = input;
 
     try {
-      const containerId = await this.getGTMContainerId(tenantId);
+      const containerId = await this.getGTMContainerId();
 
       // Hash all user data for Enhanced Conversions (GDPR-compliant)
       const emailHash = this.hashValue(email);
@@ -124,6 +125,13 @@ export class GTMSnippetGeneratorService {
         ...(googleAdsConversionId && { google_ads_conversion_id: googleAdsConversionId }),
         ...(facebookPixelId && { facebook_pixel_id: facebookPixelId }),
         ...(tiktokPixelId && { tiktok_pixel_id: tiktokPixelId }),
+        
+        // UTM Parameters (from campaign)
+        ...(utmSource && { utm_source: utmSource }),
+        ...(utmMedium && { utm_medium: utmMedium }),
+        ...(utmCampaign && { utm_campaign: utmCampaign }),
+        ...(utmContent && { utm_content: utmContent }),
+        ...(utmTerm && { utm_term: utmTerm }),
         
         // Enhanced Conversions Data (all hashed for privacy/GDPR compliance)
         ...(emailHash && { user_email_hash: emailHash }),

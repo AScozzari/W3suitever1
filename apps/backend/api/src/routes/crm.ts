@@ -10179,12 +10179,12 @@ router.get('/leads/:id/status-history', async (req, res) => {
   }
 });
 
-// ==================== STORE TRACKING CONFIGURATION (GTM AUTO-CONFIG) ====================
+// ==================== STORE TRACKING CONFIGURATION ====================
 
 /**
  * POST /api/stores/:id/tracking-config
- * Configure GTM tracking for a store (GA4, Google Ads, Facebook Pixel)
- * Auto-creates GTM triggers and tags via Google Tag Manager API
+ * Configure tracking IDs for a store (GA4, Google Ads, Facebook Pixel, TikTok)
+ * Saves tracking configuration to store_tracking_config table
  */
 router.post('/stores/:id/tracking-config', async (req, res) => {
   try {
@@ -10202,19 +10202,18 @@ router.post('/stores/:id/tracking-config', async (req, res) => {
 
     const storeId = req.params.id;
 
-    // Validate request body
-    const configSchema = insertStoreTrackingConfigSchema.extend({
-      ga4MeasurementId: z.string().regex(/^G-[A-Z0-9]+$/).optional(),
-      googleAdsConversionId: z.string().regex(/^AW-[0-9]+$/).optional(),
-      facebookPixelId: z.string().regex(/^[0-9]+$/).optional(),
-      tiktokPixelId: z.string().optional()
+    const configSchema = z.object({
+      ga4MeasurementId: z.string().regex(/^G-[A-Z0-9]+$/, 'Formato GA4 non valido').optional().nullable(),
+      googleAdsConversionId: z.string().regex(/^AW-[0-9]+$/, 'Formato Google Ads non valido').optional().nullable(),
+      googleAdsConversionLabel: z.string().optional().nullable(),
+      facebookPixelId: z.string().regex(/^[0-9]+$/, 'Facebook Pixel deve essere numerico').optional().nullable(),
+      tiktokPixelId: z.string().optional().nullable()
     });
 
     const validated = configSchema.parse(req.body);
 
     await setTenantContext(tenantId);
 
-    // Verify store belongs to tenant
     const [store] = await db
       .select()
       .from(stores)
@@ -10233,34 +10232,55 @@ router.post('/stores/:id/tracking-config', async (req, res) => {
       } as ApiErrorResponse);
     }
 
-    // Configure GTM tracking via API
-    const { GTMAutoConfigService } = await import('../services/gtm-auto-config');
-    
-    const result = await GTMAutoConfigService.configureStoreTracking({
-      storeId,
-      tenantId,
-      userId,
-      ga4MeasurementId: validated.ga4MeasurementId,
-      googleAdsConversionId: validated.googleAdsConversionId,
-      facebookPixelId: validated.facebookPixelId,
-      tiktokPixelId: validated.tiktokPixelId
-    });
+    const [existingConfig] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    let savedConfig;
+    if (existingConfig) {
+      [savedConfig] = await db
+        .update(storeTrackingConfig)
+        .set({
+          ga4MeasurementId: validated.ga4MeasurementId,
+          googleAdsConversionId: validated.googleAdsConversionId,
+          googleAdsConversionLabel: validated.googleAdsConversionLabel,
+          facebookPixelId: validated.facebookPixelId,
+          tiktokPixelId: validated.tiktokPixelId,
+          updatedAt: new Date()
+        })
+        .where(eq(storeTrackingConfig.id, existingConfig.id))
+        .returning();
+    } else {
+      [savedConfig] = await db
+        .insert(storeTrackingConfig)
+        .values({
+          tenantId,
+          storeId,
+          ga4MeasurementId: validated.ga4MeasurementId,
+          googleAdsConversionId: validated.googleAdsConversionId,
+          googleAdsConversionLabel: validated.googleAdsConversionLabel,
+          facebookPixelId: validated.facebookPixelId,
+          tiktokPixelId: validated.tiktokPixelId
+        })
+        .returning();
+    }
+
+    logger.info('Store tracking config saved', { storeId, tenantId });
 
     res.status(200).json({
       success: true,
-      data: {
-        storeId,
-        gtmTriggerId: result.gtmTriggerId,
-        gtmConfigured: true,
-        tagsCreated: result.tagsCreated.length,
-        message: 'GTM tracking configured successfully. Tags will be active after container publish.'
-      },
-      message: 'Store tracking configured successfully',
+      data: savedConfig,
+      message: 'Configurazione tracking salvata con successo',
       timestamp: new Date().toISOString()
     } as ApiSuccessResponse);
 
   } catch (error: any) {
-    logger.error('Error configuring store tracking', {
+    logger.error('Error saving store tracking config', {
       errorMessage: error?.message || 'Unknown error',
       errorStack: error?.stack,
       tenantId: req.user?.tenantId,
@@ -10269,7 +10289,7 @@ router.post('/stores/:id/tracking-config', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Internal server error',
-      message: error?.message || 'Failed to configure store tracking',
+      message: error?.message || 'Failed to save tracking config',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }

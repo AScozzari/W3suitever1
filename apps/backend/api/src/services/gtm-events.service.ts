@@ -12,9 +12,10 @@ import crypto from 'crypto';
 import fetch from 'node-fetch';
 import { db, setTenantContext } from '../core/db';
 import { logger } from '../core/logger';
-import { storeTrackingConfig, gtmEventLog } from '../db/schema/w3suite';
-import { eq, and } from 'drizzle-orm';
+import { storeTrackingConfig, gtmEventLog, tenantGtmConfig } from '../db/schema/w3suite';
+import { eq, and, isNull } from 'drizzle-orm';
 import { enhancedConversionsService, EnhancedConversionData } from './enhanced-conversions.service';
+import { EncryptionKeyService } from '../core/encryption-service';
 
 export interface GTMEventParams {
   tenantId: string;
@@ -38,6 +39,12 @@ export interface TrackingConfig {
 }
 
 class GTMEventsService {
+  private encryptionService: EncryptionKeyService;
+
+  constructor() {
+    this.encryptionService = new EncryptionKeyService();
+  }
+
   /**
    * Get tracking configuration for a store
    */
@@ -71,11 +78,76 @@ class GTMEventsService {
   }
 
   /**
+   * Get GA4 API Secret from tenant_gtm_config (encrypted)
+   * Falls back to environment variable GA4_API_SECRET ONLY if no tenant config exists
+   * 
+   * Security: API secrets are stored encrypted using centralized EncryptionKeyService
+   * If a tenant secret exists but decryption fails, we return null to skip sending events (fail-safe)
+   */
+  private async getGA4ApiSecret(tenantId: string): Promise<string | null> {
+    try {
+      // Try to get tenant-specific config first
+      const [tenantConfig] = await db
+        .select()
+        .from(tenantGtmConfig)
+        .where(and(
+          eq(tenantGtmConfig.tenantId, tenantId),
+          eq(tenantGtmConfig.isActive, true)
+        ))
+        .limit(1);
+
+      if (tenantConfig?.ga4ApiSecretEncrypted) {
+        // Decrypt using centralized encryption service
+        // SECURITY: If decrypt fails, we return null and skip event (fail-safe)
+        try {
+          const decrypted = await this.encryptionService.decrypt(
+            tenantConfig.ga4ApiSecretEncrypted, 
+            tenantId
+          );
+          if (decrypted) {
+            return decrypted;
+          }
+          logger.error('Failed to decrypt GA4 API secret - null result, skipping event', { tenantId });
+          return null; // Fail-safe: skip event instead of using wrong secret
+        } catch (decryptError) {
+          logger.error('Failed to decrypt GA4 API secret, skipping event', {
+            tenantId,
+            error: decryptError instanceof Error ? decryptError.message : String(decryptError)
+          });
+          return null; // Fail-safe: skip event instead of using wrong secret
+        }
+      }
+
+      // No tenant config exists - fallback to environment variable (development mode)
+      return process.env.GA4_API_SECRET || null;
+    } catch (error) {
+      logger.warn('Failed to get GA4 API secret from tenant config', {
+        tenantId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null; // Fail-safe
+    }
+  }
+
+  /**
+   * Encrypt a GA4 API secret for storage in tenant_gtm_config
+   * Uses centralized EncryptionKeyService for consistent encryption
+   * 
+   * @param plaintext The API secret to encrypt
+   * @param tenantId The tenant ID for key derivation
+   * @returns Encrypted string in keyId:iv:authTag:encrypted format
+   */
+  async encryptGA4ApiSecret(plaintext: string, tenantId: string): Promise<string> {
+    return this.encryptionService.encrypt(plaintext, tenantId);
+  }
+
+  /**
    * Send event to Google Analytics 4 via Measurement Protocol
    * 
    * @see https://developers.google.com/analytics/devguides/collection/protocol/ga4/reference
    */
   private async sendToGA4(
+    tenantId: string,
     measurementId: string,
     eventName: string,
     eventParams: Record<string, any>,
@@ -85,8 +157,19 @@ class GTMEventsService {
     userAgent?: string
   ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
     try {
-      // GA4 Measurement Protocol endpoint
-      const apiSecret = process.env.GA4_API_SECRET || 'development-secret';
+      // Get API secret from tenant_gtm_config or fallback to env
+      const apiSecret = await this.getGA4ApiSecret(tenantId);
+      
+      // SECURITY: If no API secret available, skip sending event
+      if (!apiSecret) {
+        logger.warn('No GA4 API secret available, skipping event', {
+          tenantId,
+          eventName,
+          measurementId
+        });
+        return { success: false, error: 'No API secret configured' };
+      }
+      
       const url = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
 
       // Generate client_id (use hashed email or random UUID)
@@ -344,6 +427,7 @@ class GTMEventsService {
       // Send to GA4 if configured
       if (trackingConfig.ga4MeasurementId) {
         results.ga4 = await this.sendToGA4(
+          params.tenantId,
           trackingConfig.ga4MeasurementId,
           params.eventName,
           params.eventData,

@@ -122,23 +122,6 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
     enabled: open && !!storeId && !!trackingConfig,
   });
 
-  // Check GTM MCP Server status
-  const { data: gtmMcpStatus, isLoading: isLoadingGtmMcp } = useQuery({
-    queryKey: ['/api/mcp/servers', 'google-tag-manager-mcp', 'status'],
-    queryFn: async () => {
-      try {
-        const json = await apiRequest('GET', '/api/mcp/servers');
-        const gtmServer = (json as any[])?.find((s: any) => s.name === 'google-tag-manager-mcp');
-        return {
-          configured: !!gtmServer && gtmServer.status === 'active',
-          server: gtmServer || null
-        };
-      } catch {
-        return { configured: false, server: null };
-      }
-    },
-    enabled: open,
-  });
 
   // GPS Form
   const gpsForm = useForm<GPSFormData>({
@@ -491,55 +474,19 @@ export function StoreConfigurationDialog({ storeId, open, onOpenChange }: StoreC
           <TabsContent value="marketing" className="mt-6">
             <Form {...marketingForm}>
               <form onSubmit={marketingForm.handleSubmit(handleMarketingConfigure)} className="space-y-8">
-                {/* GTM MCP Server Status Check */}
-                {isLoadingGtmMcp ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-sm">Verifica configurazione GTM MCP...</span>
+                {/* Info Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-900">Configurazione Tracking</p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Inserisci gli ID di tracking per questo negozio. Questi dati verranno usati per generare 
+                        lo snippet GTM da inserire nelle landing page delle campagne.
+                      </p>
                     </div>
                   </div>
-                ) : gtmMcpStatus?.configured ? (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <span className="font-medium">Google Tag Manager MCP attivo</span>
-                    </div>
-                    <p className="text-sm text-green-600 mt-1">
-                      L'auto-configurazione GTM è abilitata. I tracking IDs inseriti sotto verranno usati per creare automaticamente tag e trigger.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="text-2xl">⚠️</div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-amber-900 mb-1">
-                          Google Tag Manager MCP non configurato
-                        </p>
-                        <p className="text-sm text-amber-800 leading-relaxed mb-3">
-                          Per abilitare l'auto-configurazione GTM (creazione automatica di tag, trigger e snippet), 
-                          installa e configura il server <strong>"Google Tag Manager MCP"</strong> nella sezione Settings → MCP.
-                        </p>
-                        <p className="text-xs text-amber-700 italic">
-                          💡 Senza questo server, dovrai configurare manualmente tag e trigger nel tuo container GTM.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {trackingConfig?.gtmConfigured && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <span className="font-medium">GTM Configurato con successo!</span>
-                    </div>
-                    <p className="text-sm text-green-600 mt-1">
-                      Trigger ID: {trackingConfig.gtmTriggerId}
-                    </p>
-                  </div>
-                )}
+                </div>
 
                 {/* SEZIONE 1: Tracking IDs */}
                 <div className="border rounded-lg p-6 space-y-4">
