@@ -3098,6 +3098,172 @@ router.get('/campaigns/:id/utm-analytics', async (req, res) => {
 });
 
 /**
+ * GET /api/crm/campaigns/:id/gtm-snippet
+ * Generate GTM snippet for a campaign with UTM parameters and store tracking config
+ * 
+ * Flow:
+ * 1. Get campaign with UTM parameters
+ * 2. Get store tracking config (GA4, Google Ads, Facebook, TikTok)
+ * 3. Generate GTM snippet with precompiled dataLayer
+ * 
+ * Query params:
+ * - channelId: Optional - Use UTM from specific channel link
+ * - email: Optional - User email for Enhanced Conversions (hashed)
+ * - phone: Optional - User phone for Enhanced Conversions (hashed)
+ */
+router.get('/campaigns/:id/gtm-snippet', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const campaignId = req.params.id;
+    const { channelId, email, phone } = req.query;
+    
+    await setTenantContext(tenantId);
+
+    // Get campaign with store info
+    const [campaign] = await db
+      .select()
+      .from(crmCampaigns)
+      .where(and(
+        eq(crmCampaigns.id, campaignId),
+        eq(crmCampaigns.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Campaign not found',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    if (!campaign.storeId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Campaign has no store assigned - cannot generate GTM snippet',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get store tracking config
+    const [trackingConfig] = await db
+      .select()
+      .from(storeTrackingConfig)
+      .where(and(
+        eq(storeTrackingConfig.storeId, campaign.storeId),
+        eq(storeTrackingConfig.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    // Get store info for social handles
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(eq(stores.id, campaign.storeId))
+      .limit(1);
+
+    // Get UTM parameters - either from specific channel or campaign name
+    let utmSource = 'w3suite';
+    let utmMedium = 'campaign';
+    let utmCampaign = campaign.name.toLowerCase().replace(/\s+/g, '-');
+    let utmContent: string | null = null;
+    let utmTerm: string | null = null;
+
+    // If channelId provided, get UTM from that specific link
+    if (channelId && typeof channelId === 'string') {
+      const [utmLink] = await db
+        .select()
+        .from(crmCampaignUtmLinks)
+        .where(and(
+          eq(crmCampaignUtmLinks.campaignId, campaignId),
+          eq(crmCampaignUtmLinks.channelId, channelId),
+          eq(crmCampaignUtmLinks.tenantId, tenantId)
+        ))
+        .limit(1);
+
+      if (utmLink) {
+        utmSource = utmLink.utmSource;
+        utmMedium = utmLink.utmMedium;
+        utmCampaign = utmLink.utmCampaign;
+      }
+    }
+
+    // Generate GTM snippet with all data
+    const snippet = await GTMSnippetGeneratorService.generateSnippet({
+      tenantId,
+      storeId: campaign.storeId,
+      ga4MeasurementId: trackingConfig?.ga4MeasurementId || null,
+      googleAdsConversionId: trackingConfig?.googleAdsConversionId || null,
+      facebookPixelId: trackingConfig?.facebookPixelId || null,
+      tiktokPixelId: trackingConfig?.tiktokPixelId || null,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
+      utmTerm,
+      email: typeof email === 'string' ? email : null,
+      phone: typeof phone === 'string' ? phone : null,
+      facebookPageUrl: store?.facebook || null,
+      instagramHandle: store?.instagram || null,
+    });
+
+    logger.info('Campaign GTM snippet generated', {
+      tenantId,
+      campaignId,
+      storeId: campaign.storeId,
+      channelId: channelId || 'default',
+      hasTrackingConfig: !!trackingConfig
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        snippet,
+        campaignId,
+        campaignName: campaign.name,
+        storeId: campaign.storeId,
+        storeName: store?.nome || null,
+        gtmConfigured: !!trackingConfig?.ga4MeasurementId,
+        utmParams: {
+          source: utmSource,
+          medium: utmMedium,
+          campaign: utmCampaign,
+          content: utmContent,
+          term: utmTerm
+        }
+      },
+      message: 'Campaign GTM snippet generated successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error generating campaign GTM snippet', {
+      errorMessage: error?.message || 'Unknown error',
+      errorStack: error?.stack,
+      tenantId: req.user?.tenantId,
+      campaignId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to generate campaign GTM snippet',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+/**
  * POST /api/crm/campaigns
  * Create a new campaign
  */

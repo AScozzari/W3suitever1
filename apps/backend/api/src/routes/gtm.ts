@@ -266,4 +266,85 @@ router.post('/events/lead-converted', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/gtm/config
+ * Get GTM configuration for SPA (Container ID)
+ * 
+ * Returns global Container ID from tenant_gtm_config (tenant_id = NULL)
+ * This endpoint is used by the frontend to dynamically load the GTM Container
+ * 
+ * Response:
+ * - containerId: GTM Container ID (e.g., 'GTM-XXXXXXX')
+ * - configured: boolean - whether GTM is properly configured
+ */
+router.get('/config', async (req, res) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Import db and schema here to avoid circular dependency
+    const { db } = await import('../core/db');
+    const { tenantGtmConfig } = await import('../db/schema/w3suite');
+    const { isNull } = await import('drizzle-orm');
+
+    // Get global config (tenant_id = NULL)
+    const [globalConfig] = await db
+      .select({
+        containerId: tenantGtmConfig.containerId,
+        isActive: tenantGtmConfig.isActive
+      })
+      .from(tenantGtmConfig)
+      .where(isNull(tenantGtmConfig.tenantId))
+      .limit(1);
+
+    if (!globalConfig?.containerId) {
+      logger.warn('No GTM container configured', { tenantId });
+      return res.status(200).json({
+        success: true,
+        data: {
+          containerId: null,
+          configured: false
+        },
+        message: 'GTM not configured',
+        timestamp: new Date().toISOString()
+      } as ApiSuccessResponse);
+    }
+
+    logger.debug('GTM config retrieved', { 
+      tenantId, 
+      containerId: globalConfig.containerId 
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        containerId: globalConfig.containerId,
+        configured: true,
+        isActive: globalConfig.isActive
+      },
+      message: 'GTM config retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse);
+
+  } catch (error: any) {
+    logger.error('Error retrieving GTM config', {
+      errorMessage: error?.message,
+      tenantId: req.user?.tenantId
+    });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error?.message || 'Failed to retrieve GTM config',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export default router;
