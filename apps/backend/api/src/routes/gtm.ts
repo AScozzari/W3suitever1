@@ -271,7 +271,8 @@ router.post('/events/lead-converted', async (req, res) => {
  * Get GTM configuration for SPA (Container ID)
  * 
  * Returns global Container ID from tenant_gtm_config (tenant_id = NULL)
- * This endpoint is used by the frontend to dynamically load the GTM Container
+ * This endpoint is PUBLIC (no tenant required) to allow SPA bootstrap
+ * The Container ID is global and safe to expose
  * 
  * Response:
  * - containerId: GTM Container ID (e.g., 'GTM-XXXXXXX')
@@ -279,22 +280,13 @@ router.post('/events/lead-converted', async (req, res) => {
  */
 router.get('/config', async (req, res) => {
   try {
-    const tenantId = getTenantId(req);
-    if (!tenantId) {
-      return res.status(401).json({
-        success: false,
-        error: 'Unauthorized',
-        message: 'Missing tenant context',
-        timestamp: new Date().toISOString()
-      } as ApiErrorResponse);
-    }
-
     // Import db and schema here to avoid circular dependency
     const { db } = await import('../core/db');
     const { tenantGtmConfig } = await import('../db/schema/w3suite');
     const { isNull } = await import('drizzle-orm');
 
     // Get global config (tenant_id = NULL)
+    // This is public data (Container ID only) - no tenant context required
     const [globalConfig] = await db
       .select({
         containerId: tenantGtmConfig.containerId,
@@ -305,7 +297,7 @@ router.get('/config', async (req, res) => {
       .limit(1);
 
     if (!globalConfig?.containerId) {
-      logger.warn('No GTM container configured', { tenantId });
+      logger.debug('No GTM container configured');
       return res.status(200).json({
         success: true,
         data: {
@@ -318,7 +310,6 @@ router.get('/config', async (req, res) => {
     }
 
     logger.debug('GTM config retrieved', { 
-      tenantId, 
       containerId: globalConfig.containerId 
     });
 
@@ -335,8 +326,7 @@ router.get('/config', async (req, res) => {
 
   } catch (error: any) {
     logger.error('Error retrieving GTM config', {
-      errorMessage: error?.message,
-      tenantId: req.user?.tenantId
+      errorMessage: error?.message
     });
     res.status(500).json({
       success: false,

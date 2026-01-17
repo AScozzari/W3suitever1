@@ -7,6 +7,86 @@ declare global {
 }
 
 let gtmInitialized = false;
+let cachedContainerId: string | null = null;
+
+interface GTMConfigResponse {
+  success: boolean;
+  data?: {
+    containerId: string | null;
+    configured: boolean;
+    isActive?: boolean;
+  };
+}
+
+async function fetchGTMContainerId(): Promise<string | null> {
+  if (cachedContainerId) {
+    return cachedContainerId;
+  }
+
+  try {
+    const response = await fetch('/api/gtm/config', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      console.warn('[GTM] Failed to fetch config, using fallback');
+      return null;
+    }
+
+    const data: GTMConfigResponse = await response.json();
+    
+    if (data.success && data.data?.containerId && data.data.configured) {
+      cachedContainerId = data.data.containerId;
+      console.log('[GTM] Container ID fetched from API:', cachedContainerId);
+      return cachedContainerId;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('[GTM] Error fetching config:', error);
+    return null;
+  }
+}
+
+export async function initializeGTMAsync(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  
+  if (gtmInitialized) {
+    console.log('[GTM] Already initialized, skipping reinit');
+    return;
+  }
+
+  const dynamicContainerId = await fetchGTMContainerId();
+  const containerId = dynamicContainerId || import.meta.env.VITE_GTM_CONTAINER_ID || 'GTM-XXXXXXX';
+  
+  console.log('[GTM] Initializing with container ID:', containerId, dynamicContainerId ? '(from API)' : '(from env/fallback)');
+
+  window.dataLayer = window.dataLayer || [];
+  gtmInitialized = true;
+  window.dataLayer.push({
+    'gtm.start': new Date().getTime(),
+    event: 'gtm.js',
+    platform: 'w3suite',
+    environment: import.meta.env.MODE || 'production',
+    app_version: '1.0.0'
+  });
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtm.js?id=${containerId}&l=dataLayer`;
+  
+  const firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode?.insertBefore(script, firstScript);
+
+  const noscript = document.createElement('noscript');
+  noscript.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${containerId}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
+  document.body.insertBefore(noscript, document.body.firstChild);
+
+  console.log('[GTM] Initialized successfully');
+}
 
 export function initializeGTM(): void {
   if (typeof window === 'undefined') return;
@@ -78,6 +158,25 @@ export interface GTMConversionData {
   phone?: string;
 }
 
+export interface GTMPurchaseData {
+  transaction_id: string;
+  value: number;
+  currency?: string;
+  items?: Array<{
+    item_id?: string;
+    item_name: string;
+    price?: number;
+    quantity?: number;
+    item_category?: string;
+  }>;
+  coupon?: string;
+  shipping?: number;
+  tax?: number;
+  email?: string;
+  phone?: string;
+  store_id?: string;
+}
+
 export function pushToDataLayer(eventName: string, eventData: any = {}): void {
   if (typeof window === 'undefined') return;
   
@@ -119,6 +218,27 @@ export function pushPageView(pageData?: Partial<GTMPageViewData>): void {
 
 export function pushConversionEvent(conversionData: GTMConversionData): void {
   pushToDataLayer('conversion', conversionData);
+}
+
+export function pushPurchaseEvent(purchaseData: GTMPurchaseData): void {
+  const eventData = {
+    transaction_id: purchaseData.transaction_id,
+    value: purchaseData.value,
+    currency: purchaseData.currency || 'EUR',
+    items: purchaseData.items || [],
+    coupon: purchaseData.coupon,
+    shipping: purchaseData.shipping,
+    tax: purchaseData.tax,
+    store_id: purchaseData.store_id,
+    ecommerce: {
+      transaction_id: purchaseData.transaction_id,
+      value: purchaseData.value,
+      currency: purchaseData.currency || 'EUR',
+      items: purchaseData.items || []
+    }
+  };
+
+  pushToDataLayer('purchase', eventData);
 }
 
 export function pushCustomEvent(eventName: string, eventData: any = {}): void {

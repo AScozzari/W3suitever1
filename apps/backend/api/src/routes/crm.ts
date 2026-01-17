@@ -3166,11 +3166,14 @@ router.get('/campaigns/:id/gtm-snippet', async (req, res) => {
       ))
       .limit(1);
 
-    // Get store info for social handles
+    // Get store info for social handles (with tenant filter for security)
     const [store] = await db
       .select()
       .from(stores)
-      .where(eq(stores.id, campaign.storeId))
+      .where(and(
+        eq(stores.id, campaign.storeId),
+        eq(stores.tenantId, tenantId)
+      ))
       .limit(1);
 
     // Get UTM parameters - either from specific channel or campaign name

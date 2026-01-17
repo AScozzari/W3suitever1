@@ -534,6 +534,236 @@ class GTMEventsService {
       userAgent
     });
   }
+
+  /**
+   * Track purchase/order event (e-commerce)
+   * 
+   * @param params Purchase event parameters
+   */
+  async trackPurchase(params: {
+    tenantId: string;
+    orderId: string;
+    storeId: string | null;
+    customerId?: string | null;
+    userData?: EnhancedConversionData;
+    value: number;
+    currency?: string;
+    items?: Array<{
+      item_id?: string;
+      item_name: string;
+      price?: number;
+      quantity?: number;
+      item_category?: string;
+    }>;
+    coupon?: string;
+    shipping?: number;
+    tax?: number;
+    clientIp?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    const {
+      tenantId,
+      orderId,
+      storeId,
+      customerId,
+      userData,
+      value,
+      currency = 'EUR',
+      items = [],
+      coupon,
+      shipping,
+      tax,
+      clientIp,
+      userAgent
+    } = params;
+
+    await this.trackEvent({
+      tenantId,
+      storeId,
+      eventType: 'custom',
+      eventName: 'purchase',
+      eventData: {
+        transaction_id: orderId,
+        value,
+        currency,
+        items,
+        coupon,
+        shipping,
+        tax,
+        customer_id: customerId,
+        ecommerce: {
+          transaction_id: orderId,
+          value,
+          currency,
+          items: items.map(item => ({
+            item_id: item.item_id,
+            item_name: item.item_name,
+            price: item.price,
+            quantity: item.quantity,
+            item_category: item.item_category
+          }))
+        }
+      },
+      userData,
+      conversionValue: value,
+      currency,
+      clientIp,
+      userAgent
+    });
+
+    logger.info('Purchase event tracked', {
+      tenantId,
+      orderId,
+      value,
+      currency,
+      itemCount: items.length
+    });
+  }
+
+  /**
+   * Track checkout begin event
+   */
+  async trackBeginCheckout(params: {
+    tenantId: string;
+    storeId: string | null;
+    value: number;
+    currency?: string;
+    items?: Array<{
+      item_id?: string;
+      item_name: string;
+      price?: number;
+      quantity?: number;
+    }>;
+    coupon?: string;
+    clientIp?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    const {
+      tenantId,
+      storeId,
+      value,
+      currency = 'EUR',
+      items = [],
+      coupon,
+      clientIp,
+      userAgent
+    } = params;
+
+    await this.trackEvent({
+      tenantId,
+      storeId,
+      eventType: 'custom',
+      eventName: 'begin_checkout',
+      eventData: {
+        value,
+        currency,
+        items,
+        coupon,
+        ecommerce: {
+          value,
+          currency,
+          items
+        }
+      },
+      clientIp,
+      userAgent
+    });
+  }
+
+  /**
+   * Track add to cart event
+   */
+  async trackAddToCart(params: {
+    tenantId: string;
+    storeId: string | null;
+    item: {
+      item_id?: string;
+      item_name: string;
+      price?: number;
+      quantity?: number;
+      item_category?: string;
+    };
+    value?: number;
+    currency?: string;
+    clientIp?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    const {
+      tenantId,
+      storeId,
+      item,
+      value,
+      currency = 'EUR',
+      clientIp,
+      userAgent
+    } = params;
+
+    await this.trackEvent({
+      tenantId,
+      storeId,
+      eventType: 'custom',
+      eventName: 'add_to_cart',
+      eventData: {
+        currency,
+        value: value || item.price || 0,
+        items: [item],
+        ecommerce: {
+          currency,
+          value: value || item.price || 0,
+          items: [item]
+        }
+      },
+      clientIp,
+      userAgent
+    });
+  }
+
+  /**
+   * Track view item event (product view)
+   */
+  async trackViewItem(params: {
+    tenantId: string;
+    storeId: string | null;
+    item: {
+      item_id?: string;
+      item_name: string;
+      price?: number;
+      item_category?: string;
+    };
+    value?: number;
+    currency?: string;
+    clientIp?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    const {
+      tenantId,
+      storeId,
+      item,
+      value,
+      currency = 'EUR',
+      clientIp,
+      userAgent
+    } = params;
+
+    await this.trackEvent({
+      tenantId,
+      storeId,
+      eventType: 'custom',
+      eventName: 'view_item',
+      eventData: {
+        currency,
+        value: value || item.price || 0,
+        items: [item],
+        ecommerce: {
+          currency,
+          value: value || item.price || 0,
+          items: [item]
+        }
+      },
+      clientIp,
+      userAgent
+    });
+  }
 }
 
 export const gtmEventsService = new GTMEventsService();
