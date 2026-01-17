@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import BrandLayout from '../components/BrandLayout';
 import { 
@@ -68,12 +68,12 @@ export default function IntegrationsPage() {
   const tenantsConfig: TenantGTMConfig[] = tenantsConfigData?.data || [];
   const tenantsList: Tenant[] = tenantsListData?.organizations || [];
 
-  useState(() => {
+  useEffect(() => {
     if (globalConfig) {
       setContainerId(globalConfig.containerId || '');
       setGlobalActive(globalConfig.isActive);
     }
-  });
+  }, [globalConfig]);
 
   const saveGlobalMutation = useMutation({
     mutationFn: async (data: { containerId: string; isActive: boolean }) => {

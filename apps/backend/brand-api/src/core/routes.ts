@@ -7173,6 +7173,95 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // POST test tenant GTM connection (validates API Secret with GA4)
+  app.post("/brand-api/gtm/tenants/:tenantId/test", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+
+    // Only super_admin can test connections
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      // Get tenant config with encrypted secret
+      const [config] = await db
+        .select()
+        .from(tenantGtmConfig)
+        .where(eq(tenantGtmConfig.tenantId, tenantId))
+        .limit(1);
+
+      if (!config) {
+        return res.json({
+          success: false,
+          message: "Nessuna configurazione trovata per questo tenant"
+        });
+      }
+
+      if (!config.ga4MeasurementId || !config.ga4ApiSecretEncrypted) {
+        return res.json({
+          success: false,
+          message: "Measurement ID o API Secret mancanti"
+        });
+      }
+
+      // Decrypt API secret
+      let apiSecret: string;
+      try {
+        apiSecret = await encryptionService.decrypt(config.ga4ApiSecretEncrypted, tenantId);
+      } catch (decryptError) {
+        return res.json({
+          success: false,
+          message: "Impossibile decifrare l'API Secret. Potrebbe essere necessario riconfigurarlo."
+        });
+      }
+
+      // Test connection to GA4 Measurement Protocol
+      // Send a test event (debug mode) to validate credentials
+      const testPayload = {
+        client_id: `test_${tenantId.substring(0, 8)}`,
+        events: [{
+          name: 'gtm_connection_test',
+          params: {
+            test_timestamp: new Date().toISOString(),
+            source: 'brand_interface'
+          }
+        }]
+      };
+
+      // Use debug endpoint for validation (doesn't record real events)
+      const debugUrl = `https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga4MeasurementId}&api_secret=${apiSecret}`;
+      
+      const response = await fetch(debugUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testPayload)
+      });
+
+      const result = await response.json();
+
+      // Check validation result
+      if (result.validationMessages && result.validationMessages.length === 0) {
+        res.json({
+          success: true,
+          message: "Connessione GA4 verificata con successo"
+        });
+      } else {
+        const errorMessages = result.validationMessages?.map((m: any) => m.description).join(', ') || 'Errore sconosciuto';
+        res.json({
+          success: false,
+          message: `Validazione fallita: ${errorMessages}`
+        });
+      }
+    } catch (error) {
+      console.error("Error testing GTM connection:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Errore durante il test della connessione" 
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 
