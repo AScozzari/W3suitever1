@@ -1,148 +1,47 @@
 /**
- * MCP Public Gateway Routes
- * 
- * PUBLIC endpoints for external integrations (n8n, Claude, Zapier, ChatGPT)
- * Authenticated via:
- *   - API Key (sk_live_*, sk_test_*) - for scripts, n8n, Zapier
- *   - OAuth2 JWT (eyJ*) - for ChatGPT, Claude Desktop, browser-based clients
+ * W3 Suite MCP Gateway Routes
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
- * API ENDPOINTS REFERENCE
+ * TRE METODI DI CONNESSIONE
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * JSON-RPC 2.0 SSE Transport (Model Context Protocol):
- *   POST /api/mcp-public/sse         - MCP SSE endpoint (main entry point)
+ * 1. MCP HTTP Streamable (RACCOMANDATO - spec 2025-03-26)
+ *    Endpoint: POST/GET /api/mcp-public/mcp
+ *    Protocollo: JSON-RPC 2.0 con HTTP Streamable transport
+ *    Per: EdgeVoIP, Claude Desktop moderno, client MCP nuovi
+ *    Vantaggi: Funziona con firewall/proxy, session management
  * 
- * REST Endpoints (Management):
- *   GET  /api/mcp-gateway/tools      - List available MCP tools
- *   POST /api/mcp-gateway/execute    - Execute an MCP tool
- *   GET  /api/mcp-gateway/stats      - Usage statistics
- *   GET  /api/mcp-gateway/keys       - List API keys
- *   POST /api/mcp-gateway/keys       - Create new API key
- *   GET  /api/mcp-gateway/usage-logs - Usage logs
+ * 2. MCP SSE (Legacy - spec 2024-11-05)
+ *    Endpoint: POST/GET /api/mcp-public/sse
+ *    Protocollo: JSON-RPC 2.0 con Server-Sent Events
+ *    Per: ChatGPT, vecchie versioni Claude Desktop
+ *    Note: Può avere problemi con alcuni firewall/proxy
  * 
- * ═══════════════════════════════════════════════════════════════════════════════
- * AUTHENTICATION METHODS
- * ═══════════════════════════════════════════════════════════════════════════════
- * 
- * 1. API Key Authentication (for scripts, n8n, Zapier):
- *    Header: Authorization: Bearer sk_live_xxxxxxxxxxxx
- *    
- *    API keys support:
- *    - Rate limiting (per-minute)
- *    - Daily quota limits
- *    - Department-scoped permissions
- *    - IP whitelisting (optional)
- * 
- * 2. OAuth2 JWT Authentication (for ChatGPT, Claude Desktop):
- *    Header: Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
- *    
- *    OAuth2 supports:
- *    - Authorization Code flow with PKCE (S256)
- *    - Refresh token rotation
- *    - Scope-based permissions (mcp_read, mcp_write)
- *    - User-level audit trails
+ * 3. REST Gateway (Per automazioni)
+ *    Endpoint: POST /api/mcp-gateway/execute
+ *    Protocollo: HTTP REST standard
+ *    Per: n8n, Zapier, script, automazioni
+ *    Note: Tu scegli quale tool chiamare, non c'è "discovery"
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
- * CHATGPT CUSTOM MCP SERVER CONFIGURATION (OpenAI)
+ * AUTENTICAZIONE (uguale per tutti e tre)
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * In ChatGPT Settings → Connectors → Add Custom MCP Server:
+ * API Key (raccomandato per automazioni):
+ *   - Nel URL: ?api_key=sk_live_xxx
+ *   - Header: Authorization: Bearer sk_live_xxx
+ *   - Header: X-MCP-Key: sk_live_xxx
  * 
- *   Name:              W3 Suite
- *   MCP Server URL:    https://w3suite.it/api/mcp-public/sse
- *   Authentication:    OAuth 2.0
- *   Authorization URL: https://w3suite.it/oauth2/authorize
- *   Token URL:         https://w3suite.it/oauth2/token
- *   Client ID:         chatgpt-mcp-client
- *   Client Secret:     (leave empty - public client)
- *   Scopes:            openid tenant_access mcp_read mcp_write
- * 
- * OAuth2 Flow: Authorization Code with PKCE (S256)
- * Grant Types: authorization_code, refresh_token
+ * OAuth2 (per browser/app con login utente):
+ *   - Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+ *   - Scopes: mcp_read, mcp_write, tenant_access
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
- * CLAUDE DESKTOP CONFIGURATION (Anthropic)
- * ═══════════════════════════════════════════════════════════════════════════════
- * 
- * In claude_desktop_config.json (via mcp-remote):
- * 
- *   {
- *     "mcpServers": {
- *       "w3suite": {
- *         "command": "npx",
- *         "args": [
- *           "mcp-remote",
- *           "https://w3suite.it/api/mcp-public/sse",
- *           "--oauth-client-id", "claude-mcp-client",
- *           "--oauth-authorize-url", "https://w3suite.it/oauth2/authorize",
- *           "--oauth-token-url", "https://w3suite.it/oauth2/token",
- *           "--oauth-scopes", "openid tenant_access mcp_read mcp_write"
- *         ]
- *       }
- *     }
- *   }
- * 
- * Config file location:
- *   - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
- *   - Windows: %APPDATA%\Claude\claude_desktop_config.json
- *   - Linux: ~/.config/Claude/claude_desktop_config.json
- * 
- * ═══════════════════════════════════════════════════════════════════════════════
- * N8N / ZAPIER / SCRIPTS CONFIGURATION
- * ═══════════════════════════════════════════════════════════════════════════════
- * 
- * For automated workflows, use API Key authentication:
- * 
- *   1. Generate API key in W3 Suite → Impostazioni → MCP Gateway → API Keys
- *   2. Copy the sk_live_* or sk_test_* key
- *   3. Add to your workflow:
- * 
- *   cURL Example:
- *   curl -X POST https://w3suite.it/api/mcp-gateway/execute \
- *     -H "Authorization: Bearer sk_live_xxxxxxxxxxxx" \
- *     -H "Content-Type: application/json" \
- *     -d '{"tool": "CRM_CREATE_LEAD", "params": {"name": "John", "email": "john@example.com"}}'
- * 
- *   n8n HTTP Request Node:
- *     - Method: POST
- *     - URL: https://w3suite.it/api/mcp-gateway/execute
- *     - Authentication: Header Auth
- *     - Name: Authorization, Value: Bearer sk_live_xxxxxxxxxxxx
- * 
- * ═══════════════════════════════════════════════════════════════════════════════
- * REGISTERED OAUTH CLIENTS
- * ═══════════════════════════════════════════════════════════════════════════════
- * 
- *   Client ID              | Platform       | Redirect URI
- *   -----------------------|----------------|----------------------------------
- *   chatgpt-mcp-client     | ChatGPT        | https://chatgpt.com/aip/{id}/oauth/callback
- *   claude-mcp-client      | Claude Desktop | http://localhost:{port}/callback
- *   n8n-mcp-client         | n8n            | (workflow callback)
- *   zapier-mcp-client      | Zapier         | https://zapier.com/oauth/callback
- * 
- * MCP Scopes:
- *   - mcp_read:  Read-only access to MCP tools (list, query)
- *   - mcp_write: Write access to MCP tools (create, update, delete, execute actions)
- * 
- * ═══════════════════════════════════════════════════════════════════════════════
- * RATE LIMITING & QUOTAS
- * ═══════════════════════════════════════════════════════════════════════════════
- * 
- * Per API Key:
- *   - Rate limit: Configurable per-minute limit (default: 60/min)
- *   - Daily quota: Configurable daily limit (default: 1000/day)
- *   - Department restrictions: Optional scope to specific departments
- * 
- * Rate limit headers in response:
- *   - X-RateLimit-Limit: Maximum requests per minute
- *   - X-RateLimit-Remaining: Requests remaining in current window
- *   - X-RateLimit-Reset: Unix timestamp when limit resets
- * 
+ * DOCUMENTAZIONE COMPLETA: docs/MCP-PUBLIC-GATEWAY-API.md
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
  * @author W3 Suite Team
- * @date 2025-12-31
+ * @date 2026-01-17
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
@@ -169,6 +68,28 @@ const router = Router();
 // In-memory rate limiting cache (per-minute tracking)
 // Per-minute tracking uses memory for speed; daily quota uses database for persistence
 const rateLimitCache = new Map<string, { count: number; resetAt: number }>();
+
+// In-memory session cache for HTTP Streamable transport
+const mcpSessions = new Map<string, { 
+  tenantId: string; 
+  apiKeyId: string; 
+  authMethod: string;
+  scopes?: string[];
+  createdAt: number;
+  lastActivity: number;
+}>();
+
+// Session cleanup interval (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  for (const [sessionId, session] of mcpSessions.entries()) {
+    if (now - session.lastActivity > SESSION_TIMEOUT) {
+      mcpSessions.delete(sessionId);
+      logger.info(`[MCP-STREAMABLE] Session expired: ${sessionId}`);
+    }
+  }
+}, 5 * 60 * 1000);
 
 function checkMinuteRateLimit(apiKeyId: string, rateLimitPerMinute: number): { allowed: boolean; error?: string } {
   if (rateLimitPerMinute <= 0) return { allowed: true };
@@ -1001,7 +922,415 @@ router.get('/docs', (req: Request, res: Response) => {
   });
 });
 
-// ==================== MCP SSE TRANSPORT FOR CLAUDE ====================
+// ==================== MCP HTTP STREAMABLE TRANSPORT (2025-03-26 spec) ====================
+/**
+ * HTTP Streamable Transport - Il nuovo standard MCP che sostituisce SSE
+ * 
+ * Supporta due modalità:
+ * - Batch mode: POST con Accept: application/json → risposta JSON singola
+ * - Stream mode: POST con Accept: text/event-stream → SSE streaming
+ * 
+ * Session management via Mcp-Session-Id header
+ * Backward compatible con vecchio SSE transport
+ */
+
+// OAuth2 Discovery Endpoints for /mcp (HTTP Streamable)
+router.get('/mcp/.well-known/oauth-protected-resource', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    resource: `${baseUrl}/api/mcp-public/mcp`,
+    authorization_servers: [baseUrl],
+    scopes_supported: ['mcp_read', 'mcp_write', 'tenant_access'],
+  });
+});
+
+router.get('/mcp/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/oauth2/authorize`,
+    token_endpoint: `${baseUrl}/oauth2/token`,
+    registration_endpoint: `${baseUrl}/oauth2/register`,
+    revocation_endpoint: `${baseUrl}/oauth2/revoke`,
+    response_types_supported: ['code'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256'],
+    token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
+    scopes_supported: ['openid', 'profile', 'tenant_access', 'mcp_read', 'mcp_write'],
+    service_documentation: `${baseUrl}/api/mcp-public/docs`,
+  });
+});
+
+// Helper function to execute MCP tool (shared between SSE and HTTP Streamable)
+async function executeMcpTool(
+  tenantId: string,
+  apiKeyId: string,
+  authMethod: string,
+  scopes: string[] | undefined,
+  method: string,
+  id: any,
+  params: any,
+  req: Request
+): Promise<{ jsonrpc: string; id: any; result?: any; error?: { code: number; message: string } }> {
+  
+  if (method === 'initialize') {
+    return {
+      jsonrpc: '2.0', id,
+      result: {
+        protocolVersion: '2025-03-26',
+        capabilities: { 
+          tools: { listChanged: false },
+          streaming: true // HTTP Streamable support
+        },
+        serverInfo: { name: 'w3suite-mcp', version: '2.0.0' },
+      },
+    };
+  }
+  
+  if (method === 'tools/list') {
+    let actions;
+    
+    if (authMethod === 'oauth') {
+      const hasMcpWrite = scopes?.includes('mcp_write') || false;
+      
+      actions = await db
+        .select({
+          actionId: actionDefinitions.actionId,
+          actionName: actionDefinitions.actionName,
+          description: actionDefinitions.description,
+          mcpInputSchema: actionDefinitions.mcpInputSchema,
+          actionCategory: actionDefinitions.actionCategory,
+        })
+        .from(actionDefinitions)
+        .where(and(
+          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+          eq(actionDefinitions.isActive, true),
+          eq(actionDefinitions.exposedViaMcp, true),
+          hasMcpWrite ? sql`TRUE` : sql`${actionDefinitions.actionCategory} = 'query'`
+        ));
+      
+      logger.info(`[MCP-STREAMABLE] OAuth tools/list: ${actions.length} tools`);
+    } else {
+      actions = await db
+        .select({
+          actionId: actionDefinitions.actionId,
+          actionName: actionDefinitions.actionName,
+          description: actionDefinitions.description,
+          mcpInputSchema: actionDefinitions.mcpInputSchema,
+          actionCategory: actionDefinitions.actionCategory,
+        })
+        .from(actionDefinitions)
+        .innerJoin(mcpToolPermissions, and(
+          eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
+          eq(mcpToolPermissions.apiKeyId, apiKeyId),
+          eq(mcpToolPermissions.isEnabled, true)
+        ))
+        .where(and(
+          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`,
+          eq(actionDefinitions.isActive, true),
+          eq(actionDefinitions.exposedViaMcp, true)
+        ));
+    }
+    
+    return {
+      jsonrpc: '2.0', id,
+      result: { tools: actions.map(a => ({ 
+        name: a.actionId, 
+        description: `[${a.actionCategory?.toUpperCase() || 'QUERY'}] ${a.description || a.actionName}`, 
+        inputSchema: a.mcpInputSchema || { type: 'object', properties: {}, required: [] } 
+      })) },
+    };
+  }
+  
+  if (method === 'tools/call') {
+    const { name: toolName, arguments: toolArgs } = params;
+    
+    let action;
+    
+    if (authMethod === 'oauth') {
+      const hasMcpWrite = scopes?.includes('mcp_write') || false;
+      
+      const [foundAction] = await db
+        .select({ 
+          queryTemplateId: actionDefinitions.queryTemplateId,
+          actionCategory: actionDefinitions.actionCategory,
+          actionName: actionDefinitions.actionName,
+          actionId: actionDefinitions.actionId,
+        })
+        .from(actionDefinitions)
+        .where(and(
+          eq(actionDefinitions.actionId, toolName), 
+          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`, 
+          eq(actionDefinitions.isActive, true),
+          eq(actionDefinitions.exposedViaMcp, true)
+        ))
+        .limit(1);
+      
+      if (foundAction && foundAction.actionCategory === 'operative' && !hasMcpWrite) {
+        return { jsonrpc: '2.0', id, error: { code: -32603, message: `Operative action requires mcp_write scope: ${toolName}` } };
+      }
+      
+      action = foundAction;
+    } else {
+      const [foundAction] = await db
+        .select({ 
+          queryTemplateId: actionDefinitions.queryTemplateId,
+          actionCategory: actionDefinitions.actionCategory,
+          actionName: actionDefinitions.actionName,
+          actionId: actionDefinitions.actionId,
+        })
+        .from(actionDefinitions)
+        .innerJoin(mcpToolPermissions, and(
+          eq(mcpToolPermissions.actionDefinitionId, actionDefinitions.id),
+          eq(mcpToolPermissions.apiKeyId, apiKeyId),
+          eq(mcpToolPermissions.isEnabled, true)
+        ))
+        .where(and(
+          eq(actionDefinitions.actionId, toolName), 
+          sql`(${actionDefinitions.tenantId} = ${tenantId} OR ${actionDefinitions.tenantId} IS NULL)`, 
+          eq(actionDefinitions.isActive, true),
+          eq(actionDefinitions.exposedViaMcp, true)
+        ))
+        .limit(1);
+      
+      action = foundAction;
+    }
+    
+    if (!action) {
+      return { jsonrpc: '2.0', id, error: { code: -32601, message: `Tool not found or not authorized: ${toolName}` } };
+    }
+    
+    if (action.actionCategory === 'operative') {
+      logger.info(`[MCP-STREAMABLE] Operative action called: ${toolName}`, { args: toolArgs });
+      return {
+        jsonrpc: '2.0', id,
+        result: {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              status: 'pending',
+              action: action.actionName,
+              actionId: action.actionId,
+              message: `Azione operativa "${action.actionName}" registrata.`,
+              parameters: toolArgs,
+              timestamp: new Date().toISOString()
+            }, null, 2)
+          }]
+        }
+      };
+    }
+    
+    if (!action.queryTemplateId) {
+      return { jsonrpc: '2.0', id, error: { code: -32601, message: `Query template not configured for: ${toolName}` } };
+    }
+    
+    const [template] = await db.select().from(mcpQueryTemplates).where(eq(mcpQueryTemplates.id, action.queryTemplateId)).limit(1);
+    if (!template) {
+      return { jsonrpc: '2.0', id, error: { code: -32603, message: 'Query template not found' } };
+    }
+    
+    let sqlQuery = template.sqlTemplate;
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+    
+    const normalizedArgs: Record<string, any> = { tenant_id: tenantId, tenantId: tenantId };
+    const paramMapping: Record<string, string> = {
+      'dateFrom': 'date_start', 'dateTo': 'date_end', 'storeId': 'store_id',
+      'employeeName': 'employee_name', 'status': 'shift_status', 'category': 'request_category'
+    };
+    if (toolArgs) {
+      for (const [key, val] of Object.entries(toolArgs)) {
+        normalizedArgs[key] = val;
+        if (paramMapping[key]) normalizedArgs[paramMapping[key]] = val;
+      }
+    }
+    
+    const numericFields = ['limit', 'offset', 'page', 'pageSize', 'year'];
+    for (const field of numericFields) {
+      if (normalizedArgs[field] !== undefined) {
+        const numVal = parseInt(String(normalizedArgs[field]), 10);
+        if (isNaN(numVal) || numVal < 0 || numVal > 10000) {
+          return { jsonrpc: '2.0', id, error: { code: -32602, message: `Invalid ${field} value` } };
+        }
+        normalizedArgs[field] = numVal;
+      }
+    }
+    
+    sqlQuery = sqlQuery.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, varName, content) => {
+      return normalizedArgs[varName] !== undefined && normalizedArgs[varName] !== '' ? content : '';
+    });
+    
+    sqlQuery = sqlQuery.replace(/\{\{(\w+)\|(\d+)\}\}/g, (_, varName, defaultVal) => {
+      const val = normalizedArgs[varName] !== undefined ? normalizedArgs[varName] : parseInt(defaultVal, 10);
+      const numVal = parseInt(String(val), 10);
+      if (isNaN(numVal) || numVal < 0 || numVal > 10000) return '100';
+      return String(numVal);
+    });
+    
+    sqlQuery = sqlQuery.replace(/'?\{\{(\w+)\}\}'?/g, (fullMatch, varName) => {
+      if (normalizedArgs[varName] !== undefined) {
+        queryParams.push(normalizedArgs[varName]);
+        return `$${paramIndex++}`;
+      }
+      return 'NULL';
+    });
+    
+    const client = await pool.connect();
+    try {
+      await client.query(`SELECT set_config('app.tenant_id', $1, true)`, [tenantId]);
+      
+      const startTime = Date.now();
+      logger.info(`[MCP-STREAMABLE] Executing query:`, { query: sqlQuery.substring(0, 200) });
+      
+      const result = await client.query(sqlQuery, queryParams);
+      logger.info(`[MCP-STREAMABLE] Query returned ${result.rows?.length || 0} rows`);
+      
+      await logMcpUsage(req, toolName, null, '/mcp', 200, true, Date.now() - startTime);
+      
+      const rows = result.rows || [];
+      const textContent = rows.length > 0 
+        ? JSON.stringify(rows, null, 2)
+        : `Nessun risultato trovato per la query "${toolName}".`;
+      
+      return { 
+        jsonrpc: '2.0', id, 
+        result: { 
+          content: [{ type: 'text', text: textContent }],
+          data: rows,
+          meta: { rowCount: rows.length, success: true, tool: toolName, executedAt: new Date().toISOString() }
+        } 
+      };
+    } finally {
+      client.release();
+    }
+  }
+  
+  if (method === 'notifications/initialized') {
+    return { jsonrpc: '2.0', id, result: {} };
+  }
+  
+  return { jsonrpc: '2.0', id, error: { code: -32601, message: `Method not found: ${method}` } };
+}
+
+// HTTP Streamable POST endpoint (main entry point for new MCP 2025-03-26 spec)
+router.post('/mcp', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Response) => {
+  const { tenantId, apiKeyId, authMethod, scopes } = req.mcpAuth!;
+  const acceptHeader = req.get('Accept') || 'application/json';
+  const sessionId = req.get('Mcp-Session-Id');
+  
+  // Validate Origin header for security (DNS rebinding protection)
+  const origin = req.get('Origin');
+  if (origin) {
+    const allowedOrigins = ['https://w3suite.it', 'https://chatgpt.com', 'https://claude.ai', 'http://localhost', 'http://127.0.0.1'];
+    const isAllowed = allowedOrigins.some(ao => origin.startsWith(ao));
+    if (!isAllowed) {
+      logger.warn(`[MCP-STREAMABLE] Origin rejected: ${origin}`);
+      // We don't block, just log - some clients may have valid but unexpected origins
+    }
+  }
+  
+  const { id, method, params } = req.body;
+  
+  // If this is an initialize request, create a new session
+  if (method === 'initialize') {
+    const newSessionId = `mcp_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    mcpSessions.set(newSessionId, {
+      tenantId,
+      apiKeyId,
+      authMethod,
+      scopes,
+      createdAt: Date.now(),
+      lastActivity: Date.now()
+    });
+    
+    logger.info(`[MCP-STREAMABLE] New session: ${newSessionId} for tenant ${tenantId}`);
+    
+    const result = await executeMcpTool(tenantId, apiKeyId, authMethod, scopes, method, id, params, req);
+    
+    // Return session ID in header
+    res.setHeader('Mcp-Session-Id', newSessionId);
+    
+    // Check if client wants SSE streaming
+    if (acceptHeader.includes('text/event-stream')) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.write(`data: ${JSON.stringify(result)}\n\n`);
+      res.end();
+    } else {
+      res.json(result);
+    }
+    return;
+  }
+  
+  // For other methods, update session if present
+  if (sessionId && mcpSessions.has(sessionId)) {
+    const session = mcpSessions.get(sessionId)!;
+    session.lastActivity = Date.now();
+  }
+  
+  logger.info(`[MCP-STREAMABLE] RPC: ${method}`, { id, sessionId, authMethod });
+  
+  try {
+    const result = await executeMcpTool(tenantId, apiKeyId, authMethod, scopes, method, id, params, req);
+    
+    // Stream mode: respond with SSE
+    if (acceptHeader.includes('text/event-stream')) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.write(`data: ${JSON.stringify(result)}\n\n`);
+      res.end();
+    } else {
+      // Batch mode: respond with JSON
+      res.json(result);
+    }
+  } catch (error: any) {
+    logger.error(`[MCP-STREAMABLE] Error:`, error);
+    await logMcpUsage(req, params?.name || method, null, '/mcp', 500, false, 0, 'EXECUTION_ERROR', error.message);
+    res.json({ jsonrpc: '2.0', id, error: { code: -32603, message: error.message } });
+  }
+});
+
+// HTTP Streamable GET endpoint (for SSE fallback and stream resumption)
+router.get('/mcp', mcpApiKeyAuth, async (req: McpAuthenticatedRequest, res: Response) => {
+  const { tenantId, apiKeyId } = req.mcpAuth!;
+  const lastEventId = req.get('Last-Event-ID');
+  
+  // Set up SSE stream
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  
+  logger.info(`[MCP-STREAMABLE] SSE connection opened for tenant ${tenantId}`, { lastEventId });
+  
+  // Send initial server info
+  const serverInfo = {
+    jsonrpc: '2.0',
+    method: 'notifications/initialized',
+    params: {
+      protocolVersion: '2025-03-26',
+      capabilities: { tools: { listChanged: false }, streaming: true },
+      serverInfo: { name: 'w3suite-mcp', version: '2.0.0' },
+    },
+  };
+  
+  res.write(`id: 1\ndata: ${JSON.stringify(serverInfo)}\n\n`);
+  
+  // Keep-alive
+  const keepAlive = setInterval(() => {
+    try { res.write(': keepalive\n\n'); } catch { clearInterval(keepAlive); }
+  }, 30000);
+  
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    logger.info(`[MCP-STREAMABLE] SSE connection closed`);
+  });
+});
+
+// ==================== MCP SSE TRANSPORT (LEGACY - for backward compatibility) ====================
 
 const sseConnections = new Map<string, Response>();
 
