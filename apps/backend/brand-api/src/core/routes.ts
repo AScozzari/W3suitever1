@@ -1,11 +1,12 @@
 import express from "express";
 import http from "http";
 import bcrypt from "bcryptjs";
-import { sql } from "drizzle-orm";
+import { sql, eq, isNull, and } from "drizzle-orm";
 import { db } from "../../../api/src/core/db.js";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
-import { insertStoreSchema } from "../../../api/src/db/schema/w3suite.js";
+import { insertStoreSchema, tenantGtmConfig, tenants } from "../../../api/src/db/schema/w3suite.js";
+import { EncryptionKeyService } from "../../../api/src/core/encryption-service.js";
 import { 
   insertBrandCategorySchema, updateBrandCategorySchema,
   insertBrandProductTypeSchema, updateBrandProductTypeSchema,
@@ -6882,6 +6883,293 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         success: false,
         error: error instanceof Error ? error.message : "Failed to push asset"
       });
+    }
+  });
+
+  // ==================== GTM (GOOGLE TAG MANAGER) CONFIGURATION ENDPOINTS ====================
+  // Centralized GTM configuration with Mixed RLS pattern
+  // tenant_id = NULL → Global container config
+  // tenant_id = UUID → Tenant-specific API secrets
+
+  const encryptionService = new EncryptionKeyService();
+
+  // GET global GTM container ID (tenant_id = NULL row)
+  app.get("/brand-api/gtm/global", async (req, res) => {
+    const user = (req as any).user;
+
+    // Only super_admin can view global GTM config
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const [globalConfig] = await db
+        .select()
+        .from(tenantGtmConfig)
+        .where(isNull(tenantGtmConfig.tenantId))
+        .limit(1);
+
+      res.json({
+        success: true,
+        data: globalConfig ? {
+          id: globalConfig.id,
+          containerId: globalConfig.containerId,
+          isActive: globalConfig.isActive,
+          createdAt: globalConfig.createdAt,
+          updatedAt: globalConfig.updatedAt
+        } : null
+      });
+    } catch (error) {
+      console.error("Error fetching global GTM config:", error);
+      res.status(500).json({ error: "Failed to fetch GTM configuration" });
+    }
+  });
+
+  // POST/PUT global GTM container ID
+  app.put("/brand-api/gtm/global", async (req, res) => {
+    const user = (req as any).user;
+    const { containerId } = req.body;
+
+    // Only super_admin can update global GTM config
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    if (!containerId) {
+      return res.status(400).json({ error: "Container ID is required (format: GTM-XXXXXXX)" });
+    }
+
+    // Validate GTM container ID format
+    if (!/^GTM-[A-Z0-9]+$/.test(containerId)) {
+      return res.status(400).json({ error: "Invalid GTM Container ID format. Expected: GTM-XXXXXXX" });
+    }
+
+    try {
+      // Check if global config exists
+      const [existing] = await db
+        .select()
+        .from(tenantGtmConfig)
+        .where(isNull(tenantGtmConfig.tenantId))
+        .limit(1);
+
+      let result;
+      if (existing) {
+        // Update existing
+        [result] = await db
+          .update(tenantGtmConfig)
+          .set({ 
+            containerId, 
+            updatedAt: new Date() 
+          })
+          .where(eq(tenantGtmConfig.id, existing.id))
+          .returning();
+      } else {
+        // Create new global config
+        [result] = await db
+          .insert(tenantGtmConfig)
+          .values({
+            tenantId: null,
+            containerId,
+            isActive: true
+          })
+          .returning();
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: result.id,
+          containerId: result.containerId,
+          isActive: result.isActive
+        },
+        message: "GTM Container ID salvato con successo"
+      });
+    } catch (error) {
+      console.error("Error saving global GTM config:", error);
+      res.status(500).json({ error: "Failed to save GTM configuration" });
+    }
+  });
+
+  // GET all tenant GTM configs (for admin overview)
+  app.get("/brand-api/gtm/tenants", async (req, res) => {
+    const user = (req as any).user;
+
+    // Only super_admin can view all tenant configs
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      // Get all tenant configs with tenant info
+      const configs = await db
+        .select({
+          id: tenantGtmConfig.id,
+          tenantId: tenantGtmConfig.tenantId,
+          ga4MeasurementId: tenantGtmConfig.ga4MeasurementId,
+          hasApiSecret: sql<boolean>`${tenantGtmConfig.ga4ApiSecretEncrypted} IS NOT NULL`,
+          isActive: tenantGtmConfig.isActive,
+          createdAt: tenantGtmConfig.createdAt,
+          updatedAt: tenantGtmConfig.updatedAt,
+          tenantName: tenants.name,
+          tenantSlug: tenants.slug
+        })
+        .from(tenantGtmConfig)
+        .leftJoin(tenants, eq(tenantGtmConfig.tenantId, tenants.id))
+        .where(sql`${tenantGtmConfig.tenantId} IS NOT NULL`);
+
+      res.json({
+        success: true,
+        data: configs
+      });
+    } catch (error) {
+      console.error("Error fetching tenant GTM configs:", error);
+      res.status(500).json({ error: "Failed to fetch tenant configurations" });
+    }
+  });
+
+  // GET specific tenant GTM config
+  app.get("/brand-api/gtm/tenants/:tenantId", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+
+    // Only super_admin can view tenant configs
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const [config] = await db
+        .select()
+        .from(tenantGtmConfig)
+        .where(eq(tenantGtmConfig.tenantId, tenantId))
+        .limit(1);
+
+      res.json({
+        success: true,
+        data: config ? {
+          id: config.id,
+          tenantId: config.tenantId,
+          ga4MeasurementId: config.ga4MeasurementId,
+          hasApiSecret: !!config.ga4ApiSecretEncrypted,
+          isActive: config.isActive,
+          createdAt: config.createdAt,
+          updatedAt: config.updatedAt
+        } : null
+      });
+    } catch (error) {
+      console.error("Error fetching tenant GTM config:", error);
+      res.status(500).json({ error: "Failed to fetch tenant configuration" });
+    }
+  });
+
+  // PUT tenant GTM config (create or update)
+  app.put("/brand-api/gtm/tenants/:tenantId", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+    const { ga4MeasurementId, ga4ApiSecret, isActive } = req.body;
+
+    // Only super_admin can update tenant configs
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      // Check if tenant exists
+      const [tenant] = await db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      // Encrypt API secret if provided
+      let encryptedSecret: string | undefined;
+      if (ga4ApiSecret) {
+        encryptedSecret = await encryptionService.encrypt(ga4ApiSecret, tenantId);
+      }
+
+      // Check if config exists
+      const [existing] = await db
+        .select()
+        .from(tenantGtmConfig)
+        .where(eq(tenantGtmConfig.tenantId, tenantId))
+        .limit(1);
+
+      let result;
+      if (existing) {
+        // Update existing
+        const updateData: any = { 
+          updatedAt: new Date() 
+        };
+        if (ga4MeasurementId !== undefined) updateData.ga4MeasurementId = ga4MeasurementId;
+        if (encryptedSecret) updateData.ga4ApiSecretEncrypted = encryptedSecret;
+        if (isActive !== undefined) updateData.isActive = isActive;
+
+        [result] = await db
+          .update(tenantGtmConfig)
+          .set(updateData)
+          .where(eq(tenantGtmConfig.id, existing.id))
+          .returning();
+      } else {
+        // Create new tenant config
+        [result] = await db
+          .insert(tenantGtmConfig)
+          .values({
+            tenantId,
+            ga4MeasurementId: ga4MeasurementId || null,
+            ga4ApiSecretEncrypted: encryptedSecret || null,
+            isActive: isActive !== undefined ? isActive : true
+          })
+          .returning();
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: result.id,
+          tenantId: result.tenantId,
+          ga4MeasurementId: result.ga4MeasurementId,
+          hasApiSecret: !!result.ga4ApiSecretEncrypted,
+          isActive: result.isActive
+        },
+        message: `Configurazione GTM salvata per ${tenant.name}`
+      });
+    } catch (error) {
+      console.error("Error saving tenant GTM config:", error);
+      res.status(500).json({ error: "Failed to save tenant configuration" });
+    }
+  });
+
+  // DELETE tenant GTM config
+  app.delete("/brand-api/gtm/tenants/:tenantId", async (req, res) => {
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+
+    // Only super_admin can delete tenant configs
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    try {
+      const deleted = await db
+        .delete(tenantGtmConfig)
+        .where(eq(tenantGtmConfig.tenantId, tenantId))
+        .returning();
+
+      if (deleted.length === 0) {
+        return res.status(404).json({ error: "Configuration not found" });
+      }
+
+      res.json({
+        success: true,
+        message: "Configurazione GTM eliminata"
+      });
+    } catch (error) {
+      console.error("Error deleting tenant GTM config:", error);
+      res.status(500).json({ error: "Failed to delete configuration" });
     }
   });
 

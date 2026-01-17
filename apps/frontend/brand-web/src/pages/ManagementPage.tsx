@@ -14,7 +14,8 @@ import {
   Settings,
   X,
   Users,
-  Loader2
+  Loader2,
+  Tag
 } from 'lucide-react';
 
 import ManagementDashboardTab from '@/components/management/ManagementDashboardTab';
@@ -22,6 +23,7 @@ import ManagementTenantsTab from '@/components/management/ManagementTenantsTab';
 import ManagementLegalEntitiesTab from '@/components/management/ManagementLegalEntitiesTab';
 import ManagementStoresTab from '@/components/management/ManagementStoresTab';
 import TenantDetailView from '@/components/management/TenantDetailView';
+import GTMConfigTab from '@/components/management/GTMConfigTab';
 
 interface Tenant {
   id: string;
@@ -136,6 +138,12 @@ export default function ManagementPage() {
       label: 'Punti Vendita',
       icon: Store,
       testId: 'tab-management-stores'
+    },
+    {
+      id: 'gtm',
+      label: 'GTM',
+      icon: Tag,
+      testId: 'tab-management-gtm'
     }
   ], []);
 
@@ -376,6 +384,9 @@ export default function ManagementPage() {
                   onEditStore={handleEditStore}
                 />
               )}
+            </TabsContent>
+            <TabsContent value="gtm" className="mt-0">
+              {activeTab === 'gtm' && <GTMConfigTab />}
             </TabsContent>
           </Tabs>
         </div>
