@@ -5,7 +5,7 @@ import { sql, eq, isNull, and } from "drizzle-orm";
 import { db } from "../../../api/src/core/db.js";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
-import { insertStoreSchema, tenantGtmConfig, tenants } from "../../../api/src/db/schema/w3suite.js";
+import { insertStoreSchema, tenantGtmConfig, tenants } from "../../../api/src/db/schema/index.js";
 import { EncryptionKeyService } from "../../../api/src/core/encryption-service.js";
 import { 
   insertBrandCategorySchema, updateBrandCategorySchema,

@@ -146,8 +146,9 @@ export type { InsertTenantDriverCategory, TenantDriverCategory } from './w3suite
 export type { InsertTenantDriverTypology, TenantDriverTypology } from './w3suite';
 
 // ==================== STORES RE-EXPORTED FROM W3SUITE ====================
-import { stores as w3suiteStoresTable } from './w3suite';
+import { stores as w3suiteStoresTable, insertStoreSchema as w3suiteInsertStoreSchema } from './w3suite';
 export const stores = w3suiteStoresTable;
+export const insertStoreSchema = w3suiteInsertStoreSchema;
 export type { InsertStore, Store } from './w3suite';
 
 // ==================== STORE ASSOCIATIONS RE-EXPORTED FROM W3SUITE ====================
@@ -305,6 +306,29 @@ import {
   type DeployCenterSessionCommit,
   type NewDeployCenterSessionCommit
 } from './brand-interface';
+
+// ==================== GTM CONFIG (W3SUITE) ====================
+import {
+  tenantGtmConfig,
+  storeTrackingConfig,
+  insertTenantGtmConfigSchema,
+  insertStoreTrackingConfigSchema,
+  type TenantGtmConfig,
+  type InsertTenantGtmConfig,
+  type StoreTrackingConfig,
+  type InsertStoreTrackingConfig
+} from './w3suite';
+
+export {
+  tenantGtmConfig,
+  storeTrackingConfig,
+  insertTenantGtmConfigSchema,
+  insertStoreTrackingConfigSchema,
+  type TenantGtmConfig,
+  type InsertTenantGtmConfig,
+  type StoreTrackingConfig,
+  type InsertStoreTrackingConfig
+};
 
 export {
   deployCenterCommits,
