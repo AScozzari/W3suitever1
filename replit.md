@@ -212,14 +212,7 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centrali
 - OpenAI
 - AWS S3
 - Google Tag Manager (GTM)
-
-# Production Infrastructure (Gara WindTre)
-- **Cloud Provider**: Seeweb (Italia) - ISO 27001, SOC 2, AGID CSP certified
-- **Virtualization**: Proxmox VE 8.x cluster multinodo con HA
-- **Firewall**: Fortinet FortiGate (NGFW + WAF + IPS)
-- **Storage**: Ceph distributed storage (replicated)
-- **Backup**: Proxmox Backup Server + offsite
-- **Data Residency**: Italia (Frosinone, Milano)
-- **Technical Model**: Mixed CaaS/PaaS (per gara WindTre)
-- **Hosting Model**: Not W3 Private datacenter (Vendor Private)
-- **Documentazione Gara**: `docs/gara-appalto/`
+- Seeweb (Cloud Provider for Production)
+- Proxmox VE (Virtualization for Production)
+- Fortinet FortiGate (Firewall for Production)
+- Ceph (Distributed Storage for Production)
