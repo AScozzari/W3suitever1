@@ -1,8 +1,9 @@
 # W3Suite - Analisi Completa per Gara WindTre
 
 **Documento di Riferimento per Integrazione e Requisiti**  
-**Versione:** 1.1  
+**Versione:** 1.2  
 **Data:** 2 Febbraio 2026  
+**Ultimo aggiornamento:** Verifica coerenza SOC ↔ SRM completata  
 **Basato su:** Technology SoC v2.8, Service-Resource-Model v1.6, Technology Guidelines v2.8
 
 ---
@@ -138,18 +139,24 @@ Questa sezione mappa **tutti** i requisiti della Technology SoC v2.8 (non solo i
 
 Questa tabella mostra l'allineamento esatto tra il file `SERVICE-RESOURCE-MODEL-W3SUITE.xlsx` e la documentazione.
 
-### Verifica Campi per Ogni Risorsa
+### Verifica Campi per Ogni Risorsa (Aggiornato v1.2)
 
 | Risorsa | SLA Value | SLA Class | HA Model | Distribution | Capacity | Backup | Recovery | Ops | Cost |
 |---------|-----------|-----------|----------|--------------|----------|--------|----------|-----|------|
 | **Backend Node.js** | 99.9% | HA | Active-Active | Multi-zone | Horizontal (no outage) | N/A (stateless) | Automated Proxmox | Vendor | Included |
 | **Redis Cache** | 99.9% | HA | Primary-Replica | Primary-Replica | Vertical (no outage) | RDB daily | Automated failover | Vendor | Included |
 | **Nginx Proxy** | 99.9% | HA | Active-Active | Active-Active | Horizontal (no outage) | N/A (stateless) | Automated Proxmox | Vendor | Included |
+| **Fortinet FortiGate** | 99.9% | HA | Active-Passive | Active-Passive | N/A | Config daily | Automated failover | Seeweb | Included |
+| **Identity & Auth Service** | 99.9% | HA | Active-Active | Multi-zone | Horizontal (no outage) | N/A (keys in DB) | Automated Proxmox | Vendor | Included |
+| **Audit Logging Service** | 99.9% | HA | Active-Active | Active-Active | Horizontal (no outage) | Retention 90 days | Automated Proxmox | Vendor | Included |
 | **PostgreSQL Primary** | 99.9% | HA | Primary-Replica | Primary-Replica | Vertical (maintenance) | Daily full + WAL | Automated failover | Vendor | Included |
 | **PostgreSQL Replica** | 99.9% | HA | Standby | Standby | Horizontal (no outage) | From Primary | Promote to Primary | Vendor | Included |
 | **Ceph Storage** | 99.9% | HA | Multi-node | Replicated | Add nodes (no outage) | Offsite weekly | Automated Ceph | Seeweb | Included |
+| **Secret Manager** | 99.9% | HA | Integrated | Integrated | N/A | Encrypted daily | Manual restore | Vendor | Included |
 | **OpenAI API** | 99.5% | HA | Cloud-managed | Cloud-managed | Rate limit | N/A (SaaS) | Fallback model | OpenAI | Pay-per-use |
 | **AI Gateway MCP** | 99.9% | HA | Active-Active | Multi-zone | Horizontal (no outage) | N/A (stateless) | Automated Proxmox | Vendor | Included |
+
+**Totale risorse: 12** (aggiornato da 8)
 
 ### Note di Coerenza
 
@@ -159,17 +166,29 @@ Questa tabella mostra l'allineamento esatto tra il file `SERVICE-RESOURCE-MODEL-
 
 3. **Cost Model "Included"**: Tutti i componenti self-hosted sono inclusi nel canone SaaS tranne OpenAI che è pay-per-use.
 
-### ⚠️ Discrepanze Identificate e Azioni Correttive
+### ✅ Coerenza SOC ↔ SRM Verificata (v1.2)
 
-| Campo Excel | Valore Dichiarato | Stato Reale | Azione Richiesta |
-|-------------|-------------------|-------------|------------------|
+Le seguenti incoerenze sono state **risolte** con l'aggiornamento dei file:
+
+| Incoerenza Precedente | Risoluzione |
+|-----------------------|-------------|
+| SOC menzionava "Identity & Auth" ma SRM non aveva risorsa | ✅ Aggiunta risorsa "Identity & Auth Service" al SRM |
+| SOC menzionava "Audit Logging" ma SRM non aveva risorsa | ✅ Aggiunta risorsa "Audit Logging Service" al SRM |
+| SOC menzionava "Fortinet" ma SRM non aveva risorsa | ✅ Aggiunta risorsa "Fortinet FortiGate Firewall" al SRM |
+| SOC menzionava "Vault predisposto" ma SRM non aveva risorsa | ✅ Aggiunta risorsa "Secret Manager (predisposto)" al SRM |
+| SOC non menzionava SLA | ✅ Aggiunti riferimenti SLA in tutte le risposte SOC |
+
+### ⚠️ Gap Tecnici Rimanenti (da implementare)
+
+| Campo | Valore Dichiarato | Stato Reale | Azione Richiesta |
+|-------|-------------------|-------------|------------------|
 | PostgreSQL Recovery | "Automated failover" | Testato manuale | **Settimana 7-8**: Configurare failover automatico |
 | Backend Distribution | "Multi-zone" | Single-zone | **Settimana 5-6**: Espandere a multi-zona |
 | Observability | "Predisposto" | Console logging | **Settimana 5-6**: Implementare Prometheus |
-| mTLS | "Integrabile" | Non attivo | **Settimana 7-8**: Attivare mTLS |
-| Azure AD | "Federabile" | Non integrato | **Settimana 1-4**: Implementare federation |
+| mTLS | "Attivabile" | Non attivo | **Settimana 7-8**: Attivare mTLS |
+| Azure AD | "Configurabile" | Non integrato | **Settimana 1-4**: Implementare federation |
 
-**Nota**: Questi gap sono stati dichiarati con linguaggio prudente ("predisposto", "integrabile") proprio per segnalare che richiedono lavoro.
+**Nota**: Questi gap sono dichiarati con linguaggio prudente ("predisposto", "attivabile", "configurabile") per segnalare che richiedono lavoro di implementazione.
 
 ---
 
