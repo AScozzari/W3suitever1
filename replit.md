@@ -1,5 +1,5 @@
 # Overview
-W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes business operations across CRM, POS, WMS, Analytics, HR, and CMS modules. Its primary goal is to enhance efficiency, provide data-driven insights, and enable strategic decision-making through advanced AI capabilities, with the ambition of becoming a leading AI-native operating system.
+W3 Suite is an AI-powered, multi-tenant enterprise platform designed to centralize business operations across various modules like CRM, POS, WMS, Analytics, HR, and CMS. Its core purpose is to boost efficiency, deliver data-driven insights, and enable strategic decision-making through advanced AI. The long-term vision is to establish W3 Suite as a leading AI-native operating system in the market.
 
 # User Preferences
 - Preferred communication style: Simple, everyday language
@@ -192,9 +192,9 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes bus
   - **Refactor continuo**: Convertire pagine esistenti quando vengono toccate
 
 # System Architecture
-- **UI/UX Decisions**: The platform utilizes `shadcn/ui` (built on Radix UI) to ensure consistency and accessibility. All pages must adhere to a standard application structure, including headers, sidebars, and white backgrounds. New UI components should exclusively use `rem` units for responsive scaling, managed by `VITE_FONT_SCALE=80`. Forms incorporate Italian Business Validation, offering real-time feedback, localized error messages, and Zod schemas for data integrity.
-- **Technical Implementations**: The backend operates on PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`). Security is robust, featuring OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Row-Level Security (RLS) driven by `app.tenant_id`. Core modules include a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, and a Multi-Provider OAuth (MCP). AI capabilities are integrated through an AI Voice Agent with RAG, AI Enforcement Middleware, an AI Workflow Builder, and Intelligent Workflow Routing. The WMS supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized items, immutable event logs, and historical snapshots. The Brand Interface provides a Workflow Builder and a Git-versioned JSON-based Master Catalog System. The Commissioning Module calculates commissions using a three-level architecture (Type, Template, Instance) with configurable functions and variables. GTM integration leverages `tenant_gtm_config` with Mixed RLS and `store_tracking_config` for store-specific tracking IDs, with API Secrets encrypted via a central `EncryptionKeyService`.
-- **System Design Choices**: The platform's hierarchical structure is Tenant → Commercial Area → Organization Entity → Store → Department → Team → User. A Cross-Store Architecture provides tenant-wide data visibility with Role-Based Access (RBA) and advanced filtering. Request routing employs "Functional First → First Wins" and "Shift-Based Routing" strategies. All system actions are managed through `action_definitions`, which serves as the single source of truth for the MCP Gateway, with routing orchestrated by `UnifiedTriggerService`. User scope data is consistently derived from `user_stores`. VPS deployment is incremental, utilizing `deploy/incremental-deploy.sh` scripts to `/var/www/w3suite/`, secured via SSH with `deploy/keys/vps_key`. Frontend builds necessitate `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`. The `w3suite_prod` database is accessed securely via a local socket over SSH.
+- **UI/UX Decisions**: The platform uses `shadcn/ui` (based on Radix UI) for consistent and accessible interfaces. All pages maintain a standard app structure with headers, sidebars, and white backgrounds. Responsive scaling is achieved by exclusively using `rem` units for new UI components, controlled by `VITE_FONT_SCALE=80`. Forms include Italian Business Validation with real-time feedback, localized error messages, and Zod schemas for data integrity.
+- **Technical Implementations**: The backend leverages PostgreSQL with a 3-schema architecture (`w3suite`, `public`, `brand_interface`). Security features include OAuth2/OIDC, MFA, JWTs, and a 3-level RBAC system with Row-Level Security (RLS) driven by `app.tenant_id`. Key modules are a Universal Workflow Engine, Unified Notification System, Centralized Webhook Management, Task Management, and a Multi-Provider OAuth (MCP). AI integration consists of an AI Voice Agent with RAG, AI Enforcement Middleware, an AI Workflow Builder, and Intelligent Workflow Routing. The WMS supports diverse product types with dual-layer versioning, 13 logistic states, serialized/non-serialized items, immutable event logs, and historical snapshots. The Brand Interface offers a Workflow Builder and a Git-versioned JSON-based Master Catalog System. The Commissioning Module calculates commissions using a three-level architecture (Type, Template, Instance) with configurable functions and variables. GTM integration uses `tenant_gtm_config` with Mixed RLS and `store_tracking_config` for store-specific tracking, encrypting API Secrets via `EncryptionKeyService`.
+- **System Design Choices**: The platform's hierarchical structure is Tenant → Commercial Area → Organization Entity → Store → Department → Team → User. A Cross-Store Architecture provides tenant-wide data visibility with Role-Based Access (RBA) and advanced filtering. Request routing employs "Functional First → First Wins" and "Shift-Based Routing" strategies. All system actions are managed through `action_definitions`, which is the single source of truth for the MCP Gateway, with routing by `UnifiedTriggerService`. User scope data is consistently derived from `user_stores`. VPS deployment is incremental using `deploy/incremental-deploy.sh` scripts to `/var/www/w3suite/`, secured via SSH with `deploy/keys/vps_key`. Frontend builds require `VITE_AUTH_MODE=oauth2` and `VITE_FONT_SCALE=80`. The `w3suite_prod` database is accessed securely via a local socket over SSH.
 
 # External Dependencies
 - PostgreSQL
@@ -212,3 +212,14 @@ W3 Suite is an AI-powered, multi-tenant enterprise platform that centralizes bus
 - OpenAI
 - AWS S3
 - Google Tag Manager (GTM)
+
+# Production Infrastructure (Gara WindTre)
+- **Cloud Provider**: Seeweb (Italia) - ISO 27001, SOC 2, AGID CSP certified
+- **Virtualization**: Proxmox VE 8.x cluster multinodo con HA
+- **Firewall**: Fortinet FortiGate (NGFW + WAF + IPS)
+- **Storage**: Ceph distributed storage (replicated)
+- **Backup**: Proxmox Backup Server + offsite
+- **Data Residency**: Italia (Frosinone, Milano)
+- **Technical Model**: Mixed CaaS/PaaS (per gara WindTre)
+- **Hosting Model**: Not W3 Private datacenter (Vendor Private)
+- **Documentazione Gara**: `docs/gara-appalto/`
