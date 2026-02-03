@@ -10,10 +10,22 @@
 
 | # | Documento | Stato | Note |
 |---|-----------|-------|------|
-| 1 | SERVICE-RESOURCE-MODEL-W3SUITE-FINAL.xlsx | ✅ CORRETTO | Valori dropdown esatti, 7 risorse |
-| 2 | SOC-RISPOSTE-W3SUITE.xlsx | ✅ CONFORME | Risposte allineate TOGAF |
-| 3 | AI-QUESTIONNAIRE-RISPOSTE-W3SUITE.xlsx | ✅ CONFORME | Posizionamento DEPLOYER corretto |
-| 4 | GAP-ANALYSIS-GESTIONALE-MIO-NEGOZIO.xlsx | ✅ COMPLETO | 111 requisiti analizzati |
+| 1 | SERVICE-RESOURCE-MODEL-W3SUITE-FINAL.xlsx | ✅ CORRETTO | 7 risorse, dropdown esatti |
+| 2 | SOC-RISPOSTE-W3SUITE-COMPLETE.xlsx | ✅ AGGIORNATO | 164 requisiti, 103 Full (63%) |
+| 3 | SOC-RISPOSTE-COMPLETE-v3.md | ✅ AGGIORNATO | Dettaglio tutte le risposte |
+| 4 | AI-QUESTIONNAIRE-RISPOSTE-W3SUITE.xlsx | ✅ CONFORME | Posizionamento DEPLOYER |
+| 5 | GAP-ANALYSIS-GESTIONALE-MIO-NEGOZIO.xlsx | ✅ COMPLETO | 111 requisiti analizzati |
+
+### 1.1 SOC Technology v2.8 - Statistiche
+
+| Metrica | Valore | % |
+|---------|--------|---|
+| Full Compliance | 103 | 63% |
+| Partial | 1 | 1% |
+| Not Applicable | 60 | 36% |
+| **TOTALE** | **164** | 100% |
+
+**Note N/A**: Requisiti "W3 Public Cloud Tenant" non applicabili (Seeweb = Not W3 Private) + Network Functions
 
 ---
 
