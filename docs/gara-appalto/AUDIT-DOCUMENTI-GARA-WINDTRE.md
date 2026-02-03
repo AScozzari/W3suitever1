@@ -1,7 +1,7 @@
 # AUDIT COMPLETO DOCUMENTI GARA WINDTRE
 
 **Data Audit**: 3 Febbraio 2026  
-**Versione**: 2.0  
+**Versione**: 3.0  
 **Auditor**: W3Suite Team
 
 ---
@@ -10,167 +10,139 @@
 
 | # | Documento | Stato | Note |
 |---|-----------|-------|------|
-| 1 | SERVICE-RESOURCE-MODEL-W3SUITE-v2.xlsx | ✅ CORRETTO | Valori dropdown esatti verificati |
+| 1 | SERVICE-RESOURCE-MODEL-W3SUITE-FINAL.xlsx | ✅ CORRETTO | Valori dropdown esatti, 7 risorse |
 | 2 | SOC-RISPOSTE-W3SUITE.xlsx | ✅ CONFORME | Risposte allineate TOGAF |
 | 3 | AI-QUESTIONNAIRE-RISPOSTE-W3SUITE.xlsx | ✅ CONFORME | Posizionamento DEPLOYER corretto |
-| 4 | GAP-ANALYSIS-GESTIONALE-MIO-NEGOZIO.md/xlsx | ✅ COMPLETO | 111 requisiti analizzati |
-| 5 | 05-SOC-RISPOSTE-DETTAGLIO.md | ✅ CONFORME | Dettaglio risposte tecniche |
-| 6 | 04-INFRASTRUTTURA-SEEWEB-PROXMOX.md | ✅ CONFORME | Documentazione infrastruttura |
+| 4 | GAP-ANALYSIS-GESTIONALE-MIO-NEGOZIO.xlsx | ✅ COMPLETO | 111 requisiti analizzati |
 
 ---
 
-## 2. SERVICE-RESOURCE-MODEL - VERIFICA DROPDOWN
+## 2. INFRASTRUTTURA SEEWEB (VERIFICATA DA seeweb.it)
 
-### 2.1 Hosting Model (Colonna E)
+### 2.1 Architettura Cluster
+
+```
+┌────────────────────────────────────────┐    ┌──────────────────────┐
+│          SEEWEB DC1 (Primary)          │    │   SEEWEB DC2 (DR)    │
+│                                        │    │                      │
+│  ┌─────────────┐  ┌─────────────┐      │    │  ┌────────────────┐  │
+│  │   Nodo 1    │  │   Nodo 2    │      │    │  │ Cloud Backup   │  │
+│  │ Bare Metal  │  │ Bare Metal  │      │    │  │    (PBS)       │  │
+│  │ Foundation  │  │ Foundation  │      │    │  │  Full IaaS     │  │
+│  │   Server    │  │   Server    │      │    │  │  23€/100GB     │  │
+│  └──────┬──────┘  └──────┬──────┘      │    │  └────────────────┘  │
+│         │    HA Appliance    │         │    │                      │
+│         └────────┬───────────┘         │    └──────────────────────┘
+│                  │                     │
+│  ┌───────────────┴───────────────┐     │
+│  │      Proxmox VE Cluster       │     │
+│  │  ┌─────────────────────────┐  │     │
+│  │  │   FortiGate VM (IaaS)   │  │     │
+│  │  │   Virtual Appliance     │  │     │
+│  │  └─────────────────────────┘  │     │
+│  │  ┌──────┐┌──────┐┌──────┐┌──────┐   │
+│  │  │ VPC  ││ VPC  ││ VPC  ││ VPC  │   │
+│  │  │ FE   ││ BE   ││DB Pri││DB Rep│   │
+│  │  └──────┘└──────┘└──────┘└──────┘   │
+│  └───────────────────────────────┘     │
+└────────────────────────────────────────┘
+```
+
+### 2.2 Componenti e Technical Model
+
+| Componente | Tipo Seeweb | Technical Model | Note |
+|------------|-------------|-----------------|------|
+| **Foundation Server (2 nodi)** | Server fisici dedicati | `Bare Metal` | Cluster Proxmox VE |
+| **FortiGate** | Virtual Appliance (1-4 CPU) | `Full IaaS` | NGFW |
+| **Cloud Backup (PBS)** | Servizio Cloud | `Full IaaS` | 23€/100GB, DC separato |
+| **VPC (4 VM)** | Macchine virtuali | `Full IaaS` | FE, BE, DB Pri, DB Rep |
+
+### 2.3 Configurazione Backup
+
+| VM | Snapshot (Full) | Incrementale | Retention Full | Retention Incr | Target |
+|----|-----------------|--------------|----------------|----------------|--------|
+| Nodo 1 | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+| Nodo 2 | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+| FortiGate VM | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+| Frontend VPC | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+| Backend VPC | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+| PostgreSQL Primary | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+| PostgreSQL Replica | Daily | 1 min | 1 month | 1 week | PBS DC2 |
+
+**Nota**: TUTTE le VM hanno backup sia snapshot che incrementali verso Proxmox Backup Server su DC2.
+
+---
+
+## 3. SERVICE-RESOURCE-MODEL - VERIFICA DROPDOWN
+
+### 3.1 Hosting Model (Colonna E)
 
 | Valore Usato | Valore Dropdown Esatto | Stato |
 |--------------|------------------------|-------|
 | Not W3 Private datacenter | `Not W3 Private datacenter` | ✅ |
-| Not W3 Public cloud Tenant | `Not W3 Public cloud Tenant` | ✅ |
 
 **Motivazione**: W3Suite è ospitato su Seeweb (datacenter privato italiano), non su cloud WindTre.
 
-### 2.2 Hosting Provider (Colonna F)
+### 3.2 Hosting Provider (Colonna F)
 
 | Valore Usato | Valore Dropdown Esatto | Stato |
 |--------------|------------------------|-------|
 | Vendor Private | `Vendor Private` | ✅ |
 
-**Motivazione**: Seeweb è un provider privato italiano, non AWS/GCP/Azure.
+**Motivazione**: Seeweb è un provider privato italiano.
 
-### 2.3 Technical Model (Colonna G)
+### 3.3 Technical Model (Colonna G)
 
 | Valore Usato | Valore Dropdown Esatto | Uso |
 |--------------|------------------------|-----|
-| Full IaaS | `Full IaaS` | Proxmox, Ceph |
-| Mixed CaaS/PaaS | `Mixed CaaS/PaaS` | W3Suite Apps, PostgreSQL |
-| Multi-tenant SaaS | `Multi-tenant SaaS` | OpenAI API |
-| HW Appliance | `HW Appliance` | FortiGate Firewall |
+| Bare Metal | `Bare Metal` | Foundation Server (nodi fisici) |
+| Full IaaS | `Full IaaS` | FortiGate VM, Cloud Backup PBS, VPC |
 
-### 2.4 Distribution Method (Colonna L)
+### 3.4 Distribution (Colonna K)
 
-| Valore Usato | Valore Dropdown Esatto | Stato |
-|--------------|------------------------|-------|
-| Resources - SW configuration | `Resources - SW configuration` | ✅ |
-| Internal SaaS/Cloud provider | `Internal SaaS/Cloud provider -configuration  ` | ✅ |
+| Valore Usato | Valore Dropdown Esatto | Uso |
+|--------------|------------------------|-----|
+| Cloud-Multi-zone | `Cloud-Multi-zone` | Foundation Server (2 nodi HA) |
+| Cloud-Single-zone | `Cloud-Single-zone` | VPC, FortiGate, PBS |
 
-### 2.5 Single Resource Role (Colonna M)
+### 3.5 Recovery Class (Colonna AE)
 
 | Valore Usato | Valore Dropdown Esatto | Stato |
 |--------------|------------------------|-------|
-| Active  | `Active ` (con spazio) | ✅ |
-
-### 2.6 HA Classification (Colonne B-C)
-
-| Valore Usato | Valore Dropdown Esatto | Stato |
-|--------------|------------------------|-------|
-| HA | `HA` | ✅ |
-| HA- | `HA-` | ✅ |
-
-### 2.7 Recovery Class (Colonna AE)
-
-| Valore Usato | Valore Dropdown Esatto | Stato |
-|--------------|------------------------|-------|
-| Local Resilent  | `Local Resilent ` (spazio finale) | ✅ |
-| Zone Resilent  | `Zone Resilent ` (spazio finale) | ✅ |
-| Region Resilent  | `Region Resilent ` (spazio finale) | ✅ |
+| Zone Resilent  | `Zone Resilent ` (spazio finale) | ✅ Cluster 2 nodi |
+| Region Resilent  | `Region Resilent ` (spazio finale) | ✅ Backup su DC2 |
+| Local Resilent  | `Local Resilent ` (spazio finale) | ✅ FortiGate single |
 
 **NOTA**: Il template WindTre usa "Resilent" (senza "i"), non "Resilient".
 
-### 2.8 RTO/RPO (Colonne AG-AH)
-
-| Valore Usato | Valore Dropdown Esatto | Stato |
-|--------------|------------------------|-------|
-| Seconds  | `Seconds ` (spazio finale) | ✅ |
-| Minutes (1-5) | `Minutes (1-5)` | ✅ |
-| Hour (1-5) | `Hour (1-5)` | ✅ |
-| N/A | `N/A` | ✅ |
-
-### 2.9 Operation Model (Colonna AI)
-
-| Valore Usato | Valore Dropdown Esatto | Stato |
-|--------------|------------------------|-------|
-| SW Integrator | `SW Integrator` | ✅ |
-| HW/SW vendor | `HW/SW vendor` | ✅ |
-| SaaS Provider | `SaaS Provider` | ✅ |
-
-### 2.10 Cost Model (Colonna AK)
-
-| Valore Usato | Valore Dropdown Esatto | Stato |
-|--------------|------------------------|-------|
-| Subscription | `Subscription` | ✅ |
-| COTs SW License | `COTs SW License` | ✅ |
-| (on-premise) HW Buy & Support | `(on-premise) HW Buy & Support` | ✅ |
-
 ---
 
-## 3. ALLINEAMENTO TOGAF & BLUEPRINT ARCHITETTURALE
+## 4. RISORSE SERVICE-RESOURCE-MODEL (7 RISORSE)
 
-### 3.1 Principi Architetturali Rispettati
+### 4.1 Riepilogo Completo
 
-| Principio TOGAF | Implementazione W3Suite | Stato |
-|-----------------|-------------------------|-------|
-| **Cloud First** | Seeweb Cloud Italia + OpenAI SaaS | ✅ |
-| **Microservizi** | Node.js + Express.js modulare | ✅ |
-| **Open-Source** | PostgreSQL, Redis, Nginx, Ceph | ✅ |
-| **API-First** | REST API + OpenAPI docs | ✅ |
-| **Software-Defined** | Proxmox IaC, Docker containers | ✅ |
-| **DevSecOps** | CI/CD pipeline, Harbor registry | ✅ |
-| **Always-On** | HA clustering, Zone resilient | ✅ |
-| **Osservabilità** | Grafana + Prometheus + Loki | ✅ |
-| **Zero Trust** | OAuth2/OIDC + MFA + 3-Level RBAC | ✅ |
-| **Least Privilege** | RLS PostgreSQL + RBAC granulare | ✅ |
-| **Cost Control** | Pay-as-you-go AI, Seeweb contract | ✅ |
+| # | Risorsa | Technical Model | Distribution | Recovery | Backup |
+|---|---------|-----------------|--------------|----------|--------|
+| 1 | Foundation Server Cluster (2 nodi) | Bare Metal | Cloud-Multi-zone | Zone Resilent | Snapshot + Incr |
+| 2 | FortiGate VM | Full IaaS | Cloud-Single-zone | Local Resilent | Snapshot + Incr |
+| 3 | Cloud Backup (PBS) | Full IaaS | Cloud-Single-zone | Region Resilent | - (è il target) |
+| 4 | W3Suite Frontend VPC | Full IaaS | Cloud-Single-zone | Region Resilent | Snapshot + Incr |
+| 5 | W3Suite Backend VPC | Full IaaS | Cloud-Single-zone | Region Resilent | Snapshot + Incr |
+| 6 | PostgreSQL Primary VPC | Full IaaS | Cloud-Single-zone | Region Resilent | Snapshot + Incr |
+| 7 | PostgreSQL Replica VPC | Full IaaS | Cloud-Single-zone | Region Resilent | Snapshot + Incr |
 
-### 3.2 Conformità Blueprint Easy Digital Group
+### 4.2 Service Resource Distribution
 
-| Area | Requisito Blueprint | Implementazione | Stato |
-|------|---------------------|-----------------|-------|
-| Security | Zero Trust & Least Privilege | OAuth2 + RLS + RBAC | ✅ |
-| Data | Event-Driven & Real-Time | WebSocket + Notifications | ✅ |
-| AI/ML | MLOps pipeline | MCP Gateway + OpenAI | ✅ |
-| Platform | Kubernetes/Containers | Docker + Proxmox LXC | ✅ |
-| Observability | Logging/Metrics/Tracing | Grafana Stack | ✅ |
-
----
-
-## 4. RISORSE SERVICE-RESOURCE-MODEL INSERITE
-
-### 4.1 CORE PLATFORM (5 risorse)
-
-| # | Vendor | Technical Model | HA | Recovery |
-|---|--------|-----------------|----|----|
-| 1 | Seeweb S.r.l. (Proxmox VE) | Full IaaS | HA | Zone |
-| 2 | Fortinet (FortiGate NGFW) | HW Appliance | HA | Local |
-| 3 | W3Suite (Node.js API) | Mixed CaaS/PaaS | HA | Zone |
-| 4 | F5/Nginx (Reverse Proxy) | Mixed CaaS/PaaS | HA | Local |
-| 5 | Redis (Cache/Session) | Mixed CaaS/PaaS | HA | Local |
-
-### 4.2 DATABASE LAYER (2 risorse)
-
-| # | Vendor | Technical Model | HA | Recovery |
-|---|--------|-----------------|----|----|
-| 6 | PostgreSQL 15 | Mixed CaaS/PaaS | HA | Zone |
-| 7 | Ceph (Distributed Storage) | Full IaaS | HA | Zone |
-
-### 4.3 AI SERVICES (2 risorse)
-
-| # | Vendor | Technical Model | HA | Recovery |
-|---|--------|-----------------|----|----|
-| 8 | OpenAI (GPT-4 API) | Multi-tenant SaaS | HA- | Region |
-| 9 | W3Suite (MCP Gateway) | Mixed CaaS/PaaS | HA | Local |
-
-### 4.4 SECURITY (1 risorsa)
-
-| # | Vendor | Technical Model | HA | Recovery |
-|---|--------|-----------------|----|----|
-| 10 | W3Suite (OAuth2/RBAC) | Mixed CaaS/PaaS | HA | Zone |
-
-### 4.5 OBSERVABILITY (1 risorsa)
-
-| # | Vendor | Technical Model | HA | Recovery |
-|---|--------|-----------------|----|----|
-| 11 | Grafana Labs (Stack) | Mixed CaaS/PaaS | HA- | Local |
+| Module | Risorsa | DC1 (Primary) | DC2 (DR) | Backup Type |
+|--------|---------|---------------|----------|-------------|
+| INFRASTRUCTURE | Nodo 1 (Bare Metal) | Active | | Snapshot + Incr |
+| INFRASTRUCTURE | Nodo 2 (Bare Metal) | Active | | Snapshot + Incr |
+| INFRASTRUCTURE | FortiGate VM | Active | | Snapshot + Incr |
+| INFRASTRUCTURE | Cloud Backup (PBS) | | Active | - |
+| APPLICATION | Frontend VPC | Active | | Snapshot + Incr |
+| APPLICATION | Backend VPC | Active | | Snapshot + Incr |
+| DATABASE | PostgreSQL Primary | Active | | Snapshot + Incr |
+| DATABASE | PostgreSQL Replica | Standby | | Snapshot + Incr |
 
 ---
 
@@ -190,6 +162,8 @@
 | 2.1 (Deployer Questions P.01-P.11) | ✅ COMPILATA | Tutte le risposte fornite |
 | 2.2 (Provider Questions) | ⬜ NON COMPILATA | Non applicabile (siamo Deployer) |
 | 2.3 (Provider Technical) | ⬜ NON COMPILATA | Non applicabile (siamo Deployer) |
+
+**Nota**: OpenAI è il Provider AI esterno (SaaS). Non va dichiarato come risorsa infrastrutturale nel Service-Resource-Model.
 
 ---
 
@@ -216,16 +190,6 @@
 | 6 | Pega CRM | Alto | 10-14 sett |
 | 7 | Voodoo (digital) | Medio | 4-6 sett |
 
-### 6.3 Valore Aggiunto W3Suite
-
-| Funzionalità | Beneficio | ROI |
-|--------------|-----------|-----|
-| AI Voice Agent 24/7 | Supporto automatico | -40% call center |
-| MCP Gateway | Integrazione unificata | -70% tempi sviluppo |
-| WebRTC Calls | Softphone browser | -100% licenze |
-| Workflow AI Builder | Automazione processi | Settimane → ore |
-| Predictive Analytics | Ottimizzazione stock | +10% vendite |
-
 ---
 
 ## 7. CHECKLIST CONFORMITÀ FINALE
@@ -238,59 +202,26 @@
 | Technology SoC Risposte | ✅ | ✅ |
 | AI Questionnaire | ✅ | ✅ |
 | Gap Analysis Mio Negozio | ✅ | ✅ |
-| Infrastruttura Seeweb | ✅ | ✅ |
 
 ### 7.2 Requisiti Tecnici
 
 | Requisito | Stato | Evidenza |
 |-----------|-------|----------|
 | Datacenter Italia | ✅ | Seeweb Rome/Milan |
-| ISO 27001 | ✅ | Certificazione Seeweb |
-| GDPR Compliance | ✅ | RLS + Data residency |
-| HA/DR | ✅ | Zone Resilient |
-| Backup | ✅ | Daily + WAL |
-| Encryption | ✅ | AES-256 + TLS 1.3 |
-
-### 7.3 Allineamento TOGAF
-
-| Principio | Applicato |
-|-----------|-----------|
-| Cloud First | ✅ |
-| Microservizi | ✅ |
-| API-First | ✅ |
-| Zero Trust | ✅ |
-| Osservabilità | ✅ |
-| DevSecOps | ✅ |
+| Cluster 2 nodi | ✅ | Foundation Server Bare Metal |
+| Backup Snapshot + Incr | ✅ | Tutte le VM → PBS DC2 |
+| DR su DC separato | ✅ | PBS su DC2 (Region Resilient) |
+| Firewall | ✅ | FortiGate Virtual Appliance |
+| GDPR Compliance | ✅ | RLS + Data residency Italia |
 
 ---
 
-## 8. RACCOMANDAZIONI
-
-### 8.1 Azioni Immediate
-
-1. **Verificare** file Excel con team commerciale prima dell'invio
-2. **Validare** dropdown aprendo il file in Excel (non solo lettura)
-3. **Confermare** naming moduli con documentazione WindTre
-
-### 8.2 Azioni Prima della Submission
-
-1. Stampare PDF di backup di tutti i documenti
-2. Verificare che tutti i campi obbligatori siano compilati
-3. Controllare coerenza tra documenti (stessi moduli, stesse SLA)
-
-### 8.3 Note Tecniche
-
-- I valori dropdown hanno spazi finali in alcuni casi (es. `Local Resilent `)
-- Il template usa "Resilent" senza "i" - rispettare questa grafia
-- OpenAI usa `Not W3 Public cloud Tenant` perché è SaaS esterno
-
----
-
-## 9. FIRMA AUDIT
+## 8. FIRMA AUDIT
 
 | Campo | Valore |
 |-------|--------|
 | Data Audit | 3 Febbraio 2026 |
+| Versione | 3.0 |
 | Auditor | W3Suite Technical Team |
 | Stato Finale | ✅ **CONFORME** |
 | Pronto per Submission | ✅ **SÌ** |
