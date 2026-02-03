@@ -1,183 +1,140 @@
 # W3Suite - Risposte AI Questionnaire WindTre
 
-**Documento: 7_W3_AI_Questionnaire_2.PROVIDER**  
-**Ruolo W3Suite: DEPLOYER (non Provider di modelli AI)**  
-**Data: 2 Febbraio 2026**
+**Documento**: 7_W3_AI_Questionnaire_2.PROVIDER  
+**Ruolo W3Suite**: **DEPLOYER** (Art. 26 AI Act)  
+**Data**: 3 Febbraio 2026
 
 ---
 
-## Riepilogo Posizionamento
+## ⚠️ Istruzioni di Compilazione
 
-| Aspetto | Posizione W3Suite |
-|---------|-------------------|
-| **Ruolo AI Act** | Deployer (Art. 26) |
+### Regola Fondamentale
+
+Il questionario prevede che:
+
+> **"Non compilare SECTION 2.2 e 2.3 se si è risposto 'Yes' al quesito P.09"**
+
+Poiché W3Suite risponde **P.09 = Yes** (conferma ruolo di Deployer):
+
+| Sezione | Compila? | Motivo |
+|---------|----------|--------|
+| **SECTION 2.1** | ✅ **SÌ** | Dati generali e ruolo |
+| **SECTION 2.2** | ❌ **NO** | Solo per Provider di modelli AI |
+| **SECTION 2.3** | ❌ **NO** | Solo per Provider di modelli AI |
+
+---
+
+## Posizionamento W3Suite
+
+| Aspetto | Valore |
+|---------|--------|
+| **Ruolo AI Act** | **Deployer** (Art. 26) |
 | **Provider modello AI** | OpenAI (GPT-4, GPT-3.5-turbo) |
-| **Classificazione rischio** | Minimal/No Risk |
-| **Training dati W3** | NO (zero-day retention OpenAI) |
-| **FRIA richiesta** | NO (non high-risk) |
+| **Sviluppa modelli AI?** | NO |
+| **Addestra modelli AI?** | NO |
+| **Usa AI di terze parti?** | SÌ (OpenAI) |
 
 ---
 
-## Risposte Complete per Sezione
+## SECTION 2.1 - Risposte Complete
 
-### SEZIONE 2.1 - Dati Provider
+### Dati Provider
 
 | ID | Domanda | Risposta |
 |----|---------|----------|
-| P.01 | Provider (Vendor) | **Easy Digital Group S.r.l.** |
-| P.02 | Indirizzo | [Inserire indirizzo sede legale] |
-| P.03 | Intra/Extra EU | **Intra European Union** |
-| P.04 | Nome Servizio/Prodotto | **W3Suite - AI-Powered Enterprise Platform** |
+| **P.01** | Provider (Vendor) | **Easy Digital Group S.r.l.** |
+| **P.02** | Indirizzo sede | [Inserire indirizzo sede legale] |
+| **P.03** | Intra/Extra EU | **Intra European Union** |
+| **P.04** | Nome Servizio/Prodotto | **W3Suite - AI-Powered Enterprise Platform** |
 
 ### Consapevolezza AI Act
 
 | ID | Domanda | Risposta |
 |----|---------|----------|
-| P.05 | Consapevole AI Act? | **Yes** |
-| P.06 | Compreso definizione "sistema IA"? | **Yes** |
-| P.07 | Compreso definizione "GPAI model"? | **Yes** |
+| **P.05** | Consapevole previsioni AI Act? | **Yes** |
+| **P.06** | Compreso definizione "sistema di IA"? | **Yes** |
+| **P.07** | Compreso definizione "modello IA per finalità generali"? | **Yes** |
 
 ### Uso AI e Ruolo
 
 | ID | Domanda | Risposta | Note |
 |----|---------|----------|------|
-| P.08 | Servizio usa AI? | **Yes** | W3Suite integra AI per assistenza operativa |
-| P.09 | Conforme AI Act? | **Yes** | Come deployer, applica Art. 26 |
-| P.10 | System Integrator? | **Yes** | Integra OpenAI in piattaforma enterprise |
-| P.11 | IT SPOC? | **No** | |
-
-### Ruolo secondo AI Act (CRITICO)
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.10bis | Siete "Provider" AI Act? | **No, deployer** | W3Suite è DEPLOYER. Non sviluppa modelli AI, utilizza OpenAI GPT-4 come modello GPAI esterno |
-
-### Garanzie e Conformità
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.11bis | Garantisce conformità Provider? | **Yes** | Come deployer, garantisce uso conforme |
-| P.12 | Manleva WindTre? | **Yes** | |
-| P.13 | No sistemi "rischio inaccettabile"? | **Yes** | Nessun sistema Art. 5 AI Act |
-| P.14 | Consapevole "High Risk Systems"? | **Yes** | |
-| P.15 | Consapevole modelli GPAI? | **Yes** | |
-| P.16 | Consapevole obblighi trasparenza? | **Yes** | Art. 50 AI Act |
-| P.17 | Verificato provider terzi? | **Yes** | OpenAI verificato conforme |
-| P.18 | Responsabile per failure terzi? | **Yes** | |
-| P.19 | Staff formato su AI? | **Yes** | Formazione Art. 4 AI Regulation |
-| P.20 | Marcatura CE? | **N/A** | Non applicabile a deployer |
-
-### Classificazione Rischio
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.21 | Categoria rischio AI | **N/A - Minimal/No Risk** | AI per assistenza operativa, non in Allegato III |
-| P.22 | Sistema ad alto rischio? | **No** | |
-| P.23-P.29 | Dettagli high-risk | **N/A** | Non applicabile |
-
-### Modelli AI Utilizzati
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.30 | Modelli GPAI usati | **OpenAI GPT-4 e GPT-3.5-turbo** | OpenAI garantisce Art. 53, W3Suite applica Art. 26 |
-| P.31 | Tipo modello ML | **Generative** | LLM per generazione testo |
-| P.32 | Training dataset | **External Data** | Training gestito da OpenAI. Dati W3 NON usati (zero-day retention) |
-| P.33 | Dati biometrici? | **No** | |
-| P.34 | Livello autonomia | **Partial Machine Autonomy** | Output sempre soggetto a revisione umana |
-| P.35 | Dove eseguito AI? | **Cloud - OpenAI API (EU endpoint)** | Endpoint EU per minimizzare trasferimenti extra-UE |
-| P.36 | Adattabilità post-deploy? | **Nil** | Nessun apprendimento post-deployment |
-
-### Trasparenza e Output
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.37 | Utenti informati interazione AI? | **Yes** | Label "AI Assistant", disclaimer |
-| P.38 | Tipo output AI | **Text generation, data analysis, recommendations** | |
-| P.39 | Genera deep-fake? | **No deep-fake generation** | |
-| P.40 | Output etichettati/tracciabili? | **Yes** | Audit trail attivo |
-
-### Sicurezza e Controlli
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.41 | Cybersecurity AI? | **Yes** | TLS 1.3, API key rotation, rate limiting |
-| P.42 | Logging interazioni? | **Yes** | Retention 90 giorni |
-| P.43 | Controlli accesso AI? | **Yes** | RBAC per funzionalità AI |
-| P.44 | Monitoring qualità output? | **Yes** | |
-| P.45 | Incident response AI? | **Yes** | |
-
-### Explainability e Bias
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.46 | Explainability? | **Partial** | Limitata da natura black-box LLM |
-| P.47 | Bias mitigation? | **OpenAI + W3Suite monitoring** | |
-| P.48 | Testing comportamenti? | **Yes** | |
-| P.49 | Feedback loop? | **Yes** | |
-| P.50 | Decisioni automatizzate? | **N/A** | No decisioni con impatto legale |
-
-### Governance AI
-
-| ID | Domanda | Risposta |
-|----|---------|----------|
-| P.51 | Governance AI definita? | **Yes** |
-| P.52 | Policy uso accettabile? | **Yes** |
-| P.53 | Revisione periodica? | **Yes** |
-| P.54 | Documentazione tecnica? | **Yes** |
-| P.55 | Contratto con provider AI? | **Yes** |
-
-### Performance e SLA
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.56 | SLA AI Services | **99.5%** | Dipendente da SLA OpenAI |
-| P.57 | Monitoring performance? | **Yes** | |
-| P.58 | Capacity planning? | **Yes** | |
-| P.59 | Gestione failure? | **Graceful degradation** | Fallback a funzionalità non-AI |
-| P.60 | Business continuity? | **Yes** | |
-
-### MLOps / LLMOps
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.61 | Architettura MLOps | **API Integration Architecture** | MCP Gateway → OpenAI API → Processing → Audit |
-| P.62 | Stack tecnologico | **Node.js Gateway, Git prompt templates, Redis cache, PostgreSQL audit** | |
-| P.63 | Componenti open source? | **Yes** | Node.js, Express, PostgreSQL, Redis |
-| P.64 | Componenti SaaS? | **Yes - OpenAI API** | Contratto Enterprise |
-| P.65 | Modello costi | **Pay-per-use (tokens)** | OpenAI per token, W3Suite incluso in SaaS |
-
-### Data Protection
-
-| ID | Domanda | Risposta | Note |
-|----|---------|----------|------|
-| P.66 | Isolamento dati W3 | **W3Suite tenant isolation** | RLS PostgreSQL, zero-day retention OpenAI |
-| P.67 | Data retention | **90 days audit, 0-day OpenAI** | |
-| P.68 | Dati W3 per training? | **Yes, no W3 data used** | Dati W3 NON usati per training OpenAI |
-| P.69 | DPIA | **DPIA by both** | Easy Digital Group + WindTre |
-| P.70 | FRIA | **N/A - Not high-risk AI** | Non richiesta per sistemi non ad alto rischio |
-
-### Note Finali
-
-| ID | Risposta |
-|----|----------|
-| P.71 | W3Suite è deployer AI (Art. 26 AI Act). Utilizza OpenAI GPT-4 come modello GPAI esterno. Conformità garantita da: (1) OpenAI come provider del modello, (2) Easy Digital Group come deployer responsabile dell'uso conforme. Architettura predisposta per audit, trasparenza e supervisione umana. |
+| **P.08** | Il servizio/prodotto utilizza IA ed è soggetto al Regolamento? | **Yes** | W3Suite integra OpenAI GPT-4 |
+| **P.09** | Utilizza IA nel ruolo di "deployer"? | **Yes** | ⚠️ **RISPOSTA CHIAVE** - W3Suite è DEPLOYER, non Provider |
+| **P.10** | È System Integrator di sistemi IA? | **Yes** | Integra modelli OpenAI nella piattaforma |
+| **P.11** | È IT SPOC? | **No** | |
 
 ---
 
-## Documenti di Supporto
+## SECTION 2.2 - NON COMPILARE
 
-Per completare il questionario, allegare:
+> ❌ **Non compilare questa sezione**
+> 
+> Motivo: P.09 = Yes (W3Suite è Deployer, non Provider)
 
-1. **Documentazione tecnica W3Suite AI** - Architettura integrazione OpenAI
-2. **Policy uso AI** - Linee guida uso accettabile
-3. **DPIA W3Suite** - Valutazione impatto protezione dati
-4. **Contratto OpenAI Enterprise** - Clausole data protection
+La sezione 2.2 contiene domande riservate ai **Provider** di sistemi AI secondo l'Art. 3 punto 3 del AI Act, ovvero soggetti che:
+- Sviluppano sistemi di IA
+- Fanno sviluppare sistemi di IA
+- Immettono sul mercato sistemi di IA con proprio nome/marchio
+
+**W3Suite non rientra in questa definizione** perché utilizza modelli AI di terze parti (OpenAI).
+
+---
+
+## SECTION 2.3 - NON COMPILARE
+
+> ❌ **Non compilare questa sezione**
+> 
+> Motivo: P.09 = Yes (W3Suite è Deployer, non Provider)
+
+La sezione 2.3 richiede dettagli tecnici sui modelli AI che sono responsabilità del **Provider** (OpenAI), non del Deployer (W3Suite).
 
 ---
 
 ## Riferimenti Normativi
 
-- **AI Act**: Regolamento (UE) 2024/1689
-- **Art. 26**: Obblighi dei deployer di sistemi AI
-- **Art. 53**: Obblighi dei provider di modelli GPAI
-- **Allegato III**: Lista sistemi AI ad alto rischio
+### Art. 3 - Definizioni AI Act
+
+**Punto 3 - Provider (Fornitore)**:
+> "Una persona fisica o giuridica che **sviluppa** un sistema di IA o un modello di IA per finalità generali o che **fa sviluppare** un sistema di IA e lo immette sul mercato con il **proprio nome o marchio**"
+
+**Punto 4 - Deployer (Operatore)**:
+> "Una persona fisica o giuridica che **utilizza** un sistema di IA sotto la propria autorità"
+
+### Obblighi Deployer (Art. 26)
+
+W3Suite, come Deployer, è tenuto a:
+
+1. ✅ Utilizzare sistemi AI conformemente alle istruzioni del Provider
+2. ✅ Garantire supervisione umana appropriata
+3. ✅ Monitorare il funzionamento del sistema AI
+4. ✅ Informare gli utenti dell'interazione con sistemi AI
+5. ✅ Conservare log generati automaticamente (quando applicabile)
+
+---
+
+## Riepilogo Compilazione
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  AI QUESTIONNAIRE 2. PROVIDER - W3Suite                 │
+├─────────────────────────────────────────────────────────┤
+│  SECTION 2.1 (P.01 - P.11)                              │
+│  ✅ COMPILARE - Risposte fornite sopra                  │
+├─────────────────────────────────────────────────────────┤
+│  SECTION 2.2 (P.10 - P.20)                              │
+│  ❌ NON COMPILARE - P.09 = Yes (Deployer)               │
+├─────────────────────────────────────────────────────────┤
+│  SECTION 2.3 (P.21 - P.71)                              │
+│  ❌ NON COMPILARE - P.09 = Yes (Deployer)               │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## File di Output
+
+| File | Contenuto |
+|------|-----------|
+| `AI-QUESTIONNAIRE-RISPOSTE-W3SUITE.xlsx` | Risposte Excel pronte per copia/incolla |
+| `GUIDA-AI-QUESTIONNAIRE-W3SUITE.md` | Questa guida |
