@@ -15,6 +15,7 @@
 | 3 | SOC-RISPOSTE-COMPLETE-v3.md | ✅ AGGIORNATO | Dettaglio tutte le risposte |
 | 4 | AI-QUESTIONNAIRE-RISPOSTE-W3SUITE.xlsx | ✅ CONFORME | Posizionamento DEPLOYER |
 | 5 | GAP-ANALYSIS-GESTIONALE-MIO-NEGOZIO.xlsx | ✅ COMPLETO | 111 requisiti analizzati |
+| 6 | ANALISI-COMMERCIALE-AQ-WINDTRE.md | ✅ NUOVO | Analisi costi e hosting |
 
 ### 1.1 SOC Technology v2.8 - Statistiche
 
