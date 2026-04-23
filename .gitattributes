@@ -1,0 +1,8 @@
+dist/ linguist-generated=true linguist-vendored=true
+dist-brand/ linguist-generated=true linguist-vendored=true
+dist-vps/ linguist-generated=true linguist-vendored=true
+apps/*/dist/ linguist-generated=true linguist-vendored=true
+*.min.js linguist-generated=true
+*.min.css linguist-generated=true
+build/ linguist-generated=true linguist-vendored=true
+packages/*/dist/ linguist-generated=true linguist-vendored=true

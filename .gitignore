@@ -1,8 +1,9 @@
 node_modules
 dist
+dist-brand
+dist-vps
 .DS_Store
 server/public
 vite.config.ts.*
-*.tar.gzdist-vps/
-dist-vps/
+*.tar.gz
 deploy/keys/
