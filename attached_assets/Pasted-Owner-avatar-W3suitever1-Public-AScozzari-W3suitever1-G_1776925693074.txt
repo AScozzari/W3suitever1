@@ -1,0 +1,251 @@
+Owner avatar
+W3suitever1
+Public
+AScozzari/W3suitever1
+Go to file
+t
+T
+Name		
+author
+antonioscozzari
+chore: remove dist files from git tracking, fix .gitignore and add .g…
+f1fe4dd
+ · 
+7 minutes ago
+.github/workflows
+Fresh start without large files
+4 months ago
+.husky
+Fresh start without large files
+4 months ago
+apps
+Add Google Tag Manager configuration exports to the schema
+3 months ago
+archive
+Fresh start without large files
+4 months ago
+attached_assets
+Add new documents and images to project assets
+16 hours ago
+configs
+Fresh start without large files
+4 months ago
+db/oltp
+Fresh start without large files
+4 months ago
+deploy
+Add inventory and serial history query templates for WMS
+3 months ago
+docker
+Fresh start without large files
+4 months ago
+docs
+Analyze and report inconsistencies in client requirements document
+2 months ago
+edgvoip_scripts
+Fresh start without large files
+4 months ago
+nginx
+Fresh start without large files
+4 months ago
+packages
+Fresh start without large files
+4 months ago
+public
+Fresh start without large files
+4 months ago
+scripts
+Add cartoon avatars for multiple users and update their database entries
+3 months ago
+uploads/avatars
+Fix avatar serving and file download issues in object storage
+3 months ago
+.gitattributes
+chore: remove dist files from git tracking, fix .gitignore and add .g…
+7 minutes ago
+.gitignore
+chore: remove dist files from git tracking, fix .gitignore and add .g…
+7 minutes ago
+.replit
+Add cloud storage management endpoints and improve security
+3 months ago
+HR_SYSTEM_SECURITY_VERIFICATION_REPORT.md
+Fresh start without large files
+4 months ago
+HR_SYSTEM_VERIFICATION_REPORT.md
+Fresh start without large files
+4 months ago
+MCP_AUDIT_REPORT.md
+Fresh start without large files
+4 months ago
+MCP_TWILIO_INTEGRATION.md
+Fresh start without large files
+4 months ago
+TESTING_META_OAUTH.md
+Fresh start without large files
+4 months ago
+TIME_ATTENDANCE_ARCHITECTURE_ANALYSIS_REPORT.md
+Fresh start without large files
+4 months ago
+clear_storage.js
+Fresh start without large files
+4 months ago
+create-crm-demo-via-api.sh
+Fresh start without large files
+4 months ago
+crm-demo-data-complete.sql
+Fresh start without large files
+4 months ago
+crm-demo-data-fixed.sql
+Fresh start without large files
+4 months ago
+crm-demo-final.sql
+Fresh start without large files
+4 months ago
+demo-crm-minimal.sql
+Fresh start without large files
+4 months ago
+demo-data-crm-staging-fixed.sql
+Fresh start without large files
+4 months ago
+demo-data-crm-staging.sql
+Fresh start without large files
+4 months ago
+ecosystem.config.cjs
+Fresh start without large files
+4 months ago
+file-guardian.js
+Fresh start without large files
+4 months ago
+index.ts
+Fresh start without large files
+4 months ago
+nginx.template.conf
+Fresh start without large files
+4 months ago
+package-lock.json
+Add commercial analysis document and update audit log
+2 months ago
+package.json
+Add commercial analysis document and update audit log
+2 months ago
+pnpm-workspace.yaml
+Fresh start without large files
+4 months ago
+replit.md
+Transitioned from Plan to Build mode
+2 months ago
+server.ts
+Fresh start without large files
+4 months ago
+start-brand-backend.sh
+Fresh start without large files
+4 months ago
+start-brand-frontend-only.sh
+Fresh start without large files
+4 months ago
+start-brand-frontend.sh
+Fresh start without large files
+4 months ago
+start-brand-services.sh
+Fresh start without large files
+4 months ago
+start-brand-system.sh
+Fresh start without large files
+4 months ago
+start-brand.sh
+Fresh start without large files
+4 months ago
+start-voice-gateway.sh
+Fresh start without large files
+4 months ago
+start-w3-frontend.sh
+Fresh start without large files
+4 months ago
+tailwind.config.ts
+Fresh start without large files
+4 months ago
+test-api-verification.js
+Fresh start without large files
+4 months ago
+test-brand-interface.js
+Fresh start without large files
+4 months ago
+test-edgvoip-connection.html
+Fresh start without large files
+4 months ago
+test-hr-dashboard.html
+Fresh start without large files
+4 months ago
+test-pdc-api.js
+Fresh start without large files
+4 months ago
+test_http_streaming.sh
+Fresh start without large files
+4 months ago
+tsconfig.base.json
+Fresh start without large files
+4 months ago
+tsconfig.json
+Fresh start without large files
+4 months ago
+turbo.json
+Fresh start without large files
+4 months ago
+Repository files navigation
+README
+Add a README
+Help people interested in this repository understand your project.
+
+About
+first release w3 suite
+
+ Activity
+Stars
+ 0 stars
+Watchers
+ 0 watching
+Forks
+ 0 forks
+Releases
+No releases published
+Create a new release
+Packages
+No packages published
+Publish your first package
+Contributors
+1
+@AScozzari
+AScozzari
+Languages
+TypeScript
+95.7%
+ 
+HTML
+2.6%
+ 
+Shell
+0.7%
+ 
+CSS
+0.4%
+ 
+JavaScript
+0.3%
+ 
+PLpgSQL
+0.2%
+ 
+Other
+0.1%
+Footer
+© 2026 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Community
+Docs
+Contact
+Manage cookies
